@@ -1,0 +1,16 @@
+```text
+Cannabis sativa Yunma 7 Chloroplast Genome:
+
+Genome size: 153,899 bp; GC content: 36.67%
+Regions: LSC (84,046 bp), SSC (17,831 bp), IR (26,011 bp) x 2
+Genes: 74 protein-coding, 37 tRNA, 8 rRNA; 12 duplicated genes (ndhB, rps7, rps12, rps19, rpl2, rpl23, ycf1, ycf2, rrn4.5, rrn5, rrn16, rrn23)
+Yunma 7: Cultivated in Yunnan Province, China; low THC (<0.3%).
+Sequencing: Illumina NovaSeq (0.91 Gb); SRA: PRJNA679189; GenBank: MW013540
+Assembly: NOVOPlasty, GapCloser
+Annotation: DOGMA, Geneiousv11.0.3
+Phylogenetic analysis:  Closely related to Cannabis hybrid AK Royal Automatic (Matielo et al., 2020).  23 species included (19 Cannabaceae, 3 Moraceae, 1 Ulmaceae outgroup).  MAFFT alignment; MEGA7 neighbor-joining tree (100 bootstrap replicates).
+Funding: National Natural Science Foundation of China (31501350, 31760403); China Agriculture Research System (CARS-16-E15).
+Sample Collection: Greenhouse, School of Agriculture, Yunnan University (24.83 N, 102.85 E); Herbarium of Yunnan University (HGS-dm2020004).
+DNA extraction: Modified CTAB method (Doyle and Doyle, 1987)
+References: Deng et al. (2019), Dierckxsens et al. (2017), Doyle and Doyle (1987), Katoh and Standley (2013), Kearse et al. (2012), Kojoma et al. (2006), Kumar et al. (2016), Luo et al. (2012), Marks et al. (2009), Matielo et al. (2020), Measham et al. (1994), Oh et al. (2016), Vergara et al. (2016), Wyman et al. (2004), Zhang et al. (2018).
+```

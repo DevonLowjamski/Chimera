@@ -1,0 +1,109 @@
+```text
+growing_marijuana_idiots_guide.txt
+
+**Part 1: Marijuana 101**
+
+* **Marijuana Overview:** Drug from cannabis plant; history of use (2727 BCE, Shen Nung; 1920s-30s US popularity; legalization in WA, CO, OR, AK, Uruguay, Chile, Colombia, Jamaica).  Oldest stash (2700-year-old Gobi Desert tomb).
+* **Plant Anatomy:** Leaves (photosynthesis, trim), Buds (flowers, calyx, cola), Male (stamen), Female (pistils).
+* **Cannabis Species:** Indica (body high, higher THC:CBD), Sativa (head high, higher CBD:THC), Ruderalis (low THC, auto-flowering). Indica: shorter, broader leaves; shrub-like. Sativa: longer, skinnier leaves; taller, vine-like. Sativa bloom humidity <65%.
+* **Hybrids:** Afghanica (indica-dominant, sedating), auto-flowering (ruderalis cross).
+* **Strains:**  List of strains (composition, crosses, taste/smell, property).  Examples: 9 Pound Hammer (sedating), Afghan OG (sedating), Afghani (sedating), Berry White (energetic), Blue Hawaiian (energetic), etc.
+
+
+**Part 2: Introduction to Growing Marijuana**
+
+* **Why Grow?** Grow desired strains, control product quality/safety, save money, enjoy the process. Terpene profiles (limonene, myrcene, pinene, linalool, caryophyllene).
+* **Life Cycle:** Propagation (seed/clone), Vegetative (4-6 weeks, can be prolonged), Flowering (6-10 weeks), Harvest.
+* **Cannabis Needs:** Soil, nutrients (N, P essential), water (distilled/RO), light (≥12 hours), temperature (70-80°F), humidity (40-70%), airflow.
+* **Ideal Soil:** pH 5.5-7, good drainage, air retention (60-70°F), NPK fertilizer, supplements (silica, humic acids).  Kevin's 2:1:1 soil mix (Pro-Mix HP, FoxFarm Ocean Forest, perlite).
+* **Hydroponics:** Faster growth, precise nutrient control, less pest issues; risks: mechanical failure, cross-contamination.
+* **pH Importance:** Ideal 5.8-6.2 (hydro), 5.5-7 (soil).  Acid/base solutions for adjustment.
+* **Water:** pH, TDS/ppm (parts per million), temperature (65-80°F), nutrients. Reverse osmosis (RO). Overwatering/Underwatering symptoms.
+* **Acquiring Seeds:** Online, exchanges, feminized seeds (silver thiosulfate, colloidal silver, rodelization).
+* **Germinating Seeds:** Soaking, starter cubes, direct planting, paper towel method.
+* **Planting Seedlings:** Soil (indoors/outdoors), hydroponic systems.
+* **Vegetative Stage:** Environment, nutrients, techniques (topping, super cropping, LST, lollipopping).
+* **Pruning (Vegetative):** Shape control, yield increase, thinning.
+* **Fertilizing (Vegetative):** NPK (high N, low P), liquid/dry fertilizers, foliar feeding.
+* **Keeping Vegetative Plants Healthy:** Foliar sprays (fertilizers, pesticides, fungicides, water), humidifiers, fans. Transplanting.
+* **Transplanting:** During vegetative stage, avoid dry spots. Method.
+* **Prolonging Vegetative Stage:** Pros/cons (larger plants, mother plants).
+* **Identifying Gender:** Preflowers (3-4 weeks vegetative), female (stigmas), male (pollen sacs).
+* **Cloning:** From healthy vegetative plants; optimal conditions (temperature, humidity, lighting); 7-18 days; method.  Sexing plants via cloning.
+* **Flowering Stage:** Nutrients (lower N, higher P), supplements, techniques (super cropping, LST), lighting schedule (12/12, variations), flushing.
+* **Fertilizing (Flowering):** Lower N, higher P; supplements; foliar feeding (first 3-4 weeks).
+* **Pruning (Flowering):** Remove popcorn buds, fan leaves (2 weeks into flowering).
+* **Keeping Flowering Plants Healthy:** Foliar sprays, dehumidifier, CO2 (1200-1500 ppm), flushing.  Do not transplant.
+* **Harvest Stage:** Trichome development (clear, opaque, amber), drying (45-55% RH, <75°F), trimming (wet/dry, machine/hand), curing (1 month, burping), storage.
+* **Making Kief:** Passive (kief boxes, grinders), active (mesh screens).
+* **Making Dry Hash:** Strained kief, cellophane, oven (350°F/10 min), rolling pin.
+* **Making Water/Bubble Hash:** Cold water, ice, bubble bags (25, 70, 160, 220 micron), bucket/washing machine, drying.
+* **Grow Location:** Indoors (climate control, expensive), outdoors (natural, weather dependent), grow structures (combination).
+
+
+**Part 3: Indoor Growing**
+
+* **Introduction:** Replicate outdoor conditions. Soil vs. hydroponics.
+* **Choosing Strains:** Indica (faster flowering), hybrids, auto-flowering (beginners).  Strain examples.
+* **Grow Mediums:** Soil (easy, pests), rock wool cubes (versatile, algae), coco coir (dries faster, gnats), expanded clay pellets (aeration, root rot risk).
+* **Setting Up Grow Room:** Legality, budget, growing method, grow medium, lighting, environmental requirements (temperature, humidity), air (AC, fans, air scrubbers, CO2).
+* **Ideal Indoor Climate:** Germination (warm, dark, moist), cloning (75-85°F, high humidity), vegetative (75-80°F, 60-70% humidity), flowering (72-78°F, 50-55% humidity). Ventilation.
+* **Lighting:** Fluorescent (cloning, vegetative), HID (MH-vegetative, HPS-flowering), LED.  Lighting schedule, PAR measurement, lumens, Kelvin.  Hardening with HPS.
+* **Ballasts:** Magnetic (durable, noisy), digital (efficient, more complex), DE bulb ballasts.
+* **Reflective Hoods:** Closed, vented, wings, parabolic.
+* **Timers:** Mechanical, hard-wired, digital.  Timing for each stage.
+* **Watering Methods:** Manual, automated, foliar.
+* **Hydroponic Systems:** Aeroponic, drip, DWC, ebb and flow, NFT, wick.  Setting up an ebb and flow system.  Air stones.
+* **Ventilation: Airflow:** Air exchange rate (summer, spring/fall, winter).
+* **Ventilation: Air Circulation:** Fans, closed grow rooms (CO2), grow structure ventilation (mechanical/natural).
+* **Supplying Carbon Dioxide:** Advantages, disadvantages, delivery systems (passive: seltzer water, dry ice, CO2 bags; active: CO2 tanks, CO2 generators).  PPM levels.
+* **Growth Cycles:** Staggering for monthly harvests.
+* **Cleaning:** Tools, surfaces, solutions (alcohol, bleach).
+
+
+**Part 4: Outdoor Growing**
+
+* **Introduction:** Pros (natural, sustainable), cons (weather, legality, space).
+* **Climate and Marijuana:** Environmental impact, warmer/colder climates, suitable strains.
+* **Choosing a Spot:** Sunlight, soil, animal protection, public view, containers vs. ground.  Terrain, terroir.
+* **Choosing Strains:** Climate, temperature, humidity, shorter growing seasons. Strain examples.
+* **Soil Preparation:** Tilling, pH (6.5-6.8), soil testing, digging holes, adding water.
+* **Amending Soil:** Peat/coco, aggregate, bat guano, seaweed.  Mixing.
+* **Hardening Plants:** Gradually expose indoor plants to outdoor conditions.  Avoid windburn.
+* **Protecting Plants from the Elements:** Excessive sun (shade cloth), wind (stakes, windbreak), excessive rain (tarp, hoop house), cold (cover).
+* **Watering Outdoors:** Dripline, water sources (natural, well, rainwater), watering young plants.
+* **Fertilizing:** Chemical vs. natural fertilizers, natural nutrients (alfalfa meal, fish emulsion/meal, compost), application (dry/liquid), foliar feeding.
+* **Vegetative Stage Outdoors:** Length, protection (weather, animals), managing growth, pruning.
+* **Keeping Your Plants Healthy Outdoors:** Soil care, space, predator protection, fungus/mold/bacteria (copper, hydrogen peroxide, colloidal silver).
+* **Flowering Stage Outdoors:** Natural light cycles, potential diseases (bud rot, powdery mildew), fan leaf removal.
+* **Light Deprivation Method:** Techniques, timing, scheduling, building a hoop house.
+* **Harvesting Outdoors:** When to harvest (trichomes, leaves), preparation, harvesting method.
+
+
+**Part 5: Extending Growing Seasons with Structures**
+
+* **Why Grow in Structures?:** Protection, extended growing season, better environment.
+* **Types of Grow Structures:** Cold frames (inexpensive, temporary), hoop houses (simple, inexpensive), hot frames/greenhouses (climate control, expensive).
+* **Controlling Climate and Environment:** Active (swamp coolers, fans, AC, heaters), passive (sun, fresh air), supplemental lighting, light deprivation (manual/automatic).
+* **Choosing the Right Grow Structure:** Goals, climate, cost, size.
+* **Building a Grow Structure:** Zoning requirements, building permits, location.
+
+
+**Part 6: Breeding**
+
+* **Goal:** Create genetically stable, superior plants.  Crossing (cross-pollination), phenotype.
+* **Selecting Parents:** Dissimilar varieties, female (desired traits, bud quality), male (growth, vigor, potency testing).
+* **Collecting Pollen:** From mature male flowers; avoiding contamination; method.
+* **How to Pollinate:** Active (paintbrush), passive (airflow, shaking).
+* **Collecting Fertile Seeds:** Maturity, collection method, storage.
+* **Stabilizing Desired Traits:** First-generation offspring (crosses), second-generation (selection), stabilization (7-10 generations).  Selecting carefully.
+* **Feminization:** Stabilizing exceptional females.
+* **Backcrossing:** Introduce traits from a different strain.
+* **Stabilizing Cannabinoid/Terpene Profiles:** Cloning, testing.
+
+**Glossary:** Definitions of terms.
+
+**Resources:** Websites, journals, magazines.
+
+**About the Authors:** Biographies of Kevin Oliver and Chadd McKeen.
+```

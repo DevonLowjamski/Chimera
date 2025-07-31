@@ -1,0 +1,25 @@
+```text
+cannabis_fusarium_solani_lichenicola_roo.txt
+
+**Study Objective:** Characterize Fusarium species infecting greenhouse cannabis (Cannabis sativa L.).
+
+**Sampling (2019-2020):** 68 symptomatic plants (10 strains) from 6 licensed Canadian production facilities (BC & ON).  Plants propagated in coco coir; environmental conditions: 24–38°C, 60–85% RH.  Symptoms: stunted growth, crown discoloration, yellowing leaves, root browning.  Tissue samples: crown, root, stem. Coco coir samples also collected.
+
+**Isolation:** 34 fungal isolates; 28 identified as Fusarium solani; 6 provisionally as Cylindrocarpon sp. (slow-growing colonies, grey-white aerial mycelium, chestnut-brown underside, cylindrical 1–3 septate conidia, no microconidia, chlamydospores present).
+
+**Molecular Identification:** TEF-1α and ITS1-5.8S-ITS2 regions sequenced.  28 isolates confirmed as F. solani; 6 as F. lichenicola (FSSC subclade 16; formerly Cylindrocarpon lichenicola). GenBank accession numbers provided (Table 1). Phylogenetic analysis using Neighbour-Joining method (MEGA7).
+
+**Mycelial Growth & Spore Measurements:** Optimal growth temperature for both F. solani and F. lichenicola: 30°C.  F. solani macroconidia: canoe-shaped, 1–3 septate, 28–35 µm length, 2.8–3.5 µm width. F. lichenicola spores: cylindrical, 1–3 septate, 22–35 µm length, 2–3.5 µm width. F. lichenicola produced chestnut-brown pigment in potato dextrose broth; abundant spores and chlamydospores after 2 weeks.
+
+**Pathogenicity Tests:**
+    * **Cuttings:** F. solani: damping-off, stem infection (10–14 days). F. lichenicola: yellowing, wilting (3 weeks), inhibited root development.
+    * **Rooted Plants:** F. solani: yellowing. F. lichenicola: yellowing, stunting, root browning. Inoculum concentration: 1.5 × 10⁶ (F. solani), 1.2 × 10⁶ (F. lichenicola) spores/mL.
+
+**F. lichenicola:** First worldwide report on cannabis.  Weak, introduced tropical pathogen, likely from imported coco coir.  Previously reported from tropical climates: human dermal/ocular infections, pomelo fruit rot, taro corm rot, tea plant disease.  Produces chlamydospores for survival.
+
+**F. solani:** Previously reported on cannabis; widespread pathogen.  Optimal growth 30–35°C (some isolates at 37°C).  Phylogenetic analysis shows lack of host specialization.
+
+**Biosecurity:** Potential human health concerns with F. lichenicola and F. solani (cutaneous infections);  biosecurity measures recommended when handling coco coir.  Other potential contaminants (Aspergillus, Penicillium) in coco coir also noted. F. lichenicola rare in cannabis (1.3% of Fusarium spp. 2017-2020, absent from dried inflorescences).
+
+**Funding:** Agrima Botanicals, NSERC CRD grant.
+```

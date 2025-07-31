@@ -1,0 +1,215 @@
+﻿Prompts
+Game Core Concept & Collaboration:
+* Project: Collaborate on video game development, acting as a peer to challenge, question, and clarify ideas for a cannabis virtual farm simulation. Process is long-term, expect evolving goals.
+* Vision: A cohesive game blending City Building (Cities Skylines, SimCity), Farm Sim (Farming Simulator, Stardew Valley), Genetic Modeling/Breeding (CryptoKitties, APICO), Real-World Search/Find (Pokemon GO, Ingress), and Collectable Marketplace Trading (Runescape, EVE Online).
+* Graphics: Generally high quality, not hyper-realistic.
+* Progression: Natural; starts simple (basic options/layouts), transitions to complex systems/build-outs. Farm upgrades align with genetic journey (finding, creating, trading).
+* Goal: Create ultimate cannabis genetics via optimal growing conditions, strains, and breeding protocols.
+* Research: Extensive research needed for cannabis genetics, breeding, and cultivation practices.
+Feature Set 1: City Building Simulation (Inspired by Cities Skylines II, SimCity)
+* Concept: Extensive, detailed world-building options applied to cannabis cultivation. Examples: utility placement (sewer, electric), road systems (sizes, types), building placement/zoning, landscaping, terrain modification, sophisticated finances/utilities/laws control.
+* Player Customization:
+   * Farm/Grow Room: Dimensions, material, geographical location, characteristics.
+   * Cultivation: Growing medium (with add-ins like peat, perlite), pot size, seed/clone start.
+   * Irrigation/Fertigation: Extreme flexibility in placement/buildout. Includes batch/mix tanks, plumbing (pipes, diameter, material, valves, solenoids, outlets).
+   * Lighting: Natural sunlight, artificial (LED, HPS, HID - types, spectrum, layout), or combination.
+   * HVAC/Ventilation: Fans, dehumidifiers, A/C, heating; detailed placement of ducting, hoses, piping (size, material).
+   * Dry Rooms: Similar detailed equipment placement/design.
+* Gameplay: Players optimize via experimentation. Envision community sharing techniques.
+* Realism: Accurate simulations/physics for options/combinations require research (plumbing, flow rates, fluid dynamics, HVAC, airflow, lighting, electricity, cultivation). Players can tweak all extra features/controls. This is a prominent, valuable feature.
+Feature Set 2: Farm Simulation (Inspired by Farming Simulator, Stardew Valley)
+* Concept: Crop growing dynamics/gameplay.
+* Time Simulation: Changeable (speed up/slow down) for expedited growth cycles, with consequences. Speeding up affects healthy and unhealthy plants (growth or death/infection).
+* Expansion: Purchasing more land, upgrading operations for more genetic experimentation space.
+Feature Set 3: Genetic Modeling and Breeding Simulation (Inspired by CryptoKitties, APICO)
+* Concept: Advanced, sophisticated genetics engine. Insane trait variety, rarities, combinations, mirroring real-world cannabis genetics value/culture.
+* Player Agency: Develop strains, breeding practices, crosses; experiment for ultimate genetics.
+* Engine Requirements: Dynamic, entertaining, challenging, fun; structured, consistent, with elegant randomness/chance.
+* Research: Cannabis genetics (culture, naming, biology, science). This is a defining, crucial feature needing accuracy. Consider Evo 2 AI model (Arc Institute) integration.
+Feature Set 4: Real World Search and Find (Inspired by Pokemon GO, Ingress)
+* Concept: Real-world searching for digital items (seeds, plant cuttings).
+* Landrace Strains: Incorporate into search/find feature, possibly exclusively. Landraces: less optimal overall but unique, useful attributes for cross-breeding.
+* Development: Idea needs significant further brainstorming and definition. Feature is currently planned to be scrapped.
+Feature Set 5: Collectable Marketplace Trading (Inspired by Runescape, EVE Online)
+* Concept: Extensive, active in-game marketplace for trading useful/rare items.
+* Tradable Items: All game attributes, not just plant genetics (predicted biggest item). Includes growing equipment, seeds, cuttings (largest segment).
+* Monetization: Research opportunities for developer profit.
+* Status: Feature implementation to be delayed until a later game version.
+AI for Visuals & UI/UX Generation:
+* Goal: Research using AI for all visual aspects: graphics, images, 3D models, renderings, animations, UI/UX (menus, overlays, colors, fonts, design, aesthetic). Create ultimate research report/game plan for AI tool usage. Consider low cost, high accuracy; combine tools into assembly line.
+* Tools & Workflow: Explore custom style training, general models with prompt engineering + human refinement. User is inexperienced, relies on AI for tool recommendations. Merge attached AI graphics report with game concept document for a methodical plan. This is high-level planning, not actual generation.
+Visual Style & Mood:
+* Overall Mood: Clinical/scientific, modern/high-tech, aspirational/professional, with optional relaxed/cozy vibe per player choice.
+* Keywords: Realistic, clean, rewarding, engaging, detailed.
+* Player Choice Aesthetics:
+   * High-Tech: Large-scale, top-line facility optimizing scientific/functional performance.
+   * Cozy: Small-scale (closet/tent/bedroom), amateur/low-tech equipment, personal, relaxed feel.
+* Game Modes: Hardcore realistic (tight budgets) to relaxed (unlimited resources). Specific growth challenges with leaderboards.
+* "Clean": Pristine visual look, avoiding rust/dirt/spills even if less realistic.
+* "Detailed": Intricate equipment/asset models; granular complexity/customization in setup/execution; fine-grained UI data visualizations. Plant visual complexity less critical initially (AI procedural gen later).
+* Launch Version: Basic features (asset #, genetics, variability), but full visual asset realism/quality.
+* "Rewarding": Acknowledge all progress (small to large) visually/audibly.
+* "Engaging": Via metrics/conditions (environment, genetics, timing, strategy) players monitor/optimize. Visual complexity matches player's mood/vibe.
+Visual References:
+* Equipment: Satisfactory (machine look, not futuristic/outdoor environment), Farming Simulator.
+* Data UI: Stellaris (preferred), Cities: Skylines (good for data/resource control). Avoid EVE Online (cluttered).
+* Facility Layout: More serious Two Point Hospital/Campus (blueprint/architectural visualization). Hierarchical views: main facility (Two Point-like) -> specific rooms -> benches/tables -> individual plants, with increasing granular detail/data viz. Tycoon game view levels.
+* Cozy Vibe: iGrow game (modest indoor setups); less sophisticated equipment, personal decor, warmer/less intense lighting, maintaining realism.
+* Real-World Cannabis Style: Demeter Designs, Athena Nutrients, Jungle Boys, CannaCribs facilities, Hanna Instruments.
+* Real-World Non-Cannabis Style: Apple, Google.
+Color Palette & Typography:
+* Overall: Slightly stylized, grounded, high-quality, clean graphics. Lighting soft/ambient mostly; harsh/functional for high-tech.
+* UI Palette (Dark Mode-like):
+   * Primary: Elegant, sophisticated; expansive greys, mature/majestic greens, light blues/whites. Focus: readability, contrast, deep colors.
+   * Secondary: Charcoal, off-black, deep dark blues/purples.
+   * Accent: Bright, energetic (yellow, orange, reds, pinks, purples); inspired by cannabis genetic colors.
+* Cozy Palette: Warmer, earthy (beige, cream, light browns, wood tones, light greens/blues).
+* Functional Colors: Used where sensible; reinforce related UI functions. Warnings/alerts: distinct palette or systematic (experiment). Maintain modern, clean, beautiful aesthetic.
+* Typography: Superfamily preferred. Poppins liked but a bit sterile; refine later.
+LOD & Visual Effects:
+* LOD: Relatively high geometric detail/texture resolution; up to modern standards, not extreme realism. Assets high-res, detailed, visually sophisticated, not life-like.
+* Materials: Max definition, high contrast, ultra-realistic relationships (1:1 realism to real-world less important).
+* VFX: Use sensible effects; elegant, pleasing, matching game's sophistication, no excess. Good anti-aliasing needed.
+* Performance: Consider from start; limit initial scope for higher graphics, expand with popularity.
+Environmental Design:
+* Grow Facilities:
+   * Interiors: Basic structural elements with varied looks (real-life materials). Player builds with various materials/styles in sandbox mode.
+   * Starting Points: Vary by player status. Beginner: small residential house in endless white abyss (360° view). Click house -> Two Point Hospital blueprint view. Smallest room (closet) unlocked first; rest of "map" unlockable. Click room -> interior POV sandbox. Same concept for warehouse/large facilities.
+   * Utilities: Visible initially (closet/house); hidden (walls, underground, roofs) in advanced facilities. Toggle-able views for hidden utilities (water, electric, HVAC) making structures see-through. Utility visuals: same realism/scale as other assets; material-based looks, size differences; possible flow animations (visual aid, not sim) triggered on completion.
+* Layouts & Player Construction:
+   * Pre-made "levels"/"maps": All players progress through same base starting points, then customize in sandbox. This user construction is core gameplay, generating diverse layouts. We design these sandbox environments.
+   * Starting Level (Most Visually Demanding): Residential house model (same for all) in white expanse. Blueprint layout (bedrooms, closets, etc.) same for all. Each room a potential grow space. Start in small unlocked room (sandbox). Expand by unlocking more rooms within house. Transition via layout view.
+   * Zoning: Players dedicate areas (Veg, Flower, Dry, etc.) for benefits/penalties.
+   * Warehouse Level: Unlocks after house. Giant open warehouse (concrete floor, pillars) in white expanse. Players build from scratch (walls, rooms, large-scale setups). Assets needed: walls, roofs, pipes, ducts (various materials/sizes). Outdoor setups possible much later.
+   * Engine: All maps/levels in one game engine; reuse physics/algorithms. Build environments adhering to physics, mechanics, procedural systems.
+* Visuals: Avoid clutter (no grunge). Scale/space prevent clutter. Cozy settings: more decor options. Beginning maps fixed look (walls/floors); larger maps highly customizable. No exterior world beyond maps in white "purgatory".
+* Grid System: Real-world scaled, consistent with assets. Examples: 1'x1' or 1mx1m, or scalable by zoom (yard -> foot -> inch). Architectural system for higher levels (walls any dimension). City-builder mechanics for utilities, SketchUp-like for build-outs; drag-and-drop assets.
+Plant Visuals:
+* Importance: "The thing" in the game; strive for realism, close to real biology.
+* Detail: Extremely detailed (leaves, buds, trichomes, stems, medium, pests, pathogens, deficiencies/excesses) without jarring contrast.
+* Indicators: Visually represent all plant health/status factors and their interconnectedness.
+* Variation: Endless procedural subtle differences (from plant/growing factors + light randomness) without drastic visual divergence.
+* Color: Realistic, accurate to biology/genetics; large variety for genetic expressions.
+* Procedural Effects: Based on extensive research of real-world strain characteristics (size, structure, color, bud formation, trichomes). Combined with environment sim for endless combinations.
+* Dynamics: Visuals change/adapt over time based on sim data (environment, grow, genetics). Start basic, advance with sim. Balance consistency with procedural variation.
+UI/UX Aesthetics:
+* Elements: Panels/buttons material design-inspired (subtle depth/shadows); icons simplistic flat, abstract but realistic symbols (sophisticated line art with vibrant accents).
+* Data Visualization: Crucial. Intuitive, easy-to-read, modern, beautiful graphs/charts. Subtle gradients, accent colors, logical repetitive schemes for clarity. Highlight key data, not overwhelm. Useful tool, not gimmick.
+* Interaction: Subtle animations/transitions for engagement, no delays/interruption to flow. Subtle, engaging interactivity/guides, not over-stimulating. Prioritize clean, user-friendly screen over clutter. Effective dark space, subtle highlighting.
+* Layout: Use layered tabs, collapsible sections, pop-ups where logical. Subject to revision with development.
+Characters & Technical Art:
+* Characters: No visualized characters planned now or future.
+* Technical Art: User has no knowledge of polygon counts etc.; relies on AI.
+Visual Goals Summary & Asset Requirements:
+* Style Guide: Confirmed alignment.
+* Equipment/Building Visual Goals: 1. Cohesive, coherent, systematic aesthetic. 2. Beautiful, visually satisfying, engaging assets.
+* Plant Visual Goals: 1. Realism, biological accuracy to real-world varieties (e.g., Indica short/bushy, Sativa tall/stringy) across all traits. 2. Adapt/change over time (growth, breeding, techniques, environment) in a reinforcing loop (plant <> environment) without being unrealistic/dramatic.
+* 3D Asset Requirements: Viewable from various angles, placeable various positions/orientations, accurately scaled, playable/adaptable, evolvable/upgradable, combinable/interfaceable with others.
+AI Tool Testing & Choices (3D Assets - Rodin, Meshy):
+* Rodin (Hyper3D): By far best for 3D models (accuracy, prompt adherence, realism, design, materials, textures). Valuable preview feature. Excellent Image-to-3D. Good for organic cannabis plants. Superior texturing (text-to-texture, image-to-texture, PBR controls). Style adaptable. Good controllability/variation, follows prompts for slight changes. Advanced texturing. Costs justified.
+   * Technical: Amazing readiness; game-ready exports, customizable poly count/type, UVs, LOD. Hyper3D OmniCraft suite and plugins (Blender, UE, Unity, ComfyUI) are groundbreaking. User to research Hyper3D.
+* Meshy: Decent models but errors/inconsistencies. Cost concern for many assets/revisions. Fell short on cannabis plants. Limited free-tier texture customization.
+* Sloyd: Performed worst in initial test; discontinued.
+* Skipped: Scanning/Luma AI, Test Case 4.
+* Workflow: Imagen (image gen) -> Rodin (Image-to-3D) as backup.
+* Plant Variation: Rodin for base meshes/textures; procedural system for infinite variations (critical R&D needed for this complex but elegant solution).
+AI for Animation:
+* Scope: No characters/humanoids/animals (except plant pests).
+* Needs: Subtle plant movement (breeze/fans), medium change (watering), water flow (hydro), water spin (mix tank), real-world asset movements. UI/UX animations (buttons, asset moves, resource viz, completion/construction refs, menu/page moves, sliders).
+AI Tool Testing & Choices (UI/UX - Uizard, UX Pilot, ChatGPT, Layer AI):
+* Element Generation: ChatGPT best (prompt adherence, clarity; needs minor cleanup). Consistent style/quality in sets. Gemini Imagen struggled with icons.
+* Layouts: Uizard, UX Pilot very good; logically organized, beautiful designs. Uizard more intuitive, better interface/AI; good branding/style adherence. Useful for idea visualization, especially for inexperienced user. Handle data complexity well (not fully tested).
+* Layer AI: Very impressive, advanced options, possibly favorite.
+* Ease of Use: ChatGPT, Leonardo, Gemini easier; UI tools (Uizard, UX Pilot) steeper curve. Tools responsive to prompts. Good control over input.
+* Workflow: Hybrid approach feasible. Unsure of Figma role/integration, though Uizard has it.
+Core Mechanics Clarifications:
+* Physics: Basic approach; many interacting parameters over CFD accuracy. Granular sim much later. Predefined, abstract calculations initially, gain sophistication via testing. Fun/engaging > realism initially. User to document parameters.
+* Genetics: Opposite to physics; limited set (max 5) but near full complexity from start. Weighted averages/probabilistic outcomes okay, but deep development desired. New genetic "drops" for engagement. Player breeding can create massive variety; balance needed. Complex but good UX = fun.
+* Player Progression: Stumped initially, needs more thought/research for rewarding, challenging, entertaining system for launch.
+* Cozy vs. Professional: Overstated; not mechanically different paths, just player-chosen aesthetic/scale.
+* Game Engine: Unreal Engine (unless AI advises against).
+* AI Coding: Primarily Cursor with TaskMaster MCP.
+Core Gameplay Loop: Feedback & Satisfaction:
+* Immediate Feedback: Visual plant observation (health, dev, genetics, recovery, condition); can be dissatisfying if mistakes made (learning).
+* Early Game: Logic/rules explained non-intrusively (Satisfactory-style).
+* Returning Players: Basic cultivation routines (health, moisture, maintenance). Satisfaction from optimizing parameters for desired outcome. Feedback via data (moisture, temp, pH etc.). Params start basic, unlock complexity with progression.
+* Ongoing: See visual plant progress over lifecycle; use visuals for issue/experiment assessment. Core loop: visual progress + parameter dialing.
+* Data & Decisions: Plant biological data (visual + scientific: cannabinoids, terpenes, yield, tolerance) available pre/during/post cycle. Drives genetic selection. Testing ability/data complexity grows with player. Deep uniqueness per player.
+* Competition: Online leaderboards (THC, yield, efficiency, etc.); community may define metrics.
+Gameplay Modes & UI Interaction (Plants & Equipment):
+* Views/Modes:
+   * Main Cultivation Mode: Google Earth-like zoom; click tent/room/bench for "street view" like G.E..
+   * Single Plant UI: Click plant in "street view"; UI side-panel, plant prominent. Early game: basic info (age, strain, health 1-10). Progress unlocks more data points via tools/sensors. Manual data entries dated/timed. Tabs for dense data (Water, Nutrients).
+   * Equipment Interaction: Click equipment -> toggles specific close-up interactive view with controls. Logical, subtle animations for changes (e.g., fan starts slow, LED instant).
+* Plant Health Indicator: Early game UI bar (1-10) determined by game's underlying simulation factors (even if not all apparent to player). Guides learning, not reliant on player assessment. Visual plant appearance matches indicator and causal factors (e.g., low water = wilting). Underlying health calculation drives all visual/UI representations.
+* Learning: Initial challenge is visual assessment; drives need for automation. Like Satisfactory's teaching. Visual observation log in plant UI is good idea.
+* UI Data Display: Plant UI shows blank fields for unacquirable data initially (shows potential). Main UI: latest data; tabs for historical data/charts. No visual indicators on plants; manual monitoring is early challenge, reinforces learning, limits early expansion. Later game tools for mass scanning.
+* Tool Interaction Flow: Identify need -> select tool from inventory (appears held) -> interact with asset.
+   * Specific Asset Interaction: "Hold" tool -> select target asset -> view changes to "action mode" (zoomed, specific to action/asset).
+      * Example (pH): Select meter -> select plant -> close-up pot/substrate view, meter animates reading, data auto-logged -> back out.
+      * Example (Pruning): Select shears -> select plant -> overall plant structure view -> click part to cut. Automation for mass pruning later. Same loop for all tools.
+   * Environmental Tools: Select tool -> instant action mode/view, display animates value based on player location (e.g., thermometer near light = higher).
+* Navigation: "Street view" mode requires click on plant/asset for further interaction/action mode.
+* Help: Hints, tips, mouse-over tooltips for early game guidance valuable. Specific action mode details (pruning UI) for later design.
+Hour-to-Hour Gameplay Loop & Goals:
+* Loop: Minute-to-minute tasks -> complete daily/progress-based objectives -> rewards -> upgrades (player/tool) -> new actions -> reinforces loop. Hour-to-hour is building, optimizing, experimenting for knowledge, further building.
+* Accomplishment: Maxing current setup capabilities; feeling good about crop's future.
+* Objectives: Explicitly given, clear, story-influenced (story TBD).
+* Rewards: Various, but new genetics NOT from objectives; acquire via breeding, trading, season drops. Player choice in unlock path (innovate beyond skill/research trees).
+* Early Game: Balancing resources, system capacity, self-realizations via experimentation.
+* Session End Satisfaction: Comfort leaving plants unattended. Daily tasks done, setup optimized, resources used -> security plants will be okay. Ultimate payoff: harvest, see results, new genetics enable further progression.
+Time Mechanics Detailed:
+* Concept: Struggled with balance; needs to be entertaining, realistic, fair.
+* Baseline Scale: 1 in-game week (6 game days) = 1 real-world hour (1 game day = 10 real min). Grow cycle: 8-24+ real hours.
+* Player-Controlled Acceleration Levels (via slider):
+   * Naming: Prefer intuitive names based on real time equivalencies (e.g., "1 game day = X real minutes") over multipliers.
+   * Levels (examples):
+      * "Real-time": 1:1 game to real (for hardcore enthusiasts, novelty/challenge, not main play).
+      * 0.5x.
+      * 1x (Baseline): 1 game week (6 days) per 1 real hour.
+      * "1 game day = 5 real minutes" (approx. 12 game days per real hour) (Replaces 2x / 15 days per hour).
+      * "1 game day = 2 real minutes" (approx. 30 game days per real hour).
+      * "1 game day = 1 real minute" (approx. 60 game days per real hour).
+* Consequences of Acceleration:
+   * Challenge: Logical/natural issues if care insufficient at speed (e.g., daily tasks become minute-ly at 8x).
+   * Resources: Consumed consistently; depletion is part of challenge (e.g., small reservoir empties fast).
+   * Commitment/Inertia: Changing speed incurs mandatory lock-in time at new speed AND a transition delay before change takes effect, preventing exploits (e.g., quick revert if problems). Warnings displayed.
+   * Risk/Reward Variables: Minor advantages/disadvantages tied to speed ("real-time" = highest potential benefit, fastest = lowest). E.g., max THC potential slightly lower at faster speeds. Not frustratingly unfair. Other variables TBD.
+* Offline Time Progression: Player chooses any timescale (including "pause") for offline periods.
+   * Return to Game: Simulates missed events. To manage load: show accelerated time-lapse of grow changes while computing remaining events in background. End with detailed data recap screen.
+* Process Durations: Growth stages, cultivation, post-harvest (drying, curing) map to real-world timeframes scaled by chosen game speed. "Season drops" on real-world global time.
+* Leaderboards: Timescale variations add depth to competitive challenges.
+* Time Display UI: Flexible player choice. Overall display + other time elements. Clickable time/date strings toggle game time / real-world time display (clearly indicated).
+Player Progression Mechanics (SDT-based):
+* Types: Character-centric, Equipment/Resource, Narrative/World, Unlockable Content, Meta-Progression, Skill/Mastery, Time/Engagement, Player Agency/Choice.
+* Character-Centric (Skill Tree - "The Tree"):
+   * Visual: Cannabis plant; leaves = categories (size proportional to importance); branches group related leaves. Sketch TBP. Grows visually with progression.
+   * Nodes: Unlock ability + new challenge/mechanic to manage (balances difficulty). Unlocking a concept (e.g., Temperature) introduces its simulation; player's ability to manage it depends on other unlocks (e.g., thermometers).
+   * 7 Categories (Importance Order):
+      1. Genetics: Seed Bank, Plant Sex ID, Mothers, Breeding, Pheno-hunting, Bio-Mods (feminized, auto), Adv. Techniques (tissue culture). Example: Plant Sex unlock -> M/F plants + random sex from seed mechanic (risk of pollination). (7-10 nodes, high interconnectivity).
+      2. Cultivation: Irrigation, Fertilization, IPM, Propagation, Plant Work (defoliate, train, top).
+      3. Environment: Temperature, Humidity, Light, VPD, CO2 (all involve related equipment).
+      4. Construction: Plumbing, Electricity, Rooms, Equipment (benches, tables).
+      5. Harvest: Cutting, Drying, Trimming, Curing, Processing.
+      6. Science: Environmental sensors, Crop sensors, Analysis tools, Research/experimentation.
+      7. Business: Resources efficiency, Finances, Market reputation/branding. (2-3 nodes, low interconnectivity).
+   * Skill Points: Earned via objectives/tasks completion, and successful high-quality harvest sales. More ways TBD.
+   * Interdependencies: Between branches/nodes for connected experience, broader development (AI to develop logical connections). Finalize branch/leaf/node options before detailed definitions. AI can refine categories/nodes.
+* Equipment/Resource-Based: Tied to skill tree. Unlocked nodes make equipment/resources available/manageable. Equipment has own upgrade paths (pumps, light parts) via in-game currency. Resources improvable (water/air quality, electricity, genetics).
+* Narrative/World-Based: Basic storyline (player starts company, aims for best genetics/rep). Guides player via objectives, secretly teaching mechanics; progresses player through levels (house to warehouse).
+* Unlockable Content/Feature: E.g., new levels.
+* Meta-Progression:
+   * Genetic Library: Bred strains stored permanently, tied to account (not save), usable in new games.
+   * Persistent Unlocks: Start new game at warehouse if house level completed once.
+   * Reputation: User/company rep (game-wide/marketplace) affects prices. Tied to crop quality. High quality = high rep/prices. Low quality sale = damages rep. Selling bad seeds/clones severely damages rep. Verify rep before trade.
+* Skill/Mastery-Based: Natural player improvement via practice, experimentation, understanding, discussion. Leaderboard competition.
+* Time-Based/Engagement: Daily challenges/rewards; seasonal drops/items via tiered objectives.
+* Player Agency/Choice-Driven: Core of sandbox; infinite setups/choices, unique player paths.
+Earned Automation:
+* Tuning: Aspects require fine-tuning with gameplay definition and testing.
+* Tedium Threshold: Key aspect needing well-defined mechanics for tasks (e.g., hand watering frequency).
+* Realism Bias: Consistency with real-world science/techniques paramount, even if difficult.
+   * Manual Feasibility: Small number of plants manually manageable with proper technique, like real life. No unfair penalization for lacking automation if manual care is high quality.
+   * Challenge (No Automation): Constant pressure for optimal conditions in accelerated, accurate sim. One bad day can be very detrimental.
+   * Consequences: Not unrealistically punishing. Sub-optimal conditions = slight quality decrease, not game-breaking penalties disproportionate to real-world effects.
+* Player Progression: Achieving optimal conditions manually is difficult, making automation advantageous. Player agency to automate most inconvenient tasks first.

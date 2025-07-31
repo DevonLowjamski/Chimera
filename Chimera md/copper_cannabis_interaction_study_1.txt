@@ -1,0 +1,203 @@
+﻿Psychopharmacology  
+ 9 by Springer-Verlag 1978  
+Psychopharmacology 56, 309- 316 (1978)  
+Studies on the Interactions of Copper and Cannabis  
+P. P. SINGH* and P. K. DAS  
+Department of Pharmacology, Institute of Medical Sciences, Banaras Hindu University, Varanasi-221 005, India  
+Abstract. The action of copper (CuSO4, 5 mg/kg, oral)  on selected neuropharmacological actions of cannabis  resin (CI, oral) was studied on albino rats and mice.  Copper potentiated the barbiturate hypnosis 
+potentiating activity of CI in albino rats and mice and  had no effect on hypothermic activity in albino rats.  Single doses of copper partially inhibited tolerance  to barbiturate hypnosis-potentiation activity and  markedly delayed the development of tolerance to hy pothermic activity of CI. Oral as well as i.c.v, copper  (CuSO4, 0.1 gg) in single dose antagonised the toler ance to hypothermic activity of cannabis or THC for  one to two weeks. Copper-CI interaction could be  antagonised by penicillamine. Zinc (ZnSO,, 5 mg/kg,  oral) had an action similar to that of copper in  antagonising the development of tolerance to the  hypothermic activity of CI, but magnesium (MgSO4,  5 mg/kg, i.p.) was devoid of any such action.  Studies indicate that, although copper has no  significant neuropharmacological action, it interacts  with CI activity, especially in tolerant rats, in effects on  hypothermia. The site of action of copper is possibly the  hypothalamus, where it inhibits the processes of toler ance development to CI on the noradrenergic neurone.  
+Key words: Cannabis - Copper - Interactions -  Hypothermia  
+Various metal preparations have been used for medic inal purposes in the Ayurvedic system of medicine in  India for more than 2500years. Since the time of  Susruta (1000 B.C.), copper preparations, especially as  
+* Address for offprint requests: Dr. P. P. Singh, c/o Dr. P. K. Das,  Professor and Head of the Department of Pharmacology, Institute of  Medical Sciences, Banaras Hindu University, Varanasi-221005,  India  
+copper oxide, have been used for oral medications  (Gaur and Gupta, 1970; Sen et al., 1922). The poten tiating effect of copper on human responses to cannabis  has been known to Indian people for centuries. People  of the different parts of India, who have experience with  cannabis, believe that, if during the process of prepara tion of cannabis drinks, copper coins are rubbed in or if  cannabis drinks are kept stored for some hours in a  copper vessel, the intoxicating effect of cannabis is  potentiated (Chopra and Chopra, 1957; Dube, 1972).  Our questioning of cannabis users in different parts of  the country has indicated that cannabis users, with  personal experience regarding the potentiating effect of  copper on cannabis action, believe this. The present  report incorporates the results of copper-cannabis  interaction in experimental animals. These interaction  studies have been conducted using several pharma cological actions of cannabis as parameters, including  the phenomenon of tolerance. In order to determine  whether the effect of copper is peculiar to the metal or is  also present in other bivalent metals, we also conducted  a preliminary comparative study with zinc and  magnesium.  
+MATERIALS AND METHODS  
+Resin was extracted from the flowering tops of Cannabis indica with  petroleum ether (60- 80 ~ C) and then suspended in 2 ~o Tween-80 for  experimentation. The delta-9-tetrahydrocannabinol (THC) content  of the resin was biologically assayed by the four-point assay method,  using pure THC and taking hypothermic activity in albino rats as the  parameter. The THC content of the resin was estimated to be 17 %.  
+Experiments were conducted on adult albino rats (125-200 g)  and albino mice (15- 20 g) of both sexes at an ambient temperature of  25_+ I~ All the experiments were conducted 'blind' to avoid  subjective errors. Cannabis resin was administered orally. Our  earlier studies (Singh and Das, 1975) showed that 50 mg/kg cannabis  produces moderate hypothermia that peaks at 4h. Therefore, in all  the experiments on body temperature, and as well as in other  experiments, the dosage of cannabis was 50 mg/kg and the tempera ture was recorded after 4 h. An equivalent volume of 2 % Tween-80  
+0033-3158/78/0056/0309/$1.60 
+310 Psychopharmacology 56 (1978)  
+was administered to control animals. Copper was used as copper  sulphate (BDH, Analar) dissolved in glass-distilled water.  Preliminary experiments with 1, 5, 10, and 20 mg/kg of oral copper  sulphate on the pentobarbitone hypnosis-potentiating activity of  cannabis showed that 1 mg/kg was ineffective and that there were no  significant differences among the effects of 5, 10, and 20mg/kg. In  order to check the toxicity of copper sulphate, rats were administered  5 mg/kg of oral copper sulphate each day for 15 days, there were no  deaths. Copper sulphate was given in the dose of 5 mg/kg orally only  once in most of the experiments, but in some experiments it was given  twice. In some experiments it has been given intracerebroventri cularly (i.c.v.) in the dose of 0.1 gg. To study copper-cannabis  interactions, both these drugs were given simultaneously. The  following experiments were conducted.  
+A. Effect of Copper  
+on the Pharmacological Actions of Cannabis  
+1. Hypnotic Potentiation. Pentobarbitone sodium was administered  in dosages of 25 and 40 mg/kg i.p. in albino rats and mice,  respectively, 2 h after cannabis treatment. Sleeping time was recorded  as the time between loss and recovery of the righting reflex.  
+2. Hypothermie Activity, The rectal temperatures of albino rats were  recorded using a Telethermometer with the probe inserted 2 cm into  the rectum. The temperature was recorded before and 2, 4, 6, and 24 h  after cannabis treatment.  
+B. Interaction of Copper and Cannabis  
+in Cannabis-Tolerant Rats  
+1. Effect on Pentobarbitone-Induced Hypnosis in Cannabis-Tolerant  Rats. The method of studying the effect of cannabis on  pentobarbitone-induced hypnosis was the same as that mentioned  above. Twenty rats were allowed to develop tolerance to potentiation  of pentobarbitone hypnosi s by daily administration of 50 mg/kg of  cannabis for 7 days. On the 8th day, half the rats were given cannabis  alone and the other half were given cannabis along with copper  sulphate.  
+2. Effect on Rectal Temperature. The method of studying the effect of  cannabis on the body temperature of albino rats was the same as that  described above. The following experiments were conducted:  
+a) Cannabis was administered daily for 28 days.  
+b) Cannabis was administered daily for 28 days, but on the first day  cannabis was administered along with copper sulphate.  c) Cannabis was administered daily for 28 days, but on the 8th day  cannabis was given along with copper, whereas on the 22nd day  copper sulphate was given 2 h before cannabis.  
+d) Lateral cerebral ventricle was cannulated in a group of rats as  described by Feldberg and Lotti (1967). These rats were given oral  cannabis daily for 21 days and its effect on body temperature was  recorded. On the 8th day 0.1 llg of copper sulphate was administered  i.c.v.  
+3. Effect of Penicillamine on Hypothermic Activity of Cannabis. The  method of studying hypothermic activity was the same as that  described above. Three groups of 5 rats were used:  
+a) Cannabis only  
+b) Penieillamine 100mg/kg i.p. only  
+c) Cannabis given orally and penieillamine 100 mg/kg i.p. given half  an hour before temperature record.  
+4. Effect of Penicillamine on Copper-THC Interaction. In order to  study the effect of i.c.v, copper on the hypothermic activity of THC,  the lateral ventricles of a group of 5 rats were cannulated. These rats  
+were given 10mg/kg THC orally each day for 14days except on the  10th day. On the 10th day 0.1 ~tg of copper sulphate was given i.c.v.  To determine the effect of penicillamine on copper-THC interaction,  100mglkg of penicillamine was given i.p. on the 12th day.  
+C. Interaction of Zinc or Magnesium  
+With Cannabis on Body Temperature  
+In these experiments zinc sulphate and magnesium sulphate 5 mg/kg  were given orally and i.p., respectively. The following experiments  were conducted.  
+1. Effect of Zinc and Magnesium on Cannabis Hypothermia. Zn or Mg  was administered simultaneously with cannabis in nontolerant rats.  
+2. Effect of Zinc or Magnesium on Cannabis-Tolerant Rats. Cannabis  administered daily for 22days, but on the 10th and 17th days  cannabis was given along with either zinc or magnesium sulphate.  
+RESULTS  
+Copper alone (5 mg/kg, orally) had no effect on any of  the experimental parameters.  
+A. Effect of Copper  
+on the Pharmacological Actions of Cannabis  
+1. Hypnotic Potentiation. Copper enhanced the pento barbitone hypnosis-potentiating activity of cannabis  (20 and 50 mg/kg) in albino rats and mice. The poten of cannabis activity by copper was, however, statisti cally significant only in albino rats that received  20 mg/kg of cannabis (Fig. 1).  
+2. Hypothermic Activity. Copper did not significantly  modify the onset, peak, or duration of the hypothermic  activity of cannabis (50 mg/kg). The peak fall in body  temperature at 4h in groups of rats (10each) with  cannabis alone and in combination with copper was  1.18 + 0.12 and 1.30 _+ 0.15 ~ respectively.  
+B. Interaction of Copper and Cannabis  
+in Cannabis-Tolerant Rats  
+1. Effect on Pentobarbitone-Induced Hypnosis. The  pentobarbitone sleeping time in the control rats was  51.3 + 3.2 min. The sleeping time of fifteen nontolerant  rats treated with cannabis and pentobarbitone was  117.5 + 6min, while in cannabis-tolerant rats (7 days  cannabis treatment) the sleeping time after cannabis  and pentobarbitone was 58.8 _+ 3.6min. When the  tolerant rats were given cannabis, pentobarbitone, and  copper, however, the sleeping time was 85.8 _+ 12 min.  Thus cannabis tolerance to the barbiturate hypnosis 
+potentiating activity was partially but significantly  (P < 0.05) inhibited by copper treatment. 
+P. P. Singh and P. K. Das: Interactions of Copper and Cannabis 311  &00  
+350  
+~ 300  
+"6  
+o~ 250  
+._~ 200  
+Fig. 1  
+Effect of copper sulphate 5 mg/kg (Cu 5)  
+on cannabis resin (CI) (20 and 50 mg/kg) 150  induced pentobarbitone hypnosis [  potentiation in albino rats and mice.  
+Vertical lines. S.E. Sleeping time of Y  pentobarbitone-treated control (C) animals 100  expressed as 100. Parentheses." number of  
+animals used. Stars." significance (< 0.05) in ]  relation to cannabis (20 mg/kg) 501 L I  C Cu5  
+(lZ,) (15)  
+RATS MICE I ///~  / /  
+/  
+ 9 I [  
+d,  
+I I I ]  
+2o 50 c co5 2'0 ;0  (I01 (10) (211 (21) (10) (I01  El mg/kg  
+2. Effect of Copper on the Hypothermic Activity of  Cannabis in Chronically Cannabis-Treated Rats. The  effect of oral copper on the hypothermic activity of  cannabis in 28-day cannabis-treated rats is summarised  in Table 1. Following the daily administration of  cannabis there was a rapid development of tolerance to  the hypothermic activity of cannabis, which disap 
+peared on the 5th day. From the 7th day onwards there  was a slight rise in body temperature that gradually  increased, but remained nearly stable from the 15th to  28th days. When copper was given along with cannabis  on the first day, the hypothermic activity of cannabis  disappeared on the 15th day and a slight hyperthermia  was maintained until the 28th day. In the third group of  rats cannabis was given daily for 7 days and tolerance  was allowed to develop. On the 8th day, when copper  was given along with cannabis, there was again sig nificant hypothermia. On the subsequent days the hy 
+pothermic activity of cannabis gradually subsided and  slight hyperthermia was seen on the 21 st day. On the  22nd day, when cannabis was again given 2 h after  copper administration, there was significant hypother 
+mia, which gradually subsided on the subsequent days  and disappeared on the 28th day. The study revealed  the following:  
+a. The administration of a single dose of copper on the  first day delays the development of tolerance to the  hypothermic activity in rats chronically treated with  cannabis.  
+Table 1. Effect of copper on chronic administration of cannabis  (CI) on body temperature in albino rats  
+Day Change in rectal temp. ~ C at 4 h after CI  
+Control Cu given Cu given  
+(N= 10) on 8th on 1st day  and 22nd day (N = 6)  
+(N = 6)  
++ Cu  
+1 -0.88_+0.26 -0.88-t-0.18 -0.88_+0.19  3 -0.58_+0.10 -0.67_+0.12 -0.67+0.18  5 +0.08_+0.29 -0.04-+0.15 -0.33-+0.22  7 +0.29_+0.23 +0.38_+0.22 -0.30_+0.19  + Cu  
+8 +0.30_+0.18 -0.60-+0.14"*  
+10 +0.33_+0.19 -0.29-+0.18" -0.30-+0.12"  12 +0.42-+0.10 -0.25-+0.13'* -0.19+0.06"*  15 +0.58_+0.12 -0.20_+0.15"* +0.19+0.12"  
+19 +0.50_+0.23 +0.08_+0.15 +0.38+0.16  21 +0.55-+0.14 +0.35-+0.17 +0.50_+0.21  + Cu  
+22 +0.55+0.18 -0.65-+0.17"*  
+24 +0.69_+0.12 -0.35-+0.14"* +0.38-+0.16  28 +0.58_+0.21 -0.10_+0.07" +0.50_+0.10  
+* P<0.05; ** P<0.01; Pin relation to control  
+b. In cannabis-tolerant rats the administration of a  single dose of copper breaks the tolerance, and it takes  another week to redevelop tolerance. 
+312 Psychopharmacology 56 (1978)  0"8  
+0'6  
+,,, 0"4  rv~  
+~0'2  13.  
+w C I--  .J  
+~ 0.2  W  
+z_ 0.4  LLI  
+z 0"6  -r  
+0  
+0"8  
+/I  
+Fig. 2  
+Effect of daily administration of cannabis  
+resin (CI) (50 mg/kg) on body temperature  
+of albino rats except on 8th day, when  
+copper sulphate (Cu 0.1 rtg) was injected  
+i.c.v. Treatment from 9th to 21st day is  
+significant (< 0.001) against 7th day  
+I'0 3 5 7 8 9 II 13 15 17 19 21  C1501 , , J  DAYS  
+cannabis treatment  
+c. The effect of copper was found to be the same  whether given in combination with cannabis resin or  separately.  
+3. Effect of i.c.v. Copper on Cannabis-Tolerant Rats.  The effect of i.c.v, copper on cannabis-tolerant rats is  illustrated in Figure 2. Administration of i.c.v, copper  produced a significant rise in body temperature (+ 0.74  + 0.03 ~ C). The hyperthermic effect disappeared after  24h. Rats developed tolerance to the hypothermic  activity of cannabis very rapidly and there was a  hyperthermic response to cannabis on the 7th day.  Following a single administration ofi.c.v, copper there  was a complete breakdown of tolerance and the  hypothermic activity of cannabis was manifested for  the following 13days. During these 13 days, the hy pothermic effect of cannabis was not significantly  
+different from that of the first day for 11 days. Thus this  study shows that i.c.v, copper can break down tolerance  to the hypothermic activity of cannabis and prolong the  effect.  
+4. Effect of Penicillamine on Hypothermic Activity of  Cannabis. In order to elucidate whether chelation of  endogenous copper affects the hypothermic activity of  cannabis, interaction of cannabis with a copper chelat 
+ing agent penicillamine was studied. Penicillamine  alone produced significant hypothermia (-0.88  _+ 0.10 ~ C). But the hypothermic activity of cannabis penicillamine treated rats (-0.88 + 0.07 ~ C) was not  significantly different from that of cannabis (50 mg/kg)  alone (- 0.93 + 0.05).  
+5. Interaction of i.c.v. Copper, Penicillamine, and THC  on the Body Temperature of Albino Rats. The results are  illustrated in Figure 3. Rats developed tolerance to the  
+hypothermic activity of THC very rapidly, similar to  that of cannabis resin. Administration of i.c.v, copper  broke down THC tolerance, similar to that of cannabis  resin. But subsequently, when THC was given with  penicillamine, the hypothermic activity of THC disap 
+peared and there was slight hyperthermia. On the  following days, however, THC again produced sig nificant hypothermia. These results show that penicil lamine antagonises the activity of copper in breaking  the tolerance to cannabis.  
+C. Interaction of Zinc or Magnesium With Cannabis  on the Body Temperature of Albino Rats  
+1. Effect of Zinc or Magnesium on the Hypothermic  Activity of Cannabis in Albino Rats. Zinc sulphate or  magnesium sulphate did not produce any change in  body temperature. Like copper sulphate, both these  salts failed to significantly modify the hypothermic  activity of cannabis.  
+2. Effect of Zinc or Magnesium on the Hypothermic  Activity of Cannabis in Tolerant Rats. The effect of zinc  sulphate or magnesium sulphate on the body tempera ture of cannabis-tolerant rats are given in Table 2. In  the cannabis-tolerant rats the drug produced slight  hyperthermia on the 9th day. On the 10th day, when  cannabis was administered with ZnSO4, there was  significant hypothermia similar to that seen on the first  day of cannabis administration. On the following days  the hypothermic activity of the cannabis gradually  subsided and disappeared on the 15th day. There was  again slight hyperthermia on the 16th day. When  cannabis was given along with Zn on the 17th day, 
+P. P. Singh and P. K. Das: Interactions of Copper and Cannabis 313  1, 2 II ~  
+o  
+2 g  
+Fig. 3  
+08 / i  
+O,Z, ~'/CuO'l.a ~ ~  / ' 0 _  O,Z,  
+0,8 \  
+Effect of daily administration of delta-9-THC  (10mg/kg) on body temperature of albino rats  except on 10th day, when copper sulphate  (Cu 0.1 gg) was injected i.c.v. On the 12th day  penicillamine (PNE) (100 mg/kg) was also  administered i.p. Stars: significance (< 0.001)  against 9th day THC treatment  
+&  
+5  
+1,2 ~ 1 \  1,6 \,~  
+2,0 I I I I I I I [ I  3 5 7 9 10 11 12 13 14  THC 101 ] I I  Days  
+there was significant hypothermia, and on subsequent  days the hypothermic activity of cannabis gradually  subsided in a manner similar to that seen earlier.  
+In the second group of animals tolerance developed  to the hypothermic activity of cannabis as usual, with  slight hyperthermia on the 9th day. On the 10th day,  when cannabis was given with Mg, there was a slight  increase in the hyperthermic activity of cannabis, which  was, however, not seen on subsequent days. From the  llth to 16th days cannabis manifested the usual  hyperthermic response. On the 17th day, when can 
+nabis was again given along with Mg, there was a slight  increase in hyperthermic response. On the following  days the normal cannabis activity was maintained.  
+A comparison of the effects of Cu, Zn, and Mg  (Fig.4) in cannabis-tolerant rats shows similarities  between Cu and Zn, with Mg being different. Copper  and zinc both converted the hyperthermic effect of  cannabis into hypothermic response in tolerant rats.  The effects of a single-dose administration of either of  
+these metals lasted for several days. In the case of  copper, however, it took 11 days for the effect to  disappear, while in the case of Zn it took 6 days to  disappear. Magnesium had no effect on the hypother 
+mic activity of cannabis in tolerant rats, but it slightly  increased the hyperthermic activity of cannabis on the  day of its administration.  
+DISCUSSION  
+In the present study selected biological actions of orally  administered copper sulphate were studied in albino  rats and mice with special reference to those parameters  
+Table 2. Effect of zinc and magnesium on short-term adminis tration of cannabis (CI) on body temperature in albino rats  
+Day Change in rectal temp. ~ C at 4 h after CI  
+Zn given on 10th Mg given on 10th  and 17th day and 17th day  
+(N = 5) (N = 5)  
+1 -- 1.13 + 0.23 -- 0.96 + 0.12  3 -0.81 _+0.12 --0.69+0.16  5 -0.13_+0.16 --0.19 +0.12  7 +0.25 • 0.10 +0.13 _+ 0.07  9 + 0.44 _+ 0.06 + 0.38 + 0.07  + Zn + Mg  
+10 - 0.94 • 0.21 ** + 0.56 • 0.06  11 -0.75 • 0.10"* +0.38 +0.07  13 - 0.50 • 0.10 ** + 0.38 + 0.07  15 -0.06+_0.12" +0.44+0.06  16 + 0.38 • 0.07 + 0.44 _+ 0.06  + Zn + Mg  
+17 - 0.88 _+ 0.16 ** + 0.58 + 0.08  18 - 0.56 _+ 0.12 ** + 0.50 • 0  20 -0.19 _+ 0.12" +0.42 +0.08  22 + 0.25 _+ 0.08 + 0.50 • 0.06  
+* P<0.01; ** P<0.001;Pinrelationto9thdayCItreatment  
+used for cannabis activity. In albino rats, 5 mg/kg of  copper sulphate given orally each day for even 15 days  was not found to be toxic. In most of the experiments,  however, copper was administered as copper sulphate  only once. Copper per se hadno effect on any of the  experimental parameters. So it appears that copper  alone has no neuropharmacological activity, possibly  because of the fact that a sufficient amount of copper is 
+314 Psychopharmacology 56 (1978)  06  
+0'~  
+o 0 0"2  
++  
+LU  
+~-- 0"2  
+LU I--  
+0 LU  
+r O'E  Z  
+w O"B Z  "1"  
+0 I'O  1"2'  
+0o./, / L/co/ !/ )!  
+~Zn A,e--zn  
+V  
+2 4 6 8 I0 12 14 16 18 20 22 24 26 28  I ,,, I  CI 50 mq/Kq/DAY  
+Fig. 4  
+The effect of daily administration of  cannabis resin (CI) on body temperature of  albino rats. Solid dots: rats given copper  sulphate (Cu) (5 mg/kg) orally on 8th and  22nd day. Triangles: rats given zinc  sulphate (Zn) (5 mg/kg) orally on lOth and  17th days. Squares: rats given magnesium  sulphate (Mg) (5 mg/kg) i.p. on lOth and  17th days  
+present in the body for optimal enzymatic reactions  whenever copper is needed.  
+Although copper did not have any neuropharma cological activity, it did interact with cannabis. In this  study the parameters of neuropharmacological activity  and the doses of cannabis resin used are the same as  those reported earlier (Singh and Das, 1975; 1978).  Copper potentiated the enhancement of barbiturate  hypnosis by cannabis, but had little effect on the  hypothermic action of cannabis.  
+In the next part of the study the effect of copper was  studied in cannabis-tolerant rats. Because canabis is  known to produce tolerance in several species of  animals, including man, it was thought worthwhile to  explore the possibility of cannabis-copper interaction  during tolerance, especially because of the above 
+mentioned belief of Indian cannabis users. In an earlier  study we reported that tolerance to hypothermic,  analgesic, and barbiturate hypnosis-potentiating activ ities of cannabis develops very rapidly and is complete  within 7 days, and that it takes 4 weeks or more for  tolerance to disappear (Singh and Das, 1977). Copper  partially antagonised tolerance to the barbiturate  hypnosis-potentiating activity of cannabis in albino  rats. It is interesting that, although copper per se did not  affect barbiturate hypnosis, it did enhance the  barbiturate-potentiating action of cannabis and also  partially antagonised tolerance development.  
+The most interesting copper-cannabis interaction  was seen in tolerant rats when body temperature was  taken as a parameter. There were three interesting  results: (1) although copper did not modify the hy 
+pothermic activity of cannabis in nontolerant rats, a  single dose of copper on the first day significantly  
+delayed the development of tolerance by at least a  week; (2) in cannabis-tolerant rats a single dose of  copper completely broke the tolerance, and it took  another week for tolerance to redevelop; and (3)  cannabis-copper interaction was not due to any phy 
+siochemical complex formation, because of the repro ducibility of interaction even when these were given  separately and also because of the long-lasting effect of  copper (several days). In order to study the anatomical  site of action of copper, i.e., whether it is peripheral or  central, copper was given i.c.v, in cannabis-tolerant  rats. Qualitatively similar results were observed with  i.c.v, administration, indicating that the site of action of  copper was probably in the paraventricular zone of  hypothalamus. The results show that following oral  administration of copper, a significant amount of  copper is absorbed, and despite protein binding of  copper in the blood, effective amounts of copper are  taken up by the hypothalamus. The disposal of copper  seems to be a slow process that takes at least a week. But  following i.c.v, administration more copper becomes  localised and the disappearance of copper is extremely  slow, taking a period of more than 2 weeks. The results  of the interaction between i.c.v, copper and oral  cannabis were confirmed with i.c.v, copper and THC,  which indicated interaction between copper and THC.  
+The copper-cannabis interaction raised the possi bility that endogenous copper may be necessary for the  hypothermic activity of cannabis. In order to test this  possibility, the effect of the copper chelating agent  penicillamine was studied on the hypothermic activity  of cannabis in nontolerant rats. Penicillamine did not  affect the hypothermic action of cannabis, indicating  that at least free copper ions are not essential for the 
+P. P. Singh and P. K. Das: Interactions of Copper and Cannabis 315  
+hypothermic response of cannabis. In order to study the  role of copper in cannabis-tolerant rats, pencillamine  was again used. In THC-tolerant rats the adminis tration of i.c.v, copper reproduced the hypothermic  action of THC. The administration of oral penicil lamine reversed the hypothermic effect of THC to  hyperthermic response that is normally seen in tolerant  rats. On the subsequent day, however, THC again  produced hypothermia. These results indicate that  penicillamine antagonised the copper-THC interaction  in tolerant rats. It may be concluded that the free  form of the copper and not the bound copper was  responsible for antagonising the development of  tolerance to cannabis.  
+in order to find out whether the effect of copper was  specific or present in other divalent metallic ions, the  effects of copper were compared with those of zinc and  magnesium. The effect of zinc on cannabis tolerance to  hypothermic activity was found to be qualitatively  similar to that of copper. But in equivalent dosages zinc  was less potent, especially in its duration of action.  Magnesium had no effect in cannabis-tolerant rats. On  the other hand, on the day magnesium was adminis 
+tered there was a slight increase in the hyperthermic  activity of cannabis. Thus it seems that the action of  copper is similar to that of zinc but not to that of  magnesium.  
+Copper has no place as a medicinal agent for  internal use in modern medicine, but copper is known  to be an important trace metal, the deficiency of which  is probably extremely rare. In a study of the presence of  different metals in various regions of rat brain, Rajan et  al. (1976) have shown that relatively high concen 
+trations of copper and zinc are present in the hy pothalamus, especially in the myelin and synapto somes, suggesting a specific role for these metals.  Copper plays an important role in several metal activated enzymes or metallo-enzymes. It has been  shown that copper and zinc catalyse decarboxylation  (Steinberger and Westheimer, 1949; Lehninger, 1950).  Dopamine-beta-hydroxylase (DBH) is a copper containing enzyme (Molinoff et al., 1975), and copper  probably also acts as a catalyst (Goldstein et al., 1968).  The recent studies of Molinoff and Orcutt (1973) and  Molinoff et al. (1975) show that DBH is inhibited by  heterogenous inhibitors present in the biological sys tem, including the adrenergic neurons. Copper binds  the DBH inhibitors, thus allowing full expression of  DBH activity. The inhibition of DBH activity by  disulfiram and tropolone derivatives is related to  copper chelation. Among the other enzymes associated  with the noradrenergic system, the tyrosine hydrox ylase activity partially depends on magnesium  (Lovenberg et al., 1975) and phenylethanolamine-N methyl-transferase is inhibited by copper (Kitabchi and  
+Williams, 1969), but the role of copper in MAO activity  is controversial (Costa and Neff, 1970).  
+It has been shown that the hypothermic activity of  cannabis is mediated through the noradrenergic system  (Singh and Das, 1976). Subsequently, was shown that  the hyperthermic response of cannabis in tolerant rats is  also mediated through the noradrenergic system in  albino rats (Singh and Das, unpublished). It was  proposed that cannabis initially produces hypothermia  because of a marked release of noradrenaline, but with  the development of tolerance, the release of noradren 
+aline subsides, resulting in a rise in body temperature  in albino rats. The absence of any significant effect of  copper per se indicates that in normal animals an  adequate amount of copper is available for optimal  function. The failure of copper to interact with single  administration of cannabis, hypothermia being the  parameter, also suggests that copper does not facilitate  release of NA induced by cannabis. But copper fa 
+cilitates cannabis/THC activity, and especially their  effects on the body temperature of tolerant rats. In  cannabis-tolerant rats it is possible that there is either  an enzyme blockade at the level of dopa-decarboxylase  or DBH or an increase in the concentration of DBH  inhibitors. In either of these circumstances exogenous  copper might restore enzyme activity and thus cannabis  activity. The studies also show that the action of zinc,  but not that of magnesium, is similar to that of copper.  The availability of relatively high amounts of copper  and zinc in the hypothalamus, and especially in the  synaptosomes, strongly suggests that the action of these  metals on cannabis activity on body temperature in  tolerant rats is related to the noradrenergic system.  
+Acknowledgements. The authors gratefully acknowledge the gift of  tetrahydrocannabinol from Dr. O. J. Braenden, Narcotics Division,  United Nations, Geneva. We are also indebted to Dr. S. K.  Bhattacharya and Dr. P. K. Dey for their kind help, and to Mr. U. C.  Saigal for his skilful technical assistance. The study was supported by  grants-in-aid from the Central Council of Research in Indian  Medicine and Homeopathy, New Delhi.  
+REFERENCES  
+Chopra, I. C., Chopra, R. N. : The use of cannabis drugs in India.  Bull. Narc. 9, 4-29 (1957)  
+Costa, E., Neff, N.H.: Estimation of turnover rates to study the  metabolic regulation of the steady state level of neuronal  monoamines. In: Handbook of neurochemistry, vol. IV,  A. Lajtha, ed., p. 45. London: Plenum Press 1970  
+Dube, K. C. : Manner of intake, different preparations, frequency,  dose, etc. I.C.M.R. seminar on long-term effect of cannabis use in  India, New Delhi, December 1972  
+Feldberg, W., Lotti, V.J.: Temperature responses to monoamines  and an inhibitor of MAO injected into the cerebral ventricles of  rats. Br. J. Pharmacol. 31, 152-161 (1967)  
+Gaur, D. S., Gupta, L. P.: A study on drug evaluation in ancient  India. In: Advances in research in Indian Medicine,  K. N. Udupa, G.N. Chaturvedi, and S.N. Chaturvedi, eds.,  p. 357. Varanasi: B.H.U. Press t970 
+316 Psychopharmacology 56 (1978)  
+Goldstein, M., Joh, T. H., Garvey, T. Q. : Biochemistry 7 [pp. 2724-  2730, 1968]. Quoted in: Molinoff, P. B., Axelrod, J.: Bio chemistry of catecholamines. Annu. Rev. Biochem. 40, 465-  500 (1968)  
+Kitabchi, A.E., Williams, R.H.: Phenylethanolamine-N-methyl  transferase in human adrenal gland. Biochim. Biophys. Acta 178,  181 - 184 (1969)  
+Lehninger, A. L. : Role of metal ions in enzyme systems. Physiol. Rev.  30, 393-429 (1950)  
+Lovenberg, W., Bruckwick, E., Hanbauer, I.: Protein phosphory lation and regulation of catecholamine synthesis. In: Chemical  tool in catecholamine research II, O. Almgren, A. Carlsson, and  J. Angel, eds., p. 37. Amsterdam: North Holland Publishing Co.  1975  
+Molinoff, P. B., Nelson, D. L., Orcutt, J. C., Harden, T. K.: The re gulation of dopamine-fl-hydroxylase activity. In: Chemical tool  in catecholamine research II, O.Almgren, A. Carlsson, and  J.Angel, eds., p. 81. Amsterdam: North Holland Publishing  Co. 1975  
+Molinoff, P. B., Orcntt, J. C. : Dopamine betahydroxylase and the  regulation of catecholamine biosynthesis. Frontiers in catechol amine research, p. 195. London: Pergamon Press 1973  
+Rajan, K. S., Colburn, R. W., Davis, J. M. :Distribution of metal ions  in the subcellular fractions of several rat brain areas. Life 8ci. 18,  423 - 432 (1976)  
+Sen, K. B., Sen, K. A., Sen, K. P. : Copper In: Datta's Materia medica  of Hindus. Calcutta: Adi-Ayurveda Machine Press 1922  Singh, P. P., Das, P. K. : A neuro-psychopharmacological study of  Canabis indiea. Ind. J. Pharmacol. 7, 51- 57 (1975)  Singh, P. P., Das, P. K. : Role of catecholamines in the hypothermic  activity of cannabis in albino rats. Psychopharmacology (Berl.)  50, 199-204 (1976)  
+Singh, P. P., Das, P. K. : Tolerance to cannabis in albino rats. Ind. J.  Exp. Biol. 15, 280-284 (1977)  
+Singh, P. P., Das, P. K. : Effect of Cannabis indica on locomotor  activity. Ind. J. Ex. Biol. (in press, 1978)  
+Steinberger, R., Westheimer, F. H. : Metal-ion catalyzed decarbox ylation dimethyloxaloacetic acid. J. Am. Chem. Soc. 71, 4158  (1949)  
+Received June 8, 1977; Final Version August 25, 1977

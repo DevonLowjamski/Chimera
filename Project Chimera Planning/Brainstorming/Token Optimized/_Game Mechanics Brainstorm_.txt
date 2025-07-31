@@ -1,0 +1,84 @@
+﻿**Cultivation** 
+* **Irrigation:**
+   * Amount (Volume): Total, Per Event, Event Count.
+   * Frequency (Timing): Duration Between Events.
+   * Strategy (Crop Steering): Drybacks, Leachate, Flushing, Stacking EC, Combined Strategy.
+   * Method: Hand Watering, Drip Emitters, Flood Table, Hydro, Aero.
+* **Plant Work:**
+   * Planting: Seeds, Clones.
+   * Transplanting/Up-Potting: Clones->Pots, Smaller->Bigger Mediums.
+   * Defoliating: Skirting, Lollipopping.
+   * Tipping/Topping.
+   * Training (LST): Tie Wraps, Support Posts, Trellising.
+   * Moving Areas: Clones(Moms->Prop), Clones->Transplants, Transplants->Veg, EarlyVeg->(LateVeg or Moms), LateVeg->EarlyFlower, EarlyFlower->MidFlower, MidFlower->LateFlower, LateFlower->Harvest, Harvest->DryRoom, DryRoom->CuringRoom, CuringRoom->FinishedMaterial.
+* **IPM:**
+   * Mixing Pesticides.
+   * Scouting: Pests (Visual Inspect, Sample+Microscope[Leaf, Stem, Medium]), Diseases, Deficiencies, Viruses.
+   * Spraying, Drenching.
+   * Applying Beneficials, Sticky Tags.
+* **Growing Conditions:**
+   * Temperature: Ambient, Medium, Leaf Surface; Day/Night Variance.
+   * Humidity: Ambient, Medium, Leaf Surface; Day/Night Variance.
+   * Light: Intensity (Brightness, Height, Elec Capacity, PPFD), Spectrum (PAR, Color), Type (LED, HPS, HID, CFL), Schedule (18/6, 12/12, 24/0, 0/24, PlayerChoice), Bleed.
+   * Air Flow & Ventilation: CO2, VPD.
+   * Spacing: Bench-Bench, Plant-Plant.
+   * Microclimates: Wall Proximity, Vent Proximity, Equipment Light Block.
+   * Plant Structure.
+   * Growing Medium: Soil, Coco Coir, Rockwool, Hydroponics, Aeroponics; Volume; Additives; Stage Transplant.
+* **Fertigation:**
+   * Fertilizer Type: Liquid, Powder/Granular (Water Soluble, Top Feed), Organic.
+   * Chemical Composition: NPK Values, Macro/Micro Values, Additives.
+   * Mixing, Dosing, Spraying, Applying, Feeding.
+* **Cleaning & Sanitizing:**
+   * Tanks, Filters, Mixers, Piping, Pumps, Hoses, Equipment & Tools.
+* **Propagation:** Cutting, Prepping, Sticking, Maintaining.
+* **Harvesting:** Remove Support, Chop Plant, Hang on Dry Rack, Final Defol, Start Drying/Curing.
+* **Cleaning & Sanitizing Areas:**
+   * Dry Clean: Sweep, Vacuum, Leaf Blower.
+   * Wet Clean: Wash/Wipe (Grow Area, Tables/Benches/Floor, Walls, Lights, Supports, Plumbing, HVAC, Lighting, Equipment).
+   * Pressure Clean (Larger Facilities): Tables/Benches/Floor, Walls, Lights, Supports, Plumbing.
+   * Sanitize: Grow Area (Tables/Benches/Floor, Walls, Lights, Supports, Plumbing, HVAC, Lighting, Equipment), Irrigation Systems (Drippers, Line Flushing, Filters), HVAC (Filters, Drain Pans, Ducting), Drying/Curing Rooms (Floors, Walls, Roof, Racks, Equipment).
+* **Data Collection & Analysis:**
+   * Collection Tools/Metrics: EC/PPM Meter (Medium, Leachate, PourThrough), VWC% Meter (Medium), pH Meter (Medium, Leachate, PourThrough), Temp Meter (Medium, Leachate, PourThrough), Spectrometer (Macro/Micro Nutrients - Medium, Leachate, PourThrough), Chlorophyll Meter (Leaf).
+   * Crop Details Tracked: Name, Date Planted, Growth Week, Location, Notes.
+* *(Breeding simulation/mechanics deferred to separate document)*.
+
+**Building** 
+* **Walls & Infrastructure:**
+   * Placement: Directions (+Y/N, -Y/S, -X/W, +X/E, -Z/Lower, +Z/Higher); Orientation (Locked[Vertical/Horizontal] or Unlocked[Rotatable, Spinnable]); Location (Any, GridConform, AreaConform, SpaceLimitConform); Asset Interference.
+   * Size: Height, Width, Length, Thickness.
+   * Material Properties: Strength, Stability, Durability, Longevity, Cost, Appearance (Cosmetic), Illumination (Reflect/Transp/Absorb), Insulation (Airflow, Temp, Light), Efficiency.
+* **Tables / Benches / Racks:**
+   * Placement: Directions (+Y/N, -Y/S, -X/W, +X/E, -Z/Lower, +Z/Higher); Orientation (Locked[Horizontal] or Unlocked[Rotatable, Spinnable]); Location (Any, GridConform, AreaConform, SpaceLimitConform); Asset Interference.
+   * Size: Height, Width, Length, Thickness.
+   * Material Properties: Strength, Stability, Durability, Longevity, Cost, Appearance (Cosmetic), Illumination (Reflect/Transp/Absorb).
+   * Copy/Pastable.
+* **Plumbing & Irrigation Systems:**
+   * Placement: Directions (+Y/N, -Y/S, -X/W, +X/E, -Z/Lower, +Z/Higher); Orientation (Unlocked[Rotatable, Spinnable]); Location (Any, GridConform, AreaConform, SpaceLimitConform); Asset Interference.
+   * Size: Height, Width, Length, Thickness, Diameter.
+   * Material Properties: Strength, Stability, Durability, Longevity, Cost, Appearance (Cosmetic).
+   * Flow Properties: Min/Max Pressure, Flow Rate, Deviation, Efficiency.
+   * Copy/Pastable.
+* **Lighting:**
+   * Placement: Directions (+Y/N, -Y/S, -X/W, +X/E, -Z/Lower, +Z/Higher); Orientation (Unlocked[Rotatable, Spinnable]); Location (Any, GridConform, AreaConform, SpaceLimitConform); Asset Interference.
+   * Size: Locked.
+   * Material Properties: Strength, Stability, Durability, Longevity; Bulb (Durability, Longevity); Cost, Appearance (Cosmetic).
+   * Lighting Properties: Type (LED, HPS, HID, Fluor.), Ballast, Wattage (In/Out), Spectrum (Color, PAR, PPFD), Heat, Efficiency.
+   * Electrical: Daisy Chain, Power Supply, System Integration.
+   * Copy/Pastable.
+* **HVAC & Airflow:**
+   * Placement: Directions (+Y/N, -Y/S, -X/W, +X/E, -Z/Lower, +Z/Higher); Orientation (Unlocked[Spinnable]); Location (Any, GridConform, AreaConform, SpaceLimitConform); Asset Interference.
+   * Ducting: Size (Locked); Material (Strength, Stability, Durability, Longevity, Cost, Cosmetic, Illum[Reflect/Transp/Absorb], Insulating[Temp]); Air Flow (Min/Max Rate, Vent#/Placement[In/Out]), Efficiency.
+   * A/C & Heater Units: Properties (Strength, Stability, Durability, Longevity, Cost, Cosmetic, Illum[Reflect/Transp/Absorb]); Water Connect (In/Out); Air Flow (Min/Max Rate, Vent#/Placement[In/Out]); Electrical (Power Usage[Wattage In/Out], Daisy Chain, Supply, System Integration); Efficiency.
+   * Ventilation Fans: Properties (Strength, Stability, Durability, Longevity, Cost, Cosmetic, Illum[Reflect/Transp/Absorb]); Air Flow (Min/Max Rate, Min/Max Speed); Electrical (Power Usage[Wattage In/Out], Daisy Chain, Supply, System Integration); Efficiency.
+   * Auxiliary Fans: Properties (Strength, Stability, Durability, Longevity, Cost, Cosmetic, Illum[Reflect/Transp/Absorb]); Air Flow (Min/Max Rate, Min/Max Speed); Electrical (Power Usage[Wattage In/Out], Daisy Chain, Supply, System Integration); Efficiency.
+   * Copy/Pastable.
+* **Humidifiers & Dehumidifiers:**
+   * Humidifiers: Placement (Directions[+/-Y, +/-X, +/-Z], Unlocked[Spinnable], Location[Any, Grid/Area/SpaceConform], Interference); Size (Locked); Properties (Strength, Stability, Durability, Longevity, Cost, Cosmetic, Illum[Reflect/Transp/Absorb]); Air Humid. Rate (Min/Max Flow); Water Connect (In/Out); Electrical (Power Use[Wattage In/Out], Daisy Chain, Supply, System Int.); Efficiency; Copy/Pastable.
+   * Dehumidifiers: Placement (Directions[+/-Y, +/-X, +/-Z], Unlocked[Spinnable], Location[Any, Grid/Area/SpaceConform], Interference); Size (Locked); Properties (Strength, Stability, Durability, Longevity, Cost, Cosmetic, Illum[Reflect/Transp/Absorb]); Air Flow Rate (Min/Max Flow); Water Connect (In/Out); Electrical (Power Use[Wattage In/Out], Daisy Chain, Supply, System Int.); Efficiency; Copy/Pastable.
+* **Electric System:**
+   * Source: Grid (Simple connect, Timed cost, Limited supply) OR Generator (Placement[Dirs, Unlocked/Spin, Loc, Interfere]; Size[Locked]; Props[Strength, Stability, Durability, Longevity, Cost, Cosmetic]; Elec Props[Wattage, Efficiency, Max/Avg Output]; Elec Connect[In/Out, Daisy, System Int]; Env Impact[Heat, Pollution{Air, Water, Soil}]; Copy/Pastable) OR Solar Panels (Placement[Dirs, Unlocked/Spin, Loc, Interfere]; Size[Locked]; Props[Strength, Stability, Durability, Longevity, Cost, Cosmetic]; Elec Props[Wattage, Efficiency, Max/Avg Output]; Elec Connect[In/Out, Daisy, System Int, Inverter/Battery]; Env Impact[Heat]; Copy/Pastable).
+   * Panel Boxes: Routing (Source->Facility, Facility Internal Dist.); Breakers (Min/Max Wattage); Placement (Dirs, Unlocked/Spin, Loc, Interfere); Size (Locked); Props (Strength, Stability, Durability, Longevity, Cost, Cosmetic); Elec Props (Wattage, Efficiency, Max/Avg Output); Elec Connect (In/Out, Daisy, System Int); Copy/Pastable.
+   * Wiring: Routing (Panel->Rooms, Room Internal Dist.); Connecting (Wire-Wire, Wire-Equip); Placement (Dirs, Unlocked[Rotate/Spin], Loc, Interfere); Size (W, L, Thick, Diam, Elec Capacity); Props (Strength, Stability, Durability, Longevity, Cost, Cosmetic); Elec Props (Wattage, Efficiency, Max/Avg Output); Elec Connect (In/Out, Daisy, System Int).
+   * Outlets: Placement (Dirs, Unlocked[Rotate/Spin], Loc, Interfere); Size (Locked); Props (Strength, Stability, Durability, Longevity, Cost, Cosmetic); Elec Props (Wattage, Efficiency, Max/Avg Output); Elec Connect (In/Out, Daisy, System Int).
+* *(Physics simulation/mechanics deferred to separate document)*.

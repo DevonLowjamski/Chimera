@@ -1,0 +1,27 @@
+```text
+hemp_nitrogen_fertilization_size_variabi_1.txt
+
+**Objective:** Analyze hemp size variability effects of nitrogen fertilization, row width, and sex expression.
+
+**Methods:** Field experiments (1991, 1992, Lelystad, Netherlands) using randomized complete block design. Treatments: 80/200 kg ha⁻¹ N, 12.5/25/50 cm row width, precision/roller sowing, uniform thinning.  Plant density: 160 plants m⁻² (1991), 132 plants m⁻² (1992).  Five harvests (June-September). Measured: plant height, dry weight, sex. Statistical analysis: CV, skewness, kurtosis.
+
+**Results:**
+
+* **Row width:** No significant effect on size variability.
+* **Nitrogen (N):** 200 kg ha⁻¹ N significantly increased CV of weight and height (1.5x higher than 80 kg ha⁻¹ N at final harvest).
+    * **Dry weight:** Positively skewed (except first harvest), more skewed at 200 kg ha⁻¹ N. Positive kurtosis at 200 kg ha⁻¹ N (harvests 4, 5, 1992).
+    * **Height:** Negatively skewed (except 80 kg ha⁻¹ N, harvest 1). At 200 kg ha⁻¹ N, negative skewness (early) transitioned to negative kurtosis (late).
+* **Self-thinning:** Contrary to expectation, did not reduce CV of weight or height. Suppressed plants survived well under canopy. More suppressed plants at 200 kg ha⁻¹ N.
+* **Sex:** Sexual dimorphism affected variability. Heavier plants were female, taller plants male.  Higher female:male ratio at 200 kg ha⁻¹ N (1991 only).
+* **Allometry:** Height/weight ratio (slenderness) higher in suppressed plants.  200 kg ha⁻¹ N resulted in more heavy, less slender plants.
+
+**Conclusions:**
+
+* Higher N fertilization increased hemp size variability.
+* Self-thinning did not reduce variability; suppressed plants tolerate low light.
+* Sexual dimorphism contributed to variability;  higher N (1991 only) increased female proportion.
+* Higher N resulted in less slender plants, mainly due to more heavy plants, not reduced self-thinning.
+* Reduced N fertilization leads to finer, less variable hemp stems.
+
+**References:** (List of references omitted for brevity, but available in original document)
+```

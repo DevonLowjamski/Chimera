@@ -1,0 +1,99 @@
+﻿Economy & Marketplace Systems Design v1.1
+I. Introduction
+* Document: Project Chimera's economic systems design (NPC-driven economy & future player-driven marketplace).
+* Goal: Robust, engaging economic layer reflecting player skill value (cultivation, breeding, processing, market strategy).
+* Approach: Phased. MVP: foundational NPC-based economy. Future expansion: complex player-driven marketplace (per Game Concept).
+* Monetization: Ethical, prioritizing player experience/fairness.
+II. Initial NPC Buyer/Contract Economy (MVP Focus)
+* MVP primary economic interaction: NPC entities via contracts & direct sales.
+* System provides: player income, objectives, engagement with game world's cannabis product demand.
+* A. Types of Contracts & NPC Buyers
+   * Cultivation Contracts: Primary early-mid game progression/income driver.
+   * Mechanics: NPCs/NPC orgs offer contracts for specific cannabis strain quantities, quality stipulations (e.g., min THC/CBD, specific terpene profiles, visual quality score), in-game deadline.
+   * Examples: "Deliver 500g 'High-CBD Alpha Strain', >15% CBD, <1% THC by Day 60"; "Supply 1kg any Indica-dominant strain, 'Earthy & Pine' terpene profile."
+   * Research & Development Contracts: NPCs (e.g., research institutes, pharmaceutical co.s) offer contracts for developing strains with novel traits or cultivation data.
+   * NPC Buyer Personas & Preferences: Diverse demand via different NPC buyers/factions with distinct preferences, varying prices.
+   * Example: "Medical Dispensary" NPC: prioritizes high-CBD, specific terpenes, consistent quality; offers premium prices.
+   * Example: "Bulk Processor" NPC: accepts lower quality, larger volumes; lower per-unit prices.
+   * Example: "Enthusiast Collective" NPC: seeks rare genetics, high-potency/flavorful strains.
+   * Effect: Encourages player cultivation/breeding goal diversification.
+* B. Income Generation
+   * Contract Completion: Primary MVP income method.
+   * Payment: Based on successful contract fulfillment (quantity, quality specs via lab tests/visual scores, timeliness).
+   * Bonuses: Possible for exceptional quality/early delivery.
+   * Direct Sales to NPC Vendors: Simpler, immediate option for uncontracted/surplus product.
+   * Prices: Likely lower than contract rates (spot market vs. pre-arranged).
+   * Function: Outlet for non-contract items or quick cash needs.
+   * Reputation Impact: Player "company" reputation (from quality, reliability, ethics) influences NPC interactions.
+   * High reputation: Access to more lucrative contracts, better pricing, unique NPC opportunities/requests.
+   * Low reputation (failed contracts, poor quality product e.g., contaminated, mislabeled): Damaged reputation, reduced opportunities.
+* C. Costs & Expenses (Player-Side)
+   * Players manage operational costs for cultivation facility.
+   * Building Materials & Equipment: Initial/ongoing costs (grow rooms, labs, processing areas: walls, floors, lights, fans, pumps, benches, lab gear).
+   * Consumables: Regular purchases (nutrients, growing mediums, amendments, CO2 for tanks, pest/disease treatments, lab supplies e.g., for testing, packaging).
+   * Utilities:
+      * Electricity: Significant, ongoing expense; tied to equipment (lights, HVAC, pumps) power consumption. Game simulates power draw.
+      * Water: Metered cost (esp. large ops or RO systems - which also use power/generate wastewater).
+      * Waste Disposal: Potential minor cost (used medium, plant waste), esp. at scale.
+   * Genetics (Seeds/Clones): Initial acquisition costs (NPC vendors, special in-game events).
+   * Research & Development Costs: Some advanced projects may need direct funding or rare/expensive material consumption.
+   * Maintenance & Repair (Potential Future Mechanic): Equipment degradation over time; costs for parts/repair for optimal function; adds to operational cost management.
+III. Player-Driven Marketplace (Future Expansion)
+* System: Significant post-launch feature; dynamic, player-controlled economy.
+* A. Trading Mechanism
+   * Buy/Sell Orders (Recommended): Robust asynchronous system. Players post Sell Orders (items e.g., genetics, equipment, resources; price; quantity; duration). Players post Buy Orders (items; max price). Marketplace auto-matches compatible orders. Facilitates price discovery, asynchronous trading.
+   * Direct Player-to-Player Trades (Limited Scope): Possible for same multiplayer session or friends list pre-arranged exchanges. Order book system preferred for broader market.
+* B. Tradable Items (Examples)
+   * Genetics (Anticipated cornerstone): Player-bred seeds (F1s, IBLs, unique crosses), clones (elite mothers), rare landraces. Potentially pollen (unique males).
+   * Equipment: New player-crafted equipment (if crafting implemented). Surplus/used equipment from upgrading players.
+   * Resources & Consumables: Bulk high-quality nutrients, rare soil amendments, specialized growing mediums.
+   * Harvested Product (Subject to Design Choices & Platform Policies): High-quality dried/cured flower, trim (for extraction), collected kief. (Design Note: Direct player cannabis sales may have platform restrictions; consider "genetic samples" or "research biomass" valued by profile as alternatives).
+   * Processed Goods (If Advanced Processing Implemented): Cannabis extracts (oils, shatter, wax), edibles, topicals by players.
+* C. Marketplace User Interface (UI)
+   * Essential: Clear, intuitive, functional UI for positive trading.
+   * Item Listing: Easy interface (item type, strain, quantity, description e.g., genetic lineage, terpene notes, quality metrics, price, duration). Clear display of listing fees/sales taxes.
+   * Browse & Searching: Robust filtering (category, strain name, genetic traits, seller reputation, price range) & sorting.
+   * Order Management: Personal dashboard to track active buy/sell orders, view transaction history, manage marketplace wallet funds, claim purchases/sales proceeds.
+   * Market Data (Potentially Advanced Feature): Access to historical price charts, avg sale prices, trading volume. Helps informed decisions, trend ID. Unlockable via "Business" skill tree or in-game "Market Data Service" subscription.
+* D. Market Scope (Global vs. Regional)
+   * Global Market (Recommended for Initial): All players use one unified marketplace. Simpler to implement/balance, ensures sufficient liquidity/variety.
+   * Regional Market (Potential Future Expansion): Implications: Physical goods transport (costs, time delays, risks e.g., spoilage, damage, theft if PvP). Unique regional supply/demand, local NPC "regulations", resource availability leading to arbitrage. Complexity: Significant design/technical. Best for post-launch after successful/stable global market.
+* E. Core Economic Principles in Player Market
+   * Supply & Demand: Fundamental price driver. High availability/low demand = price down; scarcity/high demand = price up. Game systems allow natural operation.
+   * Value Creation: Players create economic value via: Breeding Innovation (unique, high-performance, rare genetics). Cultivation Excellence (high-quality flower via environmental control/plant care, maximizing genetic potential). Processing Prowess (efficiently transforming raw cannabis to high-value goods e.g., premium extracts, cured flower). Market Acumen (IDing market needs, timing sales, building quality/reliability reputation).
+   * Information Asymmetry: Players investing in research, data analysis (in-game plant/market data), understanding mechanics may gain economic advantage.
+* F. Robust Resource/Currency Sinks (Crucial for Economic Stability)
+   * Purpose: Prevent runaway inflation, maintain in-game currency value.
+   * Marketplace Tax & Listing Fees: Small percentage tax (e.g., 1-5%) on final player marketplace sale value. Small flat listing fee (discourages market spam). Primary, consistent currency sinks.
+   * NPC Vendors for Unique/Essential Goods & Services: NPCs sell essentials, rare genetic starting material, unique equipment blueprints, specialized services (e.g., advanced lab analysis for high fee) at fixed, significant prices. Removes currency from circulation.
+   * Repair & Maintenance Costs: Degrading equipment requires currency for spare parts (NPCs/players) or repair services.
+   * High-End Crafting, Research, & Facility Development: Unlocking top-tier research, crafting elite equipment, advanced genetic modification (if implemented), constructing/upgrading large/sophisticated facilities require substantial currency/rare resource investments.
+   * Item Degradation & Spoilage: Perishables (e.g., improperly handled harvested plant material, some processed goods with shelf-life) lose quality/become unsellable if not handled, stored, or sold timely. Removes potential value.
+   * Operational Costs: Ongoing utility bills, consumable purchases act as continuous small currency sinks.
+   * Cosmetic Purchases (Monetization): Real money cosmetic purchases effectively remove in-game currency equivalent if cosmetics also obtainable (very difficultly) with in-game currency (primary intent is direct real-money purchase).
+* G. Safeguards & Balancing for Player Marketplace
+   * Goal: Fair, stable market paramount.
+   * Against Market Manipulation & Exploits: Transaction Limits/Velocity Checks (consider for new accounts/short timeframes to deter RMT/exploit abuse). Developer Monitoring Tools (back-end tools for suspicious patterns, exploits, unusual price movements).
+   * Robust Item & Economic Balancing: Careful balance of acquisition rates, costs, utility of tradables to prevent exploitability or destabilizing economy.
+   * Preventing Monopolies: Encourage Diverse Production Paths (multiple viable success/profitability strategies; players not all forced into same few items). Accessibility of Core Resources (core progression resources not easily cornered; NPC vendors can offer baseline essentials).
+   * New Player Experience & Balance: Strong NPC Economy Foundation (new players progress, learn, earn currency without immediate player market dependence/overwhelm). Skill-Based Market Success (success by in-game skill, knowledge, effort, strategy, not just wealth/early advantage). Gradual Introduction (new players gradually introduced to player marketplace complexities with game progression).
+IV. Monetization Strategy (Ethical Focus)
+* Model: Prioritizes player experience, fairness, long-term engagement. Base game: one-time purchase (Buy-to-Play, B2P).
+* A. Ethical Microtransactions
+   * Core Principle: NO Pay-to-Win (P2W). Microtransactions will not offer competitive gameplay advantages, bypass core progression, include loot boxes, or involve direct sale of essential game resources or genetics that would unbalance.
+   * Cosmetics (Primary Focus): Purely aesthetic, no gameplay impact. Examples: Equipment Skins (lights, hydro systems, lab gear, controllers), Facility Decor (paints, posters, non-functional furniture, rare non-cannabis ornamentals), UI Themes.
+   * Marketplace Tax (Future - Revenue & Currency Sink): Small, transparent percentage fee (e.g., 1-5%) on completed player-to-player sales. Contributes to developer revenue & essential currency sink.
+   * Convenience/Quality-of-Life (QoL) Items (Extreme Caution & Strict Balancing): Only if NO P2W perception or core gameplay loop disruption. Player feedback paramount. Potential Examples (Highly Speculative, Rigorous Scrutiny): One-time consumable for very slight expedition of non-critical, researched, short task (e.g., "Insta-Finish" 5-min research timer; not for biological processes like plant growth). Cosmetic "pet" or small non-functional drone. Strict Limitations: NEVER competitive advantage, skip significant gameplay/progression, grant unobtainable resources/abilities, create unfair field. Manual gameplay/earned automation always most effective/rewarding.
+* B. Paid Expansions (Future Major Content)
+   * Substantial new content, significant feature additions as paid expansions.
+   * Scope & Content Examples: New Maps & Regions (e.g., outdoor grows with unique climate challenges, advanced subterranean labs, themed expansions like "Lunar Biodome" if lore supports). Large Genetic Pool Expansions (new landraces, mutations, fictional related plant species). Significant New Core Mechanics: Full player-driven marketplace implementation; Advanced AI staffing (hire/manage NPC workers with skills/specializations); Deep, narrative-driven campaigns; Complex new processing pathways (e.g., advanced pharmaceutical extraction/product formulation); Sophisticated, optional physics simulation for environmental factors (if beneficial/feasible).
+* C. Balancing Monetization & Player Experience
+   * Transparency: All monetization methods clearly communicated.
+   * Value Proposition: Monetized content (esp. expansions) offers substantial new gameplay/value. Cosmetics desirable but optional.
+   * Respect for Player Investment: Core B2P game complete/satisfying. Monetization not for artificial barriers or frustrating players into spending.
+   * Community Feedback: Continuous dialogue essential for fair/respectful monetization.
+V. Conclusion
+* Project Chimera's economic systems evolve with player capabilities & game development.
+* Initial NPC-driven economy: stable foundation (learn, grow, profit).
+* Eventual player-driven marketplace (sound economic principles, robust safeguards): dynamic, deeply engaging long-term experience.
+* All monetization ethical: fair, rewarding, player-respectful simulation game.

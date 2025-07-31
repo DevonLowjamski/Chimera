@@ -1,0 +1,133 @@
+﻿Project Chimera: Gameplay Mechanics v1.1 (Condensed)
+1. Introduction Details core player gameplay mechanics in Project Chimera. Builds on Game Concept Document v1.0 & "Game Mechanics.docx". Focus: player actions & system interactions. (Breeding/Genetics & Physics Simulation mechanics in separate documents).
+2. Core Gameplay Loop Summary Cycle:
+* Design & Build: Construct/optimize cultivation spaces/infrastructure (map/sandbox).
+* Cultivate: Plant seeds/clones, manage grow environment, nurture plants, address challenges.
+* Harvest & Process: Harvest mature plants, execute drying/curing for end-product quality.
+* Analyze & Learn: Collect/interpret grow cycle data (environmental, plant health, yield, quality) for future decisions.
+* Optimize & Expand: Use knowledge, resources, new genetics (see breeding doc) to improve setups, techniques, scale.
+* Progress: Unlock new equipment, facility types, genetic potential, advanced techniques via progression system (details TBD).
+3. Cultivation Systems & Plant Interaction Direct plant interactions & immediate environment management.
+3.1. Plant Lifecycle Management
+* Planting:
+   * Seeds: Source/plant in starter mediums.
+   * Clones: Cuttings from "Mother" plants, prepare (e.g., rooting hormone), place in propagation.
+* Transplanting/Up-Potting: Move plants between containers/systems (e.g., clones->small pots->final containers/beds). Select appropriate medium volume/type.
+* Plant Training & Shaping:
+   * Pruning/Defoliation: Remove leaves/branches (light, airflow, structure). Includes Skirting, Lollipopping.
+   * Topping/Tipping: Remove apical meristem for bushier growth, multiple main colas.
+   * Low-Stress Training (LST): Bend/tie branches for even canopy, max light. Tools: tie wraps, support posts/stakes.
+   * Trellising: Netting/structures support plants, spread canopies, manage growth (esp. flowering).
+* Plant Movement: Physical move: Propagation -> Veg -> Flower -> Dry Room.
+3.2. Irrigation & Fertigation Management
+* Watering Strategy: Define/execute precise plans:
+   * Volume Control: Total water/cycle, volume/event, events/cycle.
+   * Frequency Control: Timing/duration between events.
+   * Advanced (Crop Steering): Controlled drybacks, leachate management, flushes (water only), stacking EC (intentional nutrient concentration rise). System simulates combined effects.
+* Watering Methods: Implement/manage:
+   * Manual Hand Watering.
+   * Automated Drip Emitters.
+   * Ebb & Flow / Flood Tables.
+   * Hydroponic Systems (DWC, NFT, etc. - details TBD).
+   * Aeroponic Systems (Misting - details TBD).
+* Fertigation (Nutrient Delivery):
+   * Nutrient Selection: Types (liquid, granular/powder, water-soluble, top-feed amendments, organic vs. synthetic). Considers NPK, macro/micronutrients, additives.
+   * Mixing: Prepare solutions in tanks (multi-part/additives). Requires careful measurement, order.
+   * Dosing & Application: Deliver via irrigation. Foliar spraying option. Monitor/adjust concentration (EC/PPM), pH.
+3.3. Environmental Control
+* Temperature Management: Monitor/control in zones:
+   * Ambient Air Temp.
+   * Growing Medium Temp.
+   * Leaf Surface Temp (for VPD).
+   * Day/Night Temp differentials.
+* Humidity Management: Monitor/control relative humidity (RH):
+   * Ambient Air RH.
+   * Canopy Microclimate RH.
+   * Day/Night RH differentials.
+* Lighting Management:
+   * Intensity & Delivery: Adjust brightness/dimming, fixture height, layout for target PPFD. Considers electrical capacity.
+   * Spectrum & Quality: Light types (LED, HPS, HID, Fluorescent) with different spectral outputs (PAR). Simulates spectrum impact on growth stages.
+   * Photoperiod Scheduling: Set light cycles (e.g., 18/6 Veg, 12/12 Flower, 24/0, custom). Manage light leaks/bleed (dark periods).
+* Atmospheric Management:
+   * Airflow & Ventilation: Fans (intake, exhaust, oscillating) for circulation, temp/humidity management, CO2 distribution.
+   * CO2 Enrichment: Optional CO2 supplement (boosts photosynthesis). Requires careful monitoring, integration.
+   * Vapor Pressure Deficit (VPD): Monitor/manage (from Temp/RH) as key plant transpiration indicator.
+* Spatial Management:
+   * Plant Spacing: Optimal plant/bench/row spacing for airflow, light, overcrowding prevention.
+   * Microclimate Awareness: Recognize/mitigate microclimates (walls, vents, equipment blockage).
+3.4. Integrated Pest Management (IPM)
+* Scouting & Identification: Regular inspection:
+   * Visual: Plants for pests, damage, disease.
+   * Microscopic: Leaf/stem/medium samples for specific pests, diseases, deficiencies/viruses.
+* Treatment & Prevention:
+   * Mixing & Application: Prepare/apply pesticides/beneficials (spray, soil drench).
+   * Beneficial Introduction: Apply beneficial insects/microbes.
+   * Trapping: Sticky traps.
+   * (Specific pest/disease types & simulation TBD).
+3.5. Harvesting & Post-Harvest Processing
+* Harvesting:
+   * Optimal time determination (simulated visual cues: trichomes).
+   * Remove supports (trellises, stakes).
+   * Cut plants (whole/branches).
+   * Optional final defoliation (pre-dry trim).
+   * Transport to Drying Room.
+* Drying: Hang plants or place branches/buds on racks in controlled environment (Temp, RH, Airflow, Darkness). Monitor moisture loss.
+* Curing: Transfer dried buds to curing containers. Manage container RH (burping/humidity packs) over time for aroma, flavor, smoothness.
+3.6. Cleaning & Sanitation
+* Routine Cleaning:
+   * Dry: Sweeping, vacuuming, leaf blowers (appropriate use).
+   * Wet: Wash surfaces (floors, walls, tables, lights, equipment) in grow/dry areas.
+* System Flushing & Cleaning:
+   * Irrigation Lines: Flush lines, clean filters, emitters.
+   * Tanks & Mixers: Clean nutrient reservoirs, mixing equipment.
+   * HVAC Systems: Clean filters, drain pans, potentially ducting.
+* Deep Cleaning & Sanitization: Thorough cleaning & sanitizer application between cycles/post-contamination. All surfaces/equipment. Methods vary by scale (wipe-downs vs. pressure washing).
+4. Facility Construction & Management Design, build, modify cultivation facilities.
+4.1. Structural Elements (Walls, Floors, Roofs)
+* Placement: Build in X, Y, Z axes within map boundaries.
+* Orientation: Primarily locked (Walls vertical, Floors/Roofs horizontal). Angled elements potential future update.
+* Sizing: Define length, width, height/thickness.
+* Material Selection: Impacts: Structural Properties (strength, durability), Cost, Appearance, Functional Properties (insulation, light interaction, airflow).
+4.2. Equipment & Furniture Placement (Benches, Tables, Racks)
+* Placement: Free or grid-snapped. Considers collision.
+* Orientation: Multi-axis rotation.
+* Sizing: Predefined for most; adjustable for benches/racks potentially.
+* Material: Impacts durability, cost, appearance, cleanliness.
+* Functionality: Plant surfaces, equipment mounts.
+* Workflow Tools: "Copy and Paste" for layout duplication.
+4.3. Utility System Construction
+* General Properties (All Utilities):
+   * Placement: Route pipes, ducts, wires in 3D (grid-snap or free). Considers collisions.
+   * Orientation: Full rotation/angling for connections.
+   * Sizing: Diameters/gauges impact performance (flow, capacity, pressure/voltage drop).
+   * Material: Impacts cost, durability, efficiency (pipe friction, duct insulation, wire resistance), appearance.
+   * Connectivity: Logical connections source to endpoints. Visual feedback for valid connections.
+* Plumbing & Irrigation:
+   * Components: Pipes, fittings, valves (manual/solenoid), pumps, filters, tanks (batch, mix), emitters.
+   * Functionality: Simulates flow, pressure (layout, pump, pipe specs). Requires water source & delivery point connection.
+* HVAC & Airflow:
+   * Components: Ducting, vents (in/out), inline fans, ACs, heaters, humidifiers, dehumidifiers, auxiliary fans.
+   * Functionality: Simulates airflow (CFM), temp/humidity modification (equipment specs, layout). Requires power, potentially water.
+* Electrical System:
+   * Components: Power sources (Grid, Generators, Solar + Inverters/Batteries), Panel Boxes (breakers), Wiring, Outlets, Equipment connections.
+   * Functionality: Simulates power generation/draw, circuit load, voltage. Logical routing: source -> panel -> circuits -> outlets/equipment. Breakers trip on overload. Sources have cost/environmental implications. Equipment needs sufficient power.
+4.4. Zoning & Layout Optimization Designate areas (Veg, Flower, Dry). Strategic zone/utility/workflow routing impacts efficiency, environmental control, risk mitigation (clean/dirty separation).
+5. Data Collection & Analysis Tools/interfaces for information gathering & decision making.
+5.1. Data Points & Collection Methods
+* Environmental Data: Real-time sensor readings (player-placed/zone-integrated): Temp, Humidity, CO2, PAR/PPFD.
+* Growing Medium Data:
+   * Manual Sampling: Handheld meters for EC/PPM, pH, Temp, VWC% (medium/leachate).
+* Plant Data:
+   * Visual Inspection: Health, growth stage, structure, color.
+   * Manual Sampling: Chlorophyll meters (leaves).
+   * (Advanced Analysis - Future?): Simulated lab analysis (tissue: nutrient levels; post-harvest: cannabinoid/terpene profiles).
+* Operational Data: Track resource use (water, power), costs, task time, yield.
+5.2. Data Presentation & UI
+* Dashboards & Overlays: Customizable UI for key real-time data.
+* Graphs & Charts: Visualize trends (environment, nutrients, plant growth).
+* Logs & Notes: Record observations, tasks, harvest results (plant/batch specific).
+* Alerts & Notifications: System flags critical issues (environment out-of-range, nutrient lockout, pests).
+6. Economy & Resource Management (Initial Scope)
+* Financials: Budget management. Costs: materials, equipment, utilities, nutrients, seeds/clones. Income: selling harvested product (NPC buyers/contracts - initial version).
+* Resource Inventory: Track consumables (nutrients, medium, water, generator fuel).
+* (Full player-driven marketplace & economic complexities: future update).

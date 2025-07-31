@@ -1,0 +1,429 @@
+[Insert Original Document Filename Here]
+**I. Introduction**
+**1.1. Objective:** Outline comprehensive, systematic, actionable research plan detailing methodology for identifying, documenting, validating, organizing fundamental technical game programming concepts (functions, formulas, equations, algorithms, theorems forming modern game development's technical bedrock).
+**1.2. Rationale/Significance:** Game development: rapid tech advancement, high specialization (graphics, physics, AI, audio, networking). Critical knowledge often fragmented (teams, legacy code, tacit developer knowledge). Fragmentation challenges: knowledge preservation, onboarding/training, technical understanding/implementation consistency. Systematically compiled/validated knowledge base (KB) addresses challenges. KB functions:
+*   Knowledge Preservation/Transfer: Captures/codifies essential tech knowledge, accessible beyond experts/projects.
+*   Onboarding/Training: Structured, reliable, accurate resource accelerating developer learning (new field/specialization).
+*   Standardization: Fosters common technical vocabulary, shared understanding of fundamental algorithms/formulas.
+*   Reference/Research: Quick-reference for established concepts, validated foundation for advanced/specialized topics.
+Rigorous plan paramount (breadth, depth, interdisciplinary nature) ensuring KB comprehensive, accurate, logically organized, designed for long-term maintenance/expansion in evolving field.
+**1.3. Scope Overview:** KB scope: technical concepts with direct application/significant adaptation in game programming (functions, formulas, equations, algorithms, core data structures, programming patterns in game features/engine systems). Foundational concepts (math: linear algebra, calculus; CS: data structures, algorithm analysis; physics: Newtonian mechanics) included if critically applied/adapted (e.g., vector math for graphics/physics, integration methods for physics simulation). Excludes high-level game design philosophies/abstract principles unless directly translatable to specific, implementable algorithms, formulas, data structures for programmers. This document is the plan, not the KB itself.
+
+**II. Phase 1 (P1): Scope Definition & Taxonomy Development**
+Focus: Establish KB boundaries, create logical organizing structure.
+**2.1. Defining Inclusion Criteria:** Rigorous criteria for concept selection consistency/relevance:
+*   Direct Applicability: Directly employed in game features, engine subsystems, dev tools (e.g., A* pathfinding; abstract graph theory only if specific theorem/algo commonly used).
+*   Significance: Fundamental/widely utilized in ≥1 recognized game programming domain (Graphics, Physics, AI) (e.g., Quaternions for 3D rotation; not obscure niche theorems).
+*   Specificity: Distinct to game dev or significant adaptation of broader math/CS principle (e.g., real-time collision detection algos: AABB checks, SAT for OBB; general Big O notation only if for specific game algo performance).
+*   Technical Nature: Concrete technical elements: functions, formulas, equations, algorithms, theorems, core data structures/patterns (e.g., Object Pooling, Scene Graphs). Abstract design philosophies omitted unless manifest as specific, implementable tech.
+**2.2. Establishing Major Categories:** Top-level classification aligned with game dev domains & engine architecture for intuitive navigation. Proposed (from common roles/engine components):
+1.  Core Mathematics & Physics: Foundational math/physical principles across domains (e.g., Linear Algebra, Calculus, Newtonian Mechanics).
+2.  Graphics Rendering: Algos, formulas, techniques for visual output (geometry processing to pixel color).
+3.  Physics Simulation: Concepts for physical interactions (collision detection, response, dynamics).
+4.  Artificial Intelligence (AI): Algos/techniques for NPC/game system behavior (pathfinding, decision-making, state management).
+5.  Engine Systems & Architecture: Core programming patterns, data structures, system-level concepts for engine operation (memory mgt, parallelism).
+6.  Audio Processing: DSP techniques, sound synthesis, spatialization, playback.
+7.  Networking: Algos/protocols for game state, sync, communication (multiplayer).
+8.  Gameplay Systems: Common algos/data structures for core gameplay mechanics (potential overlap, careful scoping).
+Categorization reflects industry specializations (Graphics/Physics Programmer, AI Engineer) & engine subsystems (Rendering, Physics, AI, Audio). List is starting point, refine based on research.
+**2.3. Developing Subcategories:** Hierarchical structure within major categories for deeper navigation/understanding.
+Example Hierarchies:
+*   Graphics Rendering:
+    *   Geometric Transformations: Vector Ops (Dot/Cross Product); Matrix Transforms (Translation, Rotation, Scaling); Quaternions (Slerp).
+    *   Rendering Pipeline: Vertex Processing (Vertex Shaders); Rasterization (Rasterization Rules: e.g., Top-Left Rule); Fragment Processing (Fragment/Pixel Shaders).
+    *   Lighting & Shading: Reflection Models (e.g., Phong, Blinn-Phong); PBR (Microfacet Theory, Energy Conservation, Fresnel Effect: Schlick Approx; BRDFs: Cook-Torrance Model, NDF: e.g., GGX, G: e.g., Schlick-GGX/Smith).
+    *   Texturing: Texture Mapping & UV Coords; Texture Filtering (Bilinear, Trilinear, Anisotropic).
+    *   Shadows: Shadow Mapping (PCF, Common Artifacts).
+*   Physics Simulation:
+    *   Collision Detection: Broad Phase (Sweep and Prune, Spatial Hashing/Grids, BVH, Octrees/Quadtrees); Narrow Phase (AABB vs AABB, Sphere vs Sphere, OBB vs OBB: SAT).
+    *   Collision Response: Impulse-based Resolution; Friction Models (e.g., Coulomb Friction).
+    *   Dynamics Simulation: Rigid Body Dynamics; Numerical Integration Methods (Euler, Verlet).
+*   AI:
+    *   Pathfinding: A* Search Algorithm (Heuristics: Admissibility).
+    *   Decision Making & Behavior Modeling: FSMs; BTs (Core Nodes: Sequence, Selector, Action, Decorator; Execution Flow).
+*   Engine Systems & Architecture:
+    *   Memory Management: Object Pooling; Custom Allocators (Stack, Pool, Free List; Perf/Frag Considerations).
+    *   Parallelism & Concurrency: Job Systems & Task Scheduling.
+    *   Scene Representation: Scene Graphs.
+*   Audio Processing:
+    *   DSP: Sampling; Digital Filters (Low-pass, High-pass, Band-pass); Effects (Reverb, Delay).
+    *   Spatialization: Panning (Pairwise, VBAP); HRTFs.
+Handling Cross-Disciplinary Concepts (e.g., Vector Dot Product, Matrix Multiplication in Graphics, Physics, AI): Combined approach:
+1.  Place foundational in "Core Mathematics & Physics".
+2.  Robust tagging system: tags for all relevant application domains (e.g., "Graphics", "Physics", "AI").
+3.  Explicit cross-references in doc template's "Related Concepts" field.
+Ensures primary home, easily discoverable from all applied contexts.
+**2.4. Taxonomy Outline (Table Summary):**
+*   Core Mathematics & Physics: Subcats: Linear Algebra (Vectors, Matrices, Quaternions), Calculus (Integration, Derivatives), Newtonian Mechanics (Laws of Motion, Momentum). Tags: Graphics, Physics, AI, Gameplay.
+*   Graphics Rendering: Subcats: Geometric Transformations, Rendering Pipeline (Vertex/Fragment Shaders, Rasterization), Lighting & Shading (Phong, PBR, BRDFs), Texturing (UV Mapping, Filtering), Shadows (Shadow Mapping, PCF). Tags: Math, Engine Systems.
+*   Physics Simulation: Subcats: Collision Detection (Broadphase: SAP, BVH, Octree; Narrowphase: AABB, Sphere, SAT/OBB), Collision Response (Impulse-based, Friction), Dynamics (Rigid Body, Integration: Euler, Verlet). Tags: Math, Engine Systems.
+*   Artificial Intelligence (AI): Subcats: Pathfinding (A*, Heuristics), Decision Making (FSMs, Behavior Trees), Steering Behaviors, ML Applications (if specific & applicable). Tags: Math, Gameplay Systems.
+*   Engine Systems & Arch.: Subcats: Memory Management (Object Pooling, Custom Allocators), Parallelism (Job Systems, Task Scheduling), Scene Representation (Scene Graphs), Resource Management, Scripting Integration. Tags: CS Fundamentals.
+*   Audio Processing: Subcats: DSP (Sampling, Filters, Reverb, Delay), Spatialization (Panning, VBAP, HRTF), Synthesis, Mixing. Tags: Math, Engine Systems.
+*   Networking: Subcats: Sync Techniques (Dead Reckoning, State Sync), Latency Compensation, Network Topologies, Data Serialization. Tags: Engine Systems.
+*   Gameplay Systems: Subcats: Inventory Systems, Quest Systems, Skill/Stat Systems, Common Mechanic Algos (e.g., procedural generation for specific gameplay, if distinct from general AI/Graphics). Tags: AI, Engine Systems.
+Taxonomy: structured, flexible, industry/engine-grounded for effective knowledge organization.
+
+**III. Phase 2 (P2): Comprehensive Resource Identification & Review**
+Focus: Identify, evaluate, select authoritative sources for concept extraction. Rigorous for reliable/relevant info.
+**3.1. Source Identification Strategy (Multi-faceted):**
+*   Seed List Initiation: Curated foundational/respected textbooks (e.g., "Real-Time Rendering", "Game Engine Architecture", "Game Programming Patterns", AI for games texts).
+*   Citation Chasing: Systematically follow bibliographies/references in high-quality seed sources (backward search for foundational work); "forward" search (papers citing seed source) for recent developments.
+*   Targeted Database Searches: Major academic/technical DBs (ACM Digital Library, IEEE Xplore incl. IEEE Transactions on Games, Google Scholar, arXiv). Keywords from P1 taxonomy (e.g., "Cook-Torrance BRDF", "A* pathfinding game AI", "rigid body dynamics simulation game", "job system task scheduling", "object pooling game performance", "scene graph engine").
+*   Conference Proceedings Analysis: Systematically review archives of key conferences (SIGGRAPH, GDC, AIIDE). Use GDC Vault if accessible.
+*   Industry Leader Review: Official docs, tech blogs, white papers, public presentations from leading engine devs (Epic Games/Unreal Engine, Unity Technologies) & influential developers/researchers.
+*   Open Source Engine Analysis: Source code/docs of prominent, active open-source engines (e.g., Godot, O3DE, Bevy, Stride, MonoGame) for practical insight into implementation/adaptation.
+**3.2. Literature Review Methodology (Structured evaluation):**
+*   Initial Relevance Filtering: Quick screen (title, abstract, keywords, ToC) for scope/taxonomy relevance. Exclude out-of-scope (e.g., artistic discussions, business strategy).
+*   Credibility/Authority Assessment: Based on:
+    *   Author Expertise: Recognized field experts, affiliations (academic institutions, reputable studios).
+    *   Publication Venue: Peer-reviewed journals (e.g., IEEE Transactions on Games) & conferences (e.g., SIGGRAPH, GDC) > non-reviewed blogs/forums. Official engine docs valuable (note potential engine-specific bias/implementation details).
+    *   Citation Impact: For academic sources, indicates influence/acceptance.
+    *   Source Type: Prioritize primary (original research, core docs, foundational textbooks) > secondary summaries.
+*   Content Review (Selected sources):
+    *   Technical Depth/Accuracy: Sufficient detail? Technically sound? Obvious errors?
+    *   Clarity: Clear, well-structured, understandable?
+    *   Recency: Up-to-date (esp. rendering, AI)? Older foundational sources still valuable, may need supplementation.
+*   Data Saturation: Per subcategory, review until diminishing returns (new sources reiterate already captured info).
+**3.3. Source Evaluation Matrix (Table Summary):**
+*   Peer-Reviewed Journal Article: Criteria: Authority (Peer Review), Tech Depth, Recency, Relevance, Citation Impact. Priority: High. Ex: IEEE Trans. on Games, ACM TOG.
+*   Peer-Reviewed Conference Paper: Criteria: Authority (Peer Review), Recency, Tech Depth, Relevance, Venue Reputation. Priority: High. Ex: SIGGRAPH, GDC (Tech Tracks), AIIDE.
+*   Seminal Textbooks: Criteria: Authority (Author), Comprehensiveness, Foundational Value, Clarity, Tech Depth. Priority: High. Ex: "Real-Time Rendering", "Game Engine Architecture", "Game Programming Patterns", "Artificial Intelligence for Games".
+*   Official Engine Documentation: Criteria: Relevance (Direct Application), Practical Detail, Recency (Version Specific). Priority: Medium-High. Ex: Unreal Engine Docs, Unity Docs.
+*   Technical Blogs/Articles (Known Experts): Criteria: Authority (Author Reputation), Recency, Practical Insights, Relevance. Priority: Medium. Ex: Blogs by Allen Chou, Eric Lengyel, Sebastien Lagarde.
+*   Open Source Engine Code/Docs: Criteria: Practical Impl Detail, Relevance, Community Vetting (popular projects). Priority: Medium. Ex: Godot, O3DE, Bevy source/docs.
+*   General Web Articles/Tutorials: Criteria: Clarity, Relevance (Initial Exploration), Recency. Priority: Low. Ex: GeeksforGeeks, LearnOpenGL, Gamedev StackExchange (pointers, verify w/ stronger sources).
+*   Forum Discussions: Criteria: Potential Uncited Insights, Community Consensus (extreme caution). Priority: Very Low. Ex: Reddit (/r/gamedev, /r/GraphicsProgramming), Gamedev.net forums (leads, not primary sources).
+Structured source ID/evaluation ensures accurate, comprehensive KB from reliable origins.
+
+**IV. Phase 3 (P3): Systematic Information Extraction & Documentation**
+Focus: Systematic extraction of tech info, documentation in standardized format.
+**4.1. Extraction Protocol (Strict, for consistency/completeness):**
+1.  Canonical Name/Aliases: Determine common/formal name (e.g., "A* Search Algorithm"), list alt names/abbreviations (e.g., "A-Star").
+2.  Formal Definition: Concise, accurate definition (what it is, fundamental purpose).
+3.  Formulas/Pseudocode: Core math (LaTeX: e.g., f(n)=g(n)+h(n) for A*; $\vec{a} \cdot \vec{b} = |\vec{a}||\vec{b}|\cos\theta$ for dot product). Language-agnostic pseudocode for algos.
+4.  Parameters/Variables: Define all symbols, params, vars in formulas/pseudocode.
+5.  Core Principles/Properties: List key characteristics, assumptions (e.g., A* informed search, needs admissible heuristic for optimality; dot product commutative).
+6.  Game Programming Context/Applications: How/why used in game dev. Concrete examples (dot product for FOV checks/basic lighting; Object Pooling for particles/projectiles; FSMs for NPC state mgt).
+7.  Advantages/Disadvantages/Trade-offs: Benefits (A*'s efficiency w/ good heuristic; Object Pool perf gains) & limitations, issues, artifacts (A*'s memory intensity; shadow map aliasing; FSM complexity growth; numerical instability in integration).
+8.  Related Concepts: Connections: prerequisites (vectors for dot product), alternatives (BTs vs FSMs), specializations (Blinn-Phong from Phong).
+9.  Source Citations: Meticulously record full citation details (author, title, pub year, pages, URL). Shared reference tool (Zotero, Mendeley), consistent style (IEEE, APA).
+**4.2. Standardized Documentation Template (Uniform for structure, detail, metadata consistency):**
+Fields:
+*   Concept ID: Unique identifier (internal linking/tracking).
+*   Canonical Name: Primary, standardized (Ex: A* Search Algorithm).
+*   Aliases: Alt names/abbreviations (Ex: A-Star).
+*   Category: Primary taxonomy category (Ex: Artificial Intelligence).
+*   Subcategory: Specific subcategory (Ex: Pathfinding).
+*   Tags: Relevant cross-disciplinary/application (Ex: Graph Theory, Heuristics, NPC Navigation).
+*   Definition: Clear, concise explanation (Ex: "A* is an informed graph traversal and pathfinding algorithm used to find the shortest path between a start node and a goal node in a weighted graph, guided by a heuristic estimate of the cost to the goal.").
+*   Formula(s)/Pseudocode: Core math/algo steps (Ex A* Cost: $f(n) = g(n) + h(n)$; Pseudocode: init, open/closed list mgt, node expansion, termination).
+*   Parameters/Variables: Definitions (Ex: $n$: Current node. $g(n)$: Cost start to $n$. $h(n)$: Heuristic $n$ to goal).
+*   Core Principles/Properties: Key characteristics (Ex: Informed Search; Best-First; Admissibility (heuristic never overestimates); Completeness; Optimality (if heuristic admissible/consistent)).
+*   Game Programming Context & Applications: Specific game dev uses (Ex: NPC pathfinding (tile maps, nav meshes); AI planning; strategy game routes; puzzle game states).
+*   Advantages: Benefits in game dev (Ex: Optimal pathfinding (guaranteed shortest w/ admissible heuristic); Generally more efficient than uninformed (e.g., Dijkstra's) by focusing search).
+*   Disadvantages/Trade-offs/Artifacts: Limitations, issues (Ex: Memory intensive (open/closed lists, large spaces); Perf heavily heuristic-dependent; Can be slower than Greedy Best-First if heuristic poor).
+*   Related Concepts: Links (Ex: See Also: Dijkstra's Algorithm, Greedy Best-First Search, Heuristics, Navigation Mesh).
+*   Source Citations: Formatted list.
+*   Diagrams/Visual Aids: (Optional) Placeholder/embedded (e.g., FSM state transitions, rendering pipeline flow).
+Template ensures comprehensive documentation (what, how, why, when, why not in game prog context). Produces consistent, high-quality dataset.
+
+**V. Phase 4 (P4): Logical Organization & Repository Structure**
+Focus: Organize extracted/documented data logically, select hosting platform.
+**5.1. Information Architecture:** Digital structure mirrors P1 taxonomy (logical, intuitive org). Key considerations:
+*   Hierarchical Structure: Primary org; drill-down: Major categories (Graphics Rendering) -> subcategories (Lighting & Shading) -> concepts (Blinn-Phong Reflection Model).
+*   Navigation: Multiple methods:
+    *   Browse: Hierarchical category/subcategory structure.
+    *   Search: Robust full-text (name, alias, keywords in def/app fields).
+    *   Tag Filtering: Filter by cross-disciplinary tags (e.g., "Physics", "Linear Algebra").
+*   Entry Points: Clear; main index (major categories, recent/frequently accessed concepts).
+**5.2. Cross-referencing Implementation:** Vital for interconnectedness.
+*   Dedicated "Related Concepts" Field: In template; lists related concepts, linked via unique Concept ID.
+*   Inline Hyperlinks: Within def/app text, terms for other KB concepts hyperlinked.
+*   Bidirectional Linking: Feasible/logical (e.g., Blinn-Phong links to Phong, Phong links back), facilitates exploration.
+Strategy ensures easy navigation (foundational principles, specific impls, alternatives, related techniques).
+**5.3. Repository Platform Selection:** Critical for long-term usability, maintainability, scalability.
+Options/Trade-offs:
+*   Internal Wiki (Confluence, MediaWiki): Pros: Familiar, good collab editing, internal tool integration. Cons: Basic search, less robust version control, limited presentation customization (formulas/diagrams).
+*   Version-Controlled Doc Site (Sphinx, MkDocs, Docusaurus w/ Git): Pros: Excellent Git version control, highly customizable presentation, plugins (diagrams, MathJax/KaTeX), static site gen (fast, secure). Cons: Steeper learning curve (non-tech), less intuitive editing than WYSIWYG.
+*   Custom DB/Web App: Pros: Max flexibility (data structure, query, presentation, features). Cons: Highest dev effort/cost, ongoing custom app maintenance.
+Evaluation Criteria: Searchability (advanced: full-text, filter by cat/tag); Editability & Collaboration (contrib ease, review workflows, concurrent edit); Version Control (robust history, revert, branching); Access Control (read/write permissions); Extensibility & Customization (LaTeX via MathJax/KaTeX, diagrams, code snippets, custom styling); Maintainability (platform/content updates).
+Recommendation: Version-Controlled Doc Site (Docusaurus/Sphinx on GitHub Pages/internal Git server) most suitable. Best balance: robust version control, presentation flexibility, tech content support. Aligns with expandable/updatable resource need.
+
+**VI. Phase 5 (P5): Rigorous Validation & Verification**
+Focus: Ensure tech accuracy, applicability, completeness. Multi-layered validation.
+**6.1. Technical Accuracy Review Process:** Verify correctness (defs, formulas, algos, props).
+*   Source Cross-Referencing: Every significant claim, formula, algo step verified against multiple, independent, high-quality P2 sources. Discrepancies investigated, resolved (prioritize authoritative/recent, or note discrepancy), documented. Crucial due to potential inaccuracies (even official docs).
+*   Expert Peer Review: Drafted entries assigned to domain experts (graphics progs review rendering; AI specialists review pathfinding). Standardized checklist: correctness (defs, formulas, pseudocode), accuracy (props, principles), clarity/unambiguity, completeness, source relevance/accuracy.
+*   Mathematical/Algorithmic Verification: Manual derivation checks for core math (vector ops, matrix transforms, quaternion math) & fundamental algos (A* steps, SAT projection logic). Compare documented algos to known, trusted reference impls (GLM, Eigen) or well-regarded open-source engines (Godot).
+**6.2. Applicability & Context Check:** Beyond tech correctness, ensure game dev relevance/accurate context.
+*   Contextual Relevance: Reviewers confirm game prog apps/use cases practical, common, clearly explained. Examples illustrative of real-world (e.g., FSMs for 'Patrolling', 'Attacking').
+*   Trade-off Accuracy: Verify documented advantages, disadvantages, trade-offs, potential artifacts (e.g., shadow mapping artifacts: aliasing, peter-panning; quaternions avoiding gimbal lock vs Euler angles).
+**6.3. Implementation Prototyping (Targeted):** Select subset of complex/critical algos.
+*   Selection Criteria: Concepts with subtle impl details, prone to numerical instability, or conflicting source algo steps (e.g., specific BRDF impls: Cook-Torrance w/ GGX NDF & Smith G; complex impulse-based collision response w/ friction; nuanced job system scheduling patterns).
+*   Process: Develop minimal code/tests from KB entry's pseudocode/formulas. Compare prototype behavior/output against expected/reference.
+*   Feedback Loop: Discrepancies, ambiguities, missing details refine concept's documentation.
+Practical validation bridges theory-practice, identifies nuances/edge cases missed in paper reviews, increases KB reliability/practical value.
+
+**VII. Phase 6 (P6): Long-Term Maintenance & Expansion Plan**
+Focus: Strategies for ongoing accuracy, relevance, comprehensiveness in evolving field.
+**7.1. Update Strategy (Proactive):**
+*   Periodic Review: Schedule regular, systematic reviews (e.g., annually/biennially) by domain experts. Check tech accuracy vs state-of-the-art, assess relevance, ID update/clarification needs. Monitor/incorporate new research (GDC, SIGGRAPH, AIIDE), major engine/influential publication updates.
+*   Continuous Monitoring/Feedback: Foster culture: team members flag outdated info, errors, ambiguities during work. Simple feedback mechanism (7.2).
+*   New Concept Integration: Clear workflow (propose, research, document, validate, integrate) for new techniques, significant algo variations, overlooked concepts. Follow P2-P5 rigor.
+**7.2. Contribution & Feedback Model (Leverage collective team knowledge):**
+*   Contribution Process: Clear guidelines/procedures for corrections, improvements, new entries (e.g., Git pull requests, wiki edit suggestions, dedicated submission form).
+*   Review & Approval: All contributions undergo P5-like validation (peer review by domain experts, core maintenance team) before merge. Ensures quality/consistency.
+*   Feedback Mechanism: User-friendly way for feedback, error reports, questions (e.g., integrated comments on repo platform, dedicated email alias, specific team comms channel). Regularly review/act on feedback.
+**7.3. Versioning & Changelog (Clear change history):**
+*   Version Control: Utilize chosen repo platform's built-in (e.g., Git). All changes committed w/ descriptive messages.
+*   Changelog: Publicly accessible; summarizes significant updates, additions, corrections, deprecations. Transparency, shows resource evolution.
+Structured approach ensures KB remains reliable, up-to-date, evolving asset.
+
+**VIII. High-Level Timeline & Resource Considerations**
+Estimates timeline, outlines required resources.
+**8.1. Estimated Phase Durations (High-level, assumes dedicated core team; actuals depend on team size, expertise, concept depth. P3, P5, P6 significant overlap):**
+*   P1: Scope/Taxonomy: 2-4 weeks.
+*   P2: Resource ID/Review: 8-12 weeks.
+*   P3: Info Extraction/Doc: 12-16 weeks (Concurrent w/ P5).
+*   P4: Org/Repo Structure: 4-6 weeks (Can start alongside P3).
+*   P5: Validation/Verification: 6-8 weeks (Concurrent w/ P3, ongoing).
+*   P6: Maintenance/Expansion: Ongoing (Begins after initial population).
+Total Initial Population: Approx 6-9 months; ongoing maintenance.
+**8.2. Required Expertise (Diverse team):**
+*   Domain Experts: PhDs, senior engineers, specialists (Graphics, Physics, AI, Audio, Networking, Engine Arch, Gameplay) for concept ID, source eval, nuanced info extraction, tech validation.
+*   Technical Writers/Researchers: Skilled in tech writing, info synthesis, systematic research for consistent docs, clarity, citation mgt, extraction oversight.
+*   Project Lead/Manager: Coordinate efforts, manage timeline, ensure plan adherence, resolve conflicts, oversee repo platform setup/maintenance.
+**8.3. Tooling (Recommended):**
+*   Reference Mgt Software: Zotero, Mendeley (organize/cite sources consistently).
+*   Repository Platform: Chosen from P4 (e.g., Git repo w/ static site generator like Docusaurus/Sphinx, or enterprise Wiki like Confluence).
+*   Diagramming Tools: (Optional) Software for visual aids (e.g., diagrams.net, Lucidchart, Visio).
+*   Mathematical Notation Support: MathJax/KaTeX integration in repo platform (render LaTeX).
+**8.4. High-Level Project Timeline (Table Summary):**
+*   P1. Scope & Taxonomy: 2-4 Wks. Milestones: Inclusion Criteria Defined, Taxonomy Finalized, Taxonomy Outline Table Created. Deps: -.
+*   P2. Resource ID & Review: 8-12 Wks. Milestones: Initial Source List Compiled, Eval Matrix Defined, Key Sources Reviewed. Deps: P1 (Taxonomy).
+*   P3. Info Extraction & Doc: 12-16 Wks. Milestones: Doc Template Finalized, Initial Batch Concepts Documented. Deps: P1, P2, P4.
+*   P4. Organization & Repo: 4-6 Wks. Milestones: Repo Platform Selected & Set Up, Info Arch Implemented. Deps: P1.
+*   P5. Validation & Verification: 6-8 Wks (Initial). Milestones: Validation Process Defined, Initial Batch Concepts Validated. Deps: P3.
+*   P6. Maintenance & Expansion: Ongoing. Milestones: Update Strategy Implemented, Contribution Model Active. Deps: P3, P4, P5.
+(Note: P3, P4, P5 largely parallel after initial setup). Timeline is project roadmap; highlights sequential/concurrent tasks.
+
+**IX. Conclusion**
+**9.1. Summary of Plan:** Structured, 6-phase research plan for comprehensive technical game programming KB. Emphasizes: Rigorous Scoping (inclusion criteria, logical taxonomy); Systematic Research (ID/eval diverse, authoritative sources); Standardized Documentation (consistent template: defs, formulas/algos, game-specific apps, trade-offs); Logical Organization (hierarchical, robust cross-ref, maintainable repo platform); Thorough Validation (source cross-ref, expert peer review, targeted impl prototyping for tech accuracy/practical relevance); Long-Term Sustainability (ongoing updates, community contribs, version control for living resource).
+**9.2. Expected Outcome:** Rigorously validated, logically organized, comprehensive KB. Contains fundamental functions, formulas, equations, algorithms, theorems relevant to game programming, contextualized (practical apps, adv/disadv). Invaluable asset: enhances knowledge sharing, accelerates dev, improves onboarding, fosters higher tech understanding.
+**9.3. Next Steps (Upon approval):**
+1.  Assemble core research/validation team, assign roles by expertise.
+2.  Formally initiate P1: Finalize inclusion criteria, detailed taxonomy structure.
+3.  Begin compiling initial seed list of sources (P2).
+4.  Select/configure chosen repo platform (P4 kickoff).
+
+**Works cited**
+1. Video game programmer - Wikipedia, https://en.wikipedia.org/wiki/Video_game_programmer
+2. Specialties in game development? : r/gamedev - Reddit, https://www.reddit.com/r/gamedev/comments/p587m/specialties_in_game_development/
+3. Best Game Programming Books for Beginners - FROMDEV, https://www.fromdev.com/2024/11/best-game-programming-books-for-beginners.html
+4. What are the general components of a game engine? : r/gamedev - Reddit, https://www.reddit.com/r/gamedev/comments/1do0yac/what_are_the_general_components_of_a_game_engine/
+5. Applications of the Vector Dot Product for Game Programming ..., https://hackernoon.com/applications-of-the-vector-dot-product-for-game-programming-12443ac91f16
+6. Mastering Game Physics: Implementing Realistic Simulations - 30 Days Coding, https://30dayscoding.com/blog/game-physics-implementing-realistic-simulations
+7. Advanced Character Physics - Thomas Jakobsen - CMU School of Computer Science, https://www.cs.cmu.edu/afs/cs/academic/class/15462-s13/www/lec_slides/Jakobsen.pdf
+8. A\* search algorithm - Wikipedia, https://en.wikipedia.org/wiki/A*_search_algorithm
+9. An Introduction to A* Pathfinding Algorithm – AlgoCademy Blog, https://algocademy.com/blog/an-introduction-to-a-pathfinding-algorithm/
+10. Working with Quaternions | Apple Developer Documentation, https://developer.apple.com/documentation/accelerate/working-with-quaternions
+11. Quaternions and spatial rotation - Wikipedia, https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
+12. developer.mozilla.org, https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_collision_detection#:~:text=As%20with%202D%20collision%20detection,entities%20are%20overlapping%20or%20not.
+13. 3D collision detection - Game development | MDN, https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_collision_detection
+14. stackoverflow.com, https://stackoverflow.com/questions/47866571/simple-oriented-bounding-box-obb-collision-detection-explaining#:~:text=To%20know%20if%20two%20OBB,normals%20there%20is%20a%20collision.
+15. Collision Detection, https://www.cs.jhu.edu/~sleonard/cs436/collisiondetection.pdf
+16. Collision detection, https://fulmanski.pl/zajecia/tippgk/zajecia_20162017/wyklad_cwiczenia_moje/collision.pdf
+17. Object pool pattern - Wikipedia, https://en.wikipedia.org/wiki/Object_pool_pattern
+18. Use object pooling to boost performance of C# scripts in Unity, https://learn.unity.com/tutorial/use-object-pooling-to-boost-performance-of-c-scripts-in-unity?uv=6&projectId=67bc8deaedbc2a23a7389cab
+19. Object Pool - Game Programming Patterns, https://gameprogrammingpatterns.com/object-pool.html
+20. wiki.blender.jp, https://wiki.blender.jp/Dev:Source/GameEngine/SceneGraph#:~:text=The%20Scene%20Graph%20is%20a,world%20coordinates%20for%20each%20object.
+21. Scene graph - Wikipedia, https://en.wikipedia.org/wiki/Scene_graph
+22. Different Types of Video Game Designers Explained, https://gamedesignskills.com/game-design/types-of-game-designers/
+23. What disciplines are involved in game development? - in-lusio - WordPress.com, https://inlusio.wordpress.com/2010/04/18/what-disciplines-are-involved-in-game-development/
+24. Video game development - Wikipedia, https://en.wikipedia.org/wiki/Video_game_development
+25. Game Engine Development: Engine Parts | IndieGameDev, https://indiegamedev.net/2020/01/15/game-engine-development-for-the-hobby-developer-part-2-engine-parts/
+26. Game Engine "Control Flow" Design Options? - Game Development Stack Exchange, https://gamedev.stackexchange.com/questions/149330/game-engine-control-flow-design-options
+27. What exactly is component-based architecture and how do I get it to work?, https://gamedev.stackexchange.com/questions/211690/what-exactly-is-component-based-architecture-and-how-do-i-get-it-to-work
+28. Understanding the Rendering Pipeline: Essentials for Traditional and Real-Time Rendering, https://garagefarm.net/blog/understanding-the-rendering-pipeline-essentials-for-traditional-and-real-time-rendering
+29. OpenGL Rendering Pipeline | An Overview - GeeksforGeeks, https://www.geeksforgeeks.org/opengl-rendering-pipeline-overview/
+30. Chapter 2 - The Graphics Rendering Pipeline, http://cseweb.ucsd.edu/~ravir/274/15/readings/Real-Time%20Rendering/Chapter%202.pdf
+31. Physics Tutorial 4: Collision Detection, https://research.ncl.ac.uk/game/mastersdegree/gametechnologies/previousinformation/physics4collisiondetection/2017%20Tutorial%204%20-%20Collision%20Detection.pdf
+32. State · Design Patterns Revisited · Game Programming Patterns, https://gameprogrammingpatterns.com/state.html
+33. Parallelism in AI: Multithreading Strategies and Opportunities for Multi-core Architectures - Andrew Armstrong, https://aarmstrong.org/notes/game-developers-conference-2009-notes/parallelism-in-ai-multithreading-strategies-and-opportunities-for-multi-core-architectures
+34. The Use Of Digital Signal Processing (DSP) Algorithms In Sound Engineering, https://www.tecnare.com/article/the-use-of-digital-signal-processing-dsp-algorithms-in-sound-engineering/
+35. Digital Signal Processing (DSP) - Documentation | Epic Developer Community, https://dev.epicgames.com/documentation/en-us/unreal-engine/digital-signal-processing-dsp
+36. Dot and Cross Products on Vectors | GeeksforGeeks, https://www.geeksforgeeks.org/dot-and-cross-products-on-vectors/
+37. Spatial Transformation Matrices, https://www.brainvoyager.com/bv/doc/UsersGuide/CoordsAndTransforms/SpatialTransformationMatrices.html
+38. Transformation matrix - Wikipedia, https://en.wikipedia.org/wiki/Transformation_matrix
+39. Matrices in Computer Graphics｜Gao's Blog, https://vitaminac.github.io/Matrices-in-Computer-Graphics/
+40. The Transformation Matrix - Alan Zucconi, https://www.alanzucconi.com/2016/02/10/tranfsormation-matrix/
+41. What is a quaternion? Why is it very important in video games? - Quora, https://www.quora.com/What-is-a-quaternion-Why-is-it-very-important-in-video-games
+42. Slerp - Wikipedia, https://en.wikipedia.org/wiki/Slerp
+43. Can someone help me understand quaternions and slerp? - jMonkeyEngine Hub, https://hub.jmonkeyengine.org/t/can-someone-help-me-understand-quaternions-and-slerp/31790
+44. Spherical Linear Interpolation (Slerp) — splines, version 0.3.2-5-g07b114f - Read the Docs, https://splines.readthedocs.io/en/latest/rotation/slerp.html
+45. Math for Game Developers - Slerping Quaternions - YouTube, https://www.youtube.com/watch?v=x1aCcyD0hqE
+46. Using Quaternion to Perform 3D rotations - Cprogramming.com, https://www.cprogramming.com/tutorial/3d/quaternions.html
+47. Method for interpolation between 3+ quaternions? - Game Development Stack Exchange, https://gamedev.stackexchange.com/questions/62354/method-for-interpolation-between-3-quaternions
+48. Understanding Slerp, Then Not Using It, http://number-none.com/product/Understanding%20Slerp,%20Then%20Not%20Using%20It/
+49. Game Math: Deriving the Slerp Formula | Ming-Lun "Allen" Chou | 周明倫, https://allenchou.net/2018/05/game-math-deriving-the-slerp-formula/
+50. Game Developer - August 2006 - AWS, https://ubm-twvideo01.s3.amazonaws.com/o1/vault/GD_Mag_Archives/GDM_August_2006.pdf
+51. Rendering Pipeline Overview - OpenGL Wiki, https://www.khronos.org/opengl/wiki/Rendering_Pipeline_Overview
+52. Hello Triangle - LearnOpenGL, https://learnopengl.com/Getting-started/Hello-Triangle
+53. Overview of the Graphics Pipeline - Fragment Storm, http://www.fragmentstorm.com/overview-of-the-graphics-pipeline
+54. www.scratchapixel.com, https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical-implementation/overview-rasterization-algorithm.html#:~:text=Rasterization%2C%20to%20put%20it%20briefly,or%20obscured%20by%20other%20objects.
+55. Rasterisation - Wikipedia, https://en.wikipedia.org/wiki/Rasterisation
+56. What is Rasterization in Graphics - Startup House, https://startup-house.com/glossary/what-is-rasterization-in-graphics
+57. Shader Basics - The GPU Render Pipeline, https://shader-tutorial.dev/basics/render-pipeline/
+58. Realtime–Rendering with OpenGL - The Graphics Pipeline - Bauhaus-Universität Weimar, https://www.uni-weimar.de/fileadmin/user/fak/medien/professuren/Computer_Graphics/CG_WS_19_20/Computer_Graphics/01_Introduction.pdf
+59. Computer graphics lighting - Wikipedia, https://en.wikipedia.org/wiki/Computer_graphics_lighting
+60. Advanced Lighting - LearnOpenGL, https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
+61. Blinn–Phong reflection model - Wikipedia, https://en.wikipedia.org/wiki/Blinn%E2%80%93Phong_reflection_model
+62. Physically based rendering - Wikipedia, https://en.wikipedia.org/wiki/Physically_based_rendering
+63. Notes on Physically Based Rendering - Tarun Ramaswamy, https://rtarun9.github.io/blogs/physically_based_rendering/
+64. Theory - LearnOpenGL, https://learnopengl.com/PBR/Theory
+65. Physically Based Rendering in Filament - Google, https://google.github.io/filament/Filament.html
+66. The PBR Guide - Part 1 - Adobe, https://www.adobe.com/learn/substance-3d-designer/web/the-pbr-guide-part-1
+67. SIGGRAPH 2020 Course: Physically Based Shading in Theory and Practice - Self Shadow, https://blog.selfshadow.com/publications/s2020-shading-course/
+68. Cook-Torrance Reflectance Model - Graphics Compendium, https://graphicscompendium.com/gamedev/15-pbr
+69. CSC 473 | Cook-Torrance Components, https://calpoly-iandunn.github.io/csc473/references/cook-torrance
+70. brdf - Fresnel and specular colour - Computer Graphics Stack Exchange, https://computergraphics.stackexchange.com/questions/4771/fresnel-and-specular-colour
+71. Schlick's approximation - Wikipedia, https://en.wikipedia.org/wiki/Schlick%27s_approximation
+72. Correct way to think about Fresnel effect - Computer Graphics Stack Exchange, https://computergraphics.stackexchange.com/questions/9749/correct-way-to-think-about-fresnel-effect
+73. CS 5625 Lec 2: Shading Models - Computer Science Cornell, https://www.cs.cornell.edu/courses/cs5625/2013sp/lectures/Lec2ShadingModelsWeb.pdf
+74. Cook-Torrance / BRDF General - Graphics and GPU Programming - GameDev.net, http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
+75. Article - Physically Based Rendering - Cook–Torrance - Coding Labs, http://www.codinglabs.net/article_physically_based_rendering_cook_torrance.aspx
+76. Few problems with BRDF using Beckmann and GGX/Trowbridge-Reitz distribution for comparison - Stack Overflow, https://stackoverflow.com/questions/35300861/few-problems-with-brdf-using-beckmann-and-ggx-trowbridge-reitz-distribution-for
+77. Path tracing the Cook-Torrance BRDF - Computer Graphics Stack Exchange, https://computergraphics.stackexchange.com/questions/4394/path-tracing-the-cook-torrance-brdf
+78. Cook-Torrance BRDF : r/gamedev - Reddit, https://www.reddit.com/r/gamedev/comments/4wjfbv/cooktorrance_brdf/
+79. DirectX Raytracing, Tutorial 14, https://cwyman.org/code/dxrTutors/tutors/Tutor14/tutorial14.md.html
+80. Importance sampling GGX NDF - fireflies and bright final result, https://computergraphics.stackexchange.com/questions/10292/importance-sampling-ggx-ndf-fireflies-and-bright-final-result
+81. Importance Sampling techniques for GGX with Smith Masking-Shadowing: Part 1, https://schuttejoe.github.io/post/ggximportancesamplingpart1/
+82. BRDF - HuCoco, http://hucoco.com/2018/07/12/BRDF/
+83. Optimizing GGX Shaders with dot(L,H) - Filmic Worlds, http://filmicworlds.com/blog/optimizing-ggx-shaders-with-dotlh/
+84. Correct Specular Term of the Cook-Torrance / Torrance-Sparrow Model, https://computergraphics.stackexchange.com/questions/3946/correct-specular-term-of-the-cook-torrance-torrance-sparrow-model
+85. Specular BRDF Reference - Graphic Rants, http://graphicrants.blogspot.com/2013/08/specular-brdf-reference.html
+86. Physically Based Rendering Algorithms: A Comprehensive Study In Unity3D - Part 3 - Piecing Together Your PBR Shader - Mudstack, https://mudstack.com/blog/tutorials/physically-based-rendering-study-part-3/
+87. Texture mapping - Wikipedia, https://en.wikipedia.org/wiki/Texture_mapping
+88. Game Graphics 101: Textures, UV Mapping, and Texture Filtering - IT Hare on Soft.ware, http://ithare.com/game-graphics-101-textures-uv-mapping-and-texture-filtering/
+89. Texture filtering - Arm Developer, https://developer.arm.com/documentation/102449/latest/Texture-filtering
+90. What Is Anisotropic Filtering? - Intel, https://www.intel.com/content/www/us/en/gaming/resources/what-is-anisotropic-filtering.html
+91. ELI5: What do the various "texture filtering" terms mean for video games (e.g. bilinear, trilinear, anisotropic filtering, etc.?) : r/explainlikeimfive - Reddit, https://www.reddit.com/r/explainlikeimfive/comments/yjfr1/eli5_what_do_the_various_texture_filtering_terms/
+92. Shadow Mapping - LearnOpenGL, https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+93. Shadow mapping - Wikipedia, https://en.wikipedia.org/wiki/Shadow_mapping
+94. Chapter 11. Shadow Map Antialiasing - NVIDIA Developer, https://developer.nvidia.com/gpugems/gpugems/part-ii-lighting-and-shadows/chapter-11-shadow-map-antialiasing
+95. Revectorization-Based Shadow Mapping - Graphics Interface, https://graphicsinterface.org/wp-content/uploads/gi2016-10.pdf
+96. Experimental real-time shadowing techniques? - Computer Graphics Stack Exchange, https://computergraphics.stackexchange.com/questions/6229/experimental-real-time-shadowing-techniques
+97. Chapter 32. Broad-Phase Collision Detection with CUDA - NVIDIA Developer, https://developer.nvidia.com/gpugems/gpugems3/part-v-physics-simulation/chapter-32-broad-phase-collision-detection-cuda
+98. Rigid Body Collision Detection, https://www.scss.tcd.ie/John.Dingliana/cs7057/cs7057-2010-07-BroadPhase.pdf
+99. Confused about broad and narrow phase of collision testing. : r/gamedev - Reddit, https://www.reddit.com/r/gamedev/comments/3vstgu/confused_about_broad_and_narrow_phase_of/
+100. Sweep and prune - Wikipedia, https://en.wikipedia.org/wiki/Sweep_and_prune
+101. 23 - Sweep and Prune Collision Detection with 10 lines of code - YouTube, https://www.youtube.com/watch?v=MKeWXBgEGxQ
+102. Best broad phase approach for collision detection - TIGSource Forums, https://forums.tigsource.com/index.php?topic=24939.0
+103. Broad-phase collision detection methods? - Stack Overflow, https://stackoverflow.com/questions/1616448/broad-phase-collision-detection-methods
+104. How to traverse Bounding Volume Hierarchy for collision detection? - Reddit, https://www.reddit.com/r/gameenginedevs/comments/1fshvmx/how_to_traverse_bounding_volume_hierarchy_for/
+105. Real-Time_Rendering_4th-Collision_Detection.pdf, https://www.realtimerendering.com/Real-Time_Rendering_4th-Collision_Detection.pdf
+106. Broad Phase Collision Detection – Bounding Volume Hierarchies 1 | TheGeneralSolution's Game Development Blog, https://thegeneralsolution.wordpress.com/2011/12/13/broad-phase-collision-detection-bounding-volume-hierarchies-1/
+107. Collision Detection - Stanford Computer Graphics Laboratory, https://graphics.stanford.edu/courses/cs448z/stuff/CollisionDetection2021.pdf
+108. Writing a Collision Detection Library. Need guidance. - Real-Time Physics Simulation Forum, https://pybullet.org/Bullet/phpBB3/viewtopic.php?t=4241
+109. Efficient BVH-based Collision Detection Scheme with Ordering and Restructuring - GitHub Pages, https://min-tang.github.io/home/BVH-OR/files/eg2018.pdf
+110. When to Use Spatial Hashing vs Bounding Volume Hierarchy? - Game Development Stack Exchange, https://gamedev.stackexchange.com/questions/124186/when-to-use-spatial-hashing-vs-bounding-volume-hierarchy
+111. Collision detection without nested loops, or nested loops with silly high complexity. : r/gamedev - Reddit, https://www.reddit.com/r/gamedev/comments/1a9xom/collision_detection_without_nested_loops_or/
+112. Broadphase collision detection - Math and Physics - GameDev.net, https://www.gamedev.net/forums/topic/484271-broadphase-collision-detection/
+113. 2D collision detection - Game development - MDN Web Docs, https://developer.mozilla.org/en-US/docs/Games/Techniques/2D_collision_detection
+114. What is AABB - Collision detection? - Stack Overflow, https://stackoverflow.com/questions/22512319/what-is-aabb-collision-detection
+115. generic swept sphere collision detection algorithm. - Real-Time Physics Simulation Forum, https://pybullet.org/Bullet/phpBB3/viewtopic.php?t=1452
+116. Collision detection - Game Physics, https://perso.liris.cnrs.fr/nicolas.pronost/UUCourses/GamePhysics/lectures/lecture%206%20Collision%20Detection.pdf
+117. Simple Oriented Bounding Box OBB collision detection explaining - Stack Overflow, https://stackoverflow.com/questions/47866571/simple-oriented-bounding-box-obb-collision-detection-explaining
+118. bounding boxes - OBB vs OBB Collision Detection - Game Development Stack Exchange, https://gamedev.stackexchange.com/questions/25397/obb-vs-obb-collision-detection
+119. Collision response - Wikipedia, https://en.wikipedia.org/wiki/Collision_response
+120. Collision Response - Chris Hecker, https://chrishecker.com/images/e/e7/Gdmphys3.pdf
+121. Rigid Body Collision Response - cs.utah.edu, https://users.cs.utah.edu/~ladislav/kavan03rigid/kavan03rigid.pdf
+122. Collision Resolution - Game Development Stack Exchange, https://gamedev.stackexchange.com/questions/5906/collision-resolution
+123. 2D Impulse-based Rigid Body Dynamics : r/gamedev - Reddit, https://www.reddit.com/r/gamedev/comments/5sp9xb/2d_impulsebased_rigid_body_dynamics/
+124. Rigid body physics resolution causing never ending bouncing and jittering, https://gamedev.stackexchange.com/questions/131219/rigid-body-physics-resolution-causing-never-ending-bouncing-and-jittering
+125. Physics - Collision Response, https://research.ncl.ac.uk/game/mastersdegree/gametechnologies/physicstutorials/5collisionresponse/Physics%20-%20Collision%20Response.pdf
+126. Collision Response and Coulomb Friction | Gaffer On Games, https://gafferongames.com/post/collision_response_and_coulomb_friction/
+127. LCP w/friction - Real-Time Physics Simulation Forum - PyBullet, https://pybullet.org/Bullet/phpBB3/viewtopic.php?t=1033
+128. 3D Coulomb Friction - Use Collision Impulse To Calculate Friction Force?, https://gamedev.stackexchange.com/questions/152877/3d-coulomb-friction-use-collision-impulse-to-calculate-friction-force
+129. Why do the friction forces in this simulation make objects behave in an unstable way?, https://stackoverflow.com/questions/20871485/why-do-the-friction-forces-in-this-simulation-make-objects-behave-in-an-unstable
+130. How to implement friction in a physics engine based on "Advanced Character Physics", https://gamedev.stackexchange.com/questions/34968/how-to-implement-friction-in-a-physics-engine-based-on-advanced-character-physi
+131. Announcing Newton, an Open-Source Physics Engine for Robotics Simulation | NVIDIA Technical Blog, https://developer.nvidia.com/blog/announcing-newton-an-open-source-physics-engine-for-robotics-simulation/
+132. research.ncl.ac.uk, https://research.ncl.ac.uk/game/mastersdegree/gametechnologies/previousinformation/physics1introductiontonewtoniandynamics/2017%20Tutorial%201%20-%20Introduction%20to%20Newtonian%20Dynamics.pdf
+133. Verlet Integration - YouTube, https://www.youtube.com/watch?v=-GWTDhOQU6M
+134. Euler and Verlet Integration for Particle Physics - Gorilla Sun, https://www.gorillasun.de/blog/euler-and-verlet-integration-for-particle-physics/
+135. Verlet Integration and Cloth Physics Simulation - Pikuma, https://pikuma.com/blog/verlet-integration-2d-cloth-physics-simulation
+136. Physics Tutorial 2: Numerical Integration Methods, https://research.ncl.ac.uk/game/mastersdegree/gametechnologies/previousinformation/physics2numericalintegrationmethods/2017%20Tutorial%202%20-%20Numerical%20Integration%20Methods.pdf
+137. Integrators in physics engines (RK4, Improved Euler); how do you apply forces without breaking the scene / accuracy? - Reddit, https://www.reddit.com/r/gamedev/comments/4gu0ke/integrators_in_physics_engines_rk4_improved_euler/
+138. Verlet Rope in Games - toqoz.fyi, https://toqoz.fyi/game-rope.html
+139. The PBD Simulation Loop | PBD - Carmen's Graphics Blog, https://carmencincotti.com/2022-08-01/the-pbd-simulation-loop/
+140. Verlet Simulations - DataGenetics, http://datagenetics.com/blog/july22018/index.html
+141. The A* Algorithm: A Complete Guide | DataCamp, https://www.datacamp.com/tutorial/a-star-algorithm
+142. Introduction to A\* - Stanford CS Theory, http://theory.stanford.edu/~amitp/GameProgramming/AStarComparison.html
+143. Tech Breakdown: AI with Finite State Machines - Little Polygon Game Dev Blog, https://blog.littlepolygon.com/posts/fsm/
+144. Finite-state machine - Wikipedia, https://en.wikipedia.org/wiki/Finite-state_machine
+145. Finite State Machine Ai Overview | Restackio, https://www.restack.io/p/state-machines-answer-finite-state-machine-ai-cat-ai
+146. Behavior Tree Theory | Epic Developer Community, https://dev.epicgames.com/community/learning/tutorials/qzZ2/unreal-engine-behavior-tree-theory
+147. Behavior Trees in Action:A Study of Robotics Applications - Page has been moved, https://www.cse.chalmers.se/~bergert/paper/2020-sle-behaviortrees.pdf
+148. Procedural Content Generation using Behavior Trees (PCGBT) - CEUR-WS.org, https://ceur-ws.org/Vol-3217/paper11.pdf
+149. Building Utility Decisions into Your Existing Behavior Tree - Game AI Pro, http://www.gameaipro.com/GameAIPro/GameAIPro_Chapter10_Building_Utility_Decisions_into_Your_Existing_Behavior_Tree.pdf
+150. Using Behaviour Trees to Model Battle Drills for Computer-Generated Forces, https://www.sto.nato.int/publications/STO%20Meeting%20Proceedings/STO-MP-MSG-171/MP-MSG-171-01.pdf
+151. Building Behavior Trees from Observations in Real-Time Strategy Games - School of Computer Science, https://www.cs.auckland.ac.nz/research/gameai/publications/Robertson_Watson_INISTA15.pdf
+152. Implementing Object Pooling in Unity for Performance - Wayline, https://www.wayline.io/blog/implementing-object-pooling-in-unity-for-performance
+153. Maximizing Memory Management: Object Pooling in Games - DEV Community, https://dev.to/patrocinioluisf/maximizing-memory-management-object-pooling-in-games-6bg
+154. Computer Graphics Learning - Object Pool, https://cglearn.eu/pub/programming-patterns-in-computer-games/object-pool
+155. Custom memory allocators | Metric Panda Games, https://www.metricpanda.com/rival-fortress-update-16-custom-memory-allocators/
+156. Memory Management in Game Engines: What I've Learned (So Far) - Jennifer Chukwu, https://jenniferchukwu.com/posts/memory
+157. mtrebi/memory-allocators: Custom memory allocators in C++ to improve the performance of dynamic memory allocation - GitHub, https://github.com/mtrebi/memory-allocators
+158. Custom Allocators in C++: High Performance Memory Management - John Farrier, https://johnfarrier.com/custom-allocators-in-c-high-performance-memory-management/
+159. Containers and memory fragmentation - GameDev.net, https://www.gamedev.net/forums/topic/695903-containers-and-memory-fragmentation/
+160. C++ memory allocator for games : r/gamedev - Reddit, https://www.reddit.com/r/gamedev/comments/f4nh49/c_memory_allocator_for_games/
+161. Why should I use custom allocators? : r/gameenginedevs - Reddit, https://www.reddit.com/r/gameenginedevs/comments/m44tfd/why_should_i_use_custom_allocators/
+162. Unity at GDC - Job System & Entity Component System - YouTube, https://www.youtube.com/watch?v=kwnb9Clh2Is
+163. The Job System in 'Cyberpunk 2077': Scaling Night City on the CPU - GDC Vault, https://gdcvault.com/play/1034296/The-Job-System-in-Cyberpunk
+164. How do game engines calculate frame-to-frame? : r/gamedev - Reddit, https://www.reddit.com/r/gamedev/comments/zqda6g/how_do_game_engines_calculate_frametoframe/
+165. Render Thread Jobification - Riccardo Loggini, https://logins.github.io/programming/2020/12/31/RenderThreadJobification.html
+166. Building a JobSystem - Rismosch, https://www.rismosch.com/article?id=building-a-job-system
+167. task-based multithreading GDC 2010 - YouTube, https://m.youtube.com/watch?v=1sAR3WHzJEM&pp=sAQA
+168. Scene Graphs - Wisp Wiki, https://teamwisp.github.io/research/scene_graph.html
+169. So what is a scene graph? : r/gamedev - Reddit, https://www.reddit.com/r/gamedev/comments/80xkwt/so_what_is_a_scene_graph/
+170. Scene Graph - Open 3D Engine - O3DE, https://docs.o3de.org/docs/user-guide/assets/scene-pipeline/scene-graph/
+171. Game engines: What are scene graphs? - c++ - Stack Overflow, https://stackoverflow.com/questions/5319282/game-engines-what-are-scene-graphs
+172. How to Reduce Background Noise in Audio Using DSP - SPON Communications, https://sponcomm.com/info-detail/how-to-reduce-background-noise-in-audio-using-dsp
+173. 9 Digital Signal Processing - tonmeister.ca, https://www.tonmeister.ca/main/textbook/intro_to_sound_recordingch10.html
+174. Sampling (signal processing) - Wikipedia, https://en.wikipedia.org/wiki/Sampling_(signal_processing)
+175. Audio Signal Processing - Filtering & Reverb - YouTube, https://www.youtube.com/watch?v=EEkH7zFPzTs
+176. Reverb Algorithm : r/DSP - Reddit, https://www.reddit.com/r/DSP/comments/1baxiyo/reverb_algorithm/
+177. Past, Present, and Future of Spatial Audio and Room Acoustics The authors contributed equally to this work. - arXiv, https://arxiv.org/html/2503.12948v1
+178. Spatialization Overview in Unreal Engine - Epic Games Developers, https://dev.epicgames.com/documentation/en-us/unreal-engine/spatialization-overview-in-unreal-engine
+179. Working with 3D spatialized objects - Audiokinetic, https://www.audiokinetic.com/library/2024.1.2_8726/?source=Help&id=working_with_3d_objects
+180. Interactive 3D Audio Rendering in Flexible Playback Configurations - APSIPA, http://www.apsipa.org/proceedings_2012/papers/401.pdf
+181. Real-time binaural rendering with virtual vector base amplitude panning - CORE, https://core.ac.uk/download/pdf/210513347.pdf
+182. Spatial Audio.pdf, https://courses.cs.washington.edu/courses/cse490j/18sp/assignments/assignment_6/resources/Spatial%20Audio.pdf
+183. Mastering the Dot Product of Vectors for Real Applications, https://www.numberanalytics.com/blog/mastering-dot-product-vectors-real-applications
+184. Dot Products in Games and Their Use Cases - Amir Azmi, https://amirazmi.net/dot-products-in-games-and-their-use-cases/
+185. Best Game Development Books: In-Depth Reviews - Udonis Blog, https://www.blog.udonis.co/mobile-marketing/mobile-games/best-game-development-books
+186. Must read books about GameDev, that is not about Game Engines? - Reddit, https://www.reddit.com/r/gamedev/comments/1dzqhpq/must_read_books_about_gamedev_that_is_not_about/
+187. Amazon Best Sellers: Best Game Programming, https://www.amazon.com/Best-Sellers-Game-Programming/zgbs/books/15375251
+188. IEEE Transactions on Games Journal - Impact Factor - S-Logix, https://slogix.in/research/journals/ieee-transactions-on-games/
+189. IEEE transactions on games (Institute of Electrical and Electronics Engineers) | 316 Publications | 144 Citations | Top authors | Related journals - SciSpace, https://scispace.com/journals/ieee-transactions-on-games-1euknpok
+190. IEEE Transactions on Games - Impact Factor & Score 2025 - Research.com, https://research.com/journal/ieee-transactions-on-games
+191. IEEE Transactions on Games, https://transactions.games/
+192. Game Developers Conference (GDC) | The Game Industry's Premier Professional Event, https://gdconf.com/
+193. Game Artificial Intelligence (AI) Summit | Game Developers Conference (GDC), https://gdconf.com/game-artificial-intelligence-ai-summit
+194. Best Game Industry Events and Conferences for 2025, https://www.gameindustrycareerguide.com/best-game-industry-events-conferences/
+195. Proceedings of the AAAI Conference on Artificial Intelligence and Interactive Digital Entertainment, https://ojs.aaai.org/index.php/AIIDE/index
+196. Unreal Engine: The most powerful real-time 3D creation tool, https://www.unrealengine.com/
+197. Unreal Engine 5.5 Documentation - Epic Games Developers, https://dev.epicgames.com/documentation/en-us/unreal-engine/unreal-engine-5-5-documentation
+198. Project Structure & Naming Conventions - Technical Guide To Linear Content Creation: Pre-Production, https://dev.epicgames.com/community/learning/courses/r1M/unreal-engine-technical-guide-to-linear-content-creation-pre-production/mX6b/unreal-engine-project-structure-naming-conventions
+199. Script structure - Unity Documentation, https://docs.unity.com/ugs/manual/cloud-code/manual/scripts/how-to-guides/script-structure
+200. Document your package - Unity - Manual, https://docs.unity3d.com/6000.0/Documentation/Manual/cus-document.html
+201. Unity Documentation, https://docs.unity.com/
+202. Game Design - The Best Blogs and Websites - Feedly, https://feedly.com/i/top/game-design-blogs
+203. Voxagon Blog | A game technology blog by Dennis Gustafsson, https://blog.voxagon.se/
+204. www.google.com, https://www.google.com/search?q=open+source+game+engines+list
+205. Top 73 Free & Open Source Game Engines Compared - Dragonfly, https://www.dragonflydb.io/game-dev/engines/free
+206. Open source Game engines - OSSD, https://opensourcesoftwaredirectory.com/Game-development/Game-engines
+207. A list of open source game engines. - GitHub, https://github.com/bobeff/open-source-engines
+208. Unreal's documentation is plentiful, it's just inaccessible and impossible to reference quickly : r/unrealengine - Reddit, https://www.reddit.com/r/unrealengine/comments/1i9lvz0/unreals_documentation_is_plentiful_its_just/
+209. How to write documentation of a project - Unreal Engine Forums, https://forums.unrealengine.com/t/how-to-write-documentation-of-a-project/250880

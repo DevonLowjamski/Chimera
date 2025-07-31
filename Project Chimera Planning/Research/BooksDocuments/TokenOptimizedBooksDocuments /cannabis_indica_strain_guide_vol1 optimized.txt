@@ -1,0 +1,214 @@
+```text
+cannabis_indica_strain_guide_vol1.txt
+
+Cannabis Indica: 100 strains, global breeders.  Genetic history, growing traits, taste, effects.  $20.00. ISBN 978-1-931160-81-0.
+
+Plant Growth Stages: Seedling (young, vulnerable), Vegetative (leaf/stem growth), Flowering (bud production). Unique environmental/nutritional needs per stage.
+
+Indica characteristics: Squat, short, stubby leaves, rapid growth/flowering.  Suitable for indoor, SOG, ScrOG. Landrace varieties exist but hybridization creates domesticated strains. Cannabinoids induce "couch lock" stone. Afghani#1, Afghani, Kush are popular pure indica lines.  "Mostly indica" strains have >50% indica traits, often taller with cerebral high.
+
+Strain Data (100 strains, abbreviated entries):
+
+Adonai Kush (Kushman Massive): Silvertooth (Super Silver Haze x Sweet Tooth #3) x Russian Kush.  THC 19%. Lazy stone, munchies.
+
+Afghani Milk (Ch9 Female Seeds): Ch9 Vintage 2006 x Mazar-i-Sharif. THC 18-22%. Sticky, high resin, fast growing. Tangy, hashy.  Relieves stomach pain, MS spasms.
+
+Afghanica (Flying Dutchmen): Afghani x Skunk. THC 18%. Easy grow, hardy. Hashy taste, mellow body high.
+
+Afgoo (Northstone Organics): Afghani Kush x Maui Haze. THC 20%. Sedative, piney taste. Sleep-inducing.
+
+Atomic Northern Lights (Dr. Atomic Seeds): Northern Lights #5. THC 17%. Short, bushy, frosted buds. Prolonged, intense high.
+
+Auto Bud (Autofem Seeds): Lowryder x Big Bud male/Hindustani female. THC ?. Dense buds, auto-flowering. Big Bud flavors, strawberry smell, couch lock.
+
+Auto White Domina (Kannabia Seeds): Ruderalis x Black Domina. THC 20%. Tall, central cola, lateral branches.  Mold resistant, high yield (400g/sq yd). Afghan taste, citrus hint.
+
+Babylonia Fruit (Vulkania Seeds): Nepalese Landrace x African/Asian. THC 16%. Small, minimal branching.  Fast flowering (55-65 days), easy grow. Sweet, fruity smell, narcotic high.
+
+Big Buddha Cheese (Big Buddha Seeds): Skunk #1 x Afghani. THC 19%. Pungent, cheddar-like aroma. Uplifting high.
+
+Bigger Pine x Bubble Gum (Original Sensible Seed Co.): Bigger Pine x Bubble Gum. THC 18%. Short, bushy, pine-cone buds. Sweet aroma.
+
+Blue Donkey Dick (Karmaceuticals): Blueberry x Donkey Dick. THC 17%. Large colas, purple/blue tints (cold temps). Uplifting, fruity, skunky high.
+
+Blue Fruit (Dinafem Seeds): Mexican Purple x Thai x Afghani (Blueberry). THC 12-19%. Vigorous growth, blue/purple coloration (cold temps).  Calming high.
+
+Blue Mistic (Royal Queen Seeds): California origin. THC 20%. Compact, blue hues (flowering). High yield (450g). Little aroma, fruity, smooth smoke.
+
+Blue North Special (North of Seeds): Blue x Beast. THC 14-18%. Mildew resistant. High yield (up to 500g). Berry aroma, positive high.
+
+Blue Rhino (Positronic Seeds): Blueberry x White Rhino. THC 16%.  Large central cola. Blueberry, woody hints. Heavy, long-lasting high.
+
+Blueberry (DJ Short): Blueberry Line. THC 16-24%. Medium-tall, long branches. Lavender buds. Euphoric, long-lasting high.
+
+Blueberry Headband (Emerald Triangle Seeds): Blueberry x Headband. THC 15-20%. Medium size, may need staking. Blue hues, energetic, long-lasting high.
+
+Blush (Whish Seeds): Blue Moonshine x Berlin (Afghani x Thai x Afghani). THC 16%.  Best in colder climates. Earthy, floral taste. Relaxing, sleep-inducing.
+
+BLZ Bud (Seedism Seeds): G-13 x Silver Haze x Train Wreck. THC 19%. Sweet, sour, spicy taste. Couch lock, then euphoria.
+
+Buddha’s Sister (Soma Seeds): Reclining Buddha x Afghani Hawaiian. THC 18%. Silky buds. Cherry candy flavor, tart smell. Powerful cerebral high.
+
+Bullshark (The Bulldog Seeds): Great White Shark x Skunk #5. THC 17%. Fast growing, dense buds. Skunky, fruity taste.  Strong body high.
+
+Burmese Kush (TH Seeds): Burmese Kush x OG Kush. THC 18%. Low leaf-to-flower ratio. Citrus zest, silky smooth smoke.
+
+Cannaberry (Allele Seeds Research): Cannalope Haze x Northern Lights x Blueberry. THC 18%. Two phenotypes.  Fruity taste, energizing high.
+
+Caramel (Poor White Farmer Seeds): Chemdawg 1991 x Butterscotch Hawaiian F2. THC 17%.  Viney growth. Butterscotch/rubber aroma. Strong, giggly high.
+
+
+Clockwork Orange (Riot Seeds): Clockwork Orange S1 x G13 Black Widow. THC 21%. Giant leaves, organic grow preferred. Woody, earthy taste. Introspective high.
+
+COG (Kingdom Organic Seeds): Cinderella 99 x OG Kush/White Widow. THC 19-21%. Heavy feeder, large buds. Grape Kool-Aid, hashish smell. Relaxing high, appetite stimulant.
+
+Cogollon Powell (Dr. Canem & Company Seeds): Big Bud x Afghan. THC 17-20%. High yielding. Smooth, happy high.
+
+Cream Caramel Auto (Sweet Seeds): Auto-flowering. THC 19%. East Indian BlueBlack x Maple Leaf Indica x White Rhino. Dense buds, earthy aroma.  Spacey, dissociative high.
+
+Deep Purple (Subcool/TGA): Purple Urkle x Querkle. THC 17-18%. Short, stocky.  Musty grape taste. Uplifting, anti-depressant.
+
+Deimos (Buddha Seeds): Northern Lights x Ruderalis. THC 17%. Auto-flowering, bushy, high yielding. Sweet, tangy taste. Relaxing, contemplative high.
+
+Devil (Mr. Nice Seeds): Afghan x Afghan/Skunk. THC 18%. Outdoor grow preferred. Sour smoke, introspective high.
+
+Double Dutch (Magus Genetics): Warlock x pre-2000 Chronic. THC 18%. Large, dense buds. Cheese-like taste, wildflower aroma. Strong head and body high.
+
+Double Fun (No Mercy Supply): Citral x Dr. Weedman. THC 16%. Mold and fungi resistant.  Lemon smell, sweet citrus smoke. Strong psychoactive effect.
+
+Double Kush (Delta 9 Labs): Kushage x Afghan Kush. THC 16%. SOG preferred. Fruity taste and smell.  Uplifting, pain relief.
+
+Dready Berry (Dready Seeds): Blueberry x White Widow. THC 16-20%.  Large, blue/purple buds. Fruity, skunky taste.  Relaxing, long-lasting high.
+
+Dream Catcher (Taylor’d Genetics): Skunk x Afghani. THC 20%. Uniform growth, easy to clone. Melon/strawberry flavor. Positive, relaxing high.
+
+Garberville Purple Kush (Ocanabis): Purple Afghani x Hindu Kush. THC 19%. Dark fruit flavors. Energetic, body high.
+
+Gordy Spice #18 (Motarebel): G-13 x BCSC Northern Lights #5. THC ?. Resilient. Purple tint.  Strong, relaxing high.
+
+Grape Stomper (Gage Green Genetics): Purple Elephant x Elite Seeds Chemdog Sour Diesel. THC 20%. Lavender trichomes. Relaxing, pain-relieving high.
+
+Grubbycup’s Stash (Grubbycup Stash Seeds): (White Rhino x Blueberry) x (Blackberry x Purple Lady). THC 17%. Whorled phyllotaxis. Strong, long-lasting high.
+
+Hashberry (Mandala Seeds): Californian Hybrid x Landrace North Indian (Kashmiri). THC 15-18%. Vigorous, resistant.  Potent hash. Balanced high, sleep-inducing.
+
+Himalaya Blue Diesel (Short Stuff Seeds): Lowyrder #2 x Blueberry x Auto Nepalese Kush x NYC Diesel. THC 18%. Auto-flowering. Fruity, spicy taste. Giggly, couch-lock high.
+
+Hindu Kush (Original Seeds): Landrace Hindu Kush. THC 17%.  Small, deep green plants (indoor).  Sandalwood, charas smell.  Hypnotic high.
+
+Ice Kush (Advanced Seeds): Kush x South African Sativa. THC 16%. Typical indica look, larger buds. Citrus, strawberry aroma. Balanced high.
+
+Iranian Autoflower (Dr. Greenthumb Seeds): Iranian Landrace Selection. THC ?. Auto-flowering, high yield (100-200g). Hashey taste, uplifting then body stone.
+
+Jet Fuel (Sativa Tim): Green Giant x Humboldt Select x Apollo 11. THC ?. Sturdy, short. Orange undertones, bold taste. Scatterbrained high.
+
+Kalijah (Reggae Seeds): Blue Heaven x Mexican x Afghani. THC 17%. SOG suitable. Fruity smoke, long-lasting high.
+
+Kamoto Kush (M.G.M. Genetics): Purple Kush x Indica 6. THC 19%. Slow vegetative growth. Coffee, hash smell. Couch lock, munchies.
+
+Kandahar (Ministry of Cannabis): Afghan Kandahari x Skunk. THC 19.5%. Fat leaves, ScrOG suitable. Musky, woody taste. Powerful high.
+
+King’s Kush (Green House Seed Co.): OG Kush x Grape. THC 19%. Medium-sized. Purple tints (cold temps). Grape aroma, strong high.
+
+Kong (Holy Smoke Seeds): Motavation IBL x White Russian BX. THC 21-23%.  Massive buds, may need staking. Couch lock high.
+
+Kushdee (ASG Seeds): Allstar Kush x Alegria. THC 18-19%. Large stalks. Petroleum, citrus aroma. Heavy body stone.
+
+KWT (Zenseeds): Krome’s The White (Triangle). THC 19%. Easy to clone. Lemon pine scent. Unique, inspiring high.
+
+L.A. Confidential (DNA Genetics): California Afghani x Afghani Landrace. THC 17%.  Two phenotypes.  Piney, skunky aroma. Relaxing, psychedelic high.
+
+L.A. Ultra (Resin Seeds): MK Ultra x L.A. Confidential. THC 19-23%.  Short, stubby. Spicy, fruity aroma. Energetic, stimulating high.
+
+Lemonberry (Fusion Seeds): Dabney Blue x Lemon Thai Flower Time. THC 19%.  Citrus and berry flavors. Balanced high, giggly.
+
+Lowryder (High Bred Seeds): William’s Wonder x Northern Lights #2 x Mexican Ruderalis. THC 10-12%. Auto-flowering, rapid growth. Sweet smoke. Daytime high.
+
+Machine Gum (Muppet Seeds): Bubble Gum x California Indica/California Desert Sativa. THC 15%.  Medium height. Sweet, menthol flavor. Euphoric, giggly high.
+
+Mad Lion OG (AKVC Collective): Jamaican Kush male (Kingston) x Skywalker OG clone. THC ?.  Pungent aroma. Cerebral high, then couch lock.
+
+Mamba (Green Lantern Seeds): Pre-98 Bubba Kush x ChemDawg. THC 17%. Dense, sizeable buds. Heavy-headed, relaxing high.
+
+
+Mamba Negra (Blimburn Seeds): Critical Mass x Skunk. THC 18%. Uniform plants, large central cola. Fruity aroma, relaxing high.
+
+Master Kush (White Label Seeds): Hindu Kush x Hindu Kush. THC 16%. Short, bushy. Charas-like taste. Euphoric, body high.
+
+Matanuska Tundra (Sagarmatha Seeds): Alaskan origin. THC 18%. Small, compact. Chocolaty smoke, sedative high.
+
+Mazar-I-Sharif (Bomba Seeds): Landrace Mazar-i-Sharif. THC 17%. Large outdoor plants. Pungent, sweet aroma. Mellow, potentially mind-warping high.
+
+Mendo Purp (PureBred Growers): Purple Urkle x Grape Ape x Granddaddy Purps. THC ?. Dark purple (soilless grow).  Relaxing high.
+
+Montreal Chemo (Trichome Pharm): Canadian origin. THC 23%. Sturdy. Pain management, appetite stimulant. Heavy, narcotic high.
+
+Mr. Nice (G-13 x Hash Plant) (Sensi Seeds): G-13 x Hash Plant. THC 20%.  Medium height. Charas-like taste. Powerful body stone.
+
+Mt. Cook (Kiwi Seeds): Afghani/Thai x Northern Lights/Hash Plant. THC 18%.  Heavy buds, may need staking. Earthy taste. Heavy body stone.
+
+Northern Light Special (Spliff Seeds): Afghani x Hindu Kush x Thai. THC 18%. Short, compact. Skunk-like smell, sweet taste.  Strong body high.
+
+Northern Skunk (Peak Seeds): Northern Lights x Pure Skunk F1. THC 20%.  Stocky, low odor. Sweet, skunky taste. Relaxing, long-lasting high.
+
+Obsession (World of Seeds): Gilgit Valley x (White Rhino x Black Domina x Jack Herer). THC 15-20%. Mold resistant. Fruity taste. Relaxing, uplifting high.
+
+Olivia Kush (OtherSide Farms): Hindu Kush x Skunk. THC 20%. Bushy, strong.  Thick smoke, strong couch lock high.
+
+P-91 (Stoney Girl Gardens):  THC 28%.  4-6 feet tall, fast flowering (40 days). Musky, grapefruit, spice taste.  Strong, sleep-inducing high.
+
+Peace Maker (Finest Medicinal Seeds): Super Skunk x White Widow. THC 17%. Short, strong branches. Fruity, candy taste.  Relaxing, long-lasting high.
+
+Pennsylvania Purple (Unknown East Coast Grower): Purple tints. THC 17%. Short, bushy.  Fruity, grape taste. Relaxed, creative high.
+
+Pinkbud (Secret Garden Seeds): LowAsis x M. JEMS x Diesel Ryder. THC ?. Auto-flowering, SOG.  Colorful buds, mellow high.
+
+Puna Blue (Supreme Beans): Hawaiian x Afghani. THC 17%. Large central cola.  Heavy, narcotic, social high.
+
+Purple Pineberry (Secret Valley Seeds): THC 18%. Hardy, mold resistant.  Pine aroma, energizing high.
+
+Red Flame Kush (SinsemillaWorks!): Purple Kush x Blue Moonshine. THC 17%. Fast flowering (7 weeks).  Strong indica high.
+
+Redd Cross (Genetics Gone Madd): Spirit of 76 x unknown Afghani Indica. THC 19%. Compact. Sweet smoke, pain relief.
+
+Sannie’s Herijuana IBL (Sannie’s Seeds): Killer New Haven Strain x Petrolia Headstash. THC 20-25%.  Vigorous branching. Dark coffee/wood taste. Intense couch lock.
+
+SDOGnesia (Ultimate Seeds): Sour Diesel x OG Kush x Amnesia Haze. THC 21%. Shiny, sticky buds. Psychedelic high.
+
+Sensi Star (Paradise Seeds): Unknown Indica Hybrid. THC 15-18%. Dense, resinous buds. Citrus-metallic scent. Strong, long-lasting high.
+
+Shiesel (Bonguru Beans): Shiva x New York City Diesel. THC 18%. Challenging grow.  Fruity, hashy taste. Couch lock high.
+
+Sour Grapes (Apothecary Genetics): Grape Ape x Sour Diesel. THC 19-21%.  Not suitable for SOG. Fast flowering. Wine grape, candy taste. Euphoric body high.
+
+Starbud (HortiLab Seed Company): Unknown Midwest Strain. THC 14-20%.  Shiny, resinous buds. Sweet, dank smell. Heavy body stone.
+
+Sweet Chunk (Alpine Seeds): Sweet Pink Grapefruit x Deep Chunk IBL. THC 16-20%. Compact nuggets. Grapefruit, sweet, fruity taste. Couch lock, uplifting buzz.
+
+Tahoe Gold (Master Thai Seeds): 1968 Skunk #1 x 1975 Hindu Kush. THC 17%. Versatile grow. Sweet taste, positive high.
+
+Taiga (Dutch Passion): Auto-flowering. THC ?. Ruderalis/Indica x Power Plant. Small, compact.  Sharp, Power Plant-like taste. Mellow body stone.
+
+Taleggio (Alphakronik Genes): Exodus Cheese x Space Queen. THC ?. Pungent aroma. Blueberry, vanilla, strawberry flavors. Strong couch lock high.
+
+Taskenti (CannaBioGen): Uzbekistani. THC ?.  Heavy branching. Earthy, fruity taste. Mellow high.
+
+The Happy Brother BX2 (Karma Genetics): Happy Brother x Happy Brother BX1. THC 17%. Small amount of light needed. Citrus, musky, skunky taste. Cerebral, relaxing high.
+
+TNT Kush (Eva Female Seeds): Pakistani Kush. THC 19-21%. High trichome production. Nutty, fruity, cypress aroma. Strong high.
+
+Tony’s Superfrosty (Redstar Farms): Blackberry Kush x 98 Bubba x Afghan. THC 18%.  Short, strong branches. Sweet taste, heavy, therapeutic high.
+
+Towerful (Tropical Seeds Company): Congo Pointe Noir x Pakistan Chitral Kush. THC 19%. One solid top cola. Woody aroma, wine-like taste. Giggly, narcotic high.
+
+Whitaker Blues (JD Short of DJ Short Seeds): Quimby x Blueberry. THC 17%. Stout, compact buds. Grape, vanilla flavor. Relaxing high.
+
+White Russian (Serious Seeds): AK-47 x White Widow. THC 22%. Dense, resinous buds. Strong, long-lasting cerebral high.
+
+X-18 Pure Pakistani (Reserva Privada): Pakistani Indica. THC ?.  Pungent aroma, cheese/chorizo, then citric. Heavy body stone.
+
+Zombie Rasta (Hero Seeds): Black Domina x Bob Marley Collie. THC 23-26%. Large central cola. Fruity, sour taste. Mellow, chilled high.
+
+Zombie Virus (OGA Seeds): Pure Indica x Diesel. THC 19%. Easy grow, easy cloning.  Grape undertones.  Couch lock high.
+
+```

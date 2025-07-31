@@ -1,0 +1,27 @@
+```text
+Medical Cannabis (Cannabis sativa L.) Phosphorus Response:  Vegetative Growth (Long Photoperiod)
+
+Study: Investigated P nutrition effects on two medicinal cannabis genotypes ('Desert Queen' (DQ, high THC), 'Royal Medic' (RM, balanced THC/CBD)) under long photoperiod.  Five P levels (5, 15, 30, 60, 90 mg L⁻¹).
+
+Methods: Controlled environment, 3 L pots (perlite), 18/6 h light/dark, 25°C, 400 μmol m⁻² s⁻¹ (Metal halide bulbs). Irrigation (1 L h⁻¹), 30% drainage.  Nutrient solution: (mM) 10.42 N-NO₃⁻, 2.07 N-NH₄⁺, 2.56 K⁺, 2.99 Ca²⁺, 1.44 Mg²⁺, 1.47 S-SO₄²⁻, 0.06 Cl⁻, 0.021 Fe²⁺, 0.011 Mn²⁺, 0.009 B³⁺, 0.005 Zn²⁺, 0.0008 Cu²⁺, 0.0003 Mo²⁺ (EDTA chelated micronutrients).  Harvest after 30 days.  Analyzed: biomass (leaves, stems, roots), gas exchange (photosynthesis, transpiration, stomatal conductance, intercellular CO2), photosynthetic pigments (chlorophyll a, b, carotenoids), macronutrients (N, P, K, Ca, Mg), micronutrients (Mn, Fe, Zn, Cu).  Bioaccumulation coefficient (BC) and translocation factor (TF) calculated.
+
+Results:
+
+Plant Growth & Development: Biomass maximized at 30 mg L⁻¹ P (both cultivars).  Lower P levels (5 mg L⁻¹) resulted in reduced biomass, stem diameter, plant height, and node number (DQ more sensitive than RM).  >30 mg L⁻¹ P showed no further biomass increase.
+
+Gas Exchange & Photosynthesis: Photosynthesis, transpiration, stomatal conductance, and intercellular CO2 maximized at 30 mg L⁻¹ P (both cultivars).  Higher P levels reduced these parameters (except RM photosynthesis).  Intrinsic water use efficiency (iWUE) highest under P deficiency.
+
+Photosynthetic Pigments: DQ: higher chlorophyll and carotenoid levels under lower P. RM: chlorophyll maximized at intermediate P; carotenoids higher under lower P.
+
+Macronutrients: P accumulated in roots > leaves > stems.  K, N, Ca, Mg showed high shoot translocation.  Genotypic differences in K and N accumulation.  Ca and Mg leaf concentrations maximized at intermediate P; root Ca increased with P.
+
+Micronutrients:  All micronutrients accumulated in roots > leaves > stems (except DQ Zn and Mn). Zn root concentration higher under low P; translocation decreased with increased P (both cultivars).  RM Mn leaf concentration maximized at intermediate P; root Mn higher under high P.  DQ Mn leaf concentration maximized at intermediate P.  Fe root concentration minimized at intermediate P.
+
+Visual Characteristics: 5 mg L⁻¹ P: chlorosis, wilting, reduced leaf size (both cultivars). 15–90 mg L⁻¹ P: no visible deficiency symptoms.
+
+Discussion:
+
+Optimal P range: 15–90 mg L⁻¹, optimum at 30 mg L⁻¹.  P deficiency affects growth, gas exchange, pigment levels.  High P doesn't increase biomass; slightly reduces gas exchange.  Genotypic variation in nutrient uptake, translocation, and accumulation.  P influences macronutrient and micronutrient uptake and translocation.  Zn retention in roots under P deficiency.  Low heavy metal accumulation in medicinal cannabis (vs. hemp).
+
+Conclusion: 30 mg L⁻¹ P recommended for optimal vegetative growth.  Genotypic differences in P response necessitate cultivar-specific fertilization strategies.
+```

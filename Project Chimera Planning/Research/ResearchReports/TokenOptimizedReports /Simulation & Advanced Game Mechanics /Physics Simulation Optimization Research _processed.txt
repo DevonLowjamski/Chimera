@@ -1,0 +1,204 @@
+Physics Simulation Optimization: Abstracted Models and Believable Illusions
+
+(Note: Citations [N] refer to the Works Cited section appended at the end.)
+
+**I. Introduction: Realism-Performance Dilemma in Physics Simulation**
+**A. Enduring Quest for Believable Worlds**
+Physics simulation: cornerstone in particle accelerators (subatomic interactions) [1], molecular dynamics (molecule dance) [2], video games (immersive environments) [3], cinema VFX [4], training platforms [5]. Tension: high fidelity/realism vs. computational/real-time constraints. Recurring challenge, needs optimization [1]. "Realism": Scientific: strict physical law adherence, precise observable phenomena replication [1]. Interactive/VFX: "believability"/"perceptual realism"; engages intuition, enhances narrative [3]; may deviate from accuracy for compelling/performant experience. Legitimizes "faking" physics alongside formal abstraction.
+
+**B. Defining "Optimization"**
+Optimization: holistic balance: cost, accuracy, stability, believability, artistic control [6]. Report focus: 1) formal physics model abstraction/simplification; 2) "faking" complex physics for convincing illusions. Optimization foundational to design, not post-corrective. Influences model/algorithm choice, artistic/engineering direction. Cost-accuracy/believability balance: core design constraint [6]. Simulations as experiment surrogates [8]; efficiency integral.
+
+**C. Report Objectives & Structure**
+Expert overview: optimization strategies (principles, applications, trade-offs). Structure: computational burden; model abstraction (formal reduction, data-driven); "faking" physics; application-specific optimizations (case studies); advanced paradigms & future.
+
+**II. Understanding Computational Burden**
+**A. Sources of Computational Cost & Bottlenecks**
+Demands from:
+*   High fidelity/correctness (scientific/engineering) [1]. Accurate complex laws (particle beams, chemical reactions) need sophisticated models, intensive calculations. E.g., accelerator sims: accuracy priority -> min/hrs per run, ML dataset bottleneck [1].
+*   High dimensionality: vast DoFs (particles, FEM nodes, opt. params) need resources [1]. "Curse of dimensionality" acute in interactive (real-time feedback) [3].
+*   Complex interactions/phenomena: collective effects/space charge (beam physics) [1], contact manifolds (collisions) [3], stiff systems (varied timescales) [7], chemical interactions (MD, SOAP quadratic scaling) [2].
+*   Data-driven (ML): Trained ML model speedups, but high-quality dataset gen. (via high-fidelity sims) costly/slow [1]. E.g., accelerator physics: limited experimental beam time -> sim data for ML, but sims intensive [1]. Cycle: scarce data -> sim data need -> sim gen. bottleneck. Sim opt. crucial for direct use & data gen.
+*   Solver limitations: Iterative linear solvers poor for stiff systems (need costly direct factorization) [7]. Gradient computation (complex models, opt. algos) expensive traditionally [1].
+Bottlenecks: moving targets. Hardware (GPUs [1])/algorithm evolution shifts them (e.g., GPU data transfer/memory/parallelization limits). Optimization: continuous.
+
+**B. Critical Triad: Fidelity, Performance, Believability**
+Trade-off: fidelity vs. performance [1]. Triad: fidelity, performance, "believability." Interactive (games, VR): perceived realism > strict physics if more engaging [3]. Optimal balance varies: Scientific: fidelity. Game: real-time/believability. Film VFX: believability/richness. Cost-accuracy trade-off: substantial cost cuts, "optimization reliability" [6]. Sims: "gap from reality" [8]; perfect fidelity sometimes impractical.
+
+**III. Abstracted Physics Models: Efficient Realism**
+Model abstraction: mitigates burden by simplifying conceptual model, maintaining validity for sim questions [14]. Identify essentials, omit irrelevancies.
+**A. Principles of Model Abstraction/Simplification**
+Core: less complex, tractable reality representation. Levels: quantum -> atomistic -> mesoscopic -> continuum [16]. E.g., circuits: electron movement -> binary logic [17]. Idealizations: rigid bodies, incompressible fluids, frictionless surfaces. E.g., steam generator trainer: water tank simplified (uniform temp/pressure, ignore some heat exchange) [18]. Terramechanics: simplified tire-ground (rect. contact, even weight) [13]. Ship motion: ignore 2nd-order wave excitation [13]. Validity crucial: simplified model must capture relevant phenomena [14]. E.g., FEM for VR handicraft: FEM results (material transform) -> "Action Animators" (pre-computed anim.) preserve traits in real-time VR [5]. Abstraction spectrum: informal heuristics (games) <-> formal model reduction. Data-driven (ML surrogates) in between, increasingly physics-informed [10]. Choice: rigor, domain knowledge, data. Trend: physical consistency in data-driven abstraction [10].
+
+**B. Formal Model Reduction Techniques**
+Math-principled methods: decrease complexity (DoFs) of large dynamical systems, preserve behavior [20].
+*   Coarse-Graining (CG): Principle: Lumps atom/molecule groups into "pseudo-atoms"/"beads" [16]. Larger systems/timescales vs. all-atom. For biomolecules, membranes, polymers. Method: Bottom-up (from all-atom/QM) or top-down (tune to macroscopic observables). Recent: probabilistic generative models learn fine-to-coarse map; e.g., latent space (slow/fast vars) trained via energy-based objective (potential-based, not trajectory-based) [22]. Apps: MD (biomolecular, soft matter, materials) for protein folding, self-assembly, polymer dynamics [16].
+*   Reduced Order Models (ROMs): Concept: Low-dim math reps approximate FOM input-output, reduced cost [19]. Parametric ROMs (pROMs): Accuracy over input param range. For design exploration, control, UOQ, real-time analysis [21]. Techniques: Projection-based (e.g., POD-Galerkin). Identify low-dim subspace (dominant FOM dynamics), project FOM eqns. Innovative: physics-constrained ROMs + DG-DD: ROMs for unit components, assembled for global system. Large-scale sims w/o full-scale data. Speedups 15-40x (Poisson/Stokes), ~1% error [23]. Challenges: ROM stability (non-linear/convective). pROM accuracy over params ("curse of dim."). Basis selection, non-linear term handling critical [19].
+Information loss inherent. Discarded info must be irrelevant. Defines validity domain. Outside: unreliable [2]. E.g., MLFFs unreliable out-of-domain [2]. ROMs for specific params/conditions; generalization needs assessment [19].
+
+**C. Data-Driven Abstraction: ML for Surrogate Modeling & Parameterization**
+ML: tools for data-driven abstraction. Learns input-output from data -> efficient approximations.
+*   Surrogate Models (Emulators): ML (NNs) mimic high-fidelity sims [1]. Particle accelerators: NN surrogates for beam dynamics (fast, differentiable) for online tuning/opt [1]. MD: Machine Learned Force Fields (MLFFs) learn interatomic potentials from QM (DFT accuracy, lower cost) [2]. Challenges: "edge cases"; needs active learning, UQ [2].
+*   Learned Solvers: ML learns to solve diff. eqns. "Metamizer": learned PDE solver. Trained via physics-loss. Generalizes to new PDEs, competitive [10].
+*   ML for Parameterization/Closure Models: For ROMs, ML parameterizes complex terms or learns closure models for unresolved physics [19].
+*   Advantages: Dramatic speedups (complex, non-linear). Captures intricate relations w/o explicit physics.
+*   Challenges: Data Requirements: Large, high-quality data for robust ML; gen. can be bottleneck [1]. Generalization: Out-of-distribution prediction unreliable [2]. Interpretability: "Black box" NNs hard to understand [19]. Physical Consistency: Adherence to laws ongoing research -> physics-informed ML.
+Relationship: ROMs vs. ML-surrogates: symbiotic/competitive. ROMs: consistent, low-dim reps simplify ML or gen. data. ML: parameterizes ROM components [1]. Future: hybrid (PINNs, ML-enhanced ROMs) [19].
+
+**Physics Abstraction/Simplification Techniques Overview:**
+*   **Heuristic Simplification:** Principle: Omit details, intuition-approx. Domains: Games, RT-VFX, Interactive. Adv: Easy, fast. Limits: Lacks rigor, not phys-accurate, hard generalize, unpredictable.
+*   **Coarse-Graining (CG):** Principle: Group DoFs (atoms) to fewer units. Domains: MD (biomolecules, polymers), Materials Sci. Adv: Drastic DoF cut, larger sys/timescales, retains essential phys. Limits: Info loss, CG param hard, transferability issues.
+*   **Projection-based ROMs (e.g., POD-Galerkin):** Principle: Project gov. eqns to low-dim subspace (dominant dynamics). Domains: Fluids, Struct. mech, Heat, Control. Adv: Rigorous, speedup, preserves key dynamics. Limits: Basis gen costly, stability (non-linear/convective), accuracy from basis.
+*   **Parametric ROMs (pROMs):** Principle: ROMs accurate over param range. Domains: Eng. design, Opt, UQ. Adv: Rapid param space explore, UQ/opt. Limits: "Curse of dim." (many params), accuracy/stability over range hard.
+*   **ML Surrogates/Emulators (e.g., NNs):** Principle: Learn input-output map (complex sim) from data. Domains: Sci/Eng, replacing expensive sims. Adv: Models complex/non-linear, massive speedups (trained). Limits: Data-hungry, poor gen. (out-of-dist), "black box"/no interpret, train costly.
+*   **Learned Solvers (e.g., Metamizer):** Principle: ML models learn to solve diff.eqns/sim steps. Domains: PDEs, accel. sim tasks. Adv: High speed, learns complex sol. manifolds, gen. to unseen [10]. Limits: Phys-informed train, data gen, stability/accuracy, interpret.
+*   **Physics-Informed NNs (PINNs):** Principle: Embed phys. laws (PDEs) in NN loss. Domains: Solve/discover PDEs, inverse prob, data-assim. Adv: Less labeled data, phys-consistent sol, sparse/noisy data. Limits: Complex loss opt. hard, "hard" constraints hard, train cost.
+
+**IV. The Art of Illusion: "Faking" Complex Physics Believably**
+Parallel to formal abstraction: "art of illusion" (interactive entertainment, VFX) creates illusion of complex physics. Prioritizes perceptual realism, efficiency, often over strict accuracy. "Faking": not fraud [24]; judicious inexpensive approximations, artistic exaggerations, perceptual tricks for believable real-time phenomena [3].
+**A. Perceptual Realism vs. Physical Accuracy**
+Goal: engage intuition [3] or deepen narrative [4], not meticulous physics replication. Human perception IDs unnatural motion, forgives subtle deviations if coherent/convincing. Exploit perceptual thresholds, focus computation on believability. "Believability threshold" context-dependent (fast game vs. slow cinematic) [26]. Tune to expectations, constraints.
+
+**B. Practical "Faking" Strategies (Games, VFX)**
+*   Simplified Dynamics (Rigid/Soft Bodies):
+    *   Rigid Bodies: Game physics: simplified. Reduced coord. multibody reps [27]. Omit Coriolis (instability) [27]. Discrete collision (cheaper) [27]. Simplified friction [11]. Kinematic movement for less critical objects.
+    *   Soft Bodies (Cloth, Simple Deformables): PBD, Verlet integration popular (stability, control, ease, not energy conserving) [20]. Skinned mesh + procedural secondary motion ("jiggle physics," springs) [28]. Shader-based deformations (displacement map) for wrinkles, impacts on GPU [29]. Image-based animation (virtual clothes fitting) [30].
+*   Efficient Volumetric Effects (Particles, Impostors, Billboards for Smoke, Fire, Explosions):
+    *   Particle Systems: For smoke, fire, sparks, debris. Opt: Sprites/billboards (textured 2D quads) [31]. Flipbooks (animated textures) [31]. Soft particles (alpha blend near geometry) [26]. Distance culling, LOD [31].
+    *   Impostors/Billboards: Represent complex 3D/effects (distant explosions, trees) with 2D images (view-angle dependent) [31]. Reduces geometry.
+    *   Volumetric Textures/Raymarching (Shaders): For smoke, fog, fire: sample 3D textures or shader raymarching [32]. Volumetric lighting: convincing smoke, can be unstable/costly [26].
+*   Approximations (Fluids, Hair, Cloth - beyond basic):
+    *   Fluids (Water, Splashes): Full sim too costly. Screen-space techniques (reflections, refractions). Wave motion: math functions (Gerstner) or FFT (height fields). Splashes, rain: particle systems [33]. Simplified grid (cellular automata) for flow, accumulation, heat [34]. Hybrid: Lagrangian vortex particles (interior features) + Eulerian grid (boundaries) [35].
+    *   Hair: Individual strands prohibitive. "Hair cards"/"strips" (textured polygons) [36]. Specialized shading (Kajiya-Kay, anisotropic) [36]. Dynamics on guide strands/simplified skeleton, interpolated [36]. Distant LOD: volumetric (voxelized, raymarched) [37].
+    *   Cloth (Advanced): Beyond PBD: pre-baked sims or optimized custom solvers. High-fidelity FEM data could gen. real-time components (drape/fold) [5].
+*   Procedural Methods (Dynamic Phenomena):
+    *   Generate procedurally vs. explicit sim. Effects (fire propagation, cracking, destruction): procedural algorithms [38]. Volumetric combustion: charring (voxel grids, SDFs) [38]. Cellular automata: emergent effects (heat, fire) [34]. L-systems, noise, reaction-diffusion: natural patterns, geometry.
+*   Stylized Physics:
+    *   Intentional deviation from realism for art. Cartoon animation (squash/stretch), non-photorealistic rendering. Simplified/altered rules for aesthetic/gameplay. E.g., "Don't Starve" crafting [39].
+*   Effective "faking": often layered simplified sims, procedural elements, visual tricks. Explosion: particles, billboards, shaders, camera shake [31]. Compositional.
+*   Success: authoring tool quality, artistic control. Shader editors [26], particle interfaces, animation software [4] critical [40].
+
+**C. Managing Complexity with Level of Detail (LOD) for Physics**
+LOD: adjust object complexity by distance, screen-size, importance. Applied to physics.
+*   Concept: Simpler, less costly physics for distant/small/occluded/less critical objects [37].
+*   Examples: Dynamic rigid body -> kinematic. Reduced particle emission/complexity. Simpler collision shapes. Hair: detailed strands (close) -> volume-based (distant); smooth transitions (alpha blend/dither) [37]. Hierarchical hair LODs (strands, clusters, strips) [36].
+*   Challenges: Smooth, seamless transitions. Consistent behavior across LODs.
+
+**"Faking" Techniques Catalogue for Common Phenomena:**
+*   **Smoke/Fire/Explosions:** Tech: Billboard particles (sprites)+flipbooks, soft particles, layered FX, impostors. Mech: Perceptual cues (motion,color,opacity), geom. simplify. Impact: Lo-Med. Believ: Med-Hi (context). [26]
+*   **Water Surf/Splashes:** Tech: Screen-space shaders (reflect,refract), Gerstner/FFT waves, particle splashes, proc. textures. Mech: Geom. approx, stat. wave models, simpl. particle dyn. Impact: Med. Believ: Med-Hi. [33]
+*   **Hair/Fur:** Tech: Hair cards/strips, Kajiya-Kay/aniso. shading, guide strand sim, vol. LODs. Mech: Geom. simplify, spec. lighting, reduced sim complex. Impact: Med-Hi. Believ: Med-Hi (density/style). [36]
+*   **Cloth Deform (Basic):** Tech: PBD, Verlet integ, skinned mesh+secondary motion (jiggle). Mech: Simpl. constraint solvers, kinematic augment. Impact: Lo-Med. Believ: Lo-Med (simple items). [20]
+*   **Rigid Body Interact (Games):** Tech: Simpl. collision shapes (AABB,sphere,capsule), discrete collision, omit forces (Coriolis). Mech: Reduced geom. complex, temporal approx, model simpl. Impact: Lo-Med. Believ: Med (gameplay). [11]
+*   **Weather FX (Wind,Rain):** Tech: Proc. vertex displace (veg. wind), particle emit (rain), screen-space FX (cam raindrops). Mech: Algorithmic motion, particle FX, screen overlays. Impact: Lo-Med. Believ: Med. [33]
+*   **Destruction:** Tech: Pre-fractured models, proc. crack gen, particle debris, RB sets (trigger). Mech: Pre-compute, algorithmic patterns, simpl. dynamics. Impact: Med. Believ: Med-Hi (spectacle). [38]
+*   **Volumetric Fog/Light Shafts:** Tech: Shader raymarch, vol. textures, screen-space scatter approx. Mech: Light transport approx, vol. sampling. Impact: Med-Hi. Believ: Med-Hi. [32]
+
+**V. Application-Specific Optimization & Case Studies**
+Choice influenced by app requirements. "Optimal" varies. "Purpose-driven" opt: success criteria dictate trade-offs.
+**A. Interactive Systems: Games, VR/AR Training**
+Demand real-time, stability, controllable/predictable physics.
+*   Games: Physics for gameplay, visuals, emergence [3]. Constraints: frame rates, intuitive/enjoyable interactions. Tech: PBD, simplified rigid bodies, particles, LOD [3]. Pre-calc/procedural destruction. Scalability (multiplayer): Cloud physics. "Aura projection" for distributed servers [7]. Case: Unity/PhysX: "wild glitches," collider bottlenecks, vehicle tuning. Opt: manage colliders, rigidbodies, ragdolls. Profiling for hotspots ("physics spiral of doom," desync) [40]. Case: Real-time Terrain/Ship Sim (Unity): Adapts terramechanics/hydrodynamics. Simplifies eqns, assumptions (tire contact, wave forces), GPU use (geom. shader tracks, vertex shader surfaces) [13].
+*   VR/AR Training: Believable interaction (manual skills, machinery). Accuracy (human-tool) for learning transfer [5]. Hybrid Realities: High-fidelity offline physics + real-time game engines (Unity for interaction/render, pre-comp/abstracted physics for core realism). Case: FEM for Handicraft Training (VR): Detailed FEM (Abaqus) for material transform. Results pre-comp. as "Action Animators" in Unity VR [5]. Case: Steam Generator Operator Training: Dynamic models (Matlab-Simulink) + VR. Real-time via model simplifications (e.g., water tank: stirred vol., uniform T/P, neglect minor heat exchange) [18].
+
+**B. Scientific & Engineering Sims: Approximation with Rigor**
+Accuracy paramount, but scale/complexity need approx/opt.
+*   Accelerator Physics: Design, operation, opt. rely on complex sims. Challenge: Intensive beam dynamics sims hamper ML data gen, slow online tuning [1]. Scarce "beam time" -> sim data need -> faster codes [1]. Solution: "cheetah" code: tensorized computation (GPU), speed opt (simplified transfer matrices). Orders of magnitude speedup. Enables RL-tuning, numerical opt. NN-surrogates explored [1]. Bayesian Optimization (BO): Sample-efficient for expensive functions. Online tuning, offline opt [1].
+*   Molecular Dynamics: Atomic behavior for drug discovery, materials, biochem. Challenge: Atomistic sim cost scales rapidly (atoms, timescale) [2]. Solutions: MLFFs: Learn potentials from QM (DFT), speedup dynamics [2]. Challenges: featurization scaling (SOAP), out-of-domain reliability. GMP featurization aims to fix scaling [2]. CG: Reduces DoFs, longer sim times [16].
+*   General Engineering Design/Opt: Sims for validation, prediction, opt. ROMs: For design space exploration, UQ, multi-objective opt (need many runs) [8]. Scalable ROMs + DG-DD: For large-scale eng. ROMs for "unit components," assembled. Poisson/Stokes 15-40x faster, ~1% error, less memory. Vital for lab-to-industry [23]. Advanced Opt Formulations: Multi-objective (competing criteria): traditional Pareto limited by noise/inaccuracy. Constraint Active Search (CAS): diverse, robust solutions satisfying criteria [8].
+ML relies on sim data due to experiment cost/impracticality (accelerators [1], materials [2]). Sim's dual role (predictive tool + ML data gen) makes opt. critical.
+
+**VI. Advanced Optimization Paradigms & Future Outlook**
+Beyond direct abstraction/"faking": intelligent algorithms, hybrid philosophies. Tackle sample efficiency, consistency, model limits.
+**A. Intelligent Search: Bayesian Optimization & Active Learning**
+Expensive sims -> intelligent search for optimal params / model accuracy.
+*   Bayesian Optimization (BO): Global opt for costly black-box functions [9]. Builds probabilistic surrogate (Gaussian Process) of objective. Acquisition function balances exploration/exploitation. For accelerator tuning, sim calibration [1]. Handles high-dim outputs (tensor GPs) [9].
+*   Active Learning: For data-driven models (MLFFs in MD), improves accuracy efficiently [2]. Iteratively selects most informative new data (via UQ) for labeling (expensive DFT). Desired accuracy, fewer labels [2].
+
+**B. Hybrid Approaches: First Principles + Data-Driven Insights**
+Combine physics-based (interpretability, laws) + ML (flexibility, power).
+*   PINNs & Related: ML (NNs) embed physical laws in learning (PDEs/ODEs as loss constraints) [10]. Reduces labeled data, improves generalization, physical consistency. "Metamizer" uses physics-loss [10]. Extends to ML-learned ROM dynamics [19].
+*   Combining ROMs & ML: Synergistic. ML learns ROM closure terms or IDs optimal basis/accelerates solution [19].
+*   Hybrid Fluid Solvers: E.g., Lagrangian vortex (interior features) + Eulerian grid (boundaries). Two-way coupling for info transfer [35].
+Philosophy: "best of both worlds": robust/interpretable/consistent first-principles + ML for complexity/data-learning/non-linearity.
+
+**C. Navigating Limitations: Accuracy, Stability, Generalizability**
+Abstracted/simplified models have limits. "No Free Lunch."
+*   Accuracy Trade-offs: Simplification discards info. Model "accurate enough" for purpose. Quantify error, bounds essential [8].
+*   Stability: Reduced models (esp. data-driven, long-time integration) can be unstable [19]. A priori ROM param learning no guarantee.
+*   Generalizability (Domain of Validity): Models trained for one condition may not generalize [2]. Out-of-distribution (ML). ROMs depend on training discretization [19].
+*   Interpretability: "Black box" NNs barrier in critical domains/research [19].
+*   Model Construction Cost: Abstracted models fast to eval, construction intensive (data gen, basis calcs, ML training) [1].
+UQ importance grows. Rigorous confidence quantification. UQ in active learning (MLFFs) [2], BO (GPs) [43]. For critical decisions.
+Complex, multi-objective problems (uncertainties, goals [8]): shift to robust "good enough" solutions (vs. single "optimum"). E.g., CAS [8].
+
+**D. Future Outlook**
+Evolution driven by:
+*   Deeper ML/Physics Integration: Sophisticated hybrids: accurate, robust, consistent.
+*   Robust/Generalizable Reduced Models: Overcome stability/generalizability limits (new theory, advanced learning).
+*   Hardware Advancements: Quantum computing [44], AI accelerators alter landscape.
+*   Interpretability/Trustworthiness: Crucial for ML adoption in critical apps.
+*   Standardized Benchmarks/Frameworks: E.g., Broadmark (collision detection [45]) for progress, reproducibility.
+
+**VII. Conclusion: Strategic Pathways to Efficient & Believable Physics Simulation**
+Continuous journey: rich virtual worlds vs. computational constraints. Opt. techniques: formal abstraction & "faking."
+**A. Recap of Key Strategies**
+Manage complexity. Formal abstraction (CG, ROMs): math-principled DoF reduction, preserve behavior (sci/eng). Data-driven (ML): surrogates, learned solvers, PINNs. Capture non-linearity, speedups. Perceptual "faking" (interactive/VFX): believability, real-time. Simplified dynamics, particles, impostors, shaders, procedural. Understand bottlenecks first.
+
+**B. Guiding Principles for Selecting Techniques**
+Strategic approach:
+1.  "No Free Lunch": Trade-offs: fidelity, performance, cost, data, ease, interpretability. Optimal choice context-dependent.
+2.  Application-Driven Selection: Goals dictate compromises, techniques (scientific accuracy vs. game interaction vs. film VFX).
+3.  Value of Hybrid Approaches: Combine strengths (PINNs, ML-ROMs, layered "faking") often superior.
+Choosing/tuning/managing: complex meta-optimization. Strategic mindset for costs/benefits [6].
+
+**C. The Future is Integrated and Intelligent**
+Trajectory: integrated, intelligent. Physics-modeling & AI/ML blur -> novel hybrids (powerful, robust, interpretable). Rigorous validation, V&V, UQ critical for reliability (high-stakes decisions). Progress via community, open standards (tools, engines, benchmarks, platforms) [45].
+Optimization: dynamic, ongoing. Critical for science, engineering, interactive experiences. Future: virtual more closely/efficiently mirrors/evokes physical world.
+
+**Works cited**
+1. Bridging the gap between machine learning and particle accelerator ..., accessed May 6, 2025, https://link.aps.org/doi/10.1103/PhysRevAccelBeams.27.054601
+2. Overcoming the Chemical Complexity Bottleneck in on-the-Fly ..., accessed May 6, 2025, https://pubs.acs.org/doi/10.1021/acs.jctc.4c00474
+3. Physics for Game Programmers : Physics Optimization ... - GDC Vault, accessed May 6, 2025, https://gdcvault.com/play/1022198/Physics-for-Game-Programmers-Physics
+4. Become a Visual Effects Artist in 2025: A Complete Guide - FilmLocal, accessed May 6, 2025, https://filmlocal.com/filmmaking/how-to-become-a-visual-effects-artist-a-beginners-roadmap-to-hollywood/
+5. Physics-Based Tool Usage Simulations in VR - MDPI, accessed May 6, 2025, https://www.mdpi.com/2414-4088/9/4/29
+6. Simulation optimization: A comprehensive review on theory and ..., accessed May 6, 2025, https://www.researchgate.net/publication/245315349_Simulation_optimization_A_comprehensive_review_on_theory_and_applications
+7. I3D '19- Proceedings of the ACM SIGGRAPH Symposium on ..., accessed May 6, 2025, https://www.siggraph.org/wp-content/uploads/2019/07/Open-Access-for-I3D-19.html
+8. arXiv:2306.13780v1 [cs.AI] 23 Jun 2023, accessed May 6, 2025, https://arxiv.org/pdf/2306.13780
+9. [2111.14911] Optimizing High-Dimensional Physics Simulations via Composite Bayesian Optimization - arXiv, accessed May 6, 2025, https://arxiv.org/abs/2111.14911
+10. Metamizer: A Versatile Neural Optimizer for Fast and Accurate Physics Simulations, accessed May 6, 2025, https://openreview.net/forum?id=60TXv9Xif5
+11. Rigid Body Physics for Synthetic Data Generation - Simple search, accessed May 6, 2025, https://liu.diva-portal.org/smash/get/diva2:943995/FULLTEXT01.pdf
+12. Unreal Engine Physics Essentials | Game Development | eBook - Packt, accessed May 6, 2025, https://www.packtpub.com/en-us/product/unreal-engine-physics-essentials-9781784398231
+13. typeset.io, accessed May 6, 2025, https://typeset.io/pdf/real-time-physics-based-simulation-for-3d-computer-graphics-386qgqucvr.pdf
+14. apps.dtic.mil, accessed May 6, 2025, https://apps.dtic.mil/sti/pdfs/ADA319039.pdf
+15. Modeling and Simulation in Engineering - CORE, accessed May 6, 2025, https://core.ac.uk/download/478139480.pdf
+16. Coarse-grained modeling - Wikipedia, accessed May 6, 2025, https://en.wikipedia.org/wiki/Coarse-grained_modeling
+17. Home Page — Abstraction Physics Wiki, accessed May 6, 2025, https://abstractionphysics.net/
+18. Integration of Dynamic Models and Virtual Reality for the Training of ..., accessed May 6, 2025, https://asmedigitalcollection.asme.org/energyresources/article/145/6/061701/1155781/Integration-of-Dynamic-Models-and-Virtual-Reality
+19. ir.cwi.nl, accessed May 6, 2025, https://ir.cwi.nl/pub/34879/34879.pdf
+20. animation.rwth-aachen.de, accessed May 6, 2025, https://animation.rwth-aachen.de/media/papers/93/2025-CGF-STAR-Multiphysics.pdf
+21. A Survey of Projection-Based Model Reduction Methods for ..., accessed May 6, 2025, https://epubs.siam.org/doi/10.1137/130932715
+22. Energy-Based Coarse-Graining in Molecular Dynamics: A Flow-Based Framework Without Data - arXiv, accessed May 6, 2025, https://arxiv.org/html/2504.20940v1
+23. Train small, model big: Scalable physics simulators via reduced ..., accessed May 6, 2025, https://www.osti.gov/pages/biblio/2367375
+24. A history of FLICC: the 5 techniques of science denial - Cranky Uncle, accessed May 6, 2025, https://crankyuncle.com/a-history-of-flicc-the-5-techniques-of-science-denial/
+25. In what ways is physics susceptible to fraudulent research? - Reddit, accessed May 6, 2025, https://www.reddit.com/r/Physics/comments/1idnbn7/in_what_ways_is_physics_susceptible_to_fraudulent/
+26. Interactive Real-Time Smoke Rendering - Page has been moved, accessed May 6, 2025, https://www.cse.chalmers.se/~uffe/xjobb/Robert%20Larsson-Interactive%20Real-Time%20Smoke%20Rendering.pdf
+27. Erwin Coumans - GDC Vault, accessed May 6, 2025, https://media.gdcvault.com/GDC2014/Presentations/Coumans_Erwin_Physics_for_Game.pdf
+28. Extending the Animation Rigging package with C# – Unite Copenhagen 2019 - SlideShare, accessed May 6, 2025, https://www.slideshare.net/slideshow/extending-the-animation-rigging-package-with-c-unite-copenhagen-2019/180510356
+29. IDSS: A Novel Representation for Woven Fabrics - ResearchGate, accessed May 6, 2025, https://www.researchgate.net/publication/221847489_IDSS_A_Novel_Representation_for_Woven_Fabrics?_tp=eyJjb250ZXh0Ijp7InBhZ2UiOiJzY2llbnRpZmljQ29udHJpYnV0aW9ucyIsInByZXZpb3VzUGFnZSI6bnVsbCwic3ViUGFnZSI6bnVsbH19
+30. Image-based clothes animation for virtual fitting | Request PDF - ResearchGate, accessed May 6, 2025, https://www.researchgate.net/publication/262207203_Image-based_clothes_animation_for_virtual_fitting
+31. Realtime VFX Dictionary Project - Real Time VFX, accessed May 6, 2025, https://realtimevfx.com/t/realtime-vfx-dictionary-project/570
+32. Using raycasting in GPU shaders to enhance real-time graphics, accessed May 6, 2025, https://www.proun-game.com/Oogst3D/ARTICLES/Using%20raycasting%20in%20GPU%20shaders%20to%20enhance%20real-time%20graphics.pdf
+33. DEV LOG 6 - Wilder World ZINE, accessed May 6, 2025, https://www.zine.live/dev-log-6/
+34. staff.itee.uq.edu.au, accessed May 6, 2025, https://staff.itee.uq.edu.au/janetw/papers/PhD%202006%20Sweetser.pdf
+35. Large-scale Fluid Simulation using Velocity-Vorticity Domain Decomposition - GAMMA, accessed May 6, 2025, http://gamma.cs.unc.edu/hybridfluid/golas-2012-hybridfluid.pdf
+36. Realistic Real-Time Hair Simulation and Rendering - Eurographics Association, accessed May 6, 2025, https://diglib.eg.org/bitstream/handle/10.2312/vvg20051031/229-236.pdf
+37. Real-Time Hybrid Hair Rendering - Eurographics Association, accessed May 6, 2025, https://diglib.eg.org/bitstream/handle/10.2312/sr20191215/001-008.pdf
+38. Publications - Computational Sciences Group, accessed May 6, 2025, https://computationalsciences.org/publications.html
+39. DHQ: Digital Humanities Quarterly: Crafting in Games, accessed May 6, 2025, https://www.digitalhumanities.org/dhq/vol/11/4/000339/000339.html
+40. Unity PhysX | WN Hub, accessed May 6, 2025, https://wnhub.io/academy/unity-physx
+41. SIGGRAPH '24: ACM SIGGRAPH 2024 Talks, accessed May 6, 2025, https://www.siggraph.org/wp-content/uploads/2024/09/talks.html
+42. NVIDIA PhysX SDK 3.4.1 Documentation, accessed May 6, 2025, https://documentation.help/NVIDIA-PhysX-SDK-3.4.1/documentation.pdf
+43. Bayesian Optimization Algorithms for Accelerator Physics - arXiv, accessed May 6, 2025, https://arxiv.org/html/2312.05667v1
+44. BenchQC - Scalable and modular benchmarking of industrial quantum computing applications - arXiv, accessed May 6, 2025, https://arxiv.org/pdf/2504.11204
+45. diglib.eg.org, accessed May 6, 2025, https://diglib.eg.org/server/api/core/bitstreams/d1ac9824-285d-4dfa-8184-17e165bdacfd/content

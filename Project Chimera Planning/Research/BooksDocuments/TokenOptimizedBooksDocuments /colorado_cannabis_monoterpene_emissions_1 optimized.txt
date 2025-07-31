@@ -1,0 +1,19 @@
+colorado_cannabis_monoterpene_emissions_1.txt
+
+**Study Overview:** 2019 Colorado study measured monoterpene emissions from four commercial cannabis facilities (A, B, C, D) during vegetative, flowering, drying, and trimming.  Facilities A, B, and D provided emission rate calculations; Facility C's complex HVAC prevented calculations.  Highest emission rates: 7.18E–1 kg/hr (mechanical trimming), 2.33E–1 kg/hr (drying rooms). Dominant monoterpenes: β-myrcene, terpinolene, D-limonene.  Post-harvest activities had significantly higher emissions than cultivation.
+
+**Facilities:**
+* **A:**  Climate-controlled, 112 carbon filters; 169,289 harvested plants (2019); AER 30 hr⁻¹.
+* **B:** 60 20-ton HVAC units, one exhaust; 131,742 harvested plants (2019); AER 5.5 hr⁻¹.
+* **C:**  Unique "lung room" HVAC;  925 harvested plants (2019); AER uncalculable.
+* **D:** Evaporative cooling, rooftop HVAC; 29,532 harvested plants (2019); AER 8.6 hr⁻¹.
+
+**Sampling:**  Ambient biogenic VOCs sampled using Tenax TA tubes (25–40 ml/min, 5–20 min). Duplicate samples collected. PID monitoring guided sample timing (Supplementary Tables S5, S6, S7).  Laboratory analysis (DRI) included 23 identified compounds (Supplementary Table S7).  Blanks run; reproducibility ~21% (median 7%).  No blank cartridges used during indoor sampling.
+
+**Emission Rate Calculation:**  Completely mixed flow reactor model assumed;  Fin = 0, L = 0 (rapid equilibrium, infrequent cleaning). Equation: ER = CBVOC * λ * V.  AER uncertainty significant; estimated using Facility B PID data (Figure 2).  Chemical loss (reaction with OH, O3) estimated (Equation 5, 6);  OH loss ~1–10%; O3 loss <0.5%–10%.  See Table 3 for results.
+
+**Results (Table 3):** Highest total biogenic VOC concentration: 4.35E4 µg/m³ (mechanical trimming). Lowest: 7.26E2 µg/m³ (Facility A vegetative).   Emissions normalized by biomass and plant count (Table 3).  Highest biomass-normalized rate: 1.16E–3 kg/hr/kg biomass (Facility A drying). Highest plant-normalized rate: 3.62E–4 kg/hr/plant (Facility D flowering).  β-myrcene consistently dominant (Table 2).
+
+**Conclusion:** Post-harvest activities are major emission sources; cultivation-only inventories underestimate total emissions. Dominant monoterpenes consistent across facilities despite strain diversity.  Site-specific AER, plant counts, strains, biomass, processing method needed for accurate emission inventories. Future research should include solvent VOCs from extraction.
+
+**Supplementary Materials:** Contain detailed data on strains (S1), plant counts/strain types (S2, S3), uncertainties (S4), PID data (S5), tube sampling details (S6), and sample results (S7). PID data available upon request.

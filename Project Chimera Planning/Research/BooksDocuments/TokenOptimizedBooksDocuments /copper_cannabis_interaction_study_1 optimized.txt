@@ -1,0 +1,39 @@
+copper_cannabis_interaction_study_1.txt
+
+**Study Objective:** Investigate copper's effect on cannabis's neuropharmacological actions in rats and mice.
+
+**Methods:**
+* Cannabis resin (17% THC) administered orally (50mg/kg).
+* Copper sulfate (CuSO4): 5mg/kg oral, 0.1µg intracerebroventricular (i.c.v.).
+* Zinc sulfate (ZnSO4): 5mg/kg oral.
+* Magnesium sulfate (MgSO4): 5mg/kg i.p.
+* Pentobarbital-induced hypnosis (rats: 25mg/kg i.p.; mice: 40mg/kg i.p.) measured via righting reflex.
+* Hypothermia measured via rectal temperature (Telethermometer).
+* Tolerance studies involved daily cannabis administration (7-28 days).
+* Penicillamine (100mg/kg i.p.) used as copper chelator.
+
+**Results:**
+
+* **Copper alone:** No neuropharmacological effects.
+* **Copper + Cannabis (non-tolerant):**
+    * Potentiated pentobarbital hypnosis potentiation (rats, 20mg/kg cannabis, significant).
+    * No significant effect on hypothermia.
+* **Copper + Cannabis (tolerant):**
+    * Partially inhibited barbiturate hypnosis potentiation tolerance.
+    * Significantly delayed/inhibited hypothermia tolerance (oral and i.c.v. copper). Single oral dose delayed tolerance; subsequent single dose reversed tolerance. I.c.v. copper prolonged hypothermia effect.
+* **Penicillamine + Cannabis:** No significant effect on hypothermia.
+* **Penicillamine + i.c.v. Copper + THC:** Antagonized copper's hypothermia-inducing effect.
+* **Zinc + Cannabis:** Similar to copper in delaying/inhibiting hypothermia tolerance, but less potent and shorter duration.
+* **Magnesium + Cannabis:** No effect on hypothermia tolerance; slightly increased hyperthermia.
+
+**Conclusions:**
+
+* Copper interacts with cannabis, particularly in tolerant animals, affecting hypothermia.
+* Site of action: likely hypothalamus, affecting noradrenergic neurons and tolerance development.
+* Copper's action resembles zinc's, not magnesium's.
+* Interaction not due to physicochemical complex formation; effect prolonged.
+* Penicillamine antagonizes copper's effect.  Free copper, not bound copper, is likely responsible.
+* Possible mechanism: restoration of dopamine-β-hydroxylase (DBH) activity through copper binding to DBH inhibitors in tolerant rats.
+
+
+**References:**  (List of references omitted for brevity, but original citations are maintained in the original file.)

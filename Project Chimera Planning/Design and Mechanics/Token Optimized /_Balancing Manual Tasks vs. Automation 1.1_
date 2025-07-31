@@ -1,0 +1,38 @@
+﻿Balancing Manual Tasks vs. Automation 1.1
+Project Chimera: Balancing Manual Tasks vs. Automation - Design Philosophy & Implementation Outline (DRAFT v1.1) Core Philosophy: Progression from manual to earned automated systems. Player motivation for automation: inherent challenges of maintaining optimal conditions in a realistic, dynamic biological simulation, not artificial punitive/tedious manual tasks. System respects player skill/effort; automation is a desirable, empowering path to greater efficiency, scale, and maximum genetic potential.
+I. Principles: Manual Tasks & Automation Design: A. Realism/Feasibility of Manual Operation: Manual tasks (watering, nutrient mixing, environmental checks) mirror real-world effort for small-scale operations. Diligent, skilled players can achieve good/high-quality results manually, especially early game. No artificial penalties for not automating if high care standards are maintained.
+B. "Burden of Consistency" - Primary Automation Driver: Core manual challenge: relentless precision, consistency, timely intervention for numerous parameters. Burden increases with:
+* Operation scale (more plants/rooms).
+* Accelerated in-game time (intervention frequency rises in real-time).
+* Critical plant lifecycle stages needing environmental stability. Automation's primary appeal: alleviates this burden, ensures consistency, frees player.
+C. Graduated/Realistic Consequences of Suboptimal Conditions: Deviations (manual/poor automation) have realistic, graduated effects on plant health/yield/quality.
+* Minor, short-term deviations: slight stress, minimal outcome impact.
+* Prolonged/extreme deviations: significant negative impacts. Catastrophic failure from severe/sustained neglect, not single minor mistakes. System goal: show good results are achievable with imperfect care, but peak genetic potential requires near-perfect, consistent conditions.
+D. Player Agency in Identifying "Pain Points"/Prioritizing Automation: Players identify their most demanding, error-prone, or limiting manual tasks. Progression (Skill Tree, research, equipment) allows players to choose automation priorities based on perceived needs.
+E. Automation as Enhancer: Capability, Consistency, Scale: Automation: not a gatekeeper to basic success, but a tool for higher performance. Benefits:
+* Consistency: Precise environmental setpoints, nutrient delivery schedules without human error/fatigue.
+* Efficiency: Optimized resource use (water, nutrients, power).
+* Scalability: Manage larger/more complex facilities than manually feasible.
+* Risk Mitigation: Reduces human oversight errors, especially with accelerated time/offline progression.
+* Time Liberation: Frees player from repetitive tasks for strategic activities (genetics, research, design, market).
+II. "Initial Tedium Threshold" & Natural Inconsistencies of Manual Tasks: "Tedium" reflects genuine time, attention, cognitive load for meticulous manual care, not annoyance.
+A. Manual Watering:
+* Burden Source: Remembering checks, judging moisture (visual, then basic meters), application time. Increasingly time-consuming with more plants/faster game speeds.
+* Natural Inconsistency: Slight over/under-watering without precise, continuous soil moisture data. Different media/pot sizes dry at varied rates, hard to perfect manually at scale.
+B. Manual Nutrient Mixing & Delivery:
+* Burden Source: Time for accurate multi-component measurement, mixing, application. Frequency rises with plant needs/accelerated time.
+* Natural Inconsistency: Slight measurement variations cause minor nutrient imbalances or pH/EC drift over time.
+C. Manual Environmental Monitoring & Adjustment:
+* Burden Source: Frequent spot-checks of basic, non-networked thermometers/hygrometers. Manual adjustments to fans, vents, basic heaters/coolers.
+* Natural Inconsistency: Significant environmental fluctuations between spot-checks (e.g., day/night shifts, accelerated time). Plants may experience unnoticed brief suboptimal periods.
+D. Manual Pest & Disease Scouting:
+* Burden Source: Time-consuming visual inspection of many plants, including under leaves.
+* Natural Inconsistency: Easy to miss early, subtle pest/disease signs. When manually obvious, issue may be established/harder to treat.
+E. Manual Record Keeping:
+* Burden Source: Discipline for meticulous logging (observations, actions, data) in in-game notebook.
+* Natural Inconsistency: Prone to forgotten entries, typos, subjective interpretations; challenges long-term trend analysis/replication vs. automated data logging.
+III. Ensuring Clear Path to & Benefits of Automation:
+A. Visibility of Automation Solutions: Skill Tree, research, equipment options clearly present automation as solutions to manual burdens. Node descriptions (e.g., "Advanced Irrigation Techniques") highlight benefits: improved consistency, reduced labor, better plant outcomes.
+B. Tangible Rewards of Early Automation: Initial automation tiers (basic light timers, simple drip systems) accessible (cost-effective skill points/resources). Must provide immediate, noticeable quality-of-life improvements and clear workload reduction, reinforcing automation's value. "Before" (manual) vs. "After" (basic automation) contrast for a task should be highly rewarding.
+C. Progression of Automation Complexity: Automation capabilities develop progressively: simple timers/controllers to sophisticated, sensor-driven, integrated systems managing multiple parameters precisely. Mirrors player's growing understanding and facility complexity.
+Adherence to these principles will make manual-to-automated transition feel natural, rewarding, driven by player desire to overcome realistic cultivation challenges and achieve mastery, efficiency, scale.

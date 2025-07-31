@@ -1,0 +1,325 @@
+﻿G Model   
+FSI 9328 No. of Pages 10 
+Forensic Science International xxx (2018) xxx–xxx 
+Contents lists available at ScienceDirect     
+Forensic Science International 
+journal homepage: www.elsevier.com/locate/forsciint
+Commercial cannabis consumer products part 2: HPLC-DAD quantitative analysis of cannabis cannabinoids 
+Laura A. Ciolino*, Tracy L. Ranieri, Allison M. Taylor 
+Forensic Chemistry Center, Food and Drug Administration, 6751 Steger Drive, Cincinnati, OH, USA 
+A R T I C L E I N F O 
+Article history: 
+Received 16 November 2017 
+Received in revised form 6 March 2018 Accepted 20 May 2018 
+Available online xxx 
+Keywords: 
+Cannabis cannabinoids 
+Commercial cannabis products 
+High performance liquid chromatography diode array detection (HPLC-DAD) D9-tetrahydrocannabinol 
+Cannabidiol 
+1. Introduction 
+A B S T R A C T 
+Quantitative analysis for the cannabis cannabinoids such as cannabidiol and D9-tetrahydrocannabinol in commercial products is necessary for evaluating label information, and assessing dosages and exposures when the products are consumed. Herein is presented a broadly applicable HPLC-DAD method for the determination of cannabis cannabinoids in commercial consumer products and traditional plant-related substances. The current method provides chromatographic resolution of 11 cannabinoids using a commercial, mixed C18-aromatic functionality stationary phase. The method uses 95% or pure ethanol for extraction, and certain modifications which address specific matrix types are detailed herein. Extensive method validation including precision and accuracy was conducted for five cannabinoids of primary interest (CBD, D9-THC, CBDA, THCA, and CBN). UV detection provided excellent sensitivity with limits of quantitation (LOQs) of 10mg/g across cannabinoids. The method was applied to about 60 commercial products representing diverse product types and a broad range of cannabinoids amounts (0.01–350 mg/g). 
+Published by Elsevier B.V. 
+only in baked goods, beverages, candies, and chocolates [11]. This 
+latter report provided no details of the extraction conditions or 
+In addition to traditional cannabis plants and plant extracts, the recent surge in the sale of cannabis-based consumer products has added a host of sample types for analysis including foods, candies, beverages, topicals, vapes/eliquids, and oral supplements in various forms. A GC–MS method [1] for the qualitative analysis of cannabis cannabinoids which addresses the current diversity in cannabis-based samples was presented in Part 1. In Part 2, the quantitative analysis of the cannabinoids is addressed. 
+The expansion of the cannabis market has coincided with continued development of quantitative analytical methods for the cannabinoids. For quantitation which addresses both acidic and neutral cannabinoids, methods based on HPLC–MS [2,3], SFC-DAD MS [4], HPLC-DAD [5–13], HPLC-DAD-MS [14,15], and GC-FID [16] have been reported. Most of the reported methods [3–10,12–16] were developed for plant materials or plant extracts/oils, including illicit, medicinal, and/or hemp varieties. One of the HPLC–MS methods was used for the determination of cannabidiol (CBD) only in eliquids [2]. One of the HPLC-DAD methods was used for the determination of D9-tetrahydrocannabinol (hereafter “d9THC”) 
+* Corresponding author. 
+E-mail addresses: laura.ciolino@fda.hhs.gov (L.A. Ciolino), 
+tracy.ranieri@fda.hhs.gov (T.L. Ranieri), allison.taylor@fda.hhs.gov (A.M. Taylor). 
+https://doi.org/10.1016/j.forsciint.2018.05.033 
+0379-0738/Published by Elsevier B.V. 
+HPLC parameters [11]. 
+Each of these methods is applicable to specific sample types, and does not address the broad range of cannabis-based sample types which currently exist. As for the qualitative testing [1], there is a need to develop alternative extraction procedures which extract the target cannabinoids while minimizing interferences. Extraction requirements for quantitative analysis are more stringent than for qualitative analysis, demanding high recoveries of the target analytes to provide accurate results. The objective of this part was to develop and validate a broadly applicable HPLC DAD method for the quantitative analysis of cannabis cannabi noids. As for Part 1, the method scope includes both acidic and neutral cannabinoids, and all varieties of cannabis plants (recreational, medical, and hemp), plant extracts or preparations, and consumer, medical, or illicit products. The HPLC-DAD method will likewise provide chromatographic resolution of the 11 commercially available cannabis cannabinoids: cannabidiol (CBD), cannabidiolic acid (CBDA), D9 tetrahydrocannabinol (d9THC), tetrahydrocannabinolic acid-A (hereafter “THCA”), can nabinol (CBN), D8-tetrahydrocannabinol (d8THC), cannabigerol (CBG), cannabigerolic acid (CBGA), cannabidivarin (CBDV), tetra hydrocannabivarin (THCV), and cannabichromene (CBC). Extensive method validation is conducted for five cannabinoids of primary interest (CBD, d9THC, CBDA, THCA, and CBN). 
+
+
+Please cite this article in press as: L.A. Ciolino, et al., Commercial cannabis consumer products part 2: HPLC-DAD quantitative analysis of cannabis cannabinoids, Forensic Sci. Int. (2018), https://doi.org/10.1016/j.forsciint.2018.05.033
+	
+
+
+
+G Model   
+FSI 9328 No. of Pages 10
+2 L.A. Ciolino et al. / Forensic Science International xxx (2018) xxx–xxx 
+2. Materials and methods 
+2.1. Standards, chemicals, and reagents 
+Cannabis cannabinoids were obtained as pure substances ( 98%) or concentrated stock solutions (10 mg/ml) in methanol or methylacetate from Cayman, Sigma, or Fluka. For the pure substances, stock solutions in the range 0.5–2.0 mg/ml were prepared using methanol or acetonitrile. Certified 1.0 mg/ml cannabinoid stock solutions from Cerilliant Corporation were also used. For analysis, stock solutions were diluted in 95% ethanol to yield concentrations within the calibration ranges. 
+Ethanol (200 proof, USP/ACS grade) was obtained from Sigma Aldrich. Acetonitrile (HPLC grade), methanol (HPLC grade), glacial acetic acid (HPLC grade), and hexanes (Optima grade) were obtained from Fisher Scientific (Fair Lawn, NJ). Deionized water was obtained from a Millipore 18 ohm filtration system fed by a service deionized water source. 95% ethanol(aq) (hereafter “95% ethanol”) was prepared in our laboratory from the 200 proof ethanol and deionized water. 
+2.2. Cannabis plant materials, commercial products, hempseed oils, hash oils, kief, and dronabinol capsules 
+Five THCA-rich varieties of cannabis plant materials were obtained from retail markets in Colorado in 2017. The plant materials consisted of dried buds which were ground in a mortar prior to extraction. Commercial cannabis consumer products including oral supplements, foods, candies, beverages, vapes/ eliquids, and topicals were obtained between 2015 and 2017 via purchases from internet web stores. Two different Canada-sourced hempseed oils were obtained in 2014 or 2017. Generic dronabinol capsules (2.5 mg and 5.0 mg strengths) were obtained from a local pharmacy. 
+Two crude hash oils and one fine kief material were prepared in the authors’ laboratory from a commercial THCA-rich bud material obtained previously in 2016. 3.1 g of ground material were extracted with 30 ml ethanol (hash oil 1) or isopropyl alcohol (hash oil 2). The entire extract was filtered through a 0.45mm nylon membrane filter, after which the solvent was evaporated in a heated water bath (45–50  C) under a nitrogen purge. Both hash oils were dark red amber, with yields of 0.71 g (hash oil 1) or 0.68 g (hash oil 2). For the fine kief, 3.1 g of ground bud material, 50 ml water, and 117 g ice were stirred in a beaker for 45 min. The preparation was successively filtered through a series of five metal sieves, with mesh sizes of 10, 20, 60, 80, and 100. The materials collected on the sieves were allowed to air dry, with a yield of 0.13 g fine kief material obtained from the 60 mesh sieve. 
+2.3. Concentrated cannabis plant extracts for spiking 
+Three different types of concentrated plant extract filtrates were used for the negative product matrices spike/recovery experiments (see Section 2.7). THCA-rich concentrated plant extracts were prepared from the commercial bud materials (Section 2.2) by extracting the ground bud with 100% ethanol (2.8 g bud material in 20 ml ethanol) according to the general procedure (Section 2.4). Depending on the batch, nominal THCA and d9THC concentrations for the finished filtrates were in the range 21–23 mg/ml and 2.3–5.9 mg/ml, respectively. A d9THC-rich concentrated plant extract was prepared by first heating the THCA rich ground bud material in an oven for 2.5 h at 250  C, followed by three days ambient, dark storage with the dried material exposed to air. After extraction with 100% ethanol (4.4 g plant material in 35 ml ethanol), nominal d9THC and CBN concentrations for the finished filtrate were 21 mg/ml and 0.69 mg/ml, respectively. A 
+concentrated CBD-rich extract was prepared from a commercial oral supplement product which was labeled as a hemp oil. Assay results for the CBD and CBDA contents of the product were 159 and 10 mg/g, respectively. 5.4 g of the oral supplement was extracted with 30 ml of 100% ethanol yielding finished CBD and CBDA filtrate concentrations of 21 mg/ml and 1.4 mg/ml, respectively. 
+2.4. Sample preparation 
+Sample weights and extraction volumes were adjusted according to cannabinoid contents, with sample weights in the range 0.03–2.5 g and extraction volumes in the range 0.5–30 ml. For tablets and capsules, composites of 3–10 units were prepared if possible. For some capsules (e.g. dronabinol capsules), it was not possible to prepare a quantitative composite since the capsule contents were viscous liquids. For these capsules, analysis was conducted using several individual whole capsules. All extractions were performed using 95% ethanol or 100% ethanol with variations in the general procedure according to the sample matrix (see 
+below). Extractions for sample matrices which completely dissolved were generally carried out in volumetric flasks, and all other extractions were performed in scintillation vials or Erlenmeyer flasks. 
+Product contents were mixed or shaken as needed prior to sampling. A portion of sample was weighed into the extraction vessel. The extracting solvent was added, and the samples were capped, then vortexed thoroughly to dissolve or disperse the matrix. Samples which did not fully dissolve were sonicated for 30 min. A portion of the extract was filtered through a 0.45mm nylon membrane filter. Depending on the cannabinoid(s) content, HPLC-DAD analysis was conducted on the filtrate, or the filtrate was further diluted using 95% ethanol to reach a target final concentration within the standard calibration ranges. In many cases, it was necessary to analyze two different extract dilutions (i.e., analyze the filtrate and a dilution of the filtrate, or analyze two separate dilutions of the filtrate) so that the sample concentrations of the targeted cannabinoids fell within the standard calibration ranges. 
+Variations were applied to specific matrix types as follows. For semisolid fat/oil matrices such as butter, margarine, virgin coconut oil, and various nonpolar topical ointments, creams, or balms, the sample vessel was warmed on a hot plate after addition of the extraction solvent to melt the matrix. The sample was then vortexed to disperse the matrix, continuing with the general procedure. For specific high sugar and carbohydrate matrices including hard candies, fruit preserves, and honey, the aqueous portion of the 95% ethanol extractant was added first, followed by warming of the sample vessel on a hot plate to cause the sugars and carbohydrates to fully dissolve. The ethanol portion of the extractant was then added as 100% ethanol to give a final proportion of approximately 95% ethanol. The sample was then vortexed to disperse the sample, continuing with the general procedure. For any highly aqueous matrices such as prepared coffee or tea beverages, and certain oral supplements/pharma ceuticals, the extractant was 100% ethanol with the general procedure followed thereafter. 
+2.5. HPLC-DAD analysis 
+All HPLC analysis was conducted using Agilent 1100, 1200, or 1260 HPLC-DAD systems. Separations were carried out using MacMod ACE 5 C18-AR analytical columns (5mm, 4.6 mm ID   250 mm length). The mobile phase comprised 66:34 acetoni trile: 0.5% acetic acid (no pH adjustment, nominal pH 2.9). The injection volume was 25ml, flow rate 1.0 ml/min., and run time 50 min. Several detection wavelengths (220 nm, 240 nm, 270 nm, 
+
+
+Please cite this article in press as: L.A. Ciolino, et al., Commercial cannabis consumer products part 2: HPLC-DAD quantitative analysis of cannabis cannabinoids, Forensic Sci. Int. (2018), https://doi.org/10.1016/j.forsciint.2018.05.033
+	
+
+
+
+G Model   
+FSI 9328 No. of Pages 10
+L.A. Ciolino et al. / Forensic Science International xxx (2018) xxx–xxx 3 
+307 nm) were used according to the specific compound, compound levels, and sample matrices (see also Table 1 and Section 3): Chromatographic peak spectra were obtained over the range 190– 400 nm. 
+2.6. Spike recovery for hempseed oils and cannabis based consumer products 
+Spike recovery experiments for two hempseed oils and 28 commercial cannabis consumer products were conducted as follows. The hempseed oils were spiked with all five target cannabinoids at two different spiking levels (ca. 20mg/g and in range 120–140mg/g). The consumer products were spiked only with the cannabinoids which were detected and quantitated in the assay work for the given product, and at spiking levels close to the assayed levels. Spike/recovery experiments were conducted in duplicate for each hempseed oil or consumer product. The cannabinoid contents present in the matrix prior to spiking was accounted for when calculating spike recovery. 
+For spiking, a portion of oil or product was weighed into a 20 ml glass scintillation vial or volumetric flask, after which an aliquot(s) (10–300ml) of a standard solution(s) or a standard mix was deposited onto the sample. The vessel was capped and thoroughly vortexed to distribute the spiking solution as completely as possible into the matrix. For semisolid products, the vial was warmed and further vortexed as needed to melt the product and mix in the spike. For solid product matrices, the solvent was allowed to completely evaporate from the product matrix under a bench top vacuum snorkel prior to extraction. For liquid and semisolid matrices, the extraction was performed without evaporating the spiking solvent. After spiking, all extractions were carried out according to the general procedure (see Section 2.4). 
+2.7. Negative product matrices and concentrated cannabis spikes 
+38 cannabinoid-negative products including edible oils, foods and beverages, topicals, and oral OTC medicines were obtained from local stores for use in spike/recovery experiments with concentrated cannabis plant extracts (see Section 2.3). In addition, one Canada-sourced hempseed oil (Section 2.2), one cannabinoid negative commercial cannabis herbal cream (Section 2.2), and one pharmaceutical cream base containing no active ingredients (obtained from a local pharmacy) were included in the study. 
+Table 1 
+Target compounds retention, spectral detection and UV response. 
+Spike/recovery experiments were conducted in duplicate for each product matrix and plant extract. Spiking was conducted as follows: a portion of product (200–300 mg) was weighed into a 20 ml glass scintillation vial or volumetric flask, after which an aliquot (150–200ml) of the concentrated cannabis extract spiking solution was deposited onto the product. The vessel was capped and thoroughly vortexed to distribute the spiking solution as completely as possible into the product matrix. For semisolid products, the vessel was warmed and further vortexed as needed to melt the product and mix in the spike. For solid products, the solvent was allowed to completely evaporate from the product matrix under a bench top vacuum snorkel. For liquid and semisolid products, the extraction was performed without evaporating the spiking solvent. After spiking, all extractions were carried out according to the general procedure (Section 2.4). The extraction volume was typically 5.0 or 10.0 ml. 
+3. Results and discussion 
+3.1. HPLC analysis 
+This method provides chromatographic resolution of the following 11 cannabis cannabinoids for which standards were commercially available: CBD, CBDA, d9THC, THCA, CBN, d8THC, CBG, CBGA, CBDV, THCV, and CBC. Chromatographic resolution was made more difficult by two critical compound pairs with very similar structures: CBD/CBG (closed vs. open ring), and d9THC/ d8THC (double bond position isomers), see structures in Part 1 [1]. A key finding from the development work was the improved separation of these compound pairs by use of a mixed C18/ aromatic functionality stationary phase (MacMod ACE 5 C18-AR). Highlights of the development work follow. 
+Four derivatized silica stationary phases were evaluated for the resolution of nine cannabinoids available at the time (CBD, CBDA, d9THC, THCA, CBN, d8THC, CBG, THCV, and CBC). The stationary phases (all 25 cm, 4.6 mm ID, 5mm particle diameter) were a conventional C18 phase (Luna C18-2), a phenylhexyl phase (Luna), and two phases with mixed C18/aromatic functionality (MacMod ACE 5 C18-AR and Siliachrom C18/phenyl). Mobile phase variables included buffer type (acetic acid, formic acid, or citric acid), buffer pH (tested pH range 2.5–5.1), and the use of acetonitrile vs. methanol. Overall retention for the cannabinoids was highest with the C18 column and lowest with the phenylhexyl column. Due to 
+Compound Nominal ret time min Observed l maxes nm Detection l nm Linear rangea mg/ml Slope CBDA 12 308, 269, 224b 307 0.50–1000 18.3 270 0.50–1000 44.3 
+240 0.50–1000 29.9 
+220 0.50–500 97.2 
+CBD 15 276, 235(s), risec 240 0.50–750 18.1 220 0.50–500 94.1 
+CBN 25 301(s), 285, 221b 240 0.50–750 54.2 220 0.50–500 130 
+D9-THC 29 279, 235(s), risec 240 0.50–1000 20.3 220 0.50–750 87.4 
+THCA 39 306, 272, 223b 307 0.50–1000 21.3 270 0.50–1000 50.7 
+240 0.50–1000 32.6 
+220 0.50–750 96.8 
+a Listed concentration ranges represent tested ranges for which linearity was established. b Apparent maximum observed at listed wavelength, observed maximum may be artefact of acetic acid buffer background subtraction. c Low end of spectrum characterized by continual steep rise in absorbance with no defined maximum. 
+Please cite this article in press as: L.A. Ciolino, et al., Commercial cannabis consumer products part 2: HPLC-DAD quantitative analysis of cannabis cannabinoids, Forensic Sci. Int. (2018), https://doi.org/10.1016/j.forsciint.2018.05.033
+	
+
+
+
+G Model   
+FSI 9328 No. of Pages 10
+4 L.A. Ciolino et al. / Forensic Science International xxx (2018) xxx–xxx 
+their lower pH relative to acetic acid, formic acid buffers resulted in   
+unnecessarily long retention for THCA. Resolution of all nine 
+cannabinoids was only achieved using the ACE 5 C18 column, and 
+identified two alternate sets of mobile phase conditions: (1) 66:34 
+acetonitrile:0.5% acetic acid (no pH adjustment, nominal pH 2.9); 
+and (2) 83:17 methanol: 50 mM citrate (pH adjusted to 4.2). 
+Because retention of THCA is extremely pH dependent, the first set 
+of mobile phase conditions was chosen as consistent buffer pH’s 
+are obtained without the need for adjustment. 
+Fig. 1 shows the separation of 11 cannabinoids using the ACE 5 
+C18-AR column (Fig. 1A) vs. the conventional C18 column (Fig. 1B) 
+with mixed 0.5% acetic acid/acetonitrile mobile phases for both 
+columns. Resolution of all 11 cannabinoids with excellent peak 
+shape was obtained using the ACE 5 C18-AR column. Next to the 
+ACE 5 C18-AR column, the C18 column provided the next best 
+resolution but iterative mobile phase adjustments always left two 
+or more cannabinoids unresolved. Fig. 2 shows HPLC-DAD 
+chromatograms for two commercial cannabis products: an oral 
+liquid supplement for which CBD was the predominant cannabi 
+noid (Fig. 2A), and a topical balm for which CBDA was the 
+predominant cannabinoid (Fig. 2B). These chromatograms dem 
+onstrate the typical case that the cannabinoids are resolved from 
+other compounds in the chromatogram. The series of compounds 
+which elute prior to CBDA for both the oral liquid and topical balm 
+are completely excluded from detection by using 307 nm as the 
+detection wavelength (see next paragraph). 
+Table 1 summarizes retention time, and UV spectral and 
+response data, for the five target compounds (CBD, d9THC, CBDA, 
+THCA, and CBN). Multiple absorbance maxima are observed in each 
+compound’s spectrum. Multiple detection wavelengths were 
+evaluated and used for the five compounds based on their 
+Fig. 2. HPLC-DAD chromatograms for two commercial Cannabis products: an oral 
+liquid (A) and a topical balm (B). Peak labels and cannabinoid eluate concentrations   
+(mg/ml): (A) 1-CBDA (3.7); 2- CBD (420); 3-CBN (2.3); 4-d9THC (15). (B) 1-CBDA 
+(90); 2-CBD (42); 3-d9THC (2.8); 4-THCA (1.8). 
+inherent UV maxima, relative UV responses, and in order to avoid 
+interferences from matrix components in practice. While none of 
+the compounds showed a maximum at 240 nm, this wavelength 
+tended to equalize the response (slope) across the five compounds, 
+except for CBN which has the highest response. 220 nm provides 
+the highest response for all five compounds and is useful for low 
+level quantitation. 270 and 307 nm provide high selectivity for 
+CBDA and THCA, which was used to minimize or eliminate 
+detection of matrix interferences as needed. Detection wave 
+lengths in the range 270–280 nm were problematic for CBD, CBN, 
+and d9THC due to interferences encountered with many matrix 
+types in the retention windows for these compounds. Linear 
+ranges were established at two or more wavelengths as listed in 
+the table for the five target compounds. The listed ranges are 
+considered strict ranges established by visual inspection of the 
+concentration vs. response data graphs, calculation of correlation 
+coefficients (r), consideration of absorbance magnitudes, and 
+assessment for spectral distortions. All correlation coefficients (r) 
+were >0.999. The low end of the calibration ranges was taken as 
+0.50mg/ml (see also Section 3.4). 
+3.2. Extraction for quantitative analysis 
+Extraction for quantitative analysis requires dissolution or fine 
+dispersion of the sample matrix in the extracting solvent, as well as 
+Fig. 1. HPLC-DAD separation of 11 cannabinoids (nominally 50mg/ml each) using ACE 5 C18 AR column and 66:34 acetonitrile 0.5% HAc mobile phase (A) vs. Luna C18 column and 74:26 acetonitrile 0.5%HAc mobile phase (B) Elution order 1-CBDV, 2- CBDA, 3-CBGA, 4-CBG, 5-CBD, 6-THCV, 7-CBN, 8-d9THC, 9-d8THC,10-CBC,11-THCA. 
+sufficient solubility of the target compounds. Both of these requirements are dictated by the chemical and physical natures of both the target analytes and the sample matrices. As a whole, the cannabis cannabinoids are medium to low polarity compounds. 
+
+
+Please cite this article in press as: L.A. Ciolino, et al., Commercial cannabis consumer products part 2: HPLC-DAD quantitative analysis of cannabis cannabinoids, Forensic Sci. Int. (2018), https://doi.org/10.1016/j.forsciint.2018.05.033
+	
+
+
+
+G Model   
+FSI 9328 No. of Pages 10
+L.A. Ciolino et al. / Forensic Science International xxx (2018) xxx–xxx 5 
+CBD, d9THC, and CBN possess weakly acidic phenolic hydroxyl groups, while CBDA and THCA possess both carboxylic acid and phenolic hydroxy groups. The target sample matrices are diverse including cannabis plants, plant extracts, plant oils, and a host of commercial products made using cannabis plants, extracts, or oils. These products range from highly polar (sugary foods or beverages) to nonpolar (certain ointments/balms, butter) matrices, with many product types of intermediate polarity (many foods and topicals, oral supplements). Physical forms included solids, semi solids, aqueous and nonaqueous solutions, dispersions, emulsions, and viscous or free flowing liquids. 
+Method development with extractants focused on comparing ethanol and acetonitrile, either as pure solvents or with the addition of up to 15% water. The goal was to investigate whether small amounts of water could boost extractability for the acidic cannabinoids (CBDA, THCA, etc.) which are capable of ionizing and/ or help diminish coextraction of unwanted matrix components such as oils. Any solvents containing acids or bases were ruled out due to the instability of several cannabinoids [17–19] in acidic or basic solutions. Extractants containing chloroform were also ruled out due to CBD instability [20,21]. This included the extractant 9:1 methanol:chloroform, for which major CBD degradation (15–40%) was observed in extracts of several concentrated hemp oils/pastes within one day’s storage under ambient conditions. 
+In development work, experiments were conducted comparing the following four extractants for quantitation of THCA, d9THC, CBGA, and CBDA from five different commercial THCA-rich plant bud products: (1) ethanol; (2) acetonitrile; (3) 95% ethanol, and (4) 90% acetonitrile(aq). 95% ethanol provided the highest average extractability across the five plant materials for all four of the cannabinoids. The average relative amounts extracted with 95% ethanol were 1.4% higher vs. pure ethanol, and 3–5% higher vs. the acetonitrile-based solvents. The same four extractants were compared for the quantitation of CBD, d9THC, CBDA, THCA, and CBN in a concentrated hemp oil, and two commercial oral supplements containing oils such as hempseed, coconut, grape seed, and peppermint (note that THCA was not detected in the oral supplements). 95% ethanol and pure ethanol provided similar extractability (within 1% relative), and both ethanol-based extractants provided much higher extractability (10–15% higher) relative to the acetonitrile-based extractants. Hence, acetonitrile based solvents were ruled out for use in quantitative analysis. Unlike for the GC–MS analysis [1], the higher coextraction of sugars, glycerin, or propylene glycol by the ethanol-based solvents did not cause any chromatographic interferences in the HPLC-DAD analysis since these coextracted compounds are not detected by UV. 
+Table 2 
+Table 3 
+Assay results and precision for concentrated, CBD-rich Cannabis oral supplement syringe products. 
+Product No. n CBD d9-THC CBN CBDA mg/g %RSD mg/g %RSD mg/g %RSD mg/g %RSD 
+1 3 144 0.95 8.5 0.58 1.9 2.1 ND – 2 3 145 1.4 6.4 1.6 1.2 0.94 ND – 3 4 151 11 6.6 7.0 1.2 8.8 ND – 4 3 245 1.2 8.6 1.5 0.80 5.6 0.24 2.8 
+5 3 350 0.74 1.6 4.2 8.2 2.8 ND – 6 3 257 1.4 8.4 1.6 0.70 3.2 0.24 8.3 7 3 144 0.83 5.0 0.80 0.39 2.6 ND – 
+Average %RSD 2.5 2.5 3.7 5.5 
+Products 1–3 were extracted with 100% ethanol; products 4–7 were extracted with 95% ethanol. 
+n, number of trials. 
+All reported values (mg/g) are averages of 3– 4 trials. 
+ND, not detected. 
+As discussed above, it was difficult to measure differences in extractability for pure ethanol vs. 95% ethanol. Extractability for ethanol-water mixtures fell off with higher water amounts, especially above 10%. Overall, the data indicated that 95% ethanol may provide marginally higher extractability vs. pure ethanol for CBDA, which is the most polar of the target compounds and capable of ionizing. Excellent peak shapes were obtained for the cannabinoids across the entire range of product types and matrices (Tables 2–6) with 95% ethanol extracts. Good peak shapes were observed for pure ethanol extracts except for matrices which contained high levels of oils, or solvents such as propylene glycol or glycerin. The additional “solvency load” from the oils or solvents caused peak broadening in the chromatograms. 
+Most product matrices containing sugars and carbohydrates dispersed well and yielded quantitative recoveries with the 95% ethanol extractant. However, as in the GC–MS work, specific high sugar, high carbohydrate products such as hard candies, strawberry preserves, and honey required a modification of the extraction procedure. Thesematrices didnot disperse wellineither 95%or pure ethanol, and tended to form glassy, impervious precipitates during extraction. The net result was a physical trapping of the cannabis cannabinoids, and low recoveries (17–66%) of the cannabinoids, whether from cannabis-containing products or when conducting spiking experiments in negative productmatrices. This problemwas resolved by addingthe aqueousportion ofthe95%ethanolextractant first, followed by warming of the extraction vessel on a hot plate to cause the carbohydrates and sugars to fully dissolve. The ethanol portion of the extractant was then added as 100% ethanol to give a final proportion of approximately 95% ethanol. The ethanol addition 
+Assay results and precision for commercial THCA-rich Cannabis plant buds and plant preparations (n = 3). 
+Matrix THCA d9THC CBGA CBDA CBN mg/g %RSD mg/g %RSD mg/g %RSD mg/g %RSD mg/g %RSD Plant buds 1 138 6.4 4.4 7.4 3.4 3.7 0.26 6.4 0.016 13 Plant buds 2 212 1.6 7.6 5.9 8.8 0.46 0.51 4.9 0.020 12 Plant buds 3 241 1.8 7.9 4.3 6.9 2.0 0.54 1.7 0.034 4.9 Plant buds 4 154 3.6 18 2.0 15 2.1 0.33 1.7 0.24 4.3 Plant buds 5 239 6.8 11 6.0 2.5 0.72 0.58 3.5 0.026 6.6 
+Hash oil 1 379 3.2 149 3.7 14 2.9 0.76 3.5 4.3 2.3 Hash oil 2 399 1.8 172 1.4 15 0.55 0.86 3.8 4.9 0.14 Fine kief 214 6.8 46 4.8 4.0 7.7 0.43 10 9.4 5.6 
+Average %RSD 4.0 4.4 2.5 4.4 6.1 
+n, number of trials. 
+All reported values (mg/g) are averages of the 3 trials. 
+Please cite this article in press as: L.A. Ciolino, et al., Commercial cannabis consumer products part 2: HPLC-DAD quantitative analysis of cannabis cannabinoids, Forensic Sci. Int. (2018), https://doi.org/10.1016/j.forsciint.2018.05.033
+	
+
+
+
+G Model   
+FSI 9328 No. of Pages 10
+6 L.A. Ciolino et al. / Forensic Science International xxx (2018) xxx–xxx 
+Table 4 
+Assay results, precision, and spike recovery for target cannabinoids in imported Canadian hempseed oils. 
+Hempseed oil product Compound Determined amount (n) mg/g %RSD Low spiking level mg/g %Recovery High spiking level mg/g %Recovery 1 CBDA 14 (3) 3.0 18 87 125 90 CBD 12 (8) 8.9 19 105 142 96 THCA 1.5 (6) 5.8 19 83 142 88 d9THC trace NA 19 97 142 98 CBN ND NA 19 99 142 94 Averages 5.9 94 93 
+2 CBDA 56 (3) 0.89 18 91 119 91 CBD 26 (8) 3.0 20 101 137 101 THCA 3.1 (6) 3.3 21 84 137 87 d9THC trace NA 20 104 137 103 CBN ND NA 20 102 137 93 Averages 2.4 96 95 
+All determined amounts (mg/g) are averages of 3–8 trials. 
+n, number of trials for assay given in parentheses; n = 2 for all spiking experiments. 
+ND, not detected. 
+NA, not applicable. 
+Note that reported THCA levels are less than the specified LOQ (10mg/g). 
+Table 5 
+Assay results, precision, and spike recovery for commercial Cannabis CBD products. 
+Product description n CBD d9THC CBDA CBN 
+Assay % Spike % Assay % Spike % Assay % Spike % Assay % Spike % mg/g RSD mg/g Rec mg/g RSD mg/g Rec mg/g RSD mg/g Rec mg/g RSD mg/g Rec 
+Oral nonaqueous liquid 6 145 3.2 137 96 5.3 3.8 4.9 99 0.54 4.3 0.53 100 0.21 7.8 0.21 93 Oral nonaqueous liquid 3 50 0.78 37 103 1.8 1.3 1.8 95 0.046 9.1 0.37 96 0.057 3.5 0.37 98 Oral nonaqueous liquid 3 28 0.59 21 114 trace – – – – – – – – – – – Oral nonaqueous liquid 3 15 0.18 13 93 0.85 0.65 0.77 92 – – – – 0.097 1.3 0.086 89 
+Oral nonaqueous liquid 3 15 0.70 15 104 0.53 0.81 0.56 100 0.13 1.3 0.14 105 0.082 3.8 – – Oral nonaqueous liquid 3 9.5 0.93 7.7 100 0.29 2.4 0.25 104 0.012 1.9 0.011 98 0.012 5.3 0.011 109 Oral nonaqueous liquid 3 8.1 2.8 8.0 99 0.29 0.50 0.31 95 0.046 1.5 0.041 100 0.010 4.4 0.010 99 Oral nonaqueous liquid 2 6.9 0.51 6.6 97 0.21 0.19 0.30 98 –- –- – – 0.018 5.8 0.025 94 Oral semisolid 2 6.8 0.22 5.6 92 0.40 1.2 0.31 87 0.30 2.6 0.22 98 0.12 0.83 0.11 87 Oral nonaqueous liquid 2 6.6 0.87 6.6 100 0.21 0.28 0.22 92 – – – – 0.018 0.92 0.018 98 Tablets 2 1.5 2.5 1.9 99 0.021 10 0.067 98 – – – – 0.028 3.1 0.038 98 Oral nonaqueous liquid 2 1.2 2.4 0.74 97 0.035 7.4 0.026 100 – – – – – – – – Capsules powder 6 0.56 1.1 0.51 90 0.014 5.9 0.014 96 0.0096 3.6 0.010 100 – – – – Aqueous supplement 2 0.30 0.53 0.30 100 0.012 2.4 0.011 101 – – – – – – – – Oral liquid dispersion 3 0.23 1.6 0.22 106 trace – – – – – – – – – – – Oral nonaqueous liquid 3 0.011 2.5 0.013 112 – – – – 0.055 0.89 0.070 99 – – – – Vape/eliquid 2 9.0 0.54 6.4 99 – – – – – – – – – – – –- Vape/eliquid 2 7.4 4.8 7.4 100 0.069 6.0 0.10 111 – – – – 0.015 5.27 0.012 102 Vape/eliquid 2 0.28 0.40 0.22 98 – – – – – – – – – – – – Vape/eliquid 3 0.27 1.2 0.30 100 – – – – – – – – – – – – Vape/eliquid 3 0.26 0.82 0.27 100 – – – – – – – – – – – – Topical gel 3 16 0.94 12 107 0.41 3.1 0.40 97 0.018 3.8 0.017 100 0.014 2.44 0.017 92 Topical balm 2 0.45 1.7 0.43 91 0.032 6.0 0.020 102 0.94 0.18 0.86 101 – – – – Whole coffee bean 3 0.82 9.0 0.54 97 0.034 8.8 0.022 95 – – – – trace – – – Strawberry jam 3 0.62 5.1 0.70 113 0.023 9.4 0.026 108 – – – – – – – – Hard candies 12 0.31 1.5 0.33 98 0.018 6.7 0.018 90 – – – – – – – – Flavored liquid 3 0.28 0.66 0.29 94 – – – – – – – – – – – – Coffee beverage 3 0.042 0.63 0.036 96 – – – – – – – – – – – – 
+Averages %RSD 1.7 %Rec 99.8 %RSD 4.0 %Rec 97.9 %RSD 2.9 %Rec 99.7 %RSD 3.7 %Rec 96.3 
+extracted the cannabinoids, while also causing formation of a finely dispersed precipitate. This latter approach resulted in quantitative recovery (85–113%) of the cannabinoids, see also Tables 5 and 6. To assess other high sugar matrices for the potential to trap the cannabinoids and the need to use the modified extraction, it is a matter of evaluating the physical form of the precipitates formed during extraction. Glassy or amorphous precipitates may trap the cannabinoids, while finely dispersed precipitates tend not to interfere with extraction. 
+Semisolid fat and oil matrices such as butter, margarine, virgin coconut oil, and various nonpolar topical ointments, creams, or balms did not disperse well in either 95% or pure ethanol. Two 
+alternative extraction conditions were evaluated to address this problem: (1)the use of 95% ethanol combined with hexane (10–30% v/v) for extraction; (2) a simple warming of the 95% ethanol extract on a hot plate. The hexane-containing extractants did provide good dispersion of the sample matrices during extraction, and resulted in quantitative cannabinoid recoveries (91–105%). The warming of the 95% ethanol extract caused the semisolid matrices to melt and remain dispersed throughout the extraction, and also provided quantitative recoveries (86–103%). The latter approach which avoided the need for hexane in the extractant was preferred, and minimized coextraction of fatty matrix components. Finally, pure ethanol was used for the extraction of Cannabinoids from highly 
+
+
+Please cite this article in press as: L.A. Ciolino, et al., Commercial cannabis consumer products part 2: HPLC-DAD quantitative analysis of cannabis cannabinoids, Forensic Sci. Int. (2018), https://doi.org/10.1016/j.forsciint.2018.05.033
+	
+
+
+
+G Model 
+FSI 9328 No. of Pages 10Table 6 
+  
+L.A. Ciolino et al. / Forensic Science International xxx (2018) xxx–xxx 7 
+Cannabinoids %spike recovery from consumer products. 
+Spiking extract source Fresh bud Decarboxylated bud Decarboxylated hemp oil 
+Cannabinoid THCA d9THC d9THC CBN CBD CBDA Spiking level range (mg/g) 13–19 1.7–5.8 13–20 0.41–0.69 16–19 0.96–1.2 Edible oils 
+Liquid coconut oil 97.2 103 96.2 100 91.6 91.5 Virgin coconut oil 91.7 100 98.9 103 93.3 93.0 Grapeseed oil 90.2 94.9 95.7 99.0 93.4 94.3 Safflower seed oil 92.5 97.5 94.7 101 93.8 95.8 Sunflower seed oil 92.8 99.8 95.9 98.9 93.3 95.1 Olive oil 94.2 100 97.4 100 92.2 93.6 Hempseed oil 1 92.4 100 95.9 101 94.9 96.4 Hempseed oil 2 93.0 101 95.8 101 94.4 96.0 Sesame oil 93.0 100 97.2 100 93.8 95.0 Corn oil 91.9 100 98.8 102 93.2 94.9 
+Foods/beverages 
+Frosted brownie 102 100 98.8 98.6 92.3 95.3 Milk chocolate bar 107 110 101 99.7 96.3 99.6 Dark chocolate bar 101 102 98.3 96.2 94.3 95.7 Hard candy 100 105 95.5 103 99.3 102 Honey 99.5 106 94.3 99.3 95.7 96.8 Strawberry preserves 92.6 101 102 109 101 102 
+Whipped butter 89.8 95.1 95.5 97.7 96.5 99.2 Vegetable oil spread 94.8 102 92.2 96.9 96.8 96.9 Cream cheese spread 94.8 99.8 91.8 93.8 96.7 97.2 Powdered cocoa mix 101 105 99.8 101 96.8 97.9 Ground coffee 93.8 97.8 96.0 101 97.0 93.2 Flavored coffee beverage 90.2 100 94.8 97.1 97.7 97.1 Flavored green tea beverage 91.7 102 96.3 98.7 98.6 102 Creamy peanut butter 91.0 93.5 98.3 99.7 95.2 96.4 Loose English tea 93.5 99.4 97.5 100 99.7 100 Greek yogurt 93.0 99.5 99.3 102 95.3 94.3 Pancake dry mix 96.4 98.7 95.6 98.4 98.4 93.2 Tapioca pudding dry mix 102 107 102 105 94.1 94.9 Flavored gelatin dry mix 105 108 103 106 95.7 96.3 
+Topicals 
+Hand/body lotion 96.3 99.5 92.3 97.7 89.3 84.7 Pharmaceutical cream base 94.5 100 94.2 95.7 89.8 87.1 Trolamine salicylate cream 98.4 101 95.9 98.8 97.8 94.4 Menthol pain gel 97.3 100 93.9 95.7 90.3 87.7 Menthol/methylsalicylate balm 95.2 100 98.9 102 90.7 85.8 Herbal pain cream 87.8 93.5 95.8 100 92.5 90.5 Camphor/menthol ointment 96.4 102 94.6 101 94.9 88.2 
+Oral OTC pharmaceuticals 
+Acetaminophen tablets 95.4 101 98.3 99.7 90.8 90.5 Ibuprofen tablets 93.8 99.4 96.2 99.8 91.5 91.5 Acetaminophen suspension 97.7 98.9 98.3 99.4 92.2 90.8 Ibuprofen soft gels 98.6 98.7 96.3 96.6 91.5 91.7 Acetaminophen/caffeine liquid 98.9 103 99.0 99.0 91.6 90.6 Overall average % recovery 95.6 101 96.9 100 94.5 94.4 
+aqueous sample matrices such as beverages. Depending on the sample weights and extraction volumes,the water in these matrices mixed with the ethanol extractantto produce a finished extract with >90% ethanol. Quantitative recoveries (90–102%) were obtained. 
+While no formal stability studies were conducted, sample extracts using 95% ethanol or pure ethanol were found to be stable for all product types. Sample extracts were placed in amber HPLC vials and queued in an autosampler under ambient conditions. No evidence of conversion of the carboxylated cannabinoids (CBDA, THCA) to their decarboxylated forms (CBD, d9THC), or of conversion of d9THC to CBN, was observed in the analytical time frames (extracts were analyzed up to three days after preparation when in a sample queue). 
+3.3. Method validation 
+Method validation consisted of evaluating precision and accura cy. Precision was assessed by calculating relative standard deviation 
+(%RSD) for replicate analyses of commercial cannabis products, or other cannabis matrices. Accuracy was primarily determined by measuring the recoveries of cannabinoid spikes from numerous commercial cannabis products, and from a series of consumer products which we spiked to mimic the commercial products. No certified cannabis reference materials were available for testing, but both 2.5 and 5.0 mg prescription dronabinol capsules were analyzed to further test method accuracy. The 2.5 and 5.0 mg dronabinol capsules were from different generic drug manufacturers, with both formulas including glycerin and sesame oil as excipients. Excellent accuracy was obtained, with the d9THC assay results equivalent to 95% and 101% ofthe labeled amounts for the 2.5 and 5.0 mg capsules, respectively. The results of extensive precision and accuracy testing are detailed below. The authors’ inhouse laboratory targets for precision were %RSDs of 20% or less, and accuracy were 80–120% recovery of the spiked or labeled amounts. 
+Table 2 provides the analysis results for five THCA-rich cannabis plant bud products obtained from Colorado retail markets in 2017, 
+
+
+Please cite this article in press as: L.A. Ciolino, et al., Commercial cannabis consumer products part 2: HPLC-DAD quantitative analysis of cannabis cannabinoids, Forensic Sci. Int. (2018), https://doi.org/10.1016/j.forsciint.2018.05.033
+	
+
+
+
+G Model   
+FSI 9328 No. of Pages 10
+8 L.A. Ciolino et al. / Forensic Science International xxx (2018) xxx–xxx 
+as well as crude hash oils and fine kief which were prepared in the authors’ laboratory (Section 2.2). No CBDA-rich varieties were available in the retail markets visited. The commercial plant buds were packaged in capped plastic product jars containing from 1.75 to 3.5 g total contents weight. The plant buds were thoroughly ground in a mortar prior to analysis with no further attempts to homogenize the materials, and extracted with pure ethanol. The crude hash oils and kief were extracted with 95% ethanol. The table lists assay and precision results for the cannabinoids THCA, d9THC, CBGA, CBDA, and CBN. THCA was by far the predominant cannabinoid in the commercial buds (ranging from 138 to 241 mg/g) with very small amounts of CBN (all less than 0.24 mg/g), consistent with fairly fresh plant material. Good assay precision was obtained over several orders of magnitude for the cannabinoid determined amounts (0.016–399 mg/g) with average %RSDs ranging from 2.5 to 6.1% across the five cannabinoids. As is typical for low level quantitation, the highest individual %RSDs (12 or 13%) were observed for the CBN assays which were near the LOQ (0.01 mg/g). 
+Table 3 provides the analysis results for seven concentrated, CBD-rich oral supplement syringe products obtained from internet web stores between 2014 and 2016. Six of the syringe products contained semisolid paste or gel like substances, and one syringe product contained a low viscosity liquid. Most of the products were labeled as “hemp oil” with additional label text indicating “mature stalk”, “seed and stalk”, “stem and stalk”, or “aerial plant parts”. The product contents were dispensed directly from the product syringes for analysis, and extracted with pure ethanol or 95% ethanol (see table). The table lists assay and precision results for the four cannabinoids CBD, d9THC, CBN, and CBDA. CBD amounts were high ranging from 144 to 350 mg/g. CBDA was either not detected or found in low amounts in the products indicating that the product contents were most likely subjected to a heated decarboxylation process during manufacture. Again, good assay precision was obtained over several orders of magnitude for the cannabinoid determined amounts (0.24–350 mg/g) with average % RSDs ranging from 2.5 to 5.5% across the cannabinoids. No THCA was detected in the products. 
+Table 4 provides assay, precision (%RSD), and accuracy (%spike/ recovery) data for the five target cannabinoids in two Canadian sourced hempseed oils (one obtained in 2014 and the other in 2017). All extractions were conducted using 95% ethanol. Note that cannabinoid levels are typically low in hempseed oils, and all results are given in mg/g. Determined amounts of CBDA and CBD in the first hempseed oil were close to the specified LOQ (0.01 mg/g, equivalent to 10mg/g) for this method, and determined amounts of THCA were below the LOQ in both hempseed oils. Two spiking levels (nominally 20mg/g or 120–140mg/g) were tested for each cannabinoid, which fall within the ranges of cannabinoid contents reported for hempseed oils [5,22]. Recoveries for both spiking levels averaged across the five target cannabinoids ranged from 93–96%. However, recoveries tended to be lower (83–88%) for THCA. Through all of the work with other edible oils and product matrices, hempseed oil was the most difficult matrix fromwhich to extract low levels of THCA (less than 200mg/g). 
+Table 5 provides assay results, precision (%RSD), and accuracy (%spike/recovery) data for CBD, d9THC, CBDA, and CBN in 28 cannabis based consumer products obtained between 2015 and 2017 from internet web stores. The products included oral supplements (oral/sublingual liquids/semisolid, tablets, capsules), vapes/eliquids, topicals, and foods or beverages. Many of the orals liquids were sold in dropper bottles, and were formulated with various edible oils (grapeseed, sunflower seed, aerial hemp, hempseed, liquid or virgin coconut, sesame), and may have also contained ethanol, glycerin, propylene glycol, and flavors. All products were extracted with 95% ethanol. CBD was declared as an 
+ingredient on many of the product labels, and was frequently present in highest amount relative to the other cannabinoids. Interferences were not encountered in most cases, except for CBDA for which sometimes there was partial coelution with unknown interferents. These CBDA interferences were effectively eliminated by using the most selective wavelength for this compound (307 nm). For all cannabinoids, expert examination of the peak UV spectra in the product chromatograms was made, and cannabinoid identification was only confirmed if the spectra were consistent with the respective cannabinoid standard. 
+In the table, the products are listed in descending order of CBD content within each product category. CBD product levels spanned a broad range from 0.011 to 145 mg/g. If detected, the d9THC content ranged from 0.012 to 5.3 mg/g across the products. Good precision was obtained, with average %RSDs across products ranging from 1.7 to 4.0%. Spiking experiments were conducted for each of the quantified cannabinoids using a spiking level which approximated the amounts determined in the assay. Excellent recoveries were obtained, with the averages across products ranging from 96 to 100% for each cannabinoid. THCA was only detected in one of the products listed in Table 5, the topical balm with a determined content of 0.019 mg/g (3.3%RSD). Another consumer product which is not listed in the table consisted of an oral liquid tincture which contained only THCA and d9THC with determined amounts of 0.14 mg/g (0.35% RSD) and 0.026 mg/g (4.7% RSD), respectively. Spike recovery for THCA in the topical balm was 100% (0.020 mg/g spiking level) and in the oral tincture was 102% (0.15 mg/g spiking level). 
+In order to further challenge the method’s broad applicability, additional spiking experiments were conducted with still more products/sample matrices. Table 6 provides accuracy (%spike/ recovery) data for all five target cannabinoids in 39 negative product matrices, and two Canadian hempseed oils which contained low cannabinoid levels (see Table 4) prior to spiking. Most of the sample matrices were consumer products obtained from local grocery stores or pharmacies, and included edible oils, foods and beverages, topicals, and oral OTC pharmaceuticals. As a whole, these matrices are physically and chemically diverse, and may contain fats, oils, sugars, starches, food proteins, flavors, water, or various topical/pharmaceutical excipients. The edible oils include several which were encountered by the authors in commercial cannabis containing oral supplements. 
+The products/matrices were spiked with three differenttypes of concentrated cannabis extracts (Section 2.3): (1) an ethanolic THCA-rich extract which was prepared in the authors’ laboratory from fresh THCA-rich cannabis bud material; (2) an ethanolic d9THC-rich extract which was prepared in the authors’ laboratory from decarboxylated cannabis bud material; (3) an ethanolic CBD rich extract which was prepared in the authors’ laboratory from a commercial decarboxylated hemp oil (the authors’ analysis of the CBD content of the product was ca. 160 mg/g). By using whole cannabis extracts for spiking, this set of experiments more closely mimics manufactured cannabis consumer products because the extracts contain additional cannabinoids and a host of other cannabis plant components which extract into ethanol. Another goal was to achieve somewhat higher spiking levels, especially for THCA and d9THC. To this end, spike recoveries were only measured for the two cannabinoids which were most prominent in the spiking extracts, i.e. THCA and d9THC for the first spiking set, d9THC and CBN for the second spiking set, and CBD and CBDA for the third spiking set. For brevity, spiking levels for each individual matrix are not listed in the table. Rather, the ranges of spiking levels across the 41 matrices are listed, and were in the range 10– 20 mg/g for the predominant cannabinoid and 0.4–5.8 mg/g for the second cannabinoid in each set. All individual spike recoveries fell within the range 85–110%. The recoveries for the five target 
+
+
+Please cite this article in press as: L.A. Ciolino, et al., Commercial cannabis consumer products part 2: HPLC-DAD quantitative analysis of cannabis cannabinoids, Forensic Sci. Int. (2018), https://doi.org/10.1016/j.forsciint.2018.05.033
+	
+
+
+
+G Model   
+FSI 9328 No. of Pages 10
+L.A. Ciolino et al. / Forensic Science International xxx (2018) xxx–xxx 9 
+compounds averaged across all 41 matrices were excellent, ranging from 94 to 101%. The low levels of cannabinoids already present in the two hempseed oils prior to spiking were accounted for in the spike recovery calculations. None of the additional product actives (trolamine salicylate, acetaminophen, ibuprofen, etc.) from the topical or oral pharmaceuticals caused interferences for the cannabinoids. 
+3.4. Method LODs and LOQs 
+The method limit of quantitation (LOQ) was taken as 10mg/g (0.010 mg/g) in all cannabis-related samples including finished products. For UV detection, limits of detection (LODs) are specific to the response slope at a given wavelength. For the five target cannabinoids, the slopes ranged from a low of 18 for CBD at 240nm up to 130 for CBN at 220 nm (Table 1). The concentration based limit of detection (LOD)for the injected standardsolutionwas established as 0.20mg/ml, and was based on the lowest response compound (CBD) yielding themost conservative value.The concentration based LODwasconfirmed by injectionoflowlevel standards andinpractice withreal sample extracts. The concentrationbasedLOQ was taken as 2.5 times this value, or 0.50mg/ml. 
+For LOQ calculations in finished products, a 1 g sample weight and 5.0 ml extraction volume were taken to represent a fairly concentrated sample extract. While this calculation would yield a finished products LOQ value of 2.5mg/g, the LOQ was specified at the more conservative 10mg/g value based on other consider ations. These include the intended use of the method for a series of cannabinoids in a tremendous variety of product types and matrices, and the tendency for poorer precision at low analyte levels in complex matrices. The specified LOQ does not preclude the possibility of achieving lower limits for specific cannabinoids in specific product or matrix types by various means, such as the use of preconcentration of product extracts. 
+As demonstrated in this work, the method sensitivity was well suited for analysis of commercial cannabis products for which target cannabinoid levels were at or well above the current method LOQ. Furthermore, certain legal limits or definitions based on the cannabinoid content(s) in cannabis materials are currently in use throughout the world. Maximum d9THC contents in the range 0.1– 0.3%w/w [23–26] are currently specified in the EU, Australia, US, and Canada for plant materials to meet a legal definition of “hemp”. By contrast, maximum allowable levels of d9THC in hemp seeds/ hempseed oils for consumption are much lower, ranging from zero to 20mg/g [24,26,27] depending on the governing country. The current method LOQ falls well below the sensitivity needed to classify hemp vs. marijuana plants, but may not be suitable for the stricter d9THC limits in hemp seeds/hempseed oils. As discussed for the GC–MS procedure [1], this method has not been evaluated for the determination of cannabinoids in washed or unwashed hemp seeds, or hemp seed kernels. 
+4. Conclusion 
+The HPLC-DADmethodpresentedhereinaddresses theneed for a reliablequantitativeprocedurefor thedetermination ofthecannabis cannabinoids in a wide range of product and sample types. The method is applicable to foods, candies, beverages, topicals, vapes/ eliquids, oral liquid supplements, pastes, capsules, tablets, cannabis plants, and plant extracts or preparations. In earlier work (data not presented), spiking experiments for CBC in 10 products and CBG in three products were conducted, and quantitative recoveries were obtained. Although the extensive validation studies were limited to the five cited cannabinoids, this method may be suitable for the quantitation of other cannabis cannabinoids, with additional validation conducted for the specific compounds of interest. 
+Declaration of interests 
+None. 
+References 
+[1] L.A. Ciolino, T.L. Ranieri, A.M. Taylor, Commercial cannabis consumer products Part 1: GC–MS qualitative analysis of cannabis cannabinoids, Forensic Sci. Int. xxxxxx. 
+[2] M.R. Peace, K.E. Butler, C.E. Wolf, J.L. Poklis, A. Poklis, Evaluation of two commercially available cannabidiol formulations for use in electronic cigarettes, Front. Pharmacol. 29 (2016) 1–6. 
+[3] O. Aizpurua-Olaizola, J. Omar, P. Navarro, M. Olivares, N. Etxebarria, A. Usobiaga, Identification and quantitation of cannabinoids in cannabis sativa L. plants by high performance liquid chromatography–mass spectrometry, Anal. Bioanal. Chem. 406 (2014) 7549–7560. 
+[4] M. Wang, Y.H. Wang, B. Avula, M.M. Radwan, A.S. Wanas, Z. Mehmedic, J. van Antwerp, M.A. ElSohly, I.A. Khan, Quantitative determination of cannabinoids in cannabis and cannabis products using ultra-high performance supercritical fluid chromatrography and diode array/mass spectrometric detection, J. Forensic Sci. 62 (2017) 602–611. 
+[5] C. Citti, B. Pacchetti, M.A. Vandelli, F. Forni, G. Cannazza, Analysis of cannabinoids in commercial hemp seed oil and decarboxylation kinetics studies of cannabidiolic acid (CBDA), J. Pharm. Biomed Anal. 149 (2018) 532– 540. 
+[6] B. Patel, D. Wene, Z. Fan, Qualitative and quantitative measurement of cannabinoids in cannabis using modified HPLC/DAD method, J. Pharm. Biomed. Anal. 146 (2017) 15–23. 
+[7] V. Brighenti, F. Pellati, M. Steinbach, D. Maran, S. Benvenuti, Development of a new extaction technique and HPLC method for the analysis of non psychoactive cannabinoids in fibre-type cannabis sativa L. (hemp), J. Pharm. Biomed. Anal. 143 (2017) 228–236, doi:http://dx.doi.org/10.1016/j. jpba.2017.05.049 [Epub ahead of print]. 
+[8] W. Peschel, Quality control of traditional cannabis tinctures, Sci. Pharm. 84 (2016) 567–584. 
+[9] W. Gul, S.W. Gul, M.M. Radwan, A.S. Wanas, Z. Mehmedic, I.I. Khan, M.H. Sharaf, M.A. ElSohly, Determination of 11 cannabinoids in biomass and extracts of different varieties of cannabis using high-performance liquid chromatography, J. AOAC Int. 98 (2015) 1523–1528. 
+[10] W. Peschel, M. Politi, 1HNMR and HPLC/DAD for cannabis sativa L. chemotype distinction, extract profiling, and specification, Talanta 140 (2015) 150–165. 
+[11] R. Vandrey, J.C. Raber, M.E. Raber, B. Douglass, C. Miller, M.O. Bonn-Miller, Cannabinoid dose and label accuracy in edible medical cannabis products, JAMA 313 (2015) 2491–2493. 
+[12] L. Ambach, F. Penitschka, A. Broillet, S. Konig, W. Weinmann, W. Bernhard, Simultaneous quantification of delta-9-THC, THC-acid A, CBN and CBD in seized drugs using HPLC-DAD, Forensic Sci. Int. 243 (2014) 107–111. 
+[13] B. De Backer, B. Debrus, P. Lebrun, L. Theunis, N. Dubois, L. Decock, A. Verstraete, P. Hubert, C. Charlier, Innovative development and validation of an HPLC/DAD method for the qualitative and quantitative determination of major cannabinoids in cannabis plant material, J. Chromatogr. B 877 (2009) 4115– 4224. 
+[14] Y.H. Wang, B. Avula, M.A. ElSohly, M.M. Radwan, M. Wang, A.S. Wanas, Z. Mehmedic, I.A. Khan, Quantitative determination of d9-THC, CBG, CBD, their acid precursors and five other neutral cannabinoids by UHPLC-UV-MS, Planta Med. 84 (2018) 260–266. 
+[15] C. Citti, G. Ciccarella, D. Braghiroli, C. Parenti, M.A. Vandelli, G. Cannazza, Medicinal cannabis: principal cannabinoids concentration and their stability evaluated by a high performance liquid chromatography coupled to diode array and quadrupole time of flight mass spectrometry method, J. Pharm. Biomed. Anal. 128 (2016) 201–209. 
+[16] E.A. Ibrahim, W. Gul, S.W. Gul, B.J. Stamper, G.M. Hadad, R.A.A. Salam, A.K. Ibrahim, S.A. Ahmed, S. Chandra, H. Lata, M.A. Radwan, M.A. EhSohly, Determination of acid and neutral cannabinoids in extracts of different strains of cannabis sativa using GC-FID, Planta Med. 84 (2018) 250–259. 
+[17] R. Mechoulam, L. Hanus, Cannabidiol: an overview of some chemical and pharmacological aspects. Part 1: chemical aspects, Chem. Phys. Lipids 121 (2002) 35–43. 
+[18] R. Mechoulam, Marihuana chemistry, Science 168 (1970) 1159–1165. [19] O. Zoller, P. Rhyn, B. Zimmerli, High-performance liquid chromatographic determination of d9-tetrahydrocannabinol and the corresponding acid in hemp containing foods with special regard to the fluorescence properties of d9-tetrahydrocannabinol, J. Chromatogr. A 872 (2000) 101–110. [20] J.M. Parker, M.L. Borke, L.H. Block, T.G. Cochran, Decomposition of cannabidiol in chloroform solution, J. Pharm. Sci. 63 (1974) 970–971. 
+[21] J.W. Fairbairn, J.A. Liebmann, M.G. Rowan, Stability of cannabis and its preparations, J. Pharm. Pharmacol. 28 (1976) 1–7. 
+[22] M. Petrovi c, Ž. Debeljak, N. Kezi c, P. Džidara, Relationship between cannabinoids content and composition of fatty acids in hempseed oils, Food Chem. 170 (2015) 218–225. 
+[23] European Monitoring Centre for Drugs and Drug Addiction, Cannabis legislation in Europe: an overview, Publication Office of the European Union, Luxembourg, 2017. 
+
+
+Please cite this article in press as: L.A. Ciolino, et al., Commercial cannabis consumer products part 2: HPLC-DAD quantitative analysis of cannabis cannabinoids, Forensic Sci. Int. (2018), https://doi.org/10.1016/j.forsciint.2018.05.033
+	
+
+
+
+G Model   
+FSI 9328 No. of Pages 10
+10 L.A. Ciolino et al. / Forensic Science International xxx (2018) xxx–xxx 
+[24] Therapeutic Goods Administration, Department of Health, Australia, Schedul ing delegate’s final decisions: Cannabis, (2017) . May https://www.tga.gov.au/ book-page/11-cannabis. 
+[25] US. Department of Agriculture, Drug Enforcement Administration, Food and Drug Administration, Statement on Principles of Industrial Hemp. Federal Register Vol. 81 No. 156 (August 12, 2016) 53395–53396. 
+[26] Minister of Justice, Government of Canada, Industrial Hemp Regulations (SOR/ 98-156), current to 2018-01-18. 
+[27] Drug Enforcement Administration, Exemption from control of certain industrial products and materials from the cannabis plant. Federal Register Vol. 68 No. 55 (March 21, 2003) 14119–14126. 
+
+
+Please cite this article in press as: L.A. Ciolino, et al., Commercial cannabis consumer products part 2: HPLC-DAD quantitative analysis of cannabis cannabinoids, Forensic Sci. Int. (2018), https://doi.org/10.1016/j.forsciint.2018.05.033

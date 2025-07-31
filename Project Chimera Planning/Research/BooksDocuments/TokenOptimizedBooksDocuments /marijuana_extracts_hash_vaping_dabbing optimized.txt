@@ -1,0 +1,35 @@
+```text
+marijuana_extracts_hash_vaping_dabbing.txt
+
+Plant Growth Stages: Seedling (young, vulnerable), Vegetative (leaf/stem growth), Flowering (bud production). Unique environmental/nutritional needs per stage.  Buds (5-20% THC), leaves (1-3% THC), trim (2-6% THC). Trim/leaves contain 10-20% total THC.
+
+By-product Hierarchy (decreasing THC): 1. Bud bits/popcorn bud; 2. Bag shake; 3. Primary trim; 4. Mature fan leaves; 5. Immature buds; 6. Immature trim/leaf; 7. Vegetative leaf.
+
+Gland Types: Bulbous (10-15 microns), Capitate-sessile (25-100 microns), Capitate-stalked (150-500 microns). Gland size varies by strain, growing technique.
+
+THC Solubility: Oils, fats, alcohol; not water.  THCA (inactive) decarboxylates to THC during drying.
+
+Assimilation: Smoking/vaping (fast); sublingual tincture (5 min); edibles (empty stomach 20-30 min, full stomach 45-60 min).  Dosage varies greatly; experimentation needed.
+
+Kief/Dry Sift: Trichome collection via screen (40-400 mesh; 100-130 microns optimal). Manual, machine (Pollinator), dry ice methods.  Dry ice: -106°F (-76°C); yields 4-10g/oz.
+
+Water Hash: Trichome separation via ice water agitation & micron-sized bags (Ice-O-Lator, Bubble Bags, homemade). Multiple bags separate by grade.  Yields ¼ - 1 oz/8 oz plant material.
+
+Advanced Hash: Kief/water hash pressing (manual, mechanical).  Decarboxylation via mild heat. Hand-rubbing (low yield, high quality).
+
+Vaporizers: Evaporate THC below combustion point (330-375°F [165-190°C]). Types: desktop (VaporBrothers Vapor Box, Da Buddha, VapirRise, Volcano, Storz & Bickel Plenty), handheld (Magic Flight Launch Box), vape pens (Vaped Micro V2, Cloud, Grenco Science microG, Vaporite Sapphire, Vaporite Emerald, Ploom Pax).
+
+Dabbing: Vaporizing concentrates.  Gear: nails (quartz, titanium, ceramic; domed/domeless), dab rigs, electric dabbers, health stones, skillets, dabbers.  Butane torch use; safety precautions crucial.  The Clear concentrate (75-80% THC). HBC Wax (solvent-free, hyperbaric).
+
+Butane Extracts (BHO): Butane dissolves cannabinoids; solvent evaporated. Dangers: explosion risk (closed-loop systems recommended).  Closed-loop: recapture system, vacuum oven (94-98°F [34-37°C], -600 mm Hg [Torr]).  Consistencies: shatter, honeycomb, budder, wax, oil.  Open-ended: higher risk, lower efficiency.  Winterization removes waxes.  Decarboxylation (222°F [106°C]).
+
+CO2 Extracts: Supercritical/subcritical CO2 extraction.  Safer than butane.  High yield, clean product.  Equipment: CO2 tanks, extractor (Eden Labs, Waters SFE, Apeks).  Supercritical (87°F [30°C], 1070 psi+).  Winterization, decarboxylation.
+
+Tinctures: Alcohol/glycerin extraction. Alcohol choices: USP, Everclear (190 proof), Spirytus (192 proof).  Methods: soaking, Ask Ed's Fast-Track.  Reduction to oil via evaporation (double boiler).  Distilling (Soxhlet extractor). Glycerin tinctures: alcohol tincture + glycerin; alcohol evaporation.  Sublingual administration.
+
+Capsules (Canna Caps): Powdered/oil-based filling.  Decarboxylation (100°F [38°C]).  Gelatin/vegetarian capsules.  Filling machines.  Dosage: 1-5 size #0, 1-2 #00.
+
+Edibles: Cannabinoid infusion in oil, butter, milk, flour.  Decarboxylation crucial.  Dosage varies greatly; cautious approach recommended.  Recipes: Canna oil, canna butter (slow cooker, stove-top, skillet), rice crispy treats, pesto, salad dressing, canna milk, Bhang Lassi, canna tea, marijuana flour.
+
+Topicals: Skin absorption of cannabinoids.  Uses: pain relief, inflammation, skin conditions.  Methods: poultices (fresh leaf, alcohol-soaked, powdered), salves/oils (cannabis oil + beeswax, shea butter, etc.), topical tinctures, Rick Simpson Oil.  Heat increases absorption.
+```

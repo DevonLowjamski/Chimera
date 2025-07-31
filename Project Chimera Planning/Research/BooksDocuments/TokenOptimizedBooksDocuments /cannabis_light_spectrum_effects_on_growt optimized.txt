@@ -1,0 +1,21 @@
+```text
+Cannabis sativa L. light spectrum effects:
+
+Light impacts photosynthesis, photoperiodism, photomorphogenesis.  Photosynthesis (400-700nm, max absorption 600-700nm [red] & 420-450nm [blue]) affected by intensity & spectrum. Full spectrum benefits suggested.  Photoperiodism affects flowering (short-day plant). Photomorphogenesis (light quality) impacts vegetative/flowering transition, elongation, stomatal conductance, leaf expansion, secondary metabolism.  Cannabinoids affected by light.
+
+Study objective: Evaluate Blue:Red light ratio's effect on cannabinoid metabolism, and full spectrum effects (similar Blue:Red ratio).
+
+Methods: 3 Cannabis sativa genotypes (CS10: high CBDA, low THCA; CS12: balanced; CS14: high THCA, low CBDA). Cuttings grown in coconut fiber/perlite (1L pots). Long photoperiod (18/6) for 5 days (CS12: 24 days), then short photoperiod (12/12). 4 light treatments:  HPS (high-pressure sodium, red/far-red rich), White LED (~1:1 Blue:Red), 1:1 LED (Blue:Red), 1:4 LED (Blue:Red).  950 μmol m⁻²s⁻¹ PAR (Photosynthetically Active Radiation) after 10 days. HPS & 1:4 LED: up to 25% IR. Cannabinoid analysis (HPLC) after 58 days (40% amber trichomes).  Morphological (height, biomass), physiological (pigments, gas exchange, membrane leakage, osmotic potential, relative water content (RWC), water use efficiency (WUEi)) measurements.  Statistics: one-way ANOVA (α < 0.05), Tukey's HSD.
+
+Results:
+
+Yield: Highest inflorescence yield with 1:1 Blue:Red (LED), similar yield with 1:4 Blue:Red (LED) in 2/3 varieties. Lowest yield with 1:1 White LED.
+
+Cannabinoids: CBGA highest response; stimulated by blue-rich light (White LED, 1:1 LED). CBDA, THCA, CBCA also affected, cultivar-specific, less pronounced than CBGA. Decarboxylation varied by cultivar, cannabinoid; not significantly affected by light.
+
+Morphology: Blue light induced compact plants. 1:4 LED yielded tallest plants (CS10, CS14).  1:1 & White LED yielded shortest.  CS12: Red/Blue LED taller than HPS/White LED.  1:1 LED: highest biomass.
+
+Physiology: 1:1 & 1:4 LED: highest photosynthesis rate. Stomatal conductance & transpiration highest in 1:1 LED (CS14: similar with White LED). Lowest intracellular CO2 in HPS. Highest in 1:1/1:4 LED (CS14: 1:1 & White LED).  Chlorophyll a highest in 1:1 LED. Carotenoids highest in 1:1 LED, lowest in HPS. Chlorophyll b varied by cultivar. Osmotic potential & RWC unaffected. Membrane leakage unaffected. HPS most water efficient. 1:1 LED least water efficient.
+
+Conclusions: Light spectrum impacted all parameters. Cultivar-dependent responses observed. Blue:Red ratio affected growth and cannabinoid profile. Full spectrum did not improve yield. Cannabinoid profile alteration possible via light manipulation. Genetics & light quality interplay key for bioactive profile customization.
+```

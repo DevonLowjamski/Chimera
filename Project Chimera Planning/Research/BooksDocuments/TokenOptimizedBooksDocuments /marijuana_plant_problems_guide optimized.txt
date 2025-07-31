@@ -1,0 +1,33 @@
+```text
+marijuana_plant_problems_guide.txt
+
+Plant Growth Stages: Seedling (young, vulnerable), Vegetative (leaf/stem growth), Flowering (bud production). Each stage has unique, player-managed environmental/nutritional needs.  Sativa: tall (8-15 ft/2.5-4.6 m), skinny leaflets, high THC, low CBD. Indica: short (<5 ft/1.5 m), bushy, wide leaflets, low THC, high CBD.  Hybrids exist. Medicinal uses: chronic pain, muscle spasms, glaucoma, epilepsy, nausea, appetite stimulation, cancer treatment (promising research).
+
+Part I: Visual Problem-Solving Guides (Whole Plant, Leaves, Flowers/Buds, Stems, Roots, Seeds/Seedlings). Each chapter categorizes symptoms (e.g., leaf holes, discoloration), providing photos, descriptions, diagnoses (most to least common: pests, diseases, disorders), and solutions (page references).
+
+Part II: Organic Solutions (Change Growing Conditions, Biological Controls, Organic Chemical Remedies, Healthy Growing Conditions, Nutrient Management, Light Management, Water Management, Temperature/Humidity Management, Pruning, Propagation).
+
+Chapter 7: Change Growing Conditions: Sanitize (tools, plants, growing area), Weed (sheet mulch, hoe/pull, germination inhibitors), Mulch (organic, nutrient-poor), Row Covers, Screens (doors/vents/windows), Cutworm Collars, Tarpaper Collars, Copper Tape, Fences, Netting, Sand/Perlite (over potting media), Turn Off Lights.
+
+Chapter 8: Biological Controls: Beneficial Insects (tables by diagnosis, including species names and uses; detailed descriptions of each beneficial insect), Beneficial Mites (tables by diagnosis, including species names and uses; detailed descriptions of each beneficial mite), Beneficial Fungi (tables by diagnosis, including species names and uses; descriptions of each beneficial fungus), Beneficial Nematodes (tables by diagnosis, including species names and uses; descriptions of each beneficial nematode), Beneficial Bacteria (tables by diagnosis, including species names and uses; descriptions of each beneficial bacterium), Beneficial Protozoa (Nosema locustae), Insecticidal Viruses (NPV).
+
+Chapter 9: Organic Chemical Remedies: Safety (protective gear, labels), Least Toxic to Most Toxic: Kaolin, Hot-Pepper Spray, Garlic Spray, Baking Soda Spray (simple, complex), Insecticidal Soap, Neem, Iron Phosphate, Horticultural Oil, Diatomaceous Earth, Spinosad, Copper, Sulfur, Pyrethrin.  Stop using herbicides/pesticides; wash residue off plants.
+
+Chapter 10: Healthy Growing Conditions: Polycultures (companion plants by family), Genetically Resistant Plants, Avoid Planting Near Certain Crops, Crop Rotation, Plant Marigolds, Create Healthy Soil (compost piles, raised beds, sheet mulching), Create Healthy Potting Media, Choose the Right Container (size, shape, material, smart pots, air pots, hempy buckets), Hydroponic Systems.
+
+Chapter 11: Manage Nutrients: Measure and Modify pH (6.5-7 for soil/potting media; 5.8-6.5 for hydroponics), Manage Essential Nutrients (primary macronutrients: N, P, K; secondary macronutrients: Ca, Mg, S; micronutrients: B, Cu, Fe, Mn, Mo, Zn; quantities, fertilizer choices, decrease nitrogen), Stop Fertilizing and Flush Salts, Supplement Carbon Dioxide (indoors only).
+
+Chapter 12: Manage Light: Duration (vegetative: 13-18 hrs sativa, 14-18 hrs indica; flowering: ≤12 hrs sativa, ≤11 hrs indica; increase/decrease light), Quality (blue/red wavelengths, light sources), Quantity (25,000-50,000 lux, inverse square law).
+
+Chapter 13: Manage Water: Quantity and Frequency (½ inch dry media), Avoid Overwatering, Keep Foliage Dry, Measure and Adjust Water Quality (EC meter, TDS, 800-1200 PPM, distilled water, reverse osmosis).
+
+Chapter 14: Manage Temperature and Humidity: Temperature (vegetative: 70-85°F/21-29°C day, 60-75°F/16-24°C night; flowering: 65-80°F/18-27°C day, 55-70°F/13-21°C night), Humidity (vegetative: 40-80%; flowering: 40-60%; high humidity for cuttings), Hygrometers, Humidifiers, Dehumidifiers.
+
+Chapter 15: Use Proper Pruning Techniques: Clean Cuts (sterile tools), Why and When to Prune (compactness, remove shaded limbs, bigger buds, cuttings).
+
+Chapter 16: Use Proper Propagation Techniques: From Seeds (soaking, planting, temperature, lighting, repotting, sex determination), From Cuttings (choosing mother plant, sterile tools, cutting preparation, rooting hormone, planting, humidity), By Tissue Culture.
+
+Resources: USDA Organic Food Information, OMRI, Recommended Reading, Biological Control Suppliers, Soil/Water Testing (US).
+
+Acknowledgments & About the Authors & Index
+```

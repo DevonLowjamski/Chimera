@@ -1,0 +1,107 @@
+﻿Asset List 1.3.docx
+Project Chimera: Asset List. Core Vision: Modern, High-Tech, Clinical/Scientific, Aspirational/Professional aesthetic; player-driven "Relaxed & Cozy" variations. Detail: Paramount, benchmarks Satisfactory, Farming Sim for equipment; deep simulation. Source Prioritization: 1. Core Docs (mechanics, scope, style). 2. Relevant Docs (cannabis science, cultivation, pests, water, nutrients, breeding, equipment for realism/complexity). 3. General Knowledge (bridge gaps). Gameplay Loops Supported: Build, Cultivate, Breed, Process, Analyze, Optimize. Key Customizations: Expanded Utility Systems (Plumbing, HVAC, Electrical). Detailed Plant Assets (dynamic, procedural, GxE-tied). Lab/Research Equipment (advanced breeding/analysis). UI/Data Viz as crucial assets. Specifics: Environmental control, nutrient management, IPM, post-harvest details. Scalability: Residential vs. Warehouse/Industrial.
+Structural & Architectural Elements Purpose: Define grow spaces, support equipment, manage environment (materials). Variations: Interior (Drywall, Concrete, Insulated Panel), Exterior (Siding, Brick, Metal - Map specific), Industrial (Pre-fab, Heavy-duty). Material properties: Cost, Appearance, Insulation (R-value, light/air barrier for Env. Control Sim), Cleanliness. Assets:
+● Walls: Sections/panels (various materials). MVP. Required for initial Residential House map & basic Warehouse build-out. Insulation material properties relevant for MVP Env. Control Sim. Exterior/map-specific materials Post-MVP.
+● Floors: Sections (Concrete, Wood, Grate - load ratings). Drains (Standard, Trench - capacity). MVP. Required for initial facility construction.
+● Roofs/Ceilings: Sections (Drywall, Suspended Grid, Concrete). Suspended Tiles (acoustic, cleanroom). Open Rafters/Trusses (Wood, Metal). MVP. Required for initial facility construction.
+● Doors: Various types (Standard, Industrial Roller, Air Lock). MVP. Required for facility construction.
+● Windows: Various types (Standard, Greenhouse, Industrial). MVP. Standard windows for Residential/Warehouse. Greenhouse-specific windows Future (Post-MVP).
+● Stairs/Ladders/Catwalks: Vertical access. Likely MVP for multi-story/vertical Warehouse/facilities. Catwalks relevant for industrial scale.
+● Support Pillars/Beams: (Concrete, Steel). MVP for Warehouse map shell.
+Cultivation & Plant Care Tools Purpose: Plant maintenance, scouting, apply treatments. Variations: Size, Material, Quality (Basic, High-quality). Assets:
+● Pruning & Cutting: Bypass Pruners (Std, HD), Snips/Scissors (Micro-Tip, Curved/Straight), Scalpels, Loppers, Hand Saw. MVP. Needed for basic plant training (topping, manual LST) in core MVP cultivation.
+● Spraying & Application: Hand Spray Bottles, Pump Sprayers (Gal, Backpack), Handheld Dusters, Soil Drench Applicators. Industrial (Motorized spray carts, Foggers). MVP for basic manual pest/disease treatment. Industrial versions likely Late-Game MVP or Post-MVP (scale/automation skill nodes).
+● Scouting & Monitoring: Sticky Traps (Yellow, Blue - Cards, Rolls), Magnifying Loupes, Handheld/Benchtop Digital/Standard Microscopes. Soil/Medium Sample Probes/Corers. Leaf Sample Bags/Vials. Simulated Chlorophyll Meter. MVP for basic plant health monitoring & pest/disease ID. Microscopes/probes for manual data acquisition loop, unlocked via "Manual Environmental & Plant Sampling" Science skill node.
+Nutrient & Irrigation Equipment Purpose: Store, mix, deliver nutrients/water. Variations: Scale (Manual, Small Reservoir, Large Industrial), Control (Manual, Timed, Automated), Type (Drip, Ebb/Flow, DWC, Aeroponic). Assets:
+● Watering Cans/Hoses. MVP. Essential basic irrigation.
+● Reservoirs/Tanks: Various sizes (Plastic, Poly, Stainless). MVP. Needed for manual/timed watering. Larger/Industrial sizes likely Late-Game MVP or Post-MVP.
+● Pumps: Water Pumps (Submersible, Inline - flow rates/head pressure), Air Pumps (for DWC). MVP. Needed for simple reservoir systems. Sizes/capacities support scalability. Redundant pumps/advanced manifolds later game/Post-MVP.
+● Plumbing: Pipes (PVC, PEX, Drip Line), Fittings, Valves, Filters. MVP. Essential for irrigation systems, detailed construction. Sizes/materials impact performance. Manual routing MVP.
+● Nutrient Mixing Stations/Vats. MVP. Required for manual nutrient mixing. Scale/automation increases later.
+● Automated Dosing/Fertigation Systems. Likely Late-Game MVP / Post-MVP. Basic automation (timers) MVP; full auto-dosing likely advanced automation (deferred post-MVP).
+● Growing Mediums/Substrates: Bags/bulk (Soil, Coco Coir, Rockwool cubes/slabs, Hydroton, Peat Moss). MVP. Essential consumable. UI/Inventory representation MVP.
+● Nutrient Containers: Bottles/Bags of base nutrients, additives. MVP. Consumable, manual nutrient management. UI/Inventory representation MVP.
+Environmental Control Equipment Purpose: Manage temp, humidity, CO2, airflow, light cycles. Variations: Size, Capacity, Efficiency, Control (Manual, Timed, Sensor-Controlled). Assets:
+● HVAC Systems: Air Conditioners (Window, Split), Heaters (Electric, Gas), Dehumidifiers, Humidifiers. MVP. Basic HVAC for temp/humidity is core MVP. Various types/capacities for different rooms/needs. Unlocked via "Basic Environmental Control" Environment skill node.
+● Fans: Circulation Fans (Clip, Standing, Wall), Exhaust Fans, Inline Duct Fans. MVP. Essential for MVP airflow management/env control. Part of abstracted airflow physics.
+● Ducting: Flexible, Rigid (various diameters), Fittings, Filters. MVP. Needed for HVAC/exhaust. Detailed construction. Manual routing MVP.
+● CO2 Systems: CO2 Tanks (Visual assets), Regulators, Controllers, Generators. MVP for basic CO2 management (likely manual initially). Tanks are visual. Controllers for automation might be later MVP/Post-MVP.
+● Grow Lights: Types (HID - MH/HPS with Ballasts/Hoods, LED Panels - wattages/spectrum, Fluorescent - T5/CFL). MVP. Essential. Various types/tiers for progression.
+● Light Timers/Controllers. MVP. Basic automation (light timers) core MVP. Sensor-controlled/advanced automation likely Late-Game MVP / Post-MVP.
+● Thermostats, Humidistats, Environmental Controllers. MVP. Basic automation (simple thermostat/humidistat) core MVP. Advanced/integrated controllers unlock later.
+● Sensors: Environmental (Temp, RH, CO2, Light), Soil/Substrate (Moisture, EC, pH). MVP. Essential for real-time data dashboards. Player-placed sensors core to data collection. Various tiers (manual vs. integrated automated).
+● Air Filters: Intake filters, Carbon filters. Likely MVP. Essential for air quality/odor control (future mechanic?). Part of ducting.
+Utility Systems & Equipment Purpose: Deliver power, connect systems. Variations: Scale, Capacity, Efficiency, Type (Standard, Industrial). Assets:
+● Electrical Wiring: Various gauges. MVP. Detailed construction, abstracted utility connections. Manual routing MVP. Sizes/gauges impact performance.
+● Circuit Breakers / Fuse Boxes. MVP. Essential for electrical system management, load balancing.
+● Generators (Diesel/Gas). Likely Late-Game MVP / Post-MVP. Backup power. For scaling/risk mitigation (later progression).
+● Battery Banks / UPS. Likely Late-Game MVP / Post-MVP. Short-term buffer. Advanced risk management.
+● Main Power Grid Connection Point (Abstracted). MVP. Represents abstracted power draw.
+● Water Supply Connection Point (Abstracted - Tap, RO, Treated). MVP. Represents abstracted water source.
+Pots, Containers, & Growing Surfaces Purpose: Hold plants/medium. Variations: Size, Material (Plastic, Fabric, Ceramic), Type (Standard Pot, Grow Bag, Tray, Slab). Assets:
+● Pots: Various sizes (Small, Medium, Large). MVP. Essential. Sizes support plant lifecycle (transplanting).
+● Fabric Grow Bags. MVP. Container variation.
+● Trays / Flats (Seedling, Propagation). MVP. For starting seeds/clones.
+● Rockwool Cubes / Slabs. MVP. Growing medium/container type, esp. for hydro/coco.
+● Hydroponic/Aeroponic Systems (Basic Ebb/Flow, DWC buckets). Likely MVP for basic hydro options (beyond soil/coco). Supports different cultivation methods. Complex systems (aeroponic) might be later MVP/Post-MVP.
+● Growing Benches / Tables (Flood tables, Wire racks). MVP. Organize/manage multiple plants. Types support different systems (flood tables for Ebb/Flow).
+Pest & Disease Management Purpose: Monitor, identify, treat plant issues. Assets:
+● Sticky Traps (Yellow, Blue - Cards, Rolls). MVP. Basic pest monitoring.
+● Handheld Magnifying Loupes. MVP. Close visual inspection/scouting.
+● Hand Spray Bottles, Pump Sprayers (Gal, Backpack). MVP. Manual treatment application (e.g., neem oil).
+● (Simulated) Pesticides/Fungicides (Consumables). MVP. Needed for manual treatment. UI/Inventory representation.
+● Microscopes (Handheld, Benchtop). MVP. Detailed pest/trichome inspection. Unlocked via Science skill tree.
+● In-game "Plant Problems Guide" UI/Asset. MVP. Essential for diagnostics/solutions.
+Harvesting & Processing Equipment Purpose: Harvest, trim, dry, cure for product quality. Variations: Size, Capacity, Automation (Manual to Automated Industrial), Material (Food-Grade). Assets:
+● Harvesting Tools: Large Trimming Shears, HD Loppers, Collection Totes/Bins (Food-grade). Tarps. MVP. Manual harvesting.
+● Trimming Tools: Trim Scissors (Micro-tip, types). Trim Bins/Trays (kief screens). Isopropyl Alcohol/Wipes (cleaning). Rags. MVP. Manual trimming. Cleaning for hygiene/quality.
+● Drying Racks / Clotheslines & Hangers. MVP. Manual drying.
+● Curing Containers (Jars, Buckets). MVP. Manual curing.
+● Bowl Trimmers (Manual, Electric). Likely Mid-Late MVP / Post-MVP. Some automation beyond hand trimming; Harvest skill/research unlock.
+● Automated Trimming Machines (Sizes/throughputs). Likely Late-Game MVP / Post-MVP. High-tier equipment, Advanced Automation (deferred), high-tier Harvest skill nodes.
+● Weighing & Measuring: Digital Pocket Scales (Precision), Digital Bench Scales (Larger capacity). Industrial (Platform, Floor scales). Calibration Weights. MVP. Essential for yield tracking, contract specs, inventory. Different scales for different needs/scales.
+● Potential Future/High Tier: Extraction/Concentrate Equipment (Solventless Press, Basic Extraction System). Post-MVP. Explicitly deferred.
+Facility Furniture & Fixtures Purpose: Workspace, storage, safety, general utility. Assets:
+● Workbenches (Sizes, materials). HD Shelving (Metal, Wire). Storage Cabinets (Metal, Plastic, Lockable). Rolling Utility Carts. Seating (Chairs, Stools). Folding Chairs. MVP. Functional storage/workspace. Supports Cleanliness aesthetic (item storage).
+● Sinks: Industrial Sink/Wash Basin (Stainless Steel). Faucet Fixtures. MVP. Essential for hygiene, cleaning. Part of general facility utility.
+● Safety: Eye Wash Station (Wall, Pedestal). Emergency Shower (Industrial). Fire Extinguishers. First Aid Kits. Likely MVP. Essential safety, aligns with professional aesthetic.
+● General: Wall Clocks. Trash Cans/Waste Bins (Industrial rolling). Recycling Bins. Mop & Bucket. Broom & Dustpan. Wet Floor Signs. Floor Mats/Anti-Fatigue. Lockers. MVP. Visual detail, waste management, clean/professional aesthetic.
+Map Specific Assets Purpose: Define build environment, establish scale. Assets:
+● Residential House: Standard residential elements (exterior, interior, doors/windows). Smaller scale assets (fixtures, utility connections). Base "shell" (white void for non-playable). MVP. Initial map environment.
+● Warehouse: Large open concrete structure (floor, walls, roof). Support pillars/beams. Industrial doors/windows. Base "shell". MVP. Accessible after Residential. Next scale of operations.
+● (Future: Greenhouse - glass/polycarbonate, vents; Research Lab - sterile materials, lab benches; Outdoor Field - landscape, fencing). Future (Post-MVP). Potential future facility types/maps; deferred "Additional Maps/Facility Types".
+Decorative & "Cozy" Items Purpose: Player customization, "Cozy" aesthetic. Assets: Posters, art, rugs, small furniture (chairs, tables), non-cannabis plants, decorative lighting, personal items, paint/texture options (walls/floors). MVP. Player expression, tailoring facility mood (Cozy vs. Professional). Unlockable decor can deliver lore. Paint/texture options don't change core material properties in MVP.
+Plant Assets (Core for Procedural System) Purpose: Central visual output, dynamic GxE reflection. Key Requirements (Procedural System):
+● Base 3D Models: HQ, detailed base meshes/textures for ~5-10 landrace-inspired foundational strains.
+● Variations: Seedling, Vegetative (Early, Mid, Late), Flowering (Early, Mid, Late), Harvested (Whole plant, branches), Dried (Buds).
+● Potential: Root System Viz (medium, water, nutrient response). MVP Status: MVP. Core to cultivation sim. Initial launch: 5-10 foundational strains. Root System Viz Potential (might be later/not MVP). Procedural Generation System (Software/Code Asset): Crucial system, not 3D model. MVP. Inputs: Abstracted Genetics Data, Environmental Parameters. Algorithms generate plant structure, morphology. Essential for dynamic GxE reflection, visual variability. AI-Assisted Procedural Generation core technical implementation. Dynamic Shader/Material Effects (MIDs, MPCs): Real-time GxE visualization: Coloration (nutrient deficiencies, temp/light stress), Turgidity/Wilting, Growth & Development, Trichome Appearance, Stress/Problem Symptoms (visual pests/diseases/deficiencies), Training/Pruning Effects. MVP. Crucial visual feedback. Tied to core MVP systems (Env Control, Nutrients, Plant Health, Basic Breeding). Performance Optimization: LODs, HISMs/ISMs (plant components), optimized shaders. MVP. Essential for performance with many plants. LODs mandatory.
+Data Collection & Lab Equipment Purpose: Collect plant/env data, simulate lab analysis (genetic/chemical profile). Variations: Tier (Handheld/Basic, Benchtop/Research, Industrial/Automated). Assets:
+● Handheld Meters (Visual): EC/PPM, pH, Temp Probe, Soil Moisture, Simulated Chlorophyll Content, PAR/PPFD, Infrared Thermometer, VPD Meter. MVP. Basic data collection tools. Unlocked via Science skill tree. Visual representation key to "Action Mode" data acquisition.
+● Benchtop Meters/Analyzers (Visual): Lab-grade EC/pH meter, Spectrophotometer (simulated use). Likely Mid-Late MVP / Post-MVP. Advanced tools, higher-tier data analysis/research unlocks. Basic Lab Testing is Quantitative Analysis node; simulated off-site testing mentioned, benchtop equipment might be transition to advanced analysis.
+● Data Logging & Interface (Visual): Laptop, Tablet, Desktop (Monitor, Keyboard, Mouse), Clipboard, Pens, Whiteboard. Industrial (Server rack, large control displays). MVP. Visual representation of UI/Data Viz systems. Laptops/Tablets/Desktops are interface for dashboards, logs. Industrial versions likely later.
+● Calibration Weights. MVP. For calibration routine mechanic if implemented.
+UI & Data Visualization Elements Purpose: Present complex sim data for player decisions. CRITICAL gameplay "assets". Assets (UI Elements/Visuals):
+● Environmental Data Dashboards/Overlays: Real-time sensor readouts (Temp, RH, VPD, CO2, PAR). Customizable. MVP. Core to MVP Env Control/data collection. Customization/Presets MVP design.
+● Graphs & Charts: Historical trends (Env, Nutrients, Growth). Multi-variable plots. MVP. Essential for data analysis/trends. Supports manual data analysis early, sensor data later.
+● Plant Health/Status Indicators: Icons/bars on models (Health, Water, Nutrient Status). Detail view UI (specific issues). MVP. Critical feedback.
+● Nutrient Management Interface: Mixing UI (visual tank, ingredients, steps). EC/PPM/pH readouts. Nutrient composition. Runoff/Substrate test results. MVP. Essential for manual nutrient management. Integrated UI supports.
+● Genetic Data Display: Strain Name, Lineage, Key Traits (Sliders, Bars, Values). Punnett Squares (Simulated). Pedigree Charts. Genetic Marker/Allele display (abstracted). MVP for core observable traits, lineage, simple inheritance. Punnett Squares/Pedigree charts interface for basic breeding. Genetic Marker/Allele display abstracted, tied to "(Optional Late Game) Genetic Marker Assisted Selection (MAS - Simplified)" skill node (Late-Game MVP or Post-MVP).
+● Simulated Lab Analysis Results: Cannabinoid/Terpene Profiles (charts, graphs, % lists), Simulated Tissue Nutrient Analysis, Simulated Water Quality Report. Likely Mid-Late MVP / Post-MVP. Tied to Quantitative Analysis skill node & Simulated Lab Analysis Interface. Basic lab testing for MVP unlock, full suite might expand later. Profiles needed for NPC contract quality specs (at least basic analysis MVP).
+● Breeding Interface: Parent selection, Crossing UI, Pheno-Hunting tools. MVP. Essential for basic breeding loop.
+● Facility Management Overlays: Utility View (pipe/duct/wire networks, flow/pressure indicators). Zoning UI. Resource inventory/consumption. MVP. Utility View ("X-Ray") crucial for MVP construction/troubleshooting. Zoning for facility design. Resource inventory/consumption UI MVP.
+● Operational & Financial Data: Budget, Costs, Revenue, Profit/Loss. MVP. Essential for core economy sim.
+● Alerts & Notifications: Visual/audio cues (Env out-of-range, Pest, Root Rot). MVP. Critical player feedback. Tiered alerts MVP design.
+● Historical Logs & Notes Interface. MVP. Player observations, auto event logging.
+● Tutorial/Info Overlays: Explaining concepts (VPD, GxE, deficiencies). MVP. Essential for onboarding, explaining complex mechanics.
+Advanced Breeding & Lab Equipment Purpose: Support high-tier breeding (Tissue Culture), genetic research. Variations: Tier (Research, Production). Assets:
+● Tissue Culture Station: Sterile Work Area/Hood (Laminar Flow), Autoclave, Incubator, Microscope (Dissecting), Racks for Culture Vessels, Culture Vessels. Likely Post-MVP. Part of "Advanced Propagation (Tissue Culture & Micropropagation)" skill node, but "Advanced Breeding Systems" deferred, this equipment is "Advanced Breeding & Lab Equipment".
+● Lab Furniture: Specialized Benches (Stainless/Chemical Resistant), Storage Cabinets (Chemical/Flammable), Lab Sinks. Likely Late-Game MVP / Post-MVP. Specific to lab environments beyond basic facility, supports advanced research/breeding. Research Lab facility Future (Post-MVP).
+● Potential: Cryopreservation Unit (long-term genetic archiving - visual). Likely Post-MVP. Very high-tier/specialized, linked to long-term genetic archiving, aligns with deferred "Advanced Genetics".
+Consumable Resources (Abstract/UI Representation) Purpose: Track/manage consumed resources (UI/Inventory). Assets (UI Icons, bulk storage models/containers possible):
+● Water: Supply (Tap, RO, Treated). Storage (Tanks, Reservoirs). MVP. Consumable. UI rep MVP. Bulk storage models possible (MVP if needed for visual inventory/management). RO/Treated water sources might be later MVP/Post-MVP upgrades.
+● Power: Supply (Grid, Generator Fuel, Battery Charge). Consumption meter. MVP. Abstracted utility cost/resource. UI rep (meter) MVP. Gen Fuel/Battery Charge linked to Generators/Batteries (Likely Late-Game MVP / Post-MVP).
+● Nutrients: Packaged Fertilizers, Mixed Solution (Reservoir). MVP. Consumable. UI/Inventory rep MVP. Mixed solution in reservoirs.
+● CO2: CO2 Tanks (Visual), CO2 Gas (UI). MVP. Consumable for CO2 systems. Visual tanks & UI rep MVP.
+● Building Materials: Walls, Floors, Pipes, Wires, Ducting (UI, pallet/stack models possible). MVP. Consumable for construction. UI rep MVP. Pallet/stack models for visual inventory possible (MVP).
+● Seeds/Clones: Strain-specific Seeds (Visual), Clones (Propagation). MVP. Essential consumables. Visual rep & UI inventory MVP. Acquisition costs MVP.
+● Finances: In-game Currency (UI). MVP. Core to economy. UI rep MVP.

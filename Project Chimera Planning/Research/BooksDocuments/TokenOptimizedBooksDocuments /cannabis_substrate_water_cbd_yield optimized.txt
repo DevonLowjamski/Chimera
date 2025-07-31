@@ -1,0 +1,30 @@
+```text
+cannabis_substrate_water_cbd_yield.txt
+
+**Objective:** Determine optimal Cannabis sativa substrate for CBD yield based on water relations.
+
+**Methods:** Cannabis sativa L. (var. Tiborszallasi) grown in 5 substrates (S1-S5): S1 (70% coconut fiber, 30% peat), S2 (70% coconut fiber, 30% perlite), S3 (60% coconut fiber, 30% peat, 10% perlite), S4 (100% coconut fiber), S5 (90% coconut fiber, 10% perlite).  Measured: biomass, physiological parameters (plant height, leaf/inflorescence dry weight, chlorophyll (SPAD), PSII efficiency, transpiration), mineral content (leaves, inflorescences, substrates), CBD concentration (inflorescences), PIP aquaporin gene expression (leaves).  Controlled environment: 70–85% RH, 25–30°C, 485 ppm CO2, 400 ± 50 µmol m−2 s−1 PAR, 18h/6h photoperiod (vegetative); 12/12h photoperiod, 400 ± 50 µmol·m−2·s−1 PAR, 60–75% RH, 22–25°C (flowering).  Hoagland solution: NO3– (15mM vegetative, 9mM flowering), H2PO4–(1mM), K+(6 mM), Ca2+(5 mM), Mg2+(2 mM), SO42−(2 mM), Fe2+(72 µM), Mn2+(18 µM), Cu2+(3 µM), Zn2+(3 µM), BO33−(45 µM), MoO42−(0,1 µM).  Statistical analysis: one-way ANOVA, Duncan's test (p ≤ 0.05).
+
+**Substrate Characteristics (Table 1):**
+S3: Highest AW (38.9%), followed by S1 (29.8%), S5 (25.6%). S4: Lowest AW (7%). S2: Highest RW (11.5%). S3: Highest UAW (34.3%). S1, S2: Lowest UAW. S4, S5: Highest total porosity, air space; lowest bulk density. S2: Lowest air space, highest bulk density.
+
+**Substrate Mineral Content (Table 2):**
+S4, S5: Highest Na, Ca, Fe. S3: Highest Mg, Zn. S2: Highest P, B, Cu, Mn, K.
+
+**pH/EC (Figure 1):** S4: Highest pH, EC.  pH, EC decreased over time in all substrates.
+
+**Plant Growth (Figure 2, Table 3):**
+S3: Tallest plants, highest leaf DW. S1, S3: Highest inflorescence DW. S5: Lowest height, leaf/inflorescence DW.
+
+**Physiological Parameters (Figures 3-5, Table 4):**
+S1, S3: Highest chlorophyll (SPAD), PSII efficiency, transpiration. S4: Lowest chlorophyll, PSII efficiency, transpiration. S3: Highest N in leaves. S1: Highest P, Cu, Fe, Mn in leaves. S2: Lowest nutrient content in leaves. S1, S3: Highest nutrient accumulation in inflorescences. S2: Lowest nutrient content in inflorescences.
+
+**CBD Concentration (Figure 6):** S4: Highest CBD. S3: Second highest CBD. S5: Lowest CBD.
+
+**PIP Aquaporin Expression (Figure 7):**
+S5: Highest PIP1.1, PIP1.2, PIP1.3, PIP2.2, PIP2.3, PIP2.7 expression. S4: Highest PIP2.1 expression. S4: Second highest PIP1.4 expression. S1: Lowest PIP1.4 expression.
+
+**Discussion:**  Available water (AW) primary factor influencing growth and CBD yield. S1, S3 (peat-based): High AW, high transpiration, optimal growth, high CBD (except S1 slightly lower than S3). S2, S4, S5 (coconut fiber-based): Low AW, reduced transpiration, lower growth. S4 (stress): High CBD despite low growth, high PIP2.1 expression. S5: High PIP expression (most isoforms), high nutrient accumulation in leaves despite low substrate nutrient levels, suggesting enhanced nutrient uptake/transport. PIP2.3 associated with vegetative growth. PIP2.1 associated with inflorescence production. PIP1.4 may be involved in water stress response.  Apoplastic pathway dominant in high-AW substrates; symplastic pathway (aquaporins) more important in low-AW substrates.
+
+**Conclusions:** AW crucial for cannabis growth.  Peat-based substrates optimal for growth and high CBD yield via apoplastic transport. Coconut fiber substrates induce water stress, impacting growth.  Aquaporins mediate water and nutrient transport under both optimal and stress conditions; specific isoforms play distinct roles.
+```

@@ -1,0 +1,28 @@
+```text
+hemp_seed_germination_modeling_optimizat.txt
+
+**Objective:** Optimize Cannabis sativa (cv. Finola) in vitro seed germination using artificial neural networks (ANNs) and a multi-objective optimization algorithm.
+
+**Methods:**
+
+* **Plant material:** Cannabis sativa cv. Finola (CSGA No.1 Certified seed, Lot #: 1908-18637-17-KKF-01). Sterilization: 15 min tap water wash, 60 s 70% ethanol, 12 min 12% bleach, 3 × 5 min deionized water rinse.
+* **Media:**  (1/10, 1/2, full strength) DKW (PhytoTech Labs) + 2% or 5% sucrose; (1/10, 1/2, full strength) mMS (PhytoTech Labs) + 2% or 5% glucose; 0.6% agar; pH 5.8; Magenta GA7 vessels (30 ml media/vessel); 4-5 seeds/replicate; 14-16 replicates/treatment.
+* **Growth conditions:** 25 ± 2°C; 16-h photoperiod; 40 ± 5 μmol m−2 s−1 light intensity.
+* **Germination Indices:**  Germination Index (GI) (Eq. 1), Mean Germination Time (MGT) (Eq. 2), Germination Rate (GR) (Eq. 3), Timson Germination Index (TGI) (Eq. 4), Vigor Index (VI) (Eq. 5).
+* **Morphological Traits:** Seedling fresh weight, leaf number, shoot length, root length (measured using ImageJ 1.50i from iPhone Xs images).
+* **ANNs:** Multilayer Perceptron (MLP), Radial Basis Function (RBF), Generalized Regression Neural Network (GRNN). Box-Cox transformation, 5-fold cross-validation (10 repetitions). Input variables: DKW strength, mMS strength, sucrose level, glucose level. Output variables: GI, MGT, GR, TGI, VI, seedling fresh weight, shoot length, leaf number, root length. Evaluation metrics: r², RMSE, MBE.
+* **Optimization:** Non-dominated Sorting Genetic Algorithm-II (NSGA-II) (crossover rate: 0.7; generation number: 1000; initial population: 200; mutation rate: 0.5; roulette wheel selection). Target variables: GR, MGT. Software: MATLAB.
+* **Validation:** Experimental testing of optimized result (15 replicates, 5 seeds/replicate).
+
+
+**Results:**
+
+* GRNN exhibited highest predictive accuracy (r² > 0.70) for all germination indices and morphological traits compared to MLP and RBF (Table 2).
+* Optimal conditions (NSGA-II optimization of GRNN): 0.43 strength mMS medium + 2.3% sucrose (78.93% GR, 0.64 MGT) (Table 3). Validation experiment showed negligible difference between predicted and experimental results.
+* Correlation between morphological traits (Fig. 4).  Highest correlation: seedling fresh weight and shoot length (0.62). Lowest correlation: root length and leaf number (0.25).
+
+
+**Conclusion:**
+
+GRNN-NSGA-II accurately predicted and optimized in vitro hemp seed germination.  Moderate mMS strength (0.43) and sucrose level (2.3%) yielded optimal germination.  The model can be applied to other cannabis cultivars and in vitro culture procedures.
+```

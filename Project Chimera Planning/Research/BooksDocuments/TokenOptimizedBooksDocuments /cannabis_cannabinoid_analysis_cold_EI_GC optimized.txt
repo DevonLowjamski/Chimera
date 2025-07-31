@@ -1,0 +1,15 @@
+```text
+cannabis_cannabinoid_analysis_cold_EI_GC.txt
+
+**DOI:** 10.1002/jms.4726
+
+**Authors:** Amirav, Neumark, Margolin Eren, Fialkov, Tal
+
+**Abstract:** GC-MS with Cold EI analyzes cannabis for terpenes, sesquiterpenes, sesquiterpinols, fatty acids, THC, CBD, other cannabinoids, hydrocarbons, sterols, diglycerides, triglycerides, and impurities. Cold EI, using supersonic molecular beams (SMB) and electron ionization of vibrationally cold compounds, improves GC-MS performance, enabling cannabinoid analysis without derivatization, enhanced molecular ions for identification, and internal quantitation without calibration.  Over 50 cannabinoids identified, including a novel compound similar to delta-9-THC and large cannabinoids (m/z > 400). Impurities like bromo-CBD and fluticasone propionate detected.  Oxidized CBD formation during decarboxylation monitored.  Sensitive delta-9-THC quantitation in CBD products.  Full cannabinoid content of EP-1 (epilepsy/ASD treatment) analyzed for entourage effect research.
+
+**Methods:** Agilent 7890A GC + 5977 MSD with Aviv Analytical SMB interface and dual-cage fly-through ion source. GC column: 15m, 0.32mm ID, 0.1μ DB1HT film; flow program 2-30ml/min; oven: 50-330°C at 20°C/min.  Solvent: hexane (dichloromethane avoided due to oxidation). Samples: cannabis flowers, extracts, drugs. Standard EI comparison used Agilent 7890 GC + 5977 MSD with Inert ion source; 30m, 0.25mm ID column with 0.25μ DB-5MS Ultra Inert film; 1.2ml/min He flow; oven: 50-320°C at 10°C/min.
+
+**Results:** Cold EI enables full-range analysis of cannabis components (Figure 1).  Significantly more cannabinoids detected compared to standard EI (Figure 2); THC/CBD ratio 6x greater in Cold EI due to standard EI's non-uniform response and cannabinoid decomposition. Cold EI superior for sesquiterpene analysis (Figure 3), providing enhanced molecular ions and improved NIST library identification.  Over 50 cannabinoids identified with abundant molecular ions (Figure 4). Bromo-CBD detected (Figure 5); fluticasone propionate detected in cannabis flower (Figure 6). Large cannabinoids (m/z > 400) identified (Figure 7). CBDA oxidation during decarboxylation monitored (Figure 8).  Sensitive delta-9-THC quantification (S/N 81,000 for 0.66% THC/CBD; LOD ~0.01%) (Figure 9). Cannabis cancer drug analysis (Figure 10); Rick Simpson oil analysis (Figure 11). EP-1 (ASD drug) analysis (Figure 12);  CBDV/CBD ratio 3.9% in EP-1 vs. 0.48% in Avidekel.  Vitamin E (alpha-tocopherol) detected in EP-1. Novel cannabinoid, "THC-Aviv," discovered (Figure 13), with mass spectrum similar to delta-9-THC.
+
+**Conclusions:** GC-MS with Cold EI offers universal, untargeted analysis of cannabis, enabling comprehensive characterization and quantification of all volatile and semi-volatile compounds without derivatization.  Cold EI provides enhanced molecular ions and uniform response, facilitating identification and quantitation.  This method enables the discovery of novel compounds and impurities, and facilitates research into the entourage effect.
+```

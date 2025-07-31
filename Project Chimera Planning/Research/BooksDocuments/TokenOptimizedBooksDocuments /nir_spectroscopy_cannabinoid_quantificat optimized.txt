@@ -1,0 +1,35 @@
+nir_spectroscopy_cannabinoid_quantificat.txt
+
+**Objective:** Develop rapid, economical, environmentally-friendly NIR spectroscopy method for Cannabis sativa L. cannabinoid quantification.
+
+**Materials & Methods:**
+
+* **Samples:** 189 dried, ground samples from diverse genotypes, varieties (Aida, Beatriz, Enza, Juani, Magda, Mati, Marisa, Octavia, Pilar, Sara, Theresa, Carma, Ermes), growth conditions, and plant zones.  Authorized by AEMPS for R&D.
+* **Reference Analysis:** GC-FID (Agilent GC 7820, ZB-5MS column).  Cannabinoid standards (THC Pharm): CBDV, Δ9-THCV, CBC, Δ8-THC, CBD, Δ9-THC, CBG, CBN. Internal standard: squalene. Modified EC 1177/2000 method. SEL calculated.
+* **Spectra Collection:**  Dispersive NIR (NIR Systems 6500, 400-2498nm, 2nm intervals, WINISI II 1.50), FT-NIR (Bruker MPA, 12500-4000cm⁻¹, 8cm⁻¹ resolution, OPUS 7.2). Reflectance mode.
+* **Data Preprocessing:** PCA (WINISI IV, SNV, DT, Norris-Williams derivative (1,5,5,1)), outlier removal (GH≥3). Calibration/validation set split (1:3).  FT-NIR preprocessing: 1st/2nd derivatives, 1st derivative + vector normalization/MSC.  Five spectral regions: 9400-7500, 7500-6100, 6100-5450, 5450-4600, 4600-4250 cm⁻¹.
+* **Calibration:** MPLS (WINISI IV, 400-2500nm, 1100-2500nm, 800-2500nm, SNV/DT, MSC, 1,5,5,1; 1,10,10,1; 2,5,5,1; 2,10,10,1 derivatives). PLS1 (OPUS 7.2).  Cross-validation (WINISI IV: 4-group; OPUS: leave-one-out). T-outlier removal.
+* **Validation:** External validation (56 samples).  SEP/RMSEP, RSQ, paired t-test, RPD (SD/SEP/RMSEP).
+
+**Results:**
+
+* **Cannabinoid Content:** Wide range observed (Table 1).  Non-uniform but continuous distribution.
+* **Spectral Features:** Typical plant material absorption bands observed (Figure 2).  Differences due to chemical composition.  1666nm band (terpenes) more evident with CBD >4%.
+* **Calibration Statistics:** Excellent R²CV (0.91-0.99) for CBD, CBC, Δ8-THC, Δ9-THC, CBG, CBN (both instruments). Good R²CV for CBDV, Δ9-THCV (both instruments). SEP values: CBG excellent precision; Δ8-THC, Δ9-THC, CBD, CBC good; Δ9-THCV moderate; CBDV poor (both instruments).  RPD values varied (Table 2,3).
+* **Validation:** Similar SEP/RMSEP, RSQ values for both instruments. Paired t-tests (p>0.05) confirmed no significant differences between reference and NIR predicted values (Figure 4A,B).
+
+**Conclusions:**
+
+NIR and FT-NIR provide accurate, rapid, economical, environmentally-friendly cannabinoid quantification in Cannabis sativa L.  Both instruments yield comparable results.  Method suitable for variety assessment, genetic resource characterization, and potentially industry applications.
+
+
+**Tables & Figures:** (Data from original tables and figures summarized concisely, not fully reproduced due to space constraints.  Key metrics only.)
+
+* **Table 1:** Summary statistics (min, max, mean, SD, SEL) for each cannabinoid in calibration and validation sets.
+* **Table 2:** Key calibration & validation statistics (SEC, R², SECV, R²CV, SEP, slope, RSQ, RPD) for dispersive NIR, per cannabinoid.
+* **Table 3:** Key calibration & validation statistics (RMSEC, R², RMSECV, R²CV, RMSEP, slope, RSQ, RPD) for FT-NIR, per cannabinoid.
+* **Figure 2:**  Illustrative spectra showing key absorption bands.
+* **Figure 4A & B:** Scatter plots of measured vs. predicted cannabinoid concentrations for validation sets (dispersive & FT-NIR).
+* **Figure 5:** Spectral regions used in best FT-NIR models.
+
+**Abbreviations:** (As defined in original document)

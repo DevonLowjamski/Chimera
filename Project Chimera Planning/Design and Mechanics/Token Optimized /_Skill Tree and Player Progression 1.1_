@@ -1,0 +1,171 @@
+﻿Skill Tree and Player Progression 1.1
+Visual Metaphor: Cannabis plant; main stalk to seven "Leaves" (categories). Selected Leaf unfurls/expands: shows "Nodes" (unlockable skills/concepts). Leaf size/prominence can indicate importance/node count. Unlocking nodes: plant appears more vibrant/complex.
+Skill Point Acquisition Summary: Main source: Objective Completion. Guided objectives (teach mechanics) give skill points; unlocking nodes reveals new objectives (positive feedback loop). Successful Harvests: skill points via quality/outcome of final crop (incentivizes cultivation mastery). (Potential minor sources later).
+Node Unlocking Philosophy: Unlocking node introduces concept & associated mechanics/simulations. Player mastery via equipment, tools, tech progression (often unlocked/purchased separately).
+I. Genetics Leaf (Target: ~8-12 Nodes) (Focus: unlocking major breeding concepts, techniques, deeper genetic understanding )
+* Seed & Clone Fundamentals:
+   * Unlocks: Seed Bank UI, basic seed storage/labeling, simple cuttings (clones) from "Mother Plants," basic manual germination (e.g., direct sow).
+   * Introduces: Seed/clone inventory management, mother plants concept, basic propagation challenges (initial low success).
+* Sexual Reproduction Basics:
+   * Unlocks: Visual ID of pre-flowering male/female plants, basic manual pollen transfer, F1 seed creation.
+   * Introduces: Random sex of seed-grown plants, accidental pollination risk, basic pollen handling, generations concept (P, F1).
+* Phenotype Scouting & Selection:
+   * Unlocks: Tagging plants with observed visual traits (color, structure, vigor) in Plant UI for tracking.
+   * Introduces: Selecting parent plants based on desirable expressed characteristics.
+* Vegetative Propagation Advancement:
+   * Unlocks: Use of rooting hormones, basic propagators (humidity domes, heat mats), improving clone success rates/speed.
+   * Introduces: More controlled propagation environments, resource cost for propagators/hormones.
+   * Requires (Implied): (Cultivation) Growing Media & Containers (for propagators).
+* Pollen Management & Storage:
+   * Unlocks: More effective pollen collection, drying, short-to-medium term storage (e.g., refrigerated); basic pollen viability testing.
+   * Introduces: Pollen shelf-life mechanics, contamination risks, need for dedicated pollen storage.
+* Trait Stabilization (Backcrossing):
+   * Unlocks: Concept/techniques for backcrossing to stabilize desired dominant/recessive traits; more detailed multi-generational pedigree tracking tools.
+   * Introduces: Long-term breeding projects, deeper inheritance understanding, record-keeping importance.
+   * Requires: (Science) Observation & Record Keeping (for effective tracking).
+* Targeted Reproduction Techniques (Feminization/Autoflower):
+   * Unlocks: Methods to produce feminized seeds (e.g., via STS reversal - abstracted) and to breed for/with autoflower trait.
+   * Introduces: More control over seed output sex, unique growth patterns/requirements of autoflowers.
+* Advanced Propagation (Tissue Culture & Micropropagation):
+   * Unlocks: Access to tissue culture lab setup; sterile multiplication of genetic material, potential for cleaning genetics (some systemic issues), long-term genetic preservation in vitro.
+   * Introduces: High-cost lab setup, sterile environment mechanics, meticulous multi-stage processes, new resource types (agar, hormones).
+   * Requires: (Science) Manual Environmental & Plant Sampling (for sterile technique understanding - implied microscope use), (Construction) Specialized Facility Development (for a clean lab space, can be a soft req).
+* Understanding Polygenic Traits:
+   * Unlocks: Deeper in-game understanding that key traits (yield, potency, complex aromas) are controlled by multiple genes; may unlock more advanced (abstracted) predictive tools for breeding outcomes.
+   * Introduces: Greater complexity in achieving specific high-level breeding goals, emphasizes value of large-scale pheno-hunting/data analysis.
+   * Requires: (Science) Data Interpretation & Diagnostics (to understand how to analyze complex outcomes).
+* (Optional Late Game) Genetic Marker Assisted Selection (MAS - Simplified):
+   * Unlocks: High-cost, late-game lab analysis; provides probabilistic "markers" for desired traits in young seedlings, allowing earlier selection.
+   * Introduces: Speeds selection in large breeding programs; results suggestive, not definitive; requires significant "Science" tech investment.
+   * Requires: (Science) Advanced Analytics & Research Methodology AND (Genetics) Understanding Polygenic Traits.
+   * Rationale: MAS is data-heavy scientific process for complex genetic understanding.
+II. Cultivation Leaf (Target: ~6-8 Nodes) (Core Focus: Plant Care, Growing Techniques, Optimization )
+* Foundational Plant Care (Water & Basic Nutrients):
+   * Unlocks: Manual watering, simple all-in-one (NPK) liquid fertilizers.
+   * Introduces: Plant needs for water/food; risks of over/under watering/feeding.
+* Growing Media & Containers:
+   * Unlocks: Basic potting soils, fabric/plastic pots; understanding of drainage.
+   * Introduces: Different media properties, importance of container size/type.
+* Plant Structuring (Pruning & LST):
+   * Unlocks: Basic pruning (removing select leaves/branches), Low-Stress Training techniques (bending, tying).
+   * Introduces: Canopy management, light penetration, airflow improvement concepts.
+* Integrated Pest & Disease Management (IPM Fundamentals):
+   * Unlocks: Visual scouting for common issues, basic organic treatments (e.g., neem oil, sticky traps).
+   * Introduces: Preventative care, identifying common problems, early intervention.
+   * Requires (Soft): (Science) Manual Environmental & Plant Sampling (loupe/microscope for effective pest ID).
+* Optimized Nutrient Delivery (Solution Crafting & Basic Hydro/Drip):
+   * Unlocks: Mixing multi-part nutrient solutions (custom NPK + micros), basic drip irrigation or simple hydroponics (e.g., DWC buckets).
+   * Introduces: More precise nutrient control, pH/EC management, different delivery system mechanics/challenges (clogs, reservoir management).
+   * Requires: (Science) Manual Environmental & Plant Sampling (for pH/EC metering), (Construction) Utility Fundamentals (for simple water lines for drip/DWC).
+* Advanced Plant Shaping (HST & Canopy Management):
+   * Unlocks: High-Stress Training techniques (topping, supercropping - abstracted), use of trellis/SCROG nets.
+   * Introduces: More aggressive canopy manipulation for yield optimization; higher risk if incorrect.
+* Atmospheric Optimization for Cultivation (VPD & CO2 Management):
+   * Unlocks: Deeper VPD understanding, active CO2 supplementation (tanks, regulators) integrated with environmental controls.
+   * Introduces: Fine-tuning atmosphere for optimal transpiration/photosynthesis, CO2 resource management.
+   * Requires: (Environment) Environmental Automation (Sensors & Controllers - Basic) (to effectively monitor/manage CO2 and VPD triad) AND (Environment) Precision Climate Management (for sensors/controllers) AND (Construction) Specialized Facility Development (for sealed rooms).
+   * Rationale: Effective CO2 management needs precise environmental control and well-built sealed spaces.
+III. Environment Leaf (Target: ~6-8 Nodes) (Core Focus: Climate Creation & Control )
+* Core Environmental Parameters (Temp, Humidity, Light Cycle):
+   * Unlocks: Awareness of temp/humidity as factors, basic thermometers/hygrometers (manual readings); grow lights, basic timers for photoperiod control.
+   * Introduces: Need to monitor/manually influence core parameters.
+* Air Exchange & Circulation:
+   * Unlocks: Use of intake/exhaust fans (basic), oscillating fans for internal air movement.
+   * Introduces: Fresh air exchange concepts, managing heat buildup, internal microclimates.
+* Climate Control (Heating & Cooling Basics):
+   * Unlocks: Simple heaters, basic AC units/fans for direct temperature management.
+   * Introduces: More active (manual or simply timed) temperature control.
+   * Requires: (Construction) Basic Infrastructure (Tents & Power Strips) (to power devices).
+* Atmospheric Refinement (Humidification & Dehumidification):
+   * Unlocks: Basic humidifiers, dehumidifiers.
+   * Introduces: More active control over humidity for VPD synergy with temperature.
+   * Requires: (Construction) Basic Infrastructure (Tents & Power Strips).
+* Advanced Lighting Solutions:
+   * Unlocks: LED grow lights with adjustable intensity, basic spectrum control (e.g., Veg/Bloom switches).
+   * Introduces: Energy-efficient lighting, tailoring light to growth stages.
+* Environmental Automation (Sensors & Controllers - Basic):
+   * Unlocks: Basic environmental sensors (temp/humidity) connected to simple controllers (on/off for fans, heaters, humidifiers via setpoints).
+   * Introduces: Rudimentary automation, reduced manual adjustments, setpoint control concept.
+   * Requires: (Science) Manual Environmental & Plant Sampling (understanding target values for controllers).
+* Precision Climate Management (Integrated HVAC & Advanced Automation):
+   * Unlocks: Sophisticated HVAC systems, advanced multi-sensor arrays, programmable logic controllers (PLCs - abstracted) for integrated/precise management of all environmental variables (temp, humidity, CO2, VPD, air exchange) with scheduling.
+   * Introduces: High-level environmental optimization, potential microclimate zoning, high energy/cost implications.
+   * Requires: (Construction) Automated Utilities Installation (Advanced Electrical for power), (Construction) Specialized Facility Development (for ducting/sealed rooms if fully optimizing).
+IV. Construction Leaf (Target: ~4-6 Nodes) (Core Focus: Building & Utility Infrastructure )
+* Basic Infrastructure (Tents & Power Strips):
+   * Unlocks: Setting up pre-fab grow tents, basic extension cords/power strips.
+   * Introduces: Dedicated grow spaces concept, basic electrical distribution (with limitations).
+* Room Structuring & Layout:
+   * Unlocks: Building basic interior walls, doors; defining room layouts in larger spaces.
+   * Introduces: Facility customization, workflow planning, basic structural integrity.
+* Utility Fundamentals (Electrical Circuits & Manual Water Lines):
+   * Unlocks: Installing simple electrical panel boxes, running basic dedicated circuits; manually running hoses/temporary water lines.
+   * Introduces: Circuit loads/breakers concept, managing basic water transport beyond buckets.
+* Automated Utilities Installation (Plumbing & Advanced Electrical):
+   * Unlocks: Laying permanent pipes for irrigation/drainage, installing pumps, water reservoirs; installing more complex electrical systems (higher capacity panels, conduits, junction boxes).
+   * Introduces: Automated water flow, robust power distribution, utility system planning.
+* Specialized Facility Development (Sealed Rooms & Workflow Optimization):
+   * Unlocks: Techniques for building air-tight, insulated rooms (for CO2/environmental control); designing layouts for efficient workflow (e.g., distinct veg/flower/dry rooms, processing equipment placement).
+   * Introduces: Advanced environmental control possibilities, lean manufacturing/workflow principles for cultivation.
+   * Requires: (Environment) Precision Climate Management (common co-requisite, sealed rooms are for precise climate control).
+V. Harvest Leaf (Target: ~4-6 Nodes) (Core Focus: Post-Cultivation Processing for Quality )
+* Harvest Readiness & Techniques:
+   * Unlocks: Understanding visual cues for optimal harvest (trichome appearance via loupe, pistil color), proper cutting/handling techniques.
+   * Introduces: Importance of harvest timing for desired effects/potency.
+   * Requires (Soft): (Science) Manual Environmental & Plant Sampling (for effective loupe use).
+* Controlled Drying Processes:
+   * Unlocks: Setting up dedicated drying spaces/racks with basic airflow/humidity control (e.g., fans, small dehumidifier).
+   * Introduces: Importance of slow, controlled drying for quality preservation.
+   * Requires: (Environment) Air Exchange & Circulation AND (Environment) Atmospheric Refinement (or basic equipment from them).
+* Trimming & Preparation:
+   * Unlocks: Manual hand-trimming techniques (wet vs. dry), separating flower from waste.
+   * Introduces: Labor-intensive but quality-focused post-harvest aspect, trim quality impact on final product appeal.
+* Curing Science & Application:
+   * Unlocks: Curing in airtight containers (jars initially), understanding curing chemistry (chlorophyll breakdown, terpene preservation), burping schedules.
+   * Introduces: Critical step for maximizing flavor, aroma, smoothness; patience required.
+   * Requires: (Environment) Atmospheric Refinement (Humidification/Dehumidification) OR basic humidity control tools; (Science) Manual Environmental & Plant Sampling (using hygrometers in jars).
+   * Rationale: Proper curing fundamentally depends on stable humidity/temperature.
+* Post-Harvest Efficiency (Bulk Processing & Basic Automation):
+   * Unlocks: Techniques for managing larger harvest volumes (e.g., larger drying/curing containers); introduction to basic trimming aids or small-scale machines.
+   * Introduces: Balancing efficiency with quality for larger operations.
+   * Requires: (Construction) Room Structuring & Layout (adequate space for bulk processing).
+VI. Science Leaf (Target: ~4-6 Nodes) (Core Focus: Data, Analysis, Research )
+* Observation & Record Keeping:
+   * Unlocks: In-game notebook for detailed manual logging of observations, parameters, actions, outcomes.
+   * Introduces: Importance of meticulous record-keeping for learning/replication.
+* Manual Environmental & Plant Sampling:
+   * Unlocks: Handheld meters (pH, EC/PPM, temp, humidity, basic soil moisture), basic microscope for pest/trichome inspection.
+   * Introduces: Quantitative spot-checking of key parameters, closer visual analysis.
+* Data Interpretation & Diagnostics:
+   * Unlocks: In-game guides for interpreting meter readings, visual plant health diagnostics (nutrient issues, pest ID), simple data graphing for manually entered data.
+   * Introduces: Connecting data points to plant health/environmental conditions.
+* Quantitative Analysis (Basic Lab Testing & Data Integration):
+   * Unlocks: Ability to send samples for (abstracted) off-site lab testing (potency, terpenes); ability to input results into plant records and compare.
+   * Introduces: Objective chemical analysis, quantifying breeding/cultivation success.
+   * Requires: (Harvest) Trimming & Preparation (to have final product to sample).
+* Advanced Analytics & Research Methodology:
+   * Unlocks: (Late Game) In-house analytics software integrating with advanced sensor networks; tools for A/B test comparisons (rooms/batches), basic statistical analysis of results.
+   * Introduces: More rigorous experimentation, data-driven optimization at facility level.
+   * Requires: (Environment) Environmental Automation (Sensors & Controllers - Basic) (data streams for software); (Construction) Automated Utilities Installation (Advanced Electrical) (power for sensors/computers).
+VII. Business Leaf (Target: ~3-4 Nodes) (Core Focus: Economic Viability & Market Interaction )
+* Basic Operations Management (Contracts & Simple Finances):
+   * Unlocks: Access to NPC contracts, simple ledger for income/major expenses tracking.
+   * Introduces: Concept of selling product, managing basic cash flow.
+* Brand & Reputation Building:
+   * Unlocks: Naming company, choosing logo; basic reputation system with NPC buyers based on product quality/contract fulfillment.
+   * Introduces: Impact of quality on NPC buyer relationships/prices.
+   * Systemic Dependency: Reputation influenced by product quality from Genetics, Cultivation, Environment, Harvest mastery. Better skills = better products = better business reputation.
+* Market Awareness & Product Specialization:
+   * Unlocks: Access to basic market trend info (e.g., "NPCs currently favor high-yield strains"); ability to brand/label specific genetic products for sale.
+   * Introduces: Adapting production to NPC market demands, creating value via unique genetics.
+   * Systemic Dependency: Effective specialization requires strong Genetics and proven quality from Harvest.
+* (Optional for Player Marketplace) Advanced Economic Operations:
+   * Unlocks: If player-to-player marketplace: tools for managing online listings, understanding player market supply/demand, advanced branding, potentially basic "retail" mechanics (player "shops").
+   * Introduces: Complex player-driven economic interactions.
+   * Requires (Implied): Consistent high-quality production from all relevant skill trees to be competitive.
+Presenting Interdependencies Intuitively: Contextual in Skill Tree UI, not massive web.
+* UI Visual Cues: Hover locked node highlights prerequisite nodes (pulse/line animation).
+* Tooltip lists required nodes (e.g., "Requires: 'Automated Utilities Installation' [Construction], 'Optimized Nutrient Delivery' [Cultivation]").
+* Node Layout: Nodes for cross-category advancements at "Leaf" edges, visually suggesting connections.
+* Pathway Suggestions: Game subtly suggests logical progression pathways by player goals/recent unlocks.
+   * Example: Unlock "HVAC Systems" (Environment) -> UI prompt for "Advanced Facility Construction (Ducting)" (Construction) if locked.

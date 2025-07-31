@@ -1,0 +1,61 @@
+```text
+cannabis_growers_handbook_1.txt
+
+Plant Growth Stages: Seedling (young, vulnerable), Vegetative (leaf/stem growth), Flowering (bud production). Each stage has unique, player-managed environmental/nutritional needs.  Plant is dioecious (male/female), occasionally monoecious (hermaphrodite) due to stress (inadequate light, poor nutrition, light cycle changes).
+
+Cannabis sativa L.: Annual, dioecious herb; leaves have serrated leaflets (1-13); flowers imperfect (staminate male/pistillate female); wind-pollinated; produces achenes (seeds); short-day/long-night plants (except C. ruderalis, some equatorial C. sativa - autoflowering).  Diploid (2n=20), polyploids artificially produced.  Trichomes produce cannabinoids (THC, CBD, CBG, CBC, CBN, THCV, CBDV, THCa, CBDa, etc. - >100 total) and terpenes.  Flavonoids provide color (anthocyanins - purple).
+
+Cannabinoids: THC (psychotropic), CBD (therapeutic - anti-inflammatory, anti-anxiety, anti-seizure, muscle relaxant).  CBG (mother cannabinoid), CBC (minor, therapeutic), CBN (THC breakdown product), Δ8-THC (CBD conversion). THCV, CBDV (propyl cannabinoids).  Entourage effect: cannabinoids & terpenes interact synergistically.
+
+Terpenes: (>100 identified); attract pollinators, repel/kill herbivores, attract herbivore predators.  Affect mood, sensitivity, perceptions.  Examples: Myrcene (sedative, analgesic, anti-inflammatory), Limonene (alertness, antifungal), β-Caryophyllene (analgesic, anti-inflammatory, CB2 agonist), α- & β-Pinene (memory enhancement, bronchodilator), Borneol (sedative, anti-inflammatory), Δ3-Carene (anti-inflammatory, antifungal), Linalool (sedative, anti-inflammatory, anxiolytic), Pulegone (AChEI), Humulene (anti-inflammatory, analgesic), Terpinolene (sedative, antibacterial, antifungal), Nerolidol (antifungal, anxiolytic), α-Bisabolol (sedative, anti-inflammatory), Ocimene (anti-inflammatory, antifungal), Eucalyptol (anti-inflammatory, antibacterial).
+
+Indica: Short, bushy, wide leaves, early maturity, relaxing high. Kush: Indica variant, extra-wide leaves.
+
+Sativa: Tall, conical, long leaves, late maturity, psychedelic high.
+
+Ruderalis: Autoflowering, short, low resin, low THC.
+
+Hybrids: Combinations of indica and sativa traits.
+
+Autoflowering: Flower regardless of light cycle; 60-90 days maturity; small (2-3 ft) and super (4-5 ft) varieties; fast harvest, suitable for short seasons.
+
+Cultivar Selection: Seed (heterogeneous, easy transport/storage), Clone (homogeneous, faster growth).  Consider size, maturation speed, yield, flavor/aroma/high, mold resistance.
+
+Variety Showcase: (See document for detailed cultivar information).
+
+Breeding: Random (uncontrolled pollination), Intentional (selective breeding, genetic profiling), F1 (first generation hybrid), F2 (second generation), Backcross.  Feminized seeds (all female plants).  Triploid varieties (sterile, increased yield).
+
+Photosynthesis: 6CO2 + 6H2O + Light Energy → C6H12O6 + 6O2.  Chloroplasts contain chlorophyll (red/blue light absorption), carotenoids (blue/blue-green).  Limiting factors: Light, CO2, Water, Oxygen, Nutrients, Air Temperature/Humidity.
+
+Light: Quantity (µmol·m–2·s–1, PPF, PPFD, DLI), Duration (photoperiod), Quality (spectrum).  Red (photosynthesis), Far-red (photosynthesis, flowering), Blue (photosynthesis, growth), Green (photosynthesis, canopy penetration).  UV (potency), Phytochromes (red/far-red receptors).
+
+CO2: C3 plant; optimal 800-1500 ppm; supplementation (tanks, generators); avoid incomplete combustion (CO).
+
+Water: Alkalinity (CaCO3 equivalents), pH (5.6-6.3 hydroponic, 5.8-6.5 soil), EC (mS/cm, <0.5 ideal), dissolved ions; RO treatment; sanitation (ClO2, HOCl, H2O2, C2H4O3).
+
+Oxygen: Root respiration; aeration (air pumps, bubblers, H2O2); hypoxic/anoxic conditions; soil porosity, fertigation.
+
+Nutrients: N-P-K ratios; vegetative (high N/low P), flowering (low-med N/med-high P), ripening (low N/high P).  Fertilizers: liquid, granular, organic, controlled release.  Monitor pH, EC/TDS.  Nutrient deficiencies (visual symptoms, corrective actions).
+
+Air Temperature: 70-85°F (21-29°C) optimum; higher for high light/CO2.  Humidity: 70% propagation, 55-65% vegetative, 50-60% flowering; VPD (vapor pressure deficit).  Air circulation; biosecurity.
+
+Personal Garden Spaces: Grow tents (4x4 ft example); lighting, ventilation, odor control, climate control, electrical connections.
+
+Medium & Large Spaces: (20x20 ft bloom room example); lighting, ventilation (charcoal filter, inline fan), plant support (trellising), air conditioning, CO2, control equipment (timer, controller), drainage, water purification (RO).
+
+Featured Gardens: Dennis Peron (balcony garden), KISS (simple system), Tyler LeBlanc (aquaponic), Oklahoma Sungrown (hügelkultur, fungi), Creswell Oreganics (octagon gardens), Autumn Brands (Dutch-style), California Appellation of Origin (sun-grown, no structures/supplemental lighting), Martyjuana (biodynamic, moon cycles), Sunboldt Grown (dry farming), Mendo Dope/Greenshock Farms (volcano mounds), Remo (high-tech, high-yield indoor).
+
+Electricity: Service equipment, circuit breakers (80% rule), amperage, voltage, wattage, load calculations.
+
+Harvesting: Picking, bucking, trimming (wet/dry, manual/machine), drying (low and slow, hot fast), curing, storing (glass, stainless steel, plastic, vacuum sealing, nitrogen).  Trichome maturity (clear, milky, amber).
+
+Processing: Kief (dry sift, dry ice), Hashish (hand-rubbing, pressing), Rosin (heat & pressure). Edibles, tinctures, topicals.
+
+Cloning: Totipotency; rooting hormones (auxins); methods (water, aeroponics, planting media); maintaining temperature/humidity.
+
+Tissue Culture: Micropropagation; multiplication, rooting stages; advantages (disease-free, genetic preservation, space savings).
+
+Pests & Diseases: IPM (resistance, exclusion, disruption of life cycle, eradication); monitoring (signs/symptoms); common pests (aphids, spider mites, hemp russet mites, broad mites, caterpillars, thrips, fungus gnats, whiteflies, slugs/snails, ants, gophers/moles, deer, rodents).  Common diseases (gray/brown mold, powdery mildew, Hop Latent Viroid).
+
+Sustainability: No-till, wildlife-friendly, land sparing; water conservation (rainwater harvesting, recycling); energy conservation (renewable sources); waste management (reuse, reduce, recycle, compost).
+```

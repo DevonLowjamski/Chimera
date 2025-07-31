@@ -1,0 +1,352 @@
+﻿Industrial Crops & Products 170 (2021) 113753 
+Contents lists available at ScienceDirect      
+Industrial Crops & Products  
+journal homepage: www.elsevier.com/locate/indcrop  
+Modeling and optimizing in vitro seed germination of industrial hemp  (Cannabis sativa L.)  
+Mohsen Hesami, Marco Pepe, Adrian Scott Monthony, Austin Baiton,  Andrew Maxwell Phineas Jones *  
+Department of Plant Agriculture, University of Guelph, Guelph, N1G 2W1, ON, Canada  
+ARTICLE INFO  
+Keywords:  
+Artificial intelligence  
+Carbohydrate sources  Culture medium  
+Machine learning algorithm  Optimization algorithm  Plant tissue culture  
+1. Introduction  
+ABSTRACT  
+In vitro seed germination of cannabis as the first physiological stage in the plant life cycle is not only important  for studying factors affecting cultivation conditions but also crucial for obtaining juvenile tissue as a potential  explant for different in vitro procedures. On the other hand, in vitro seed germination is a multi-variable biological  process that can be influenced by genetic (genotype) and physical factors (medium composition and environ 
+mental conditions). Therefore, a powerful mathematical methodology such as artificial neural networks (ANNs)  is well suited to analyze the data and optimize the conditions this complex system. The current study was aimed  to evaluate the effect of different types and concentrations of carbohydrate sources (sucrose and glucose) as well  as different strengths of DKW (Driver and Kuniyaki Walnut) and mMS (Murashige and Skoog Medium, Van der  Salm modification) media on seed germination indices as well as morphological features of in vitro-grown  cannabis seedlings by using three ANNs including multilayer perceptron (MLP), radial basis function (RBF), and  generalized regression neural network (GRNN). The GRNN model displayed higher predictive accuracy (r2>0.70)  in both training and testing sets for all germination indices and morphological traits in comparison to RBF or  MLP. Moreover, non-dominated sorting genetic algorithm-II (NSGA-II) was subjected to the GRNN to find the  optimal type and level of media and carbohydrate source for obtaining the best seed germination indices  (germination rate and mean germination time). According to the optimization process, 0.43 strength mMS  medium supplemented with 2.3 % sucrose would result in the best outcomes. This result showed that a moderate  level of salts existing in culture media (0.43 strength of mMS medium) supplemented with a moderate level of  sucrose (2.3 %) can improve in vitro seed germination of hemp. The results of a validation experiment revealed  that there was a negligible difference between the experimental data and the optimized result. Therefore, GRNN NSGA-II provided an accurate prediction of seed germination and can likely be employed to optimize different  factors involved in in vitro culture of this multi-purpose crop.  
+characteristics (Chandran et al., 2020; Krasteva et al., 2021). The ad 
+vantages of tissue culture are numerous and include: (1) a reduced space  
+Hemp (Cannabis sativa L.) is cultivated in many parts of the world for  oil, fiber, seeds and its medicinal values (Kovalchuk et al., 2020; Salami  et al., 2020). There is an exponential increase in demanding the products  of cannabis all over the world, including a multi-billion dollar market for  non-psychoactive cannabinoids that can be obtained from industrial  hemp (Monthony et al., 2021). However, studies on this multipurpose  crop are lacking and biotechnological methods are in their infancy due  to the long history of prohibition (Hesami et al., 2020c). Plant tissue  culture is an important agricultural biotechnology that provides the  production of crops with improved food, fuel, fiber, and feed  
+* Corresponding author.  
+E-mail address: amjones@uoguelph.ca (A.M. Phineas Jones).  https://doi.org/10.1016/j.indcrop.2021.113753  
+requirement owing to the small size of explant used as starting material;  (2) production of multiples of plants without the need for any pollina tors; (3) cultivation of plants under sterile conditions therefore limiting  the transmission of pests, diseases, and pathogens; (4) highly space and  time-efficient production and storage of mature plants impervious to  weather and without the need for soil (Chadipiralla et al., 2020;  El-Sherif, 2018).  
+Applying and developing biotechnological tools, such as plant tissue  culture, to cannabis will help tackle some species-specific bottlenecks to  improve productivity, develop disease resistance, studying functional  
+Received 19 February 2021; Received in revised form 14 June 2021; Accepted 15 June 2021 Available online 23 June 2021 
+0926-6690/© 2021 Published by Elsevier B.V. 
+Industrial Crops & Products 170 (2021) 113753 
+M. Hesami et al. 
+genomics, and genetic manipulation (Hurgobin et al., 2020). To study in  vitro functional genomics or genetic manipulation and secondary  metabolite production via callus culture, juvenile tissues and organs  such as different parts of in vitro-growing seedling have been recom 
+mended as a potential explant material (Deguchi et al., 2020; Ioannidis  et al., 2020; Sorokin et al., 2020). Thus, efficient seed germination  protocol to provide in vitro-grown seedlings can play a conspicuous role  in successful cannabis genetic manipulation and regeneration. More 
+over, seed germination can be considered as the first and most important  physiological stage in the plant life cycle (Hu et al., 2018). Therefore,  successful seed germination is not only important for studying factors  affecting cultivation conditions, but also crucial for obtaining juvenile  tissue as a potential explant for different in vitro procedures (e. g. gene  transformation, callus culture, secondary metabolite and biofuel pro 
+duction) and for screening stress-tolerant genotypes (Hu et al., 2018;  Sorokin et al., 2021). In an ex vitro study, Hu et al. (2018) investigated  the effect of different concentrations of various salts (NaCl, Na2CO3,  Na2SO4, and NaHCO3) on seed germination of two hemp cultivars and  reported that a low level of salts improved seed germination rate,  resulted in longer hypocotyls and radicles in comparison with a high  concentration of salts. They also showed that the quality of seedlings  was more sensitive to salt concentrations than seed germination rate and  that seed germination indices of hemp could be different with the type  and concentration of salts. These results show the importance of  studying the type and concentration of salts on seed germination, but to  the best of our knowledge, no comprehensive studies exist concerning in  vitro cannabis seed germination where salts are typically included in the  culture medium.  
+In vitro seed germination is a multi-variable biological process  (Genze et al., 2020) that can be influenced by genetic (genotype) and  physical factors such as type and concentrations of plant growth regu lators, carbon sources, gelling agent, medium composition, disinfection  procedure, as well as light, pH, and temperature (Fig. 1) (Hesami and  Jones, 2020; Roni et al., 2018). Among these factors, medium  
+composition (e.g., type and concentration of salts and vitamins), car bohydrate sources, and their interaction play a pivotal role. Previous  studies showed that the high concentration of media (full strength me dium) can inhibit seed germination in many species (Bozdemir et al.,  2018; Huh et al., 2016; Lin et al., 2017). Also, different studies showed  that each plant needs specific medium composition (salts and vitamins)  and carbohydrate source for optimal germination (Roni et al., 2018;  Stewart and Kane, 2010; Sumaryono et al., 2012). For instance, Knudson  (1922) showed that orchid seed requires a specific culture medium  supplemented with sucrose as a simple carbohydrate source for in vitro  germination. In another study, Sumaryono et al. (2012) studied the ef fect of different strengths of MS medium along with different concen trations and types of carbohydrates for in vitro growth of Metroxylon sagu  seedlings. They reported that half-strength MS medium along with 30  g/l sucrose resulted in the highest performance and growth of the  seedlings. Generally, it has been suggested that the type and strength of  media as well as carbohydrate sources should be adjusted for each plant  (Roni et al., 2018; Stewart and Kane, 2010; Sumaryono et al., 2012). As  a non-linear and complex biological process, conventional statistical  approaches such as simple regression is not suitable for studying and  analyzing in vitro seed germination due to the number of treatments that  would be required (Niazian and Niedbała, 2020). New non-linear  computational approaches have great potential to optimize the process  with minimal treatments.  
+Machine learning algorithms have been successfully employed for  predicting and optimizing various complex biological systems (Hesami  et al., 2021; Niazian and Niedbała, 2020; Silva et al., 2019; Yoosefzadeh  Najafabadi et al., 2021). Artificial neural networks (ANNs) can be  considered as the most well-known models among different machine  learning algorithms (Jafari and Shahsavar, 2020; Kusumo et al., 2017;  Sebayang et al., 2017). The usefulness and reliability of ANNs in  studying and predicting different steps of plant tissue culture such as in  vitro sterilization, callogenesis, shoot proliferation, and in vitro produc tion of secondary metabolites have been recently confirmed (Farhadi  et al., 2020; Hesami and Jones, 2020; Salehi et al., 2020, 2021). Genetic  algorithm (GA) is a well-known single objective optimization algorithm  that has been previously been applied for optimizing different in vitro  processes (Hesami and Jones, 2020; Salehi et al., 2020). However, as a  single objective optimization algorithm, it can only find the optimal  level of inputs for each individual target variable separately and cannot  optimize the level of inputs for all target variables simultaneously  (Bozorg-Haddad et al., 2016; Hesami et al., 2020b; Tanabe and Ishi buchi, 2020; Yoosefzadeh-Najafabadi et al., 2021). Therefore, a  multi-objective optimization algorithm that can target different outputs  simultaneously may be preferable (Hesami and Jones, 2020; Yilmaz,  2021). In multi-objective optimization algorithms, input variables are  considered as multi-objective optimization problems, whereas the so 
+lutions recognize the best possible balance among various functions  (target variables) (Tanabe and Ishibuchi, 2020; Yilmaz, 2021). Recently  non-dominated sorting genetic algorithm-II (NSGA-II) was used for  optimizing different in vitro culture systems such as in vitro sterilization  (Hesami et al., 2019a), somatic embryogenesis (Hesami et al., 2020a),  and shoot proliferation (Hesami et al., 2019b). Therefore, the hybridi 
+zation of ANNs and multi-objective optimization algorithms can be  considered as an accurate and reliable methodology for studying, pre dicting, and optimizing in vitro seed germination.  
+The measurement and assessment of morphological characteristics of  in vitro-grown plantlets is a tedious and time-consuming process in in  vitro studies, making protocol optimization a time consuming and  expensive process (Niazian et al., 2019). New methods that incorporates  machine vision approaches have the potential overcome those diffi 
+culties and streamline the process (Dutta Gupta and Pattanayak, 2017;  Genze et al., 2020). Image processing is one of the most well-known  machine vision methods and provides detailed information as well as  greater reliability and accuracy than conventional counting and visual  
+Fig. 1. The schematic view of factors affecting in vitro seed germination. determination (Niazian et al., 2019). For instance, Genze et al. (2020)  
+2 
+Industrial Crops & Products 170 (2021) 113753 
+M. Hesami et al. 
+compared the conventional assessment method with hybrid image  processing and ANN for studying ex vitro seed germination of three  different crops including rye (Secale cereale L.), maize (Zea mays L.), and  pearl millet (Pennisetum glaucum [L.] R. Br.). They reported that the  machine learning-based method was robust and helped to speed up seed  germination assessment. In another study, Colmer et al. (2020) sug 
+gested a hybrid image processing and ANN as a reliable method for  phenotypic analysis of seed germination of Brassica napus L. varieties.  Hence, image processing provides a robust tool for studying morpho logical features of in vitro-grown seedling.  
+The main objective of this study is to optimize the medium compo sition (type and concentration of media and carbohydrate sources) for in  vitro seed germination of hemp. Therefore, the current study was per formed to evaluate the effect of different types and concentrations of  carbohydrate sources (sucrose and glucose) as well as different strengths  of DKW (Driver and Kuniyuki, 1984) and mMS (Murashige and Skoog  Medium, Van der Salm modification (Van der Salm et al., 1994)) on in  vitro seed germination indices as well as morphological features of in  vitro-grown seedlings through the image processing in hemp by using  three well-known ANNs including multilayer perceptron (MLP), radial  basis function (RBF), and generalized regression neural network  (GRNN) in combination with NSGA-II. Also, performance of these  models in modeling and forecasting in vitro hemp seed germination was  compared and provides a foundation to optimize other in vitro methods.  
+2. Material and methods  
+2.1. Plant material, culture medium, and growth conditions  
+Industrial hemp seeds (Cannabis sativa cv. Finola) were used for this  study (CSGA No.1 Certified seed, Lot #: 1908-18637-17-KKF-01). First,  the seeds were washed for 15 min with running tap water. Afterward,  the seeds were dipped for 60 s in 70 % ethanol and then washed with  sterilized deionized water for 5 min under a laminar airflow cabinet.  Once in the laminar flow hood and following the wash, seeds were  sterilized using 12 % (v/v) commercial bleach for 12 min, followed by  three, 5-minute deionized water rinses. Different (one-tenth, half, and  full) strengths of DKW medium (D2470, PhytoTech Labs, Kansas, USA)  supplemented with various levels of sucrose (2 % and 5 %) as well as  different (one-tenth, half, and full) strengths of mMS medium (Phyto tech Labs, Kansas, USA) supplemented with various levels of glucose (2  % and 5 %) were used in this study. All media had 0.6 % agar (Thermo 
+Fisher Scientific, Waltham, MA) and the pH of the media was adjusted to  5.8 using 1 M HCl and NaOH before autoclaving for 20 min at 120 ◦C.  For each treatment, 30 ml of media were poured into a Magenta GA7  vessel (Fisher Scientific, NJ, USA). The in vitro seed germination ex 
+periments were performed based on a completely randomized design  (CRD) with a factorial arrangement with 14–16 replicates per treatment,  and each replicate consisted of 4–5 seeds. All culture boxes were placed  in the growth chamber at 25 ± 2 ◦C under 16-h photoperiod with 40 ± 5  μmol m− 2 s− 1 light intensity.  
+2.2. Germination indices  
+Hemp seeds were considered germinated seed upon emergence of the  radicle and germination was recorded every 10 days for 40 days (4 sets  of counting). Different seed germination indices were used for evalu ating the in vitro germination of hemp seed as follow:  
+1) Germination index (GI) was computed based on the following  equation.  
+2) Mean germination time (MGT) was calculated based on the following  equation.  
+MGT = ∑fd /f (2)  where f is the number of germinated seeds on day d.  
+3) Germination rate (GR) was calculated using the following equation:  GR = Gn × 100 (3)  
+Where G is the number of germinated seeds by the end of the experiment  and n equals the total number of cultivated seeds.  
+4) Timson germination index (TGI) is determined based on the based on  the following equation.  
+TGI = ∑GP (4)  
+where G is the percentage of germinated seeds per period, and P shows  the germination period.  
+5) Vigor index (VI) was determined according to the following  equation.  
+VI = G × W (5)  
+Where G is the number of germinated seeds at the end of the experiment,  and W represents the weight of seedlings. The weights of the seedlings  were weighed on day 40.  
+2.3. Morphological traits  
+At the end of the experiment (day 40) morphological traits including  seedling fresh weight, leaf number, shoot length, and root length were  assessed. To measure shoot length and root length, an image processing  was used. The images of the in vitro grown seedlings were captured by  iPhone Xs with the auto-focus feature from a vertical distance of 25 cm.  The reliability of smartphones in capturing images to study plant  morphological traits has been approved by different studies (Friedrichs  et al., 2017; Mohan and Gupta, 2019; Vesali et al., 2017). The acquired  images were processed with ImageJ 1.50i software (National Institute of  Mental Health). The steps of the image processing using ImageJ software  consisted of (i) image acquisition and set scale, (ii) red, green, and blue  (RGB) color cropping filtering, (iii) creation of a grayscale image, (iv)  development of a binary image, (v) remove noises from the binary image  and filling holes, and (vi) measuring the image (shoot or root) length  (Fig. 2a).  
+The obtained data were used for modeling, predicting, and opti mizing seed germination indices and morphological traits of cannabis  seedlings. The step-by-step procedure of this experiment has been  summarized in Fig. 2. The Pearson correlation of morphological traits  were estimated using corrplot package (Wei et al., 2017) in R software  version 3.6.1.  
+2.4. Modeling procedures  
+In the present study, MLP, GRNN, and RBF as three well-known  ANNs were employed to model and predict in vitro cannabis seed  
+GI = 
+(Number of germinated seeds days of first count 
+) 
++ … 
+germination. Before using the ANNs, Box-Cox transformation was  employed to normalize the data. To detect outliers, principal component  
++ 
+(Number of germinated seeds days of last count 
+) 
+(1)  
+analysis (PCA) was used; however, no outlier was identified. In this  study, the five-fold cross-validation approach with 10 repetitions were  applied to evaluate the prediction accuracy of the tested ANNs.  
+3 
+Industrial Crops & Products 170 (2021) 113753 
+M. Hesami et al. 
+Fig. 2. The schematic view of the step-by-step procedure of this study including (a) image processing, (b) modeling seed germination indices and morphological  traits based on four input variables including sucrose, glucose, Driver and Kuniyaki walnut (DKW) medium, and Murashige and Skoog medium Van der Salm  modification (mMS) using artificial neural networks (ANNs), (c) optimization process via non-dominated sorting genetic algorithm-II (NSGA-II), and (d) experimental  validation test.  
+Different strengths of DKW and mMS media and different levels of  sucrose and glucose were selected as input variables, while seed  germination indices (GI, MGT, GR, TGI, and VI) and morphological traits  (seedling fresh weight, shoot length, leaf number, and root length) were  considered as target (output) variables (Fig. 2b).  
+To evaluate and compare the efficiency and accuracy of the ANNs, r2  (coefficient of determination), mean bias error (MBE), and root mean  square error (RMSE) were employed.  
+2.4.1. Multilayer perceptron (MLP) model  
+The 3-layer backpropagation MLP is a distributed and parallel model  that employs supervised learning for the training set that minimizes the  error between the output and input variables through the following  function:  
+wji represents the weight of the direct relationship of input neuron i to  the hidden neuron j, wj0 shows the bias for node jth, w0 equals the bias  connected to the neuron of output, and g represents the activation  function for the hidden neuron.  
+It is crucial to determine the number of neurons in each node and the  number of hidden units because they play a pivotal role in the perfor mance of MLP. In the current study, the optimal neuron number in the  hidden layer was detected based on trial and error. Also, linear function  (purelin) and hyperbolic tangent sigmoid function (tansig) were applied  as the transfer functions of output layer and hidden layer, respectively.  Moreover, bias and weights were adjusted by using a Levenberg Marquardt algorithm.  
+2.4.2. Radial basis function (RBF) model  
+Error = 1n∑n n=1 
+(ys − ̂ys)2 (6)  
+Radial basis function is a three-layer (an input, a hidden, and an  output) ANN model. RBF as a basis of radial basis networks makes a  network of artificial neurons. Euclidean distance between the neural  
+where n is the number of observations, ys is the sth observed variable,  and ̂ys is the sth predicted variable.  
+To compute the ̂y in the MLP with p neurons in the hidden layer and k  output variables, following equation is implemented:  
+center and the input in RBF provides activation function input for each  neuron. If the input x as an n-dimensional vector connects to each hid den neuron, each output of the hidden neuron will only relate to the  radial distance between the neural center and the x input vector. Then,  
+̂y = f 
+[∑p j=1 
+wj.g(∑k i=1 
+wjixi + wj0) + wo 
+] 
+(7)  
+the following function is used for computing the output of each neuron  (hj):  
+hj = ∅ (‖ x − cj ‖) j = 1, 2, 3,…, m (8)  
+where xi is the ith output variable, wj shows the weighted input data into  the jth hidden neuron, f shows activation function for the output neuron,  
+where ‖‖ is Euclidean rule, ϕ shows activation function, cj represents the  jth hidden neuron center, and m equals the number of hidden neurons.  
+4 
+Industrial Crops & Products 170 (2021) 113753 
+M. Hesami et al. 
+The following equation represents the Gaussian function as the well known activation function in RBF:  
+3. Results  
+[ 
+∅j(x) = exp 
+− ‖ x − cj ‖2 2σ2 
+] 
+(9)  
+3.1. Effect of media and carbohydrate sources on in vitro seed  germination  
+Where ϕj(x) shows the reaction of the jth unit and σ equals the width of  the Gaussian function. Afterward, the minimum mean square is used to  obtain the connection between the weights of hidden and output layers.  Finally, the kth output of the model is determined based on the following  equation:  
+̂yk = ∑m 
+Wjk ∅j(x) + W0 (10)  j=1 
+where ̂yk shows the kth output variable, wjk represents connecting  weight between the kth output variable and the jth hidden neuron, and  w0 shows the bias.  
+2.4.3. Generalized regression neural network (GRNN) model  Generalized regression neural network as a standard regression  method is another kind of radial basis network including the input layer,  pattern layer, summation layer, and output layer. The input node  completely enters the pattern node. The distance between stored pattern  outputs is considered as the pattern layer output. The output of each  pattern neuron is connected to S-summation and D-summation neurons  in the summation layer. D-summation neuron computes the unweighted  pattern neuron outputs. S-summation neuron sums the weighted pattern  neuron outputs. Finally, the following equation is used for calculating  the output:  
+In the current study, the effect of different concentrations (2% and  5%) of two carbohydrate sources (sucrose and glucose) and different  (one-tenth, half, and full) strengths of DKW and mMS media were  investigated on germination indices and seedling morphological traits of  cannabis. Based on our results (Table 1 and Fig. 3), various morpho 
+logical responses were observed in different treatments. The highest root  length (8.68 cm) and leaf number (6.67) were obtained from DKW + 2 %  sucrose and 1/2 DKW + 5 % sucrose, respectively (Table 1). The  maximum seedling fresh weight (0.37 g) and shoot length (13.99 cm)  were observed on the half-strength mMS medium along with 5 %  glucose (Table 1). Generally, seedling fresh weight and shoot length  were decreased on both full-strength media (DKW and mMS) and this  could be a result of the increased osmotic stress arising from higher basal  salt concentrations in those media. Based on the correlation coefficient  results (Fig. 4), all morphological traits were in a significant correlation  with each other. The highest correlation was found between weight and  shoot length and the lowest observed between Root length and Leaf  number with the values of 0.62 and 0.25, respectively.  
+According to the results of the current study (Table 1), the maximum  values for all germination indices including GI (1.27), MGT (0.67), GR  (73.50 %), TGI (11.57), and VI (2.19) were observed in half-strength  mMS supplemented with 2 % glucose. Generally, increasing the  strength of both media (from half-strength to full-strength) and the level  of carbohydrate sources resulted in decreasing the seed germination  
+∑n 
+yi exp 
+( 
+− Di2 
+) 
+indices (Table 1).  
+̂y = 
+i=1 
+( 
+2σ2 
+3.2. Artificial neural networks evaluation  
+∑n i=1 
+exp 
+− Di2 2σ2 
+) (11)  
+Data modeling by ANNs displays a reliable solution to provide  
+Di2 = (x − xi)T (x − xi) (12)  
+where ̂y represents the average of all the weighted observed output data,  σ equals width parameter, Di2 shows a scalar function which is based on  any xi and yi observed data, and yi represents the ith output variable.  
+2.5. Optimization process  
+The non-dominated sorting genetic algorithm (NSGA-II) introduced  by Deb et al. (2002) is a multi-objective evolutionary optimization al gorithm with a strong elitism strategy (Fig. 2c). The pseudocode of  NSGA-II has been described in Fig. 7 (Matnei Filho and Vergilio, 2016).  
+NSGA-II was used to find the optimized levels of mMS and sucrose,  mMS and glucose, DKW and sucrose, as well as DKW and glucose to  maximize two most important germination indices including GR and  MGT as fitness functions. The crossover rate, generation number, initial  population, and mutation rate were respectively set to 0.7, 1000, 200,  and 0.5 to obtain the best fitness. To choose the elite population for  crossover, a roulette wheel selection approach was employed.  
+MATLAB (Matlab, 2010) software was used for writing ANNs and  optimization algorithms codes.  
+2.6. Validation experiment  
+To confirm the efficiency and reliability of the developed model, the  best predicted-optimized result was experimentally tested with 15 rep licates, and each replicate containing five seeds.  
+comprehensive knowledge on in vitro seed germination of cannabis after  training and testing from the experimental dataset. In the current study,  three ANNs (RBF, MLP, and GRNN) were employed to predict seed  germination indices and seedling morphological traits based on the  various strengths of DKW and mMS media supplemented with different  levels of sucrose and glucose. The GRNN model displayed higher pre 
+dictive accuracy (r2 > 0.70) in comparison to RBF or MLP in both  training and testing sets for all germination indices and morphological  traits including GI (r2 > 0.72 for GRNN vs. r2 > 0.61 for MLP or r2 > 0.67  for RBF), MGT (r2 > 0.72 for GRNN vs. r2 > 0.67 for MLP or r2 > 0.62 for  RBF), GR (r2 > 0.71 for GRNN vs. r2 > 0.64 for MLP or r2 > 0.64 for RBF),  TGI (r2 > 0.73 for GRNN vs. r2 > 0.69 for MLP or r2 > 0.70 for RBF), VI  (r2 > 0.70 for GRNN vs. r2 > 0.61 for MLP or r2 > 0.64 for RBF), seedling  fresh weight (r2 > 0.71 for GRNN vs. r2 > 0.64 for MLP or r2 > 0.64 for  RBF), root length (r2 > 0.72 for GRNN vs. r2 > 0.63 for MLP or r2 > 0.66  for RBF), shoot length (r2 > 0.73 for GRNN vs. r2 > 0.64 for MLP or r2 > 0.66 for RBF), and leaf number (r2 > 0.73 for GRNN vs. r2 > 0.63 for MLP  or r2 > 0.64 for RBF) (Table 2). Also, the regression lines revealed a good  fit correlation between experimental and predicted values for all the  germination indices and morphological traits in both training (Fig. 5)  and testing (Fig. 6) sets. In addition, model accuracy was evaluated by  RMSE and MBE, which proved the better performance of GRNN in  comparison with RBF and MLP (Table 2).  
+3.3. Optimization via non-dominated sorting genetic algorithm-II and  validation experiment  
+NSGA-II as an evolutionary multi-objective optimization algorithm  was subjected to the GRNN (the most accurate model in this study) in  order to find the optimal type and level of media and carbohydrate  sources for obtaining the best seed germination indices (GR and MGT).  According to the optimization process (Table 3), 0.43 strength mMS  
+5 
+Industrial Crops & Products 170 (2021) 113753 
+M. Hesami et al. 
+Table 1  
+The effect of different strengths of mMS and DKW media as well as various levels of sucrose and glucose on different seed germination indices and morphological traits  in cannabis.  
+Strength  
+media  
+DKW × Sucrose  
+Carbohydrate  sources (%)  
+GI MGT GR (%) TGI VI Seedling fresh  weight (g)  
+Root length  (cm)  
+Shoot length  (cm)  
+Leaf  
+number  
+0.1 2 0.25 ± 0.165  
+0.14 ± 0.085  
+59.52 ± 32.499  
+8.27 ± 5.487  
+0.53 ± 0.601  
+0.31 ± 0.229 8.37 ± 5.096  
+9.37 ± 6.653 5.50 ± 3.568  
+0.1 5 0.25 ± 0.141  
+0.5 2 0.49 ± 0.194  
+0.13 ± 0.070  0.26 ± 0.092  
+54.17 ± 23.960  63.75 ± 19.621  
+8.19 ± 4.698  9.89 ± 3.871  
+0.37 ± 0.178  1.09 ± 0.733  
+0.23 ± 0.091 7.24 ± 3.789  
+0.34 ± 0.171 7.35 ± 5.003  
+10.29 ± 3.670  12.89 ± 6.125  
+4.38 ± 1.455  5.69 ± 2.414  
+0.5 5 0.31 ± 0.235  
+1 2 0.24 ± 0.103  
+1 5 0.17 ± 0.131  
+mMS × Glucose  
+0.18 ± 0.127  0.13 ± 0.053  0.10 ± 0.064  
+47.41 ± 29.094  51.11 ± 21.331  45.83 ± 26.874  
+6.71 ± 4.517  7.87 ± 3.450  5.76 ± 4.357  
+0.54 ± 0.629  0.38 ± 0.217  0.17 ± 0.134  
+0.25 ± 0.163 5.78 ± 4.847  
+0.25 ± 0.138 8.68 ± 6.156  
+0.16 ± 0.120 5.56 ± 4.795  
+9.45 ± 5.963 6.67 ± 3.144  
+8.95 ± 3.811 4.73 ± 3.058  
+6.86 ± 4.487 3.75 ± 1.438  
+0.1 2 0.88 ± 0.315  
+0.1 5 0.84 ± 0.240  
+0.5 2 1.27 ± 0.581  
+0.5 5 0.54 ± 0.232  
+1 2 1.17 ± 0.533  
+1 5 0.80 ± 0.334  
+Values in each column represent means ± SD.  
+0.48 ± 0.165  0.45 ± 0.125  0.67 ± 0.290  0.30 ± 0.112  0.65 ± 0.249  0.44 ± 0.179  
+66.67 ± 22.722  63.89 ± 17.806  73.50 ± 11.958  67.96 ± 24.971  62.90 ± 13.218  59.26 ± 23.371  
+9.81 ± 3.496  9.28 ± 2.667  11.57 ± 
+3.105  10.36 ± 4.688  8.99 ± 3.563  8.94 ± 3.712  
+2.00 ± 1.413  1.78 ± 0.717  2.19 ± 1.388  1.37 ± 0.850  1.72 ± 0.712  1.27 ± 0.862  
+0.32 ± 0.170 6.72 ± 2.761  
+0.31 ± 0.096 6.54 ± 2.135  
+0.26 ± 0.108 5.87 ± 2.174  
+0.37 ± 0.203 8.20 ± 3.679  
+0.21 ± 0.082 6.96 ± 2.926  
+0.26 ± 0.137 5.63 ± 2.401  
+13.47 ± 4.090  13.87 ± 3.568  13.45 ± 4.036  13.99 ± 3.065  11.33 ± 3.601  10.66 ± 3.960  
+5.17 ± 2.517  5.17 ± 1.946  6.17 ± 2.480  4.92 ± 1.975  5.86 ± 2.035  4.00 ± 1.651  
+DKW: Driver and Kuniyaki walnut medium; GI: Germination index; MGT: Mean germination time; GR: Germination rate; mMS: Murashige and Skoog medium Van der  Salm modification; TGI: Timson germination index; VI: Vigor index.  
+medium supplemented with 2.3 % sucrose would result in the best re sults with 78.93 % GR and 0.64 MGT. The results of the validation  experiment revealed that there was a negligible difference between the  experimental data and the optimized result (Fig. 2d).  
+4. Discussion  
+Successful in vitro cannabis seed germination is not only important  for obtaining juvenile tissue as a potential explant for different in vitro  procedures (e. g. gene transformation, callus culture, secondary  metabolite and biofuel production), but also crucial for screening stress 
+tolerant genotypes (Deguchi et al., 2020; Hu et al., 2018; Sorokin et al.,  2021). Therefore, it is necessary to study and optimize factors affecting  in vitro seed germination of cannabis such as medium compositions  including macronutrients, micronutrients, vitamins, plant growth reg 
+ulators, amino acids, and carbohydrate sources (Boonsnongcheep and  Pongkitwitoon, 2020; Hesami and Jones, 2020). During in vitro seed  germination, seeds are cultured on artificial media containing essential  nutrients, amino acids, vitamins, and carbohydrate required for the  successful germination and growth of the seedlings (Hesami et al., 2018;  Utami and Hariyanto, 2019). Consequentially, the success of in vitro seed  germination is significantly affected by culture media composition (Kim  et al., 2019). The carbohydrate type and concentration during in vitro  seed germination not only influences growth and development, but also  seed germination indices such as germination percentage (Bozdemir  et al., 2018; Roni et al., 2018). Several studies have previously  demonstrated that different species and plant tissues need a specific  carbohydrate source in different stages of plant tissue culture (Hesami  et al., 2019c; Roni et al., 2018; Yaseen et al., 2013). Moreover, the effect  of type and strength of the basal medium as a source of nutrients and  vitamins on in vitro seed germination leads to good outcomes for seed ling growth and development without any physiological disorders  (Hesami et al., 2018; Kim et al., 2019; Roni et al., 2018). Therefore, the  type and concentration of different elements in the media (e. g.  
+macronutrients, micronutrients, vitamins, carbohydrate) should be  selected and optimized based on species and in vitro culture procedure  (Hesami and Jones, 2020; Lin et al., 2017). The current study demon strated the impact of type and concentration of carbohydrate sources  (sucrose and glucose) on in vitro cannabis seed germination using  different strengths of mMS and DKW media.  
+However, optimizing in vitro seed germination as a nonlinear,  multivariable, and complex system is a highly tedious, expensive, and  time-consuming process. (Hesami and Jones, 2020; Lin et al., 2017)  Thus, there is a serious need for the application of new computational  approaches such as machine learning algorithms to analyze and opti 
+mize this type of system more efficiently using fewer treatments (Nia zian and Niedbała, 2020; Silva et al., 2019). Recently, the reliability and  accuracy of different types of ANNs such as RBF, MLP, and GRNN have  been studied in different stages of plant tissue culture (Hesami and  Jones, 2020). For instance, Zhang et al. (2020) used MLP for modeling  and predicting organogenic callus production based on four input var iables (agar concentration, humidity, light time, and culture tempera ture), and reported that MLP was able to accurately model and predict  the system (r2 > 0.96). In another study, MLP was employed to model  and predict in vitro root formation in grapevine based on the concen tration of indole-3-butyric acid (IBA) and Exposure time to IBA (Gago  et al., 2010). They reported that r2 of developed model for modeling  roots number was 78.53. In another study, Hesami et al. (2019b)  employed RBF for modeling and predicting in vitro shoot proliferation in  chrysanthemum based on four input variables including 6-benzylamino purine (BAP), IBA, phloroglucinol, and sucrose. They showed that RBF  was able to accurately model and predict shoot proliferation (r2 > 0.98).  Recently, Salehi et al. (2021) used GRNN for modeling and predicting in  vitro paclitaxel biosynthesis in hazel based on four inputs including  culture filtrate levels, cell extract time, elicitor adding day, and cell  harvesting time, and reported that r2 of developed GRNN for modeling  paclitaxel biosynthesis was over 0.88. However, uncertainties regarding  machine learning outcomes represents one of the main problems with  
+6 
+Industrial Crops & Products 170 (2021) 113753 
+M. Hesami et al. 
+Fig. 3. In vitro grown seedling of cannabis in different treatments including (a) one-tenth strength of Driver and Kuniyaki walnut (DKW) medium along with 5 %  sucrose, (b) full strength of DKW medium along with 5 % sucrose, (c) one-tenth strength of Murashige and Skoog medium Van der Salm modification (mMS) along  with 2 % glucose, (d) half strength of DKW medium along with 2 % sucrose, (e) full strength of mMS medium along with 5 % glucose, (f) one-tenth strength of mMS  medium along with 5 % glucose, (g) one-tenth strength of DKW medium along with 2 % sucrose, (h) full strength of DKW medium along with 2 % sucrose, (i) full  strength of mMS medium along with 2 % glucose, (j) half strength of DKW medium along with 5 % sucrose, (k) half strength of mMS medium along with 2 % glucose,  and (l) half strength of mMS medium along with 2 % glucose.  
+machine learning algorithms (Yang et al., 2020). There are three main  sources of uncertainty in machine learning studies including data  quality, the sample of data collected from the domain, and model fit  (Saltzman and Yung, 2018). To avoid uncertainties, several studies have  suggested using different machine learning algorithms and validating  the predicted results in the lab (Englert et al., 2019; Saltzman and Yung,  2018; Yang et al., 2020). Therefore, in the current study, different ANNs  were used and the results of the most accurate model were tested in a  validation experiment.  
+According to our results, GRNN had better performance than RBF  and MLP for modeling and predicting germination indices and  morphological traits of cannabis. Although there are no studies in the  plant tissue culture area to compare these models, several studies in  other fields of agriculture reported that GRNN had better accuracy than  other ANNs such as MLP and RBF. In line with our results, Jafari and  Shahsavar (2020) compared the efficiency of different ANNs for  modeling and forecasting morphological responses of lime under water  deficiency and reported that GRNN had the highest degree of accuracy  in comparison with MLP and RBF. Also, Hosseini-Moghari and Araghi nejad (2015) demonstrated that GRNN had better performance than  MLP and RBF in predicting drought indices and drought classes.  
+Moreover, we linked the GRNN models to NSGA-II in order to opti mize morphological traits and germination indices. The efficiency of  
+genetic algorithms, both GA and NSGA-II, have been previously  confirmed in different plant tissue culture processes (Hesami and Jones,  2020). In the current study, GR and MGT as the two most important  germination indices were selected as target variables for optimizing  medium composition through the hybrid GRNN-NSGA-II. The results of  the optimization process accurately predicted that 0.43 strength mMS  medium along with 2.3 % sucrose would result in the maximum seed  germination outcomes. This result showed that the moderate level of  sucrose (2.3 %) in 0.43 strength mMS medium improved the seed  germination percentage compared with the higher levels of sucrose in  more or lower strength mMS medium. Similar results have been found in  other species, where moderate levels of sucrose and basal salts were  found to be ideal (Huh et al., 2016; Johnson et al., 2011; Roni et al.,  2018). For instance, Roni et al. (2018) reported that a moderate level of  sucrose (3 %) and half-strength MS medium resulted in the maximum  seed germination percentage in Eustoma grandiflorum. In line with our  result, Hu et al. (2018) previously showed that ex vitro seed germination  of hemp is inhibited by high concentrations of salts. Generally, it seems  that seed germination in hemp in both ex vitro and in vitro conditions is  sensitive to a high level of salts, yet moderate levels are useful to provide  the necessary nutrients. Therefore, a moderate level of salts existing in  culture media (0.43 strength of the medium) can improve in vitro seed  germination of hemp.  
+7 
+Industrial Crops & Products 170 (2021) 113753 
+M. Hesami et al. Table 2  
+Fig. 4. Heat map obtained for studied morphological traits of in vitro grown seedling of cannabis.  
+Performance criteria of artificial neural networks (ANNs) for different seed germination indices and morphological traits in cannabis.  Model Processing set Performance criteria GI MGT GR TGI VI Seedling fresh weight Root length Shoot length Leaf number  
+MLP  
+RBF  
+GRNN  
+Training  Testing  Training  Testing  Training  Testing  
+r2 0.59 0.67 0.67 0.69 0.67 0.66 0.67 0.67 0.68  RMSE 0.306 0.129 11.714 4.103 0.803 0.169 1.103 1.401 1.401  MBE − 0.076 − 0.014 2.104 0.706 − 0.031 0.072 − 0.602 0.302 0.568  
+r2 0.61 0.68 0.64 0.69 0.61 0.64 0.63 0.64 0.63  RMSE 0.201 0.145 11.123 3.883 0.798 0.161 1.321 0.824 1.735  MBE − 0.044 − 0.006 2.197 − 0.176 0.057 − 0.043 0.112 0.651 0.203  
+r2 0.74 0.69 0.68 0.70 0.69 0.66 0.69 0.69 0.68  RMSE 0.306 0.123 9.806 3.933 0.730 0.157 1.200 1.321 1.331  MBE 0.083 0.004 1.133 0.706 − 0.041 0.036 − 0.425 0.224 0.399  
+r2 0.67 0.62 0.64 0.72 0.64 0.64 0.64 0.66 0.64  RMSE 0.214 0.145 11.008 3.883 0.798 0.158 1.321 0.714 1.668  MBE 0.048 0.001 2.197 − 0.151 0.044 0.051 0.106 0.643 − 0.182  r2 0.79 0.76 0.74 0.74 0.71 0.71 0.74 0.73 0.74  RMSE 0.276 0.123 9.403 3.818 0.701 0.138 1.039 0.956 1.148  MBE − 0.076 0.001 0.849 − 0.265 − 0.001 − 0.003 − 0.004 0.053 − 0.011  r2 0.72 0.72 0.71 0.73 0.70 0.71 0.72 0.73 0.73  RMSE 0.201 0.135 10.210 3.701 0.683 0.157 1.862 0.632 1.575  MBE − 0.044 0.001 − 0.074 − 0.139 0.029 0.008 0.021 0.248 − 0.102  
+MLP: Multilayer perceptron; RBF: Radial basis function; GRNN: Generalized regression neural network; r2: Coefficient of determination; RMSE: Root mean square  error; MBE: Mean bias error; GI: Germination index; MGT: Mean germination time; GR: Germination rate; TGI: Timson germination index; VI: Vigor index.  
+The results of the validation experiment showed that there was no  considerable difference between predicted optimized results and  experimental results for seed germination in C. sativa cv. ‘Finola’,  demonstrating the accuracy of this algorithm. In contrast with in vitro  seed germination in cannabis, in vitro propagation and regeneration  methods have been well studied and the challenges surrounding recal 
+citrance of the species and replicability of many methods has been  reviewed extensively (Monthony et al., 2021). Recently, Page et al.  (2021) assessed the effect of various concentrations of different plant  growth regulators as well as basal media types for shoot growth and  explant multiplication in cannabis. Their study highlighted the necessity  
+of media optimization for maximizing shoot proliferation and mini mizing physiological defects. Therefore, the developed models in the  current study can be employed for predicting and optimizing other in  vitro culture procedures in cannabis.  
+5. Conclusion  
+In vitro seed germination is a complex biological process affecting by  various factors such as type and concentration of macronutrients,  micronutrients, vitamins, gelling agent, carbohydrate, temperature, and  light. Data modeling by ANNs can display a reliable solution to provide  
+8 
+Industrial Crops & Products 170 (2021) 113753 
+M. Hesami et al. 
+Fig. 5. Scatter plot of observed data against predicted values of (a) germination index, (b) mean germination time, (c) germination rate, (e) Timson germination  index, (f) seedling fresh weight, (g) root length, (h) shoot length, and (i) leaf number in in vitro seed germination of cannabis using generalized regression neural  network (GRNN) in training process.  
+Fig. 6. Scatter plot of observed data against predicted values of (a) germination index, (b) mean germination time, (c) germination rate, (e) Timson germination  index, (f) seedling fresh weight, (g) root length, (h) shoot length, and (i) leaf number in in vitro seed germination of cannabis using generalized regression neural  network (GRNN) in testing process.  
+comprehensive knowledge on in vitro seed germination. According to the  results of the current study, GRNN has better accuracy than other  studied ANNs. Also, the hybrid GRNN and NSGA-II as a multi-objective  optimization algorithm could precisely predict and optimize in vitro seed  germination of industrial hemp cultivar ‘Finola’ and future studies  should assess the suitability of this model and the optimized media in  
+germination of other commercial drug-type and fiber-type C. sativa. The  results of the current study show that the high seed germination rate of  hemp can be achieved from the moderate level (0.43 strength) of mMS  medium supplemented with a moderate level of sucrose (2.3 %). We  suggest that the potential of this treatment investigate for seed germi 
+nation of other cannabis genotypes, which is even more important due to  
+9 
+Industrial Crops & Products 170 (2021) 113753 
+M. Hesami et al. Table 3  
+Fig. 7. The pseudocode of non-dominated sorting genetic algorithm (NSGA-II).  Data availability  
+The results of optimization process via non-dominated sorting genetic algorithm II (NSGA-II).  
+Optimal solution Prediction  GR (%) MGT  
+0.48 strength DKW Medium + 2.7 % Sucrose 61.35 0.59  0.52 strength DKW Medium + 3.8 % Glucose 71.39 0.64  0.43 strength mMS Medium + 2.3 % Sucrose 78.93 0.64  0.47 strength mMS Medium + 3.2 % Glucose 74.07 0.62  
+DKW: Driver and Kuniyaki walnut medium; GR: Germination rate; MGT: Mean  germination time; mMS: Murashige and Skoog medium Van der Salm  modification.  
+the high cost of drug type cannabis. Furthermore, future studies can use  this treatment as a basal medium for studying other factors affecting in  vitro seed germination. While the current model was developed for  predicting and optimizing in vitro seed germination media, we also  suggest that its adaptation in other in vitro culture procedures could  present a forward-thinking aid to predicting and optimizing media  compositions for the micropropagation and regeneration of mature  stage 2 in vitro explants and consequentially overcome many of the  challenges faced currently in cannabis micropropagation. Therefore,  GRNN-NSGA-II can be employed in future tissue culture studies to  optimize different factors involved in in vitro culture of cannabis and  other species.  
+Author contributions  
+All authors have equal contribution in this study; and read and  approved the manuscript.  
+Funding  
+This research was funded through an NSERC Discovery Grant  (RGPIN-2016-06252).  
+All processed data are available without restriction upon inquiry.  Compliance with ethical standards  
+This work does not involve any human participation nor live animals  performed by any of the listed authors.  
+Declaration of Competing Interest  
+The authors declare that they have no conflict of interest.  Acknowledgments  
+Not applicable.  
+References  
+Boonsnongcheep, P., Pongkitwitoon, B., 2020. Factors affecting micropropagation of  Cannabis sativa L.: a review. Pharm. Sci. Asia 47, 21–29. https://doi.org/10.29090/  psa.2020.01.019.0030.  
+Bozdemir, H., Çıg, ˘ A., Türkoglu, ˘ N., 2018. Effects of different concentrations of  carbohydrate forms on Orchis sancta L. propagation in vitro. Appl. Ecol. Environ. Res.  16, 4849–4864. https://doi.org/10.15666/aeer/1604_48494864.  
+Bozorg-Haddad, O., Azarnivand, A., Hosseini-Moghari, S.-M., Lo´aiciga Hugo, A., 2016.  Development of a comparative multiple criteria framework for ranking pareto  optimal solutions of a multiobjective reservoir operation problem. J. Irrig. Drain  Eng. 142, 04016019 https://doi.org/10.1061/(ASCE)IR.1943-4774.0001028.  
+Chadipiralla, K., Gayathri, P., Rajani, V., Reddy, P.V.B., 2020. Plant tissue culture and  crop improvement. In: Roychowdhury, R., Choudhury, S., Hasanuzzaman, M.,  Srivastava, S. (Eds.), Sustainable Agriculture in the Era of Climate Change. Springer,  Cham, pp. 391–412.  
+Chandran, H., Meena, M., Barupal, T., Sharma, K., 2020. Plant tissue culture as a  perpetual source for production of industrially important bioactive compounds.  Biotechnol. Rep. 26, e00450 https://doi.org/10.1016/j.btre.2020.e00450.  
+Colmer, J., O’Neill, C.M., Wells, R., Bostrom, A., Reynolds, D., Websdale, D.,  Shiralagi, G., Lu, W., Lou, Q., Le Cornu, T., Ball, J., Renema, J., Flores Andaluz, G.,  Benjamins, R., Penfield, S., Zhou, J., 2020. SeedGerm: a cost-effective phenotyping  platform for automated seed imaging and machine-learning based phenotypic  analysis of crop seed germination. New Phytol. 228, 778–793. https://doi.org/  10.1111/nph.16736.  
+10 
+Industrial Crops & Products 170 (2021) 113753 
+M. Hesami et al. 
+Deb, K., Pratap, A., Agarwal, S., Meyarivan, T., 2002. A fast and elitist multiobjective  genetic algorithm: NSGA-II. EEE Trans. Evol. Comput. 6, 182–197. https://doi.org/  10.1109/4235.996017.  
+Deguchi, M., Bogush, D., Weeden, H., Spuhler, Z., Potlakayala, S., Kondo, T., Zhang, Z.J.,  Rudrabhatla, S., 2020. Establishment and optimization of a hemp (Cannabis sativa L.)  agroinfiltration system for gene expression and silencing studies. Sci. Rep. 10, 3504  https://doi.org/10.1038/s41598-020-60323-9.  
+Driver, J.A., Kuniyuki, A.H., 1984. In vitro propagation of Paradox walnut rootstock.  HortScience 19, 507–509.  
+Dutta Gupta, S., Pattanayak, A.K., 2017. Intelligent image analysis (IIA) using artificial  neural network (ANN) for non-invasive estimation of chlorophyll content in  micropropagated plants of potato. In Vitro Cell. Dev. Biol. Plant 53, 520–526.  https://doi.org/10.1007/s11627-017-9825-6.  
+El-Sherif, N.A., 2018. Impact of plant tissue culture on agricultural sustainability.  Sustainability of Agricultural Environment in Egypt: Part II. Springer, pp. 93–107.  Englert, C., Galler, P., Harris, P., Spannowsky, M., 2019. Machine learning uncertainties  with adversarial neural networks. Eur. Phys. J. C 79, 4. https://doi.org/10.1140/  epjc/s10052-018-6511-8.  
+Farhadi, S., Salehi, M., Moieni, A., Safaie, N., Sabet, M.S., 2020. Modeling of paclitaxel  biosynthesis elicitation in Corylus avellana cell culture using adaptive neuro-fuzzy  inference system-genetic algorithm (ANFIS-GA) and multiple regression methods.  PLoS One 15, e0237478. https://doi.org/10.1371/journal.pone.0237478.  
+Friedrichs, A., Busch, J.A., Van der Woerd, H.J., Zielinski, O., 2017. SmartFluo: A method  and affordable adapter to measure chlorophyll a fluorescence with smartphones.  Sensors 17, 678. https://doi.org/10.3390/s17040678.  
+Gago, J., Landín, M., Gallego, P.P., 2010. Artificial neural networks modeling the in vitro  rhizogenesis and acclimatization of Vitis vinifera L. J. Plant Physiol. 167, 1226–1231.  https://doi.org/10.1016/j.jplph.2010.04.008.  
+Genze, N., Bharti, R., Grieb, M., Schultheiss, S.J., Grimm, D.G., 2020. Accurate machine  learning-based germination detection, prediction and quality assessment of three  grain crops. Plant Methods 16, 157. https://doi.org/10.1186/s13007-020-00699-x.  
+Hesami, M., Jones, A.M.P., 2020. Application of artificial intelligence models and  optimization algorithms in plant cell and tissue culture. Appl. Microbiol. Biotechnol.  104, 9449–9485. https://doi.org/10.1007/s00253-020-10888-2.  
+Hesami, M., Daneshvar, M.H., Yoosefzadeh-Najafabadi, M., 2018. Establishment of a  protocol for in vitro seed germination and callus formation of Ficus religiosa L., an  important medicinal plant. Jundishapur J. Nat. Pharm. Prod. 13, e62682 https://doi.  org/10.5812/jjnpp.62682.  
+Hesami, M., Naderi, R., Tohidfar, M., 2019a. Modeling and optimizing in vitro  sterilization of Chrysanthemum via multilayer perceptron-non-dominated sorting  genetic Algorithm-II (MLP-NSGAII). Front. Plant Sci. 10, 282. https://doi.org/  10.3389/fpls.2019.00282.  
+Hesami, M., Naderi, R., Tohidfar, M., 2019b. Modeling and optimizing medium  composition for shoot regeneration of Chrysanthemum via radial basis function-non dominated sorting genetic Algorithm-II (RBF-NSGAII). Sci. Rep. 9, 18237 https://  doi.org/10.1038/s41598-019-54257-0.  
+Hesami, M., Naderi, R., Tohidfar, M., Yoosefzadeh-Najafabadi, M., 2019c. Application of  adaptive neuro-fuzzy inference system-non-dominated sorting genetic Algorithm-II  (ANFIS-NSGAII) for modeling and optimizing somatic embryogenesis of  Chrysanthemum. Front. Plant Sci. 10 https://doi.org/10.3389/fpls.2019.00869.  
+Hesami, M., Naderi, R., Tohidfar, M., 2020a. Introducing a hybrid artificial intelligence  method for high-throughput modeling and optimizing plant tissue culture processes:  the establishment of a new embryogenesis medium for chrysanthemum, as a case  study. Appl. Microbiol. Biotechnol. 104, 10249–10263. https://doi.org/10.1007/  s00253-020-10978-1.  
+Hesami, M., Naderi, R., Tohidfar, M., Yoosefzadeh-Najafabadi, M., 2020b. Development  of support vector machine-based model and comparative analysis with artificial  neural network for modeling the plant tissue culture procedures: effect of plant  
+growth regulators on somatic embryogenesis of chrysanthemum, as a case study.  Plant Methods 16, 112. https://doi.org/10.1186/s13007-020-00655-9.  Hesami, M., Pepe, M., Alizadeh, M., Rakei, A., Baiton, A., Jones, A.M.P., 2020c. Recent  advances in cannabis biotechnology. Ind. Crops Prod. 158, 113026 https://doi.org/  10.1016/j.indcrop.2020.113026.  
+Hesami, M., Yoosefzadeh Najafabadi, M., Adamek, K., Torkamaneh, D., Jones, A.M.P.,  2021. Synergizing off-target predictions for in silico insights of CENH3 knockout in  cannabis through CRISPR/Cas. Molecules 26, 2053. https://doi.org/10.3390/  molecules26072053.  
+Hosseini-Moghari, S.M., Araghinejad, S., 2015. Monthly and seasonal drought  forecasting using statistical neural networks. Environ. Earth Sci. 74, 397–412.  https://doi.org/10.1007/s12665-015-4047-x.  
+Hu, H., Liu, H., Liu, F., 2018. Seed germination of hemp (Cannabis sativa L.) cultivars  responds differently to the stress of salt type and concentration. Ind. Crops Prod.  123, 254–261. https://doi.org/10.1016/j.indcrop.2018.06.089.  
+Huh, Y.S., Lee, J.K., Nam, S.Y., Hong, E.Y., Paek, K.Y., Son, S.W., 2016. Effects of altering  medium strength and sucrose concentration on in vitro germination and seedling  growth of Cypripedium macranthos Sw. J. Plant Biotechnol. 43, 132–137. https://doi.  org/10.5010/JPB.2016.43.1.132.  
+Hurgobin, B., Tamiru-Oli, M., Welling, M.T., Doblin, M.S., Bacic, A., Whelan, J.,  Lewsey, M.G., 2020. Recent advances in Cannabis sativa genomics research. New  Phytol. https://doi.org/10.1111/nph.17140.  
+Ioannidis, K., Dadiotis, E., Mitsis, V., Melliou, E., Magiatis, P., 2020. Biotechnological  approaches on two high CBD and CBG Cannabis sativa L. (Cannabaceae) varieties: in  vitro regeneration and phytochemical consistency evaluation of micropropagated  plants using quantitative 1H-NMR. Molecules 25, 5928. https://doi.org/10.3390/  molecules25245928.  
+Jafari, M., Shahsavar, A., 2020. The application of artificial neural networks in modeling  and predicting the effects of melatonin on morphological responses of citrus to  drought stress. PLoS One 15, e0240427. https://doi.org/10.1371/journal.  pone.0240427.  
+Johnson, T.R., Kane, M.E., P´erez, H.E., 2011. Examining the interaction of light,  nutrients and carbohydrates on seed germination and early seedling development of  Bletia purpurea (Orchidaceae). Plant Growth Regul. 63, 89–99. https://doi.org/  10.1007/s10725-010-9516-3.  
+Kim, D.H., Kang, K.W., Enkhtaivan, G., Jan, U., Sivanesan, I., 2019. Impact of activated  charcoal, culture medium strength and thidiazuron on non-symbiotic in vitro seed  germination of Pecteilis radiata (Thunb.). Raf. S. Afr. J. Bot. 124, 144–150. https://  doi.org/10.1016/j.sajb.2019.04.015.  
+Knudson, L., 1922. Nonsymbiotic germination of orchid seeds. Bot. Gaz. 73, 1–25.  https://doi.org/10.1086/332956.  
+Kovalchuk, I., Pellino, M., Rigault, P., van Velzen, R., Ebersbach, J., Ashnest, J., Mau, M.,  Schranz, M., Alcorn, J., Laprairie, R., 2020. The genomics of cannabis and its close  relatives. Annu. Rev. Plant Biol. 71, 713–739. https://doi.org/10.1146/annurev arplant-081519-040203.  
+Krasteva, G., Georgiev, V., Pavlov, A., 2021. Recent applications of plant cell culture  technology in cosmetics and foods. Eng. Life Sci. 21, 68–76. https://doi.org/  10.1002/elsc.202000078.  
+Kusumo, F., Silitonga, A.S., Masjuki, H.H., Ong, H.C., Siswantoro, J., Mahlia, T.M.I.,  2017. Optimization of transesterification process for Ceiba pentandra oil: a  comparative study between kernel-based extreme learning machine and artificial  neural networks. Energy 134, 24–34. https://doi.org/10.1016/j.  
+energy.2017.05.196.  
+Lin, Y., Wang, Y., Iqbal, A., Shi, P., Li, J., Yang, Y., Lei, X., 2017. Optimization of culture  medium and temperature for the in vitro germination of oil palm pollen. Sci. Hortic.  220, 134–138. https://doi.org/10.1016/j.scienta.2017.03.040.  
+Matnei Filho, R.A., Vergilio, S.R., 2016. A multi-objective test data generation approach  for mutation testing of feature models. J. Softw. Eng. Res. Dev. 4, 4. https://doi.org/  10.1186/s40411-016-0030-9.  
+Mohan, P.J., Gupta, S.D., 2019. Intelligent image analysis for retrieval of leaf chlorophyll  content of rice from digital images of smartphone under natural light.  Photosynthetica 57, 388–398. https://doi.org/10.32615/ps.2019.046.  
+Monthony, A.S., Page, S.R.G., Hesami, M., Jones, A.M.P., 2021. The past, present and  future of Cannabis sativa tissue culture. Plants 10, 185. https://doi.org/10.3390/  plants10010185.  
+Niazian, M., Niedbała, G., 2020. Machine learning for plant breeding and biotechnology.  Agriculture 10, 436. https://doi.org/10.3390/agriculture10100436.  Niazian, M., Shariatpanahi, M.E., Abdipour, M., Oroojloo, M., 2019. Modeling callus  induction and regeneration in an anther culture of tomato (Lycopersicon esculentum  L.) using image processing and artificial neural network method. Protoplasma 256,  1317–1332. https://doi.org/10.1007/s00709-019-01379-x.  
+Page, S.R.G., Monthony, A.S., Jones, A.M.P., 2021. DKW basal salts improve  micropropagation and callogenesis compared to MS basal salts in multiple  commercial cultivars of Cannabis sativa. Botany 99, 269–279. https://doi.org/  10.1139/cjb-2020-0179.  
+Roni, M.Z.K., Islam, M.S., Shimasaki, K., 2018. In vitro seed germination and tracking the  seedling growth of eustoma. N. Z. J. Crop Hortic. Sci. 46, 224–242. https://doi.org/  10.1080/01140671.2017.1391300.  
+Salami, S.A., Martinelli, F., Giovino, A., Bachari, A., Arad, N., Mantri, N., 2020. It is our  turn to get cannabis high: put cannabinoids in food and health baskets. Molecules  25, 4036. https://doi.org/10.3390/molecules25184036.  
+Salehi, M., Farhadi, S., Moieni, A., Safaie, N., Ahmadi, H., 2020. Mathematical modeling  of growth and paclitaxel biosynthesis in Corylus avellana cell culture responding to  fungal elicitors using multilayer perceptron-genetic algorithm. Front. Plant Sci. 11,  1148. https://doi.org/10.3389/fpls.2020.01148.  
+Salehi, M., Farhadi, S., Moieni, A., Safaie, N., Hesami, M., 2021. A hybrid model based on  general regression neural network and fruit fly optimization algorithm for  forecasting and optimizing paclitaxel biosynthesis in Corylus avellana cell culture.  Plant Methods 17, 13. https://doi.org/10.1186/s13007-021-00714-9.  
+Saltzman, B., Yung, J., 2018. A machine learning approach to identifying different types  of uncertainty. Econ. Lett. 171, 58–62. https://doi.org/10.1016/j.  econlet.2018.07.003.  
+Sebayang, A.H., Masjuki, H.H., Ong, H.C., Dharma, S., Silitonga, A.S., Kusumo, F.,  Milano, J., 2017. Optimization of bioethanol production from sorghum grains using  artificial neural networks integrated with ant colony. Ind. Crops Prod. 97, 146–155.  https://doi.org/10.1016/j.indcrop.2016.11.064.  
+Silva, J.C.F., Teixeira, R.M., Silva, F.F., Brommonschenkel, S.H., Fontes, E.P.B., 2019.  Machine learning approaches and their current application in plant molecular  biology: a systematic review. Plant Sci. 284, 37–47. https://doi.org/10.1016/j.  plantsci.2019.03.020.  
+Sorokin, A., Yadav, N.S., Gaudet, D., Kovalchuk, I., 2020. Transient expression of the  β-glucuronidase gene in Cannabis sativa varieties. Plant Signal. Behav. 15, 1780037  https://doi.org/10.1080/15592324.2020.1780037.  
+Sorokin, A., Yadav, N.S., Gaudet, D., Kovalchuk, I., 2021. Development and  standardization of rapid and efficient seed germination protocol for Cannabis sativa.  Bioprotocol 11, e3875. https://doi.org/10.21769/BioProtoc.3875.  
+Stewart, S.L., Kane, M.E., 2010. Effects of carbohydrate source on the in vitro asymbiotic  seed germination of the terrestrial orchid Habenaria macroceratitis. J. Plant Nutr. 33,  1155–1165. https://doi.org/10.1080/01904161003763757.  
+Sumaryono, Muslihatin, W., Ratnadewi, D., 2012. Effect of carbohydrate source on  growth and performance of in vitro sago palm (Metroxylon sagu Rottb.) plantlets.  HAYATI J. Biosci. 19, 88–92. https://doi.org/10.4308/hjb.19.2.88.  
+11 
+Industrial Crops & Products 170 (2021) 113753 
+M. Hesami et al. 
+Tanabe, R., Ishibuchi, H., 2020. An easy-to-use real-world multi-objective optimization  problem suite. Appl. Soft Comput. 89, 106078 https://doi.org/10.1016/j.  asoc.2020.106078.  
+Utami, E.S.W., Hariyanto, S., 2019. In vitro seed germination and seedling development  of a rare indonesian native orchid Phalaenopsis amboinensis J.J.Sm. Scientifica 2019,  8105138. https://doi.org/10.1155/2019/8105138.  
+Van der Salm, T.P.M., Van der Toorn, C.J.G., Hanisch ¨ ten Cate, C.H., Dubois, L.A.M., De  Vries, D.P., Dons, H.J.M., 1994. Importance of the iron chelate formula for  micropropagation of Rosa hybrida L. ‘Moneyway’. Plant Cell Tiss. Org. Cult. 37,  73–77. https://doi.org/10.1007/BF00048120.  
+Vesali, F., Omid, M., Mobli, H., Kaleita, A., 2017. Feasibility of using smart phones to  estimate chlorophyll content in corn plants. Photosynthetica 55, 603–610. https://  doi.org/10.1007/s11099-016-0677-9.  
+Wei, T., Simko, V., Levy, M., Xie, Y., Jin, Y., Zemla, J., 2017. Package ‘corrplot’.  Statistician 56, e24.  
+Yang, F., Wanik, D.W., Cerrai, D., Bhuiyan, M.A., Anagnostou, E.N., 2020. Quantifying  uncertainty in machine learning-based power outage prediction model training: a  tool for sustainable storm restoration. Sustainability 12, 1525. https://doi.org/  10.3390/su12041525.  
+Yaseen, M., Ahmad, T., Sablok, G., Standardi, A., Hafiz, I.A., 2013. Review: role of  carbon sources for in vitro plant growth and development. Mol. Biol. Rep. 40,  2837–2849. https://doi.org/10.1007/s11033-012-2299-z.  
+Yilmaz, V., 2021. A Non-Dominated Sorting Genetic Algorithm-II-based approach to  optimize the spectral and spatial quality of component substitution-based  pansharpened images. Concurr. Comp-Pract. E 33, e6030. https://doi.org/10.1002/  cpe.6030.  
+Yoosefzadeh Najafabadi, M., Earl, H.J., Tulpan, D., Sulik, J., Eskandari, M., 2021.  Application of machine learning algorithms in plant breeding: predicting yield from  hyperspectral reflectance in soybean. Front. Plant Sci. 11, 624273 https://doi.org/  10.3389/fpls.2020.624273.  
+Yoosefzadeh-Najafabadi, M., Tulpan, D., Eskandari, M., 2021. Application of machine  learning and genetic optimization algorithms for modeling and optimizing soybean  yield using its component traits. PLoS One 16, e0250665. https://doi.org/10.1371/  journal.pone.0250665.  
+Zhang, Q., Deng, D., Dai, W., Li, J., Jin, X., 2020. Optimization of culture conditions for  differentiation of melon based on artificial neural network and genetic algorithm.  Sci. Rep. 10, 3524 https://doi.org/10.1038/s41598-020-60278-x.  
+12

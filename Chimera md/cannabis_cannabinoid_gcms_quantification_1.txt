@@ -1,0 +1,153 @@
+﻿Chromatographia (2021) 84:711–717  
+https://doi.org/10.1007/s10337-021-04060-9 
+ORIGINAL 
+Quantifcation of Cannabinoids in Cultivars of Cannabis sp. by Gas  Chromatography–Mass Spectrometry 
+Abdul Qudeer Ahmed1 · David Noshad2 · Paul C. H. Li1 
+Received: 26 January 2021 / Revised: 1 June 2021 / Accepted: 8 June 2021 / Published online: 27 June 2021 
+© The Author(s), under exclusive licence to Springer-Verlag GmbH Germany, part of Springer Nature 2021 
+Abstract 
+In the chemical characterization of medically valued Cannabis, the present work has used a gas chromatography (GC) method  coupled with mass spectrometry (MS) for identifcation and quantifcation of cannabinoids. We have modifed a GC–MS  method for chemical analysis of cannabinoids extracted from dried fowers of diferent Cannabis varieties. The method  allows for quantifcation of major cannabinoids, i.e. cannabidiol (CBD), cannabichromene (CBC), tetrahydrocannabinol  (THC), cannabigerol (CBG), and cannabinol (CBN) simultaneously. We found that the Cannabis cultivar called Cannabis 5-CW had the highest amount of CBD. We used a modifed GC–MS method for chemical profling of cannabinoids extracted  from a variety of Cannabis samples, especially the high CBD, CBC, THC, CBG and CBN-producing ones. The method was  successfully applied for identifcation and quantifcation of cannabinoids in a short time with better separation resolution  among the reported methods. 
+Keywords Cannabis · Chemical analysis · Cannabinoids · Medicinal plants · CBD · THC 
+Introduction 
+Cannabis has been used for medical and recreational pur poses for thousands of years. Medical Cannabis is legally  available for patients in a number of countries [27]. The  science of Cannabis is rapidly developing and recent evi dence supports its therapeutic applications [5]. A number  of studies described the biological potential of Cannabis for the treatment of pain, glaucoma, nausea, asthma, depres sion, insomnia and neuralgia [30], multiple sclerosis [33],  together with infammatory diseases [11, 16], epilepsy [12],  and movement disorders [36]. Cannabis is a chemically rich  plant of unparalleled versatility exhibiting a unique variety  of natural compounds [40]. It contains over 500 chemical  entities of which more than 100 are cannabinoid compounds  [14]. Cannabinoids are a group of compounds bearing a C21  terpenophenolic skeleton, generate the medically important  chemicals of the Cannabis plant. These compounds have  
+🖂 Paul C. H. Li  
+paulli@sfu.ca 
+1 Department of Chemistry, Department of Molecular Biology  and Biochemistry, Simon Fraser University, 8888 University  Drive, Burnaby, BC, Canada 
+2 Medleaf Biotechnologies Inc, Vancouver, BC, Canada
+been previously analyzed by LC-UV [1, 3], LC–MS [6, 41],  GC-FID [18, 23, 35], GC–MS [2, 4, 8, 10, 15, 21, 34] and  SFC-MS [40]. 
+This work presents a GC–MS method which was modi fed from the method by Cardenia et al. [10] because this  2018 method was quick in identifcation of cannabinoids  over the other methods. The modifed method, which pro vides a fast detection of cannabinoids from a variety of  samples, allows us to verify the presence of a high-CBD  producing Cannabis sample. 
+Materials and Methods 
+Standards and Reagents 
+Cannabinoid standards such as cannabidiol (CBD), cannabi chromene (CBC), tetrahydrocannabinol (THC), cannabigerol  (CBG), cannabinol (CBN), cannabicyclol (CBL) in 1 mg/ mL, as well as CBD-d3 and THC-d3 in 100 microgram/mL,  were purchased from Cerilliant Corporation (Round Rock,  TX) as drug enforcement agency-exempt solutions, in meth anol (MeOH). The chemical structures of the cannabinoids  are shown in Fig. 1. All other chemicals and solvents used  were of analytical grade. 
+Vol.:(0123456789) 1 3 
+712 A. Q. Ahmed et al. 
+Gas Chromatography (GC–MS) Analysis 
+The cannabinoids were identified by GC–MS. The GC  (Agilent 6890 series) was equipped with a HP-5MS col umn (30 m×0.25 mm, 0.25 µm flm thickness); hydrogen  was used as the carrier gas (constant fow of 1.6 mL/min).  The oven temperature was programmed from 180 °C (for  0.50 s) to 250 °C at 5 °C/min, and then to 325 °C (at 30 °C/  min); fnal temperature was maintained for 2 min. One µL  of sample was injected using autosampler and the injector  port temperature was set to 280 °C. The MS (model 5973 N)  used electron impact ionization and transmission quadru 
+pole mass spectrometer. For quantifcation, MS data were  obtained using the selected ion monitoring (SIM) method  based on fragment ions (in m/z) for CBL (231), CBD (246),  CBC (231), THC (193), CBG (193), and CBN (295). 
+Cannabis Plant Extraction 
+Dried fowers of diferent Cannabis varieties were obtained  from Medcan Biotechnologies Inc. (Vancouver, BC, Can ada). Flowers were grounded using the mortar and pes tle, and samples of 200 mg were accurately weighed. For  extraction, the samples were suspended in 2 mL methanol,  followed by vortexing, sonication for 10–20 min and cen trifugation at 4,000 rpm for 5 min. The supernatants were  transferred to a 10-mL glass vial. The extraction procedure  was repeated two more times and the respective superna tants were combined. Thereafter, supernatants were fltered  by passing through a 0.22-µm sterile syringe flter. Extracts  were dried under a gentle stream of nitrogen gas. Dried  extracts (with weights) obtained were C. sativa (92.2 mg),  C. indica (35.1 mg), Cannalope Kush (72.5 mg), Canna bis 5-CW (56.3 mg), Rock Star (74.2 mg) and Super Silver  (66.8 mg). Dried extracts were reconstituted with 200 µL  MeOH for GC–MS analysis. 
+Fig. 1 Chemical structures of  
+compounds in Cannabis
+Standard Solutions of Cannabinoids 
+Stock solutions of individual standards and internal stand ards were prepared separately at concentration of 100 μg/mL  in methanol. A standard mixture of the cannabinoid stand ards and internal standard (100 μg/mL) was also prepared. 
+Method Validation 
+GC–MS method was validated for specifcity (selectivity),  precision (repeatability and intermediate precision), limit of  detection (LOD), limit of quantifcation (LOQ) and recov ery. Specifcity (selectivity) was determined by injecting  a solvent blank to confrm that there were no false signal  peaks at the targeted retention times. Statistical analysis was  applied to the linear regression lines to determine the stand ard deviation (SD) and slope (S). From these values, LOD  and LOQ were calculated using the equations (LOD=3 ×  SD/S; LOQ=10 × SD/S). Recoveries were determined by  the method described previously [17]. 
+Spiking of Cannabis Extracts with Cannabinoid  Standards 
+Cannabinoids were quantifed using internal standard and  standard addition methods. For standard addition, extracts  of C. indica, C. sativa, Cannalope Kush, Cannabis 5-CW,  Rock Star and Super Silver (14 mg/mL) were spiked with  cannabinoid standards i.e. CBC, CBG, and CBN (50 µg/mL  and 100 µg/mL), and CBD-d3 (50 µg/mL). For THC quan 
+tifcation, C. indica, C. sativa, Cannalope Kush, Cannabis 5-CW, Rock Star, Super Silver extracts (14 mg/mL) were  spiked with THC-d3 (50 µg/mL). For CBD quantifcation, C.  indica, C. sativa, Cannalope Kush, Rock Star, Super Silver  extracts (14 mg/mL) and Cannabis 5-CW extract (0.2815 mg/ mL) were spiked with CBD-d3 (50 µg/mL). CBL was below  
+  
+
+1 3 
+Quantifcation of Cannabinoids in Cultivars of Cannabissp. by Gas Chromatography–Mass… 713 
+the detection level and so it was not quantifed. MS data were  obtained using selected ion monitoring (SIM). The deter mined amounts of cannabinoids were expressed as a percent age of the dry weights of Cannabis samples. 
+Results and Discussion 
+The goal of the present work was to separate, identify, and  quantify various cannabinoids from diferent Cannabis vari eties using a GC–MS method. Cannabinoids were identifed  by comparing their mass spectra with an online compound  database and the retention times with those of the corre sponding standard compounds. Our method provided faster  separations of CBD, THC, CBG, and CBC (within 13 min)  than the methods reported by Richins et al. [34] (24 min),  Leghissa et al. (18 min) [26], Mariotti et al. (20.5 min) [29],  Cadola et al. [8] (19 min), and and Hillig and Mahlberg [21]  (26.5 min). Moreover, CBD and CBC were baseline-sepa rated (resolution of 1.5), which was better than in methods  previously published [21], and [24, 29] (resolution less than  1), and the resolution for CBG–CBN peaks was (~1.3). 
+Identifcation of Cannabinoids by GC–MS 
+Gas chromatography-mass spectrometry (GC–MS) is a  useful approach for identifcation and quantifcation of  cannabinoids. For identifcation, individual cannabinoids  were run on GC–MS, and mass spectra were obtained and  
+Fig. 2 GC–MS chromatogram  
+of cannabinoid standards. SIM  
+data were obtained for CBD  
+(231), CBC (231), THC (193),  
+CBG (193), and CBN (295).  
+The x-axis represents time in  
+minutes, and y-axis represents  
+ion abundance 
+Fig. 3 Cannabis 5-CW extract  
+spiked with standard com 
+pounds (CBL, CBC, CBG,  
+CBN). CBD and THC were not  
+spiked. The x-axis represents  
+time in minutes, and y-axis  
+represents ion abundance
+compared with compound database search data, and pub lished literature (Figs. 2, 3 and 4). The identifed com pounds were CBL, CBD, CBC, THC, CBG, and CBN  (Figs. 2, 3). Mass spectra data showed the base and parent  ion peaks for cannabinoids, CBL, CBD, CBC (m/z 231,  314), THC (m/z 299, 314), CBG (m/z 193, 316), and CBN  (m/z 295, 310) (Fig.  3a–f). Typical chromatograms of  deuterated CBD (m/z 231, 234) and THC (m/z 193, 196)  showing the natural abundance of ions are represented in  (Fig. 5). These target cannabinoids were analyzed from six  samples: C. sativa, C. indica, Cannalope Kush, Cannabis 5-CW, Super Silver and Rock Star. CBD, CBC, THC, CBG,  and CBN were identifed from tested Cannabis samples.  Target compounds were identifed in the elution order of  (i) CBD (C21H30O2; molecular mass 314.469 g/mol), (ii)  CBC (C21H30O2; molecular mass 314.469  g/mol), (iii)  THC (C21H30O2; molecular mass 314.469  g/mol), (iv)  CBG (C21H32O2; molecular mass 316.485 g/mol), and (v)  CBN (C21H26O2; molecular mass 310.4319 g/mol). CBD  is abundant and the major compound of Cannabis 5-CW;  whereas THC is the major compound in the rest of the sam 
+ples. Five diferent cannabinoids (CBD, CBC, THC, CBG,  and CBN) were analyzed simultaneously in our method,  but other studies have focused on diferent cannabinoids  using GC–MS and GC-FID techniques. Literature revealed  that researchers published their work on cannabinoids and  terpenes but excluded one or more cannabinoids that were  analyzed in the current method. For instance, the recent  work by Pellati et al. [31] analyzed cannabinoids and  
+  
+  
+
+1 3 
+714 A. Q. Ahmed et al.   
+Fig. 4 a Mass spectra of cannabicyclol (CBL). b Mass spectra of cannabidiol (CBD). c Mass spectra of cannabichromene (CBC). d Mass spec tra of Tetrahydrocannabinol (THC). e Mass spectra of cannabigerol (CBG). f Mass spectra of cannabinol (CBN)
+terpenes but they excluded THC, CBC and CBN. Similarly,  some previous reports [7, 39], and [37, 38] only analyzed  CBD, THC, CBN, but not CBC and CBG. 
+Method Validation of Cannabinoids 
+The linear ranges of all cannabinoids were determined  over the concentrations of 0.0125 to 0.1 mg/ml. Linearity  was sufcient for all cannabinoids, with regression coef fcients (> 0.98). Results of GC method validation were  
+determined for intraday precision the percent relative  standard deviation (RSD) of cannabinoids (1.49–8.35%).  Intermediate precisions of cannabinoids were determined  from intraday and interday analyses. All compounds had  RSD ranges of 1.32–5.14%. These low RSD values indi 
+cate that the method is reproducible for the analysis of  Cannabis extracted cannabinoids. In terms of detection  and quantitation limits, LOD ranged between 0.006 and  0.008 mg/ml, while the LOQ varied between 0.018 and  0.026 mg/ml. 
+1 3 
+Quantifcation of Cannabinoids in Cultivars of Cannabissp. by Gas Chromatography–Mass… 715 
+  
+
+Fig. 5 GC–MS chromatograms of isotope standards, CBD-d3 at m/z 231 and 234, THC-d3 at m/z 193 and 196. The x-axis represents time  in minutes, and y-axis represents ion abundance 
+Recovery 
+The recoveries of cannabinoids were determined to range  between 80 and 100%. All the recoveries were good and  consistent with the literature values [20, 25, 26]. Moreover,  Calzolari et al. [9] explained that methanol is an excellent  solvent for extraction of cannabinoids and favonoids. The  Cannabis monograph of the American Herbal Pharmaco 
+poeia also indicated this solvent for preparation of standard  solutions of cannabinoids [28]. 
+Quantifcation of Cannabinoids from Cannabis  Samples 
+The method described herein was successfully applied for  quantification of cannabinoids from different Cannabis 
+samples. Phytocannabinoids were quantifed by standard  addition and internal standard methods. THC and CBD were  quantifed using isotope standards: THC-d3 and CBD-d3,  respectively. On the other hand, CBC, CBG and CBN were  quantifed by standard addition method. CBL was below the  detection limit in all samples, and so their amounts should be  less than 0.02% dry weight. Table 1 showed the quantitation  data of cannabinoids extracted from diferent Cannabis sam ples. As listed in Table 1, Cannabis 5-CW showed the high 
+est CBD content (4.6%) and C. indica the lowest (0.077%).  The THC was highest in C. sativa (7.96%) and lowest in C.  indica (2.81%). The CBC levels were the highest in Canna bis 5-CW (4.93%) and the lowest in C. indica (0.34%). Inter estingly, CBG was recorded the highest level for Cannalope  Kush (7.58%) and the lowest for Cannabis 5-CW (0.55%).  The highest amount of CBN was seen in the case of Rock  Star (2.39%) and the lowest level was found in C. indica (0.33%). It becomes evident from Table 1 that Cannalope  Kush, Super Silver are rich in CBG and Rock Star is rich in  CBN, and so these three samples should be further tested for  their pharmacological efects. Though other samples have  high contents of either CBD or THC, none of those samples  
+showed high concentrations of CBG and CBN. In the literature, diferent Cannabis cultivars showed can nabinoid contents in the ranges of CBD (9.84–0.01%), THC  (21.53–0.26%), CBC (0.62–0.03%), CBG (2.08–0.05%), and  CBN (7.25–0.18%) [34, 40]. Chemical composition of Can nabis varieties depends upon several factors such as genetic  variation, soil, climate, maturity of plants at harvest and  storage conditions. Seasonal variations also afect the lev els of CBN and THC in Indiana varieties of Cannabis [32].  Moreover, plant age, time of collection and geographic loca tion are among the factors afecting chemical composition  of Cannabis [22]. 
+Conclusion 
+Herein we reported a modifed GC–MS method for chemical  profling a variety of Cannabis samples, resulting in quanti tation of various cannabinoids. Among the tested samples,  CBD and THC were predominant constituents. Cannabis 
+Table 1 Cannabinoids contents  (% dry weight of fowers)  determined in Cannabis 
+samples by GC–MS 
+Samples GC–MS estimated cannabinoids (Mean±SD) 
+% CBD % THC % CBC % CBG % CBN % CBL 
+Cannabis sativa 0.254±0.006 7.96±0.43 2.13±0.21 1.67±0.38 2.02±1.01 <0.02 Cannabis indica 0.077±0.004 2.81±0.08 0.34±0.02 0.73±0.20 0.33±0.11 <0.02 Cannalope Kush 0.25±0.02 6.40±0.07 1.98±0.37 7.58±2.27 0.98±0.19 <0.02 Cannabis 5-CW 4.6± 0.2 3.82±0.16 4.93±1.57 0.55±0.18 0.51±0.23 <0.02 Rock Star 0.142±0.005 6.49±0.10 0.83±0.04 1.09±0.10 2.39±0.71 <0.02 Super Silver 0.13±0.01 5.68±0.34 1.16±0.29 3.76±1.17 1.13±0.08 <0.02
+1 3 
+716 A. Q. Ahmed et al. 
+5-CW exhibits the highest CBD level and therefore could be  a promising cultivar from the medical perspective. On the  other hand, C. sativa showed the high THC levels as com pared to other Cannabis samples. In addition, Cannalope  Kush, Super Silver are rich in CBG, and C. sativa and Rock  Star contain high amounts of CBN. Results from this study  help to understand the complex nature of Cannabis species  and its chemotypes. 
+Acknowledgements The authors thank Medleaf Biotechnologies Inc.,  Vancouver, British Columbia, Canada for providing fnancial assistance  in association with the Mitacs Accelerate program. 
+Author contributions AQA performed the experimental work. AQA,  PCL and DN analyzed the data. The manuscript was written through  the contributions of all authors. All authors have given approval to the  fnal version of the manuscript. 
+Funding Mitacs Accelerate program and Medleaf Biotechnologies  Inc., Vancouver, British Columbia, Canada. 
+Availability of Data and Material Not applicable. 
+Code Availability Not applicable. 
+Declarations 
+Conflict of interest DN is president of Medleaf Biotechnologies and  other authors declare that they have no competing interests. The paper  is the subject of a PCT application: CA2021050503. 
+Ethical Approval and Consent to Participate Not applicable. Consent to Participate Not applicable. 
+Consent for Publication Not applicable. 
+References 
+1. Aizpurua-Olaizola O, Soydaner U, Öztürk E et al (2016) Evolu tion of the Cannabinoid and Terpene Content during the Growth  of Cannabis sativa Plants from Diferent Chemotypes. J Nat Prod  79:324–331 
+2. Angeli I, Casati S, Ravelli A et al (2018) A novel single-step  GC-MS/MS method for cannabinoids and 11-OH-THC metabolite  analysis in hair. J Pharm Biomed Anal 155:1–6 
+3. Baker PB, Fowler R, Bagon KR et al (1980) Determination of the  distribution of cannabinoids in Cannabis resin using high perfor mance liquid chromatography. J Anal Toxicol 4:145–152 
+4. Baptista MJ, Monsanto PV, Pinho Marques EG et al (2002) Hair  analysis for delta(9)-THC, delta(9)-THC-COOH, CBN and CBD,  by GC/MS-EI. Comparison with GC/MS-NCI for delta(9)-THC COOH. Forensic Sci Int 128:66–78 
+5. Baron EP (2018) Medicinal Properties of Cannabinoids, Terpenes,  and Flavonoids in Cannabis, and Benefts in Migraine, Headache,  and Pain: An Update on Current Evidence and Cannabis Science.  Headache 58:1139–1186 
+6. Brown AK, Xia Z, Bulloch P et  al (2019) Validated quan titative Cannabis profiling for Canadian regulatory  
+compliance—Cannabinoids, afatoxins, and terpenes. Anal Chim  Acta 1088:79–88 
+7. Bruci Z, Papoutsis I, Athanaselis S et al (2012) First systematic  evaluation of the potency of Cannabis sativa plants grown in  Albania. Forensic Sci Int 222:40–46 
+8. Cadola L, Broséus J, Esseiva P (2013) Chemical profling of dif ferent hashish seizures by gas chromatography-mass spectrom etry and statistical methodology: a case report. Forensic Sci Int  232:e24-27 
+9. Calzolari D, Magagnini G, Lucini L, Grassi G, Appendino GB,  Amaducci S (2017) High added-value compounds from Cannabis  threshing residues. Ind Crops Prod 108:558–563 
+10. Cardenia V, Gallina Toschi T, Scappini S et al (2018) Develop ment and validation of a Fast gas chromatography/mass spectrom etry method for the determination of cannabinoids in Cannabis  sativa L. J Food Drug Anal 26:1283–1292 
+11. Costa B, Colleoni M, Conti S et al (2004) Oral anti-infammatory  activity of cannabidiol, a non-psychoactive constituent of Can nabis, in acute carrageenan-induced infammation in the rat paw.  Naunyn Schmiedebergs Arch Pharmacol 369:294–299 
+12. Devinsky O, Marsh E, Friedman D et al (2016) Cannabidiol in  patients with treatment-resistant epilepsy: an open-label interven tional trial. Lancet Neurol 15:270–278 
+13. Duke JA, Duke JA, Handbook of medicinal herbs. CRC Press:  2002 
+14. ElSohly MA. Constituents of Cannabis sativa. Handbook of Can nabis. 2014 
+15. Emídio ES, Prata Vde M, Dórea HS (2010) Validation of an ana lytical method for analysis of cannabinoids in hair by headspace  solid-phase microextraction and gas chromatography-ion trap  tandem mass spectrometry. Anal Chim Acta 670:63–71 
+16. Fichna J, Bawa M, Thakur GA et al. (2014) Cannabinoids allevi ate experimentally induced intestinal infammation by acting at  central and peripheral receptors. PloS one 9:e109115 
+17. Fischedick JT, Hazekamp A, Erkelens T, Choi YH, Verpoorte R  (2010) Metabolic fngerprinting of Cannabis sativa L., cannabi noids and terpenoids for chemotaxonomic and drug standardiza tion purposes. Phytochemistry 71:2058–2073 
+18. Florian RNM, Parada AF, Garzón MWF (2009) Study of can nabinoids content in marihuana samples (Cannabis sativa L.)  cultivated in several regions of Colombia. Vitae 16:237–244 
+19. Fodor B, Molnár-Perl I (2017) The role of derivatization tech niques in the analysis of plant cannabinoids by gas chromatogra phy mass spectrometry. TrAC Trends Anal Chem 95:149–158 
+20. Gul W, Gul SW, Chandra S, Lata H, Ibrahim EA, ElSohly MA  (2018) Detection and quantifcation of cannabinoids in extracts of  Cannabis sativa roots using LC-MS/MS. Planta Med 84:267–271 
+21. Hillig KW, Mahlberg PG (2004) A chemotaxonomic analysis  of cannabinoid variation in Cannabis (Cannabaceae). Am J Bot  91:966–975 
+22. Holley JH, Hadley KW, Turner CE (1975) Constituents of Can nabis sativa L. XI: Cannabidiol and cannabichromene in samples  of known geographical origin. J Pharm Sci 64:892–894 
+23. Ibrahim EA, Gul W, Gul SW et al (2018) Determination of acid  and neutral cannabinoids in extracts of diferent strains of Can nabis sativa using GC-FID. Planta Med 84:250–259 
+24. Ilias Y, Rudaz S, Mathieu P et al (2004) Analysis of Cannabis material by headspace solid-phase microextraction combined with  gas chromatography-mass spectrometry. Chimia 58:219–221.  https://doi.org/10.2533/000942904777677957 
+25. Křížek T, Bursová M, Horsley R, Kuchař M, Tůma P, Čabala R  et al (2018) Menthol-based hydrophobic deep eutectic solvents:  towards greener and efcient extraction of phytocannabinoids. J  Clean Prod 193:391–396 
+26. Leghissa A, Hildenbrand ZL, Foss FW et al (2018) Determina tion of cannabinoids from a surrogate hops matrix using multiple 
+1 3 
+Quantifcation of Cannabinoids in Cultivars of Cannabissp. by Gas Chromatography–Mass… 717 
+reaction monitoring gas chromatography with triple quadrupole  mass spectrometry. J Sep Sci 41:459–468 
+27. Lewis MM, Yang Y, Wasilewski E et al (2017) Chemical profling  of medical Cannabis extracts. ACS Omega 2:6091–6103 28. M. ElSohly, S. Chandra, H. Lata, E. Williamson, R. Upton, D.  Harder, D. Slade, M. Radwan, K. Li. (2013) Cannabis infores cence Cannabis spp., identity, analysis and quality control Am.  Herb. Pharmcopoeia 
+29. Mariotti Kde C, Marcelo MC, Ortiz RS et al (2016) Seized Can nabis seeds cultivated in greenhouse: a chemical study by gas  chromatography-mass spectrometry and chemometric analysis.  Sci Justice J Forensic Sci Soc 56:35–41 
+30. Mechoulam R, Lander N, Dikstein S, Carlini EA. Blumenthal, M  (1976) On the therapeutic possibilities of some cannabinoids. The  therapeutic potential of Marihuana. Boston, MA: Springer US; pp.  35–45. https://doi.org/10.1007/978-1-4613-4286-1_3. 
+31. Pellati F, Brighenti V, Sperlea J et al. (2018) New Methods for the  Comprehensive Analysis of Bioactive Compounds in Cannabis  sativa L. (hemp). Molecules (Basel, Switzerland) 23 
+32. Phillips R, Turk R, Manno J et al (1970) Seasonal variation  in cannabinolic content of Indiana marihuana. J Forensic Sci  15:191–200 
+33. Pryce G, Baker D (2005) Emerging properties of cannabinoid  medicines in management of multiple sclerosis. Trends Neurosci  28:272–276 
+34. Richins RD, Rodriguez-Uribe L, Lowe K et al (2018) Accumu lation of bioactive metabolites in cultivated medical Cannabis.  PLoS ONE 13:e0201119 
+35. Ross SA, Elsohly MA, Sultana GN et al (2005) Flavonoid gly cosides and cannabinoids from the pollen of Cannabis sativa L.  Phytochem Anal PCA 16:45–48 
+36. Stampanoni Bassi M, Sancesario A, Morace R et al (2017) Can nabinoids in Parkinson’s Disease. Cannabis Cannabinoid Res  2:21–29 
+37. Tipparat P, Natakankitkul S, Chamnivikaipong P et al (2012)  Characteristics of cannabinoids composition of Cannabis plants  grown in Northern Thailand and its forensic application. Forensic  Sci Int 215:164–170 
+38. Tipparat P, Suthat J, Sarita P et al (2014) Classifcation of Can nabis plants grown in northern Thailand using physico-chemical  properties. J Nat Sci Res 4:2224–3186 (ISSN (Paper)2224–3186  ISSN (Online)2225–0921) 
+39. Vanhove W, Van Damme P, Meert N (2011) Factors determin ing yield and quality of illicit indoor Cannabis (Cannabis spp.)  production. Forensic Sci Int 212:158–163 
+40. Wang M, Wang YH, Avula B et al (2017) Quantitative deter mination of cannabinoids in Cannabis and Cannabis products  using ultra-high-performance supercritical fuid chromatography  and diode array/mass spectrometric detection. J Forensic Sci  62:602–611 
+41. Wang YH, Avula B, Elsohly MA et al (2018) Quantitative deter mination of Δ9-THC, CBG, CBD, their acid precursors and fve  other neutral cannabinoids by UHPLC-UV-MS. Planta Med  84:260–266 
+Publisher’s Note Springer Nature remains neutral with regard to  jurisdictional claims in published maps and institutional afliations.
+1 3

@@ -1,0 +1,27 @@
+```text
+cannabis_cannabinoid_gcms_quantification_1.txt
+
+**Objective:** Quantify cannabinoids in Cannabis sp. cultivars via GC-MS.
+
+**Method:** Modified Cardenia et al. (2018) GC-MS method for faster cannabinoid identification.  Simultaneous quantification of CBD, CBC, THC, CBG, CBN.  Cannabis 5-CW showed highest CBD.
+
+**Materials:** Cannabinoid standards (CBD, CBC, THC, CBG, CBN, CBL) from Cerilliant; CBD-d3, THC-d3; analytical grade solvents.
+
+**GC-MS:** Agilent 6890 series GC with HP-5MS column (30 m×0.25 mm, 0.25 µm film thickness); Hydrogen carrier gas (1.6 mL/min); oven temperature program: 180 °C (0.5 s) to 250 °C (5 °C/min), then to 325 °C (30 °C/min), hold 2 min; injector: 280 °C; MS: model 5973 N, EI ionization, SIM for quantification (m/z: CBL 231, CBD 246, CBC 231, THC 193, CBG 193, CBN 295).
+
+**Extraction:** 200 mg dried flowers (C. sativa, C. indica, Cannalope Kush, Cannabis 5-CW, Rock Star, Super Silver) extracted thrice with 2 mL methanol; vortex, sonicate (10–20 min), centrifuge (4000 rpm, 5 min); filter (0.22 µm); dry under nitrogen.  Dried extract weights: C. sativa (92.2 mg), C. indica (35.1 mg), Cannalope Kush (72.5 mg), Cannabis 5-CW (56.3 mg), Rock Star (74.2 mg), Super Silver (66.8 mg). Reconstituted with 200 µL MeOH.
+
+**Standard Solutions:** Individual and mixed cannabinoid standards (100 µg/mL in methanol).
+
+**Method Validation:** Specificity: solvent blank injection; Linearity: R² > 0.98 (0.0125–0.1 mg/mL); Precision (intraday RSD): 1.49–8.35%; Intermediate precision (RSD): 1.32–5.14%; LOD: 0.006–0.008 mg/mL; LOQ: 0.018–0.026 mg/mL; Recovery: 80–100%.
+
+**Quantification:** Internal standard (isotope dilution) for THC, CBD; standard addition for CBC, CBG, CBN. CBL below detection limit (<0.02% dry weight).
+
+**Results:** Faster separation (13 min) than other methods (24–26.5 min).  Baseline separation of CBD and CBC (resolution 1.5); CBG-CBN resolution ~1.3.  Identified CBL, CBD, CBC, THC, CBG, CBN.  Cannabis 5-CW: highest CBD (4.6%); C. sativa: highest THC (7.96%); Cannabis 5-CW: highest CBC (4.93%); Cannalope Kush: highest CBG (7.58%); Rock Star: highest CBN (2.39%).
+
+**Conclusion:** Modified GC-MS method successfully quantified cannabinoids. Cannabis 5-CW promising CBD cultivar; C. sativa high THC; Cannalope Kush, Super Silver high CBG; Rock Star high CBN.  Cannabinoid content varies based on genetics, environment, and harvest/storage conditions.
+
+**Funding:** Mitacs Accelerate program and Medleaf Biotechnologies Inc.
+
+**Conflict of Interest:** DN (Medleaf Biotechnologies President). PCT application: CA2021050503.
+```

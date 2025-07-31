@@ -1,0 +1,17 @@
+```text
+Cannabis sativa L. in vitro propagation: Protocol refinement using meta-topolin (mT).
+
+Objective: Efficient, one-step C. sativa regeneration.
+
+Method:  High-THC Mexican variety female plant cuttings used.  Nodal explants surface-disinfected (0.5% NaOCl, 0.1% Tween 20, 20 min).  Murashige and Skoog (MS) medium (3% sucrose, 0.8% agar, 500 mg/L activated charcoal, pH 5.7) + mT (0.05–5.0 µM).  Incubation: 25 ± 2 °C, 16-h photoperiod, ∼52 µmol m⁻² s⁻¹.  Acclimatization: Coco natural growth medium (10 days), then sterile potting mix.
+
+Results: Optimal shoot proliferation: MS + 2.0 µM mT (13.44 ± 1.38 shoots/explant, 11.44 ± 0.80 cm shoot length, 100% explant response). Rooting: MS + 2.0 µM mT (96% success, 14 roots/shoot, 18.68 ± 1.07 cm root length). No separate rooting medium required. 100% acclimatization survival.
+
+Eco-physiology: Photosynthetic rate (Pn), transpiration (E), stomatal conductance (gCO2), intercellular CO2 concentration (Ci), water use efficiency (WUE) comparable between in vitro propagated plants (IVP) and mother plant (MP).  No significant differences (p < 0.05). Pigment content (Chl a, Chl b, carotenoids) also comparable.
+
+Genetic fidelity: ISSR markers (15 primers) showed monomorphic profiles between IVP and MP, confirming genetic identity.
+
+Cannabinoid profile:  9-THC (MP: 7.52 ± 0.04; IVP: 7.25 ± 0.15), CBD, THCV, CBC, CBG, CBN levels comparable between MP and IVP (no significant differences, p < 0.05).
+
+Conclusion:  mT (2.0 µM) enables efficient, cost-effective, one-step C. sativa propagation with 100% true-to-type plant fidelity.
+```

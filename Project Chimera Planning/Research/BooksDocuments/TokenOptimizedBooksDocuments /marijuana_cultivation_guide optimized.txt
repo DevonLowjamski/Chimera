@@ -1,0 +1,39 @@
+```text
+marijuana_cultivation_guide.txt
+
+Plant Growth Stages: Seedling (young, vulnerable); Vegetative (leaf/stem growth); Flowering (bud production). Unique environmental/nutritional needs per stage.  Cannabis is an annual plant; light, air, water, nutrients, soil/medium are essential. Cultivar and technique dictate lifecycle speed; Indica finishes sooner than Sativa.  Mother plants can be maintained indefinitely.
+
+Grow Security: Legalities (drug-free zones, legal counsel); Visibility (private, discreet location, light leaks); Electricity (sufficient power, code-compliant wiring, fire extinguishers); Odors (ventilation, carbon filters, urinal cakes, ozone generators); Moisture (dry location, leak prevention); General Advice (noise reduction, waste disposal, discretion).
+
+Symbiotic Rotation:  All growth stages synchronized. Cultivar selection crucial (Indica/hybrids ideal, Sativa requires cycle skipping). Eleven-step rotation (cloning, vegetation, flowering) detailed.  Cycle alteration based on cultivar flowering time; shortening via light manipulation and nutrient adjustments.
+
+Systems: Growroom basics (ballast area, cleanup, flowering (x2), vegetative, cloning). Existing structures vs. new construction (framing, electrical, insulation, Thermal Shield, DensGlass, mold-inhibiting paint). Precautions (pyrethrum bombs, bleach/hydrogen peroxide/ONA sterilization). Greenhouse (light deprivation, ventilation, temperature control, dehumidifiers, supplemental lighting, hardening-off clones). Indoor systems: Soilless shelf (drainage), Organic soil shelf, Simple hand-fed soilless water (rockwool cubes), Hand-water rockwool (run-to-waste), Soilless drip (run-to-waste), Basic drip, Deep Water Culture (DWC/NFT) (aeration, temperature control), Run-to-waste, Drip (Hydroton), Ebb and flow, Recirculating NFT bucket, Aeroponics, Closet cloning, Growtubes, Timers, Ballasts, Wiring, Drying racks.
+
+Growing Medium: Soil vs. Hydro (pros/cons). Medium: drainage/aeration; container size/shape (“potting up”). Rockwool tips (nutrient/pH monitoring, drainage, pH, disposal, algae prevention, drying, temperature). Soilless mix (perlite/vermiculite/soil, water-retaining crystals, runoff). Nutrient mix/salt buildup (flushing).
+
+Ventilation, Heat, CO2: Ventilation (CFM calculation, filtration, fans, air movement); Heat (BTU, air conditioners, heaters, thermostats); CO2 (photosynthesis, injection, levels, fans, ventilation).
+
+Lighting: Air-cooled lights, light coverage/layout, light distance from plants, light-ballast distances, basic bullets (photoperiod, light leaks), UVB light (effects on THC).
+
+Cultivar Selection:  Cannabis Sativa (tall, airy buds, long flowering), Cannabis Indica (short, dense buds, high THC), Indica/Sativa hybrids (balance of traits). Seed acquisition, seed storage, clones.
+
+Seed Germination: Tupperware method (rockwool cubes, light diffusers, heat mats, temperature monitoring), paper towel method (scoring seeds).  Outdoor germination (12/12 light cycle initially, transition to 16/8).
+
+Vegetative Growth: Beginnings (clones/seedlings, growth patterns, inducing flowering), preparation for flowering (lower vegetation removal, staking/tying), SCROG.
+
+Water and Feeding: Water quality/preparation (water analysis, filtration (RO, charcoal), aeration, sterilization (UV), hydrogen peroxide, temperature). Feeding (General Hydroponics Flora series (Micro, Gro, Bloom), teas, foliar feeding (timing, temperature, pH, wetting agent), temperature control/sterilization/oxygenation of reservoirs, recirculation (vs. run-to-waste), humidity (dew point), transpiration, runoff inspection, stomata, water preparation (step-by-step), pH (adjustment methods), blending organic soil mix, nutrient timing/burn periods, seaweed/kelp meal, potassium sources, phosphorous sources, sulfur sources, dolomite lime, reusing/recycling soil (earthworms, castings), what not to do, unsulfured blackstrap molasses, curing soil, soil structure/composition, harvest leftovers, beneficial nematodes, soil amendments, organic fertilizers, recommended amendments, preventing drainage problems (soil evaluation, minimizing evaporation, examining outdoor soil), organic tea (how to brew, recipe).
+
+Cloning: What is a clone, materials list, clone how-to, clone considerations (productivity, homogeneity, economy), sources (outside, mother plants, vegetating plants), traditional cutting methods, mother/donor plants, Gardex substrate, avoiding stagnant water, aeroponic cloning machines, rooting hormones, types of containers, water/pH/nutrients, plant preparation, taking cuttings, transporting cuttings, cloning tips (start clean, reduce stress, right cuttings, proper media, temperature, hormones, sticking, density, fertilization/pH), rooting process (toning), determining sex, root development.
+
+Flowering: Males/hermaphrodites/sinsemilla. Flowering stage (nutrient management (flushing), cleanup/secondary stripping, accelerating maturation, flowering cycle timeline (1-14, 14-28, 28-42, 42-56, 56-harvest)), outdoor/greenhouse flowering methods, flowering tips (excess temperature, light distance, sulfur, prewatering, foliar sprays, flushing/organics, mineral salt-based synthetic fertilizers).
+
+Harvest: Harvesting (techniques), trichomes (types), timing, harvest timing (time of day), flushing, preparing for harvest (clothesline method), manicuring, bagging/moisture, curing, harvest tips (cleaning up, dry air/increased resin).
+
+Curing: Curing process (moisture release, homogenizing buds, cannabinoid conversion), curing tip.
+
+Problems: Typical problems (seeds/seedlings, established/young plants, flowering plants), fungi (botrytis, powdery mildew), management/control (cultural control, environmental control, powdery mildew/hash), pest prevention (air filtration, pyrethrum, sticky traps, BT, neem oil), pests (snails/slugs, animal repellant, snakes, caterpillars, spider mites, thrips, aphids, ants), nutrient deficiencies (introduction, salt buildup, antagonistic effects, nitrogen, phosphorous, potassium, calcium, magnesium, sulfur, iron, manganese, zinc, copper, boron, molybdenum, chlorine, fluoride, nickel, cobalt, sodium, silicon, acceptable limits/average PPM, final note).
+
+Hash Making: About hash, factors governing quality/quantity (temperature/humidity, debris), scissor/finger hash, sieving (screen sizes, mechanized sifters, purifying), cold water extraction (basic method, Resinizer, clear jar method), hash oil (equipment, optional extras, starting materials, preparation, using heat source, condensers), pressing hash (pros/cons), note on powdering/pressing, advanced methods, hash tips.
+
+Appendices: Screen sizes (measurement), terpene extraction (future of extracts), commonly asked questions, six simple preventative tips.  Dedication, Index.
+```

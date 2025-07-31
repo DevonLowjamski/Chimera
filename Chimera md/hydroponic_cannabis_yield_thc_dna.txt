@@ -1,0 +1,252 @@
+﻿Forensic Science International 202 (2010) 36–44 
+Contents lists available at ScienceDirect     
+Forensic Science International 
+journal homepage: www.elsevier.com/locate/forsciint 
+The results of an experimental indoor hydroponic Cannabis growing study, using the ‘Screen of Green’ (ScrOG) method—Yield, tetrahydrocannabinol (THC) and DNA analysis 
+Glenys Knight a,*, Sean Hansen b,1, Mark Connor a, Helen Poulsen a, Catherine McGovern c, Janet Stacey d a Institute of Environmental Science and Research Limited (ESR Ltd), Kenepuru Science Centre, 34 Kenepuru Drive, Porirua, New Zealand bOrganised Crime Unit, Wellington Central Police Headquarters, Wellington, New Zealand 
+c Institute of Environmental Science and Research Limited (ESR Ltd), Mount Albert Science Centre, Auckland, New Zealand 
+d Forensic Science Program, Department of Chemistry, University of Auckland, New Zealand 
+ARTICLE INFO 
+Article history: 
+Received 22 September 2009 
+Received in revised form 12 April 2010 Accepted 13 April 2010 
+Available online 13 May 2010 
+Keywords: 
+Cannabis 
+Hydroponic cultivation 
+Screen of Green (ScrOG) 
+Yield 
+Tetrahydrocannabinol (THC) 
+DNA 
+1. Introduction 
+1.1. The New Zealand environment 
+ABSTRACT 
+The results of an indoor hydroponic Cannabis growth study are presented. It is intended that this work will be of assistance to those with an interest in determining an estimation of yield and value of Cannabis crops. Three cycles of six plants were grown over a period of 1 year in order to ascertain the potential yield of female flowering head material from such an operation. The cultivation methods used were selected to replicate typical indoor hydroponic Cannabis growing operations, such as are commonly encountered by the New Zealand Police. The plants were also tested to ascertain the percentage of the psychoactive chemical D-9 tetrahydrocannabinol (THC) present in the flowering head material, and were genetically profiled by STR analysis. Phenotypic observations are related to the data collected. The inexperience of the growers was evidenced by different problems encountered in each of the three cycles, each of which would be expected to negatively impact the yield and THC data obtained. These data are therefore considered to be conservative. The most successful cycle yielded an average of 881 g (31.1 oz) of dry, groomed female flowering head per plant, and over the whole study the 18 plants yielded a total of 12,360 g (436.0 oz), or an average of 687 g (24.2 oz) of dry head per plant. THC data shows significant intra-plant variation and also demonstrates inter-varietal variation. THC values for individual plants ranged from 4.3 to 25.2%. The findings of this study and a separate ESR research project illustrate that the potency of Cannabis grown in New Zealand has dramatically increased in recent years. DNA analysis distinguished distinct groups in general agreement with the phenotypic variation observed. One plant however, exhibiting a unique triallelic pattern at two of the five loci tested, while remaining phenotypically indistinguishable from three other plants within the same grow. 
+  2010 Elsevier Ireland Ltd. All rights reserved. 
+The population of just over 4.3 million people is highly urbanised, 
+with over 86% living within the urban areas, which comprise just 
+2.7% of the total land area [1,2]. 
+The remaining large areas of land, occupied by indigenous 
+New Zealand is the most geographically isolated country in the world. It lies in the South Pacific Ocean, approximately 2250 km to the east of Australia and just to the west of the international dateline. While New Zealand is comprised of a group of narrow islands spanning nearly 138 of latitude, from the subtropical to the subantarctic, its main land areas experience a predominantly temperate climate, strongly influenced by the surrounding oceans. 
+* Corresponding author. Tel.: +64 4 914 0632; fax: +64 4 914 0640. E-mail address: glenys.knight@esr.cri.nz (G. Knight). 1 Now at Organised Crime Unit, Eastern District Police Headquarters, Napier, New Zealand. 
+0379-0738/$ – see front matter   2010 Elsevier Ireland Ltd. All rights reserved. doi:10.1016/j.forsciint.2010.04.022
+forests and reserves or under forestry or pastoral cultivation, provide ample opportunities for the covert cultivation of Cannabis crops outdoors, and to date most of the Cannabis seized in New Zealand has been grown outdoors. In the warmer, northern areas of New Zealand staggered planting allows the harvest of two crops per year, with a first phase of harvesting in early December producing a pre-Christmas crop which achieves very good prices, and a second phase of harvesting in February to March [3,4]. In most of New Zealand however, only one outdoor crop is possible annually, with the typical cultivation period being between September and March. 
+All drug-Cannabis in New Zealand has originally been illegally imported in the form of seed, with much of this either purchased 
+G. Knight et al. / Forensic Science International 202 (2010) 36–44 37
+over the Internet or from places such as the Netherlands where it can be legally purchased. The varieties claimed to be grown are therefore many of those familiar in other areas of the world—e.g.: ‘Northern Lights’, ‘Hindu Kush’, and ‘Blueberry’. The risk of detection at New Zealand’s border however, provides a strong incentive to propagate from selected seed-raised plants by the taking of cuttings, a process which is known as ‘cloning’. The vast majority of indoor-grown Cannabis is grown from cloned plants. In recent years in New Zealand there appears to have been a shift with outdoor-grown Cannabis from seedlings, which were traditionally all that was found, to cloned plants; however there is some regional variation. 
+Indoor cultivation offers numerous advantages to the grower, including the ability to control environmental conditions and therefore grow continuously throughout the year. Over the last 10 years there has been a marked increase in indoor Cannabis growing operations discovered by the New Zealand Police (NZP). In 2006 7% of Cannabis plants seized by the NZP utilised hydroponics; which increased to 15% in 2007 [5]. 
+The types of set-up vary widely in sophistication, from a single plant which may be grown in soil within a wardrobe area, to highly organised hydroponic operations being grown in commercial premises, such as the 2005 seizure from an Auckland warehouse occupied by the fashion label company, ‘Insidious Fix’, and the 2007 seizure in the Waitemata District involving 1750 Cannabis plants [6,7]. 
+In a guideline judgement made by New Zealand’s Court of Appeal, in the case R v Terewi [8], the court delineated three categories of offending in relation to Cannabis cultivation, each of which carries a suggested sentencing range. While prior to the Terewi case, sentences for cultivation tended to be based on the number of plants grown, this new judgement recognised the relatively new development of indoor, and especially hydro ponic, cultivation, from which considerably enhanced yields are possible within the period of a year. The three ‘Terewi categories’ are: 
+Category 1: Cases where small quantities of Cannabis plants are grown, strictly for personal use. These are almost always assigned a fine or non-custodial sentence. 
+Category 2: Cases where there is small-scale cultivation of Cannabis for a commercial purpose. In these cases the sentence is usually between 2 and 4 years imprisonment. 
+Category 3: Cases where there is large-scale commercial cultiva tion of Cannabis, exhibiting both sophistication and organisation. The starting point for sentencing within this most serious category is usually 4 years or more. 
+In addition to the sentence imposed upon the offender, there is the provision in law to confiscate assets obtained through or used to facilitate the offending. New Zealand’s Proceeds of Crime legislation (currently the Proceeds of Crime Act 1991, soon to be replaced by the Criminal Proceeds (Recovery) Act 2009, which comes into force on 1 December 2009) allows for the confiscation of the proceeds of serious criminal offending, where ‘serious’ offending (to be replaced with the phrase ‘significant criminal offending’) is defined as those offences which are punishable by 5 years or more in prison. To date this has been applied primarily to drug-related offending. The challenge for the prosecution is to provide proof of the value of the cultivation operations discovered, in order to enable the courts to calculate the potential income derived from these operations. While there have been a number of successful seizures [9], police have been hampered by a lack of empirical data on Cannabis plant yields with which to either inform the court or refute the defence’s own claims regarding the potential value of the 
+Cannabis plants or plant material seized, or to quantify the unlawfully derived income of the offender. 
+In 2004, a covert operation by Police of the Wellington Organised Crime Unit was terminated with the arrest of the operators of a hydroponic supplies shop and a number of their customers, who were found to have well-organised indoor Cannabis crops. This successful operation, referred to as ‘Operation QUEEN’, enabled the authors to examine a number of grow set-ups, many of which were using the same system, known as the ‘Screen of Green’ (ScrOG) method [10,11]. 
+This paper presents the results of a research project, ‘Operation REAP’, which was jointly led by ESR and the NZP. In this study, three cycles of six Cannabis plants were grown hydroponically, under licence [12]. The purpose of the study was to ascertain the potential yield of female flowering head material, per year, from plants grown indoors using the ScrOG method. The operation REAP research project sought to replicate a typical indoor hydroponic Cannabis grow, such as is commonly encountered by the NZP. The yields obtained should not however, be applied directly to crops grown using methods which are substantially different from that used in this study. 
+The authors had no personal experience in the growing of Cannabis before this project. A convicted Cannabis grower assisted with the initial set-up and acted as an advisor throughout the study, on a confidential basis. 
+1.2. Taxonomic considerations 
+Until recently, Cannabis L. was considered to be one of only two genera in the family Cannabaceae; the other genus being Humulus (hops). A review of this and several related families within the Order Rosales has resulted in a previously separate family, the Celtidaceae, being absorbed into the Cannabaceae, thereby adding the genera Aphananthe, Celtis, Chaetacme, Gironniera, Lozanella, Parasponia, Pteroceltis and Trema [13]. 
+Applying classical taxonomic methods to the genus Cannabis is highly problematic due to the long period of human cultivation, which has resulted in a very large number of phenotypically distinct taxa. Furthermore, the illegal nature of cultivation in most countries has led to a proliferation of informal names which may not be uniquely or universally applied. 
+The International Plant Names Index lists 13 validly published binomials for Cannabis: Cannabis americana Pharm. ex Wehmer; Cannabis chinensis Delile; Cannabis erratica Siev.; Cannabis foetens Gilib.; Cannabis generalis E.H.L. Krause; Cannabis gigantea Crevost; Cannabis indica Lam.; Cannabis   intersita Soja´k; Cannabis kafir istanica (Vav.) Chrtek; Cannabis lupulus (L.) Scop.; Cannabis macro sperma Stokes; Cannabis ruderalis Janisch., and Cannabis sativa L. 
+In recent years however, workers have examined the genus using molecular and chemical methods, and the prevailing taxonomic treatment is to regard Cannabis as a monospecific genus, containing only the highly variable species Cannabis sativa L. The species is widely regarded as having two subspecies, C. sativa subsp. sativa and C. sativa subsp. indica. The debate on the classification of Cannabis is well covered by Shao and Clarke [14] and by Gigliano [15], each following the arrangement proposed by Small and Cronquist [16], in their 1976 paper. An opposing opinion is given by Hillig and Mahlberg [17], who suggest the relative quantities of cannabinoid compounds present would support two species of Cannabis, C. sativa and C. indica, but this suggestion has not been generally adopted. 
+The taxonomy of Cannabis has important legal significance, as in many countries, including New Zealand, it is illegal to grow or possess the plant C. sativa [18,19]. However, since 2006, it has been legal in New Zealand, under licence from the Ministry of Health, to grow officially sanctioned varieties of fibre and seed-oil Cannabis 
+38 G. Knight et al. / Forensic Science International 202 (2010) 36–44
+(industrial hemp) [20]. The hemp is legally required to contain less than 0.35% tetrahydrocannabinol (THC). 
+No published work exists on the varieties of psychoactive Cannabis available in New Zealand. This paper does not pretend to domore than provide an initiation into featureswhichmay be used to delineate the varieties present, by noting some phenotypic, physiological, chemical and molecular differences in the plants grown. 
+In addition to providing yield data, the plants grown were tested for the percentages of THC present in the mature floral heads, and DNA analysis was undertaken. These results are also presented here, along with a discussion of the findings. 
+2. Materials and methods 
+Detailed information regarding cultivation methods and materials, including the set-up, equipment required, nutrient and light regimes, andwater and electrical usage are provided in the first paper in this series [21]. In order to address police operational concerns, this information is restricted to the law-enforcement community. 
+2.1. Growing conditions 
+Each crop of six plants was grown in a room with the dimensions of 4.32 m by 3.48 m and a height of 3.17 m. This area is comparable to the size of an average New Zealand bedroom, which is a space commonly used to grow Cannabis indoors. 
+The growing medium was inorganic, with commercially prepared nutrients and additives supplied in the water by an irrigation programme. 
+The plants for the first crop (‘Grow 1’) were purchased from an illegal grower. The second crop (‘Grow 2’) used six clones produced by taking cuttings of one of the plants from Grow 1. ‘Grow 3’ was of six plants taken from a clandestine growing operation discovered by the police. 
+The first two of the three crops used the ScrOG method, while the third grow was undertaken without the mesh screen, and heavy branches were supported simply by strings. 
+All equipment, nutrients and methods used were comparable to those commonly found at indoor growing operations at the time of the inception of the study. 
+2.2. Harvest and drying 
+The plants were harvested by cutting the branches from the main stem and hanging them to dry on strings within a secure laboratory. The branches were dried to the stage where stems of a pencil thickness snapped audibly when broken. At this point the plants had lost approximately 70–75% of their fresh weight. Plants can be dried to the point where they have lost 80–90% of their fresh weight, but this results in a loss of quality and is avoided by growers [22]. 
+When dry, the plant material was groomed to remove any extraneous leaf and stem, with just closely cropped pieces of female flowering head remaining. For Grows 2 and 3, the fresh and dried weights of the branches harvested from each plant were recorded as well as the groomed female flowering head material produced by each of the plants. 
+All plant material was weighed in grams, on a calibrated Mettler PE12 balance. Metric weights were converted to ounces and pounds using the website http:// www.metric-conversions.org. The reason for this conversion is that the illicit drug market in New Zealand still predominantly operates using imperial measurements. 
+2.3. D-9 tetrahydrocannabinol (THC) analysis 
+Six randomly selected samples of head material from each plant in each grow were tested for THC concentration. The method of testing was an adaptation of the 
+Table 1 
+Description of loci. 
+method developed in-house and reported by Poulsen and Sutherland [23]. This method enabled good separation of principal cannabinoids. 
+2.3.1. Extraction of Cannabis plant 
+For each sample, approximately 2 g of dry female flowering head material was accurately weighed into a capped glass tube, noting the exact weight. Ethanol (10 ml) was added, ensuring that the plant material was totally immersed. The sample was then sonicated for 30 min. 
+2.3.2. THC analysis 
+Cannabis extract solution (50 ml) was added to 450 ml ethanol and 500 ml internal standard solution directly into a gas chromatograph mass spectrometer (GCMS) vial. The internal standard was 4-androstene-3, 17-dione, at a concentra tion of approximately 0.2 mg/ml. Two THC standard stock solutions were prepared of Cerilliant T-005 (1 mg/ml), diluted to 0.1 and 0.2 mg/ml in ethanol. If the THC concentration of the plant samples tested fell outside the range of the two THC standard solutions, further dilution and injections were carried out. 
+2.3.3. Instrumentation 
+Analysis was on a gas chromatograph: Agilent 6890 series with mass spectrometric detection using an Agilent HP-5ms, 30 m capillary column, with an inlet temperature of 280 8C and a detector temperature of 325 8C. The initial oven temperature was 80 8C with the following conditions: hold 1 min, ramp 50 8C/min to 300 8C, hold 9.6 min. 
+2.4. STR DNA analysis 
+Dried samples of leaf material from each of the Grow 1 and Grow 3 plants were genetically profiled using five trinucleotide short tandem repeat (STR) loci to determine whether the observed differences in phenotype, sexual expression and THC values were reflected in their genetic makeup. This work was done ‘blind’, in that the DNA analysts were not given information about any of the physical and chemical observations. 
+Duplicate samples of 100 mg of dried leaf material were taken from each of the 12 plants (six plants per grow). DNA was extracted from the samples using the DNeasy1 Plant Mini Kit from Qiagen. 
+Known Cannabis leaf material and tomato (Solanum lycopersicum) leaf material positive controls and a negative (reagent only) control were also included, to monitor the DNA analysis process. The amount of DNA present in each extract was quantified using 1.5% agarose gel electrophoresis with ethidium bromide staining, using the Invitrogen High DNA Mass Ladder quantification standard. 
+The samples were then analysed using the five trinucleotide STR loci (Table 1) as previously published by Gilmore et al. [24]. 
+Amplification products underwent capillary electrophoresis using an ABI PRISM1 3130 Genetic Analyser (Applied Biosystems Ltd.) and the raw data was analysed using GeneScan1 v3.1 (AB). Fst Principal Coordinate Analysis (PCA) was carried out using GenAlEx v6 [25]. 
+3. Results and discussion 
+3.1. Phenotypic observations 
+The first six plants obtained were said by the grower to be clones of the variety ‘Red Devil’. In order to distinguish them for the purposes of data collection, they were numbered ‘plant 1’ to ‘plant 6’. 
+Within a few weeks, it was apparent that there were at least two varieties present; Plants 1, 3, 4 and 6 were compact, bushy plants 
+Locus Repeat motif Primer sequences Expected amplicon size range ANUC301 (TTA)15 Fwd 50-ATATGGTTGAAATCCATTGC-30 209–261 bp Rvs 50-TAACAAAGTTTCGTGAGGGT-30 
+ANUC302 (CAA)7–(CAA)4 Fwd 50-AACATAAACACCAACAATGC-30 140–173 bp Rvs 50-ATGGTTGATGTTTTGATGGT-30 
+ANUC303 (GTG)7 Fwd 50-TAATCAACAATGACAATGGC-30 141–156 bp Rvs 50-GATTAAGGTCCTCGACGATA-30 
+ANUC304 (TCT)8TCA(TCT)7 Fwd 50-TCTTCACTCACCTCCTCTCT-30 167–230 bp Rvs 50-TCTTTAAGCGGGACTCGT-30 
+ANUC306 (GAT)3–(GAT)6 Fwd 50-ACTATTACTAAGCCTCCTCATCA-30 92–95 bp Rvs 50-GTGGTAGTCTCATTGTTGGTG-30 
+G. Knight et al. / Forensic Science International 202 (2010) 36–44 39
+  
+  
+
+Fig. 3. Flowering head of ‘‘indica-like’’ plant, with male flowers, female flowers, and 
+development of immature fruit, Grow 1. 
+Fig. 1. ‘‘indica-like’’ plant, Grow 1.   
+with large broad leaves—clearly of the habit described for indica 
+varieties (Fig. 1), while Plants 2 and 5 had narrow leaflets and longer 
+internodes resulting in taller, more openly branched plants, of the 
+growth type referred to as indicative of sativa varieties (Fig. 2). Of 
+particular interest was that each of the four indica phenotypes, while 
+initially developing female floral heads, began to also produce some 
+male flowers in week 15 of growth (2 weeks before harvest date). 
+Cannabis is usually a strictly dioecious plant, with male and female 
+flowers being produced on separate plants; monoecy and hermaph 
+roditism can occur however, and are known to be induced by certain 
+environmental factors [26–28] and also by the application of 
+exogenous hormones, such as auxin and ethylene [29]. 
+With the development of male flowers, and the consequent 
+release of pollen, some of the adjacent flowers began to develop fruit, with the production of seeds (Fig. 3). As the plants were mostly mature, and seed production would greatly diminish the value of the product, it was decided to harvest the crop (Figs. 4 and 5). Although grown under exactly the same conditions, the sativa like plants did not develop any male flowers. 
+Cuttings had been taken of both phenotypes; the sativa-like from ‘plant 2’ and the indica-like from ‘plant 4’ (Fig. 6). Due to the 
+Fig. 4. Mature plants, day 113 since planting clones, Grow 1. 
+propensity of the indica-like phenotype to produce hermaphro ditic flowers, the cuttings from ‘plant 2’ were used for the second grow. 
+The phenotype of the plants obtained from the police for the third grow was similar to the indica-like plants in Grow 1. 
+  
+  
+
+Fig. 2. ‘‘sativa-like’’ plant, Grow 1. 
+Fig. 5. Harvested head from ‘‘indica-like’’ plant, Grow 1. 
+40 G. Knight et al. / Forensic Science International 202 (2010) 36–44    
+Fig. 6. Cuttings from ‘‘sativa-like’’ plant (left), and ‘‘indica-like’’ plant (right), Grow 1. 
+3.2. Problems affecting yield and quality 
+Each of the three crops grown experienced a separate problem which impacted on the potential yield and quality of the Cannabis to some degree. For the second and third grows, the problems were serious, and reflected the inexperience of the researchers in growing Cannabis. 
+As discussed above, the first grow was harvested when male flowers developed on four of the plants, resulting in fertilisation of female flowers and the consequent onset of seed production. As this did not occur until the plants were mature, and the few immature seeds were still soft, any loss in quality was considered to be very minimal. 
+During the second grow, from cuttings taken from plant 2 of the first grow, a change in one of the additives used is suspected to have contributed to the nutrient burn of this crop (Fig. 7). By the time the problem was noticed, the leaves and bract material had irreversibly browned and begun to curl, causing floral develop ment to be restricted. Flushing through with water resulted only in vegetative new growth; therefore the crop was harvested in the 17th week of the grow. This was approximately at the expected harvest date, but the floral heads had not developed to full maturity due to the stress the plants experienced in the previous 3 weeks. 
+The third grow was infected by the two-spotted red spider mite, which is a common pest of Cannabis as well as many other plants (Fig. 8) [30]. Examination of the root areas of these plants 
+  
+
+Fig. 8. Grow 3: spider mite web on flowering head. 
+confirmed that they had been grown from cuttings, and were therefore clones [21]. The mites were not on the original clones, which had been obtained from a growing operation discovered by police in a south Wellington suburb. Unfortunately some infected plants, also sourced from a crime scene, were introduced into the grow room for temporary storage in the third week of the grow. These plants were removed and destroyed about 2 weeks later when mites were seen on them. It was not noticed that the crop had been contaminated until adult mites were seen in the 10th week of the round. By that time the plants were large, having completed the vegetative phase of the cycle and were well into the flowering phase. 
+Two-spotted mites lay eggs underneath the leaves and upon hatching, migrate up to the distal extremity of the branches and spin webs. Due to the density of the plant growth by the time the infestation was recognised, spraying with mite-killing agent was ineffective, as it could not reach all the under-leaf surfaces. Spider mites are leaf-sucking pests, which pierce the cells and draw out the fluid within, causing the leaves to mottle, dry out and die. As the developing heads are on the terminal ends of branches, they were being shrouded with the mite’s webs. Although the leaves and also the bracts within the floral heads were being damaged, the flowers themselves appeared to only be affected by the loss of the nutrient flow which would normally be supplied by the leaves and bracts. The decision was made to harvest at 14 weeks of growth, approximately 2 weeks prior to the expected harvest date. 
+3.3. Yields 
+The groomed female flowering head from the first grow was packaged in one-ounce quantities in zip-lock plastic bags, a common quantity and packaging found to be used by indoor growers. This ‘wholesale’ quantity is usually broken down further by the retailers, producing for example, $50 bags, which contain approximately 3 g, and ‘tinnies’—or metal foil-wrapped quantities of approximately 0.5–1 g and sold for $20–25 each, although $20 is the most common value [31]. The number of full ounce bags obtained from each of the plants in this grow ranged from 25 to 47, and there was a total of more than 186 oz produced. Although the yields of the second and third crops were reduced, the average yield over the three crops was 687 g (24.2 oz, or just over 1.5 lb) of dried female flowering head per plant. Yields obtained from each of 
+Fig. 7. Grow 2: nutrient burn. the three crops grown are presented in Tables 2–4, and in Fig. 9. 
+G. Knight et al. / Forensic Science International 202 (2010) 36–44 41
+Table 2 
+Grow 1: yield of Cannabis female flowering head. 
+Plant no. Dry groomed head 
+g oz lb 
+1 868 30.62 
+2 1340 47.27 
+3 672 23.70 
+4 781 27.55 
+5 896 31.61 
+6 728 25.68 
+Total 5285 186.43 11.65   Fig. 9. Yield of each of six plants in each of three grows. 
+Table 3 
+  
+
+Fig. 10. THC results for six randomly selected samples from each of six plants in Grow 1. 
+The approximate value of these grows, in New Zealand dollars using 2009 prices, is given in Table 5. 
+3.4. D-9 tetrahydrocannabinol (THC) values 
+It was found that there was considerable variation present both within and between plants (Figs. 10–15). This finding is in agreement with that noted by Fiddian and Quinn [32] and by Hassan and Somerville (pers. comm., June 2009). This wide intra plant and inter-plant variation is unsurprising, given the narrow window of time in which a flower is in peak condition. All the 
+Grow 2: yield of Cannabis female flowering head, also fresh and dry weights of cut branches. 
+Plant no. Fresh weight of cut branches (g) Dried weight of cut branches (g) Dry branches as % wet weight (g) Dry groomed head g oz lb 
+1 5673 1375 24 370 13.05 2 7532 2594 34 769 27.13 3 4661 1120 24 653 23.03 4 5467 1334 24 708 24.97 5 4684 1160 25 863 30.44 6 4926 1237 25 1041 36.72 
+Total 32,983 8820 (x¯ ¼ 27) 4404 155.34 9.71 
+Table 4 
+Grow 3: yield of Cannabis female flowering head, also fresh and dry weights of cut branches. 
+Plant no. Fresh weight of cut branches (g) Dried weight of cut branches (g) Dry branches as % wet weight (g) Dry groomed head g oz lb 
+1 3635 949 26 500 17.64 2 4731 1228 36 581 20.49 3 3709 1025 28 340 11.99 4 4503 1185 26 350 12.35 5 4962 1259 25 389 13.72 6 6752 1718 25 511 18.03 
+Total 28,292 7364 (x¯ ¼ 26) 2671 94.22 5.89 
+Table 5 
+Value of Cannabis female flowering head from study, related to the quantity sold. 
+Sold as 
+Pounds $3500–5000 Ounces $250–500 $50 bags (3 g) Bullets/foils/tinnies (0.5–1 g) $20 
+Grow 1 $40,775–58,250 $46,608–93,215 $88,083 $105,700–211,400 Grow 2 $33,985–48,550 $38,835–77,670 $73,400 $88,080–176,160 Grow 3 $20,615–29,450 $23,555–47,110 $44,517 $53,420–106,840 
+Total yearly value $95,375–136,250 $108,998–217,995 $206,000 $247,200–494,400 
+42 G. Knight et al. / Forensic Science International 202 (2010) 36–44
+  
+
+Fig. 11. The mean THC, with a band of   one standard deviation, of six THC measurements, for each plant of Grow 1. 
+  
+
+Fig. 12. THC results for six randomly selected samples from each of six plants in Grow 2. 
+Fig. 13. Mean THC results for each of the six plants in Grow 2. 
+  
+
+Fig. 14. THC results for six randomly selected samples from each of six plants in Grow 3. 
+Fig. 15. Mean THC results for each of the six plants in Grow 3. 
+flowers present in a particular head are unlikely to be at exactly the same stage of ripeness; even far less likely that all the flowers on a plant will be synchronised in their degree of maturation. As plants are almost invariably harvested at one time, the resulting product is a mixture of flowers at slightly differing stages of THC production. This result should be considered by all researchers undertaking THC analyses, as it is clear that if multiple analyses are not performed on each sample, there is a risk of obtaining a result which is quite unrepresentative of the true average potency of the sample. 
+Due to the serious problems encountered in the second and third grows, only the THC values obtained from the analysis of the plants from the first grow are likely to reflect ‘true’ levels. This opinion is reinforced by the results from the second grow, which although grown under conditions very similar to those used for Grow 1, produced average THC levels of less than one third of those found in the Grow 1 plant from which they had been cloned. 
+The Grow 1 THC results are of great interest for two reasons: first, the maximum potency measured, 30% THC, was more than three times greater than the maximum potency ever previously reported in New Zealand, which was for a single sample of outdoor-grown Cannabis head which measured 9.7% THC [23]. 
+Secondly, the Grow 1 THC results display a clear distinction between the potency of the two phenotypically distinct groups, which have been referred to above as ‘‘sativa-like’’ and ‘‘indica like’’. The two ‘‘sativa-like’’ plants (plants 2 and 5) had average potencies of 20% and 25.2%, while the four ‘‘indica-like’’ plants had average potencies ranging from 4.3 to 9.2% THC (Figs. 10 and 11). As plants within a single grow experience virtually identical conditions of light, temperature and nutrition, this result appears to support the proposition that potency is closely linked to the inherent genetic make-up of Cannabis plants, with some varieties being considerably more potent than others. This may well be the case, and strong evidence is mounting that the selective breeding of new varieties or strains is the reason that more potent Cannabis can be found now than in the past [33]. However, a factor which blurs the significance of this result is that as the four monoecious plants had all begun to produce fruit, their resin production would have levelled off and was probably in decline at the time of harvest [22,34]. 
+In an ongoing internal (ESR) research project in which samples of New Zealand-grown Cannabis from hydroponics operations, outdoor cultivations and indoor soil operations are being tested, Hassan and Somerville have found THC values ranging from 4.2 to 18.1%, with an average of 10.9% (n = 43). While this work is still preliminary in nature, it contrasts strongly with the THC survey of New Zealand Cannabis reported by Poulsen and Sutherland [23], in which the female heads tested ranged from 1.3 to 9.7% THC, and 85% of all samples had potencies between 1 and 5%. These workers concluded that there had been no significant increase in the 
+G. Knight et al. / Forensic Science International 202 (2010) 36–44 43
+Table 6 
+STR genotypes of Grow 1 plant samples. 
+ANUC301 ANUC302 ANUC303 ANUC304 ANUC306 
+Plant 1 225 225 152 152 145 152 139 204 75 88 Plant 2 225 225 138 155 142 145 139 139 75 88 Plant 3 225 243 152 152 145 152 139 204 75 88 Plant 4 225 243 152 152 145 152 139 204 75 88 Plant 5 225 243 138 155 142 145 139 139 75 88 Plant 6 225 225 138 152 155 142 145 152 139 204 75 88 
+Table 7 
+STR genotypes of Grow 3 plant samples. 
+ANUC301 ANUC302 ANUC303 ANUC304 ANUC306 
+Plant 1 225 225 138 152 145 152 189 189 81 88 Plant 2 225 225 138 152 145 152 189 189 81 88 Plant 3 225 225 138 152 145 152 189 189 81 88 Plant 4 225 225 138 152 145 152 189 189 81 88 Plant 5 225 225 138 152 145 152 189 189 81 88 Plant 6 225 225 138 152 145 152 189 189 81 88 
+average potency of Cannabis leaf or flowering head between 1976 and 1996. In light of the results of Operation REAP, and Hassan and Somerville’s study however, it now appears clear that in the period since 1996, the potency of Cannabis grown in New Zealand has dramatically increased. 
+3.5. DNA analysis 
+DNA was successfully extracted from the dried leaf material of the 12 plant samples provided (from Grow 1 and Grow 3). For each extract, approximately 10 ng of DNA was amplified using the five trinucleotide STR markers described in Section 2.4, following Gilmore et al. [24]. Tables 6 and 7 summarise the genotypes observed after capillary electrophoresis and data analysis. The allelic designation is based on the observed size of each fragment in base pairs, as determined using GeneScan software. 
+All of the plants in Grow 3 were found to share the same genetic profile (Table 7). This finding is what would be expected if these plants were clones from the same parent stock. 
+Grow 1 plants exhibited a greater level of genetic diversity, with up to three different alleles seen at two of the loci (ANUC302 and ANUC303). A single plant (plant 6) exhibited a unique profile with three alleles seen at two of the loci (ANUC302 and ANUC303). This genotype was reproducibly obtained from multiple samples of plant 6 leaf material, with those triallelic loci exhibiting peaks of 
+
+Fig. 16. Graph depicting the relationship between the first two principal coordinates obtained from principal component analysis of the Grow 1 and Grow 3 populations. Underlined numbers indicate plants sharing the same point on the graph. 
+approximately equal height. These observations along with the absence of additional peaks at the remaining loci support the conclusion that this profile is not due to cross-contamination. 
+The triallelic pattern is suggestive of polyploidy, where multiple copies of the genome are present, a situation common in plants with no adverse effects.WhilstCannabis is largely diploid, genotypes have previously been reported exhibiting up to four alleles at a single locus [35], suggestive of polyploidy. Other explanations of multi allele patterns include locus duplication and aneuploidy. 
+Analysis of DNA profiling results using Principal Coordinate Analysis allowed visualisation of the genetic relationship both within and between the plants in the two grows. Fig. 16 illustrates how the Grow 1 plants can be separated into genetically distinct groups that are themselves separate from the single genetic entity represented by the Grow 3 population. 
+It is acknowledged that the limited number of markers used on the small number of plants in this study provent any clear conclusions being drawn. However, the three groups seen in Grow 1 are consistent with the plants having originated from two distinct genetic origins, with plant 6 sharing alleles with both of the other two groups. The genetic grouping is aligned with the phenotypic and chemical differences observed (plants 1, 3, and 4 being monoecious, indica-like, with lower THC levels and plants 2 and 5 being dioecious, sativa-like, with higher THC levels). While plant 6 shared alleles with both groups in Grow 1, this plant was phenotypically and chemically grouped with plants 1, 3, and 4. All Grow 1 genotypes are clearly genetically separate and distinct from the Grow 3 plants. 
+4. Conclusion 
+The aim of this study was to ascertain the potential yield of Cannabis female flowering head which could be obtained from crops of six plants grown in a given area using a particular growing method (ScrOG). This information is needed by the New Zealand Courts when they are considering the severity of the offending, and in particular, how much income is being derived from such an illegal operation. 
+As an adjunct to the study, we made phenotypic observations, analysed the THC levels from the plants grown and undertook DNA analysis in order to see whether there was any genetic basis to the chemical and phenotypic differences observed. 
+Of the 18 plants grown, the yield varied between a maximum of 47.27 oz and 11.99 oz of dry, groomed female flowering head per 
+44 G. Knight et al. / Forensic Science International 202 (2010) 36–44
+plant, with an average of just over 1.5 lb of head per plant. This demonstrates that it is possible to obtain at least 47.27 oz from a single plant. However, it has not been possible to show whether greater yields are possible, or to determine the mean or variance to be expected from such a method. This is mainly for two reasons: (1) the problems encountered during the growing, and (2) the small number of plants grown in this study. 
+This study has demonstrated that it is possible to obtain THC levels up to a maximum of 30% from Cannabis plants available in New Zealand. However, further research is needed to ascertain what the mean and variance of THC levels in New Zealand Cannabis populations may be, and the work of Hassan and Sommerville, referred to in Section 3.4, is intending to address this question. 
+DNA analysis distinguished distinct groups of plants in general agreement with the phenotypic variation observed, with the exception of one plant of the indica-like group from Grow 1. For example, DNA analysis determined that the two plants that exhibited the characteristics of the subspecies sativa were closely related. These two plants produced significantly higher THC levels than the four plants with the physical characteristics of the subspecies indica. As all other environmental and nutritional parameters affecting the six plants were controlled, this suggests that plant variety influences THC levels. A much wider study would be required however, to ascertain whether varieties within these two subspecies consistently produce THC levels within distinct ranges, or whether there is also considerable variation in THC levels within these subspecies. 
+Acknowledgements 
+This study was conducted under the ESR Capability Develop ment Programme, which is funded by the NZP. Parts of this work were conducted by Janet Stacey as part of the requirements for a master’s degree in Forensic Science from the University of Auckland, New Zealand. This work could not have been undertaken without the valuable assistance of officers from the Wellington Organised Crime Unit, NZP, in building the growing set-up, acquiring clones and harvesting and grooming the plants. We are also indebted to the advice and expertise of Les Maxwell, Strategic Drug Analyst, NZ National Drug Intelligence Bureau, and Gavin Knight, National Statistics Manager, NZP. Lastly, but by no means least, the success achieved in this growing operation was largely due to the input of our confidential advisor. 
+References 
+[1] Statistics New Zealand figures, available on the Internet at http://www.stats. govt.nz/Downloaded (25.06.2009). 
+[2] Ministry of Agriculture and Fisheries figures, available on the Internet at http:// www.maf.govt.nz/Downloaded (25.06.2009). 
+[3] L. Maxwell, National Drug Intelligence Bureau, Wellington, pers. comm., March, 2009. 
+[4] L. Maxwell, ‘New Cannabis’ The Cornerstone of Illicit Drug Harm in New Zealand, National Drug Intelligence Bureau, Wellington, 2007. 
+[5] L. Maxwell, L. Hayton, 2008 Illicit Drug Assessment, National Drug Intelligence Bureau, Wellington, 2008. 
+[6] Designer smiles on way to jail, NZ Herald, May 03, 2008. 
+[7] Black power lose their patch, Sunday News, March 22, 2009. Counties Manukau Police District Operation WEAKEN, 2005. 
+[8] R v Terewi [1999] 3 NZLR 62, CA. 
+[9] Monthly Illicit Drug Assessment, National Drug Intelligence Bureau, Wellington, 2009 May, p. 20. 
+[10] G. Green, ScrOG, in: S.T. Oner (Ed.), The Cannabis Grow Bible, Green Candy Press, San Francisco, 2003, pp. 116–121. 
+[11] L. Edwards, Growing techniques, in: C. Perry (Ed.), Grow Great Marijuana, Sweet leaf Publishing, Los Angeles, 2006, pp. 38–40, also 201. 
+[12] Licence to Cultivate a Prohibited Plant, No. 2004/5, New Zealand Medicines and Medical Devices Safety Authority (MEDSAFE), dated 22 December 2004. [13] K.J. Sytsma, J. Morawetz, J.C. Pires, M. Nepokroeff, E. Conti, M. Zjhra, J.C. Hall, M.W. Chase, Urticalean rosids: circumscription, rosid ancestry, and phylogenetics based on rbcL, trnL-F, and ndhF sequences, Am. J. Bot. 89 (2002) 1531–1546. [14] H. Shao, R.C. Clarke, Taxonomic studies of Cannabis in China, J. Int. Hemp. Assoc. 3 (2) (1996) 55–60. 
+[15] G.S. Gigliano, Cannabis sativa L.—botanical problems and molecular approaches in forensic investigations, Forensic Sci. Rev. 13 (1) (2001) 2–17. 
+[16] E. Small, A. Cronquist, A practical and natural taxonomy for Cannabis, Taxon 25 (4) (1976) 405–435. 
+[17] K.W. Hillig, P.G. Mahlberg, A chemotaxonomic analysis of cannabinoid variation in Cannabis (Cannabaceae), Am. J. Bot. 91 (6) (2004) 966–975. 
+[18] Misuse of Drugs Act, 116 Stat. N.Z., 1975. 
+[19] E. Small, On toadstool soup and legal species of marihuana, Plant Sci. Bull. 21 (1975) 34–39. 
+[20] Misuse of Drugs (Industrial Hemp) Regulations, N.Z., 2006. [21] G.A. Knight, S.A. Hansen, An experimental indoor hydroponic Cannabis growing set-up, using the screen of green (ScrOG) method, J. Clandestine Lab. Invest. Chem. Assoc. 20 (1) (2010) 12–22. 
+[22] R.C. Clarke, Maturation and harvesting of Cannabis, in: N. Flamel, D. Cross (Eds.), Marijuana Botany an Advanced Study: The Propagation and Breeding of Distinc tive Cannabis, Ronin Publishing, Berkeley, 1993, pp. 121–154. 
+[23] H.A. Poulsen, G.J. Sutherland, The potency of Cannabis in New Zealand from 1976 to 1996, Sci. Justice 40 (3) (2000) 171–176. 
+[24] S. Gilmore, R. Peakall, J. Robertson, Short tandem repeat (STR) DNA markers are hypervariable and informative in Cannabis sativa: implications for forensic inves tigations, Forensic Sci. Int. 131 (1) (2003) 65–74. 
+[25] R. Peakall, P. Smouse, Genalex 6: genetic analysis in excel. Population genetic software for teaching and research, Mol. Ecol. Notes 6 (1) (2006) 288–295. [26] P.J. Talley, Carbohydrate–nitrogen ratios with respect to the sexual expression of hemp, Plant Physiol. 9 (4) (1934) 731–748. 
+[27] J.H. Schaffner, The influence of relative length of daylight on the reversal of sex in hemp, Ecology IV (4) (1923) 323–334. 
+[28] H.C. McPhee, The influence of environment on sex in hemp, Cannabis sativa L., J. Agric. Res. XXVIII (11) (1924) 1067–1080. 
+[29] H.Y.M. Ram, V.S. Jaiswal, Induction of female flowers on male plants of Cannabis sativa L. by 2-chloroethanephos-phonic acid, Experientia 26 (2) (1969) 214–216. [30] N.A. Martin (Ed.), New Zealand Institute for Crop and Food Research [BROAD sheet] No. 1122000 November. 
+[31] Drug Measures and Prices—2009, National Drug Intelligence Bureau, Wellington, n.d. 
+[32] S. Fiddian, C. Quinn, Determination of THC levels and morphological variation in cannabis, in: Paper Presented at Challenges & Changes: 17th International Symposium on the Forensic Sciences, March 28–April 2, 2004, Wellington, New Zealand, 2004. 
+[33] R.C. Clarke, Sinsimilla heritage: what’s in a name? in: J. King (Ed.), The Cannabible, Ten Speed Press, Berkeley, 2001, pp. 1–24. 
+[34] L.A. King, C. Carpentier, P. Griffiths, An overview of cannabis potency in Europe, in: Insights, No. 6, EMCDDA, 2004,, p. 20. 
+[35] H.-M. Hsieh, R.-J. Hou, L.-C. Tsai, C.-S. Wei, S.-W. Liu, L.-H. Huang, Y.-C. Kuo, A. Linacre, J.C. Lee, A highly polymorphic STR locus in Cannabis sativa, Forensic Sci. Int. 131 (2003) 53–58.

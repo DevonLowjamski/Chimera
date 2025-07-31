@@ -1,0 +1,314 @@
+﻿Oecologia (1995) 103:462-470  9 Springer-Verlag 1995  
+H. M. G. van der Werf  9 W. van den Berg  
+Nitrogen fertilization and sex expression affect size variability of fibre hemp  (Cannabis sativa L.)  
+Received: 15 November 1994/Accepted: 3 April 1995  
+Abstract Mechanical harvesting and industrial pro cessing of fibre hemp (Cannabis' sativa L.) require uni formity of stem length and weight. In 1991 and 1992  we carried out field experiments to investigate the  effects of soil nitrogen level (80 and 200 kg ha 1 N) and  row width (12.5, 25 and 50 cm) on the variability of  weight and height in hemp plants. The crops were sam pled 5 times between early June and early September.  Row width did not affect size variability. At final har vest coefficients of variation (CV) of both weight and  height were about 1.5 times higher at 200 than at  80 kg ha-1 N. Distributions of dry weight were posi tively skewed at all sampling dates except the first, with  skewness larger at 200 than at 80 kg ha-1 N. Distribu tions of height were negatively skewed at all sampling  dates except the first at 80 kg ha- 1 N. At 200 kg ha- 1 N  they changed from negative skewness during the first  part of the growing season to negative kurtosis in the  second part of the growing season. More suppressed  plants were present at 200 than at 80 kgha-lN.  Contrary to most published results, we did not find a  reduction of CV of weight nor of CV of height at the  onset of self-thinning. Suppressed hemp plants can sur vive relatively well in the low-light environment under  the canopy. Sexual dimorphism contributed to vari ability of height and weight, but the effects were smaller  than those of nitrogen fertilization. The ratio of female  to male plants was higher at 200 than at 80 kg ha- ~ N,  as a result of a shift in sex-ratio within the population  of suppressed plants. As suppressed plants were much  
+H. M. G. van der Werf (~)1  
+DLO Research Institute for Agrobiology and Soil Fertility  (AB-DLO), Wageningen, The Netherlands  
+H. M. G. van der Werf. W. van den Berg  
+Research Station for Arable Farming and Field Production  of Vegetables, Lelystad, The Netherlands  
+Current address:  
+IlNRA, Laboratoire d' Agronomie,  
+BP 507, 68021 Cohnar Cedex, France  
+more slender than dominating plants, self-thinning  eliminated the most slender individuals in a hemp crop.  However, the presence of many more heavy individu als of low slenderness at 200 than at 80 kg ha- 1 N was  probably the major cause of the difference in slender ness between 200 and 80 kg ha-1 N.  
+Key words Cannabis sativa L.  9 Allometry  9  Nitrogen fertilization. Competition. Sexual  dimorphism  
+Introduction  
+Fibre hemp (Cannabis sativa L.) is grown for the pro duction of stems, which are processed into textile or  paper products. In hemp, the proportion of stern in the  above-ground dry matter and the proportion of the  valuable bast fibres in the stem dry matter increase with  plant density (Van der Weft et al. 1995a), so a high  density is desirable.  
+Uniformity of size is important for the mechanical  harvesting and industrial processing of hemp stems  (De Maeyer and Huisman 1995). The larger the range  of plant heights in a hemp crop, the less efficient the  measures for mechanical defoliation at harvest. In  industrial processing, a wide range of stem weights and  stem diameters is not desirable, as it hampers fine 
+tuning of decortication equipment, resulting in less  efficient separation of bark and core. In dense plant  stands inter-plant competition may generate a size hier archy, i.e. increase variability in the size of individuals,  with large plants suppressing smaller ones (Harper  1977). Eventually self-thinning may occur; suppressed  plants may die. (Van der Werf et al. 1995a; Van der  Weft et al. 1995b).  
+Differences in the size of individual plants may  be determined by: age differences, genetic differences,  environmental heterogeneity, maternal effects, effects  of herbivores, parasites or pathogens, or competition 
+(Weiner and Thomas 1986). In hemp, which is a dioe cious species, sexual dimorphism may be an additional  cause of size variability (Hoffmann 1957), but this has  never been quantified.  
+The coefficient of variation (CV: standard devia tion/mean) is a standard measure of relative variation  and size variability (Weiner and Thomas 1986). In even aged plant stands CVs of size parameters generally  increase with time until the onset of self-thinning, and  then decrease as suppressed plants die (Benjamin and  Hardwick 1986; Weiner and Thomas 1986; Knox et al.  1989).  
+Size distributions often depart from normality;  skewness and kurtosis measure the nature and amount  of this departure (Sokal and Rohlf 1981). Skewness  indicates the degree of asymmetry of the distribution,  with negative skewness indicating a tail to the left, and  positive skewness indicating a tail to the right. Kurtosis  represents the pointedness of the distribution. A lep 
+tokurtic distribution (positive kurtosis) has more items  near the mean and at the tails, with fewer items in the  intermediate regions relative to a normal distribution  with the same mean and variance. A platykurtic dis 
+tribution (negative kurtosis) has fewer items at the  mean and at the tails than the normal distribution but  more in intermediate regions. Frequency distributions  of plant mass generally become increasingly positively  skewed as time passes, while distributions of plant  height either remain symmetrical or become negatively  skewed (Hara 1984; Geber 1989; Knox et al. 1989). Fre 
+quency distributions of both plant mass and plant  height may become bimodal, i.e. two-peaked, an ex treme platykurtic distribution (Huston and DeAngelis  
+1987). Once self-thinning has started, skewness gen erally decreases and bimodality tends to disappear  (Hara 1984; Benjamin and Hardwick 1986).  
+Competition is a major cause of the development of  size variability (Weiner and Thomas 1986; Bonan  1991). Weiner and Thomas (1986) suggested that com petition for light is one-sided, i,e. large plants suppress  small ones more than small plants suppress large ones,  and that this effect is greater than would be expected  from their relative sizes. In the most extreme form of  "one-sided" competition, the growth of large plants  would not be reduced at all by smaller individuals. In  contrast, competition for below-ground resources  would be two-sided, with shared resources being dis tributed in proportion to plant size. One-sided compe tition promotes size variability, whereas two-sided  competition reduces it (Weiner and Thomas 1986).  Reduced soil fertility may lead to earlier or more below ground (two-sided) competition, and thus should  reduce the rate at which size variability increases with  time. Tests of this hypothesis were found in two stud ies only (Weiner 1985; Lieffers and Titus 1989), which  reported on experiments which used extreme fertility  treatments in a greenhouse. The effect of soil fertility,  or of one of its major components such as soil nitro 
+OECOLOGIA 103 (1995)  9 Springer-Verlag 463  
+gen status, on size variability in a field situation has  never been reported.  
+Because competition affects size variability, in a row  crop we would expect rectangularity (the ratio of the  between-row distance and the within-row distance) to  influence size variability. At the same plant density,  competition starts earlier, the more rectangularity  exceeds 1 : 1. The effect of rectangularity on the occur 
+rence of size variability has not been previously  reported. The variability of seedling size may affect the  variability of plant size later on in the growing season.  The variability of seedling size may be influenced by  the uniformity of sowing depth and of plant spacing  within the row (Benjamin and Hardwick 1986), factors  depending on the type of sowing implement. Reports  on the effect of sowing-machine technology on size vari 
+ability were not found.  
+The objective of our experiments was to investigate  to what extent soil nitrogen level, rectangularity and  type of sowing implement affect size variability in hemp.  We also investigated to what extent sexual dimorphism  contributes to size variability in hemp.  
+Materials and methods  
+Treatments and cultural methods  
+Field experiments were carried out in t991 and 1992 in Lelystad,  the Netherlands (52 ~ 32' N, 5 ~ 31' E, -5 m elevation), on a light  marine clay soil. The experimental set-up was a randomized  complete block design with ten treatments and two replications.  The treatments involved a two-way factorial of two nitrogen levels  (soil-N + fertilizer-N: 80 or 200 kgha -1) and five plant arrange 
+ments. Plant arrangements were: (a) 12.5 cm row width ("12.5'),  (b) 25 cm row width ('25'), (c) 50 cm row width (~50'), (d) 12.5 cm  row width precision sown (~ and (e) 25 cm row width thinned  uniformly ('25u'). We used a precision seed drill to sow treatment  '12.5p' and a studded roller seed drill for the other treatments.  With the precision seed drill the distance between plants in the  row and sowing depth are tess variable than with the studded roller  seed drill.  
+Stands in all treatments were thinned manually at the seedling  stage (21 May 1991 and 26 May 1992) to obtain the desired plant  density. The treatment '25u' was thinned to obtain a uniform crop:  we removed tall and short plants and we tried to obtain a uniform  distance between the plants in a row. To allow such extensive thin 
+ning, this treatment was over-sown with about twice the number  of seeds required for the desired plant density. In 1991 all treat ments were thinned to 160 plants m -2, while in 1992 plant emer gence was less than expected and all treatments were thinned to 132  plants m -2.  
+P and K fertilizer were applied according to the recommenda tions for arable crop rotations in the Netherlands. Soil N was mea sured between 0 and 60 cm in March 1991 (25 kg ha-1) and between  0 and 90 cm in March 1992 (51 kgha /). In both years N fertilizer  was applied shortly before sowing.  
+Hemp was sown on 18 April 1991 and on 8 May 1992, with  50% plant emergence on 5 May in 1991 and on 14 May in 1992,  respectively. No herbicides were used, as weeds were adequately  suppressed by the crop. The occurrence ofBotrytis cinerea and other  fungal diseases was prevented by spraying the crops with fungicides  (alternating vinchlozolin at 167 g ha-I + chlorothalonit at 500 g  ha I and carbendazim at 87.5 gha -1 + iprodion at 175 gha -1)  during June, July and August at 14-day intervals. 
+464 OECOLOGIA 103 (1995)  9 Springer-Verlag  Data collection  
+The plots, which were 15 m long and 6 m wide, each contained five  sample areas, 2 m apart. Four sample areas were 1 m x 1 m, while  the sample area for the fifth (and final) harvest was 1 m x 2 m. The  experiment was surrounded by a 3 m-wide buffer of hemp.  
+Harvest dates were 5 and 24 June, 22 July, 19 August and 9  September in 1991, and 2 and 22 June, 20 July, 17 August and 7  September in 1992. At each harvest 25 consecutive living plants per  sample area were cut off at ground level. The length of each plant  was measured, and all plants were dried individually at 105 ~ until  constant weight. At harvest 5 the sex expression of each of the 25  plants was determined (for method see Van der Werf et al. 1994).  The remaining plants in the sample area were harvested similarly,  and were used to determine plant densities, yield and its compo nents as described in Van der Werf et al. (1995b).  
+Data analysis  
+To characterize frequency distributions of plant height and plant  weight the coefficient of variation (CV), and the skewness and kur tosis were calculated for each 25-plant sample (Sokal and Rohlf  
+1981). The CV was calculated as the standard deviation divided by  the mean. Skewness was calculated as the third central moment  divided by the cube of the standard deviation. Kurtosis was calcu lated as the fourth central moment divided by the fourth power of  the standard deviation minus 3. Differences among treatments for  CV, skewness and kurtosis were tested by analysis of variance. Tests  for the departure from zero of the treatment means of skewness  and kurtosis were based on the standard errors from the analysis  of variance. As a statistical test for bimodality is not available, we  evaluated bimodality by visual inspection of size distributions.  
+Results  
+Nitrogen levels and plant arrangements did not  significantly interact. Row width (treatments '12.5', ~25'  and ~50'), type of sowing implement ('12.5p' versus  '12.5') and manual thinning to obtain uniformity ('25u'  versus '25') did not affect CV, skewness or kurtosis. The  level of nitrogen fertilization strongly affected these size  variability parameters, and the 2 years differed to some  extent. Consequently, data are reported separately  for the 2 years and averaged over the five plant  arrangements.  
+Development of size variability  
+The CV of plant dry weight was greater at 200 than at  80 kgha-lN at harvests 3-5 in 1991 and at harvests  2-5 in 1992 (Table 1). CVs increased with time until  harvest 4 or 5, and more rapidly at 200 than at  80 kgha-lN. The distributions of plant dry weights  were positively skewed at all harvests except the first in  1991, and skewness increased with time until harvest 3,  4 or 5 (Table 1). When skewness was affected by N level,  it was larger at 200 than at 80 kg ha-iN. The distrib 
+utions of plant dry weights were not kurtotic, except  for those of harvests 4 and 5 of the 200 kg ha 1N crop  in 1992, which showed positive kurtosis (Table 1).  
+Table 1 Coefficient of variation, skewness and kurtosis of the dry  weight of hemp plants grown at two soil nitrogen levels in 1991 and  1992. Data are means of five plant arrangements, see text for har vest (H) dates (NS not significant)  
+1991 1992  
+Nitrogen (kg ha-l) Nitrogen (kg ha 1)  
+Parameter 80 200 P 80 200 P  
+Coefficient of variation  
+H 1 35.6 31.1 NS ~ 36.9 36.0 NS  H 2 42.1 47.6 NS 49.1 70.0 <0.001  H 3 54.2 86.1 <0.001 57.8 107.1 <0.001  H 4 58.8 96.4 <0.001 77.6 110.6 <0.001  H 5 60.0 93.0 <0.001 70.3 110.3 <0.001  
+Skewness  
+H 1 0.01 -0.17 NS 0.38* 0.41" NS  H 2 0.41" 0.54* NS 0.29 0.67* NS  H 3 0.49* 1.02' 0.042 0.32* 1.20' <0.001  H 4 0.61' 0.83* NS 0.93* 1.52" 0.016  H 5 0.62* 0.97* NS 0.67* 1.56" <0.001  
+Kurtosis  
+H 1 0.47 -0.02 NS -0.31 0.06 NS  H 2 0.07 0.62 NS -0.33 -0.24 NS  H 3 0.56 0.42 NS -0.62 0.85 NS  H 4 0.16 -0.50 NS 0.43 2.03* NS  H 5 0.31 0.05 NS -0.04 2.18" <0.001  
+* Skewness or kurtosis is significantly (P -< 0.05) different from zero  aNS: P > 0.05  
+The CV of plant height was greater at 200 than at  80 kgha 1N at harvests 3-5 in 1991 and at harvests  2-5 in 1992 (Table 2). CVs increased with time until  harvest 3, 4 or 5, and more rapidly at 200 than at  80 kg ha 1N. At 80 kg ha- 1N the distributions of  plant heights were negatively skewed from harvest 2 to  5, while at 200 kg ha-iN they were negatively skewed  at harvests 1 3 in 1991 and at harvest 2 in 1992  (Table 2). At all harvests except harvests 1 and 2 in  1992, skewness of the distribution of plant heights was  more negative at 80 than at 200 kg ha-iN. At 80 kg  ha- 1N the distributions of plant heights showed pos 
+itive kurtosis at harvests 2, 3 and 4 in 1991 and at har vest 3 in 1992. At 200 kg ha-iN they showed negative  kurtosis from harvests 3 to 5 in 1991 and at harvests  4 and 5 in 1992.  
+Size and sex expression  
+At harvest 5 the 200 kg ha- 1N crop in both years com prised more very heavy plants and more very light  plants than the 80 kgha-~N crop (Fig. la). In both  years and at both N levels heavy plants were mainly  female (Fig. lb c). All non-flowering plants were very  light and more were present at 200 than at 80 kg ha- 1N  (Fig. ld).  
+At harvest 5 in both years the 200 kg ha -1 N crop  comprised more very tall and more short plants than  the 80 kg ha-iN crop (Fig. 2a). In 1991 the frequency  distribution of heights of the 200 kg ha- 1N crop was 
+Table 2 Coefficient of variation, skewness and kurtosis of the height  of hemp plants grown at two soil nitrogen levels in 1991 and 1992,  Data are means of five plant arrangements, see text for harvest (H)  dates (NS not significant)  
+1991 1992  
+Nitrogen (kg ha l) Nitrogen (kg ha 1)  
+OECOLOGIA 103 (1995)  9 Springer-Verlag 465  
+clearly bimodal; in 1992 it was less so. In both years  and at both N levels the tallest plants were mainly male  (Fig. 2b c). Plants of below-average stature were more  often female than male (Fig. 2b c), and, especially at  200 kgha-lN, many of these short plants did not  flower (Fig. 2d).  
+Parameter  
+80 200 P 80 200 P  
+Coefficient of variation  H 1 I3.9  
+H 2 10.6  
+H 3 17.9  
+H 4 18.3  
+H 5 22.2  
+Skewness  
+12.0 NS a 16.5 14.8 NS  13.0 NS 13.5 23.3 0.004  28.5 <0.001 20.0 36.5 <0.001  35.3 <0.001 26.7 34.7 <0.001  32.9 <0.001 25.1 35.2 0.004  
+Allometry  
+For convenience, changes in the relationship between  height and weight of individual plants during the grow ing season are presented using the 1992 data only, as  the results for 1991 were similar.  
+H 1 0.08  H 2 - 1.64'  H 3 - 1.27"  H 4 - 1.00"  H 5 -0.71'  
+Kurtosis  
+H 1 0.29  H 2 4.40*  H 3 1.60"  H 4 0.95*  H 5 -0.01  
+-0.66* 0.017 0.00 -0.04 NS  1.06" 0.017 - 1.04' 0.95* NS  -0.48* <0.001 -1.37' -0.28 <0.001  -0.01 <0.001 -0.69* -0.22 0.003  -0.18 0.015 -0.69* -0.14 0.020  
+1.49" NS -0.17 0.18 NS  0.68 0.009 0.68 0.26 NS  0.83* <0.001 1.59" -1.02 0.016  
+-1.42" <0.001 -0.27 -0.92* 0.009  -1.20" 0.002 0.00 -0.96* 0.013  
+At harvest 1 plant height and plant weight were  related, but the relationship was not close and the pat tern was not affected by N fertilization level (Fig. 3).  At harvest 2 the relationship between height and weight  was closer than at harvest 1, and there were more short  (< 60 cm), as well as more heavy (> 6 g), plants at 200  than at 80 kg ha-iN (Fig. 3).  
+At harvest 3, in spite of more severe self-thinning at  200 than at 80 kg ha-iN, the difference in the number  of short (< 120 cm) plants at high versus low N had  
+* Skewness or kurtosis is significantly (P _< 0.05) different from zero  "NS: P > 0.05  
+Fig. 1 Frequency distributions 1991  
+increased (Fig. 4). At 80 kgha 1N maximum plant  1992  
+of dry weight of hemp plants 80 N  grown at 80 and 200 kg ha 
+of nitrogen at final harvest in D= 140 m -2  1991 and 1992. Density of  
+survivors (D) is given at the  
+top of the figure; sample size [  
+(n) is given for each histogram.  
+Maximum and minimum  
+values are beneath the 60  
+histograms, at the bottom of n = 25o  the figure. There are 20 equal 40  
+classes in each histogram  
+20  
+20  
+,o=::  
+0  
+2O  
+0  
+200 N 80 N 200 N  
+D= 96 m -z D= 119 m -z D= 93 m "z  
+~ ~ n'24~~1~ a)  all plants  
+~.~ b)  
+female plants  
+n =76  
+male plants  
+n=6 n=37 2O  
+n = 14 1 n = 39 d)  
+1. - k non-flowering  0.2 87.$ 0~2 ........... 87.5 plants  
+Weight (g) 
+466 OECOLOGIA 103 (1995)  9 Springer-Verlag  
+Fig. 2 Frequency distributions  of height of hemp plants  
+grown at 80 and 200 kg ha-]  of nitrogen at final harvest in  1991 and 1992. Density of  
+survivors (D) is given at the 401  top of the figure; sample size  (n) is given for each histogram. 3o  Maximum and minimum  
+values are beneath the  
+histograms, at the bottom of 20  the figure. There are 20 equal  classes in each histogram 10  
+1991  
+80 N  
+D = 140 m -2  n=250  
+200 N  
+D= 96 m "2  n = 244  
+I992  
+80 N  
+D= 119 m "2  n=246  
+200 N  
+D= 93 m -2  
+n = 245  
+a)  
+all plants  
+30 n = 131 n ,,, 136 n = 122  
+20  
+10  
+30, n=118 n=76  
+,o  
+o  
+A  
+n=96 n=84  
+b)  
+female plants  
+c)  
+male plants  
+201 n=6  48 334  
+n =37  
+48 334  
+n=14 n=39  
+41 41 384  
+d)  
+non-flowering  plants  
+weight was 20 g, while at 200 kg ha 1 N many plants  of between 20 and 40 g were found. In the period  between harvests 3 and 4 the plant density of the  200 kgha-lN crop decreased by 21%, and this was  associated with a large reduction in the number of very  short (< 80 cm) plants (Fig. 4). However, at harvest 4,  there were more short (< 120 cm) plants at 200 than  at 80 kg ha-iN, and this trend persisted until harvest  5 (Fig. 2a). At harvest 4, as at harvests 2 and 3, more  heavy (> 30 g) plants were present at 200 than at  80 kg ha- 1N.  
+At all harvests except harvest 1, the range of plant  weights was much wider than the range of plant heights,  e.g. at harvest 4 in the 200 kgha-lN crop (Fig. 4),  heights spanned less than one order of magnitude  (60-360 cm), whereas weights spanned about two  orders of magnitude (0.6-60 g). This implies that the  height/weight ratio ('slenderness': Van der Werf et al.  1995a) spanned more than one order of magnitude and  that the slenderness of short and light (i.e. suppressed)  plants was higher than that of tall and heavy (i.e. dom 
+Height (cm)  
+inating) plants. The heavy plants which were found at  200 but not at 80 kg ha- [ N at harvests 2, 3 and 4, were  of particularly low slenderness (Fig. 4).  
+At harvest 5 results were similar to those at harvests  3 and 4, but slenderness was also affected by sex expres sion, since the male plants were more slender than the  female (data not shown).  
+Discussion  
+Development of size variability  
+Although we investigated a fourfold range of row  widths, corresponding to a 16-fold range of rectangu larity, row width did not affect the distribution of  weight and height in hemp plants. Apparently, the  differences in the timing of onset of competition, as  generated by differences in rectangularity, were  insufficiently large to affect the development of size  variability. The lack of response of size variability to a 
+Fig. 3 The relationship  
+between height and above ground dry weight of hemp  plants grown at 80 and  
+200 kg ha- i of nitrogen on 2  (Harvest 1) and 22 (Harvest 2)  June 1992. Density of  
+survivors (D, m 2) and sample  size (n) are indicated for each  
+Height (cm)  30  
+20  
+80 N  
+~  
+OECOLOGIA 103 (1995)  9 Springer-Verlag  200 N  
+30  
+..2..- -__ ......  
+20  
+467  
+graph  
+10  
+. ~  
+D= 133  
+n = 249  
+10  
+" "'.- "3"  
+D= 132  
+n = 250  
+Harvest 1  
+0 I I 1 0 I I  0 0.4 0.8 1.2 0 0.4 0.8  
+I  
+1.2  
+150  120  90  
+60  
+30  
+0  
+L  
+i,  
+D = 135  
+n = 249  
+I [ 1 I I I  
+150  120  90  
+60  
+30  
+0  
+.--'.~.-.~-::" .-.  
+.... .  
+.~-. "-~  
+..ay"  
+o 
+D=135  
+n = 247 Harvest 2  
+I I J 1 I I  
+0 2 4 6 8 10 12  
+0 2 4 6 8 10 12  
+fourfold range of row widths may also result from the  height of the crop. Obviously the impact of row widths  varying between 12.5 and 50 cm will be less in a hemp  crop, which may exceed 3 m in height, than in most  other annual crops which generally do not exceed 1 m  in height. The treatments which aimed at reducing the  variability of seedling size ('12.5p', precision sowing,  and '25u', thinning to obtain uniformity) were not  effective, as they did not affect the variability of seedling  height or weight.  
+Nitrogen fertilization strongly affected size variabil ity: at 80 kg ha ~ N the CV of weight and the CV of  height increased at a slower rate than at 200 kg ha - 1N.  At final harvest CVs of both size parameters were about  1.5 times higher at 200 than at 80 kgha-lN, corrob orating the hypothesis of Weiner and Thomas (1986),  that competition for light is one-sided, whereas com petition for below-ground resources is two-sided.  At 80kgha-lN, nitrogen was scarcer than at  200 kg ha- ~ N, so below-ground competition was  more important. Competition for light was probably  less important at 80 than at 200 kg ha-IN, as the leaf  area index and the fraction of light intercepted by the  canopy were smaller at 80 than at 200 kg ha-~ N (Van  
+Weight (g)  
+der Werf et al. 1995b). So, whereas at the high N level  competition was mainly for light, at the low N level  competition for nitrogen played a much larger role.  
+We found positive skewness of weight distributions  and negative skewness of height distributions, confirm ing findings of Hara (1984), Geber (1989) and Knox  et al. (1989) who reported that mass skewness was pos itive and height skewness was zero to negative.  
+In both years self-thinning first occurred in the  period between harvests 2 and 3 and continued there after (Van der Werf et aI. 1995b). Contrary to most  earlier findings (Hara 1984; Weiner and Thomas 1986;  Knox et al. 1989), we did not find a reduction of the  CV of weight or of the CV of height at the onset of  self-thinning. At 200 kgha-lN, where self-thinning  was most important, both CVs increased until harvest  3 (1992) or 4 (1991) and then stabilized.  
+Similarly, at 200 kg ha - 1 N, the skewness of weight  did not decrease at the onset of self-thinning, but  increased until harvest 3 and stabilized (1991), or  increased until harvest 5 (1992). At 200 kg ha-IN, the  height distributions changed from negative skewness to  platykurtosis at the onset of self-thinning, and  remained platykurtic until the final harvest. This 
+468 OECOLOGIA 103 (1995)  Fig. 4 The relationship  
+ 9 Springer-Verlag  8O N  
+200 N  
+between height and above ground dry weight of hemp  plants grown at 80 and  200 kg ha 1 of nitrogen on 20  July (Harvest 3) and 17  August (Harvest 4) 1992.  Density of survivors (D, m -2)  
+Height  280  
+240  
+200  
+cm)  
+280  
+240  
+200  
+.-g_.. .  
+and sample size (n) are  indicated for each graph  
+160  120  80  
+40  
+360  320  280  240  200  160  120  80  
+40  
+0  
+f D= 130  n = 250  
+10 20 30 40  
+:"  
+D =128  
+n= 246  
+I I I [  
+160  
+120  
+80  
+40  
+, 0  50  
+360  
+320  
+280  
+240  
+200  
+160  
+120  
+80  
+40  
+0  
+ 9 ~-~" D=123  
+n = 247  
+I I I [ I  10 20 30 40 50  
+~  
+~ -'r. "== = ~  
+L~. D=97  
+n = 242  
+] I I I  
+Harvest 3  Harvest 4  
+0 20 40 60 80  
+0  
+Weight (g)  
+20 40 60 80  
+contrasts with earlier findings, where self-thinning was  found to remove the understorey, making the distrib ution unimodal and normal again (Benjamin and  Hardwick 1986). On the other hand, however, Thomas  and Weiner (1989) reported the survival of suppressed  Impatiens pallida plants in spite of zero or negative  growth rates for much of their lives, with size variabil ity stabilizing rather than decreasing at the onset of  self-thinning. Apparently, Cannabis sativa plants are  similarly relatively tolerant to a low-light environment,  as an understorey of short suppressed plants remained  until the final harvest. There were more suppressed  plants at 200 than at 80 kgha-lN. More plants died  at 200 than at 80 kg ha-IN, probably because light  intensity below the canopy was lower at 200 than at  80 kg ha-IN (Van der Weft et al. 1995b).  
+Size and sex expression  
+In both years and at both N levels sexual dimorphism  contributed to the variability of plant weight and  height. The range of weights was much wider in female  
+than in male plants, and the shortest plants were mainly  female, whereas the tallest plants were all male.  In 1991 the ratio of female to male plants was 1.07  at 80 kgha-lN and 1.72 at 200 kgha 1N; in 1992 it  was 1.42 at 80 kgha-lN and 1.45 at 200 kgha 1N  (Fig. 2). An increase in the proportion of female plants  as a result of increased nitrogen fertilization as occurred  in 1991 was found previously in hemp (Tibeau 1936)  and in many other dioecious species (Freeman et al.  1980). From the literature on the effect of environ mental factors on the sex expression of dioecious  plants, Freeman et al. (1980) concluded that stresses  (low soil nitrogen, dry soils, extreme temperatures, low  light intensities) tend to reduce the ratio of female to  male plants. They demonstrated that, as the cost of  reproducing as a female exceeds that of reproducing as  a male, a stress-induced reduction in the proportion of  females has survival value, particularly in patchy or  changing environments.  
+It is not clear why nitrogen fertilization affected the  sex ratio in 1991 but not in 1992. The 1991 results,  however, do shed some light on the mechanism which  is involved. Freeman et al. (1980) attribute changes in 
+the sex ratio to alteration of the sexual state of the  plants. In the 1991 experiment, the ratio of female to  male plants was close to one in the plants of above average stature, whereas in the suppressed plants, the  individuals that did flower were more often female than  male (Fig. 2). These results suggest that, in dense  Cannabis stands, the shift towards femaleness associ ated with high soil nitrogen may result from the effect  of nitrogen fertilization on size variability. Lack of  nitrogen reduces growth rate, and thus delays the onset  of competition and the appearance of a class of sup pressed plants containing more female than male  plants. This hypothesis can be further tested by inves tigating the effect of environmental stress on the sex  expression of a Cannabis stand grown at low and high  plant densities.  
+Allometry  
+Dominating and suppressed plants differed not only in  sex ratio, but also in shape: suppressed plants were  more slender than dominating plants. Lack of light is  the major cause of mortality in self-thinning stands and  lodging was found to be instrumental in carrying the  leaves into the low-light environment near the ground  (Thomas and Weiner 1989). Obviously, the shortest  plants suffer most from lack of light, and the most slen 
+der plants are most prone to buckle and lodge. In our  hemp crop, the short suppressed plants were the  most slender ones. Hence, in hemp, self-thinning elim inates the most slender individuals. Plant mortality  from self-thinning was 5 % at 80 kg ha -j N and 25 % at  200 kgha-lN (Van der Werf et al. 1995b). However,  as self-thinning eliminates the lightest plants, a  difference of this size in the mortality of suppressed  plants may not have a major effect on the weighted  mean of plant slenderness. Slenderness of the crop will  be determined mainly by the heavy plants of above 
+average stature, and these were slightly taller, much  heavier and, consequently, less slender at 200 than at  80 kgha IN. We found that the crop grown at  200 kg ha-iN was less slender than the crop grown at  80 kgha-lN (Van der Werf et al. 1995b). This may  have resulted in part from a larger number of slender  plants dying from self-thinning at 200 than at  80 kgha -~ N, but the presence of many more heavy  individuals of low slenderness at 200 than at  80 kg ha 1N was probably a more important cause.  
+Conclusions  
+To the best of our knowledge, no other studies quan tifying the effect of soil nitrogen level on size variabil ity in a field-grown crop, or reports on the effect of sex  expression on size variability in a dioecious crop, have  been published.  
+OECOLOGIA i03 (1995)  9 Springer-Verlag 469  
+In our experiments variability of both weight and  height of hemp plants was higher at 200 than at 80 kg  ha 1 N. Contrary to most results obtained in other  species, self-thinning was not associated with a reduc 
+tion in size variability. Suppressed hemp plants can sur vive relatively well in the low-light environment near  the ground.  
+Sexual dimorphism contributed to variability of  height and weight. In 1 of the 2 years, the ratio of  female to male plants was higher at 200 than at  80 kg ha-IN. In dense stands of Cannabis, the shift  towards maleness induced by environmental stress may  result from the delay in the appearance of a popula 
+tion of suppressed plants with a high ratio of female  to male plants.  
+As suppressed plants were much more slender than  dominating plants, self-thinning eliminated the most  slender individuals in a hemp crop. The presence of  many more heavy individuals of low slenderness at 200  than at 80 kg ha 1N was probably the major cause of  the difference in slenderness of the crop between 200  and 80 kg ha 1N.  
+Our findings may help the fibre hemp industry to  improve stem quality, as we show that a reduced N fertilization leads to finer and less variable hemp stems.  
+Acknowledgements Our thanks to E. A. A. de Maeyer for inspir ing this study by drawing our attention to the bimodality of height  distributions in hemp. We also thank J. J. Tick, W. C. A. van Geel  and L. J. C. van Gils for collecting and analysing part of the data,  and M. Wijlhuizen for the art work. Finally our thanks to P. C.  Struik, A. J. Haverkort, B. J. Schnieders and W. J. M. Meijer for  their helpful comments on the manuscript.  
+References  
+Benjamin LR, Hardwick RC (1986) Sources of variation and mea sures of variability in even-aged stands of plants. Ann Bot 58:  757-778  
+Bonan GB (1991) Density effects on the size structure of annual  plant populations: an indication of neighbourhood competition.  Ann Bot 68:341-347  
+De Maeyer EAA, Huisman W (1995) Techniques for harvesting  and storage of fibre hemp (in Dutch, with English summary).  IMAG-DLO and WAU, Report 94-27, Wageningen  
+Freeman DC, Harper KT, Charnow EL (1980) Sex change in plants:  old and new observations and new hypotheses. Oecologia 47:  222 232  
+Geber MA (1989) Interplay of morphology and development on  size inequality: a Polygonum greenhouse study. Ecol Monogr 59:  276 288  
+Hara T (t984) A stochastic model and the moment dynamics of  the growth and size distribution in plant populations. J Theor  Biol 109:173-190  
+Harper JL (1977) Population biology of plants. Academic Press,  New York  
+Hoffmann W (1957) Hanf, Cannabis sativa. Handbuch der  Pflanzenztichtung, part 5. Paul Parey, Berlin Hamburg, pp  204 263  
+Huston MA, DeAngelis DL (1987) Size bimodality in monospecific  populations: a critical review of potential mechanisms. Am Nat  129:678-707 
+470 OECOLOGIA 103 (t995)  9 Springer-Verlag  
+Knox RG, Peet RK, Christensen NL (1989) Population dynamics  in loblolly pine stands: changes in skewness and size inequality.  Ecology 70:1153-1166  
+Lieffers V J, Titus SJ (1989) The effects of stem density and nutri ent status on size inequality and resource allocation in lodge pole pine and white spruce seedlings. Can J Bot 67:2900-2903  
+Sokal RR, Rohlf JE (1981) Biometry. Freeman, San Francisco  Thomas SC, Weiner J (1989) Growth, death and size distribution  change in an Impatiens pallida population. J Ecol 77:524-536  Tibeau ME (1936) Time factors in utilization of mineral nutrients  by hemp. Plant Physiol I 1:731-747  
+Van der Weft HMG, Haasken HJ, Wijlhuizen M (1994) The effect  of daylength on yield and quality of fibre hemp (Cannabis sativa  L.). Eur J Agron 3:117 123  
+Van der Werf HMG, Wijlhuizen M, de Schutter J (1995a) Plant  density and self-thinning affect yield and quality of fibre hemp  (Cannabis sativa L.). Field Crops Res 40:153 164  
+Van der Werf HMG, van Geel WCA, van Gils LJC, Itaverkort AJ  (1995b) Nitrogen fertilization and row width affect self-thinning  and productivity of fibre hemp (Cannabis sativa L.). Field Crops  Res 42(1)  
+Weiner J (1985) Size hierarchies in experimental populations of  annual plants. Ecology 66:743-752  
+Weiner J, Thomas SC (1986) Size variability and competition in  plant monocultures. Oikos 47:211-222

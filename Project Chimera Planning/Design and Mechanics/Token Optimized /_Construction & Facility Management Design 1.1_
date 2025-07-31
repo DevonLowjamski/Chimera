@@ -1,0 +1,111 @@
+﻿Construction & Facility Management Design 1.1
+Document Date: May 24, 2025. Purpose: Details core systems, visual design, and player interaction principles for Project Chimera's cultivation facility construction and management. Reflects latest design decisions for an intuitive, engaging, visually coherent experience supporting detailed simulation goals.
+I. Exterior Environment Design Details visual appearance and planned evolution of player facility surroundings.
+A. MVP Visuals & Mechanics (Initial Launch)
+* Concept: Basic, realistic-styled exterior, common for initial map locations (e.g., Residential House, Warehouse).
+* Visual Components:
+   * Ground Plane: Simple green color (grass/earth).
+   * Skybox: Clear blue color.
+   * Sun: Static representation, primary exterior directional light source.
+* Day/Night Cycle: Skybox and sun position/intensity visually cycle, synchronized with player-selected in-game time acceleration.
+* Gameplay Impact (MVP): Purely visual; no initial direct impact on cultivation mechanics, resource availability, or other gameplay systems.
+B. Future Vision (Post-MVP Regions & Themes)
+* Dynamic Regions: Post-launch, multiple distinct geographical "regions" selectable at new game start. This choice is permanent for that playthrough.
+* Unique Characteristics per region:
+   * Unique visual themes reflecting climate/geography (e.g., temperate forest, arid desert, tropical zone).
+   * Distinct natural environmental conditions (e.g., average ambient temperatures, humidity levels, natural sunlight intensity/duration, prevailing weather patterns).
+   * These conditions will influence gameplay, especially with future outdoor cultivation.
+* Balancing Factors: Regions with more favorable natural cultivation climates may have higher costs for land expansion or (if implemented) employee recruitment/wages.
+* Novel Environment Themes (Potential DLC): Further expansions (possibly paid DLC) could introduce fantasy or novel themes (e.g., moon cultivation, underwater facility, vast cave system).
+C. Camera Limitations
+* A hard limit will be imposed on player camera zoom-out or movement away from their primary facility structure.
+* Intent: Provide an additional visual perspective and thematic backdrop, not extensive external landscape exploration.
+* This can thematically link progression between facility types (e.g., house and warehouse perceived as on the same larger, unseen property).
+II. Utility View & "X-Ray" Mode Crucial for construction and management of complex utility networks.
+A. Scope and Availability
+* Not available in the initial "Residential House" map/level.
+* Unlocked concurrently with player access to the "Warehouse" map/level.
+* Unlock can be tied to player progression (e.g., specific objective completion, skill tree node) or occur automatically upon first entering the warehouse.
+* Purpose: Essential for from-scratch construction, detailed layout, and troubleshooting of interconnected utility networks (plumbing, electrical, HVAC) in the more complex warehouse environment.
+B. Visual Style of "X-Ray" Mode
+1. Structural Elements (Walls, Floors, Roofs): Adopt "ghostly translucency" when toggled on. Remain visually present, identifiable, retain base colors/textures, but transparent enough for utility visibility behind/within. They will not revert to wireframes or simple outlines.
+2. Utility Highlighting:
+   * Color-Coding: Each utility type has a distinct, recognizable color (e.g., blue for water pipes, yellow for electrical, silver/grey for HVAC).
+   * Selection/Active State: Currently selected or actively functioning components feature an emissive glow or a more boldened outline.
+3. Planned vs. Built Components:
+   * Proposed Placements: Components may appear more transparent, desaturated, or "ethereal" when planning routes before finalizing.
+   * Confirmed Placements: Built components appear solid (though viewable through translucent structures in X-Ray mode).
+C. Information Display & Interaction
+* Filtering: Players can toggle filters to display specific utility types (e.g., "Show Electrical Only," "Isolate HVAC"). Critical for managing visual complexity in dense networks.
+* Contextual Information: Hovering over significant utility components (e.g., pumps, filters, main breakers) displays a tooltip with key data (e.g., "Pump XYZ - Capacity: 500 GPH," "Circuit Breaker - Load: 75/100 Amps"). Implemented intuitively to avoid overwhelming popups on minor segments.
+D. Problem Highlighting Critical diagnostic feature. Unique visual cues for operational problems within Utility View:
+* Electrical: Red flashing or specific icon for overloaded circuits or faulty connections.
+* Plumbing: Dark, static section or distinct icon for blocked pipes; "leaking" visual effect (if feasible) for damaged sections; sputtering or no flow animation for low pressure or unconnected ends.
+* HVAC: Visual indicators for blocked vents/ductwork or areas not receiving adequate airflow.
+* Successful connections and normal operation have clear positive visual feedback (e.g., steady flow animations, green status indicators).
+E. View Transition Toggling Utility View (dedicated hotkey/UI button) results in a near-instantaneous visual switch for a responsive user experience.
+F. Interactivity & Purpose
+* Utility View is the primary and sole interface for players to construct, place, connect, rotate, and edit utility networks.
+* Its enhanced information display (highlighting, tooltips, problem indicators) makes it the main view for diagnosing systemic issues, understanding flow dynamics, and optimizing utility infrastructure.
+III. Utility Flow Animations Simple, clear animations provide immediate visual feedback on utility operational status.
+A. General Principles
+* Animations present when a utility system/segment is actively functioning.
+* Visually distinct for different utility types.
+* Primary visibility enhanced or exclusive to Utility View, especially for networks hidden within structures.
+* Serve as intuitive indicators of connectivity, flow direction, basic operational status; not precise physics simulations.
+B. Specific Utility Visuals
+1. Water/Nutrient Pipes:
+   * Flow Indication: Moving pulses, directional chevrons, or dashes along pipe.
+   * Color: Animation (or pipe's fill content) can adopt nutrient solution color, or neutral blue for plain water.
+2. HVAC Ducting:
+   * Airflow: Subtle, semi-transparent animated lines, particles, or "wisps" in airflow direction.
+   * Temperature/CO2 (Subtle): Wisp color could subtly tint (faint blue for cool, faint red for heat) or incorporate faint shimmer for CO2.
+3. Electrical Wiring/Conduits:
+   * Power Flow: Small, bright pulses or stylized "energy sparks" along wire from source to connected devices.
+   * Load Indication (Subtle): Pulse frequency, intensity, or color could subtly change for higher load, potentially becoming agitated or shifting color (orange/red) if nearing/exceeding capacity.
+C. Animation Behavior
+* Active vs. Inactive: Animations present if utility intended active (e.g., pump on, switch engaged). No animation or static "idle" state if system off.
+* Interruption: Animations visually stop at closed valves, unconnected ends, or identified blockages, clearly indicating interruption point.
+IV. Clutter Management & Facility Aesthetics Maintaining a clean, organized visual appearance is a key design goal.
+A. Core Aesthetic Principle Strive for clean, pristine, professional visual aesthetic for facilities/equipment; avoid excessive grime, rust, dirt, spills.
+B. Design Strategies for Cleanliness
+1. Spatial Design & Verticality: Map layouts (inc. Residential House rooms) provide adequate space for initial setups, not overly cramped. Game provides/encourages vertical space use via assets (wall-mounted equipment, stackable shelving, multi-tiered benches).
+2. Asset Design & Placement Logic: Equipment assets have clean textures and clear, logical footprints. Grid system and robust snapping logic facilitate orderly, aligned placement.
+3. Storage Solutions: Placeable storage assets (lockable cabinets, shelves, utility carts) available. Functional inventory access points, visually "store" unused tools/small consumables for tidy workspaces.
+C. Waste Management
+1. MVP Mechanics: Players manage generated waste (pruned leaves, used growing mediums). Manual transport to placeable disposal assets (dumpsters, trash cans). Waste containers potentially upgradeable (capacity, visuals, minor efficiency benefits).
+2. Future Vision: Explore processing/re-using waste for beneficial byproducts (e.g., composting plant matter into soil amendments) or to reduce disposal costs/earn revenue.
+V. Construction System Defines how players build/modify cultivation spaces and install infrastructure.
+A. Grid System Mechanics
+* Base Unit: Fundamental grid unit for construction, placement, scaling is one (1) foot.
+* Snapping: "Snap to Grid" toggle available. When active, snaps to grid lines, intersections, mid-points of cells. Also applies to relevant points on existing objects (edges, centers, pre-defined utility connection ports).
+B. Structural Asset Placement (Path-Based) For elements like walls, primarily a path-based system, especially in advanced (e.g., warehouse) scenarios.
+* Process: Player selects specific structural asset type (e.g., "Standard Drywall Section") which inherently defines height/thickness. Player clicks start point on grid. Drags cursor for desired wall path/length. Game provides real-time visual feedback (proposed placement, cost, constructability like collision highlights). Player clicks subsequent points (corners/segments) or to finalize. Allows walls of varying lengths using standardized, asset-defined components.
+C. Dimensional Control & Asset-Based Properties
+* Height/thickness of structural elements (e.g., walls) primarily determined by selected asset type.
+* To build a different height/thickness wall, player selects a different wall asset (e.g., "8ft Drywall Section" vs. "10ft Insulated Panel"). These assets may need research/purchase.
+* This asset-defined core properties philosophy applies to most construction/utilities (e.g., pipe diameters set by chosen pipe asset).
+D. Material Application Philosophy
+* Structural element material (drywall, concrete) inherent to chosen construction asset. Selecting an asset like "Concrete Wall Section" chooses form and material simultaneously.
+* MVP: No separate "paint" or "apply material" tool to change fundamental material of a placed structural asset. Material choice is at construction asset selection.
+* (Cosmetic color variations for item categories could be simpler, separate system later).
+E. Utility Placement (General)
+* No Auto-Routing (MVP): Automatic utility routing deferred post-MVP. Players manually route all utilities.
+* Segmented Components for Curves/Bends: No truly "free-dragging flexible" segments (hoses, flex duct). Curves/bends achieved via pre-designed straight, curved, angled rigid sections conforming to grid/connection logic.
+* Vertical Runs: Intuitive tools/UI affordances for routing utilities vertically (up/down walls, floor/ceiling penetrations).
+F. Construction UI & Validation
+* UI: Clear, categorized build menu for easy selection of structures, utilities, equipment. Previews of objects before placement, with resource costs, displayed.
+* Validation & Feedback: Immediate visual feedback for valid/invalid placements (e.g., highlighting objects red for collisions/unmet prerequisites). Clear indicators for utility component connection compatibility.
+VI. Abstracted Microclimate Modeling Simulates localized environmental variations within a larger controlled space.
+A. Core Principle System simulates impact of equipment, plant density, room geometry on plant environment for player optimization, not perfect physical fidelity.
+B. Zone Definition (Sub-Zones)
+* Primary method for localized climates: sub-zones.
+* Equipment (fans, ACs, heaters, heat-producing lights) project "radius of effect" or directional "cone of influence" for environmental impact (temp change, airflow increase), diminishing with distance/obstruction.
+* Enclosed rooms still form larger boundary for overall environmental calculations.
+C. Key Influencing Factors (As detailed in environmental simulation documents) Factors include: heat from equipment (lights, pumps), airflow from fans/HVAC, plant density/transpiration (affecting local humidity/CO2), obstructions (walls, large equipment), basic room construction thermal properties.
+D. Update Frequency
+* Environmental parameters in sub-zones recalculated periodically (e.g., every few in-game minutes; real-time interval depends on active game speed/performance).
+* Ensures simulation responds to changes in equipment status/facility layout.
+E. Visual Cues
+* Heat Map Overlay: Toggleable heat map (potentially advanced environmental data view/upgrade) desired for visual temperature variations.
+* Other Cues: If feasible/clear, subtle visual cues for microclimates (faint heat haze near hot equipment, slight condensation in overly humid spots, airflow direction indicators) considered for player understanding.

@@ -1,0 +1,128 @@
+```text
+cannabis_grow_bible_second_edition.txt
+
+**Chapter 1: The Cannabis Plant**
+
+* Brief History: Originated Himalayas, spread via wind, animals, birds; archaeological evidence (fibers, pollen, seeds, trichomes) dates back millennia.
+* Landrace: Genetically diverse, stable populations adapted to local environments; examples: Afghani, Kush, Master Kush, Hash Plant.
+* Law: Eradication efforts unsuccessful; plants survive in hidden grow spaces.
+* The High: THC (delta-8 & delta-9) primary psychoactive component; levels genetically determined, quantities influenced by bud mass; resin glands (trichomes) contain THC; Zero Zero hash (highest grade).
+* Plant: Male (low THC), female (THC, seeds), hermaphrodite (both sexes, self-pollinating), sinsemilla (seedless female, high yield).
+* Species: Scientific debate (Cannabis sativa L. vs. multiple species); current consensus: Cannabis sativa L. with subspecies indica and sativa.
+* Reproduction: Dioecious (separate sexes), monecious (both sexes on one plant), hermaphrodites; sinsemilla maximizes yield.
+* Life Cycle: Germination, seedling, vegetative growth (24/0 or 18/6 photoperiod), pre-flowering (calyx development, sexing), flowering (12/12 photoperiod), seed production.  Cycle times: 10-36 weeks.
+
+**Chapter 2: Seeds: Selection, Banks, and Storage**
+
+* Selection: Consider strain type (Sativa, Indica, hybrids), indoor/outdoor suitability, flowering period, breeder reputation;  research seed banks.
+* Acquisition: Obtain from trusted growers or reputable online seed banks (verify legitimacy, shipping, prices, reviews).
+* Storage: Short-term: dry film canister; Long-term: airtight container, freezer.
+
+**Chapter 3: Propagation and Germination**
+
+* Propagation: Entire growing process; logistics depend on grow area and budget (seeds vs. clones).
+* Germination Techniques: Seed soil propagation (7-8/10 success), seed towel propagation (8-9/10 success), propagation kits (high success).
+* Seed Structure: Dicotyledons (cotyledons, plumule, radicle, epicotyl, hypocotyl); albuminous seeds.
+* Germination Process: Imbibing (water uptake), light penetration; inhibitors (soil, pH, exposure, depth, weeds, nutrients, damage, fungi).
+* Transplanting:  Maintain root integrity; methods: cutting pot base, dry soil removal, inverted pot tapping; transplant shock (avoid by careful handling, avoid feeding for one week).
+
+**Chapter 4: The Great Divide: Indoors or Outdoors**
+
+* Gardening Tools: Light source, nutrients, soil/medium, rockwool cubes, shovel/trowel, support sticks, water system, fertilizers, propagation trays, pots, scissors/knife, pest control, thread.
+* Indoor Growing: Lighting crucial; HID (MH, HPS) recommended; wattage/lumens calculations; reflectors, white paint/Mylar for light reflection; 24/0 or 18/6 vegetative photoperiod; electrical costs.
+* Outdoor Growing: Site selection (security, light, water); guerrilla farming techniques; security (avoid tracks, camouflage, stealth harvesting).
+
+**Chapter 5: Organic Farming**
+
+* Definition: No synthetics (nutrients, fertilizers, pesticides, hormones, GMOs); uses compost, natural pest control.
+* History: Religious roots, industrialization, WWII chemical advancements, IFOAM (GMO-free).
+* Methods: Compost (aerobic decomposition, 30:1 C:N ratio), compost tea, mulching, worm composting (red wigglers), organic weeding, pest control (predators), organic feeding products.
+
+**Chapter 6: The Indoor Growing Environment**
+
+* Setups: Soil, hydroponics; advanced: SOG, ScrOG, cabinet growing.
+* Lighting: HID kits (bulb, reflector, ballast, timer); color bands (CCT, CRI); photosynthesis (chlorophyll); common lighting types (domestic, fluorescent, halogen, MH, HPS); wattage/lumens calculations.
+* Soil: pH (7), nutrients (NPK, CaMgS, micronutrients), composition (clay, humus, sand, silt, loam, perlite, vermiculite, moss); mixing ratios; pots (perforated).
+
+**Chapter 7: Indoor Environmental Control**
+
+* Nutrient Control: NPK, CaMgS, micronutrients; feeding schedules (seedlings, vegetative, flowering); problematic nutrients (Mg); macronutrient disorders (N, P, K, Ca, Mg, S); feeding; nutrient strengths (30-50%).
+* Soil Control: pH monitoring (6-8); adjustment (lime, lemon peels, coffee grounds, acidic fertilizer); pH up/down; soil flushing.
+* Water Control: Watering frequency; underwatering/overwatering symptoms.
+* Air Control: Ventilation (intake, vent, fans); odor control (ionizing, ozone, activated carbon filters).
+* CO2: Supplementing; calculations; climate controllers.
+
+**Chapter 8: Pre-flowering and Flowering**
+
+* Pre-flowering: Calyx development; early sexing methods (height, calyxes, force-flowering).
+* Flowering: 12/12 photoperiod; problems (hermaphrodites, abnormal bud growth); sexing plants; male flowering; female flowering; harvest indicators (pistil color change, trichome withering, bud mass plateau).
+
+**Chapter 9: Advanced Indoor Soil-Based Grow Methods**
+
+* Clone Mother: Selecting, propagating, maintaining.
+* SOG: High plant density; short vegetative period.
+* ScrOG: Fewer plants, screen for even canopy.  Real High’s method.
+* Cabinet Growing: Perpetual grow cycles; customization.
+
+**Chapter 10: A Look at Hydroponics**
+
+* Systems: NFT, ebb & flow, drip irrigation, aeroponics, wick, gravity; automatic/manual pots.
+* Environment: Nutrients (single/twin/triple packs); growing mediums (rockwool, clay pebbles, Oasis cubes, coconut fiber, soilless mixes); pH (5.2-6.3); algae control; nutrient strengths; monitoring recycle systems; hard water.
+* The Bubbler: DIY deep water culture system.
+
+**Chapter 11: Outdoor Growing**
+
+* Planning: Site preparation (weeding, soil amendment), transplant method, irrigation, pest prevention.
+* Soil: Checking soil type, adding soil amendments.
+* Plant Care: Weeding, watering, nutrients, pest/predator control; air pruning.
+* Flowering: Photoperiod-induced; timing.
+
+**Chapter 12: Caring for Mature Marijuana Plants**
+
+* Thinning: Removing less vigorous plants; creating even canopy.
+* Light Bending: Preventing; training.
+* Pruning: For yield; topping; FIM technique; Super Cropping; making cannabis bushes.
+* Training: Manipulating plant shape.
+* Cloning: Methods; rooting solutions; air layering; bonsai clones; reverting to vegetative growth; increasing chances of females.
+
+**Chapter 13: Problem Solver**
+
+* Domestic Pets: Keeping away from plants.
+* Pesticides/Herbicides/Fungicides: Safe for food use. Pest index (ants, aphids, cutworms, caterpillars, larvae, deer, gnats, grasshoppers, groundhogs, mealy bugs, rabbits, scale, slugs, snails, spider mites, termites, thrips, whitefly, woodchucks); pest predators (beetles, braconid wasps, bugs, lacewings, ladybirds, spiders); recovering from pest invasion; fungi (botrytis, powdery mildew, root rot); chemical burns; nutrient deficiencies; 10 steps to saving your grow; bad genetics.
+
+**Chapter 14: Harvesting and Curing Your Bud**
+
+* Harvest Indicators: Pistil color change, trichome withering;  Indica/Sativa harvesting methods; quick bud samples; expert harvest indication.
+* Manicuring: Removing leaves/stems.
+* Curing: Canning method; drying; over-drying.
+
+**Chapter 15: How to Breed Marijuana**
+
+* Making Seeds: Pollen collection, seed collection.
+* Simple Breeding: Continuing a strain; making a simple hybrid.
+* Plant Genetics: Genes, gene pairs, chromosomes, loci, alleles, homozygous, heterozygous, phenotype, genotype, dominant/recessive traits, genetic notation.
+* Hardy-Weinberg Equilibrium: Gene frequencies; five conditions for equilibrium.
+* Test Crosses: Determining genotypes.
+* Mendel’s Experiments: F1 and F2 generations.
+* True Breeding: Isolating traits; backcrossing; selfing; clone mother generation.
+
+**Chapter 16: Top Ten** (List of strains by type: Indica, mostly Indica, Sativa, mostly Sativa, Indica/Sativa mix; with suitability, stability, indoor/outdoor, potency, availability)
+
+**Chapter 17: How to Make Hash**
+
+* Trichome Collection: Skuff; screening methods (flat silk/metal, multiple, advanced); drum machines; water extraction (basic, advanced—Bubble Bag); supercritical fluid extraction (SFE) with butane; pressing resin into hash.
+
+**Chapter 18: Important Cannabis Issues**
+
+* Cannabis Myths: Potency increase; health risks; hydroponics; lighting; feeding products; extraction techniques; trichome count.
+* The Truth: Indica/Sativa hybrids; breeder selection; sinsemilla; variety; adulterated hashish.
+* How to Avoid Carcinogens: Cooking with cannabis; vaporization.
+* Legalization: Social issues; alcohol vs. cannabis; driving under the influence; gateway theory; memory; immune system; sexual dysfunction; pregnancy; DNA repair.
+
+**Chapter 19: How to Enjoy Your Bud** (Instructions for making various smoking/vaporizing devices)
+
+**Chapter 20: The Cannabis Grow Bible Checklist** (Good genetics, proper lighting, prevention, air circulation, medium, pot size, safe fertilizers, 12/12 photoperiod, avoiding stress, CO2, labeling)
+
+**Resources:** Websites, further reading, seed banks, etc.
+**Glossary of Terms**
+```

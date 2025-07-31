@@ -1,0 +1,21 @@
+```text
+led_light_effects_hemp_growth_cbd.txt
+
+**Objective:** Investigate red/blue LED light effects on Cannabis sativa L. growth & cannabidiol (CBD) content.
+
+**Methods:** Pot experiment (110 days, 16/8 h light/dark, 24°C). Six treatments: CK (high-pressure sodium, R:B 9.30:1, PPFD 191); LED1 (R:B 9.20:1, PPFD 129); LED2 (R:B 1.61:1, PPFD 540); LED3 (R:B 6.47:1, PPFD 28.2); LED4 (R:B 7.15:1, PPFD 41.7); LED5 (R:B 16.8:1, PPFD 252).  Three replicates per treatment.  Plant height, stem diameter, leaf number, leaf area, and dry biomass (stem, root, flower) measured. Cannabinoid analysis (HPLC-DAD) on leaves & flowers.  THC < 0.3% for all.
+
+**Results:**
+
+* **Growth:** LED2 & LED5 maintained growth (plant height, stem diameter, leaf number) comparable to CK. LED1, LED3, LED4 significantly reduced aboveground biomass. LED2 (+15.2%), LED5 (+55.1%) increased aboveground biomass. LED2 (+238%), LED5 (+61.5%) increased flower biomass.  Others significantly reduced flower yield.
+
+* **Cannabinoids:** LED2 & LED5 highest CBD content (leaves: LED2 1.81%, LED5 1.89%; flowers: LED2 5.83%, LED5 4.83%). LED2 significantly increased leaf CBD compared to CK (1.38%); LED5 significantly increased leaf CBD, but not flower CBD compared to CK (flowers 4.27%). LED3 & LED4 reduced CBD.
+
+* **CBD Yield:** LED2 (0.14 mg/plant), LED5 (0.12 mg/plant) highest CBD yield. LED2 (+26.8%), LED5 (+9.0%) higher than CK.
+
+* **Correlations:** Positive correlation between blue light, flower biomass, flower CBD. Negative correlation between red light, CBD content. Positive correlation between PPFD, flower biomass, flower CBD, CBD yield.
+
+**Conclusions:** LED light wavelengths significantly impact hemp growth and CBD synthesis.  LED2 (R:B 1.61:1, PPFD 540) and LED5 (R:B 16.8:1, PPFD 252) optimal for increased CBD yield via increased flower biomass and/or CBD concentration.  Blue light promotes cannabinoid synthesis.
+
+**Note:**  All data are averages ± standard deviation; p<0.05 for significant differences.  Specific equipment and supplier details provided in original.
+```

@@ -1,0 +1,1081 @@
+﻿Cannabis by Kim Ronkin Casey with Joe Kraynak
+Cannabis For Dummies® 
+Published by: John Wiley & Sons, Inc., 111 River Street, Hoboken, NJ 07030-5774, www.wiley.com Copyright © 2019 by John Wiley & Sons, Inc., Hoboken, New Jersey 
+Published simultaneously in Canada 
+No part of this publication may be reproduced, stored in a retrieval system or transmitted in any form or by any  means, electronic, mechanical, photocopying, recording, scanning or otherwise, except as permitted under Sections  107 or 108 of the 1976 United States Copyright Act, without the prior written permission of the Publisher. Requests  to the Publisher for permission should be addressed to the Permissions Department, John Wiley & Sons, Inc.,  111 River Street, Hoboken, NJ 07030, (201) 748-6011, fax (201) 748-6008, or online at http://www.wiley.com/go/ permissions. 
+Trademarks: Wiley, For Dummies, the Dummies Man logo, Dummies.com, Making Everything Easier, and related  trade dress are trademarks or registered trademarks of John Wiley & Sons, Inc., and may not be used without written  permission. All other trademarks are the property of their respective owners. John Wiley & Sons, Inc., is not  associated with any product or vendor mentioned in this book. 
+LIMIT OF LIABILITY/DISCLAIMER OF WARRANTY: WHILE THE PUBLISHER AND AUTHOR HAVE USED THEIR BEST  EFFORTS IN PREPARING THIS BOOK, THEY MAKE NO REPRESENTATIONS OR WARRANTIES WITH RESPECT TO  THE ACCURACY OR COMPLETENESS OF THE CONTENTS OF THIS BOOK AND SPECIFICALLY DISCLAIM ANY  IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. NO WARRANTY MAY  BE CREATED OR EXTENDED BY SALES REPRESENTATIVES OR WRITTEN SALES MATERIALS. THE ADVICE AND  STRATEGIES CONTAINED HEREIN MAY NOT BE SUITABLE FOR YOUR SITUATION. YOU SHOULD CONSULT WITH  A PROFESSIONAL WHERE APPROPRIATE. NEITHER THE PUBLISHER NOR THE AUTHOR SHALL BE LIABLE FOR  DAMAGES ARISING HEREFROM. 
+General Disclaimer 
+The publisher and the author make no representations or warranties with respect to the accuracy or completeness of  the contents of this work and specifically disclaim all warranting, including without limitation warranties of fitness  for a particular purpose. No warranty may be created or extended by sales or promotional materials. The advice and  
+strategies contained herein may not be suitable for every situation. This work is sold with the understanding that the  publisher is not engaged in rendering legal, accounting, or other professional services. If professional assistance is  required, the services of a competent professional person should be sought. Neither the publisher nor the author  shall be liable for damages arising herefrom. The fact that an organization or Website is referred to in this work as a  citation and/or a potential source of further information does not mean that the author or the publisher endorses the  information the organization or Website may provide or recommendations it may make. Further, readers should be  aware the Internet Websites listed in this work may have changed or disappeared between when this work was  written and when it is read. 
+For general information on our other products and services, please contact our Customer Care Department within  the U.S. at 877-762-2974, outside the U.S. at 317-572-3993, or fax 317-572-4002. For technical support, please visit  https://hub.wiley.com/community/support/dummies. 
+Wiley publishes in a variety of print and electronic formats and by print-on-demand. Some material included with  standard print versions of this book may not be included in e-books or in print-on-demand. If this book refers to  media such as a CD or DVD that is not included in the version you purchased, you may download this material at  http://booksupport.wiley.com. For more information about Wiley products, visit www.wiley.com. 
+Library of Congress Control Number: 2019937503 
+ISBN 978-1-119-55066-2 (pbk); ISBN 978-1-119-55059-4 (ebk); ISBN 978-1-119-55064-8 (ebk) Manufactured in the United States of America 
+10 9 8 7 6 5 4 3 2 1
+Contents at a Glance 
+Introduction . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 1 
+Part 1: Getting Started with Cannabis . . . . . . . . . . . . . . . . . . . . . . . . . 5 CHAPTER 1: Taking the Nickel Tour . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 7 CHAPTER 2: Brushing Up on Cannabis Anatomy and Chemistry . . . . . . . . . . . . . . . . . 27 CHAPTER 3:  Steering Clear of Legal Trouble . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 45 CHAPTER 4: Tackling Cannabis Politics and Culture . . . . . . . . . . . . . . . . . . . . . . . . . . . . 63 
+Part 2: Buying, Storing, and Using Cannabis . . . . . . . . . . . . . . . . . 71 CHAPTER 5: Buying and Storing Cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 73 CHAPTER 6: Choosing and Visiting a Cannabis Dispensary . . . . . . . . . . . . . . . . . . . . . . 85 CHAPTER 7: Consuming Cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 101 CHAPTER 8: Using Cannabis Safely and Responsibly . . . . . . . . . . . . . . . . . . . . . . . . . 121 
+Part 3: Reaping the Potential Benefits  
+of Medical Marijuana . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 139 CHAPTER 9: Using Marijuana for Medicinal Purposes . . . . . . . . . . . . . . . . . . . . . . . . 141 CHAPTER 10: Using Pot for Pets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 175 
+Part 4: Grasping the Basics of Cannabis  
+Cultivation, Post-Harvest, and Production . . . . . . . . . . . . . . . . . 187 CHAPTER 11: Growing Cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 189 CHAPTER 12: Harvesting and Post-Harvest . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 225 CHAPTER 13: Making Concentrates and Marijuana Infused Products (MIPs)....... 241 
+Part 5: Getting Down to Business . . . . . . . . . . . . . . . . . . . . . . . . . . . . 259 CHAPTER 14: Starting Your Own Cannabis Business . . . . . . . . . . . . . . . . . . . . . . . . . . 261 CHAPTER 15: Finding Work in the Cannabis Industry . . . . . . . . . . . . . . . . . . . . . . . . . . 291 CHAPTER 16: Investing in Cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 307 
+Part 6: The Part of Tens . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 317 CHAPTER 17: Ten Tips for Growing More and Better Weed . . . . . . . . . . . . . . . . . . . . 319 CHAPTER 18: Ten Tips to Enhance Your Cannabis Experience . . . . . . . . . . . . . . . . . . 327 CHAPTER 19: Ten Tips for Buying Cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 333 
+Appendix: Cannabis Recipes . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 339 Index . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 361
+Table of Contents 
+INTRODUCTION . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 1 About This Book . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 1 
+Foolish Assumptions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2 
+Icons Used in This Book . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 3 
+Beyond the Book . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4 
+Where to Go from Here . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4 
+PART 1: GETTING STARTED WITH CANNABIS . . . . . . . . . . . . . . . . 5 CHAPTER 1: Taking the Nickel Tour . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 7 Exploring the Basics of Marijuana Consumption . . . . . . . . . . . . . . . . . . 8 
+Considering medical use . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 8 
+Looking into adult recreational use . . . . . . . . . . . . . . . . . . . . . . . . . 10 
+Acknowledging the potential drawbacks . . . . . . . . . . . . . . . . . . . . . 10 
+Knowing What Makes Cannabis So Special . . . . . . . . . . . . . . . . . . . . . . 11 
+Recognizing the Diversity of Cannabis Strains . . . . . . . . . . . . . . . . . . . 13 
+Buying Cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14 
+Knowing where and where not to get it . . . . . . . . . . . . . . . . . . . . . . 14 
+Understanding what you’re buying . . . . . . . . . . . . . . . . . . . . . . . . . . 15 
+Avoiding rip-offs . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16 
+Exploring Different Consumption Methods . . . . . . . . . . . . . . . . . . . . . 16 
+Smoking or vaping . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16 
+Edibles . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17 
+Tinctures . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17 
+Topical or transdermal applications . . . . . . . . . . . . . . . . . . . . . . . . . 18 
+Getting Up to Speed on Cannabis Laws . . . . . . . . . . . . . . . . . . . . . . . . . 18 
+Being a Safe and Responsible User . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19 
+Grasping the Basics of Cannabis Production . . . . . . . . . . . . . . . . . . . . 20 
+Growing cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20 
+Harvesting and curing cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21 
+Creating cannabis, extracts, concentrates  
+and infused products . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22 
+Making Money in the Cannabis Industry . . . . . . . . . . . . . . . . . . . . . . . . 22 
+Recognizing the challenges . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23 
+Getting a job in the industry . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23 
+Starting your own cannabis business . . . . . . . . . . . . . . . . . . . . . . . . 24 
+Exploring ancillary business . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 25 
+Investing in the industry . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 25
+Table of Contents v 
+CHAPTER 2: Brushing Up on Cannabis Anatomy  
+and Chemistry . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 27 Getting to Know the Plant from Top to Bottom . . . . . . . . . . . . . . . . . . 27 Examining the structure of the two primary strains . . . . . . . . . . . 28 Checking out the buds and flowers . . . . . . . . . . . . . . . . . . . . . . . . . 28 Taking a peek at the seeds . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 29 Combing through the trichomes . . . . . . . . . . . . . . . . . . . . . . . . . . . . 30 Considering the lesser parts of the plant . . . . . . . . . . . . . . . . . . . . . 31 Taking a Crash Course in Cannabinoid Chemistry . . . . . . . . . . . . . . . . 32 Assessing factors impacting individual effects . . . . . . . . . . . . . . . . 32 Exploring the endocannabinoid system . . . . . . . . . . . . . . . . . . . . . . 33 Getting high with tetrahydrocannabinol (THC) . . . . . . . . . . . . . . . . 35 Feeling better with cannabidiol (CBD) without getting high . . . . . 37 Reaping the sedative effects of cannabinol (CBN) . . . . . . . . . . . . . 37 Exploring the potential health benefits of 
+cannabigerol (CBG) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 37 Discovering the potential health benefits of 
+cannabigerol (CBG) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 38 Using terpenes to anticipate effects . . . . . . . . . . . . . . . . . . . . . . . . . 38 Exploring Cannabis Concentrates and Extracts . . . . . . . . . . . . . . . . . . 39 Concentrates . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 39 Extracts . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 40 Products made from concentrates and extracts . . . . . . . . . . . . . . 42 
+CHAPTER 3: Steering Clear of Legal Trouble . . . . . . . . . . . . . . . . . . . . . . . 45 Knowing the Laws: Federal, State, Local and International . . . . . . . . . 46 Keeping abreast of U.S. federal law and enforcement . . . . . . . . . 46 Getting up to speed on state laws . . . . . . . . . . . . . . . . . . . . . . . . . . 48 Considering local laws too . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 51 Knowing your employer’s rules . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 52 Researching international laws . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 52 Knowing Your Limits . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 54 Age limits . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 54 Purchase limits . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 55 Grow limits . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 55 Dosing limits . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 56 Driving limits . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 56 Consumption locations . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 56 Your own personal consumption limits . . . . . . . . . . . . . . . . . . . . . . 57 Avoiding Encounters with Law Enforcement . . . . . . . . . . . . . . . . . . . . . 59 Responding Appropriately in Encounters with  
+Law Enforcement . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 60 Taking Responsibility as a Parent . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 61
+vi Cannabis For Dummies 
+CHAPTER 4: Tackling Cannabis Politics and Culture . . . . . . . . . . . . . . 63 Checking the Nation’s Pulse . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 64 Acknowledging the drivers of change.........................64 Recognizing differences in attitudes about medical 
+and recreational use . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 65 Keeping pace with evolving attitudes . . . . . . . . . . . . . . . . . . . . . . . . 66 Debunking Misconceptions of Cannabis and Users . . . . . . . . . . . . . . . 66 Examining Activism . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 67 Tuning In to Cannabis Culture . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 69 
+PART 2: BUYING, STORING, AND USING CANNABIS . . . . . . 71 CHAPTER 5: Buying and Storing Cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . 73 Evaluating Your Vendor Options: Where to Buy . . . . . . . . . . . . . . . . . . 74 Buying from a dispensary . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 74 Buying cannabis online or over the phone . . . . . . . . . . . . . . . . . . . 75 Checking out cannabis “gifting” businesses . . . . . . . . . . . . . . . . . . . 77 Steering clear of the black market . . . . . . . . . . . . . . . . . . . . . . . . . . 77 Making Two Key Decisions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 78 Getting Quality Product . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 79 Buy from a reputable dispensary and be willing  
+to pay more . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 79 Check for third party testing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 79 Stick with trusted strains and brands . . . . . . . . . . . . . . . . . . . . . . . . 80 Read the label . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 80 Inspect the goods . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 81 
+Avoiding Common Cannabis Scams . . . . . . . . . . . . . . . . . . . . . . . . . . . . 83 Storing Your Cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 84 
+CHAPTER 6: Choosing and Visiting a Cannabis Dispensary . . . . . . 85 Choosing a Cannabis Dispensary . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 86 Comparing medical and recreational dispensaries . . . . . . . . . . . . 86 Finding a reliable and legal place to shop . . . . . . . . . . . . . . . . . . . . 89 Comparing purchase/delivery/pickup options . . . . . . . . . . . . . . . . 92 Visiting a Cannabis Dispensary . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 95 Knowing what to expect . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 95 Sizing up the budtender . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 97 Getting a Medical Marijuana Card . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 98 
+CHAPTER 7: Consuming Cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 101 Going Old School: Smoking or Vaping . . . . . . . . . . . . . . . . . . . . . . . . . 102 Smoking cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 102 Vaping cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 110 Dabbing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 112
+Table of Contents vii 
+Eating and Drinking Cannabis: Edibles . . . . . . . . . . . . . . . . . . . . . . . . . 115 Using Topical and Transdermal Products . . . . . . . . . . . . . . . . . . . . . . 117 Using Cannabis Tinctures or Pills . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 118 Taking Pharmaceutical Preparations . . . . . . . . . . . . . . . . . . . . . . . . . . 119 
+CHAPTER 8: Using Cannabis Safely and Responsibly . . . . . . . . . . . 121 Recognizing the Health and Safety Risks . . . . . . . . . . . . . . . . . . . . . . . 122 Checking out undesirable transitory effects . . . . . . . . . . . . . . . . . 122 Looking ahead to potential long-term complications . . . . . . . . . 123 Making Dosing Decisions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 124 Defining your desired experience . . . . . . . . . . . . . . . . . . . . . . . . . . 125 Considering the chemical composition of products . . . . . . . . . . . 125 Comparing methods of consumption . . . . . . . . . . . . . . . . . . . . . . 129 Accounting for other medications or substances used . . . . . . . . 130 Examining your body’s biochemistry . . . . . . . . . . . . . . . . . . . . . . . 131 Considering the environment or setting and your  
+mood or mind-set . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 132 Keeping Safety in Mind . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 132 Using cannabis in moderation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 133 Making rational decisions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 133 Committing to no impaired driving..........................133 Dealing with Overconsumption . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 134 Distinguishing overconsumption from overdose . . . . . . . . . . . . . 134 Avoiding overconsumption . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 135 Responding to overconsumption . . . . . . . . . . . . . . . . . . . . . . . . . . 135 Considering Underage Development . . . . . . . . . . . . . . . . . . . . . . . . . . 136 
+PART 3: REAPING THE POTENTIAL BENEFITS  OF MEDICAL MARIJUANA . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 139 
+CHAPTER 9: Using Marijuana for Medicinal Purposes . . . . . . . . . . 141 
+Understanding the Current and Ongoing Status of Medical  
+Marijuana . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 142 Choosing Medical Marijuana Products . . . . . . . . . . . . . . . . . . . . . . . . . 143 Seeking Symptom Relief for Specific Conditions . . . . . . . . . . . . . . . . 145 
+Acne . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 146 Addiction . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 146 Alzheimer’s . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 147 Amyotrophic lateral sclerosis (ALS) . . . . . . . . . . . . . . . . . . . . . . . . . 148 Anxiety..................................................149 Appetite loss . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 149 Arthritis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 150 Asthma . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 151 Attention deficit hyperactivity disorder (ADHD) . . . . . . . . . . . . . . 151 Autism spectrum disorders . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 151
+viii Cannabis For Dummies 
+Autoimmune disorders . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 152 Bipolar disorder . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 153 Cachexia (Wasting) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 153 Cancer . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 154 Cannabinoid hyperemesis syndrome (CHS) . . . . . . . . . . . . . . . . . 155 Celiac disease and gluten sensitivity.........................155 Depression . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 156 Diabetes . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 157 Eating disorders . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 158 Epilepsy . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 158 Fibromyalgia . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 159 Gastroesophageal reflux disease (GERD) . . . . . . . . . . . . . . . . . . . . 159 Glaucoma . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 160 Hepatitis C . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 161 HIV/AIDS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 161 Huntington’s disease . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 162 Inflammation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 162 Insomnia . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 163 Irritable bowel syndrome (IBS) . . . . . . . . . . . . . . . . . . . . . . . . . . . . 163 Lupus . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 164 Menopause . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 165 Migraines and headaches . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 166 Multiple sclerosis (MS) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 166 Nausea and vomiting . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 167 Pain . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 167 Parkinson’s disease . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 168 Post-traumatic stress disorder (PTSD) . . . . . . . . . . . . . . . . . . . . . . 168 Restless legs syndrome . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 169 Schizophrenia/psychosis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 170 Sexual dysfunction . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 170 Skin conditions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 171 Sports medicine . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 172 Tourette syndrome . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 172 Ulcerative colitis and Crohn’s disease . . . . . . . . . . . . . . . . . . . . . . 173 Accounting for Potential Adverse Side Effects . . . . . . . . . . . . . . . . . . 174 
+CHAPTER 10: Using Pot for Pets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 175 Recognizing the Potential Benefits of Cannabis Treatment . . . . . . . 176 Consulting Your Veterinarian First . . . . . . . . . . . . . . . . . . . . . . . . . . . . 177 Treating Specific Conditions in Pets . . . . . . . . . . . . . . . . . . . . . . . . . . . 178 
+Anxiety..................................................178 Appetite loss . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 178 Cancer . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 179 Digestion issues . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 180
+Table of Contents ix 
+Epilepsy/seizures . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 180 Nausea/vomiting . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 181 Pain . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 181 Palliative care . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 181 Tumors . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 181 
+Noting the Potential Adverse Effects of Cannabis on Pets . . . . . . . . 182 Administering Cannabis to Pets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 182 Deciding on a way to administer it . . . . . . . . . . . . . . . . . . . . . . . . . 183 Choosing an initial dose . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 183 Monitoring your pet’s reaction . . . . . . . . . . . . . . . . . . . . . . . . . . . . 184 Adjusting the dose . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 184 Preventing and responding to overconsumption . . . . . . . . . . . . . 185 Obtaining Commercial Cannabinoid Products . . . . . . . . . . . . . . . . . . 185 Preparing Your Own Concoctions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 186 
+PART 4: GRASPING THE BASICS OF CANNABIS  CULTIVATION, POST-HARVEST, AND PRODUCTION . . . . . 187 
+CHAPTER 11: Growing Cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 189 Wrapping Your Brain Around the Cannabis Growth Cycle . . . . . . . . 190 Choosing a Cultivation Method . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 191 
+Indoor . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 191 Outdoor . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 192 Hydroponics . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 193 Soil . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 193 
+Creating a Grow Room for Indoor Cultivation....................194 Tackling the initial setup . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 194 Simulating the desired climate . . . . . . . . . . . . . . . . . . . . . . . . . . . . 195 Focusing on air flow . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 195 Setting up grow lights . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 198 Deciding on a watering/fertilizing system . . . . . . . . . . . . . . . . . . . 201 Using a hydroponics system . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 202 Keeping your grow room impeccably clean . . . . . . . . . . . . . . . . . 204 
+Preparing for Outdoor Cultivation . . . . . . . . . . . . . . . . . . . . . . . . . . . . 204 Choosing a site . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 204 Hardening off your plants . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 207 Supporting and protecting your plants . . . . . . . . . . . . . . . . . . . . . 207 
+Prepping Your Soil or Other Grow Medium . . . . . . . . . . . . . . . . . . . . 208 Planting Seeds or Cuttings . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 209 Acquiring seeds or cuttings . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 209 Germinating seeds . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 211 Planting seedlings . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 212 Cloning plants . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 212 Transplanting . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 214
+x Cannabis For Dummies 
+Keeping Your Plants Healthy . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 214 Ensuring proper temperature, humidity, and lighting . . . . . . . . . 214 Watering and fertilizing your plants . . . . . . . . . . . . . . . . . . . . . . . . 215 Checking and adjusting the pH . . . . . . . . . . . . . . . . . . . . . . . . . . . . 216 Battling common pests . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 216 Preventing and treating common diseases . . . . . . . . . . . . . . . . . . 217 Pruning your plants . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 218 Training your plants to maximize yield . . . . . . . . . . . . . . . . . . . . . 218 
+Prepping Plants for Harvest . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 221 Stop spraying the foliage . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 221 Flush your grow medium . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 222 Cultivating Cannabis in an Industrial Setting: Special  
+Considerations . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 222 Considering space locations and rules . . . . . . . . . . . . . . . . . . . . . . 222 Considering the use of pesticides and nutrients . . . . . . . . . . . . . 223 Handling green waste . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 223 Arranging third party testing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 223 Tracking plants from seed to sale . . . . . . . . . . . . . . . . . . . . . . . . . . 224 
+CHAPTER 12: Harvesting and Post-Harvest . . . . . . . . . . . . . . . . . . . . . . . . 225 Deciding When to Harvest: Timing Is Everything! . . . . . . . . . . . . . . . . 226 Keeping an eye on the trichomes . . . . . . . . . . . . . . . . . . . . . . . . . . 226 Observing the pistils and stigmas . . . . . . . . . . . . . . . . . . . . . . . . . . 227 Tracking leaf senescence . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 228 Find out the strain’s expected time-to-harvest . . . . . . . . . . . . . . . 228 Harvesting Your Plants . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 228 Weighing and Calculating Your Yield (Dry/Wet Weights) . . . . . . . . . . 229 Determining the plant’s wet weight . . . . . . . . . . . . . . . . . . . . . . . . 229 Weighing after bucking or shucking and maybe  
+rough trimming . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 230 Weighing green waste and wet bud . . . . . . . . . . . . . . . . . . . . . . . . 231 Drying, Curing, and Trimming Flower Post-Harvest . . . . . . . . . . . . . . 232 Drying your plant or buds . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 232 Curing dried cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 236 Trimming bud . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 238 Storing your buds . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 239 Packaging for commercial use . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 239 
+CHAPTER 13: Making Concentrates and Marijuana Infused  Products (MIPs) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 241 Grasping Concentrate Basics . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 242 Exploring Different Extraction Methods . . . . . . . . . . . . . . . . . . . . . . . . 242 
+Non-solvent extraction methods . . . . . . . . . . . . . . . . . . . . . . . . . . 243 Solvent extraction methods . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 244
+Table of Contents xi 
+Creating Your Own Concentrates . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 247 Making kief (dry sift) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 247 Making dry sift hash . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 248 Making bubble hash . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 248 Making dry ice hash . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 250 Making rosin . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 252 Making charas . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 253 Make your own cannabis butter . . . . . . . . . . . . . . . . . . . . . . . . . . . 253 Make your own tincture . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 256 
+Cooking Up Edibles . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 257 Preparing Tinctures, Lotions, and More . . . . . . . . . . . . . . . . . . . . . . . . 258 
+PART 5: GETTING DOWN TO BUSINESS . . . . . . . . . . . . . . . . . . . . 259 CHAPTER 14: Starting Your Own Cannabis Business . . . . . . . . . . . . . 261 Working with a Federal Schedule I Drug . . . . . . . . . . . . . . . . . . . . . . . 262 Choosing a Business Type . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 263 Grower . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 264 Retailer . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 264 Manufacturer of infused products (MIP) . . . . . . . . . . . . . . . . . . . . 265 Processed product brand . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 267 Profiting from cannabis with an ancillary business . . . . . . . . . . . 268 Addressing Common Challenges . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 268 Dealing with money issues . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 269 Adhering to state and local laws . . . . . . . . . . . . . . . . . . . . . . . . . . . 272 Applying for licenses in other states . . . . . . . . . . . . . . . . . . . . . . . . 276 Staffing for Success . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 278 Filling key positions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 279 Providing the necessary training . . . . . . . . . . . . . . . . . . . . . . . . . . . 281 Getting your people certified: Badging . . . . . . . . . . . . . . . . . . . . . 282 Setting Up Shop . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 282 Choosing a facility . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 282 Establishing your supply chain . . . . . . . . . . . . . . . . . . . . . . . . . . . . 283 Tackling transportation issues . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 283 Acquiring the necessary equipment . . . . . . . . . . . . . . . . . . . . . . . . 284 Creating a website/blog . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 286 Building your point of sale (POS) system . . . . . . . . . . . . . . . . . . . . 287 Maintaining a Positive Public Image . . . . . . . . . . . . . . . . . . . . . . . . . . . 287 Attending community hearings . . . . . . . . . . . . . . . . . . . . . . . . . . . . 288 Handling public affairs . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 288 Communicating with the press . . . . . . . . . . . . . . . . . . . . . . . . . . . . 288 Catering to the customer . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 289
+xii Cannabis For Dummies 
+CHAPTER 15: Finding Work in the Cannabis Industry . . . . . . . . . . . . 291 Scoping Out Job Opportunities . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 292 Grow master or grower . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 292 Cultivation technician . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 292 Trimmer . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 293 Joint roller . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 293 Cure associate . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 293 Nutrient chemist . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 293 Extractor . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 294 Quality assurance manager . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 294 Dispensary manager . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 294 Budtender/sales associate . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 295 Dispensary receptionist or cashier . . . . . . . . . . . . . . . . . . . . . . . . . 295 Packager . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 296 Edibles chef . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 296 Courier/delivery driver . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 296 Buyer . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 297 Sales representatives . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 297 Compliance manager . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 298 Communications director . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 298 Human resources (HR) manager . . . . . . . . . . . . . . . . . . . . . . . . . . . 299 Trainers . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 299 Public affairs administrator . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 300 Laboratory worker . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 300 Security manager or officer . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 300 Accountant . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 301 Marketing manager or team members . . . . . . . . . . . . . . . . . . . . . 301 Facilities manager . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 301 Technology manager . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 302 Exploring Jobs in Ancillary Industries and Professions . . . . . . . . . . . 302 Finding Employers . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 303 Improving Your Odds of Getting Hired . . . . . . . . . . . . . . . . . . . . . . . . 304 Brush up on cannabis culture and law . . . . . . . . . . . . . . . . . . . . . . 304 Attend industry events . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 305 Get your cannabis badge or state clearance . . . . . . . . . . . . . . . . . 305 Become a cannabis activist . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 306 
+CHAPTER 16:Investing in Cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 307 Sizing Up Current and Future Investment Opportunities . . . . . . . . . 308 Considering the current market . . . . . . . . . . . . . . . . . . . . . . . . . . . 308 Exploring publicly traded stock on the Canadian market . . . . . . 310 Looking ahead to the future market . . . . . . . . . . . . . . . . . . . . . . . . 312 Performing Your Due Diligence . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 312 Seeking Private Investment Opportunities . . . . . . . . . . . . . . . . . . . . . 313 Considering Investments in Ancillary Businesses . . . . . . . . . . . . . . . . 314 Investing in Cannabis Real Estate . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 314
+Table of Contents xiii 
+PART 6: THE PART OF TENS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 317 
+CHAPTER 17: Ten Tips for Growing More and Better Weed . . . . . 319 Choose the Right Strain . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 319 Choose Top-Quality Seeds . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 321 Use High-Quality Soil.........................................321 Upsize Your Containers . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 321 Maximize Bud Production with Topping, Training,  
+and Scrogging . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 322 Use the Right Nutrients in the Right Amounts  
+at the Right Times . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 323 Get the Lighting Right . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 323 Ensure Proper Ventilation and Circulation . . . . . . . . . . . . . . . . . . . . . 324 Be Patient Near Harvest Time . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 325 Dry and Cure Your Weed Properly . . . . . . . . . . . . . . . . . . . . . . . . . . . . 325 
+CHAPTER 18: Ten Tips to Enhance Your  
+Cannabis Experience . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 327 Choose Top-Quality Products . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 327 Experiment with Different Strains..............................328 Try Different Consumption Methods . . . . . . . . . . . . . . . . . . . . . . . . . . 328 Try Hash and Other Concentrates . . . . . . . . . . . . . . . . . . . . . . . . . . . . 329 Set the Mood . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 329 Chill Your Bong . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 330 Boost Your High with Certain Foods . . . . . . . . . . . . . . . . . . . . . . . . . . . 330 Exercise Regularly . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 331 Break the Monotony . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 331 Take a Tolerance Break . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 331 
+CHAPTER 19: Ten Tips for Buying Cannabis . . . . . . . . . . . . . . . . . . . . . . . . 333 Choose the Right Dispensary for You . . . . . . . . . . . . . . . . . . . . . . . . . . 333 Find a Knowledgeable and Helpful Budtender . . . . . . . . . . . . . . . . . . 334 Describe the Specific Effect You Desire . . . . . . . . . . . . . . . . . . . . . . . . 335 Buy Legal Cannabis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 335 Visually Inspect the Product . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 336 Smell It . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 336 “Feel” It . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 337 Taste It . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 337 Ask About the Cultivation Method . . . . . . . . . . . . . . . . . . . . . . . . . . . . 338 Compare Prices . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 338 
+APPENDIX: CANNABIS RECIPES . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 339 INDEX . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 361
+xiv Cannabis For Dummies 
+Introduction 
+Welcome to Cannabis For Dummies, your definitive guide to all things can nabis. Cannabis has a long history. Human use dates back to the third  
+millennium BCE according to the earliest written records. In the U.S.,  
+its popularity rose among subcultures and countercultures in the 1950s and 60s.  However, cannabis didn’t break through the subculture barriers to enter the  mainstream until relatively recently. Now, with several countries and many states  in the U.S. legalizing it for medical or adult recreational use (or both), cannabis  has exploded onto the national and international stage. Interest and excitement  are growing fast, whether you’re a consumer, entrepreneur, investor, or someone  who’s just curious about it. 
+Depending on your experience with cannabis, you may know a lot, a little, or vir tually nothing about it or about certain facets of it. For example, you may know all  about buying it and consuming it but very little about growing, harvesting, and  curing it. You may know something about concentrates and extracts but nothing  about the business side of cannabis. Likewise, you may have used cannabis recre ationally but have little or no idea of its potential health benefits. 
+Regardless of your interest in cannabis and your motivation for finding out more  about it, you’ve come to the right place. 
+About This Book 
+In Cannabis For Dummies we cover the science behind the effects cannabis has on  people; the rules and regulations governing its purchase, possession, and use;  how to buy and consume it; how to grow it and make your own concentrates and  marijuana infused products (MIPs); how to reap its potential health benefits for  you and your pets; the basics of starting and running a cannabis business; how to  invest in it; and how to find work in the industry.
+Introduction 1 
+To make the content more accessible, we divided it into six parts: 
+» Part 1, “Getting Started with Cannabis” brings you up to speed on the basics.  
+We take you on a tour of the entire book, covering each key topic in a nutshell.  
+Then, we give you a primer on cannabis rules and regulations to keep you out  
+of legal trouble and explain the politics and culture surrounding cannabis. 
+» Part 2, “Buying, Storing, and Using Cannabis,” guides you through the process  
+of choosing and visiting a cannabis dispensary, provides instructions on various  
+methods for consuming cannabis, and provides insight on how to use cannabis  
+safely and responsibly. 
+» Part 3, “Reaping the Potential Benefits of Medical Marijuana,” explains the  
+potential health benefits of cannabis and provides guidance on how to use  
+cannabis for potential symptom relief connected to a wide range of medical  
+conditions. You also find out about the potential benefits of cannabis products  
+for pets along with guidance for how to use these products more safely. 
+» Part 4, “Grasping the Basics of Cannabis Cultivation, Post-Harvest, and  
+Production,” is for the do-it-yourselfers among the audience. Here, we lead  
+you through the process of growing cannabis indoors or outdoors; how to  
+harvest, dry, and cure it properly; and how to make your own cannabis  
+concentrates and marijuana infused products (MIPs). 
+» Part 5, “Getting Down to Business,” offers insight into starting your own  
+cannabis business, finding work in the industry, and investing in cannabis —  
+the various ways to earn a buck from a potentially lucrative industry. 
+» Part 6, “The Part of Tens,” features ten tips for growing more and better weed,  ten tips for enhancing your cannabis experience, and ten tips for ensuring  
+that you get what you paid for when buying cannabis. 
+As an added bonus, the appendix provides a number of recipes for cooking up your  very own cannabis edibles, including Infused Lavender Lemonade, Michelle’s  Medicated Blueberry Pie, No-Guilt Nosh, and Chocolate Chip Oatmeal Cookies. 
+In short, this book serves as your A–Z guide to all things cannabis. 
+Foolish Assumptions 
+All assumptions are foolish, and we’re reluctant to make them, but to keep this  book focused on the right audience and ensure that it fulfills our purpose in writ ing it, we had to make the following foolish assumptions about you: 
+2 Cannabis For Dummies
+» You’re old enough to buy, possess, and consume cannabis wherever you  
+happen to live. If you’re not of legal age, don’t read this book. 
+» You’re committed to complying with the cannabis rules and regulations in  
+whatever jurisdictions you live. We don’t condone breaking any laws, which is  
+why we have an entire chapter on rules and regulations and plenty of  
+warnings sprinkled throughout the book. 
+» If you consume cannabis, we assume that you’re committed to doing so safely  and responsibly, which includes not driving high, preventing children and pets  
+from accessing your cannabis, and consuming in moderation. 
+» You’re eager to find out more about cannabis. While you may know a great  
+deal already, our hope is that you will learn something new, especially if you’re  
+returning to cannabis after a long absence. 
+Other than those four foolish assumptions, we can honestly say that we can’t  assume much more about you. The vast number of people who have experience  with cannabis or are curious about it represent a diverse demographic. You may be  21 or 90 years old or somewhere in between, a white collar or blue collar worker,  a housewife or house husband, a doctor, a lawyer, rich or poor. Regardless of the  demographic, we applaud you for being open-minded and willing to explore what  we feel is a fascinating world. 
+Icons Used in This Book 
+Throughout this book, icons in the margins highlight certain types of valuable  information that call out for your attention. Here are the icons you’ll encounter  and a brief description of each. 
+We want you to remember everything you read in this book, but if you can’t quite  do that, then remember the important points flagged with this icon. 
+Tips provide insider insight. When you’re looking for a better, faster way to do  something, check out these tips. 
+“Whoa!” Before you take another step, read this warning. We provide this cau tionary content to help you avoid the common pitfalls that are otherwise likely to  trip you up. 
+Introduction 3
+Beyond the Book 
+In addition to the abundance of information and guidance related to cannabis that  we provide in this book, you get access to even more help and information online  at Dummies.com. Check out this book’s online Cheat Sheet for handy info regarding  different strains of cannabis, cannabinoids, and terpenes; tips for growing more  and better cannabis plants, and pros and cons of starting your own cannabis busi 
+ness. Just go to www.dummies.com and search for “Cannabis For Dummies Cheat  Sheet.” 
+Where to Go from Here 
+You’re certainly welcome to read this book from cover to cover, but we wrote it in  a way that facilitates skipping around. For a quick tutorial on cannabis that  touches on all the key topics, turn to Chapter 1. For a brief tour of cannabis anat omy and its unique chemical properties, check out Chapter 2. Chapter 3 is a must read; we included it to help you avoid getting into legal trouble. 
+If you’re looking to buy cannabis and consume it medically, recreationally, or  both, turn to the chapters in Part 2. We want to be sure you’re buying the products  that are most likely to deliver the experience you desire without getting ripped off,  and we want you to know about the various ways of consuming cannabis, so you  can make well-informed choices. 
+Those who are looking to reap the medical benefits of marijuana or use it for their  pets should turn to the chapters in Part 3. If you want to grow your own cannabis  and use it to make concentrates and other products, turn to Part 4. And if you want  to find gainful employment or explore other ways to make money in the cannabis  industry, turn to the chapters in Part 5. 
+Consider Part 6 and the appendix bonus items — tips and recipes for getting the  most out of your cannabis experience! 
+4 Cannabis For Dummies
+1Getting Started  with Cannabis
+IN THIS PART . . . 
+Wrap your brain around the multifaceted topic of  cannabis — from consumption and cultivation to law  and culture. 
+Explore the cannabis plant, its chemical composition,  and the many extracts and concentrates derived  from it. 
+Find out where cannabis is legal for medical and adult  recreational use and figure out where to go to find out  more about specific rules and regulations. 
+Get up to speed on cannabis politics and culture to  increase your awareness of the ever-evolving  landscape regarding accessibility and acceptance.
+IN THIS CHAPTER 
+» Weighing cannabis consumption pros  
+and cons 
+» Checking out the unique chemical  
+properties of cannabis 
+» Differentiating among a variety of  
+cannabis strains 
+» Starting on the road to becoming a  
+savvy shopper and consumer 
+» Understanding the path from farm to  
+final product
+Chapter 1 
+Taking the Nickel Tour 
+Cannabis is a multifaceted topic, which is one of the reasons it’s so fascinat ing. You can approach it from many different angles, discussing consump tion (both medical and adult use), law (as it applies to individuals and  businesses), the science behind it (in terms of both biology and chemistry), how  to buy it without getting ripped off, the various ways to consume it, how it’s  made, and even different ways to make money in and from the industry. 
+In this chapter, we touch on each of these topics and more to provide you with a  broad introduction to the fascinating world of cannabis and refer you to other  parts and chapters in the book where you can find more in-depth discussions.  Think of this chapter as cannabis orientation day and your roadmap to discovering  more about cannabis all rolled into one. 
+CHAPTER 1 Taking the Nickel Tour 7 
+Exploring the Basics of Marijuana  Consumption 
+People have been ingesting marijuana in various forms (mostly by smoking it) for  more than 5,000 years. The plant has unique chemical properties that make it  attractive for use in certain religious and cultural ceremonies, adult recreational  activities, and medicinal regimens (to potentially alleviate symptoms of a wide  range of medical conditions). 
+In this section, we explore some of the potential benefits of cannabis for medical  and adult recreational use along with some of the potential drawbacks, so you can  begin to develop well-informed opinions and decisions regarding its use. 
+Considering medical use 
+Some of the chemical components of cannabis have unique properties that mimic  certain chemical messengers found naturally in the body that help to regulate cer tain bodily functions, such as appetite, digestion, and immune function. (See the  later section “Knowing What Makes Cannabis So Special” for details.) As a result,  two countries and the majority of states in the U.S. have legalized medical mari juana use for certain medical conditions. Qualifying medical conditions vary from  one jurisdiction to another but may include the following: 
+» Acute or chronic pain 
+» Anxiety and/or stress 
+» Arthritis 
+» Asthma 
+» Epilepsy 
+» Gastrointestinal disorders » Glaucoma 
+» Inflammation 
+» Loss of appetite or wasting  syndrome 
+» Movement disorders (dystonia,  Huntington’s disease, Parkinson’s  disease, Tourette’s syndrome, and  spinocerebellar ataxias) 
+» Multiple sclerosis (MS) 
+» Nausea and vomiting (particu larly when associated with  chemotherapy) 
+» Opioid withdrawal 
+» Palliative care 
+» Post-traumatic stress disorder  (PTSD) 
+» Sleep disorders
+8 PART 1 Getting Started with Cannabis 
+Unfortunately, by classifying marijuana as a Schedule I drug, the U.S. federal gov ernment has declared that it has “no currently accepted medical use and a high  potential for abuse.” As a result, and because of the lack of research supporting  cannabis’ potential health benefits, we need to be careful about how we approach  this topic. We can’t say it cures any disease or illness, that it helps to cure a dis ease or illness, or even that it provides symptomatic relief. All we can say is that  it has the potential to alleviate symptoms of certain medical conditions, which  means maybe it works and maybe it doesn’t. 
+A LACK OF RESEARCH 
+One of the big factors preventing doctors and veterinarians in many states from recom mending medical marijuana to patients is the lack of research proving or disproving its  effectiveness and risks. The lack of research can be traced to several causes, including 
+• Regulatory hassles: Researchers must navigate through complex regulatory barri ers put in place by the Food and Drug Administration (FDA), the Drug Enforcement  Administration (DEA), the National Institute on Drug Abuse (NIDA), and state regula tory agencies. 
+• Restricted supply of cannabis for research: NIDA is the only source of cannabis  available for research scientists, and until recently, the University of Mississippi had  the sole contract to grow it, and the strains it grows have a potency that’s too low  for high-quality studies and much lower than current products available in the legal  market. 
+• Funding limitations: Federal funding for cannabis research is primarily allocated  to study its possible adverse effects and much less so to study its potential thera peutic effects. 
+• Challenges with dosing and placebos: Study participants may not accept any  consumption method other than smoking or vaping, which makes dose control in  studies especially difficult. Also difficult is finding a suitable placebo for the control  group. 
+• Research controls: Tremendous variations in cannabinoid content and potency  in different strains as well as consumption methods are difficult to control for  researchers using current cannabis consumers as subjects. 
+Although some challenges are outside the scope of government control, the big reasons  for lack of research in this area can be traced back to the fact that cannabis is federally  illegal in the U.S. This results in a Catch-22, in which the government denies the poten tial health benefits of cannabis while preventing the studies necessary to provide any  evidence.
+CHAPTER 1 Taking the Nickel Tour 9 
+The one big exception is at least three clinical studies have shown that low-dose  cannabidiol (CBD) is useful in reducing seizures in people who suffer from two  rare forms of epilepsy — Lennox-Gastaut syndrome and Dravet syndrome. Proof  for alleviating symptoms related to a host of other medical conditions is restricted  to either anecdotal evidence or evidence from limited clinical trials. 
+See the chapters in Part 3 for details about using medical marijuana for yourself  and possibly even your pets. 
+Looking into adult recreational use 
+THC (short for tetrahydrocannabinol) has strong psychoactive properties, meaning  it can alter brain function to create changes in perception, mood, consciousness,  cognition (thinking and memory), and behavior. Other substances that are psy choactive include caffeine, nicotine, alcohol, ephedrine, cocaine, and a number of  pharmaceutical drugs used for treating psychiatric conditions. At low doses, THC  tends to create a sense of well-being or euphoria and relaxation, which is largely  responsible for making cannabis such an attractive adult recreational drug. At  higher doses, it can create anxiety, impaired thinking, and loss of coordination. 
+When looking at cannabis as an adult recreational drug, it’s best compared to alco hol, which also produces intoxicating effects and tends to lower anxiety in the  short term. Some argue that cannabis is actually safer than alcohol because canna bis isn’t associated with physical addiction and because it may not be as harmful  to the body as alcohol. However, cannabis is associated with psychological addic tion, and long term use or overconsumption may be associated with long-term  adverse side effects, so it is not totally safe. In addition, because it’s intoxicating,  a consumer should never drive or operate machinery when using cannabis. 
+Use cannabis only legally and responsibly. Follow the same precautions as you  would (should) when consuming alcohol recreationally — use it in moderation,  and don’t drive under the influence. 
+Acknowledging the potential drawbacks 
+Cannabis isn’t a totally safe miracle drug as some present it to be. Nor is it a highly  addictive and dangerous drug as others think. It’s not nearly as addictive or  potentially dangerous as opioids, for example. Cannabis offers many potential  benefits when consumed responsibly. However, it also has some potential draw 
+backs, including the following: 
+» Heavy underage use is associated with impaired thinking, memory, and  learning functions. One study from New Zealand conducted in part by Duke 
+10 PART 1 Getting Started with Cannabis 
+University researchers showed an average loss of 8 IQ points among those  
+who smoked marijuana heavily in their teenage years. (Those who started  
+consuming cannabis as adults didn’t show notable declines.) 
+» Increased heart rate, which may increase the chances of heart attack in  
+susceptible populations. 
+» Lung irritation, coughing, and potential breathing problems if the cannabis is  smoked, including problems associated with secondhand smoke. 
+» Increased risk of serious accidents, including car accidents caused by those  
+who consume illegally and irresponsibly. 
+» Worsening of symptoms in people with schizophrenia, such as paranoia,  
+hallucinations, and disorganized thinking. 
+» Problems with childhood development during and after pregnancy in the  
+form of lower birth weight and increased risk of both brain and behavioral  
+problems, including attention deficits. 
+Check out Chapter 9 for additional details on the possible adverse side effects of  cannabis. 
+Knowing What Makes Cannabis So Special 
+Mammals, including humans, are equipped with a chemical messenger system  called the endocannabinoid system (ECS), which plays a role in regulating appetite,  pain, inflammation, immune function, digestion, reproduction, memory, motor  learning, stress, and so on. The ECS contains cannabinoid receptors distributed  throughout the central and peripheral nervous systems along with endocannabi 
+noids, which serve as chemical messengers to enable communication across the  system. 
+The ECS plays a key role in helping the body maintain homeostasis  — healthy  equilibrium. When an imbalance occurs, the body engages the ECS to help correct  it. Certain endocannabinoids are dispatched, and they lock into designated can nabinoid receptors, fitting into the receptors like keys in a lock. The receptors  then engage the nervous system to take action to correct the imbalance. The two  main cannabinoid receptors are CB1 and CB2: 
+» CB1 receptors are located primarily in the brain and central nervous system  
+and, to a lesser extent, in other tissues. They play a role in regulating appetite  
+and pain and in memory and emotional processing.
+CHAPTER 1 Taking the Nickel Tour 11 
+» CB2 receptors are located primarily in the peripheral organs, especially cells  associated with the immune system. When activated, they work to reduce  inflammation. Because many chronic conditions, including pain, are associ ated with inflammation, many of the potential health benefits of cannabis are  thought to be linked to the CB2 receptor. 
+Cannabis contains phytocannabinoids — a type of exogenous (as opposed to endog enous) cannabinoid — along with terpenes — aromatic chemical compounds com monly found in plants and essential oils made from plants. Here’s a list of the  chemical compounds in cannabis most strongly associated with its effects: 
+» Tetrahydrocannabinol (THC) is the psychoactive chemical compound in  cannabis that creates the high. It affects thinking, memory, pleasure, physical  movement, concentration, coordination, and sensory and time perception. 
+» Cannabidiol (CBD) is mostly associated with cannabis’ potential health benefits.  CBD is often used by patients seeking relief from pain, inflammation, anxiety,  and seizures. It’s not psychoactive, so it won’t make you feel intoxicated. In fact,  it may help to counteract the psychoactive properties of THC. CBD can also be  extracted from hemp, and in this form, it’s federally legal; hence, hemp-derived  CBD products are generally more available across the U.S. 
+» 9-tetrahydrocannabinol acid (THCa) is the precursor to THC that doesn’t  have psychoactive properties, so it won’t make you high. When cannabis is  heated to above 220 degrees Fahrenheit, THCa is converted into THC through  a process called decarboxylation. THCa may help to stimulate appetite, reduce  nausea and vomiting, prevent or reduce inflammation, inhibit prostate growth,  and slow the progression of certain neurodegenerative diseases, such as  Parkinson’s disease. 
+» Tetrahydrocannabivarin (THCv) is similar to THC and does have some  psychoactive properties in high doses, but it has some unique effects that  differ from those of THC. It is an appetite suppressant, stimulates bone  growth, and may help with diabetes, Alzheimer’s, and panic attacks in PTSD.  It needs to be heated higher than THC to about 428°F when vaporizing. 
+» Cannabigerol (CBG) is a non-psychoactive cannabinoid. It has analgesic, muscle  relaxant, anti-erythemic (reduces redness is skin), antifungal, anti-depressant,  anti-proliferative, anti-psoriatic, and anti-bacterial properties. As an antibacterial,  it can be a powerful weapon against the methicillin-resistant Staphylococcus  aureus (MRSA) virus. 
+» Cannabinol (CBN) is a mildly psychoactive cannabinoid that comes from the  degradation of THC after an extended period of time due to exposure to  oxygen and heat. CBN has analgesic, antibacterial, anti-inflammatory, anti insomnia, antiemetic, appetite stimulant, and bone stimulant properties. 
+12 PART 1 Getting Started with Cannabis 
+It’s also effective in treating burns. CBN is only 10 percent as psychoactive as  
+THC, but it can produce a very mild high. 
+» Terpenes are aromatic chemical compounds in plants that give them their  
+unique aroma and flavor. They may also work synergistically with cannabi 
+noids and other terpenes to enhance the overall effect of the cannabis — a  
+phenomenon commonly referred to as the “entourage effect.” 
+All cannabis products you purchase at a dispensary are labeled with concentra tions or amounts of the various active ingredients, which usually includes amounts  and/or percentages of THC and CBD. The label may also include a terpene profile  or other ingredients. See Chapter  2 for more about cannabinoid and terpene  chemistry. 
+Recognizing the Diversity of  
+Cannabis Strains 
+Not all cannabis plants are the same. They vary in structure, cannabinoid and  terpene content, and the conditions they require for optimal growth. However, the  diversity of strains can all be traced back to one or more of the following strains: 
+» Indica: Indicas are short, bushy plants that reach a maximum height of 10 feet  and have rounder leaves (than sativas). They flower relatively quickly and are  
+sensitive to changes in light. Indicas have a higher concentration of CBD-to-THC  
+than sativas, so they produce a more relaxed effect and are more likely to make  
+you drowsy. The high CBD content also makes indicas more attractive for their  
+potential medicinal properties. 
+» Sativa: Sativas are taller and less bushy than indicas and can reach a maxi 
+mum height of about 19 feet. Their leaves are more slender. Sativas tend to  
+have a higher concentration of THC-to-CBD, which tends to create a more  
+active, energetic, and creative high. 
+» Ruderalis: Ruderalis plants are very short and bushy, reaching a maximum  
+height of about two feet. They have a shorter growing season and are auto 
+flowering instead of photoperiod plants. While photoperiod plants require about  
+12 hours of total darkness over several weeks to form buds, auto-flowering plants  
+flower after a certain amount of time regardless of the amount of light to which  
+they’re exposed. Ruderalis plants aren’t nearly as psychoactive as indicas and  
+sativas, so you’ll rarely see them on product labels, but you will see them on  
+labels when you’re shopping for seeds to plant. A ruderalis is commonly  
+cross-bred with an indica and a sativa (or an existing hybrid) to make the latter  
+plants auto-flowering.
+CHAPTER 1 Taking the Nickel Tour 13 
+Sativas and indicas are cross-bred to create many of the popular hybrids, such as  Blue Dream, Pineapple Express, and Lemon Kush. See Chapter 2 for more about  the different strains. 
+Buying Cannabis 
+Buying cannabis has never been easier or less risky, at least in places where it’s  legal. You enter a cannabis dispensary, show your ID to prove you’re of age and  show your medical marijuana card (when applicable), and consult with a sales  associate (sometimes referred to as a budtender) to find the products that meet  your needs and desires. The only big difference from other retail purchases is that  when you’re buying cannabis, you usually have to pay cash. Of course, the process  is somewhat more involved, which is why we devoted an entire chapter to choos 
+ing and visiting a cannabis dispensary (Chapter 5). 
+In this section, we bring you up to speed on how to buy cannabis in order to rein force the rationale behind buying legally and steer you clear of common scams. 
+Knowing where and where not to get it 
+One of the biggest benefits of marijuana legalization is the accompanying regula tion that’s put in place to protect consumers. When you buy from a legal, reputa ble dispensary or other retailer, you’re benefiting from those protections. Some of  the value delivered by the dispensary or retailer is quality assurance. All products  are tested and clearly labeled to show the ingredients and potencies along with the  levels of any contaminants. You can purchase products with the assurance that  you’re getting what you paid for. 
+If you choose to buy from a friend or from a black market seller, which we highly  discourage, you increase your exposure to risks, including the following: 
+» Getting robbed or ripped off: A thief may either steal your money outright  
+or sell you a poor quality product that’s not worth the money. 
+» Buying and consuming a potentially dangerous product: You may be sold  something other than cannabis, something laced with a dangerous substance,  
+or something that inadvertently contains high levels of pesticides, mold, fungi,  
+solvents, or other harmful contaminants. 
+» Not knowing the potency of the product: Because black market sellers  
+don’t lab test their products and label them, you may have little to no idea  
+how potent it is, what the CBD-to-THC ratio is, or what dose to take.
+14 PART 1 Getting Started with Cannabis 
+» Supporting crime: By buying on the black market, you’re supporting crime,  which increases safety risks not only for you but also for others in your  community. 
+Because the seller plays such a key role in quality assurance, your choice of where to  buy may be even more important than your choice of what to buy. Buy from a medi cal marijuana or adult recreational dispensary and not from a black market seller. 
+Placing an order online or over the phone for pickup or delivery is fine, but only if  you’re ordering from a licensed and reputable retailer with whom you’ve already  established a relationship. Otherwise, you’re exposing yourself to a significant  risk of getting ripped off or passing your credit card information to someone  who’ll use it for his personal spending spree. 
+Understanding what you’re buying 
+Although the sales associate at your chosen cannabis dispensary can be your  greatest ally in understanding what you’re buying, you still need to be able to read  and understand product labels and, if you’re buying bud/flower, be able to judge  its quality by looking at it and smelling it. 
+The information printed on product labels for flower, edibles, vape oils, tinctures,  and other cannabis products is very useful for understanding what you’re buying  and for comparison shopping. Product labels are usually required to contain the  following details: 
+» Universal THC logo: If the product contains more than 0.03% THC, it needs to  display the universal THC logo. 
+» Cannabinoid content: For bud/flower, the label may indicate the percent ages or ratios of CBD, THC, THCa, and other cannabinoids. In processed  products, such as edibles and tinctures, cannabinoid content may be pre sented in milligrams (mg) for the entire package and broken down by serving. 
+» Strain(s): The strain(s) of the bud/flower or the plants used to create the  product. 
+» Organic: If the product is organic, the label usually has some indication of that  fact. 
+» Terpene content: Percentages or milligrams of the various terpenes. » Test results: Some indication that the product doesn’t contain harmful levels  of pesticides, molds, fungi, solvents, or other contaminants. 
+» Expiration, sell-by, or best-used-by date: The date on which the freshness  of the product can’t be guaranteed.
+CHAPTER 1 Taking the Nickel Tour 15 
+Additionally, you can usually tell the quality of flower by looking at it and smelling  it. It should be colorful, mostly green, and have a pleasantly pungent odor. If it looks  brown and dry, smells moldy or like wet hay, or it has little to no aroma, don’t buy  it. For additional guidance on buying quality cannabis, check out Chapters 8 and 19. 
+Hemp-derived CBD products are widely available, but they contain no more than  0.03 percent of THC. If you buy a hemp-derived CBD product expecting some sort  of high, you’re going to be very disappointed. However, these products should  have similar medicinal properties to the CBD in cannabis. 
+Avoiding rip-offs 
+Cannabis rip-offs generally fall into two categories: 
+» Investment schemes: The promise of big returns in a short period of time by  investing in cannabis businesses makes eager investors susceptible to  
+investment scams. 
+» Illegal sales: These are most commonly online sales from sellers who  
+promise to ship product across state lines (a federal offense) and who never  
+have the intention of doing so. Illegal sales also include black-market sales,  
+which increase exposure to several risks, as explained in the earlier section  
+“Knowing where and where not to get it.” 
+To avoid stock market scams, perform your due diligence in researching any can nabis company or fund carefully before investing in it. If you don’t understand the  industry, the company’s management, and its financials, don’t invest in it. To  
+avoid illegal sales scams, simply shop for your cannabis at a legal, reputable dis pensary or other licensed retail outlet. 
+Exploring Different Consumption Methods 
+Traditionally, consumers smoked cannabis in a pipe, a bong, or rolled as a joint.  Edibles, primarily brownies or cookies, provided another common method. However,  the legalization of cannabis, along with new technologies such as vaping devices,  have given rise to a plethora of new consumption methods. In this section, we briefly  describe your options. (See Chapter 6 for details along with instructions.) 
+Smoking or vaping 
+The two most common methods of consuming cannabis are smoking and vaping.  With smoking, you burn (combust) the cannabis and inhale the smoke. With 
+16 PART 1 Getting Started with Cannabis 
+vaping, a device heats the plant matter or (usually) a concentrate such as oil to a  point at which it vaporizes, and you inhale the vapor. The benefits of both methods  are fast onset and intensity of the effect. Some consumers claim that smoke is  more aromatic and flavorful and delivers longer-lasting effects, but vaping offers  a few advantages: 
+» More efficient: Vaping releases a higher percentage of THC from the plant  than does combustion. 
+» More discreet: People can’t tell whether you’re vaping cannabis or nicotine  oil, and you don’t have the lingering odors that result from smoking cannabis. » Easier to do: All you do is press a button and inhale. However, you do need to  charge the battery, and if you’re vaping plant matter (as opposed to oil), you  need to load the chamber and clean it after each use. 
+» Probably healthier: Vapor doesn’t contain the tar and other carcinogens  produced by burning plant matter. We’re not saying vapor is healthy, only that  it’s probably not as unhealthy as smoke. 
+Edibles 
+Edibles include chocolates, gummies, baked goods, and beverages infused with  cannabis. They provide the most discreet means for consuming cannabis, and they  enable you to enjoy two or more of your favorite indulgences at the same time. 
+Don’t consume too much too quickly. You may not begin to feel the effects for up  to two hours, so start low and go slow until you get a feel for how a certain dose  affects you. 
+Eating raw cannabis plant matter won’t produce the desired effects. Decarboxyla tion (usually through heating the cannabis) is required to convert the THCa into  the THC that makes you high. 
+Tinctures 
+A tincture is a concentrated herbal extract. You commonly consume tinctures by  placing a few drops under your tongue, holding them there a few seconds, and  then swallowing. You can also add tinctures to your favorite foods, beverages, or  lotions (for topical application). Cannabis tinctures take effect fairly quickly; the  speed of onset is second only to smoking or vaping.
+CHAPTER 1 Taking the Nickel Tour 17 
+Tinctures are great for avoiding overconsumption with edibles. Because tinctures  take effect much more quickly than edibles, you can use a tincture to figure out  how many milligrams (mg) of THC you need to take to feel the desired effects.  Then you’ll know the maximum amount of THC to consume when you’re using  edibles. 
+Topical or transdermal applications 
+Topicals are cannabis-infused lotions, creams, oils, and balms that are applied to  the skin to relieve pain and inflammation. They don’t reach the bloodstream, so  they don’t deliver the intoxicating effects of other consumption methods.  However, transdermal patches applied to the skin, do deliver cannabinoids to the  bloodstream. While topicals are generally used to relieve localized pain and  inflammation, transdermal patches are the better choice for more systemic relief. 
+Getting Up to Speed on Cannabis Laws 
+As of the writing of this book, cannabis is federally illegal in the U.S., but legal  throughout Canada and Uruguay and in certain states in the U.S. In states where  cannabis is legal, it may be legal for medical use only or for both medical and adult  recreational use. To find out where cannabis is legal in the U.S. and where it’s not,  check out the map at thecannabisindustry.org/ncia-news-resources/state 
+by-state-policies. 
+Cannabis laws vary by state and even within the states where it’s legal, because  various jurisdictions within the state can set their own laws and even prohibit  dispensaries from operating in their jurisdiction. While laws vary, the laws that  apply to consumers are typically broken down into the following categories: 
+» Purchase: Laws that pertain to purchasing cannabis specify a minimum age,  identification and age verification, purchase limits, and purchase locations  
+in addition to certain rules governing the sales transaction; for example,  
+in some jurisdictions, customers are prohibited from pooling their money  
+to buy products. 
+» Possession: Like purchase laws, possession laws specify a minimum age,  
+identification and age verification, and possession limits. For example, in  
+Colorado, if you’re 21 years or older, can you legally possess one ounce  
+(about 28 grams) of THC in flower form. 
+» Consumption: Driving under the influence of cannabis is illegal everywhere,  
+and public consumption is generally illegal. You’re not allowed to simply light 
+18 PART 1 Getting Started with Cannabis 
+up when you’re walking down the street. Some areas have legal bring-your 
+own-cannabis clubs or lounges and other establishments, such as cannabis 
+friendly motels. One key to steering clear of trouble is to be discreet — edibles  
+and vape pens may be your best options when consuming away from the  
+privacy or your own home. 
+Don’t consume on federal property, such as a national park. 
+» Transportation: Cannabis laws contain rules similar to open container laws for  alcohol. You’re not allowed to have cannabis in the passenger area of a vehicle  
+if it is in an open container (manufacturer’s seal is broken) or if there’s evidence  
+of consumption. Also, you’re prohibited from transporting or shipping product  
+over state lines, even across state lines that separate two legal states, because it  
+constitutes drug trafficking, which is a federal offense. 
+» Cultivation: These laws typically stipulate that you must be a certain age to  
+grow marijuana, that you’re allowed to grow only a certain number of plants,  
+that only a certain number of those plants can be in the flower stage, and that  
+plants must be in an enclosed, private, and locked space on private property  
+you own. 
+Many more rules and regulations govern commercial operations, including grow ers, manufacturers, sellers, and delivery services. See Chapter 3 for more detailed  coverage of cannabis laws and advice for staying out of legal trouble. 
+Being a Safe and Responsible User 
+Being a safe, responsible cannabis consumer is important for two reasons: First,  it ensures your health and safety and that of others. Second, irresponsible and  inconsiderate use runs the risk of spoiling legalization for everyone. To be a safe  and responsible cannabis consumer, follow these guidelines: 
+» Protect minors and pets. Keep your cannabis out of the reach of children  
+and teenagers, along with your pets. 
+» Don’t drive high. Stay at home or designate a driver. 
+» Be discreet and considerate. Smoking or vaping in the company of others  
+may or may not be appropriate or welcome. Consider the setting, the people,  
+and the situation. 
+» Don’t overconsume. Excessive long-term consumption isn’t healthy and may  negatively affect various aspects of your life. 
+» Don’t mix cannabis and alcohol. These two substances can intensify the  
+intoxicating effects of one another in unexpected ways.
+CHAPTER 1 Taking the Nickel Tour 19 
+» Be careful with edibles. Until you know the dose required to produce the  
+desired effects, start with a low dose and wait at least two hours before taking  
+any more. 
+See Chapter 7 for additional guidance on how to consume safely and responsibly. 
+Grasping the Basics of Cannabis  
+Production 
+Take a stroll through a cannabis dispensary and you’ll be amazed at the diversity  of products — bud/flower, pre-filled vape pens, concentrates, tinctures, lotions,  sprays, gummies, chocolates, and more. If you’re wondering how all this stuff  gets made or you want to grow your own bud or make your own cannabis infused  products, you’ve come to the right place. Here, we cover the bare-boned basics.  Turn to Part 4 for detailed coverage. 
+Growing cannabis 
+In most areas where cannabis is legal, it’s legal to grow, too, assuming you follow  the rules and regulations and your grow operation doesn’t offend the neighbors.  Cannabis is as easy to grow as a tomato plant. Assuming you give it all the nutri ents it needs — rich soil, clean water, and plenty of sunshine and fresh air — you  can expect to have a bountiful crop ready to harvest in six to ten weeks (typically  eight weeks). 
+We devoted an entire (long) chapter (Chapter 11) to growing cannabis, which cov ers indoor and outdoor grows, lighting, ventilation, fertilizers, and much more,  but here are the key takeaways: 
+» Start with good quality soil that absorbs moisture but drains well, too. 
+» Provide enough water but not too much. 
+» If you’re growing in containers, make sure the container is large enough to  
+accommodate the roots of the plant you’re growing. Some cannabis strains  
+are much larger than others, and a pot that’s too small will stunt the plant’s  
+growth or even kill it. 
+» Start with feminized seeds, which are much more likely to grow into female  
+plants, which eventually develop the buds you want to harvest. Seeds sold at  
+dispensaries are feminized.
+20 PART 1 Getting Started with Cannabis 
+» A single male plant can pollinate all the female plants in your grow room and  ruin your entire crop, so identify each plant’s sex as early as possible and  isolate the males. (See Chapter 2 for guidance on telling the difference  between male and female plants.) 
+» Plants can be photoperiod or auto-flowering. Photoperiod plants are sensitive  to changes in light and require at least 12 hours of darkness daily to enter the  flowering stage. Auto-flowering plants develop flowers on schedule even if  they get less than 12 hours of darkness. With photoperiod plants, you need to  be much more diligent about ensuring that they’re getting at least 12 hours of  darkness starting about halfway through the grow cycle. Seed package  labeling indicates whether the seeds are for auto-flowering plants. 
+» During the vegetative stage of the growth cycle (the first four to eight weeks)  feed the plants a fertilizer that’s higher in nitrogen. When the plant is nearly  half its adult size, switch to a fertilizer that’s lower in nitrogen and higher in  potassium and phosphorous. (If you’re starting with soil that has fertilizer  mixed in, don’t fertilize for the first four or five weeks.) 
+» When your plant starts getting bushy, start pruning it to remove growth near  the center stalk and lower branches that aren’t receiving much growth. The  goals are to redirect the plant’s energy to the buds/flowers and open the plant  up to light and fresh air. 
+Harvesting and curing cannabis 
+When the pistils (hair-like structures) on about half the buds on your plant turn  orange or red, the plant is ready to harvest. You can cut down the entire plant or  cut off all the branches that contain buds. Remove the fan leaves, and hang the  branches (with flowers attached) upside down in a dark room with a temperature  of 60–70 degrees Fahrenheit, relative humidity between 45 and 55 percent, and a  small fan to gently circulate the air. Be sure to leave space between the branches  to prevent mold and mildew. 
+This initial drying period usually takes a week or two. When the flowers are a little  crunchy on the outside but feel a little spongy (not squishy wet) and the smaller  branches snap when bent rather than folding over, the flowers are ready to be cured. 
+To cure the flowers, remove them from the branches and trim any leaves that stick  out of the flowers. Place the trimmed flowers in glass jars (loosely packed), seal  the jars, and place them in a cool, dry place. During the first week, open the jars  once a day for a few minutes to air out the flowers. Over the next four to seven  weeks, open the jars for a few minutes once per week. 
+When your cannabis is fully cured, it’s suitable for smoking or creating concen trates and other products.
+CHAPTER 1 Taking the Nickel Tour 21 
+Drying and curing isn’t necessary if you’re making certain concentrates. As  explained in Chapter 13, you can use a couple of different extraction methods to  collect the trichomes from the flower and use it to create hash and other concen trates. (Trichomes are sticky crystal structures on the outside of the flowers that  contain the highest concentrations of cannabinoids and terpenes.) 
+Creating cannabis, extracts, concentrates  and infused products 
+From cannabis flower, you get extracts, concentrates, and infused products: 
+» Extracts are oils of various consistency that contain high concentrations of  
+cannabinoids and terpenes. They’re used to vape, dab, and create other  
+marijuana infused products (MIPs). Extracts are typically made in special  
+facilities using pressure, heat, and potentially dangerous solvents and  
+processes. 
+» Concentrates are made through various mechanical processes with or without  the use of heat or cold to collect the trichomes from the flower. The goal is  
+to remove as much of the inert plant matter as possible, leaving behind the  
+cannabinoids and terpenes. Common concentrates are hashish (hash) and rosin. 
+» Marijuana infused products (MIPs) include edibles, tinctures, topicals, and  
+other products that contain flower or an extract or concentrate. Making an  
+infused product is usually a process of adding flower or an extract or concen 
+trate to an existing recipe. 
+Decarboxylation is required to convert the non-psychoactive THCa to the psycho 
+active THC, so if you’re making your own infused products, you need to make  
+sure this process takes place. If you’re creating a baked good, such as brownies,  
+decarboxylation occurs during the baking process. However, if the product doesn’t  
+require heat, you need to bake the cannabis first. See Chapter 13 for details. 
+Making Money in the Cannabis Industry 
+According to a 2018 article in Forbes magazine, spending on legal cannabis world wide is expected to reach $57 billion by 2027. You can claim your piece of this poten tially lucrative cannabis pie in various ways  — by getting a job in the industry,  starting your own cannabis business or an ancillary business, or investing in the  industry. In this section, we introduce these options, but first, we look at some of the  challenges that may make you think twice about seeking your fortune in cannabis.
+22 PART 1 Getting Started with Cannabis 
+Recognizing the challenges 
+Although $57 billion is certainly a lot of money, it’s not necessarily easy money,  especially in the U.S. where cannabis is still federally illegal. However, even in  areas where it’s legal, governments tax it heavily and have rules and regulations  in place that make compliance difficult and costly. In addition, because cannabis  is a drug, and because it’s primarily a cash business (in the U.S.), it’s very attrac 
+tive to criminals. Everyone wants a piece of their cannabis pie, and some people  aren’t afraid to simply take it. 
+Due to these challenges, you need to be ready to manage your expectations by  reminding yourself of the following: 
+» Due to the high costs of starting and running a cannabis business, profit  margins can be slim. A dispensary license application alone can cost more  than $60,000, and U.S. federal tax laws prohibit cannabis businesses from  deducting a host of business expenses. 
+» Because profit margins are low, don’t expect wages to be any higher in the  cannabis industry than they are in other industries. They’re likely to be a little  lower in most cases. 
+» Cannabis stocks can go from boom to bust in a hurry, and cannabis investment  scams are rampant. Currently, cannabis investing is highly speculative. You can  certainly earn a handsome return, but just as easily and quickly lose your shirt. 
+Getting a job in the industry 
+The easiest way to begin your foray into the cannabis industry is to get a job in the  industry. Given the growth of the industry, a variety of positions need to be filled,  including the following: 
+» Accountant 
+» Buyer 
+» Communications director » Compliance manager » Courier/delivery driver » Cultivation technician » Cure associate 
+» Dispensary manager 
+» Dispensary receptionist or  cashier 
+» Edibles chef 
+» Extractor 
+» Facilities manager 
+» Grower or grow master (head  grower) 
+» Human resources (HR)  managers
+CHAPTER 1 Taking the Nickel Tour 23 
+» Joint roller 
+» Laboratory worker 
+» Marketing managers or team  members 
+» Nutrient chemist 
+» Packager 
+» Public affairs administrator » Quality assurance manager 
+» Sales associate (budtender) » Sales representative » Security personnel 
+» Technology director » Trainers 
+» Trimmer
+Before you start looking for a job in the industry, consider getting a state badge.  A  cannabis company may deem you a more attractive candidate if you already  have your documentation. If a company hires someone and that person’s applica tion for a badge is denied, they need to start their candidate search all over again. 
+Openings are posted on traditional job sites, such as indeed.com. Some job sites,  such as www.vangsters.com, are dedicated to the cannabis industry. Also consider  visiting the websites of cannabis companies you’re interested in to see whether  any job openings are posted on those sites. 
+Starting your own cannabis business 
+If you’re considering starting your own cannabis business, you have numerous  opportunities to consider in the various industry segments: 
+» Grow: Grow operations cultivate, harvest, and cure cannabis to supply it to  dispensaries/retail locations and to MIPs. 
+» MIP: MIPs obtain cannabis from grow operations and use it to create concentrates,  extracts, edibles, and other marijuana infused products supplied to dispensaries/ retail locations. MIPs may be broken down further into extraction operations and  industrial kitchen operations, both of which can be a distinct business. 
+» Dispensary/retail: Dispensaries (and perhaps other retailers) obtain products  from growers and/or MIPs and sell them to consumers. 
+Vertically-integrated cannabis businesses are those that contain all three  operations — grow, MIP, and dispensary/retail. 
+Many failed cannabis businesses have been started by very smart people who are  passionate about the plant but lacking in the knowledge and skills to start and run  a business and unprepared for the costs and regulatory pressures. Don’t start a  business until you have all the pieces in place to give yourself a reasonable chance  of success. This industry can be brutal. 
+24 PART 1 Getting Started with Cannabis 
+Exploring ancillary business 
+Ancillary businesses are those that operate on the periphery of the cannabis industry  and supply it with goods and services. These businesses can profit from cannabis  without the risks and hassles, because they can also serve businesses and individuals  outside the cannabis industry. Ancillary businesses include the following: 
+» Fertilizer manufacturers 
+» Nurseries 
+» Manufacturers and sellers of grow lights 
+» Heating, ventilation, and air conditioning (HVAC) companies 
+» Breweries that sell their CO2 to grow facilities 
+» Packaging and labeling services 
+» Security services and manufactures and sellers of security equipment » Technology, and software companies 
+» Marketing, public relations, and advertising firms 
+» Real estate companies and investors 
+» Law firms and consulting agencies 
+Success in any business requires both competence in the industry and business  management skills. However, ancillary businesses don’t have the high costs  (including high taxes) and regulatory requirements that make success in the can nabis industry so challenging. 
+Investing in the industry 
+Cannabis businesses are expensive to start and maintain, and because it’s feder ally illegal in the U.S., entrepreneurs have difficulty finding bank loans to finance  their startups. They often need to use either their own money or money from  private lenders or investors. If you have money available to invest and you can  afford to let that money ride, you may be able to earn a sizeable long-term return.  However, you may also lose your entire initial investment. 
+The key to success is performing your due diligence. Before investing, research  the industry as a whole so you have a general understanding of it and can recog nize the major players. Also research individual companies thoroughly. Invest in  only those companies with solid leadership and financials.
+CHAPTER 1 Taking the Nickel Tour 25 
+Cannabis investment scams are rampant. Don’t rely solely on articles, blog posts,  incoming email messages, or press releases for guidance on finding cannabis  companies in which to invest. These sources may be promoting scams or high lighting the good news and downplaying any negatives for ulterior motives. 
+See Chapter 16 for more about investing in the cannabis industry.
+26 PART 1 Getting Started with Cannabis 
+Chapter 2 
+IN THIS CHAPTER 
+» Taking a tour of the cannabis plant » Recognizing the two major strains 
+» Examining the plant’s active  ingredients 
+» Becoming familiar with cannabis  extracts and concentrates
+Brushing Up on Cannabis  Anatomy and Chemistry 
+Whether you’re consuming, growing, harvesting, or selling cannabis, you  
+should be familiar with the plant from which products are derived, the  
+active ingredients the plant contains (and their effects), and the various  
+extracts and concentrates produced from plants. This familiarity with the plant  and its chemicals may be essential when growing and harvesting cannabis, or it  may simply make you a more educated consumer and enhance your experience. 
+In this chapter, we bring you up to speed on cannabis anatomy and chemistry,  describe the two major strains of cannabis (indica and sativa), and introduce you  to the numerous extracts and concentrates derived from the plant. 
+Getting to Know the Plant  
+from Top to Bottom 
+At its most basic level, cannabis is a plant or, as some like to call it, a “weed.” Like  most plants, it’s made up of roots, a stem (stalk), branches, leaves, and buds/ flowers. The leaves extend out from areas called nodes along the stem. 
+CHAPTER 2 Brushing Up on Cannabis Anatomy and Chemistry 27 
+In this section, we break down the plant into its component parts and describe  each part in greater detail, but first we distinguish between the two primary  strains of cannabis plants. 
+Examining the structure of  
+the two primary strains 
+Marijuana plants come in two primary strains along with a host of hybrid strains  produced through cross-breeding. Traditionally, consumers have chosen end  products based on the common effects inherent in the different strains — sativa  for a more energetic high and indica (often referred to as “inda couch”) for its  relaxation and sedative properties. The evolved genetics of the two strains have  produced these differing properties. While consumable buds from each strain are  similar in appearance, the plants have unique properties that distinguish the two  strains: 
+» Indica plants have a shorter and wider plant profile with a bushy appearance.  The leaves are also shorter and wider. Indica plants have a shorter flowering  cycle and are more suitable for colder climates with shorter growing seasons. 
+» Sativa plants appear taller and slimmer overall with thinner leaves. Sativa  plants have a longer flowering cycle and are better suited for warm climates  with longer growing seasons. 
+Checking out the buds and flowers 
+Male and female plants differ in respect to their buds/flowers. As a female plant  matures, a large cola (a cluster of buds) forms at the apex (top) of the plant and  thus is commonly referred to as the apical bud. Smaller colas may form on lower  branches that extend out from the stem. The pistil contains the reproductive parts  of the flower. Hair-like strands of the pistil, called stigmas, collect pollen from  male plants. 
+A bract (a collection of tiny leaves) encases the female’s reproductive parts, includ ing the calyx (the translucent layer that that covers the ovule at each flower’s base).  Bracts are covered with resin glands, called trichomes (pronounced “trick-combs”  or “try-combs”), which produce the highest concentration of cannabinoids — the  
+active ingredients of the plant. As cannabis buds mature, they’re commonly cov ered in this crystal resin. (See the later section “Combing through the trichomes”  for details.) 
+In male plants, the flowers produce pollen for fertilizing the female plants.
+28 PART 1 Getting Started with Cannabis 
+Because the cola contains the highest concentration of cannabinoids, growers  generally want to grow female plants, especially in a commercial enterprise,  which is why they typically start plants from cuttings or clones instead of seeds.  However, when a female plant is highly stressed, it may turn hermaphrodite 
+(serving the role as both female and male plant) to pollinate itself. 
+When grown for marijuana product, the plant is harvested at the bud stage and  not allowed to fully flower. Within the industry, the budding flower may be  referred to as either “flower” or “bud,” though technically it’s a flower. 
+The bud is the harvested product that creates almost all the marijuana products on  the market. In some states it is the only part of the plant that can be legally sold.  It is also the part of the plant that has the majority of THC and other cannabinoids,  including cannabidiol (CBD) and cannabinol (CBN). 
+Taking a peek at the seeds 
+Female plants that are allowed to flower and are pollinated by male plants produce  seeds, which can be used to grow new plants. Seeds contain almost no THC and  aren’t generally used in marijuana products. In fact, most states with medical  marijuana laws don’t consider seeds to be a usable part of the plant. However, in  most states, seeds, as well as plants, are strictly regulated. Seeds typically play a  role in the following applications: 
+» Home growers may start their plants from seeds. 
+» Growers may cross-breed plants to create seeds for growing hybrid plants. » Growers may also use seeds to refresh older mothers/clone stock. (Generally,  strains that are closest to the seed generation are healthier than ones that  have been cloned over multiple generations.) 
+Commercial growers as well as most home grows strive to avoid seeding because  it’s undesirable in the final flower product. To avoid seeding, most operations  allow only female plants in the grow room; a single male plant in a growing room  can cause the entire room to seed! They grow new plants from clippings or clones,  a practice that delivers the following benefits: 
+» Controls the sex of the plant. While seeds have about a 50/50 chance of  growing a male or female plant, a clipping or clone has a 100 percent chance  of being the same sex as the parent. (Note, however, that some seed banks  offer feminized seeds, which can have about a 90 percent chance of growing  into more desirable female plants.)
+CHAPTER 2 Brushing Up on Cannabis Anatomy and Chemistry 29 
+» Ensures that new plants are genetically pure, which is important for the  
+consistency of the end product and the desired effects it creates. 
+» Ensures that only the healthiest and most effective plants continue to be  
+grown. 
+» Shortens the time to produce a flowering bud and, hence, a harvestable bud. 
+Combing through the trichomes 
+As cannabis plants mature, the leaves and buds become covered by what appear to  be tiny crystals but are actually large collections of trichomes — fine, hair-like,  glandular outgrowths on a plant’s surface (see Figure 2-1). They may appear shiny  or frosty, look like orange hairs, or cover the buds like a layer of frost. 
+Trichomes are a common part of plant anatomy. They may be a single cell or two  to three cells viewable only through the use of a microscope or multi-cell struc tures that are visible to the naked eye. Located on all parts of the plant, from  stems to leaves to buds, trichomes protect plants from animals (especially insects)  and from environmental effects, such as wind and heat. They can be prickly,  sticky, stinky, and bitter, making the plant unpalatable. On some carnivorous  plants, trichomes play a role in catching prey. 
+FIGURE 2-1:   
+Trichomes  
+protect the plant  
+and are the  
+largest source of  
+cannabinoids.  
+gleti/Shutterstock.com
+30 PART 1 Getting Started with Cannabis 
+A great deal of the cannabinoids THC and CBD are found in the trichomes. They  also contain the terpenes that carry the aroma of the cannabis plant and indicate  expected effects beyond the definition of strain. Large numbers of trichomes indi cate high levels of cannabinoids, which equates to potency: 
+Trichome volume = Potency of all cannabinoids 
+Trichomes exist in many shapes and sizes, but these three appear most often on  cannabis plants: 
+» Bulbous trichomes form on the entire surface of the plant. They typically  have a stalk consisting of 1–4 cells and a mushroom-shaped top consisting of  another 1–4 cells. They’re so small, only 10–15 micrometers (mcm) wide, that  you need a microscope to see them. (The width of a human hair is 40–50 mcm.) 
+» Capitate sessile trichomes are slightly larger than the bulbous trichomes  and significantly more abundant. 
+» Capitate-stalked trichomes are between 50–100 mcm wide, making them  large enough to be seen by the naked eye. Their structure consists of a stalk  topped off by a large, waxy glandular head, which serves as the epicenter for  cannabinoid and terpenoid synthesis. 
+Over time, trichomes change in appearance from clear to cloudy and may change  color. These changes in appearance help growers identify optimal harvest times to  ensure maximum potency — when the volume of cannabinoids is highest and just  before the chemicals begin to break down. 
+Considering the lesser parts of the plant 
+Although the bud/flower is the primary source of active ingredients used to make  medical marijuana and adult recreational cannabis products, the plant contains a  few other parts worthy of mention: 
+» Stems and branches: Stems and branches are important for supporting the  plant, but they contain very little THC and other cannabinoids. They are  generally considered unusable parts of the plant. 
+» Stalk: Like the stems and branches, the stalk contains very little THC and  other cannabinoids and is generally considered an unusable part of the plant  for cannabinoid products. However, the fibers in the stalk, called hemp, are  often used to make paper, rope, fabric, and oil. 
+» Leaves: Marijuana plants have two types of leaves — vegetative leaves that  power plant growth and have a very low concentration of cannabinoids, and 
+CHAPTER 2 Brushing Up on Cannabis Anatomy and Chemistry 31 
+sugar leaves that grow within the bud and have high THC content. Sometimes  
+growers remove large leaves to allocate more of the plant’s energy to bud  
+growth, a process commonly referred to as de-fanning. 
+» Roots: Obviously, the roots are essential for plant growth, but they contain  
+little THC and are generally not considered a usable part of the plant for  
+cannabinoid production. 
+Taking a Crash Course in  
+Cannabinoid Chemistry 
+Cannabis affects each person differently depending on the chemical composition  of the product and how the chemicals (cannabinoids and terpenes) interact with  the individual’s biology and physiology. With a better understanding of the bio logical and physiological factors and the chemical composition of cannabis, you  can more closely align product choices to your desired experience. 
+This section covers the basics of cannabinoid chemistry and the human endocan nabinoid system, but the best resource for guiding product selection is a  well-trained budtender at your dispensary of choice. A budtender is a person who  serves customers at a cannabis dispensary. A qualified budtender can recommend  products that most closely align with your needs and the experience you desire.  (See Chapter 5 for more about choosing and visiting a cannabis dispensary.) 
+Assessing factors impacting  
+individual effects 
+Even when two people consume the same cannabis product at the same time in  the same place, they can have vastly different experiences due to factors such as  the following: 
+» Altitude: Consuming weed at high altitudes may not increase the high, but  
+it will make you feel higher, and not necessarily in a good way. Until you’re  
+acclimatized to the higher altitude, consider reducing the amount you usually  
+take by half as a starting point. (See Chapter 7 for more about dosing.) 
+» Age: Your biology and physiology change with age. As a result, the same  
+cannabis may affect you differently at different stages of your life. While using  
+a product may have calmed you when you were younger, it may make you  
+feel anxious later in life or vice versa. The same is true about quantity — you 
+32 PART 1 Getting Started with Cannabis 
+may have different effects from the same amount, though the commercial  product of today is vastly more potent than in decades past. 
+» Recent food eaten (stomach contents): Various foods contain ingredients  that interact with cannabinoids or terpenes to change the experience. Fat soluble meals have been shown to increase the onset time and heighten the  effects of cannabis. Sweet potatoes, nuts, and broccoli can also enhance or  prolong the experience. Mangoes, which contain myrcene terpenes (also  present in cannabis), may intensify the effects. The smell of black pepper  may help to lessen the intensity or duration of the effects. 
+» Environment: Whether you use cannabis at home alone, at a party with  friends, on a serene beach near the ocean, out in the woods, or in the hustle  and bustle of a large city, the experience can differ considerably. 
+» Emotional status: How you feel emotionally can significantly impact how you  feel when you consume cannabis. While cannabis may calm you when you’re  feeling stressed, for example, it may also exacerbate your anxiety. What you  expect from the experience may also impact how you feel. 
+» Frequency of consumption: People who consume cannabis frequently build  up a tolerance for it, so the experience may not be quite as intense as it is for  a new or infrequent user. 
+The variations that occur in these situations are mainly in the intensity of the  experience and the time required to feel the effects rather than changes in the  experience itself, such as a relaxing experience becoming an overly energetic one. 
+Exploring the endocannabinoid system 
+Nature has provided humans with a specific internal system for processing cannabis  called the endocannabinoid system (ECS) — a chemical messaging network that helps  to regulate certain bodily functions, including fertility and pregnancy, appetite and  digestion, sleep, motor control, pain and pleasure, immune function, temperature,  mood, and memory. It’s also the system in which consumed cannabis product is  processed, creating the high and other physiological effects associated with the  various cannabinoids. It is perhaps the most important physiological system  involved in establishing and maintaining human health. 
+The endocannabinoid system consists of three primary components: 
+» Cannabinoid receptors: Located on the surface of cells, these receptors  receive messages in the form of chemical molecules called cannabinoids.  Imagine a cannabinoid as a key that fits into the cannabinoid receptor on a cell,  triggering a biological response in the receiving cell; for example, Figure 2-2  shows the neuron at the top receiving a cannabinoid, which triggers it to 
+CHAPTER 2 Brushing Up on Cannabis Anatomy and Chemistry 33 
+release neurotransmitters to a nearby neuron. Researchers have identified two  cannabinoid receptors (also shown in Figure 2-2): 
+• Cannabinoid receptor number 1 (CB1): Located primarily in the brain  and central nervous system and, to a lesser extent, in other tissues, CB1s  receive THC and are indirectly affected by CBD. 
+• Cannabinoid receptor number 2 (CB2): Located primarily in the periph eral organs, especially cells associated with the immune system, CB2s  receive CBN and are indirectly affected by CBD. 
+CBD isn’t a perfect fit with CB1 or CB2 receptors, but it has a powerful  indirect impact on these receptors. How CBD interacts with CB1 and  CB2 receptors is still being studied. 
+» Endocannabinoids: These small molecules are neurotransmitters (chemical  messengers) that activate cannabinoid receptors. The two best known  endocannabinoids are: 
+• Anandamide (AEA) is commonly referred to as the “bliss molecule”  because it is thought to affect mood. 
+• 2-arachidonoylglycerol (2-AG) plays an important role in the regulation  of food intake and energy metabolism, anxiety and depression, addiction,  immune system function, inflammation, and proliferation and invasion of  certain types of cancer cells. 
+» Metabolic enzymes: These internal enzymes break down endocannabinoids  after they’re used. The metabolic enzymes that break down AEA and 2-AG are  (respectively): 
+• Fatty acid amide hydrolase (FAAH) 
+• Monoacylglycerol lipase (MAGL) 
+Cannabinoids come in three types: 
+» Endogenous cannabinoids: Also known as endocannabinoids, these  neurotransmitters are produced naturally by the body. They affect brain  areas that influence pleasure, memory, thinking, concentration, movement,  coordination, and sensory and time perception. 
+» Phytocannabinoids: These cannabinoids, which include THC and CBD, are  derived from plants. 
+» Synthetic cannabinoids: These cannabinoids are synthesized in a lab.  They’re generally used to help map the ECS. Some are also approved for  different ailments outside the U.S.
+34 PART 1 Getting Started with Cannabis 
+FIGURE 2-2: 
+Cannabinoids  
+enter receptors  
+triggering  
+the release or  
+take-up of  
+neurotransmitters.  
+Shutterstock.com
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+
+
+
+
+
+The effects of cannabis on the body through the endocannabinoid system are  based on the shape of the cannabinoids and their receptors and the type of inter action the molecules have with the receptors. A cannabinoid is considered an ago nist or antagonist depending on how it interacts with a receptor: 
+» Agonist: An agonist is chemical that binds to a receptor and activates it to  produce a biological response. THC and CBN are CB1 and CB2 agonists. » Antagonist: An antagonist is a substance that interferes with or inhibits the  physiological response of a receptor. CBD is a CB1 and CB2 antagonist. 
+Getting high with tetrahydrocannabinol  (THC) 
+THC, the most abundant and well-known cannabinoid in cannabis, is responsible  for the psychoactive effects most people associate with cannabis. It has analgesic  (relieves pain), antiemetic (reduces vomiting and nausea), anti-proliferative (inhibits the spread of cancer cells), antioxidant, antispasmodic, appetite stimu lant, muscle relaxant, euphoriant, and neuroprotective (slows damage to the ner vous system and brain) properties. 
+CHAPTER 2 Brushing Up on Cannabis Anatomy and Chemistry 35 
+DISCOVERY OF THE ENDOCANNABINOID  SYSTEM 
+In 1964, Israeli scientist Dr. Raphael Mechoulam became the first person to identify a  cannabinoid — THC. He was studying sativa plants and trying to identify the active  ingredients. Next, he identified and isolated CBD and started testing it on patients with  epilepsy. While taking 200 mg CBD daily, patients had no seizures. In 1986, Mechoulam  published Cannabinoids as Therapeutics, in which he discusses the many therapeutic  effects of cannabinoids in mammals, but he still had no clue as to the mechanism by  which cannabinoids worked. 
+Around the same time, Professor Allyn Howlett, a researcher at the St. Louis University  Medical School, was studying THC and its effects on the human body. In 1988, she  and her colleagues discovered the brain receptor to which THC binds. She named the  receptor cannabinoid receptor number 1 (CB1 receptor). Soon thereafter, researchers  discovered a second type of cannabinoid receptor, CB2, and found an entire network of  CB1 and CB2 receptors throughout the human body. The question then became “Why  does the human body contain receptors for compounds derived from plants, particularly  cannabis?” 
+Dr. Mechoulam and his colleagues believed they knew the answer to that question:  The human body must produce its own cannabinoids, as well. This hypothesis led  them, in 1992, to start searching for endocannabinoids (cannabinoids produced by the  human body). After two years of research, they found a compound in the brain that  acts on the cannabinoid receptors. They named the compound “anandamide” based on  the Sanskrit word “ananda,” which means supreme joy or bliss. In 1995, Mechoulam’s  team discovered a second endogenous cannabinoid, 2-arachidonoylglycerol (2-AG). 
+What’s interesting about this story is that THC ultimately was the key that unlocked the  door leading to a previously unknown chemical messaging system in the human body,  a neurotransmitter network that regulates a broad spectrum of biological functions.  Without cannabis and THC, the medical world would probably still be in the dark about  this important messaging system.
+THCa is the acidic precursor to THC. THCa converts to Δ9-THC when heated, as  when cannabis is smoked. THCa is non-psychoactive and has many therapeutic  uses. It’s a natural insecticide and an analgesic (pain reliever), and it has anti inflammatory, anti-insomnia, anti-spasmodic, anti-proliferative, antiemetic,  and neuroprotective properties. It also has been shown to regulate the immune  system while reducing inflammation. 
+36 PART 1 Getting Started with Cannabis 
+Feeling better with cannabidiol  
+(CBD) without getting high 
+Cannabidiol (CBD) is the main non-psychoactive cannabinoid in cannabis, and it  has a wide range of therapeutic uses. Because of its many therapeutic uses and  because it is non-psychoactive, it is often recommended for treating certain med 
+ical conditions in children, the elderly, and anyone who wants the medicinal ben efits of cannabis without the high. 
+CBD has analgesic, antibacterial, antidepressant, antiemetic, anti-convulsant,  anti-inflammatory, anti-ischemic (reduces the risk of artery blockage), antipso riatic (treats psoriasis), anti-hyperalgesia, anti-proliferative, antipsychotic, anti oxidant, antispasmodic, anxiolytic, bone stimulant, immunosuppressive,  intestinal anti-prokinetic (reduces small intestine contractions), neuroprotective,  neurogenic, and vasorelaxant (reduces vascular tension) properties. It may also be  helpful in the prevention and treatment of diabetes, including insulin resistance,  obesity, neuropathy, and the healing of certain skin conditions. 
+CBDa is found in elevated levels in specific cannabis strains. Like THCa, CBDa is an  acidic precursor that converts to CBD when heated. CBDa is non-psychoactive and  has antibacterial and anti-inflammatory properties and has also been shown to be  antiemetic and anti-proliferative. 
+Reaping the sedative effects  
+of cannabinol (CBN) 
+Cannabinol (CBN) is a mildly psychoactive cannabinoid that comes from the deg radation of THC after an extended period of time due to exposure to oxygen and  heat. (A fresh plant contains little or no CBN.) CBN has analgesic, antibacterial,  anti-inflammatory, anti-insomnia, antiemetic, appetite stimulant, and bone  stimulant properties. It’s also effective in treating burns. CBN is only 10 percent as  psychoactive as THC, but it can produce a very mild high. 
+Exploring the potential health benefits  of cannabigerol (CBG) 
+Cannabigerol (CBG) is a non-psychoactive cannabinoid. It has analgesic, muscle  relaxant, anti-erythemic (reduces redness is skin), antifungal, anti-depressant,  anti-proliferative, anti-psoriatic, and anti-bacterial properties. As an antibacte rial, it is a powerful weapon against the methicillin-resistant Staphylococcus  aureus (MRSA) virus.
+CHAPTER 2 Brushing Up on Cannabis Anatomy and Chemistry 37 
+Discovering the potential health benefits  of cannabigerol (CBG) 
+Tetrahydrocannabivarin (THCv) is less well known but similar to THC with some  psychoactive properties in high doses. However, it is a powerful cannabinoid with  some potential therapeutic value and unique effects that differ from those of  THC. It is an appetite suppressant, stimulates bone growth, and may help with  diabetes, Alzheimer’s, and panic attacks in PTSD. It needs to be heated higher  than THC to about 428°F when vaporizing. 
+Using terpenes to anticipate effects 
+In the not-so-distant past, consumers used plant strain to guide their product  selection. Traditionally, sativas were considered more energizing and indicas  more relaxing. However, relatively recently, the industry has moved to the use of  terpenes (aromatic molecules) for product selection because they’re more consis 
+tent identifiers for predicting the experience. Table 2-1 lists and describes the ten  most common terpenes in cannabis. 
+TABLE 2-1  Ten Common Terpenes in Cannabis 
+Terpene Aroma/flavor Effects 
+Terpinolene Floral with a smoky  woodiness 
+Highly sedative, anti-microbial, anti-proliferative 
+D-Limonene Citrus Aids in the absorption of other terpenes through skin and  mucous membranes, anti-anxiety, immunosuppressant,  
+antidepressant, antibacterial, gastroprotective, kills breast  
+cancer cells 
+Linalool Floral and sweet citrus  often found in lavender 
+Anti-anxiety, sedative, local anesthetic, analgesic,  anti-convulsive 
+α-Pinene Pine Anti-inflammatory, bronchodilation, anti-microbial, focus  and memory enhancement 
+β-Caryophyllene Pepper, clove, spice Anti-inflammatory, analgesic, anti-anxiety, antidepressant,  antioxidant, anti-microbial, gastroprotective 
+Carene Woody (cedar, pine) Dries excess bodily fluid, including tears and saliva, may  cause dry mouth and eye sensations 
+Geraniol Floral (rose) Mosquito repellant, protective against neuropathy
+38 PART 1 Getting Started with Cannabis 
+Terpene Aroma/flavor Effects 
+Humulene Earthy, hoppy Analgesic, anti-inflammatory, anti-bacterial, anti proliferative, anorectic (appetite suppressant) 
+Terpineol Floral (lilac) Relaxation 
+Myrcene Earthy, hoppy with tropi cal fruit 
+Sedative, analgesic, antibiotic, muscle relaxant
+Exploring Cannabis Concentrates  and Extracts 
+Although you can certainly consume cannabis whole (for example, by smoking  bud), most products are concentrates or extracts or are made from concentrates or  extracts. The line separating concentrates from extracts is beginning to blur, but  the two differ in the following ways: 
+» Concentrate: A concentrate includes only the most desirable components of  
+the plant, including the cannabinoids and terpenes (in most cases) without the  
+undesirable substances, such as the leaves and stems. Concentrates are  
+generally made through mechanical processes; the use of carbon dioxide  
+(CO2) without heat or pressure; or processes that use ice, water, vegetable  
+glycerin, vegetable oils, animal fats, isopropyl alcohol, or ethanol. 
+» Extract: An extract is a concentrate made with CO2 along with high heat and  
+pressure or through the use of a hydrocarbon-based solvent (butane or  
+propane) to extract chemicals from the plant material. (All extracts are  
+concentrates, but concentrates aren’t necessarily extracts.) 
+In the following sections, we list and describe the most common concentrates and  extracts, along with products commonly made from concentrates and extracts. 
+Cannabis products beyond smokable flower have always been available. As the  industry has evolved and businesses have diversified, an even greater number of  end products have become available in the legal market. 
+Concentrates 
+Concentrates include the following: 
+» Kief: Kief is the fine amount of trichomes that may be left as a byproduct from  flower. It consists of the resin glands — the sticky crystals that cover the  
+CHAPTER 2 Brushing Up on Cannabis Anatomy and Chemistry 39 
+cannabis flower. These crystals are the primary source of the cannabinoids  and terpenes that produce the desired effects. You can create your own kief  (dry sift) using a three-chamber herb grinder; as you grind your cannabis in  the top chamber, kief crystals pass through a screen into the bottom cham ber. Kief is usually consumed by adding it to another cannabis product to  increase its potency. It can also be pressed into a concentrate and consumed  that way or be added to melted butter to create edibles. 
+» Bubble hash: Bubble hash is a Kief product that can be pressed into a small  flat cake. You can make your own bubble hash by mixing cannabis plant with  ice water and then using a special filter to screen out the undesirable plant  parts. What’s left is your bubble hash. 
+» Rosin: Rosin is the resinous sap from the bud. It’s made by pressing cannabis  flower between two very hot metal plates. The resulting rosin contains most of  the flavor, aroma, terpenes, and cannabinoids from the original flower material. 
+» Cannabis oil: Cannabis oil may be a concentrate or extract depending on how  it’s produced. If it’s produced through CO2 extraction under high pressure and  at extremely low temperatures or with the use of ethanol (grain alcohol) or  olive oil, it’s an extract. The oil is then used in the manufacturing of multiple  products including vape oils, tinctures, topicals, and edibles. Over time,  cannabis oil can separate into crystallized THC and terpene liquid, and is  sometimes sold in the industry as “sauce”: 
+• Crystals of THC: Commonly consumed via dabbing (heating the product  on a very hot surface and inhaling the resulting vapors), these crystals are  highly concentrated forms of THC, but without the liquid they can be very  harsh to consume. 
+• Terpene liquid: The liquid separated from the THC crystals contains far  less THC but higher terpene levels. 
+» Tinctures: Tinctures are alcohol-based (or mixed with other liquids like agave)  cannabis concentrates. Many tinctures are sublinguals (taken underneath the  tongue), which have the benefit of quickly being absorbed. These products are  among the fastest acting consumables after inhalation. Tinctures are fre quently produced with exclusive or very high CBD strains and tend to have a  high ratio of CBD to THC. 
+Extracts 
+Common extracts include the following: 
+» Hashish: Hashish is cannabis resin that appears as a sticky, black brick  made through extraction with a hydrocarbon or fuel. It’s not a legal  U.S. dispensary product.
+40 PART 1 Getting Started with Cannabis 
+» Shatter: Shatter (see Figure 2-3) is a semi-translucent extract created from  dried and cured cannabis flower using a hydrocarbon extraction method.  The extract is then poured in large sheets to set before being broken into  small pieces, weighed, and sold. (See Figure 2-3.) Shatter is commonly used  for dabbing — heating the product on a very hot surface and inhaling the  resulting vapors. (See Chapter 6 for more about dabbing and other consump tion methods.) 
+» Wax: Sometimes referred to as “budder,” wax is similar to shatter with the  same starting material and extraction process. Then, it’s whipped to create a  chalkier consistency (see Figure 2-4). It’s also used for dabbing. 
+» Live resin: Live resin is created from fresh frozen cannabis flower that’s not  dried or cured. It’s extracted through a hydrocarbon process and whipped like  wax, but its starting material makes it softer with a higher terpene profile than  shatter or wax, resulting in a more flavorful product. (See Figure 2-5.) 
+» Cannabis oil: Cannabis oil is typically produced through CO2 extraction,  creating a concentrate. However, it can also be made with hydrocarbon  
+solvents, such as butane or hexane, in which case the oil is an extract. 
+FIGURE 2-3: 
+Shatter.  
+Roxana Gonzalez/Shutterstock.com
+CHAPTER 2 Brushing Up on Cannabis Anatomy and Chemistry 41 
+FIGURE 2-4: 
+Wax.  
+Dogcan Susluoglu/Shutterstock.com 
+FIGURE 2-5: 
+Live resin.  
+420MediaCo/Shutterstock.com
+Products made from concentrates  
+and extracts 
+Through an extraction process, THC or other cannabinoids can be separated from  the cannabis flower into varying states from liquid to solids. These usually have  very high concentrations of the cannabinoid. The primary extraction processing  methods used are: hydrocarbon such as butane/propane, Co2 or ethanol. The  desired end product dictates the process employed for extraction. Concentrates  and extracts are commonly used to create a variety of consumable products,  including the following: 
+42 PART 1 Getting Started with Cannabis 
+» Sublingual sprays: Some tinctures are developed into sublingual sprays. This  is simply another delivery method for an oil based product. Like tinctures,  these sprays tend to have a very high ratio of CBD to THC. 
+» Vape oils: Cannabis oil is commonly sold as vape oil, which can be consumed  via a vape pen or similar device. 
+» Cannabis liquor: Interest in commercial products that blend alcohol and  cannabis is growing. However, at this time, such products are not legal in the  U.S. market. The cannabis flower is very similar to hops and many home  growers mix with hops in a hot water extraction to create these products. 
+Mixing alcohol and cannabis can create intense and unexpected effects.  Consuming both products in a single experience is never recommended. » Liquid/beverage: Consuming cannabis in liquid form is very popular.  Commercial producers are creating carbonated sodas and teas; flasks  of small dose cannabis liquid; isolate powder mixes to be dissolved into  beverages; and other emerging products. 
+» Edibles: Edibles are part of the fastest growing consumption methods in  cannabis. Products include items such as gummies, lollipops, chocolates  including chocolate-covered coffee beans, baked goods, dried fruit, caramel  corn, hard candies, mints, tablets, and pills. 
+» Cannabis butter: Ground cannabis flower is sometimes mixed with tradi tional cow’s milk butter to be used as an edible cannabis product or used in  baking. 
+» Topicals: Topical products are infused lotions and oils that are applied to a  specific area of the body for direct effects. These are very commonly high CBD  products meant to relieve localized pain or inflammation. They are produced  from cannabis oil added to fats to create the lotions. 
+» Transdermals: Transdermal patches are most commonly built on a plastic  or cloth material as with other medicated patches. The oil is added along with  solvents that dissolve as well as an isolate and a layer of glue. The layers of  product diffuse into skin for localized relief or into bloodstream for more  systemic delivery.
+CHAPTER 2 Brushing Up on Cannabis Anatomy and Chemistry 43 
+Chapter 3 
+IN THIS CHAPTER 
+» Brushing up on marijuana laws » Recognizing various restrictions » Monitoring international efforts 
+» Flying below law enforcement’s radar 
+» Keeping a cool head during police  encounters 
+» Being a responsible parent
+Steering Clear of  
+Legal Trouble 
+Legal marijuana is a relatively new reality, and you want to make certain  
+you’re staying on the right side of the law, but that can be more confusing  than you may think. 
+Cannabis is currently still classified as a Schedule I drug in the U.S. and is federally  illegal to sell, possess, or consume. However, two countries and numerous states  in the U.S. have legalized cannabis to varying degrees. In the U.S. especially, the  law gets confusing with each state enacting different rules and regulations,  including whether cannabis is legal for both medical and adult recreational use,  how and where you can buy it, and how much you can purchase and carry. Adding  to the complexity is the fact that counties and municipalities within legal states  can add their own rules or individually bar certain types of sales. Tax structures  and delivery rules may differ from one county to the next, and consumption  restrictions can be equally challenging to navigate. 
+In this chapter, we provide general guidance on federal, state, local, and interna tional marijuana laws; call your attention to various restrictions you should be  aware of; and steer you toward resources where you can find more detailed and  
+CHAPTER 3 Steering Clear of Legal Trouble 45 
+current information. We also provide guidance on how to avoid encounters with  law enforcement and how to respond in the event that such an encounter occurs.  Finally, we offer insight on how to use responsibly for the safety of children. 
+Knowing the Laws: Federal, State,  Local and International 
+The first precaution to take to steer clear of legal trouble with regard to cannabis  is to know the law of the land. For example, in the United States, cannabis is illegal  federally, legal for medical use in many states, and legal for both medical and  adult recreational use in several states. On October 17, 2018, Canada become  the  second country and the first G7 member country to legalize recreational  marijuana. In Quebec and Alberta, the legal age is 18; in the remainder of the  country, the legal age is 19. Marijuana laws may also vary locally, so you need to  be aware of where you are and know and obey the relevant laws and restrictions.  Otherwise, you’re likely to find yourself at an increased risk of being charged and  possibly convicted of a crime. 
+In this section, we bring you up to speed on federal, state, local, and international  marijuana laws in the hopes that by knowing the laws you’ll be better equipped to  avoid legal problems. 
+Keeping abreast of U.S. federal law  
+and enforcement 
+The legal history of cannabis began in the early 1900s with state restrictions on its  sale and use. Federal regulation didn’t occur until President Franklin D. Roosevelt  signed the Marihuana Tax Act of 1937, which required users to obtain a tax stamp  for the purchase of marijuana. To obtain the tax stamp, users were required to  provide details about the marijuana location and amount, thereby incriminating  themselves. In 1970, the Supreme Court overturned the law, and Congress repealed  it but simultaneously passed the Controlled Substances Act, designating mari 
+juana an illegal substance. 
+At the federal level, in the U.S., marijuana is illegal, period. Although law enforce ment and prosecutors in states in which marijuana is legal aren’t likely to enforce  federal marijuana laws, they can still choose to do so.
+46 PART 1 Getting Started with Cannabis 
+In particular, the following activities are federal crimes: 
+» Transporting cannabis across any state line, even if it is going from one  legalized state directly to another. 
+» Flying with cannabis, because it enters into federal airspace. Some state govern ments have indicated that they will not be confiscating cannabis in an individual’s  possession if the amount is below the legal state limit at their airports. However,  even in those locations flying with the product is a federal crime. 
+» Possessing or using marijuana on federal land, including national parks and  forests. 
+Avoid online scams. Because federal law prohibits marijuana from being  transported across state lines, no legitimate business will ship you any cannabis  product that contains THC. Any online website, Facebook page, or other entity  that promises to ship you cannabis with THC isn’t legal. Even if the business or  individual claims to be associated with a reputable dispensary, you’re getting  scammed as long as marijuana is federally illegal. However, hemp derived CBD  products can be shipped legally across state lines. 
+THE COLE MEMORANDUM 
+During the Obama Administration (August 29, 2013), United States Deputy Attorney  General James M. Cole issued a trio of memos including the Cole Memorandum to all  United States Attorney Generals. The memo informed the state attorneys general that  due to limited resources, the U.S. Department of Justice would not be enforcing federal  marijuana prohibition in states that legalized and effectively regulated and enforced  their own marijuana laws. 
+The memo directed the state attorneys general to “not focus federal resources in your  states on individuals whose actions are in clear and unambiguous compliance with  existing state laws providing for the medical use of marijuana.” Instead, states were  encouraged to address federal priorities; for example, “by implementing effective  measures to prevent diversion of marijuana outside the regulated system and to  other states, prohibiting access to marijuana by minors, and replacing an illicit  marijuana trade that funds criminal enterprises with a tightly regulated market in  which revenues are tracked and accounted for.” 
+This memo was rescinded under the Trump administration in January 2018 by Attorney  General Jeff Sessions. The impact of the rescission in individual states has yet to be  determined, but it is a cause for concern because it indicates that the feds may be lean ing toward greater enforcement of the federal prohibition on marijuana.
+CHAPTER 3 Steering Clear of Legal Trouble 47 
+Getting up to speed on state laws 
+Although cannabis is federally illegal, each state has the right to legalize within its  borders and set the rules and regulations for personal and commercial growth,  production, transportation, sale, and use. States fall into one of the following  three categories: 
+» No laws legalizing marijuana 
+» Marijuana legalized only for medical use 
+» Marijuana legalized for both medical and adult recreational use 
+The easiest way to find out which category a state is in is to search online for  “state marijuana laws map” and click one of the many links provided. You’ll see a  color-coded map. 
+State marijuana laws change frequently, so access a map from a reliable source  that has current information. 
+These color-coded maps provide only cursory information about which states  have legalized marijuana for medical and/or adult recreational use. Specific rules  and regulations are more complex and vary considerably from state to state. In the  following sections, we highlight rules and regulations and give you a general idea  of how they can vary from state to state. 
+Carefully research the current law in any area you plan to purchase, possess,  use, grow, gift, or sell marijuana before engaging in any of these activities. In the  U.S., you should be familiar with federal, state, and local laws. You can find the  information you need online. For example, searching for “Colorado marijuana  laws” displays links to several sites with relevant information. Look for a link to  sites that end in “.gov,” which indicates a government sponsored site, such as  www.colorado.gov/pacific/marijuana. Going to a government sponsored site  ensures that you’re getting accurate and current information. 
+Medical use 
+Most U.S. states have legalized marijuana for medical use, but you need to know  more than whether medical use is legal or not in a particular state. You also need  to be aware of the specific rules and regulations. For medical marijuana, rules and  regulations typically stipulate the following:
+48 PART 1 Getting Started with Cannabis 
+PLAYING A ROLE IN LEGALIZING CANNABIS 
+With greater acceptance of marijuana and recognition of the value of the industry for  all constituencies, more states are legalizing marijuana either for medical or both  medical and adult recreational use. Some states put the question of legalization  directly to the voters, typically in the form of a proposition, whereas others turn to  state legislative bodies to make the decision. 
+As a citizen of your state, you can play a role in the decision process by contacting  your governor and state and local representatives to let them know where you stand  on this issue, voting for candidates who support your views, and casting your vote on  any cannabis propositions included on your ballot.
+» Qualifying medical conditions: Each state has a list of medical conditions  that qualify a person to use medical marijuana. For example, in the state of  Washington, qualifying conditions are cancer, intractable pain, glaucoma,  Crohn’s disease, hepatitis C, chronic renal failure, post-traumatic stress  disorder, traumatic brain injury, and diseases, including anorexia, that result  in nausea, vomiting, wasting, appetite loss, cramping, seizures, muscle  spasms, or spasticity, when these symptoms are unrelieved by standard  treatments or medications. 
+» Quantity: Most states limit or require the person’s healthcare provider to  specify a limit on the amount of marijuana the person is allowed to purchase  or grow over a specified period of time. Limits may apply to the number of  plants a person can grow or buy, the amount of marijuana infused product in  solid or liquid form, and the amount of useable product derived from plants.  Individuals who are recommended to have more plants are referred to by the  industry as Extended Plant Count (EPC) patients. 
+» Registry card requirements: Medical marijuana users must submit a medical  cannabis patient application and have it approved to obtain a medical marijuana  registry card. Requirements vary among states but typically require that the  person be a certain age and a resident of the state, have a qualifying medical  condition, and have a signed physician certification. States may prohibit medical  marijuana use for people in certain occupations, such as bus drivers, truck  drivers, and law enforcement officers. 
+» Ages: States may stipulate certain age limits for those who use medical  marijuana or for caregivers who dispense it. For example, in Colorado,  medical marijuana users must be 18 years or older. Some patients under  the age of 18 can receive permission for certain ailments under supervision  of a parent or guardian. 
+CHAPTER 3 Steering Clear of Legal Trouble 49 
+» Caregivers: Like users, caregivers are typically required to submit an applica tion and have it approved prior to assisting someone in the medical marijuana  program. States may allow caregivers to purchase and deliver medical mari juana to patients and perhaps even help patients grow their own. 
+» Commercial grows, production, transportation, and sales: State laws  governing the growth, production, transportation, and sales of medical  marijuana are numerous and complex. If you’re interested in entering the  medical marijuana industry, we strongly recommend that you consult an  attorney who specializes in this area. 
+» Home delivery: States may or may not allow home delivery of medical  marijuana. In states that do allow home delivery, limits may be placed on  the amount delivered, the number of deliveries that can be made at one  time, and so on. 
+» Taxes: Medical marijuana typically has a lower sales tax rate than that for  adult recreational marijuana. Even so, tax rates for medical marijuana vary  from state to state. In several states medical marijuana is tax-exempt.  However, cannabis businesses are still subject to the same federal income  taxes regardless of whether they’re medical, adult recreational, or both. » Enforcement: States also vary regarding penalties for breaking the law. 
+A medical card may not be usable outside the state for which it’s been issued.  Because you’re prohibited from traveling across state lines with cannabis, check  in advance when travelling to ensure that you can purchase your medicine in the  destination state. 
+Adult recreational use 
+Several U.S. states permit adult recreational use of marijuana, but that doesn’t  give you the right to consume as much marijuana you want anywhere you feel like  it. State laws contain numerous rules and regulations to control adult recreational  marijuana activities, such as the following: 
+» Age: As with alcohol, states can specify minimum age requirements for  buying, possessing, and using marijuana. For example, in Colorado, you must  be 21 years or older to buy, have, or use retail marijuana, and sharing it with  anyone under the age of 21 is illegal. 
+» Limits to buying: State law may stipulate how old you must be to buy  marijuana, where you can buy it from, and how much you can buy and carry  with you at any one time. 
+» Limits to selling: All states require that sellers be licensed; private sales are  prohibited. State law may allow an adult user to give a limited amount of 
+50 PART 1 Getting Started with Cannabis 
+marijuana to another adult user, but not sell it, regardless of whether the  product was purchased or homegrown. 
+» Carry limits: State law may limit the amount of marijuana that you can have  with you. For example, Colorado allows adults to carry up to 1 ounce of  marijuana; possessing any more can result in legal charges and fines. 
+» Public use: States typically prohibit or significantly restrict use of marijuana in  any form in public places, such as sidewalks, parks, restaurants, and common  areas of apartment buildings or condos. In addition, property owners may be  permitted to ban the use and possession of marijuana on their premises, so if  you rent an apartment or a motel room, you may be prohibited from consum ing marijuana in it unless it is designated cannabis-friendly. 
+» Business regulations: Every state in which marijuana is legal has numerous  rules and regulations that apply to marijuana growers, producers, sellers, and  distributors. These rules and regulations govern everything from verifying the  identities of buyers to packing, labeling, and tracking products. 
+» Pregnancy considerations: If you’re pregnant, you shouldn’t be consuming  marijuana. Some hospitals test babies after birth for drugs. If a baby tests  positive for THC at birth, the hospital may be required to report the test  results to child protective services. 
+» Taxes: States tend to tax adult recreational use marijuana at a relatively high  rate. For example, Colorado collects a 15 percent marijuana excise tax plus a  10 percent sales tax on adult recreational marijuana. 
+» Enforcement: States vary regarding penalties for breaking the law. For  example, a state may have certain penalties if you’re caught using marijuana  in public and much stiffer penalties if you are caught using near a school. 
+See the later section “Knowing Your Limits” for additional details about  restrictions. 
+Considering local laws too 
+In states where cannabis is legal, local municipalities can separately regulate its  growth, production, and sale within their borders. They are also allowed to add  taxes and fees to commercial efforts above and beyond those of the state. In some  cases, municipalities can completely ban commercial endeavors. For example,  Colorado Springs permits medical sales but has continued to ban adult recreational  dispensaries. Penalties can vary significantly from one municipality to another. 
+Don’t rely solely on information about state rules and regulations. Research the  municipality in which you plan to engage in any marijuana related activity before  doing so. You may be able to find out what you need to know from the municipal ity’s website or local law enforcement.
+CHAPTER 3 Steering Clear of Legal Trouble 51 
+Knowing your employer’s rules 
+Even if cannabis is legal in the state and municipality in which you live and work,  your employer may prohibit it. Here’s what you can expect in most states: 
+» Some states where medical marijuana is legal have protections for medical  marijuana users who are employees. In these states, employers are generally  prohibited from discriminating against workers who have a medical marijuana  card or qualified workers who have marijuana in their systems. However,  employers can prohibit workers from using on the job or from being under  the influence at work. 
+» Other states where medical marijuana is legal do not provide protections for  medical marijuana users, or they specifically allow employers to fire qualified  employees for off-duty consumption. 
+» In states where medical marijuana is legal, employers may be permitted to  discriminate against medical marijuana users when seeking to comply with  federal requirements, such as conditions for obtaining federal funding. 
+» In states where recreational marijuana is legal, employers generally can  enforce zero-tolerance workplace drug policies that also apply to marijuana.  They can refuse to hire and can fire adult recreational users who test positive  for marijuana in their systems, even if the use is outside work hours and the  person isn’t under the influence at work. 
+» States vary in the degree to which they allow routine or random drug testing  in the workplace. In most states, employers are allowed to routinely test  workers. In other states, drug testing is permitted only when the employer has  a good reason to do so, such as the employee appears intoxicated or is  involved in a work-related accident that results in injury or property damage. 
+Whether you’re a medical marijuana or adult-recreational consumer, do your  homework before consuming marijuana at work or even off-duty. Research state  and local laws to find out what your employer is and is not allowed to do, and read  your employee handbook to find out what your employer’s drug policies are. 
+Researching international laws 
+If you plan to travel outside of the U.S. and use cannabis at your destination, leave  your stash at home and carefully research the laws that govern marijuana pur chase, possession, and consumption at your planned destination.
+52 PART 1 Getting Started with Cannabis 
+BUSTING THE AMSTERDAM MYTH 
+Amsterdam is internationally renowned for its famed coffee shops, where tourists flock  to smoke cannabis, and law enforcement tolerates it, but don’t confuse tolerance with  legality. Cannabis is illegal in the Netherlands; the government has simply decided to  allocate more of its resources toward controlling hard drugs than soft drugs (such as  marijuana). 
+Amsterdam has strict rules and social protocols regarding amounts of cannabis that can  be purchased and in one’s possession and restrictions on where it can be consumed —  in coffeeshops. A coffeeshop is a public establishment that sells cannabis. If you want  coffee, you go to a cafe or coffee house. If you want cannabis, you go to a coffeeshop. 
+However, even in Amsterdam, cannabis laws may be evolving, so before consuming  cannabis there, be sure to check the current laws.
+As of the writing of this book, marijuana is federally legal in only two countries:  Uruguay and Canada, and in Canada, each province has its own rules and regula tions. At the onset of legalization in Canada, the only products legal for sale  nationally were flower, pre-rolled joints, and non-combustible oil extract. Rules,  opportunities, and product selections will continue to evolve over time. For exam ple, edibles are planned for the Canadian market in 2019. 
+With the legalization of adult recreational use in Canada, many of the world’s  nations will be watching to see how the process unfolds and its impact. You may  see additional countries relaxing their laws or promoting full legalization in the  near future. 
+Europe’s legal system creates a more challenging environment for legalizing can nabis. Unlike the voter-initiated process in the U.S., cannabis legislation in Europe  must be driven by the courts or legislators. As is the case in the U.S., medical  marijuana is likely to come first followed by growing legislation across Europe.  Italy may be first with measures currently moving through parliament in search  of more support. 
+Some other countries and regions to watch include the following: 
+» Mexico: Legislators have signaled the possibility of broad legalization. » South and Central America: 
+• Belize allows consumption on private property without designating  medical or recreational use. 
+CHAPTER 3 Steering Clear of Legal Trouble 53 
+• Argentina, Chile, Columbia, and Panama have medical marijuana bills that  
+have either passed or are in process. 
+• Costa Rica, Brazil, Peru, Ecuador, and Venezuela have some degree of  
+decriminalization — cannabis is illegal, but the government doesn’t  
+prosecute minor offenses. 
+» New Zealand: Medical marijuana use is permitted, and a national referen 
+dum for adult recreational use is scheduled for 2020. 
+» South Africa: Adults can use and grow cannabis privately for personal  
+adult use. 
+Knowing Your Limits 
+States and locales in which marijuana is legal have numerous rules and regula tions in place to ensure product and public safety. Staying out of legal trouble with  cannabis is often a matter of knowing and adhering to the limitations stipulated  in the legislation. 
+In this section, we provide a different perspective on state and local laws by pre senting them in terms of various limitations. 
+Rules and regulations vary by jurisdiction and may change at any time, so do your  homework to dig up the current details before engaging in any marijuana activi ties. If you have any doubts, consult a qualified attorney in the jurisdiction in  which you plan on engaging in any marijuana related activities. 
+Age limits 
+As with alcohol, states have set age limits for marijuana use and for working in the  industry. Although age limits may vary by jurisdiction, they generally contain the  following brackets: 
+» Adult recreational use: In U.S. states in which marijuana is legal, you must  
+be 21 years or older to purchase and use marijuana recreationally. In Canada,  
+the legal age is 19 in most of the country and 18 in Quebec and Alberta. 
+Giving or selling marijuana to a minor in the U.S. is a federal offense. In some  
+jurisdictions, you’re allowed to give a limited amount of marijuana to another  
+adult. However, any mention of sharing or giving a product while you’re  
+purchasing it may require that the sales person void the sale. Exchanging  
+funds for purchase inside a dispensary can also void the sale.
+54 PART 1 Getting Started with Cannabis 
+» Medical use: In the U.S., a person must be 18 or older to acquire a state  medical marijuana registry card. Some patients under the age of 18 can  receive permission for medical use for certain ailments with parent or  guardian supervision, but the parent or guardian must obtain a special  registry card issued to caregivers. 
+» Working in the industry: In most states, you must be at least 21 years old to  work in the industry and pass a background check with fingerprinting as well  as proof of state residency. Some states allow those 18 years and older to  work in the industry. 
+Purchase limits 
+A purchase limit, sometimes referred to as a carry weight is the legal amount an  individual can purchase in a day. While states and countries may have different  rules, limits are generally as follows: 
+» Adult recreational: 
+• 1 ounce of flower 
+• 8 grams of concentrate 
+• 800 mg of edibles 
+» Medical: 
+• 2 ounces of flower 
+• Extended plant count (EPC) for additional amounts as recommended by a  doctor 
+Grow limits 
+States in which marijuana is legal may allow persons over a certain age (typically  21 years) to grow their own cannabis plants. However, they often place limits on  the number of plants that can be grown, processed, possessed, and transported.  For example, as of the writing of this book, in Alaska, the grow limits are no more  than six plants total of which no more than three can be mature. In Arizona, a  patient or qualifying caregiver is allowed to cultivate no more than 12 plants and  they must do so more than 25 miles from the nearest medical marijuana dispen 
+sary. In Connecticut, home cultivation is prohibited.
+CHAPTER 3 Steering Clear of Legal Trouble 55 
+Dosing limits 
+States don’t set dosing limits directly. By setting purchase and grow limits, they  indirectly regulate the amount of marijuana any individual consumes. However,  states and countries are able to set limits on edibles and sublingual products  related to the total THC milligram content in packaged products. They may also  require that individual doses in packaged products be separated. With products  that are smoked, whether flower or concentrates, determining the THC content  and separating doses is more difficult and less practical. 
+Driving limits 
+High driving is dangerous driving, and driving high is considered driving under  the influence, which is illegal. To steer clear of trouble, follow these rules: 
+» Don’t consume any form of marijuana in your car. 
+» Don’t drive high, regardless of whether you use cannabis for medical or  recreational use. If you’ve been using or plan to use, order a ride or use a  designated driver, as you would do with alcohol consumption. 
+» Store any marijuana you may be transporting in a sealed container in the  trunk or other storage area of your vehicle, not in any passenger area. Open  container laws typically apply to cannabis as well. 
+» Think twice about refusing to take a blood test for THC if you’re stopped. You  can have your driving privileges revoked regardless of whether you’re  convicted of a crime. 
+» Keep in mind that penalties are generally far worse if you’re driving under the  influence with a child in your vehicle. You can be charged with child abuse! 
+Consumption locations 
+Public consumption is illegal, and many municipalities are diligent about enforc ing those rules. When consuming cannabis, adhere to the following guidelines: 
+» Consume only on private property, which may include the following: • Private residences (your home or the home of a friend or relative) • Rental properties that are expressly consumption friendly 
+• Hotels that are expressly consumption friendly
+56 PART 1 Getting Started with Cannabis 
+» Do not consume on public property, such as the following: 
+• Parks (especially federal parks) 
+• Concert venues 
+• Car 
+• Hotel (unless listed as a consumption friendly location) 
+• Sidewalk 
+• Cannabis dispensaries (unless a specific area is set aside for doing so,  which is allowed by law) 
+Your own personal consumption limits 
+Marijuana affects everyone differently and multiple variables impact the experi ence ranging from strain to consumption method to tolerance to environment.  Knowing your own consumption limits is a practical way to stay out of legal  trouble. As long as you remain in control of your own faculties, you’re more likely  to engage in behaviors that don’t draw the attention of law enforcement, and if  you do have an encounter with the police, you’ll be better equipped to deal with  the situation rationally. 
+See Chapter 8 for details about how to consume cannabis safely and identify your  own personal consumption limits. 
+PROTESTING RESTRICTIONS ON  
+CONSUMPTION LOCATIONS 
+The unofficial cannabis holiday known as 420 that takes place on April 20 of each year,  has developed into a grass roots protest against the restrictions on public consumption.  In legalized states, marijuana users often gather at various festivals to celebrate the  legalization of marijuana and to protest restrictions on where cannabis can be  consumed. 
+Although law enforcement agencies have a presence at these events, they generally  don’t arrest people for consuming in public. However, if participants disturb the peace  or break other laws, they can be subject to charges for additional crimes, including  those related to marijuana.
+CHAPTER 3 Steering Clear of Legal Trouble 57 
+Cannabis effects on an individual vary according to numerous factors, including  the following: 
+» Age 
+» Gender 
+» Elevation 
+» Tolerance 
+» Consumption method 
+» Potency of product 
+» Dose 
+» Environment (specifically an individual’s comfort level with their surroundings) » Product strain or terpene profile 
+» Soluble fat content of recently ingested food (specifically, eating fatty foods  before ingesting an edible marijuana product slows the absorption of THC  into the body) 
+Don’t mix marijuana with other substances, such as alcohol. 
+Start low and go slow. You can always consume more product if you’re not  experiencing the desired effect, but you can’t remove product if you’ve consumed  too much. Starting low and going slow is especially important when consuming  edibles, which may require 30 minutes to two hours to take effect and up to four  hours to produce the maximum effect. If you’re impatient, you’re likely to con 
+sume more product than necessary to achieve the desired effect and end up feeling  very uncomfortable instead. Here are some general guidelines for starting low and  going slow with edibles: 
+» Start with 1–5 mg if you’re a new consumer. (10 mg is a standard single dose  of edibles, but micro-dose options are becoming more popular and offer  individual dosing in 5 mg and less.) 
+» Start with 5–10 mg if you’re an occasional consumer. 
+» Start with 10–15 grams if you’re a frequent consumer. 
+» Wait at least two hours before consuming an additional dose. 
+» Have an experienced friend on hand to guide you through your initial  consumption experiences or at least ask your budtender for guidance.
+58 PART 1 Getting Started with Cannabis 
+When you’re first getting a feel for your tolerance, considering starting with a  cannabis-infused beverage. Beverages tend to take effect much more quickly than  edibles — within 45 minutes instead of up to two hours. That way, you can get a  general idea of which dose is best for the desired effect without having to wait two  hours between doses. 
+Avoiding Encounters with  
+Law Enforcement 
+As Americans for Safe Access (ASA) advises, “The best law enforcement encounter  is the encounter that never happens.” Whether your state has legalized cannabis  for medical or adult recreational use, growing, producing, transporting, purchas ing, possessing, or using marijuana makes you a target of greater scrutiny by law  enforcement. The best way to reduce your risk of being hassled, investigated,  arrested, or charged with a crime is to fly below the radar as much as possible.  Following are a few suggestions for avoiding uncomfortable encounters with law  enforcement: 
+» If you consume marijuana for medicinal purposes, carry your medical  
+marijuana registry card at all times. 
+» Consume marijuana only on private property, preferably your home or the  
+home of a friend or relative. If you’re consuming via smoking, smoke inside  
+with the windows closed. You want to avoid a situation in which a disapprov 
+ing neighbor calls the police. 
+» Keep a low profile. Arguments, loud music, barking dogs, physical altercations,  and loud parties can also result in neighbors calling the police. 
+» Don’t consume marijuana in your car, regardless of whether it’s parked or on  the road. If you’re stopped, and the officer gets a whiff of marijuana, you may  
+be suspected of driving under the influence, and you increase your chances of  
+having your car searched. 
+» Carry only the amount of cannabis you need and that’s within the carry limit in  your jurisdiction. Keep the receipt with the product to prove compliance with  
+the legal purchase and carry limit. 
+» Store your cannabis products in glass jars or airtight plastic containers to  
+reduce any odors that may be discernable. (Most dispensary containers are  
+airtight to preserve the quality, so consider keeping that packaging.)
+CHAPTER 3 Steering Clear of Legal Trouble 59 
+» When transporting cannabis, keep it in your vehicle’s trunk or other storage  
+location in the back, not in the passenger areas. Also, make sure your vehicle  
+is in good repair — for example, the headlights and taillights work — and drive  
+safely. Traffic violations make you more susceptible to getting stopped. 
+» Don’t fly with cannabis, regardless of whether you have a medical marijuana  
+registry card and regardless of whether you’re flying in state. If you get caught,  
+you may be subject to both state and federal criminal charges. 
+» If you grow your own marijuana, growing indoors is best to avoid the scrutiny  of neighbors and law enforcement. If you grow outdoors, make sure the area  
+is secure and as private as possible. Compost or discard waste at a remote  
+location, and keep the grow site location private. 
+» Be discreet. Don’t flaunt your marijuana activities. Limit your discussions to  
+only trustworthy individuals on a need-to-know basis. 
+Responding Appropriately in Encounters  with Law Enforcement 
+Even when you’re very careful, encounters with law enforcement may be una voidable. To make the best of a bad situation and avoid making the situation  worse, follow these suggestions: 
+» Remain calm. 
+» Move slowly. Sudden movements may cause fear, which can trigger an  
+overreaction on the part of the officer. 
+» Be respectful and polite. Treating the officer with respect always leads to a  
+better outcome. 
+» Keep your hands where the officer can see them. For example, if you’re  
+stopped in your car, keep your hands near the top of the steering wheel. Don’t  
+reach in your pocket for a wallet or anything else unless instructed to do so. 
+» Do what the officer tells you to do and only what the officer tells you to do  
+that is within your legal rights. For example, don’t reach inside the glove  
+compartment of your car to retrieve your license and registration until told to  
+do so. 
+» Remain silent for the most part. Remember that anything you say can and will  be used against you.
+60 PART 1 Getting Started with Cannabis 
+» If the officer starts asking questions or trying to engage you in conversation,  
+ask whether you are being detained or arrested. If the officer says “no,” then  
+wait for him to finish what he’s doing (such as writing a citation) and leave  
+immediately. If the answer is “yes,” then ask why you are being detained or  
+arrested, and remember the officer’s answer. 
+As soon as the officer informs you that you’re free to go, go. Don’t say a word.  
+If an officer informs you that you’re free to go, anything you say afterwards is  
+considered voluntary. 
+» If the officer refuses to let you go or continues to try to engage you in  
+conversation, say “I choose to remain silent. I want a lawyer.” 
+» Don’t consent to any searches. An officer can go through a bag you’re carrying  or pat you down to check for weapons but is not allowed to go through your  
+pockets or search your home or vehicle without reasonable suspicion or a  
+search warrant. If the officer asks to conduct a search or starts a search,  
+simply say, “I do not consent to any searches.” Don’t try to stop the officer  
+from conducting a search, because that can get you into more trouble. 
+Taking Responsibility as a Parent 
+Federal and state authorities are serious about preventing underage access to legal  marijuana, and most responsible cannabis companies support this restriction.  Numerous safety features are built into products to prevent children from being  attracted to or being able to consume product, such as the following: 
+» Restrictions on animal shapes for edibles 
+» Childproof (and sometimes adult-proof) containers 
+» Strict ID checks in dispensaries 
+» Universal THC labels 
+Dispensaries and product manufacturers are also very limited in advertising. Most  rules require proof that the print, radio, TV, or social vehicle has a 70 percent adult  audience. In Canada, rules also include restrictions on any cartoon imagery that  may be deemed enticing to children. 
+If you’re a parent, the primary responsibility for keeping your kids out of your  stash lies with you. Numerous products are available to help parents prevent  unauthorized access to marijuana products, including pouches that lock for stor ing pharmaceutical medications, portable fireproof safes that lock with a key or 
+CHAPTER 3 Steering Clear of Legal Trouble 61 
+combination, and even file storage boxes equipped with locks. The device doesn’t  have to be designed specifically for securing marijuana products, and it doesn’t  need to be expensive to be effective. 
+Plenty of programs and websites, some supported by the cannabis industry, pro vide age-appropriate and common sense curricula to parents and educators to help  guide discussions about cannabis and maintain barriers to youth consumption.  The Marijuana Education Initiative (MEI) provides exceptional guidance to parents  and educators on how to help adolescents make informed decisions about mari juana. To explore MEI’s educational resources, visit marijuana-education.com 
+Although marijuana may be beneficial for helping with certain medical conditions  in adults, it’s generally harmful for children under the age of 18. Most brain devel opment occurs during childhood and continues into the mid-20s. Any substances  that have an effect on the brain, including marijuana, alcohol, cocaine, and opi oids are harmful to children.
+62 PART 1 Getting Started with Cannabis 
+Chapter 4 
+IN THIS CHAPTER 
+» Tuning into the political and social  cannabis climate 
+» Busting common myths 
+» Following the wave of activism » Getting a feel for cannabis culture
+Tackling Cannabis  
+Politics and Culture Cannabis has a long history of use in many areas including medicine, textiles,  
+religion, and even magic (in the ancient world). Perspectives about the  plant, its uses, and its users have changed frequently around the world,  especially over the last 100 years. In the United States, cannabis has often become  a dividing line for culture — emblematic of certain counterculture groups from  
+jazz musicians in the 1920s and ‘30s to the hippies in the ‘60s, with equal back lash from the establishment, which has traditionally seen its use as ranging from  distracting to dangerous. 
+In the society of the early 2000s, cannabis is beginning to work its way into the  mainstream. With the advent of legalization for first medical cannabis in 2009  followed by adult recreational legalization in 2012 in Colorado, a new fascination  has developed around the plant and its use that is spanning all demographics. 
+This chapter brings you up to speed on current cannabis politics and culture, so  you have a clearer sense of the prevailing perspectives and attitudes and where  they seem to be heading. 
+CHAPTER 4 Tackling Cannabis Politics and Culture 63 
+Checking the Nation’s Pulse 
+Legalization of cannabis for both medical and adult recreational use in the  U.S. began as a movement with early activists coming from the more traditionally  recognized user demographics of artists, musicians, and the stoner culture.  However, growing acceptance along with expanding numbers of states legalizing  use has begun to show that cannabis acceptance is a very big tent, encompassing  people from every demographic of age, race, income, gender, location, and politi 
+cal party. 
+This section explores the factors that are driving people to change their attitudes  about cannabis, examines the prevailing attitudes and perspectives, and encour ages you to stay abreast of the ever-evolving social and political climate. 
+Acknowledging the drivers of change 
+Acceptance and use among the middle-America, middle-income, middle-aged  white constituency has come mostly come from three drivers: 
+» Monetary impact to the community: With amendment 64 in Colorado,  
+voters approved adult recreational cannabis with an extremely high tax  
+burden that directs funds to the state’s rural education efforts through a  
+grant program for school construction projects. Colorado was the first state  
+to implement voter approved adult recreational cannabis sales, and the  
+resulting state income from sales tax, excise taxes, and fees has provoked  
+revenue-envy among other states across the country, forcing both politicians  
+and voters to sit up and take notice. In any state where adult recreational  
+cannabis use is legal, the taxes and fees are fairly steep. 
+» Reduction in stigma due to medical cannabis: After a few states legalized  
+medical cannabis use, more people started to accept its medicinal value.  
+Increasingly, people are hearing from friends, relatives, and acquaintances  
+who have had success using marijuana in many forms to help mitigate  
+symptoms related to severe and chronic illness as well as more mundane  
+aches and pains. Specifically, the use of marijuana to alleviate nausea and  
+stimulate appetite in cancer patients, along with the support of physicians,  
+has helped drive the narrative that marijuana can be used as medicine. 
+In addition, statistics showing the drop in fatal opioid overdose in states  
+where marijuana is legal have helped fuel the awareness of benefits to  
+society. For example, in Denver alone, opioid deaths have dropped by  
+six percent since marijuana was legalized.
+64 PART 1 Getting Started with Cannabis

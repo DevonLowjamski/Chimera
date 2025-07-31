@@ -1,0 +1,36 @@
+```text
+cannabis_chemistry_biology_fundamentals.txt
+
+Cannabis: Chemistry & Biology Fundamentals
+
+Contributors:  J. Block, H. Lata, S. Chandra, M. ElSohly, S. Gul, W. Gul, M. Radwan, A. Wanas, C. Majumdar, E. Ibrahim.
+
+Chapter 1: Cannabis History (Block)
+
+Cannabis sativa origins: NE Asia, spread via human migration.  Prehistoric uses: fiber (China, Taiwan, Czech Republic – 10,000 BCE, ~27,000 BCE), food (seeds – China, Russia), medicine (China – 2700 BCE, India, Middle East, Greece).  Fiber crucial for sailing ships, spurred global spread (16th–18th centuries).  Chemotype variation: fiber hemp (low THC), psychoactive cannabis (high THC), intermediate (balanced THC/CBD). USP Cannabis Expert Panel: THC-dominant, CBD-dominant, balanced THC/CBD.  US policy: colonial hemp cultivation requirements, Marihuana Tax Act of 1937, prohibition (1970), 2018 Farm Bill (legalized hemp, <0.3% THC).  Modern hybridization increased THC potency, decreased CBD.  Endogenous cannabinoid system (ECS): ubiquitous lipid-based receptor system regulating bodily systems; discovered via cannabis research.  Primary phytocannabinoids: Δ9-tetrahydrocannabinol (THC), cannabidiol (CBD).  Modern cannabinoid medications: Epidiolex™ (CBD), Sativex™ (CBD:THC 1:1), dronabinol (Marinol™), nabilone (Cesamet™). Rimonabant (Acomplia™) cautionary tale (CB1 inverse agonist).
+
+Chapter 2: Cannabis Botany & Biomass Production (Lata, Chandra, ElSohly)
+
+Cannabis sativa L.: Cannabaceae family. Dioecious (mostly), monoecious (rare).  >550 constituents, 129 phytocannabinoids (Δ9-THC, CBD most significant).  Drug vs. fiber types: morphology, cannabinoid profiles (THC-dominant, CBD-dominant, balanced THC/CBD, CBG-dominant).  Cultivation: indoor (controlled environment: PPFD, photoperiod, temperature, humidity, CO2), outdoor (sunlight, weather dependent). Propagation: seeds (inconsistent chemical profile), vegetative cuttings (cloning), micropropagation (apical segments, leaf disks, nodal segments, synthetic seeds), hydroponics/aeroponics.  Mother clone selection: screening high-yielding females, cannabinoid profiling (GC-FID), conservation (slow growth, cryopreservation).  Harvesting: morning, mature buds first. Processing: drying (40°C), manicuring, storage (−10°C). Extraction: solvent, supercritical fluid.
+
+Chapter 3: Comprehensive Review of Cannabis Phytocannabinoids (ElSohly, Gul, Gul)
+
+129 cannabinoids classified into 11 types: CBG (16), Δ9-THC (25), CBT (9), Δ8-THC (5), CBN (11), CBD (13), CBND (2), CBE (5), CBC (9), CBL (3), Miscellaneous (31).  Structures described (Figures 3.1–3.18).  Historical review of chemical research: CBN (first isolated), CBD, Δ9-THC, identification of cannabinoid receptors, endogenous cannabinoids (anandamide).  Pharmacological activities summarized.
+
+Chapter 4: Non-Cannabinoid Constituents (Gul, Gul, ElSohly)
+
+>400 non-cannabinoid constituents: alkaloids (2), flavonoids (36), phenols (42), terpenes (117).  Structures described (Figures 4.1–4.10).  Detailed isolation & identification procedures summarized.
+
+Chapter 5: Total Synthesis of Major Phytocannabinoids (Gul, Ibrahim, Gul, ElSohly)
+
+Synthetic routes for major cannabinoids (CBGA, CBG, Δ9-THC, CBD, Δ9-THCV, CBDV, CBN, CBE, CBC, CBL, CBT).  Methods: decarboxylation of acids, semisynthesis (from CBD, CBDV, using BF3·Et2O, TFA, potassium tert-amylate), total synthesis (Dethe, Stoss & Merrath, using verbenone).
+
+Chapter 6: Biosynthesis of Cannabis Constituents (Wanas, Radwan, Chandra, Majumdar, ElSohly)
+
+Cannabinoids: OA (from hexanoyl-CoA, malonyl-CoA), GPP (MVP, MEP pathways), CBGA (OA + GPP), THCA, CBDA, CBCA (CBGA + oxidases), neutral cannabinoids (decarboxylation, oxidation).  Non-cannabinoid phenols: dihydrostilbenes (phenylalanine, malonyl-CoA), cannabispirans (dihydrostilbenes + oxidation, coupling), dihydrophenanthrenes (bibenzyls + cyclization).  Flavonoids: naringenin (phenylalanine, malonyl-CoA), other flavonoids (modifications of naringenin).  Terpenes: IPP, DMAPP, GPP, NPP, monoterpenes, sesquiterpenes, diterpenes, triterpenes (cyclization, modifications).
+
+Chapter 7: Identification & Analysis of Cannabis (Wanas, Radwan, Chandra, Majumdar, ElSohly)
+
+Identification: microscopy (trichomes), color tests (Duquénois–Levine, beam, Ghamrawy, fast blue B, 4-aminophenol), chromatographic analysis (GC, GC–MS, HPLC, UPLC, HPTLC).  Potency Monitoring Program (DEA):  Δ9-THC & CBD concentrations in confiscated samples (1995–2021).  Trends in THC potency (increased), CBD levels (decreased), THC:CBD ratio (increased).  Analysis methods described.
+
+```

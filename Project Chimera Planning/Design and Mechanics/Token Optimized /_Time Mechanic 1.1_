@@ -1,0 +1,65 @@
+﻿Project Chimera: Time Mechanic - DRAFT v1.1 (Condensed)
+Core Philosophy: Player-controlled pacing, balancing realism/engagement. Accelerated active gameplay for rapid biological process observation; offline progression respects player agency, cultivation persistence. Inherent trade-offs/risks with time acceleration; rewards thoughtful decisions, well-managed automated facilities.
+I. Active Gameplay Time Scales & Controls:
+* Baseline Time Scale (1x):
+   * Definition: 1 in-game week (6 in-game days) = 1 real-world hour.
+   * Equivalency: 1 in-game day = 10 real-world minutes.
+   * Purpose: Default, balanced progression; manage tasks without rush; observable/intervenable biological processes. Intended primary speed for engaged gameplay.
+* Player-Controlled Time Acceleration Levels (UI Slider, predefined snap-to levels; Labels: In-Game Day : Real-World Time):
+   * "Scientific Observation" (1 IGD = 24 RWH):
+      * Purpose: Utmost realism, detailed slow-paced observation, "hardcore" challenges. Not for standard progression.
+      * Benefit (Subtle): Potential highest nuanced genetic expression/quality.
+   * "Deliberate Pace" (1 IGD = 20 RWM):
+      * Purpose: Slower, methodical pace; more real-world time per in-game day.
+   * "Standard Cultivation" (1 IGD = 10 RWM): (1x Baseline)
+      * Purpose: Default, balanced experience.
+   * "Accelerated Growth" (1 IGD = 4 RWM):
+      * Purpose: Experienced players, moderately automated setups; speed up common grow phases.
+   * "Rapid Cycle" (1 IGD = 2 RWM):
+      * Purpose: Significantly faster progression; demands well-automated systems, quick decisions.
+   * "Hyper-Cycle" (1 IGD = 1 RWM):
+      * Purpose: Fastest active play; very advanced, stable, robustly automated facilities. Highest risk.
+      * Detriment (Subtle): Slight cap/reduction in max potential genetic expression/quality vs. slower speeds.
+II. Consequences & Management of Active Time Acceleration:
+* Proportional Task Frequency: Daily/regular in-game tasks proportionally more frequent in real-world time as game speed increases.
+* Consistent Resource Consumption (Per In-Game Unit of Time): Constant per in-game day; depletes faster in real-world time at accelerated speeds.
+* "Transition Inertia" System for Time Scale Changes:
+   * Concept: Prevents exploitation, encourages deliberate use; player cannot initiate another speed change during transition.
+   * Initiating Change: Clear pop-up (risks/benefits, Transition Inertia mechanic); player confirms.
+   * Transition Inertia (Ramp & Lock): Speed ramps up/down over "transition duration"; player locked from further changes.
+   * Duration Calculation: Percentage (e.g., 5-10%) of real-world time for one in-game day at the slower of the two speeds. Larger jumps = more gradual, longer lock.
+   * Purpose: Makes speed changes strategic, committed, reflecting system inertia.
+* Subtle Time Scale-Dependent Variables (Risk/Reward):
+   * Genetic Expression Potential: Slower speeds may offer slightly higher maximum potential quality (e.g., 1-3% peak THC variance slowest/fastest).
+   * Stress Event Probability/Severity (Brainstorming): Faster speeds might slightly increase base probability/severity of minor stressors if not perfectly managed. Slower speeds might allow more nuanced positive interactions. (Needs careful balancing, extensive testing).
+III. Offline Time Progression:
+* Player Choice at Session End (Save/Exit):
+   * Paused: No in-game time passes (Default for security).
+   * Selected Active Time Scale: Any active scale chosen for offline progression.
+* Offline Simulation & Login Resolution:
+   * Ideal: Detailed simulation based on facility state, chosen speed.
+   * Login Process & "Catch-Up" Visualization:
+      * Game calculates/simulates occurred events.
+      * Initial segment processed.
+      * Player sees accelerated visual time-lapse of facility (simulated events).
+      * Game continues background simulation, seamlessly feeding time-lapse.
+      * Purpose: Engaging visual feedback, masks computation.
+   * Post-Time-Lapse Recap Screen: Detailed "Facility Status Report" (resources, crop progress, significant events, harvests, critical alerts).
+* Risk & Automation: Offline safety directly tied to robustness of automated systems, resource buffers.
+IV. Time and Biological/Game Processes:
+* Plant Growth Stages: Base durations (in-game days) subject to active/chosen offline time scale. Player agency can influence some stage lengths (e.g., vegetative). Quality impacts (e.g., curing duration) tied to in-game time.
+* Other Game Processes: Research, construction (if not instant), contract deadlines, etc., adhere to active in-game time scale.
+* Global Events ("Season Drops"): Operate on fixed real-world calendar, independent of player time scale.
+V. Communicating Time to the Player (UI/UX):
+* Persistent Time Display: Always-visible UI: current in-game date/time, current time acceleration level (e.g., "Day 42, 14:30 (Rapid Cycle - 1 IGD = 2 RWM)").
+* Contextual Time Information:
+   * Plant Growth UI: Projected real-world time remaining for current stage, dynamic to current acceleration (e.g., "Flowering: 10 game days remaining / Est. 20 real mins at current speed").
+   * Research/Construction Queues: Estimated real-world completion times based on current speed.
+   * Contract/Objective Timers: Deadlines in both in-game time and estimated real-world time at current speed.
+* Toggleable Time Display Format (Game Time vs. Real World Time):
+   * Player clicks any time/date string in UI.
+   * Toggles all time-related displays globally between "In-Game Time" (e.g., "Finishes in 3 Game Days") and "Estimated Real-World Time at Current Speed" (e.g., "Finishes in approx. 30 Real Minutes").
+   * Clear, persistent visual indicator (icon or font style change) for active display mode (Game Time or Real Time).
+* Historical Logs: Timestamps primarily use in-game date/time (consistency); potential real-world timestamp as secondary metadata.
+VI. Time Scale and Leaderboards/Challenges (Future Consideration):
+* Chosen time scales, efficiency can integrate into competitive elements.
