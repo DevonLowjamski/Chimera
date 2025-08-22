@@ -1,0 +1,2693 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core;
+using ProjectChimera.Data.Construction;
+
+namespace ProjectChimera.Systems.Construction
+{
+    /// <summary>
+    /// Handles user interactions for grid-based object placement in Project Chimera.
+    /// Provides mouse/touch controls, preview visualization, and placement validation.
+    /// Works in conjunction with GridSystem and GridPlaceable components.
+    /// </summary>
+    public class GridPlacementController : MonoBehaviour
+    {
+        [Header("Input Settings")]
+        [SerializeField] private KeyCode _placementKey = KeyCode.Mouse0;
+        [SerializeField] private KeyCode _cancelKey = KeyCode.Mouse1;
+        [SerializeField] private KeyCode _rotateKey = KeyCode.R;
+        [SerializeField] private KeyCode _deleteKey = KeyCode.Delete;
+        [SerializeField] private LayerMask _groundLayer = 1; // Ground layer for raycast
+        
+        [Header("Drag Selection Settings")]
+        [SerializeField] private KeyCode _dragSelectKey = KeyCode.Mouse0;
+        [SerializeField] private KeyCode _addToSelectionKey = KeyCode.LeftShift;
+        [SerializeField] private float _dragThreshold = 10f; // Minimum pixels to start drag
+        [SerializeField] private bool _enableDragSelection = true;
+        [SerializeField] private Color _selectionBoxColor = new Color(0.2f, 0.8f, 1f, 0.3f);
+        [SerializeField] private Color _selectionBoxBorderColor = new Color(0.2f, 0.8f, 1f, 0.8f);
+        
+        [Header("Schematic Operations")]
+        [SerializeField] private KeyCode _saveSchematicKey = KeyCode.S;
+        [SerializeField] private KeyCode _saveSchematicModifier = KeyCode.LeftControl;
+        [SerializeField] private KeyCode _cancelSchematicPlacementKey = KeyCode.Escape;
+        
+        [Header("Ghost Preview Settings")]
+        [SerializeField] private Material _ghostPreviewMaterial;
+        [SerializeField] private Color _validGhostColor = new Color(0f, 1f, 0f, 0.5f);
+        [SerializeField] private Color _invalidGhostColor = new Color(1f, 0f, 0f, 0.5f);
+        [SerializeField] private Color _unaffordableGhostColor = new Color(1f, 0.5f, 0f, 0.5f);
+        [SerializeField] private bool _showGhostOutlines = true;
+        [SerializeField] private float _ghostPreviewHeight = 0.1f;
+        
+        [Header("Validation Settings")]
+        [SerializeField] private bool _enableCostValidation = true;
+        [SerializeField] private bool _enableSpaceValidation = true;
+        [SerializeField] private bool _enableResourceValidation = true;
+        [SerializeField] private float _minimumClearanceDistance = 1f;
+        
+        [Header("Category Filtering")]
+        [SerializeField] private bool _enableCategoryFiltering = true;
+        [SerializeField] private List<ConstructionCategory> _activeFilterCategories = new List<ConstructionCategory>();
+        [SerializeField] private bool _showFilteredObjectsOnly = true;
+        
+        [Header("Camera Settings")]
+        [SerializeField] private Camera _placementCamera;
+        [SerializeField] private float _raycastDistance = 1000f;
+        
+        [Header("Preview Settings")]
+        [SerializeField] private bool _showPlacementPreview = true;
+        [SerializeField] private bool _snapPreviewToGrid = true;
+        [SerializeField] private float _previewUpdateRate = 0.016f; // ~60 FPS
+        
+        [Header("UI Integration")]
+        [SerializeField] private bool _requireUIConfirmation = false;
+        [SerializeField] private string _placementUIMessage = "Click to place, Right-click to cancel";
+        
+        // Core references
+        private GridSystem _gridSystem;
+        private GridPlaceable _currentPlaceable;
+        private GridPlaceable _selectedObject;
+        private BlueprintOverlayRenderer _overlayRenderer;
+        
+        // Drag selection state
+        private bool _isDragSelecting;
+        private Vector2 _dragStartPos;
+        private Vector2 _dragCurrentPos;
+        private List<GridPlaceable> _selectedObjects = new List<GridPlaceable>();
+        private Rect _selectionBounds;
+        
+        // Category filtering state
+        private Dictionary<ConstructionCategory, List<GridPlaceable>> _categorizedObjects = new Dictionary<ConstructionCategory, List<GridPlaceable>>();
+        private HashSet<ConstructionCategory> _enabledCategories = new HashSet<ConstructionCategory>();
+        
+        // Schematic placement state
+        private bool _isInSchematicPlacementMode;
+        private SchematicSO _currentSchematic;
+        private List<GameObject> _ghostPreviewObjects = new List<GameObject>();
+        private Vector3Int _schematicGridPosition;
+        private int _schematicRotation;
+        private bool _isSchematicPlacementValid;
+        private OverlayInstance _currentSchematicOverlay;
+        
+        // Pooling system state
+        private Dictionary<string, Queue<GameObject>> _objectPools = new Dictionary<string, Queue<GameObject>>();
+        private Dictionary<string, Transform> _poolContainers = new Dictionary<string, Transform>();
+        private Transform _poolRoot;
+        private const int INITIAL_POOL_SIZE = 5;
+        private const int MAX_POOL_SIZE = 50;
+        
+        // Validation state
+        private SchematicValidationResult _lastValidationResult;
+        private float _currentPlayerFunds = 0f;
+        private Dictionary<string, int> _currentPlayerResources = new Dictionary<string, int>();
+        
+        // Preview state
+        private GameObject _previewObject;
+        private Vector3 _currentMouseWorldPos;
+        private Vector3Int _currentGridCoord;
+        private bool _isValidPlacement;
+        private float _lastPreviewUpdate;
+        
+        // Placement state
+        private bool _isInPlacementMode;
+        private PlacementMode _placementMode = PlacementMode.Single;
+        
+        // Events
+        public System.Action<GridPlaceable> OnObjectPlaced;
+        public System.Action<GridPlaceable> OnObjectRemoved;
+        public System.Action<GridPlaceable> OnObjectSelected;
+        public System.Action OnPlacementModeEntered;
+        public System.Action OnPlacementModeExited;
+        public System.Action<Vector3Int, bool> OnPreviewPositionChanged;
+        
+        // Drag selection events
+        public System.Action<List<GridPlaceable>> OnMultipleObjectsSelected;
+        public System.Action OnDragSelectionStarted;
+        public System.Action OnDragSelectionEnded;
+        public System.Action<Rect> OnSelectionBoundsChanged;
+        
+        // Category filtering events
+        public System.Action<List<ConstructionCategory>> OnCategoryFilterChanged;
+        public System.Action<Dictionary<ConstructionCategory, int>> OnCategoryCountsUpdated;
+        
+        // Properties
+        public GridSystem GridSystem => _gridSystem;
+        public bool IsInPlacementMode => _isInPlacementMode;
+        public GridPlaceable CurrentPlaceable => _currentPlaceable;
+        public GridPlaceable SelectedObject => _selectedObject;
+        public Vector3Int CurrentGridCoordinate => _currentGridCoord;
+        public bool IsValidPlacement => _isValidPlacement;
+        
+        // Drag selection properties
+        public bool IsDragSelecting => _isDragSelecting;
+        public List<GridPlaceable> SelectedObjects => new List<GridPlaceable>(_selectedObjects);
+        public int SelectedObjectCount => _selectedObjects.Count;
+        public Rect SelectionBounds => _selectionBounds;
+        
+        // Category filtering properties
+        public bool CategoryFilteringEnabled => _enableCategoryFiltering;
+        public List<ConstructionCategory> ActiveFilterCategories => new List<ConstructionCategory>(_activeFilterCategories);
+        public Dictionary<ConstructionCategory, int> CategoryCounts => GetCategoryCounts();
+        
+        // Schematic placement properties
+        public bool IsInSchematicPlacementMode => _isInSchematicPlacementMode;
+        public SchematicSO CurrentSchematic => _currentSchematic;
+        public Vector3Int SchematicGridPosition => _schematicGridPosition;
+        public int SchematicRotation => _schematicRotation;
+        public bool IsSchematicPlacementValid => _isSchematicPlacementValid;
+        public SchematicValidationResult LastValidationResult => _lastValidationResult;
+        public float CurrentPlayerFunds => _currentPlayerFunds;
+        
+        private void Awake()
+        {
+            InitializeController();
+            InitializePoolingSystem();
+        }
+        
+        private void Start()
+        {
+            FindReferences();
+        }
+        
+        private void OnDestroy()
+        {
+            ClearAllPools();
+        }
+        
+        private void Update()
+        {
+            if (_isInPlacementMode)
+            {
+                UpdatePlacementMode();
+            }
+            else if (_isInSchematicPlacementMode)
+            {
+                UpdateSchematicPlacementMode();
+            }
+            else
+            {
+                UpdateSelectionMode();
+                UpdateDragSelection();
+            }
+            
+            HandleInputs();
+        }
+        
+        #region Initialization
+        
+        private void InitializeController()
+        {
+            if (_placementCamera == null)
+            {
+                _placementCamera = Camera.main;
+                if (_placementCamera == null)
+                {
+                    _placementCamera = FindObjectOfType<Camera>();
+                }
+            }
+            
+            InitializeCategoryFiltering();
+        }
+        
+        private void FindReferences()
+        {
+            if (_gridSystem == null)
+            {
+                _gridSystem = FindObjectOfType<GridSystem>();
+                if (_gridSystem == null)
+                {
+                    Debug.LogError("[GridPlacementController] No GridSystem found in scene!");
+                    enabled = false;
+                    return;
+                }
+            }
+        }
+        
+        #endregion
+        
+        #region Input Handling
+        
+        private void HandleInputs()
+        {
+            // Handle drag selection input
+            if (_enableDragSelection && !_isInPlacementMode)
+            {
+                HandleDragSelectionInput();
+            }
+            
+            // Placement input
+            if (Input.GetKeyDown(_placementKey) && !_isDragSelecting)
+            {
+                HandlePlacementInput();
+            }
+            
+            // Cancel input
+            if (Input.GetKeyDown(_cancelKey))
+            {
+                HandleCancelInput();
+            }
+            
+            // Rotation input
+            if (Input.GetKeyDown(_rotateKey))
+            {
+                HandleRotationInput();
+            }
+            
+            // Delete input
+            if (Input.GetKeyDown(_deleteKey))
+            {
+                HandleDeleteInput();
+            }
+            
+            // Save schematic input (Ctrl+S)
+            if (Input.GetKey(_saveSchematicModifier) && Input.GetKeyDown(_saveSchematicKey))
+            {
+                HandleSaveSchematicInput();
+            }
+            
+            // Cancel schematic placement
+            if (Input.GetKeyDown(_cancelSchematicPlacementKey))
+            {
+                HandleCancelSchematicPlacementInput();
+            }
+        }
+        
+        private void HandlePlacementInput()
+        {
+            if (_isInPlacementMode && _currentPlaceable != null)
+            {
+                AttemptPlacement();
+            }
+            else if (_isInSchematicPlacementMode && _currentSchematic != null)
+            {
+                AttemptSchematicPlacement();
+            }
+            else
+            {
+                HandleObjectSelection();
+            }
+        }
+        
+        private void HandleCancelInput()
+        {
+            if (_isInPlacementMode)
+            {
+                CancelPlacement();
+            }
+            else if (_isInSchematicPlacementMode)
+            {
+                CancelSchematicPlacement();
+            }
+            else if (_isDragSelecting)
+            {
+                CancelDragSelection();
+            }
+            else
+            {
+                ClearSelection();
+            }
+        }
+        
+        private void HandleRotationInput()
+        {
+            if (_isInPlacementMode && _currentPlaceable != null && _currentPlaceable.CanRotate)
+            {
+                _currentPlaceable.RotateClockwise();
+                UpdatePlacementValidity();
+            }
+            else if (_isInSchematicPlacementMode && _currentSchematic != null)
+            {
+                RotateSchematic();
+            }
+            else if (_selectedObject != null && _selectedObject.CanRotate)
+            {
+                _selectedObject.RotateClockwise();
+            }
+        }
+        
+        private void HandleDeleteInput()
+        {
+            if (_selectedObject != null && _selectedObject.IsPlaced)
+            {
+                RemoveSelectedObject();
+            }
+        }
+        
+        private void HandleSaveSchematicInput()
+        {
+            if (_selectedObjects.Count > 0)
+            {
+                SaveSelectionAsSchematic();
+            }
+            else
+            {
+                Debug.LogWarning("[GridPlacementController] Cannot save schematic - no objects selected. Use drag selection to select multiple objects.");
+            }
+        }
+        
+        private void HandleCancelSchematicPlacementInput()
+        {
+            if (_isInSchematicPlacementMode)
+            {
+                CancelSchematicPlacement();
+            }
+        }
+        
+        private void HandleObjectSelection()
+        {
+            Vector3 mouseWorldPos = GetMouseWorldPosition();
+            if (mouseWorldPos == Vector3.zero) return;
+            
+            Vector3Int gridCoord = _gridSystem.WorldToGridPosition(mouseWorldPos);
+            var cell = _gridSystem.GetGridCell(gridCoord);
+            
+            if (cell != null && cell.IsOccupied && cell.OccupyingObject != null)
+            {
+                SelectObject(cell.OccupyingObject);
+            }
+            else
+            {
+                ClearSelection();
+            }
+        }
+        
+        private void HandleDragSelectionInput()
+        {
+            if (Input.GetKeyDown(_dragSelectKey))
+            {
+                _dragStartPos = Input.mousePosition;
+            }
+            else if (Input.GetKey(_dragSelectKey) && !_isDragSelecting)
+            {
+                Vector2 currentMousePos = Input.mousePosition;
+                float dragDistance = Vector2.Distance(_dragStartPos, currentMousePos);
+                
+                if (dragDistance > _dragThreshold)
+                {
+                    StartDragSelection();
+                }
+            }
+            else if (Input.GetKeyUp(_dragSelectKey))
+            {
+                if (_isDragSelecting)
+                {
+                    CompleteDragSelection();
+                }
+            }
+        }
+        
+        #endregion
+        
+        #region Drag Selection System
+        
+        private void UpdateDragSelection()
+        {
+            if (!_isDragSelecting) return;
+            
+            _dragCurrentPos = Input.mousePosition;
+            UpdateSelectionBounds();
+            UpdateSelectionPreview();
+        }
+        
+        private void StartDragSelection()
+        {
+            _isDragSelecting = true;
+            _dragCurrentPos = Input.mousePosition;
+            
+            // Clear previous selection unless adding to selection
+            if (!Input.GetKey(_addToSelectionKey))
+            {
+                ClearMultipleSelection();
+            }
+            
+            OnDragSelectionStarted?.Invoke();
+            Debug.Log("[GridPlacementController] Started drag selection");
+        }
+        
+        private void UpdateSelectionBounds()
+        {
+            Vector2 min = Vector2.Min(_dragStartPos, _dragCurrentPos);
+            Vector2 max = Vector2.Max(_dragStartPos, _dragCurrentPos);
+            
+            _selectionBounds = new Rect(min.x, Screen.height - max.y, max.x - min.x, max.y - min.y);
+            OnSelectionBoundsChanged?.Invoke(_selectionBounds);
+        }
+        
+        private void UpdateSelectionPreview()
+        {
+            // Get all objects within the selection bounds
+            var objectsInBounds = GetObjectsInScreenBounds(_selectionBounds);
+            
+            // Update visual feedback for objects within bounds
+            // This would typically highlight objects that would be selected
+        }
+        
+        private void CompleteDragSelection()
+        {
+            if (!_isDragSelecting) return;
+            
+            var selectedObjects = GetObjectsInScreenBounds(_selectionBounds);
+            
+            if (Input.GetKey(_addToSelectionKey))
+            {
+                // Add to existing selection
+                foreach (var obj in selectedObjects)
+                {
+                    if (!_selectedObjects.Contains(obj))
+                    {
+                        _selectedObjects.Add(obj);
+                    }
+                }
+            }
+            else
+            {
+                // Replace selection
+                _selectedObjects.Clear();
+                _selectedObjects.AddRange(selectedObjects);
+            }
+            
+            _isDragSelecting = false;
+            OnDragSelectionEnded?.Invoke();
+            OnMultipleObjectsSelected?.Invoke(new List<GridPlaceable>(_selectedObjects));
+            
+            Debug.Log($"[GridPlacementController] Drag selection completed - {_selectedObjects.Count} objects selected");
+        }
+        
+        private void CancelDragSelection()
+        {
+            if (!_isDragSelecting) return;
+            
+            _isDragSelecting = false;
+            OnDragSelectionEnded?.Invoke();
+            
+            Debug.Log("[GridPlacementController] Drag selection cancelled");
+        }
+        
+        private List<GridPlaceable> GetObjectsInScreenBounds(Rect screenBounds)
+        {
+            var objectsInBounds = new List<GridPlaceable>();
+            
+            if (_gridSystem == null || _placementCamera == null) return objectsInBounds;
+            
+            // Convert screen bounds to world bounds
+            Vector3 screenMin = new Vector3(screenBounds.xMin, screenBounds.yMin, 0);
+            Vector3 screenMax = new Vector3(screenBounds.xMax, screenBounds.yMax, 0);
+            
+            Ray rayMin = _placementCamera.ScreenPointToRay(screenMin);
+            Ray rayMax = _placementCamera.ScreenPointToRay(screenMax);
+            
+            // Get approximate world bounds on the ground plane
+            Vector3 worldMin = GetRayGroundIntersection(rayMin);
+            Vector3 worldMax = GetRayGroundIntersection(rayMax);
+            
+            if (worldMin == Vector3.zero || worldMax == Vector3.zero) return objectsInBounds;
+            
+            // Create bounds rectangle in world space
+            Bounds worldBounds = new Bounds();
+            worldBounds.SetMinMax(
+                new Vector3(Mathf.Min(worldMin.x, worldMax.x), worldMin.y, Mathf.Min(worldMin.z, worldMax.z)),
+                new Vector3(Mathf.Max(worldMin.x, worldMax.x), worldMax.y, Mathf.Max(worldMin.z, worldMax.z))
+            );
+            
+            // Check all placed objects
+            var allObjects = UnityEngine.Object.FindObjectsByType<GridPlaceable>(FindObjectsSortMode.None);
+            foreach (var obj in allObjects)
+            {
+                if (obj.IsPlaced && worldBounds.Contains(obj.transform.position))
+                {
+                    // Apply category filtering
+                    if (_enableCategoryFiltering && !IsObjectInActiveCategories(obj))
+                        continue;
+                        
+                    objectsInBounds.Add(obj);
+                }
+            }
+            
+            return objectsInBounds;
+        }
+        
+        private Vector3 GetRayGroundIntersection(Ray ray)
+        {
+            if (Physics.Raycast(ray, out RaycastHit hit, _raycastDistance, _groundLayer))
+            {
+                return hit.point;
+            }
+            
+            // Fallback: project onto Y=0 plane
+            if (Mathf.Abs(ray.direction.y) > 0.01f)
+            {
+                float distance = -ray.origin.y / ray.direction.y;
+                if (distance > 0 && distance < _raycastDistance)
+                {
+                    return ray.origin + ray.direction * distance;
+                }
+            }
+            
+            return Vector3.zero;
+        }
+        
+        public void ClearMultipleSelection()
+        {
+            _selectedObjects.Clear();
+            OnMultipleObjectsSelected?.Invoke(new List<GridPlaceable>());
+        }
+        
+        public void AddToSelection(GridPlaceable obj)
+        {
+            if (obj != null && !_selectedObjects.Contains(obj))
+            {
+                _selectedObjects.Add(obj);
+                OnMultipleObjectsSelected?.Invoke(new List<GridPlaceable>(_selectedObjects));
+            }
+        }
+        
+        public void RemoveFromSelection(GridPlaceable obj)
+        {
+            if (_selectedObjects.Remove(obj))
+            {
+                OnMultipleObjectsSelected?.Invoke(new List<GridPlaceable>(_selectedObjects));
+            }
+        }
+        
+        public bool IsObjectSelected(GridPlaceable obj)
+        {
+            return _selectedObjects.Contains(obj);
+        }
+        
+        #endregion
+        
+        #region Category Filtering System
+        
+        private void InitializeCategoryFiltering()
+        {
+            // Initialize category collections
+            foreach (ConstructionCategory category in System.Enum.GetValues(typeof(ConstructionCategory)))
+            {
+                _categorizedObjects[category] = new List<GridPlaceable>();
+            }
+            
+            // Set up initial active categories based on flags
+            UpdateActiveCategories();
+            
+            // Refresh object categorization
+            RefreshObjectCategorization();
+        }
+        
+        private void UpdateActiveCategories()
+        {
+            _enabledCategories.Clear();
+            
+            foreach (var category in _activeFilterCategories)
+            {
+                _enabledCategories.Add(category);
+            }
+        }
+        
+        private void RefreshObjectCategorization()
+        {
+            // Clear existing categorization
+            foreach (var categoryList in _categorizedObjects.Values)
+            {
+                categoryList.Clear();
+            }
+            
+            // Recategorize all placed objects
+            var allObjects = UnityEngine.Object.FindObjectsByType<GridPlaceable>(FindObjectsSortMode.None);
+            foreach (var obj in allObjects)
+            {
+                if (obj.IsPlaced)
+                {
+                    var category = GetObjectCategory(obj);
+                    _categorizedObjects[category].Add(obj);
+                }
+            }
+            
+            // Notify UI of updated counts
+            OnCategoryCountsUpdated?.Invoke(GetCategoryCounts());
+        }
+        
+        private ConstructionCategory GetObjectCategory(GridPlaceable obj)
+        {
+            // Map PlaceableType to ConstructionCategory using existing enum values
+            switch (obj.Type)
+            {
+                case PlaceableType.Structure:
+                    return ConstructionCategory.Structure;
+                case PlaceableType.Equipment:
+                    return ConstructionCategory.Equipment;
+                case PlaceableType.Utility:
+                    return ConstructionCategory.Utility;
+                case PlaceableType.Decoration:
+                    return ConstructionCategory.Decoration;
+                case PlaceableType.Vehicle:
+                    return ConstructionCategory.Equipment; // Vehicles treated as equipment
+                case PlaceableType.Temporary:
+                    return ConstructionCategory.Equipment; // Temporary objects treated as equipment
+                default:
+                    return ConstructionCategory.Equipment;
+            }
+        }
+        
+        private bool IsObjectInActiveCategories(GridPlaceable obj)
+        {
+            if (_activeFilterCategories.Count == 0)
+                return true;
+                
+            var objCategory = GetObjectCategory(obj);
+            return _enabledCategories.Contains(objCategory);
+        }
+        
+        private Dictionary<ConstructionCategory, int> GetCategoryCounts()
+        {
+            var counts = new Dictionary<ConstructionCategory, int>();
+            foreach (var kvp in _categorizedObjects)
+            {
+                counts[kvp.Key] = kvp.Value.Count;
+            }
+            return counts;
+        }
+        
+        public void SetCategoryFilter(List<ConstructionCategory> categories)
+        {
+            _activeFilterCategories.Clear();
+            _activeFilterCategories.AddRange(categories);
+            UpdateActiveCategories();
+            OnCategoryFilterChanged?.Invoke(new List<ConstructionCategory>(_activeFilterCategories));
+            
+            Debug.Log($"[GridPlacementController] Category filter changed to: {string.Join(", ", _activeFilterCategories)}");
+        }
+        
+        public void AddCategoryToFilter(ConstructionCategory category)
+        {
+            if (!_activeFilterCategories.Contains(category))
+            {
+                _activeFilterCategories.Add(category);
+                UpdateActiveCategories();
+                OnCategoryFilterChanged?.Invoke(new List<ConstructionCategory>(_activeFilterCategories));
+            }
+        }
+        
+        public void RemoveCategoryFromFilter(ConstructionCategory category)
+        {
+            if (_activeFilterCategories.Remove(category))
+            {
+                UpdateActiveCategories();
+                OnCategoryFilterChanged?.Invoke(new List<ConstructionCategory>(_activeFilterCategories));
+            }
+        }
+        
+        public void ToggleCategoryFilter(ConstructionCategory category)
+        {
+            if (_activeFilterCategories.Contains(category))
+            {
+                RemoveCategoryFromFilter(category);
+            }
+            else
+            {
+                AddCategoryToFilter(category);
+            }
+        }
+        
+        public List<GridPlaceable> GetObjectsByCategory(ConstructionCategory category)
+        {
+            if (_categorizedObjects.TryGetValue(category, out var objects))
+            {
+                return new List<GridPlaceable>(objects);
+            }
+            return new List<GridPlaceable>();
+        }
+        
+        public List<GridPlaceable> GetFilteredObjects()
+        {
+            var filteredObjects = new List<GridPlaceable>();
+            
+            if (_activeFilterCategories.Count == 0)
+            {
+                // Return all objects when no filter is active
+                foreach (var categoryList in _categorizedObjects.Values)
+                {
+                    filteredObjects.AddRange(categoryList);
+                }
+            }
+            else
+            {
+                // Return only objects in active categories
+                foreach (var category in _enabledCategories)
+                {
+                    if (_categorizedObjects.TryGetValue(category, out var objects))
+                    {
+                        filteredObjects.AddRange(objects);
+                    }
+                }
+            }
+            
+            return filteredObjects;
+        }
+        
+        public void EnableCategoryFiltering(bool enable)
+        {
+            _enableCategoryFiltering = enable;
+            Debug.Log($"[GridPlacementController] Category filtering {(enable ? "enabled" : "disabled")}");
+        }
+        
+        public void OnObjectPlacedHandler(GridPlaceable obj)
+        {
+            // Add to appropriate category when object is placed
+            var category = GetObjectCategory(obj);
+            if (!_categorizedObjects[category].Contains(obj))
+            {
+                _categorizedObjects[category].Add(obj);
+                OnCategoryCountsUpdated?.Invoke(GetCategoryCounts());
+            }
+        }
+        
+        public void OnObjectRemovedHandler(GridPlaceable obj)
+        {
+            // Remove from all categories when object is removed
+            foreach (var categoryList in _categorizedObjects.Values)
+            {
+                if (categoryList.Remove(obj))
+                {
+                    OnCategoryCountsUpdated?.Invoke(GetCategoryCounts());
+                    break;
+                }
+            }
+        }
+        
+        #endregion
+        
+        #region Schematic Save/Load System
+        
+        /// <summary>
+        /// Create a schematic from currently selected objects
+        /// </summary>
+        public SchematicSO CreateSchematicFromSelection(string schematicName, string description = "", string createdBy = "Player")
+        {
+            if (_selectedObjects.Count == 0)
+            {
+                Debug.LogWarning("[GridPlacementController] Cannot create schematic - no objects selected");
+                return null;
+            }
+            
+            // Create new schematic asset
+            var schematic = ScriptableObject.CreateInstance<SchematicSO>();
+            
+            // Set basic information
+            SetSchematicBasicInfo(schematic, schematicName, description, createdBy);
+            
+            // Calculate anchor point (bottom-left corner of selection)
+            Vector3Int anchorPoint = CalculateSelectionAnchorPoint();
+            
+            // Convert selected objects to schematic items
+            var schematicItems = ConvertObjectsToSchematicItems(_selectedObjects, anchorPoint);
+            
+            // Add items to schematic
+            foreach (var item in schematicItems)
+            {
+                schematic.AddItem(item);
+            }
+            
+            Debug.Log($"[GridPlacementController] Created schematic '{schematicName}' with {schematicItems.Count} items");
+            return schematic;
+        }
+        
+        /// <summary>
+        /// Save schematic to assets folder
+        /// </summary>
+        public bool SaveSchematicToAssets(SchematicSO schematic, string folderPath = "Assets/ProjectChimera/Data/Schematics/")
+        {
+            if (schematic == null)
+            {
+                Debug.LogError("[GridPlacementController] Cannot save null schematic");
+                return false;
+            }
+            
+#if UNITY_EDITOR
+            try
+            {
+                // Ensure directory exists
+                if (!System.IO.Directory.Exists(folderPath))
+                {
+                    System.IO.Directory.CreateDirectory(folderPath);
+                }
+                
+                // Create unique filename
+                string fileName = SanitizeFileName(schematic.SchematicName);
+                string fullPath = $"{folderPath}{fileName}.asset";
+                
+                // Make path unique if file already exists
+                fullPath = UnityEditor.AssetDatabase.GenerateUniqueAssetPath(fullPath);
+                
+                // Create asset
+                UnityEditor.AssetDatabase.CreateAsset(schematic, fullPath);
+                UnityEditor.AssetDatabase.SaveAssets();
+                UnityEditor.AssetDatabase.Refresh();
+                
+                Debug.Log($"[GridPlacementController] Saved schematic to: {fullPath}");
+                return true;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[GridPlacementController] Failed to save schematic: {e.Message}");
+                return false;
+            }
+#else
+            Debug.LogWarning("[GridPlacementController] Schematic saving to assets only available in editor");
+            return false;
+#endif
+        }
+        
+        /// <summary>
+        /// Create a schematic from objects within specified bounds
+        /// </summary>
+        public SchematicSO CreateSchematicFromBounds(Rect worldBounds, string schematicName, string description = "", string createdBy = "Player")
+        {
+            var objectsInBounds = GetObjectsInWorldBounds(worldBounds);
+            
+            if (objectsInBounds.Count == 0)
+            {
+                Debug.LogWarning("[GridPlacementController] Cannot create schematic - no objects in specified bounds");
+                return null;
+            }
+            
+            // Temporarily set selection to objects in bounds
+            var originalSelection = new List<GridPlaceable>(_selectedObjects);
+            _selectedObjects.Clear();
+            _selectedObjects.AddRange(objectsInBounds);
+            
+            // Create schematic
+            var schematic = CreateSchematicFromSelection(schematicName, description, createdBy);
+            
+            // Restore original selection
+            _selectedObjects.Clear();
+            _selectedObjects.AddRange(originalSelection);
+            
+            return schematic;
+        }
+        
+        /// <summary>
+        /// Create and save schematic from current selection with UI prompt for name
+        /// </summary>
+        public void SaveSelectionAsSchematic()
+        {
+            if (_selectedObjects.Count == 0)
+            {
+                Debug.LogWarning("[GridPlacementController] Cannot save schematic - no objects selected");
+                return;
+            }
+            
+            // Generate default name based on selection
+            string defaultName = GenerateDefaultSchematicName();
+            
+            // For now, use default name (in a real implementation, this would show a UI dialog)
+            var schematic = CreateSchematicFromSelection(defaultName, "Player-created schematic", "Player");
+            
+            if (schematic != null)
+            {
+                bool saved = SaveSchematicToAssets(schematic);
+                if (saved)
+                {
+                    OnSchematicSaved?.Invoke(schematic);
+                }
+            }
+        }
+        
+        private void SetSchematicBasicInfo(SchematicSO schematic, string name, string description, string createdBy)
+        {
+            // Use reflection to set private fields since the SchematicSO properties are read-only
+            var schematicType = typeof(SchematicSO);
+            
+            var nameField = schematicType.GetField("_schematicName", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            nameField?.SetValue(schematic, name);
+            
+            var descField = schematicType.GetField("_description", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            descField?.SetValue(schematic, description);
+            
+            var createdByField = schematicType.GetField("_createdBy", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            createdByField?.SetValue(schematic, createdBy);
+            
+            var creationDateField = schematicType.GetField("_creationDate", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            creationDateField?.SetValue(schematic, System.DateTime.Now);
+            
+            // Set primary category based on most common category in selection
+            var primaryCategory = GetMostCommonCategory();
+            var categoryField = schematicType.GetField("_primaryCategory", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            categoryField?.SetValue(schematic, primaryCategory);
+        }
+        
+        private Vector3Int CalculateSelectionAnchorPoint()
+        {
+            if (_selectedObjects.Count == 0) return Vector3Int.zero;
+            
+            Vector3Int min = _selectedObjects[0].GridCoordinate;
+            
+            foreach (var obj in _selectedObjects)
+            {
+                min = Vector3Int.Min(min, obj.GridCoordinate);
+            }
+            
+            return min;
+        }
+        
+        private List<SchematicItem> ConvertObjectsToSchematicItems(List<GridPlaceable> objects, Vector3Int anchorPoint)
+        {
+            var schematicItems = new List<SchematicItem>();
+            
+            foreach (var obj in objects)
+            {
+                var item = ConvertObjectToSchematicItem(obj, anchorPoint);
+                if (item != null)
+                {
+                    schematicItems.Add(item);
+                }
+            }
+            
+            return schematicItems;
+        }
+        
+        private SchematicItem ConvertObjectToSchematicItem(GridPlaceable obj, Vector3Int anchorPoint)
+        {
+            if (obj == null) return null;
+            
+            // Calculate relative position from anchor point
+            Vector3Int relativePosition = obj.GridCoordinate - anchorPoint;
+            
+            // Create schematic item
+            var item = new SchematicItem(obj.name, obj.name, relativePosition, GetObjectRotation(obj));
+            
+            // Set item properties using reflection to access private fields
+            var itemType = typeof(SchematicItem);
+            
+            // Set category
+            var categoryField = itemType.GetField("_itemCategory", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            categoryField?.SetValue(item, GetObjectCategory(obj));
+            
+            // Set grid size
+            var gridSizeField = itemType.GetField("_gridSize", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            gridSizeField?.SetValue(item, obj.GridSize);
+            
+            // Set height
+            var heightField = itemType.GetField("_height", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            heightField?.SetValue(item, obj.PlacementHeight);
+            
+            // Set prefab reference
+            var prefabRefField = itemType.GetField("_prefabReference", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            prefabRefField?.SetValue(item, obj.gameObject);
+            
+            // Set estimated cost (would need to be calculated from actual cost data)
+            var costField = itemType.GetField("_estimatedCost", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            costField?.SetValue(item, CalculateObjectCost(obj));
+            
+            // Set construction time
+            var timeField = itemType.GetField("_constructionTime", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            timeField?.SetValue(item, CalculateObjectConstructionTime(obj));
+            
+            return item;
+        }
+        
+        private int GetObjectRotation(GridPlaceable obj)
+        {
+            // Convert transform rotation to grid rotation steps (0, 90, 180, 270)
+            float yRotation = obj.transform.eulerAngles.y;
+            return Mathf.RoundToInt(yRotation / 90f) * 90;
+        }
+        
+        private float CalculateObjectCost(GridPlaceable obj)
+        {
+            // In a real implementation, this would look up the cost from construction templates or cost manager
+            // For now, return a basic estimate based on grid size
+            return obj.GridSize.x * obj.GridSize.y * 100f;
+        }
+        
+        private float CalculateObjectConstructionTime(GridPlaceable obj)
+        {
+            // In a real implementation, this would look up construction time from templates
+            // For now, return a basic estimate based on grid size
+            return obj.GridSize.x * obj.GridSize.y * 30f; // 30 seconds per grid cell
+        }
+        
+        private ConstructionCategory GetMostCommonCategory()
+        {
+            if (_selectedObjects.Count == 0) return ConstructionCategory.Structure;
+            
+            var categoryCounts = new Dictionary<ConstructionCategory, int>();
+            
+            foreach (var obj in _selectedObjects)
+            {
+                var category = GetObjectCategory(obj);
+                if (categoryCounts.ContainsKey(category))
+                    categoryCounts[category]++;
+                else
+                    categoryCounts[category] = 1;
+            }
+            
+            return categoryCounts.OrderByDescending(kvp => kvp.Value).First().Key;
+        }
+        
+        private string GenerateDefaultSchematicName()
+        {
+            string baseName = "CustomSchematic";
+            
+            if (_selectedObjects.Count > 0)
+            {
+                var mostCommonCategory = GetMostCommonCategory();
+                baseName = $"{mostCommonCategory}Layout";
+            }
+            
+            return $"{baseName}_{System.DateTime.Now:yyyyMMdd_HHmmss}";
+        }
+        
+        private string SanitizeFileName(string fileName)
+        {
+            var invalidChars = System.IO.Path.GetInvalidFileNameChars();
+            foreach (char c in invalidChars)
+            {
+                fileName = fileName.Replace(c, '_');
+            }
+            return fileName;
+        }
+        
+        private List<GridPlaceable> GetObjectsInWorldBounds(Rect worldBounds)
+        {
+            var objectsInBounds = new List<GridPlaceable>();
+            var allObjects = UnityEngine.Object.FindObjectsByType<GridPlaceable>(FindObjectsSortMode.None);
+            
+            foreach (var obj in allObjects)
+            {
+                if (obj.IsPlaced)
+                {
+                    Vector3 worldPos = obj.transform.position;
+                    if (worldBounds.Contains(new Vector2(worldPos.x, worldPos.z)))
+                    {
+                        objectsInBounds.Add(obj);
+                    }
+                }
+            }
+            
+            return objectsInBounds;
+        }
+        
+        // Events for schematic operations
+        public System.Action<SchematicSO> OnSchematicSaved;
+        public System.Action<SchematicSO> OnSchematicLoaded;
+        public System.Action<string> OnSchematicSaveError;
+        public System.Action<SchematicSO> OnSchematicPlacementStarted;
+        public System.Action OnSchematicPlacementCancelled;
+        public System.Action<SchematicSO, Vector3Int> OnSchematicPlaced;
+        public System.Action<bool> OnSchematicPlacementValidityChanged;
+        public System.Action<SchematicValidationResult> OnSchematicValidationChanged;
+        public System.Action<SchematicValidationResult> OnSchematicApplyFailed;
+        public System.Action<SchematicSO, Vector3Int, List<GameObject>> OnSchematicApplied;
+        
+        #endregion
+        
+        #region Schematic Apply/Preview System
+        
+        /// <summary>
+        /// Start schematic placement mode with ghost preview
+        /// </summary>
+        public void StartSchematicPlacement(SchematicSO schematic)
+        {
+            if (schematic == null)
+            {
+                Debug.LogError("[GridPlacementController] Cannot start schematic placement with null schematic");
+                return;
+            }
+            
+            // Cancel any existing placement modes
+            if (_isInPlacementMode)
+            {
+                CancelPlacement();
+            }
+            
+            if (_isInSchematicPlacementMode)
+            {
+                CancelSchematicPlacement();
+            }
+            
+            _isInSchematicPlacementMode = true;
+            _currentSchematic = schematic;
+            _schematicRotation = 0;
+            
+            // Create ghost preview objects
+            CreateGhostPreview();
+            
+            // Position at mouse initially
+            Vector3 mouseWorldPos = GetMouseWorldPosition();
+            if (mouseWorldPos != Vector3.zero)
+            {
+                UpdateSchematicPosition(mouseWorldPos);
+            }
+            
+            OnSchematicPlacementStarted?.Invoke(schematic);
+            Debug.Log($"[GridPlacementController] Started schematic placement mode with '{schematic.SchematicName}'");
+        }
+        
+        /// <summary>
+        /// Apply schematic at the specified grid position using pooling system
+        /// </summary>
+        public bool ApplySchematic(SchematicSO schematic, Vector3Int gridPosition)
+        {
+            if (schematic == null || schematic.Items.Count == 0)
+            {
+                Debug.LogWarning("Cannot apply empty or null schematic");
+                return false;
+            }
+            
+            // Check unlock status first
+            var unlockManager = FindObjectOfType<SchematicUnlockManager>();
+            if (unlockManager != null && !unlockManager.IsSchematicUnlocked(schematic))
+            {
+                Debug.LogWarning($"Cannot apply locked schematic: {schematic.SchematicName}");
+                var unlockValidationResult = new SchematicValidationResult();
+                unlockValidationResult.Errors.Add(new SchematicValidationErrorInfo
+                {
+                    Type = SchematicValidationError.NotUnlocked,
+                    Message = "Schematic is locked and requires unlocking first"
+                });
+                OnSchematicApplyFailed?.Invoke(unlockValidationResult);
+                return false;
+            }
+            
+            // Validate placement
+            var validationResult = ValidateSchematicPlacement(schematic, gridPosition);
+            if (!validationResult.IsValid)
+            {
+                Debug.LogWarning($"Schematic placement validation failed: {validationResult.GetErrorSummary()}");
+                OnSchematicApplyFailed?.Invoke(validationResult);
+                return false;
+            }
+            
+            // Process material cost payment through event system
+            // The Economy system will handle the payment processing independently
+            // This prevents circular dependency while maintaining functionality
+            bool paymentSuccess = true; // TODO: Implement proper event-based payment validation
+            
+            // In a full implementation, would fire an event and wait for Economy system response:
+            // OnSchematicPaymentRequested?.Invoke(schematic, false);
+            
+            // Apply schematic using pooling system
+            var instantiatedObjects = new List<GameObject>();
+            
+            foreach (var item in schematic.Items)
+            {
+                Vector3Int worldPosition = gridPosition + item.GridPosition;
+                Vector3 worldPos = _gridSystem.GridToWorldPosition(worldPosition);
+                
+                // Get pooled object for item
+                GameObject pooledObject = GetPooledObject(item);
+                if (pooledObject != null)
+                {
+                    // Configure pooled object
+                    ConfigurePooledObject(pooledObject, item, worldPos);
+                    instantiatedObjects.Add(pooledObject);
+                    
+                    // Register object with grid system
+                    var placeable = pooledObject.GetComponent<GridPlaceable>();
+                    if (placeable != null)
+                    {
+                        _gridSystem.PlaceObject(placeable, worldPosition);
+                    }
+                }
+            }
+            
+            Debug.Log($"Successfully applied schematic '{schematic.SchematicName}' with {instantiatedObjects.Count} objects using pooling system");
+            OnSchematicApplied?.Invoke(schematic, gridPosition, instantiatedObjects);
+            
+            return true;
+        }
+        
+        /// <summary>
+        /// Cancel schematic placement mode
+        /// </summary>
+        public void CancelSchematicPlacement()
+        {
+            if (!_isInSchematicPlacementMode) return;
+            
+            _isInSchematicPlacementMode = false;
+            _currentSchematic = null;
+            
+            // Destroy ghost preview objects
+            DestroyGhostPreview();
+            
+            OnSchematicPlacementCancelled?.Invoke();
+            Debug.Log("[GridPlacementController] Schematic placement cancelled");
+        }
+        
+        /// <summary>
+        /// Update schematic placement mode
+        /// </summary>
+        private void UpdateSchematicPlacementMode()
+        {
+            if (_currentSchematic == null) return;
+            
+            // Update position based on mouse
+            Vector3 mouseWorldPos = GetMouseWorldPosition();
+            if (mouseWorldPos != Vector3.zero)
+            {
+                UpdateSchematicPosition(mouseWorldPos);
+                UpdateSchematicPlacementValidity();
+            }
+        }
+        
+        /// <summary>
+        /// Rotate the current schematic
+        /// </summary>
+        private void RotateSchematic()
+        {
+            if (!_isInSchematicPlacementMode || _currentSchematic == null) return;
+            
+            _schematicRotation = (_schematicRotation + 90) % 360;
+            
+            // Update ghost preview rotation
+            UpdateGhostPreviewRotation();
+            UpdateSchematicPlacementValidity();
+            
+            Debug.Log($"[GridPlacementController] Rotated schematic to {_schematicRotation} degrees");
+        }
+        
+        /// <summary>
+        /// Attempt to place the current schematic
+        /// </summary>
+        private void AttemptSchematicPlacement()
+        {
+            if (!_isInSchematicPlacementMode || _currentSchematic == null || !_isSchematicPlacementValid)
+            {
+                Debug.LogWarning("[GridPlacementController] Cannot place schematic - invalid position or state");
+                return;
+            }
+            
+            // Place all items from the schematic
+            bool allItemsPlaced = PlaceSchematicItems();
+            
+            if (allItemsPlaced)
+            {
+                OnSchematicPlaced?.Invoke(_currentSchematic, _schematicGridPosition);
+                Debug.Log($"[GridPlacementController] Successfully placed schematic '{_currentSchematic.SchematicName}' at {_schematicGridPosition}");
+                
+                // Exit placement mode
+                CancelSchematicPlacement();
+            }
+            else
+            {
+                Debug.LogError("[GridPlacementController] Failed to place some schematic items");
+            }
+        }
+        
+        /// <summary>
+        /// Create ghost preview objects for the schematic
+        /// </summary>
+        private void CreateGhostPreview()
+        {
+            if (_currentSchematic == null) return;
+            
+            DestroyGhostPreview(); // Clean up any existing preview
+            
+            foreach (var item in _currentSchematic.Items)
+            {
+                GameObject ghostObject = CreateGhostPreviewForItem(item);
+                if (ghostObject != null)
+                {
+                    _ghostPreviewObjects.Add(ghostObject);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Create a ghost preview for a single schematic item
+        /// </summary>
+        private GameObject CreateGhostPreviewForItem(SchematicItem item)
+        {
+            GameObject prefab = GetPrefabForItem(item);
+            if (prefab == null) return null;
+            
+            // Create ghost object
+            GameObject ghostObject = Instantiate(prefab);
+            ghostObject.name = $"Ghost_{item.ItemName}";
+            
+            // Disable any colliders and interactive components
+            DisableInteractiveComponents(ghostObject);
+            
+            // Apply ghost material
+            ApplyGhostMaterial(ghostObject, _validGhostColor);
+            
+            // Set initial position (will be updated in UpdateSchematicPosition)
+            ghostObject.transform.position = Vector3.zero;
+            
+            return ghostObject;
+        }
+        
+        /// <summary>
+        /// Update schematic position based on mouse world position
+        /// </summary>
+        private void UpdateSchematicPosition(Vector3 mouseWorldPos)
+        {
+            if (_gridSystem == null) return;
+            
+            // Snap to grid
+            Vector3 snappedPos = _gridSystem.SnapToGrid(mouseWorldPos);
+            _schematicGridPosition = _gridSystem.WorldToGridPosition(snappedPos);
+            
+            // Update ghost object positions
+            for (int i = 0; i < _ghostPreviewObjects.Count && i < _currentSchematic.Items.Count; i++)
+            {
+                var ghostObject = _ghostPreviewObjects[i];
+                var item = _currentSchematic.Items[i];
+                
+                if (ghostObject != null)
+                {
+                    Vector3Int rotatedItemPos = RotateGridPosition(item.GridPosition, _schematicRotation);
+                    Vector3Int worldItemPos = _schematicGridPosition + rotatedItemPos;
+                    Vector3 worldPos = _gridSystem.GridToWorldPosition(worldItemPos);
+                    worldPos.y += item.Height + _ghostPreviewHeight;
+                    
+                    ghostObject.transform.position = worldPos;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Update ghost preview rotation
+        /// </summary>
+        private void UpdateGhostPreviewRotation()
+        {
+            for (int i = 0; i < _ghostPreviewObjects.Count && i < _currentSchematic.Items.Count; i++)
+            {
+                var ghostObject = _ghostPreviewObjects[i];
+                var item = _currentSchematic.Items[i];
+                
+                if (ghostObject != null)
+                {
+                    float totalRotation = item.Rotation + _schematicRotation;
+                    ghostObject.transform.rotation = Quaternion.Euler(0, totalRotation, 0);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Update schematic placement validity and visual feedback
+        /// </summary>
+        private void UpdateSchematicPlacementValidity()
+        {
+            if (_currentSchematic == null) return;
+            
+            bool wasValid = _isSchematicPlacementValid;
+            var previousResult = _lastValidationResult;
+            
+            // Perform comprehensive validation
+            _lastValidationResult = ValidateSchematicPlacement(_currentSchematic, _schematicGridPosition);
+            _isSchematicPlacementValid = _lastValidationResult.IsValid;
+            
+            // Update ghost material colors based on validation result
+            Color targetColor = GetValidationColor(_lastValidationResult);
+            foreach (var ghostObject in _ghostPreviewObjects)
+            {
+                ApplyGhostMaterial(ghostObject, targetColor);
+            }
+            
+            if (wasValid != _isSchematicPlacementValid || !AreValidationResultsEqual(previousResult, _lastValidationResult))
+            {
+                OnSchematicPlacementValidityChanged?.Invoke(_isSchematicPlacementValid);
+                OnSchematicValidationChanged?.Invoke(_lastValidationResult);
+            }
+        }
+        
+        /// <summary>
+        /// Check if schematic can be placed at given position
+        /// </summary>
+        private bool CanPlaceSchematicAt(Vector3Int gridPosition)
+        {
+            if (_gridSystem == null || _currentSchematic == null) return false;
+            
+            var occupiedPositions = _currentSchematic.GetOccupiedPositions(gridPosition);
+            
+            foreach (var pos in occupiedPositions)
+            {
+                var cell = _gridSystem.GetGridCell(pos);
+                if (cell == null || cell.IsOccupied)
+                {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        /// <summary>
+        /// Place all items from the schematic
+        /// </summary>
+        private bool PlaceSchematicItems()
+        {
+            if (_currentSchematic == null || _gridSystem == null) return false;
+            
+            bool allSuccessful = true;
+            var placedObjects = new List<GridPlaceable>();
+            
+            foreach (var item in _currentSchematic.Items)
+            {
+                GameObject placedObject = PlaceSchematicItem(item);
+                if (placedObject != null)
+                {
+                    var placeable = placedObject.GetComponent<GridPlaceable>();
+                    if (placeable != null)
+                    {
+                        placedObjects.Add(placeable);
+                        OnObjectPlacedHandler(placeable); // Update category tracking
+                    }
+                }
+                else
+                {
+                    allSuccessful = false;
+                }
+            }
+            
+            if (!allSuccessful)
+            {
+                // Clean up any successfully placed objects if not all were placed
+                foreach (var placeable in placedObjects)
+                {
+                    if (placeable.RemoveFromGrid())
+                    {
+                        OnObjectRemovedHandler(placeable);
+                        DestroyImmediate(placeable.gameObject);
+                    }
+                }
+                return false;
+            }
+            
+            return true;
+        }
+        
+        /// <summary>
+        /// Place a single schematic item
+        /// </summary>
+        private GameObject PlaceSchematicItem(SchematicItem item)
+        {
+            GameObject prefab = GetPrefabForItem(item);
+            if (prefab == null) return null;
+            
+            // Calculate world position
+            Vector3Int rotatedItemPos = RotateGridPosition(item.GridPosition, _schematicRotation);
+            Vector3Int worldItemPos = _schematicGridPosition + rotatedItemPos;
+            Vector3 worldPos = _gridSystem.GridToWorldPosition(worldItemPos);
+            worldPos.y += item.Height;
+            
+            // Create object
+            GameObject placedObject = Instantiate(prefab, worldPos, Quaternion.identity);
+            placedObject.name = item.ItemName;
+            
+            // Set rotation
+            float totalRotation = item.Rotation + _schematicRotation;
+            placedObject.transform.rotation = Quaternion.Euler(0, totalRotation, 0);
+            
+            // Initialize GridPlaceable if present
+            var gridPlaceable = placedObject.GetComponent<GridPlaceable>();
+            if (gridPlaceable != null)
+            {
+                gridPlaceable.GridCoordinate = worldItemPos;
+                gridPlaceable.IsPlaced = true;
+                
+                // Place on grid
+                if (!gridPlaceable.PlaceAt(worldItemPos))
+                {
+                    DestroyImmediate(placedObject);
+                    return null;
+                }
+            }
+            
+            return placedObject;
+        }
+        
+        
+        /// <summary>
+        /// Destroy all ghost preview objects
+        /// </summary>
+        private void DestroyGhostPreview()
+        {
+            foreach (var ghostObject in _ghostPreviewObjects)
+            {
+                if (ghostObject != null)
+                {
+                    DestroyImmediate(ghostObject);
+                }
+            }
+            _ghostPreviewObjects.Clear();
+        }
+        
+        /// <summary>
+        /// Disable interactive components on ghost object
+        /// </summary>
+        private void DisableInteractiveComponents(GameObject ghostObject)
+        {
+            // Disable colliders
+            var colliders = ghostObject.GetComponentsInChildren<Collider>();
+            foreach (var col in colliders)
+            {
+                col.enabled = false;
+            }
+            
+            // Disable rigidbodies
+            var rigidbodies = ghostObject.GetComponentsInChildren<Rigidbody>();
+            foreach (var rb in rigidbodies)
+            {
+                rb.isKinematic = true;
+            }
+            
+            // Disable GridPlaceable if present
+            var gridPlaceable = ghostObject.GetComponent<GridPlaceable>();
+            if (gridPlaceable != null)
+            {
+                gridPlaceable.enabled = false;
+            }
+        }
+        
+        /// <summary>
+        /// Apply ghost material to object
+        /// </summary>
+        private void ApplyGhostMaterial(GameObject ghostObject, Color color)
+        {
+            var renderers = ghostObject.GetComponentsInChildren<Renderer>();
+            
+            foreach (var renderer in renderers)
+            {
+                var materials = new Material[renderer.materials.Length];
+                
+                for (int i = 0; i < materials.Length; i++)
+                {
+                    if (_ghostPreviewMaterial != null)
+                    {
+                        materials[i] = _ghostPreviewMaterial;
+                    }
+                    else
+                    {
+                        // Create a simple transparent material
+                        materials[i] = CreateGhostMaterial(color);
+                    }
+                }
+                
+                renderer.materials = materials;
+            }
+        }
+        
+        /// <summary>
+        /// Create a simple ghost material
+        /// </summary>
+        private Material CreateGhostMaterial(Color color)
+        {
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            material.SetFloat("_Mode", 3); // Transparent mode
+            material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetInt("_ZWrite", 0);
+            material.DisableKeyword("_ALPHATEST_ON");
+            material.EnableKeyword("_ALPHABLEND_ON");
+            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            material.renderQueue = 3000;
+            material.color = color;
+            return material;
+        }
+        
+        /// <summary>
+        /// Rotate a grid position by given angle
+        /// </summary>
+        private Vector3Int RotateGridPosition(Vector3Int position, int angleDegrees)
+        {
+            int rotationSteps = (angleDegrees / 90) % 4;
+            if (rotationSteps < 0) rotationSteps += 4;
+            
+            Vector3Int result = position;
+            
+            for (int i = 0; i < rotationSteps; i++)
+            {
+                // Rotate 90 degrees clockwise in XY plane: (x, y, z) -> (y, -x, z)
+                result = new Vector3Int(result.y, -result.x, result.z);
+            }
+            
+            return result;
+        }
+        
+        /// <summary>
+        /// Comprehensive validation for schematic placement
+        /// </summary>
+        private SchematicValidationResult ValidateSchematicPlacement(SchematicSO schematic, Vector3Int gridPosition)
+        {
+            var result = new SchematicValidationResult();
+            
+            if (schematic == null)
+            {
+                result.AddError(SchematicValidationError.InvalidSchematic, "Schematic is null");
+                return result;
+            }
+            
+            // Space validation
+            if (_enableSpaceValidation)
+            {
+                ValidateSpace(schematic, gridPosition, result);
+            }
+            
+            // Cost validation
+            if (_enableCostValidation)
+            {
+                ValidateCost(schematic, result);
+            }
+            
+            // Resource validation
+            if (_enableResourceValidation)
+            {
+                ValidateResources(schematic, result);
+            }
+            
+            // Custom validation rules
+            ValidateCustomRules(schematic, gridPosition, result);
+            
+            return result;
+        }
+        
+        /// <summary>
+        /// Validate space requirements for schematic placement
+        /// </summary>
+        private void ValidateSpace(SchematicSO schematic, Vector3Int gridPosition, SchematicValidationResult result)
+        {
+            if (_gridSystem == null)
+            {
+                result.AddError(SchematicValidationError.NoGridSystem, "Grid system not available");
+                return;
+            }
+            
+            var occupiedPositions = schematic.GetOccupiedPositions(gridPosition);
+            var conflictingPositions = new List<Vector3Int>();
+            
+            foreach (var pos in occupiedPositions)
+            {
+                var cell = _gridSystem.GetGridCell(pos);
+                if (cell == null)
+                {
+                    result.AddError(SchematicValidationError.OutOfBounds, $"Position {pos} is out of bounds");
+                }
+                else if (cell.IsOccupied)
+                {
+                    conflictingPositions.Add(pos);
+                }
+            }
+            
+            if (conflictingPositions.Count > 0)
+            {
+                result.AddError(SchematicValidationError.SpaceOccupied, $"{conflictingPositions.Count} positions are already occupied");
+                result.ConflictingPositions = conflictingPositions;
+            }
+            
+            // Check clearance requirements
+            if (_minimumClearanceDistance > 0f)
+            {
+                ValidateClearance(schematic, gridPosition, result);
+            }
+        }
+        
+        /// <summary>
+        /// Validate clearance requirements around schematic items
+        /// </summary>
+        private void ValidateClearance(SchematicSO schematic, Vector3Int gridPosition, SchematicValidationResult result)
+        {
+            var clearanceViolations = new List<string>();
+            
+            foreach (var item in schematic.Items)
+            {
+                Vector3Int rotatedItemPos = RotateGridPosition(item.GridPosition, _schematicRotation);
+                Vector3Int worldItemPos = gridPosition + rotatedItemPos;
+                Vector3 worldPos = _gridSystem.GridToWorldPosition(worldItemPos);
+                
+                // Check for nearby objects within clearance distance
+                var nearbyObjects = GetObjectsNearPosition(worldPos, _minimumClearanceDistance);
+                if (nearbyObjects.Count > 0)
+                {
+                    clearanceViolations.Add($"{item.ItemName} has insufficient clearance");
+                }
+            }
+            
+            if (clearanceViolations.Count > 0)
+            {
+                result.AddWarning(SchematicValidationWarning.InsufficientClearance, 
+                    $"Clearance issues: {string.Join(", ", clearanceViolations)}");
+            }
+        }
+        
+        /// <summary>
+        /// Validate cost requirements for schematic placement
+        /// </summary>
+        private void ValidateCost(SchematicSO schematic, SchematicValidationResult result)
+        {
+            float totalCost = schematic.TotalEstimatedCost;
+            result.TotalCost = totalCost;
+            
+            if (totalCost > _currentPlayerFunds)
+            {
+                result.AddError(SchematicValidationError.InsufficientFunds, 
+                    $"Insufficient funds: need ${totalCost:F2}, have ${_currentPlayerFunds:F2}");
+                result.MissingFunds = totalCost - _currentPlayerFunds;
+            }
+        }
+        
+        /// <summary>
+        /// Validate resource requirements for schematic placement
+        /// </summary>
+        private void ValidateResources(SchematicSO schematic, SchematicValidationResult result)
+        {
+            var requiredResources = new Dictionary<string, int>();
+            var missingResources = new List<string>();
+            
+            // Collect required resources from all items
+            foreach (var item in schematic.Items)
+            {
+                foreach (var resource in item.RequiredResources)
+                {
+                    if (requiredResources.ContainsKey(resource))
+                        requiredResources[resource]++;
+                    else
+                        requiredResources[resource] = 1;
+                }
+            }
+            
+            // Check if player has sufficient resources
+            foreach (var kvp in requiredResources)
+            {
+                string resourceName = kvp.Key;
+                int requiredAmount = kvp.Value;
+                
+                if (!_currentPlayerResources.TryGetValue(resourceName, out int availableAmount) || 
+                    availableAmount < requiredAmount)
+                {
+                    int shortage = requiredAmount - (availableAmount > 0 ? availableAmount : 0);
+                    missingResources.Add($"{resourceName} (need {shortage} more)");
+                }
+            }
+            
+            result.RequiredResources = requiredResources;
+            
+            if (missingResources.Count > 0)
+            {
+                result.AddError(SchematicValidationError.InsufficientResources, 
+                    $"Missing resources: {string.Join(", ", missingResources)}");
+            }
+        }
+        
+        /// <summary>
+        /// Validate custom rules for schematic placement
+        /// </summary>
+        private void ValidateCustomRules(SchematicSO schematic, Vector3Int gridPosition, SchematicValidationResult result)
+        {
+            // Check if schematic requires unlock
+            if (schematic.RequiresUnlock && !IsSchematicUnlocked(schematic))
+            {
+                result.AddError(SchematicValidationError.NotUnlocked, 
+                    $"Schematic '{schematic.SchematicName}' is not unlocked");
+            }
+            
+            // Check construction time warnings
+            if (schematic.TotalConstructionTime > 300f) // 5 minutes
+            {
+                result.AddWarning(SchematicValidationWarning.LongConstructionTime, 
+                    $"Construction will take {schematic.TotalConstructionTime / 60f:F1} minutes");
+            }
+            
+            // Check complexity warnings
+            if (schematic.Complexity == SchematicComplexity.Advanced)
+            {
+                result.AddWarning(SchematicValidationWarning.HighComplexity, 
+                    "This is an advanced schematic with high complexity");
+            }
+        }
+        
+        /// <summary>
+        /// Check if schematic is unlocked (placeholder implementation)
+        /// </summary>
+        private bool IsSchematicUnlocked(SchematicSO schematic)
+        {
+            // In a real implementation, this would check against player progression
+            // For now, assume all schematics are unlocked unless specifically marked
+            return !schematic.RequiresUnlock;
+        }
+        
+        /// <summary>
+        /// Get validation color based on validation result
+        /// </summary>
+        private Color GetValidationColor(SchematicValidationResult result)
+        {
+            if (result == null || !result.IsValid)
+            {
+                // Check if it's specifically a cost issue
+                if (result != null && result.HasError(SchematicValidationError.InsufficientFunds))
+                {
+                    return _unaffordableGhostColor;
+                }
+                return _invalidGhostColor;
+            }
+            
+            return _validGhostColor;
+        }
+        
+        /// <summary>
+        /// Compare validation results for equality
+        /// </summary>
+        private bool AreValidationResultsEqual(SchematicValidationResult a, SchematicValidationResult b)
+        {
+            if (a == null && b == null) return true;
+            if (a == null || b == null) return false;
+            
+            return a.IsValid == b.IsValid && 
+                   a.Errors.Count == b.Errors.Count && 
+                   a.Warnings.Count == b.Warnings.Count &&
+                   Math.Abs(a.TotalCost - b.TotalCost) < 0.01f;
+        }
+        
+        /// <summary>
+        /// Update player funds for validation
+        /// </summary>
+        public void UpdatePlayerFunds(float funds)
+        {
+            _currentPlayerFunds = funds;
+            
+            // Refresh validation if in placement mode
+            if (_isInSchematicPlacementMode)
+            {
+                UpdateSchematicPlacementValidity();
+            }
+        }
+        
+        /// <summary>
+        /// Update player resources for validation
+        /// </summary>
+        public void UpdatePlayerResources(Dictionary<string, int> resources)
+        {
+            _currentPlayerResources.Clear();
+            foreach (var kvp in resources)
+            {
+                _currentPlayerResources[kvp.Key] = kvp.Value;
+            }
+            
+            // Refresh validation if in placement mode
+            if (_isInSchematicPlacementMode)
+            {
+                UpdateSchematicPlacementValidity();
+            }
+        }
+        
+        /// <summary>
+        /// Get detailed validation information for UI display
+        /// </summary>
+        public string GetValidationSummary()
+        {
+            if (_lastValidationResult == null) return "No validation performed";
+            
+            var summary = new System.Text.StringBuilder();
+            
+            if (_lastValidationResult.IsValid)
+            {
+                summary.AppendLine("✓ Ready to place");
+                summary.AppendLine($"Total Cost: ${_lastValidationResult.TotalCost:F2}");
+            }
+            else
+            {
+                summary.AppendLine("✗ Cannot place:");
+                foreach (var error in _lastValidationResult.Errors)
+                {
+                    summary.AppendLine($"  - {error.Message}");
+                }
+            }
+            
+            if (_lastValidationResult.Warnings.Count > 0)
+            {
+                summary.AppendLine("Warnings:");
+                foreach (var warning in _lastValidationResult.Warnings)
+                {
+                    summary.AppendLine($"  - {warning.Message}");
+                }
+            }
+            
+            return summary.ToString();
+        }
+        
+        #endregion
+        
+        #region Placement Mode
+        
+        /// <summary>
+        /// Start placement mode with a specific prefab
+        /// </summary>
+        public void StartPlacement(GameObject prefab)
+        {
+            if (prefab == null)
+            {
+                Debug.LogWarning("[GridPlacementController] Cannot start placement with null prefab");
+                return;
+            }
+            
+            var placeable = prefab.GetComponent<GridPlaceable>();
+            if (placeable == null)
+            {
+                Debug.LogWarning($"[GridPlacementController] Prefab {prefab.name} does not have GridPlaceable component");
+                return;
+            }
+            
+            StartPlacement(placeable);
+        }
+        
+        /// <summary>
+        /// Start placement mode with a GridPlaceable object
+        /// </summary>
+        public void StartPlacement(GridPlaceable placeable)
+        {
+            if (_isInPlacementMode)
+            {
+                CancelPlacement();
+            }
+            
+            _isInPlacementMode = true;
+            _currentPlaceable = Instantiate(placeable);
+            _currentPlaceable.EnterPreviewMode();
+            
+            // Position at mouse initially
+            Vector3 mouseWorldPos = GetMouseWorldPosition();
+            if (mouseWorldPos != Vector3.zero)
+            {
+                PositionPreviewObject(mouseWorldPos);
+            }
+            
+            OnPlacementModeEntered?.Invoke();
+            Debug.Log($"[GridPlacementController] Started placement mode with {placeable.name}");
+        }
+        
+        /// <summary>
+        /// Cancel current placement
+        /// </summary>
+        public void CancelPlacement()
+        {
+            if (!_isInPlacementMode) return;
+            
+            _isInPlacementMode = false;
+            
+            if (_currentPlaceable != null)
+            {
+                _currentPlaceable.ExitPreviewMode();
+                DestroyImmediate(_currentPlaceable.gameObject);
+                _currentPlaceable = null;
+            }
+            
+            OnPlacementModeExited?.Invoke();
+            Debug.Log("[GridPlacementController] Placement cancelled");
+        }
+        
+        private void UpdatePlacementMode()
+        {
+            if (_currentPlaceable == null) return;
+            
+            // Update preview position at regular intervals
+            if (Time.time - _lastPreviewUpdate >= _previewUpdateRate)
+            {
+                UpdatePreviewPosition();
+                _lastPreviewUpdate = Time.time;
+            }
+        }
+        
+        private void UpdatePreviewPosition()
+        {
+            Vector3 mouseWorldPos = GetMouseWorldPosition();
+            if (mouseWorldPos == Vector3.zero) return;
+            
+            PositionPreviewObject(mouseWorldPos);
+            UpdatePlacementValidity();
+        }
+        
+        private void PositionPreviewObject(Vector3 worldPosition)
+        {
+            if (_currentPlaceable == null) return;
+            
+            Vector3 targetPosition = worldPosition;
+            
+            if (_snapPreviewToGrid)
+            {
+                targetPosition = _gridSystem.SnapToGrid(worldPosition);
+            }
+            
+            _currentPlaceable.transform.position = new Vector3(targetPosition.x, targetPosition.y + _currentPlaceable.PlacementHeight, targetPosition.z);
+            _currentMouseWorldPos = targetPosition;
+            
+            Vector3Int newGridCoord = _gridSystem.WorldToGridPosition(targetPosition);
+            if (newGridCoord != _currentGridCoord)
+            {
+                _currentGridCoord = newGridCoord;
+                OnPreviewPositionChanged?.Invoke(_currentGridCoord, _isValidPlacement);
+            }
+        }
+        
+        private void UpdatePlacementValidity()
+        {
+            if (_currentPlaceable == null) return;
+            
+            bool wasValid = _isValidPlacement;
+            _isValidPlacement = _currentPlaceable.CanBePlacedAt(_currentGridCoord);
+            
+            _currentPlaceable.UpdatePlacementFeedback(_isValidPlacement);
+            
+            if (wasValid != _isValidPlacement)
+            {
+                OnPreviewPositionChanged?.Invoke(_currentGridCoord, _isValidPlacement);
+            }
+        }
+        
+        private void AttemptPlacement()
+        {
+            if (_currentPlaceable == null || !_isValidPlacement)
+            {
+                Debug.Log("[GridPlacementController] Cannot place object - invalid position");
+                return;
+            }
+            
+            // Exit preview mode
+            _currentPlaceable.ExitPreviewMode();
+            
+            // Attempt to place on grid
+            if (_currentPlaceable.PlaceAt(_currentGridCoord))
+            {
+                OnObjectPlaced?.Invoke(_currentPlaceable);
+                OnObjectPlacedHandler(_currentPlaceable); // Update category tracking
+                Debug.Log($"[GridPlacementController] Successfully placed {_currentPlaceable.name} at {_currentGridCoord}");
+                
+                // Handle placement mode continuation
+                if (_placementMode == PlacementMode.Single)
+                {
+                    _currentPlaceable = null;
+                    _isInPlacementMode = false;
+                    OnPlacementModeExited?.Invoke();
+                }
+                else if (_placementMode == PlacementMode.Multiple)
+                {
+                    // Create a new instance for continued placement
+                    var newPlaceable = Instantiate(_currentPlaceable);
+                    _currentPlaceable = newPlaceable;
+                    _currentPlaceable.EnterPreviewMode();
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[GridPlacementController] Failed to place {_currentPlaceable.name} at {_currentGridCoord}");
+                _currentPlaceable.EnterPreviewMode(); // Re-enter preview mode
+            }
+        }
+        
+        #endregion
+        
+        #region Selection Mode
+        
+        private void UpdateSelectionMode()
+        {
+            // Handle selection highlighting, movement, etc.
+            // For now, just update mouse position tracking
+            Vector3 mouseWorldPos = GetMouseWorldPosition();
+            if (mouseWorldPos != Vector3.zero)
+            {
+                _currentMouseWorldPos = mouseWorldPos;
+                _currentGridCoord = _gridSystem.WorldToGridPosition(mouseWorldPos);
+            }
+        }
+        
+        /// <summary>
+        /// Select an object on the grid
+        /// </summary>
+        public void SelectObject(GridPlaceable placeable)
+        {
+            if (_selectedObject == placeable) return;
+            
+            ClearSelection();
+            
+            _selectedObject = placeable;
+            OnObjectSelected?.Invoke(_selectedObject);
+            
+            Debug.Log($"[GridPlacementController] Selected {placeable.name} at {placeable.GridCoordinate}");
+        }
+        
+        /// <summary>
+        /// Clear current selection
+        /// </summary>
+        public void ClearSelection()
+        {
+            if (_selectedObject != null)
+            {
+                _selectedObject = null;
+                OnObjectSelected?.Invoke(null);
+            }
+            
+            // Also clear multiple selection
+            if (_selectedObjects.Count > 0)
+            {
+                ClearMultipleSelection();
+            }
+        }
+        
+        /// <summary>
+        /// Remove the currently selected object
+        /// </summary>
+        public void RemoveSelectedObject()
+        {
+            if (_selectedObject == null || !_selectedObject.IsPlaced) return;
+            
+            var objectToRemove = _selectedObject;
+            ClearSelection();
+            
+            if (objectToRemove.RemoveFromGrid())
+            {
+                OnObjectRemoved?.Invoke(objectToRemove);
+                OnObjectRemovedHandler(objectToRemove); // Update category tracking
+                DestroyImmediate(objectToRemove.gameObject);
+                Debug.Log($"[GridPlacementController] Removed {objectToRemove.name}");
+            }
+        }
+        
+        #endregion
+        
+        #region Utility Methods
+        
+        /// <summary>
+        /// Get world position of mouse cursor on ground plane
+        /// </summary>
+        private Vector3 GetMouseWorldPosition()
+        {
+            if (_placementCamera == null) return Vector3.zero;
+            
+            Ray ray = _placementCamera.ScreenPointToRay(Input.mousePosition);
+            
+            if (Physics.Raycast(ray, out RaycastHit hit, _raycastDistance, _groundLayer))
+            {
+                return hit.point;
+            }
+            
+            // Fallback: project onto Y=0 plane
+            if (Mathf.Abs(ray.direction.y) > 0.01f)
+            {
+                float distance = -ray.origin.y / ray.direction.y;
+                if (distance > 0 && distance < _raycastDistance)
+                {
+                    return ray.origin + ray.direction * distance;
+                }
+            }
+            
+            return Vector3.zero;
+        }
+        
+        /// <summary>
+        /// Set placement mode
+        /// </summary>
+        public void SetPlacementMode(PlacementMode mode)
+        {
+            _placementMode = mode;
+        }
+        
+        /// <summary>
+        /// Enable/disable UI confirmation requirement
+        /// </summary>
+        public void SetUIConfirmationRequired(bool required)
+        {
+            _requireUIConfirmation = required;
+        }
+        
+        /// <summary>
+        /// Get all objects within a radius of a world position
+        /// </summary>
+        public List<GridPlaceable> GetObjectsNearPosition(Vector3 worldPosition, float radius)
+        {
+            var nearbyObjects = new List<GridPlaceable>();
+            Vector3Int centerGrid = _gridSystem.WorldToGridPosition(worldPosition);
+            int gridRadius = Mathf.CeilToInt(radius / _gridSystem.GridSize);
+            
+            for (int x = -gridRadius; x <= gridRadius; x++)
+            {
+                for (int y = -gridRadius; y <= gridRadius; y++)
+                {
+                    Vector3Int checkCoord = centerGrid + new Vector3Int(x, y, 0);
+                    var cell = _gridSystem.GetGridCell(checkCoord);
+                    
+                    if (cell != null && cell.IsOccupied && cell.OccupyingObject != null)
+                    {
+                        if (!nearbyObjects.Contains(cell.OccupyingObject))
+                        {
+                            float distance = Vector3.Distance(worldPosition, cell.OccupyingObject.transform.position);
+                            if (distance <= radius)
+                            {
+                                nearbyObjects.Add(cell.OccupyingObject);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return nearbyObjects;
+        }
+        
+        #endregion
+        
+        #region Debug
+        
+        private void OnDrawGizmos()
+        {
+            if (!Application.isPlaying) return;
+            
+            // Draw current mouse position
+            Gizmos.color = Color.yellow;
+            if (_currentMouseWorldPos != Vector3.zero)
+            {
+                Gizmos.DrawWireSphere(_currentMouseWorldPos, 0.5f);
+            }
+            
+            // Draw current grid coordinate
+            if (_gridSystem != null)
+            {
+                Gizmos.color = _isValidPlacement ? Color.green : Color.red;
+                Vector3 gridWorldPos = _gridSystem.GridToWorldPosition(_currentGridCoord);
+                Gizmos.DrawWireCube(gridWorldPos + Vector3.up * 0.1f, Vector3.one * _gridSystem.GridSize * 0.9f);
+            }
+        }
+        
+        #endregion
+        
+        #region Visual Feedback
+        
+        private void OnGUI()
+        {
+            if (_isDragSelecting)
+            {
+                DrawSelectionBox();
+            }
+        }
+        
+        private void DrawSelectionBox()
+        {
+            Vector2 min = Vector2.Min(_dragStartPos, _dragCurrentPos);
+            Vector2 max = Vector2.Max(_dragStartPos, _dragCurrentPos);
+            
+            // Convert from screen coordinates to GUI coordinates
+            Rect guiRect = new Rect(min.x, Screen.height - max.y, max.x - min.x, max.y - min.y);
+            
+            // Draw selection box fill
+            Color oldColor = GUI.color;
+            GUI.color = _selectionBoxColor;
+            GUI.DrawTexture(guiRect, Texture2D.whiteTexture);
+            
+            // Draw selection box border
+            GUI.color = _selectionBoxBorderColor;
+            
+            // Top border
+            GUI.DrawTexture(new Rect(guiRect.x, guiRect.y, guiRect.width, 2), Texture2D.whiteTexture);
+            // Bottom border
+            GUI.DrawTexture(new Rect(guiRect.x, guiRect.y + guiRect.height - 2, guiRect.width, 2), Texture2D.whiteTexture);
+            // Left border
+            GUI.DrawTexture(new Rect(guiRect.x, guiRect.y, 2, guiRect.height), Texture2D.whiteTexture);
+            // Right border
+            GUI.DrawTexture(new Rect(guiRect.x + guiRect.width - 2, guiRect.y, 2, guiRect.height), Texture2D.whiteTexture);
+            
+            GUI.color = oldColor;
+        }
+        
+        #endregion
+        
+        #region Pooling System
+        
+        /// <summary>
+        /// Initialize the pooling system
+        /// </summary>
+        private void InitializePoolingSystem()
+        {
+            // Create pool root container
+            _poolRoot = new GameObject("SchematicObjectPools").transform;
+            _poolRoot.SetParent(transform);
+        }
+        
+        /// <summary>
+        /// Get pooled object for schematic item
+        /// </summary>
+        private GameObject GetPooledObject(SchematicItem item)
+        {
+            string poolKey = GetPoolKey(item);
+            
+            // Create pool if it doesn't exist
+            if (!_objectPools.ContainsKey(poolKey))
+            {
+                CreatePool(poolKey, item);
+            }
+            
+            var pool = _objectPools[poolKey];
+            
+            // Get object from pool or create new one
+            GameObject pooledObject;
+            if (pool.Count > 0)
+            {
+                pooledObject = pool.Dequeue();
+                pooledObject.SetActive(true);
+            }
+            else
+            {
+                pooledObject = CreatePooledObject(item, poolKey);
+            }
+            
+            return pooledObject;
+        }
+        
+        /// <summary>
+        /// Return object to pool
+        /// </summary>
+        private void ReturnToPool(GameObject obj, string poolKey)
+        {
+            if (obj == null) return;
+            
+            // Get pooled component for proper cleanup
+            var pooledComponent = obj.GetComponent<PooledSchematicObject>();
+            if (pooledComponent != null)
+            {
+                pooledComponent.OnReturnedToPool();
+            }
+            
+            // Reset object state
+            obj.SetActive(false);
+            if (_poolContainers.ContainsKey(poolKey))
+            {
+                obj.transform.SetParent(_poolContainers[poolKey]);
+                obj.transform.localPosition = Vector3.zero;
+                obj.transform.localRotation = Quaternion.identity;
+            }
+            
+            // Add back to pool if not exceeding max size
+            if (_objectPools.ContainsKey(poolKey) && _objectPools[poolKey].Count < MAX_POOL_SIZE)
+            {
+                _objectPools[poolKey].Enqueue(obj);
+            }
+            else
+            {
+                // Destroy excess objects
+                DestroyImmediate(obj);
+            }
+        }
+        
+        /// <summary>
+        /// Create a new pool for the given item type
+        /// </summary>
+        private void CreatePool(string poolKey, SchematicItem item)
+        {
+            // Create pool container
+            var container = new GameObject($"Pool_{poolKey}").transform;
+            container.SetParent(_poolRoot);
+            _poolContainers[poolKey] = container;
+            
+            // Create pool queue
+            var pool = new Queue<GameObject>();
+            _objectPools[poolKey] = pool;
+            
+            // Pre-populate pool with initial objects
+            for (int i = 0; i < INITIAL_POOL_SIZE; i++)
+            {
+                var obj = CreatePooledObject(item, poolKey);
+                if (obj != null)
+                {
+                    obj.SetActive(false);
+                    pool.Enqueue(obj);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Create a pooled object for schematic item
+        /// </summary>
+        private GameObject CreatePooledObject(SchematicItem item, string poolKey)
+        {
+            GameObject prefab = GetPrefabForItem(item);
+            if (prefab == null)
+            {
+                Debug.LogError($"Cannot create pooled object: No prefab found for item {item.ItemName}");
+                return null;
+            }
+            
+            GameObject obj = Instantiate(prefab, _poolContainers[poolKey]);
+            obj.name = $"{item.ItemName}_Pooled";
+            
+            // Add pooled object identifier
+            var pooledComponent = obj.GetComponent<PooledSchematicObject>();
+            if (pooledComponent == null)
+            {
+                pooledComponent = obj.AddComponent<PooledSchematicObject>();
+            }
+            pooledComponent.Initialize(poolKey, item);
+            
+            return obj;
+        }
+        
+        /// <summary>
+        /// Get pool key for schematic item
+        /// </summary>
+        private string GetPoolKey(SchematicItem item)
+        {
+            // Use template name and category as pool key for grouping similar items
+            return $"{item.TemplateName}_{item.ItemCategory}";
+        }
+        
+        /// <summary>
+        /// Get prefab for schematic item (addressable or direct reference)
+        /// </summary>
+        private GameObject GetPrefabForItem(SchematicItem item)
+        {
+            if (item.UseAddressableSystem && !string.IsNullOrEmpty(item.PrefabAddressableId))
+            {
+                // TODO: Implement addressable loading when addressable system is available
+                Debug.LogWarning($"Addressable loading not yet implemented for {item.PrefabAddressableId}");
+                return item.PrefabReference; // Fallback to direct reference
+            }
+            
+            return item.PrefabReference;
+        }
+        
+        /// <summary>
+        /// Configure pooled object for schematic placement
+        /// </summary>
+        private void ConfigurePooledObject(GameObject pooledObject, SchematicItem item, Vector3 worldPosition)
+        {
+            if (pooledObject == null) return;
+            
+            // Set position and rotation
+            pooledObject.transform.position = worldPosition;
+            pooledObject.transform.rotation = Quaternion.identity;
+            
+            // Apply rotation
+            if (item.Rotation != 0)
+            {
+                pooledObject.transform.rotation = Quaternion.Euler(0, item.Rotation, 0);
+            }
+            
+            // Apply height offset
+            if (item.Height != 0)
+            {
+                Vector3 pos = pooledObject.transform.position;
+                pos.y += item.Height;
+                pooledObject.transform.position = pos;
+            }
+            
+            // Apply custom properties if object supports configuration
+            var configurable = pooledObject.GetComponent<ISchematicConfigurable>();
+            if (configurable != null)
+            {
+                configurable.ApplySchematicConfiguration(item);
+            }
+            
+            // Update pooled object component
+            var pooledComponent = pooledObject.GetComponent<PooledSchematicObject>();
+            if (pooledComponent != null)
+            {
+                pooledComponent.OnActivatedFromPool(item);
+            }
+            
+            // Ensure object is in the correct parent (not in pool container)
+            pooledObject.transform.SetParent(transform);
+        }
+        
+        /// <summary>
+        /// Remove placed objects and return them to pool if applicable
+        /// </summary>
+        public void RemoveSchematicObjects(List<GameObject> objects)
+        {
+            foreach (var obj in objects)
+            {
+                if (obj != null)
+                {
+                    // Check if object is pooled
+                    var pooledComponent = obj.GetComponent<PooledSchematicObject>();
+                    if (pooledComponent != null)
+                    {
+                        // Return to pool
+                        ReturnToPool(obj, pooledComponent.PoolKey);
+                    }
+                    else
+                    {
+                        // Destroy normally
+                        Destroy(obj);
+                    }
+                    
+                    // Clear grid occupancy
+                    var placeable = obj.GetComponent<GridPlaceable>();
+                    if (placeable != null)
+                    {
+                        // Clear grid positions (implementation depends on GridPlaceable)
+                        // This would need to be implemented based on the object's grid footprint
+                    }
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Clear all pools and destroy pooled objects
+        /// </summary>
+        private void ClearAllPools()
+        {
+            foreach (var pool in _objectPools.Values)
+            {
+                while (pool.Count > 0)
+                {
+                    var obj = pool.Dequeue();
+                    if (obj != null)
+                    {
+                        DestroyImmediate(obj);
+                    }
+                }
+            }
+            
+            _objectPools.Clear();
+            _poolContainers.Clear();
+            
+            if (_poolRoot != null)
+            {
+                DestroyImmediate(_poolRoot.gameObject);
+            }
+        }
+        
+        /// <summary>
+        /// Get pool statistics for debugging
+        /// </summary>
+        public Dictionary<string, int> GetPoolStatistics()
+        {
+            var stats = new Dictionary<string, int>();
+            foreach (var kvp in _objectPools)
+            {
+                stats[kvp.Key] = kvp.Value.Count;
+            }
+            return stats;
+        }
+        
+        #endregion
+    }
+    
+    public enum PlacementMode
+    {
+        Single,    // Place one object then exit placement mode
+        Multiple   // Continue placing objects until cancelled
+    }
+    
+    /// <summary>
+    /// Validation result for schematic placement
+    /// </summary>
+    public class SchematicValidationResult
+    {
+        public List<SchematicValidationErrorInfo> Errors { get; } = new List<SchematicValidationErrorInfo>();
+        public List<SchematicValidationWarningInfo> Warnings { get; } = new List<SchematicValidationWarningInfo>();
+        public float TotalCost { get; set; }
+        public float MissingFunds { get; set; }
+        public Dictionary<string, int> RequiredResources { get; set; } = new Dictionary<string, int>();
+        public List<Vector3Int> ConflictingPositions { get; set; } = new List<Vector3Int>();
+        
+        public bool IsValid => Errors.Count == 0;
+        public bool HasWarnings => Warnings.Count > 0;
+        
+        /// <summary>
+        /// Get a summary of all errors for logging
+        /// </summary>
+        public string GetErrorSummary()
+        {
+            if (Errors.Count == 0)
+                return "No errors";
+                
+            var summary = new System.Text.StringBuilder();
+            summary.Append($"{Errors.Count} error(s): ");
+            
+            for (int i = 0; i < Errors.Count; i++)
+            {
+                summary.Append(Errors[i].Type.ToString());
+                if (i < Errors.Count - 1)
+                    summary.Append(", ");
+            }
+            
+            return summary.ToString();
+        }
+        
+        public void AddError(SchematicValidationError errorType, string message)
+        {
+            Errors.Add(new SchematicValidationErrorInfo { Type = errorType, Message = message });
+        }
+        
+        public void AddWarning(SchematicValidationWarning warningType, string message)
+        {
+            Warnings.Add(new SchematicValidationWarningInfo { Type = warningType, Message = message });
+        }
+        
+        public bool HasError(SchematicValidationError errorType)
+        {
+            return Errors.Any(e => e.Type == errorType);
+        }
+        
+        public bool HasWarning(SchematicValidationWarning warningType)
+        {
+            return Warnings.Any(w => w.Type == warningType);
+        }
+    }
+    
+    /// <summary>
+    /// Validation error information
+    /// </summary>
+    public class SchematicValidationErrorInfo
+    {
+        public SchematicValidationError Type { get; set; }
+        public string Message { get; set; }
+    }
+    
+    /// <summary>
+    /// Validation warning information
+    /// </summary>
+    public class SchematicValidationWarningInfo
+    {
+        public SchematicValidationWarning Type { get; set; }
+        public string Message { get; set; }
+    }
+    
+    /// <summary>
+    /// Types of validation errors
+    /// </summary>
+    public enum SchematicValidationError
+    {
+        InvalidSchematic,
+        NoGridSystem,
+        OutOfBounds,
+        SpaceOccupied,
+        InsufficientFunds,
+        InsufficientResources,
+        NotUnlocked,
+        InvalidConfiguration
+    }
+    
+    /// <summary>
+    /// Types of validation warnings
+    /// </summary>
+    public enum SchematicValidationWarning
+    {
+        InsufficientClearance,
+        LongConstructionTime,
+        HighComplexity,
+        HighCost,
+        RequiresUtilities
+    }
+    
+}
