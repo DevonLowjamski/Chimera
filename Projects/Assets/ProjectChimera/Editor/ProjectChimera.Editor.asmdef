@@ -1,0 +1,40 @@
+{
+    "name": "ProjectChimera.Editor",
+    "rootNamespace": "ProjectChimera.Editor",
+    "references": [
+        "ProjectChimera.Core",
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data",
+        "ProjectChimera.Data.Events",
+        "ProjectChimera.Data.UI",
+        "ProjectChimera.Systems",
+        "ProjectChimera.Systems.Gameplay",
+        "ProjectChimera.Systems.Cultivation",
+        "ProjectChimera.Systems.Economy",
+        "ProjectChimera.Systems.Progression",
+        "ProjectChimera.Systems.Construction",
+        "ProjectChimera.Systems.Community",
+        "ProjectChimera.Systems.Facilities",
+        "ProjectChimera.Systems.Tutorial",
+        "ProjectChimera.Systems.Genetics",
+        "ProjectChimera.Systems.Environment",
+        "ProjectChimera.Systems.Scene",
+        "ProjectChimera.UI",
+        "ProjectChimera.Scripts",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Editor",
+        "Unity.RenderPipelines.Core.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

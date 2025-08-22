@@ -1,0 +1,116 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/ProjectChimera/UI/Styles/SchematicLibrary.uss?fileID=7433441132597879392&amp;guid=d00139b3cb588424ab4b0369913ad15f&amp;type=3#SchematicLibrary" />
+
+    <!-- Main schematic library container -->
+    <ui:VisualElement name="root" class="schematic-library">
+
+        <!-- Search section -->
+        <ui:VisualElement name="search-container" class="search-container">
+            <ui:TextField name="search-field" class="library-search-field" text="" />
+
+            <!-- Advanced search options -->
+            <ui:VisualElement name="search-options" class="search-options">
+                <ui:Toggle label="Name" name="search-name-toggle" value="true" />
+                <ui:Toggle label="Description" name="search-description-toggle" value="true" />
+                <ui:Toggle label="Tags" name="search-tags-toggle" value="true" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Filter section -->
+        <ui:VisualElement name="filter-container" class="filter-container">
+            <ui:DropdownField label="Category" name="category-filter" class="category-filter" />
+            <ui:DropdownField label="Complexity" name="complexity-filter" class="complexity-filter" />
+            <ui:DropdownField label="Tags" name="tags-filter" class="tags-filter" />
+            <ui:DropdownField label="Sort by" name="sort-dropdown" class="sort-dropdown" />
+            <ui:Toggle label="Ascending" name="sort-order-toggle" class="sort-order-toggle" value="true" />
+        </ui:VisualElement>
+
+        <!-- Toolbar section -->
+        <ui:VisualElement name="toolbar-container" class="toolbar-container">
+            <!-- View mode buttons -->
+            <ui:VisualElement name="view-mode-container" class="view-mode-container">
+                <ui:Button text="Grid" name="grid-view-button" class="view-mode-button grid-view-button active" />
+                <ui:Button text="List" name="list-view-button" class="view-mode-button list-view-button" />
+            </ui:VisualElement>
+
+            <!-- Action buttons -->
+            <ui:VisualElement name="actions-container" class="actions-container">
+                <ui:Button text="Add New" name="add-schematic-button" class="action-button add-button" tooltip="Create a new schematic" />
+                <ui:Button text="Import" name="import-button" class="action-button import-button" tooltip="Import schematics from file" />
+                <ui:Button text="Export" name="export-button" class="action-button export-button" tooltip="Export selected schematics" />
+                <ui:Button text="Refresh" name="refresh-button" class="action-button refresh-button" tooltip="Refresh schematic library" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Content section -->
+        <ui:VisualElement name="content-container" class="content-container">
+
+            <!-- Main library view -->
+            <ui:ScrollView name="library-scroll-view" class="library-scroll-view">
+
+                <!-- Grid view -->
+                <ui:VisualElement name="library-grid" class="library-grid" style="display: flex;">
+                    <!-- Grid items will be populated dynamically -->
+                </ui:VisualElement>
+
+                <!-- List view -->
+                <ui:VisualElement name="library-list" class="library-list" style="display: none;">
+                    <!-- List items will be populated dynamically -->
+                </ui:VisualElement>
+
+                <!-- Empty state -->
+                <ui:VisualElement name="empty-state" class="empty-state" style="display: none;">
+                    <ui:VisualElement name="empty-state-icon" class="empty-state-icon" />
+                    <ui:Label text="No Schematics Found" name="empty-state-title" class="empty-state-title" />
+                    <ui:Label text="Create your first schematic by selecting objects and pressing Ctrl+S, or import existing schematics." name="empty-state-message" class="empty-state-message" />
+                </ui:VisualElement>
+
+                <!-- Loading state -->
+                <ui:VisualElement name="loading-state" class="library-loading" style="display: none;">
+                    <ui:VisualElement name="loading-spinner" class="library-loading-spinner" />
+                    <ui:Label text="Loading schematics..." name="loading-text" class="library-loading-text" />
+                </ui:VisualElement>
+
+            </ui:ScrollView>
+
+            <!-- Details panel -->
+            <ui:VisualElement name="details-container" class="details-container">
+                <ui:VisualElement name="details-panel" class="details-panel" style="display: none;">
+
+                    <ui:Label text="Schematic Details" name="details-header" class="details-header" />
+
+                    <!-- Preview image -->
+                    <ui:VisualElement name="schematic-preview" class="schematic-preview" />
+
+                    <!-- Name and description -->
+                    <ui:Label text="Schematic Name" name="schematic-name" class="schematic-name" />
+                    <ui:Label text="Schematic description..." name="schematic-description" class="schematic-description" />
+
+                    <!-- Information section -->
+                    <ui:VisualElement name="schematic-info" class="schematic-info">
+                        <!-- Info rows will be populated dynamically -->
+                    </ui:VisualElement>
+
+                    <!-- Action buttons -->
+                    <ui:VisualElement name="schematic-actions" class="schematic-actions">
+                        <ui:Button text="Apply Schematic" name="apply-button" class="apply-button" />
+                        <ui:Button text="Duplicate" name="duplicate-button" class="duplicate-button" />
+                        <ui:Button text="Delete" name="delete-button" class="delete-button" />
+                    </ui:VisualElement>
+
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+
+        <!-- Pagination section -->
+        <ui:VisualElement name="pagination-container" class="pagination-container">
+            <ui:Button text="Previous" name="prev-page-button" class="pagination-button" />
+            <ui:Label text="Page 1 of 1 (0 items)" name="page-info-label" class="page-info" />
+            <ui:Button text="Next" name="next-page-button" class="pagination-button" />
+            <ui:DropdownField label="Items per page" name="items-per-page-dropdown" class="items-per-page" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

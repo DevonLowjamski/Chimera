@@ -1,0 +1,28 @@
+using System;
+using UnityEngine;
+
+namespace ProjectChimera.Data.Simulation
+{
+    [Serializable]
+    public struct NutritionStatus
+    {
+        public float Nitrogen;
+        public float Phosphorus;
+        public float Potassium;
+        public float pH;
+        public float EC;
+        public float Calcium;
+        public float Magnesium;
+        public float Sulfur;
+        public float Iron;
+        public float Micronutrients;
+    }
+
+    [Serializable]
+    public struct WaterStatus
+    {
+        [Range(0, 1)] public float MoistureLevel;
+        [Range(0, 1)] public float DrainageRate;
+        [Range(0, 1)] public float WaterQuality;
+    }
+}

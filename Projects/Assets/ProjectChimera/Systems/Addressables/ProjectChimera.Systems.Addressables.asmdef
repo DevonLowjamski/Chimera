@@ -1,0 +1,34 @@
+{
+    "name": "ProjectChimera.Systems.Addressables",
+    "rootNamespace": "",
+    "references": [
+        "ProjectChimera.Core",
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Systems",
+        "ProjectChimera.Systems.Diagnostics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.addressables",
+            "expression": "1.0.0",
+            "define": "UNITY_ADDRESSABLES"
+        },
+        {
+            "name": "com.unity.localization",
+            "expression": "1.0.0",
+            "define": "UNITY_LOCALIZATION"
+        }
+    ],
+    "noEngineReferences": false
+}
+
+

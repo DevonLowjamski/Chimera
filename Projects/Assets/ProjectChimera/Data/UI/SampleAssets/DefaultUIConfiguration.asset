@@ -1,0 +1,115 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2c3d4e5f6789012345678901234abcd, type: 3}
+  m_Name: DefaultUIConfiguration
+  _configurationName: Default Gaming Configuration
+  _description: Optimized UI configuration for Project Chimera cannabis cultivation simulation
+  _targetProfile: 0
+  _enableDebugMode: 0
+  _maxUIUpdatesPerFrame: 10
+  _uiUpdateInterval: 0.016
+  _enableUIPooling: 1
+  _poolInitialSize: 20
+  _poolMaxSize: 100
+  _enableLODForUI: 1
+  _enableAnimations: 1
+  _enableTransitions: 1
+  _defaultAnimationDuration: 0.25
+  _defaultEasingCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _reduceMotion: 0
+  _motionReductionScale: 0.5
+  _enableKeyboardNavigation: 1
+  _enableGamepadSupport: 1
+  _enableTouchInput: 0
+  _doubleClickThreshold: 0.3
+  _longPressThreshold: 0.5
+  _enableHoverEffects: 1
+  _enableScreenReaderSupport: 0
+  _enableHighContrastMode: 0
+  _enableFocusIndicators: 1
+  _textScaleMultiplier: 1
+  _enableColorBlindSupport: 0
+  _colorBlindType: 0
+  _enableUIAudio: 1
+  _uiVolumeMultiplier: 1
+  _enableHoverSounds: 1
+  _enableClickSounds: 1
+  _enableNotificationSounds: 1
+  _enableNotifications: 1
+  _maxNotificationsVisible: 5
+  _defaultNotificationDuration: 5
+  _enableNotificationQueue: 1
+  _groupSimilarNotifications: 1
+  _notificationPosition: {x: 20, y: 20}
+  _enableModals: 1
+  _modalBackgroundBlur: 1
+  _closeModalOnBackgroundClick: 1
+  _enableModalAnimations: 1
+  _modalFadeInDuration: 0.3
+  _enablePanelCaching: 1
+  _maxCachedPanels: 10
+  _enablePanelPreloading: 0
+  _enablePanelTransitions: 1
+  _defaultTransitionType: 1
+  _showDebugOverlay: 0
+  _logUIEvents: 0
+  _logPerformanceMetrics: 0
+  _enableUIProfiler: 0
+  _debugToggleKey: 323
+  _referenceResolution: {x: 1920, y: 1080}
+  _screenMatchMode: 0
+  _matchWidthOrHeight: 0.5
+  _enableResponsiveLayout: 1
+  _responsiveBreakpoints:
+  - Name: Mobile
+    MinWidth: 480
+    ScaleFactor: 0.8
+    EnableFeature: 1
+  - Name: Tablet
+    MinWidth: 768
+    ScaleFactor: 0.9
+    EnableFeature: 1
+  - Name: Desktop
+    MinWidth: 1024
+    ScaleFactor: 1
+    EnableFeature: 1
+  - Name: Large Desktop
+    MinWidth: 1440
+    ScaleFactor: 1.1
+    EnableFeature: 1
+  _enableLocalization: 0
+  _defaultLanguage: en
+  _autoDetectLanguage: 1
+  _enableRTLSupport: 0

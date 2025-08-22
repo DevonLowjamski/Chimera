@@ -1,0 +1,26 @@
+{
+    "name": "ProjectChimera.Systems.Facilities",
+    "rootNamespace": "ProjectChimera.Systems.Facilities",
+    "references": [
+        "ProjectChimera.Core",
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Data.Facilities",
+        "ProjectChimera.Data.Events",
+        "ProjectChimera.Data.Economy",
+        "ProjectChimera.Systems.Scene",
+        "ProjectChimera.Systems.Economy",
+        "ProjectChimera.Systems.Environment",
+        "ProjectChimera.Systems.Cultivation",
+        "ProjectChimera.Systems.Construction"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+} 

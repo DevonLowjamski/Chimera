@@ -1,0 +1,16 @@
+{
+    "name": "ProjectChimera.Core.ServiceContainer",
+    "rootNamespace": "ProjectChimera.Core.ServiceContainer",
+    "references": [
+        "ProjectChimera.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

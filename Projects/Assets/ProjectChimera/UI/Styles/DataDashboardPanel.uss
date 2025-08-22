@@ -1,0 +1,183 @@
+/* Data Dashboard Panel Styles */
+
+.dashboard-root {
+    flex-grow: 1;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+}
+
+.dashboard-main {
+    flex-grow: 1;
+    background-color: rgba(40, 40, 40, 0.95);
+    border-radius: 8px;
+    padding: 20px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dashboard-title-section {
+    margin-bottom: 20px;
+    border-bottom-width: 1px;
+    border-color: rgba(255, 255, 255, 0.2);
+    padding-bottom: 15px;
+}
+
+.dashboard-title {
+    font-size: 24px;
+    color: white;
+    -unity-font-style: bold;
+    text-align: center;
+}
+
+.dashboard-filters {
+    flex-direction: row;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: rgba(60, 60, 60, 0.5);
+    border-radius: 6px;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.dashboard-refresh-button {
+    background-color: rgba(0, 150, 255, 0.8);
+    color: white;
+    border-radius: 4px;
+    padding: 8px 16px;
+    border-width: 0;
+    margin-left: 10px;
+}
+
+.dashboard-refresh-button:hover {
+    background-color: rgba(0, 150, 255, 1.0);
+}
+
+/* Quick Time Range Buttons */
+.quick-range-buttons {
+    flex-direction: row;
+    align-items: center;
+    margin: 5px 10px;
+}
+
+.quick-range-button {
+    background-color: rgba(80, 80, 80, 0.8);
+    color: rgba(255, 255, 255, 0.9);
+    border-radius: 3px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.2);
+    padding: 4px 8px;
+    margin: 0 2px;
+    font-size: 11px;
+    min-width: 30px;
+    transition-property: all;
+    transition-duration: 0.15s;
+}
+
+.quick-range-button:hover {
+    background-color: rgba(0, 150, 255, 0.6);
+    border-color: rgba(0, 150, 255, 0.8);
+    color: white;
+    transform: scale(1.05);
+}
+
+.quick-range-button:active {
+    background-color: rgba(0, 150, 255, 0.9);
+    transform: scale(0.98);
+}
+
+.kpi-cards-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    margin-bottom: 20px;
+}
+
+.kpi-card {
+    width: 200px;
+    height: 120px;
+    background-color: rgba(80, 80, 80, 0.9);
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.1);
+    margin: 10px;
+    padding: 15px;
+    justify-content: center;
+    align-items: center;
+}
+
+.kpi-card:hover {
+    background-color: rgba(100, 100, 100, 0.9);
+    border-color: rgba(0, 150, 255, 0.5);
+}
+
+.kpi-card-title {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+    margin-bottom: 8px;
+    -unity-font-style: normal;
+}
+
+.kpi-card-value {
+    font-size: 18px;
+    color: white;
+    text-align: center;
+    margin-bottom: 5px;
+    -unity-font-style: bold;
+}
+
+.kpi-card-trend {
+    font-size: 10px;
+    text-align: center;
+    -unity-font-style: normal;
+}
+
+.trend-up {
+    color: rgba(0, 255, 0, 0.8);
+}
+
+.trend-down {
+    color: rgba(255, 50, 50, 0.8);
+}
+
+.trend-neutral {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.charts-grid {
+    flex-grow: 1;
+    background-color: rgba(60, 60, 60, 0.3);
+    border-radius: 6px;
+    padding: 20px;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .kpi-card {
+        width: 180px;
+        height: 100px;
+    }
+    
+    .kpi-card-value {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 800px) {
+    .dashboard-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .kpi-cards-grid {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .kpi-card {
+        width: 250px;
+        margin: 5px;
+    }
+}

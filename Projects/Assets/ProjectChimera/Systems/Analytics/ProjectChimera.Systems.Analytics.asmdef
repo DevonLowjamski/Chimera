@@ -1,0 +1,24 @@
+{
+    "name": "ProjectChimera.Systems.Analytics",
+    "rootNamespace": "ProjectChimera.Systems.Analytics",
+    "references": [
+        "ProjectChimera.Core",
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Systems",
+        "ProjectChimera.Systems.Cultivation",
+        "ProjectChimera.Systems.Economy",
+        "ProjectChimera.Systems.Environment",
+        "ProjectChimera.Systems.Facilities"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

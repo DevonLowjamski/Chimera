@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<engine:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:engine="UnityEngine.UIElements"
+    xmlns:editor="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+>
+    <!-- Shared menu and button styles for Project Chimera -->
+    <!-- This file provides minimal UXML styling that complements code-driven layout -->
+    
+    <engine:Template name="MenuContainer" src="project://database/Assets/ProjectChimera/UI/UXML/Templates/MenuContainer.uxml" />
+    <engine:Template name="TabButton" src="project://database/Assets/ProjectChimera/UI/UXML/Templates/TabButton.uxml" />
+    <engine:Template name="ActionButton" src="project://database/Assets/ProjectChimera/UI/UXML/Templates/ActionButton.uxml" />
+    <engine:Template name="MenuSection" src="project://database/Assets/ProjectChimera/UI/UXML/Templates/MenuSection.uxml" />
+    
+    <Style src="project://database/Assets/ProjectChimera/UI/USS/SharedMenuStyles.uss" />
+</engine:UXML>

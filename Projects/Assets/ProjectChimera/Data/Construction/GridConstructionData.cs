@@ -1,0 +1,283 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+using ProjectChimera.Shared;
+
+namespace ProjectChimera.Data.Construction
+{
+    /// <summary>
+    /// Data structures for grid-based construction system in Project Chimera.
+    /// Defines templates, prefabs, and configurations for the new simplified construction approach.
+    /// </summary>
+
+    [CreateAssetMenu(fileName = "GridConstructionTemplate", menuName = "Project Chimera/Construction/Grid Construction Template")]
+    public class GridConstructionTemplate : ChimeraScriptableObject
+    {
+        [Header("Template Information")]
+        [SerializeField] private string _templateName = "New Construction Template";
+        [SerializeField] private string _description = "";
+        [SerializeField] private ConstructionCategory _category = ConstructionCategory.Structure;
+        [SerializeField] private Sprite _icon;
+        
+        [Header("Grid Properties")]
+        [SerializeField] private Vector3Int _gridSize = Vector3Int.one;
+        [SerializeField] private int _rotationSteps = 4; // 0°, 90°, 180°, 270°
+        [SerializeField] private bool _canBeRotated = true;
+        [SerializeField] private float _placementHeight = 0f;
+        
+        [Header("Prefab References")]
+        [SerializeField] private GameObject _prefab;
+        [SerializeField] private GameObject _previewPrefab;
+        [SerializeField] private Material _previewMaterial;
+        
+        [Header("Construction Requirements")]
+        [SerializeField] private List<ConstructionResource> _requiredResources = new List<ConstructionResource>();
+        [SerializeField] private float _constructionTime = 60f; // seconds
+        [SerializeField] private int _requiredSkillLevel = 1;
+        [SerializeField] private List<string> _requiredUnlocks = new List<string>();
+        
+        [Header("Placement Rules")]
+        [SerializeField] private bool _requiresFoundation = false;
+        [SerializeField] private bool _requiresUtilities = false;
+        [SerializeField] private bool _allowsOverlap = false;
+        [SerializeField] private LayerMask _collisionLayers = -1;
+        [SerializeField] private List<ConstructionCategory> _canConnectTo = new List<ConstructionCategory>();
+        
+        [Header("Economic Properties")]
+        [SerializeField] private float _baseCost = 1000f;
+        [SerializeField] private float _maintenanceCost = 10f; // per day
+        [SerializeField] private float _operationalValue = 0f; // functional benefit value
+        
+        // Properties
+        public string TemplateName => _templateName;
+        public string Description => _description;
+        public ConstructionCategory Category => _category;
+        public Sprite Icon => _icon;
+        public Vector3Int GridSize => _gridSize;
+        public int RotationSteps => _rotationSteps;
+        public bool CanBeRotated => _canBeRotated;
+        public float PlacementHeight => _placementHeight;
+        public GameObject Prefab => _prefab;
+        public GameObject PreviewPrefab => _previewPrefab ? _previewPrefab : _prefab;
+        public Material PreviewMaterial => _previewMaterial;
+        public List<ConstructionResource> RequiredResources => _requiredResources;
+        public float ConstructionTime => _constructionTime;
+        public int RequiredSkillLevel => _requiredSkillLevel;
+        public List<string> RequiredUnlocks => _requiredUnlocks;
+        public bool RequiresFoundation => _requiresFoundation;
+        public bool RequiresUtilities => _requiresUtilities;
+        public bool AllowsOverlap => _allowsOverlap;
+        public LayerMask CollisionLayers => _collisionLayers;
+        public List<ConstructionCategory> CanConnectTo => _canConnectTo;
+        public float BaseCost => _baseCost;
+        public float MaintenanceCost => _maintenanceCost;
+        public float OperationalValue => _operationalValue;
+        
+        /// <summary>
+        /// Calculate total cost including resources
+        /// </summary>
+        public float GetTotalCost()
+        {
+            float totalCost = _baseCost;
+            
+            foreach (var resource in _requiredResources)
+            {
+                totalCost += resource.Cost;
+            }
+            
+            return totalCost;
+        }
+        
+        /// <summary>
+        /// Check if player meets requirements to build this template
+        /// </summary>
+        public bool CanPlayerBuild(int playerSkillLevel, List<string> playerUnlocks, float availableFunds)
+        {
+            // Check skill level
+            if (playerSkillLevel < _requiredSkillLevel)
+                return false;
+            
+            // Check unlocks
+            foreach (var requiredUnlock in _requiredUnlocks)
+            {
+                if (!playerUnlocks.Contains(requiredUnlock))
+                    return false;
+            }
+            
+            // Check funds
+            if (availableFunds < GetTotalCost())
+                return false;
+            
+            return true;
+        }
+        
+        /// <summary>
+        /// Get grid size after rotation (3D)
+        /// </summary>
+        public Vector3Int GetRotatedGridSize(int rotationIndex)
+        {
+            if (!_canBeRotated || rotationIndex % 2 == 0)
+                return _gridSize;
+            
+            // Rotate in XY plane, preserve Z
+            return new Vector3Int(_gridSize.y, _gridSize.x, _gridSize.z);
+        }
+        
+        /// <summary>
+        /// Get grid size after rotation (backward compatibility)
+        /// </summary>
+        [System.Obsolete("Use GetRotatedGridSize(int) for 3D coordinates")]
+        public Vector2Int GetRotatedGridSize2D(int rotationIndex)
+        {
+            Vector3Int rotated3D = GetRotatedGridSize(rotationIndex);
+            return new Vector2Int(rotated3D.x, rotated3D.y);
+        }
+    }
+    
+    [System.Serializable]
+    public class ConstructionResource
+    {
+        [SerializeField] private string _resourceName = "";
+        [SerializeField] private int _quantity = 1;
+        [SerializeField] private float _unitCost = 100f;
+        [SerializeField] private Sprite _icon;
+        
+        public string ResourceName => _resourceName;
+        public int Quantity => _quantity;
+        public float UnitCost => _unitCost;
+        public float Cost => _quantity * _unitCost;
+        public Sprite Icon => _icon;
+    }
+    
+    [CreateAssetMenu(fileName = "ConstructionCatalog", menuName = "Project Chimera/Construction/Construction Catalog")]
+    public class ConstructionCatalog : ChimeraScriptableObject
+    {
+        [Header("Catalog Information")]
+        [SerializeField] private string _catalogName = "Construction Catalog";
+        [SerializeField] private string _version = "1.0";
+        
+        [Header("Construction Templates")]
+        [SerializeField] private List<GridConstructionTemplate> _templates = new List<GridConstructionTemplate>();
+        [SerializeField] private List<ConstructionSet> _constructionSets = new List<ConstructionSet>();
+        
+        // Properties
+        public string CatalogName => _catalogName;
+        public string Version => _version;
+        public List<GridConstructionTemplate> Templates => _templates;
+        public List<ConstructionSet> ConstructionSets => _constructionSets;
+        
+        /// <summary>
+        /// Get templates by category
+        /// </summary>
+        public List<GridConstructionTemplate> GetTemplatesByCategory(ConstructionCategory category)
+        {
+            return _templates.FindAll(t => t.Category == category);
+        }
+        
+        /// <summary>
+        /// Get available templates for player
+        /// </summary>
+        public List<GridConstructionTemplate> GetAvailableTemplates(int playerSkillLevel, List<string> playerUnlocks, float availableFunds)
+        {
+            return _templates.FindAll(t => t.CanPlayerBuild(playerSkillLevel, playerUnlocks, availableFunds));
+        }
+        
+        /// <summary>
+        /// Find template by name
+        /// </summary>
+        public GridConstructionTemplate FindTemplate(string templateName)
+        {
+            return _templates.Find(t => t.TemplateName.Equals(templateName, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+    
+    [System.Serializable]
+    public class ConstructionSet
+    {
+        [SerializeField] private string _setName = "";
+        [SerializeField] private string _description = "";
+        [SerializeField] private List<GridConstructionTemplate> _templates = new List<GridConstructionTemplate>();
+        [SerializeField] private bool _requiresAllTemplates = false;
+        [SerializeField] private float _setBonusMultiplier = 1.1f; // 10% bonus when using full set
+        
+        public string SetName => _setName;
+        public string Description => _description;
+        public List<GridConstructionTemplate> Templates => _templates;
+        public bool RequiresAllTemplates => _requiresAllTemplates;
+        public float SetBonusMultiplier => _setBonusMultiplier;
+    }
+    
+    [System.Serializable]
+    public class GridConstructionProject
+    {
+        [SerializeField] private string _projectId;
+        [SerializeField] private string _projectName;
+        [SerializeField] private GridConstructionTemplate _template;
+        [SerializeField] private Vector3Int _gridCoordinate;
+        [SerializeField] private int _rotation;
+        [SerializeField] private ConstructionStatus _status;
+        [SerializeField] private float _progress;
+        [SerializeField] private DateTime _startTime;
+        [SerializeField] private DateTime _estimatedCompletion;
+        [SerializeField] private List<string> _assignedWorkers = new List<string>();
+        
+        // Properties
+        public string ProjectId { get => _projectId; set => _projectId = value; }
+        public string ProjectName { get => _projectName; set => _projectName = value; }
+        public GridConstructionTemplate Template { get => _template; set => _template = value; }
+        public Vector3Int GridCoordinate { get => _gridCoordinate; set => _gridCoordinate = value; }
+        
+        /// <summary>
+        /// Get/Set 2D grid coordinate (backward compatibility)
+        /// </summary>
+        [System.Obsolete("Use GridCoordinate for 3D coordinates")]
+        public Vector2Int GridCoordinate2D 
+        { 
+            get => new Vector2Int(_gridCoordinate.x, _gridCoordinate.y); 
+            set => _gridCoordinate = new Vector3Int(value.x, value.y, 0); 
+        }
+        public int Rotation { get => _rotation; set => _rotation = value; }
+        public ConstructionStatus Status { get => _status; set => _status = value; }
+        public float Progress { get => _progress; set => _progress = value; }
+        public DateTime StartTime { get => _startTime; set => _startTime = value; }
+        public DateTime EstimatedCompletion { get => _estimatedCompletion; set => _estimatedCompletion = value; }
+        public List<string> AssignedWorkers => _assignedWorkers;
+        
+        public bool IsComplete => _progress >= 1f && _status == ConstructionStatus.Complete;
+        public TimeSpan RemainingTime => _estimatedCompletion - DateTime.Now;
+    }
+    
+    public enum ConstructionCategory
+    {
+        All,           // For filtering - shows all categories
+        Structure,
+        Room,
+        Equipment,
+        Utility,
+        Decoration,
+        Security,
+        Infrastructure,
+        Processing,
+        Storage
+    }
+    
+    public enum ConstructionStatus
+    {
+        Planned,
+        InProgress,
+        Paused,
+        Complete,
+        Cancelled,
+        RequiresAttention
+    }
+    
+    public enum PlacementValidation
+    {
+        Valid,
+        InvalidPosition,
+        InsufficientResources,
+        MissingRequirements,
+        CollisionDetected,
+        OutOfBounds
+    }
+}

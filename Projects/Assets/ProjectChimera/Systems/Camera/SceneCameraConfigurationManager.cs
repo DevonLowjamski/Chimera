@@ -1,0 +1,469 @@
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using ProjectChimera.Data.Camera;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace ProjectChimera.Systems.Camera
+{
+    /// <summary>
+    /// Manages scene-specific camera configurations and automatic loading based on scene type
+    /// Phase 3 implementation - allows different camera behaviors per scene
+    /// </summary>
+    public class SceneCameraConfigurationManager : MonoBehaviour
+    {
+        [Header("Configuration Registry")]
+        [SerializeField] private SceneCameraConfigurationEntry[] _sceneConfigurations;
+        [SerializeField] private CameraLevelConfigurationSO _defaultConfiguration;
+        [SerializeField] private bool _autoLoadOnSceneChange = true;
+        [SerializeField] private bool _debugMode = false;
+        
+        [Header("Component References")]
+        [SerializeField] private AdvancedCameraController _cameraController;
+        
+        // Runtime state
+        private Dictionary<SceneType, List<CameraLevelConfigurationSO>> _configurationCache;
+        private Dictionary<string, SceneType> _sceneNameToTypeMap;
+        private CameraLevelConfigurationSO _currentConfiguration;
+        private string _currentSceneName;
+        private SceneType _currentSceneType;
+        private bool _isInitialized = false;
+        
+        [System.Serializable]
+        public class SceneCameraConfigurationEntry
+        {
+            [Header("Scene Identification")]
+            public SceneType sceneType;
+            public string[] sceneNames; // Multiple scenes can use same configuration
+            public string[] sceneNamePatterns; // Wildcard support (e.g., "Facility_*")
+            
+            [Header("Configuration Options")]
+            public CameraLevelConfigurationSO primaryConfiguration;
+            public CameraLevelConfigurationSO[] alternateConfigurations; // For different sub-areas or modes
+            
+            [Header("Loading Behavior")]
+            public bool autoApplyOnLoad = true;
+            public float transitionDuration = 2f;
+            public bool resetCameraPosition = true;
+        }
+        
+        private void Awake()
+        {
+            InitializeConfigurationManager();
+        }
+        
+        private void Start()
+        {
+            // Auto-detect current scene and apply appropriate configuration
+            if (_autoLoadOnSceneChange)
+            {
+                LoadConfigurationForCurrentScene();
+            }
+        }
+        
+        private void OnEnable()
+        {
+            if (_autoLoadOnSceneChange)
+            {
+                SceneManager.sceneLoaded += OnSceneLoaded;
+                SceneManager.sceneUnloaded += OnSceneUnloaded;
+            }
+        }
+        
+        private void OnDisable()
+        {
+            if (_autoLoadOnSceneChange)
+            {
+                SceneManager.sceneLoaded -= OnSceneLoaded;
+                SceneManager.sceneUnloaded -= OnSceneUnloaded;
+            }
+        }
+        
+        private void InitializeConfigurationManager()
+        {
+            try
+            {
+                // Auto-find camera controller if not assigned
+                if (_cameraController == null)
+                {
+                    _cameraController = FindObjectOfType<AdvancedCameraController>();
+                }
+                
+                if (_cameraController == null)
+                {
+                    Debug.LogError("[SceneCameraConfigurationManager] AdvancedCameraController not found!");
+                    return;
+                }
+                
+                // Build configuration cache
+                BuildConfigurationCache();
+                
+                // Build scene name mapping
+                BuildSceneNameMapping();
+                
+                _isInitialized = true;
+                
+                if (_debugMode)
+                {
+                    Debug.Log($"[SceneCameraConfigurationManager] Initialized with {_sceneConfigurations.Length} configuration entries");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[SceneCameraConfigurationManager] Error during initialization: {ex.Message}");
+            }
+        }
+        
+        private void BuildConfigurationCache()
+        {
+            _configurationCache = new Dictionary<SceneType, List<CameraLevelConfigurationSO>>();
+            
+            foreach (var entry in _sceneConfigurations)
+            {
+                if (!_configurationCache.ContainsKey(entry.sceneType))
+                {
+                    _configurationCache[entry.sceneType] = new List<CameraLevelConfigurationSO>();
+                }
+                
+                // Add primary configuration
+                if (entry.primaryConfiguration != null)
+                {
+                    _configurationCache[entry.sceneType].Add(entry.primaryConfiguration);
+                }
+                
+                // Add alternate configurations
+                if (entry.alternateConfigurations != null)
+                {
+                    foreach (var altConfig in entry.alternateConfigurations)
+                    {
+                        if (altConfig != null)
+                        {
+                            _configurationCache[entry.sceneType].Add(altConfig);
+                        }
+                    }
+                }
+            }
+            
+            if (_debugMode)
+            {
+                Debug.Log($"[SceneCameraConfigurationManager] Built cache with {_configurationCache.Count} scene types");
+            }
+        }
+        
+        private void BuildSceneNameMapping()
+        {
+            _sceneNameToTypeMap = new Dictionary<string, SceneType>();
+            
+            foreach (var entry in _sceneConfigurations)
+            {
+                // Map exact scene names
+                if (entry.sceneNames != null)
+                {
+                    foreach (var sceneName in entry.sceneNames)
+                    {
+                        if (!string.IsNullOrEmpty(sceneName))
+                        {
+                            _sceneNameToTypeMap[sceneName] = entry.sceneType;
+                        }
+                    }
+                }
+            }
+        }
+        
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (_debugMode)
+            {
+                Debug.Log($"[SceneCameraConfigurationManager] Scene loaded: {scene.name}");
+            }
+            
+            LoadConfigurationForScene(scene.name);
+        }
+        
+        private void OnSceneUnloaded(Scene scene)
+        {
+            if (_debugMode)
+            {
+                Debug.Log($"[SceneCameraConfigurationManager] Scene unloaded: {scene.name}");
+            }
+        }
+        
+        private void LoadConfigurationForCurrentScene()
+        {
+            var currentScene = SceneManager.GetActiveScene();
+            LoadConfigurationForScene(currentScene.name);
+        }
+        
+        private void LoadConfigurationForScene(string sceneName)
+        {
+            if (!_isInitialized || string.IsNullOrEmpty(sceneName))
+                return;
+            
+            try
+            {
+                var sceneType = DetermineSceneType(sceneName);
+                var configuration = GetPrimaryConfigurationForSceneType(sceneType);
+                
+                if (configuration != null)
+                {
+                    ApplyConfiguration(configuration, sceneName, sceneType);
+                }
+                else
+                {
+                    ApplyDefaultConfiguration(sceneName);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[SceneCameraConfigurationManager] Error loading configuration for scene '{sceneName}': {ex.Message}");
+                ApplyDefaultConfiguration(sceneName);
+            }
+        }
+        
+        private SceneType DetermineSceneType(string sceneName)
+        {
+            // Check exact name mapping first
+            if (_sceneNameToTypeMap.TryGetValue(sceneName, out var mappedType))
+            {
+                return mappedType;
+            }
+            
+            // Check pattern matching
+            foreach (var entry in _sceneConfigurations)
+            {
+                if (entry.sceneNamePatterns != null)
+                {
+                    foreach (var pattern in entry.sceneNamePatterns)
+                    {
+                        if (MatchesPattern(sceneName, pattern))
+                        {
+                            return entry.sceneType;
+                        }
+                    }
+                }
+            }
+            
+            // Default based on scene name heuristics
+            var lowerSceneName = sceneName.ToLower();
+            if (lowerSceneName.Contains("lab") || lowerSceneName.Contains("laboratory"))
+                return SceneType.Laboratory;
+            if (lowerSceneName.Contains("genetic") || lowerSceneName.Contains("breeding"))
+                return SceneType.Genetics;
+            if (lowerSceneName.Contains("outdoor") || lowerSceneName.Contains("field"))
+                return SceneType.Outdoor;
+            if (lowerSceneName.Contains("processing") || lowerSceneName.Contains("harvest"))
+                return SceneType.Processing;
+            if (lowerSceneName.Contains("tutorial") || lowerSceneName.Contains("training"))
+                return SceneType.Tutorial;
+            
+            return SceneType.Facility; // Default fallback
+        }
+        
+        private bool MatchesPattern(string sceneName, string pattern)
+        {
+            if (string.IsNullOrEmpty(pattern))
+                return false;
+            
+            // Simple wildcard matching (* at end)
+            if (pattern.EndsWith("*"))
+            {
+                var prefix = pattern.Substring(0, pattern.Length - 1);
+                return sceneName.StartsWith(prefix, System.StringComparison.OrdinalIgnoreCase);
+            }
+            
+            // Exact match
+            return string.Equals(sceneName, pattern, System.StringComparison.OrdinalIgnoreCase);
+        }
+        
+        private CameraLevelConfigurationSO GetPrimaryConfigurationForSceneType(SceneType sceneType)
+        {
+            if (_configurationCache.TryGetValue(sceneType, out var configurations) && configurations.Count > 0)
+            {
+                return configurations[0]; // First configuration is primary
+            }
+            
+            return null;
+        }
+        
+        private void ApplyConfiguration(CameraLevelConfigurationSO configuration, string sceneName, SceneType sceneType)
+        {
+            if (_cameraController == null || configuration == null)
+                return;
+            
+            _currentConfiguration = configuration;
+            _currentSceneName = sceneName;
+            _currentSceneType = sceneType;
+            
+            // Apply configuration to camera controller
+            _cameraController.SetCameraLevelConfiguration(configuration);
+            
+            // Get transition settings for this scene type
+            var configEntry = GetConfigurationEntry(sceneType);
+            var shouldResetPosition = configEntry?.resetCameraPosition ?? true;
+            var transitionDuration = configEntry?.transitionDuration ?? 2f;
+            
+            // Reset camera to appropriate level if needed
+            if (shouldResetPosition)
+            {
+                var defaultLevel = configuration.GetAvailableLevels().FirstOrDefault();
+                _cameraController.SetCameraLevel(defaultLevel);
+            }
+            
+            if (_debugMode)
+            {
+                Debug.Log($"[SceneCameraConfigurationManager] Applied configuration '{configuration.ConfigurationName}' for scene '{sceneName}' (Type: {sceneType})");
+            }
+        }
+        
+        private void ApplyDefaultConfiguration(string sceneName)
+        {
+            if (_defaultConfiguration != null && _cameraController != null)
+            {
+                ApplyConfiguration(_defaultConfiguration, sceneName, SceneType.Facility);
+                Debug.LogWarning($"[SceneCameraConfigurationManager] Applied default configuration for unknown scene: {sceneName}");
+            }
+            else
+            {
+                Debug.LogError($"[SceneCameraConfigurationManager] No configuration available for scene: {sceneName}");
+            }
+        }
+        
+        private SceneCameraConfigurationEntry GetConfigurationEntry(SceneType sceneType)
+        {
+            return _sceneConfigurations.FirstOrDefault(entry => entry.sceneType == sceneType);
+        }
+        
+        /// <summary>
+        /// Manually set configuration for current scene
+        /// </summary>
+        public void SetConfiguration(CameraLevelConfigurationSO configuration)
+        {
+            if (configuration != null && _cameraController != null)
+            {
+                _currentConfiguration = configuration;
+                _cameraController.SetCameraLevelConfiguration(configuration);
+                
+                if (_debugMode)
+                {
+                    Debug.Log($"[SceneCameraConfigurationManager] Manually set configuration: {configuration.ConfigurationName}");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Get all available configurations for a scene type
+        /// </summary>
+        public CameraLevelConfigurationSO[] GetConfigurationsForSceneType(SceneType sceneType)
+        {
+            if (_configurationCache.TryGetValue(sceneType, out var configurations))
+            {
+                return configurations.ToArray();
+            }
+            
+            return new CameraLevelConfigurationSO[0];
+        }
+        
+        /// <summary>
+        /// Switch to alternate configuration for current scene type
+        /// </summary>
+        public bool SwitchToAlternateConfiguration(int configurationIndex)
+        {
+            var availableConfigs = GetConfigurationsForSceneType(_currentSceneType);
+            
+            if (configurationIndex >= 0 && configurationIndex < availableConfigs.Length)
+            {
+                SetConfiguration(availableConfigs[configurationIndex]);
+                return true;
+            }
+            
+            return false;
+        }
+        
+        /// <summary>
+        /// Get configuration optimized for specific area within scene
+        /// </summary>
+        public CameraLevelConfigurationSO GetConfigurationForArea(string areaName)
+        {
+            var availableConfigs = GetConfigurationsForSceneType(_currentSceneType);
+            
+            // Find configuration with matching name or description
+            foreach (var config in availableConfigs)
+            {
+                if (config.ConfigurationName.ToLower().Contains(areaName.ToLower()) ||
+                    config.Description.ToLower().Contains(areaName.ToLower()))
+                {
+                    return config;
+                }
+            }
+            
+            return _currentConfiguration; // Fallback to current
+        }
+        
+        #region Public Interface
+        
+        /// <summary>
+        /// Current camera configuration
+        /// </summary>
+        public CameraLevelConfigurationSO CurrentConfiguration => _currentConfiguration;
+        
+        /// <summary>
+        /// Current scene information
+        /// </summary>
+        public string CurrentSceneName => _currentSceneName;
+        public SceneType CurrentSceneType => _currentSceneType;
+        
+        /// <summary>
+        /// Check if manager is properly initialized
+        /// </summary>
+        public bool IsInitialized => _isInitialized;
+        
+        /// <summary>
+        /// Enable/disable debug logging
+        /// </summary>
+        public void SetDebugMode(bool enabled)
+        {
+            _debugMode = enabled;
+            Debug.Log($"[SceneCameraConfigurationManager] Debug mode {(enabled ? "enabled" : "disabled")}");
+        }
+        
+        /// <summary>
+        /// Force reload configuration for current scene
+        /// </summary>
+        public void ReloadCurrentConfiguration()
+        {
+            LoadConfigurationForCurrentScene();
+        }
+        
+        #endregion
+        
+        #if UNITY_EDITOR
+        
+        /// <summary>
+        /// Editor-only method for testing configuration loading
+        /// </summary>
+        [ContextMenu("Test Configuration Loading")]
+        private void TestConfigurationLoading()
+        {
+            if (Application.isPlaying)
+            {
+                var currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+                Debug.Log($"[SceneCameraConfigurationManager] Testing configuration for scene: {currentScene.name}");
+                
+                var sceneType = DetermineSceneType(currentScene.name);
+                Debug.Log($"Determined scene type: {sceneType}");
+                
+                var config = GetPrimaryConfigurationForSceneType(sceneType);
+                Debug.Log($"Primary configuration: {(config ? config.ConfigurationName : "None")}");
+                
+                var allConfigs = GetConfigurationsForSceneType(sceneType);
+                Debug.Log($"Available configurations: {allConfigs.Length}");
+            }
+            else
+            {
+                Debug.Log("[SceneCameraConfigurationManager] Test only works during play mode");
+            }
+        }
+        
+        #endif
+    }
+}

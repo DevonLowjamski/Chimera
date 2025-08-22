@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<engine:UXML 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xmlns:engine="UnityEngine.UIElements" 
+    xmlns:editor="UnityEditor.UIElements" 
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd">
+
+    <!-- Facility World Map Panel -->
+    <engine:VisualElement name="root" class="facility-world-map-panel">
+        
+        <!-- Header Section -->
+        <engine:VisualElement class="header-section">
+            <engine:Label text="Facility Management" class="panel-title" />
+            <engine:Label name="portfolio-value" text="Portfolio: $0 | ROI: 0%" class="portfolio-value" />
+        </engine:VisualElement>
+
+        <!-- Main Content Area -->
+        <engine:VisualElement class="content-area">
+            
+            <!-- Left Panel: Facility List -->
+            <engine:VisualElement class="facility-list-panel">
+                <engine:Label text="Your Facilities" class="section-title" />
+                <engine:ScrollView name="facility-list" class="facility-list">
+                    <!-- Facility items will be dynamically populated -->
+                </engine:ScrollView>
+            </engine:VisualElement>
+
+            <!-- Right Panel: Facility Details -->
+            <engine:VisualElement class="facility-detail-panel">
+                <engine:Label text="Facility Details" class="section-title" />
+                
+                <!-- Facility Detail Container -->
+                <engine:VisualElement name="facility-detail" class="facility-detail">
+                    <engine:Label text="Select a facility to view details" class="detail-placeholder" />
+                </engine:VisualElement>
+
+                <!-- Action Buttons -->
+                <engine:VisualElement class="action-buttons">
+                    <engine:Button name="switch-button" text="Switch To" class="action-btn switch-btn" />
+                    <engine:Button name="upgrade-button" text="Upgrade" class="action-btn upgrade-btn" />
+                    <engine:Button name="purchase-button" text="Purchase New" class="action-btn purchase-btn" />
+                    <engine:Button name="sell-button" text="Sell" class="action-btn sell-btn" />
+                </engine:VisualElement>
+            </engine:VisualElement>
+        </engine:VisualElement>
+
+        <!-- Footer Section -->
+        <engine:VisualElement class="footer-section">
+            <engine:Label name="status-label" text="Ready" class="status-label" />
+        </engine:VisualElement>
+
+    </engine:VisualElement>
+</engine:UXML>

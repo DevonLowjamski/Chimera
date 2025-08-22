@@ -1,0 +1,19 @@
+{
+    "name": "ProjectChimera.Systems.Audio",
+    "rootNamespace": "ProjectChimera.Systems.Audio",
+    "references": [
+        "ProjectChimera.Core",
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Systems.Environment"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

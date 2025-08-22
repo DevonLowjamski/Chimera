@@ -1,0 +1,95 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/ProjectChimera/UI/Styles/ConstructionPalette.uss?fileID=7433441132597879392&amp;guid=52842363b47ee4247b40575a7c370b23&amp;type=3#ConstructionPalette" />
+
+    <!-- Main construction palette container -->
+    <ui:VisualElement name="root" class="construction-palette">
+
+        <!-- Tab header -->
+        <ui:VisualElement name="tab-container" class="tab-container">
+            <ui:Button text="Construction" name="construction-tab" class="palette-tab construction-tab" />
+            <ui:Button text="Schematics" name="schematics-tab" class="palette-tab schematics-tab active" />
+            <ui:Button text="Tools" name="tools-tab" class="palette-tab tools-tab" />
+        </ui:VisualElement>
+
+        <!-- Search and filter container -->
+        <ui:VisualElement name="search-container" class="search-container">
+            <ui:TextField placeholder-text="Search items..." name="search-field" class="palette-search" />
+            <ui:DropdownField label="Category" name="category-filter" class="category-filter" />
+        </ui:VisualElement>
+
+        <!-- Main content area -->
+        <ui:VisualElement name="content-container" class="palette-content">
+
+            <!-- Construction panel -->
+            <ui:ScrollView name="construction-panel" class="construction-panel palette-panel" style="display: none;">
+                <ui:VisualElement name="construction-grid" class="palette-grid">
+                    <!-- Construction items will be populated dynamically -->
+                </ui:VisualElement>
+            </ui:ScrollView>
+
+            <!-- Schematics panel -->
+            <ui:ScrollView name="schematics-panel" class="schematics-panel palette-panel" style="display: flex;">
+                <ui:VisualElement name="schematics-header" class="panel-header">
+                    <ui:Label text="Available Schematics" class="panel-title" />
+                    <ui:Button text="+" name="add-schematic-btn" class="add-button" tooltip="Add new schematic" />
+                </ui:VisualElement>
+
+                <ui:VisualElement name="schematics-grid" class="palette-grid">
+                    <!-- Schematic items will be populated dynamically -->
+                </ui:VisualElement>
+
+                <!-- Empty state for schematics -->
+                <ui:VisualElement name="schematics-empty" class="palette-empty" style="display: none;">
+                    <ui:Label text="No schematics available" class="palette-empty-text" />
+                    <ui:Label text="Create schematics by selecting objects and pressing Ctrl+S" class="palette-empty-text" />
+                </ui:VisualElement>
+            </ui:ScrollView>
+
+            <!-- Tools panel -->
+            <ui:ScrollView name="tools-panel" class="tools-panel palette-panel" style="display: none;">
+                <ui:VisualElement name="tools-grid" class="palette-grid">
+
+                    <!-- Selection tool -->
+                    <ui:VisualElement name="selection-tool" class="palette-item palette-item-tool">
+                        <ui:VisualElement name="selection-tool-icon" class="palette-item-icon" />
+                        <ui:Label text="Select" class="palette-item-name" />
+                    </ui:VisualElement>
+
+                    <!-- Delete tool -->
+                    <ui:VisualElement name="delete-tool" class="palette-item palette-item-tool">
+                        <ui:VisualElement name="delete-tool-icon" class="palette-item-icon" />
+                        <ui:Label text="Delete" class="palette-item-name" />
+                    </ui:VisualElement>
+
+                    <!-- Copy tool -->
+                    <ui:VisualElement name="copy-tool" class="palette-item palette-item-tool">
+                        <ui:VisualElement name="copy-tool-icon" class="palette-item-icon" />
+                        <ui:Label text="Copy" class="palette-item-name" />
+                    </ui:VisualElement>
+
+                    <!-- Move tool -->
+                    <ui:VisualElement name="move-tool" class="palette-item palette-item-tool">
+                        <ui:VisualElement name="move-tool-icon" class="palette-item-icon" />
+                        <ui:Label text="Move" class="palette-item-name" />
+                    </ui:VisualElement>
+
+                    <!-- Rotate tool -->
+                    <ui:VisualElement name="rotate-tool" class="palette-item palette-item-tool">
+                        <ui:VisualElement name="rotate-tool-icon" class="palette-item-icon" />
+                        <ui:Label text="Rotate" class="palette-item-name" />
+                    </ui:VisualElement>
+
+                </ui:VisualElement>
+            </ui:ScrollView>
+
+        </ui:VisualElement>
+
+        <!-- Status bar -->
+        <ui:VisualElement name="status-bar" class="status-bar">
+            <ui:Label text="Ready" name="status-text" class="status-text" />
+            <ui:Label text="0 items" name="item-count" class="item-count" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

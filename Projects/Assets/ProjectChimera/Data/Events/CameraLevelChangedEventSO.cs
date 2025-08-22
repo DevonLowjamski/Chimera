@@ -1,0 +1,188 @@
+using UnityEngine;
+using ProjectChimera.Data.Camera;
+
+namespace ProjectChimera.Data.Events
+{
+    /// <summary>
+    /// Event channel for camera level changes
+    /// Phase 3 implementation - carries detailed camera level change information
+    /// </summary>
+    [CreateAssetMenu(fileName = "New Camera Level Changed Event", menuName = "Project Chimera/Events/Camera Level Changed Event", order = 201)]
+    public class CameraLevelChangedEventSO : TypedGameEventSO<CameraLevelChangeEventData>
+    {
+        [Header("Camera Level Event Configuration")]
+        [SerializeField] private bool _enableDebugLogging = false;
+        [SerializeField] private bool _validateLevelTransitions = true;
+        [SerializeField] private bool _trackLevelHistory = true;
+
+        public override void Invoke(CameraLevelChangeEventData data)
+        {
+            if (_enableDebugLogging)
+            {
+                Debug.Log($"[CameraLevelChangedEventSO] Camera level change event: {data.PreviousLevel} → {data.NewLevel} at {data.Timestamp:HH:mm:ss}");
+                
+                if (data.TargetObject != null)
+                {
+                    Debug.Log($"[CameraLevelChangedEventSO] Target object: {data.TargetObject.name} at position {data.TargetPosition}");
+                }
+            }
+
+            if (_validateLevelTransitions && !IsValidLevelTransition(data.PreviousLevel, data.NewLevel))
+            {
+                Debug.LogWarning($"[CameraLevelChangedEventSO] Potentially invalid level transition: {data.PreviousLevel} → {data.NewLevel}");
+            }
+
+            base.Invoke(data);
+        }
+
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+            
+            // Validate configuration
+            if (_enableDebugLogging)
+            {
+                Debug.Log($"[CameraLevelChangedEventSO] Debug logging enabled for {name}");
+            }
+        }
+
+        /// <summary>
+        /// Validate if a camera level transition is allowed
+        /// </summary>
+        private bool IsValidLevelTransition(CameraLevel from, CameraLevel to)
+        {
+            // All level transitions are valid for camera system
+            // This can be extended to enforce business rules like:
+            // - Can't zoom to Plant level without a plant target
+            // - Can't zoom to Bench level without being in Room first (depending on navigation logic)
+            return from != to; // Only invalid if switching to same level
+        }
+
+        /// <summary>
+        /// Helper method to create camera level change data
+        /// </summary>
+        public static CameraLevelChangeEventData CreateLevelChangeData(CameraLevel newLevel, CameraLevel previousLevel, 
+            Transform targetObject = null, Vector3? targetPosition = null, string triggerSource = "")
+        {
+            return new CameraLevelChangeEventData
+            {
+                NewLevel = newLevel,
+                PreviousLevel = previousLevel,
+                TargetObject = targetObject,
+                TargetPosition = targetPosition ?? Vector3.zero,
+                Timestamp = System.DateTime.Now,
+                IsValid = newLevel != previousLevel,
+                TriggerSource = triggerSource,
+                TransitionDuration = 0f // Will be set by camera controller
+            };
+        }
+
+        /// <summary>
+        /// Helper method to create zoom out event data
+        /// </summary>
+        public static CameraLevelChangeEventData CreateZoomOutData(CameraLevel currentLevel, string triggerSource = "ZoomOut")
+        {
+            var parentLevel = GetParentLevel(currentLevel);
+            return CreateLevelChangeData(parentLevel, currentLevel, null, null, triggerSource);
+        }
+
+        /// <summary>
+        /// Helper method to create focus event data
+        /// </summary>
+        public static CameraLevelChangeEventData CreateFocusData(Transform target, CameraLevel targetLevel, CameraLevel currentLevel, string triggerSource = "Focus")
+        {
+            return CreateLevelChangeData(targetLevel, currentLevel, target, target?.position, triggerSource);
+        }
+
+        /// <summary>
+        /// Get the parent level for zoom out operations
+        /// </summary>
+        private static CameraLevel GetParentLevel(CameraLevel currentLevel)
+        {
+            return currentLevel switch
+            {
+                CameraLevel.Plant => CameraLevel.Bench,
+                CameraLevel.Bench => CameraLevel.Room,
+                CameraLevel.Room => CameraLevel.Facility,
+                CameraLevel.Facility => CameraLevel.Facility, // Already at top level
+                _ => CameraLevel.Facility
+            };
+        }
+    }
+
+    /// <summary>
+    /// Data structure for camera level change events
+    /// Contains all relevant information about camera transitions
+    /// </summary>
+    [System.Serializable]
+    public struct CameraLevelChangeEventData
+    {
+        [Header("Level Transition")]
+        public CameraLevel NewLevel;
+        public CameraLevel PreviousLevel;
+        
+        [Header("Target Information")]
+        public Transform TargetObject;      // The object being focused on (can be null for zoom out)
+        public Vector3 TargetPosition;      // The target position for camera transition
+        
+        [Header("Event Metadata")]
+        public System.DateTime Timestamp;
+        public bool IsValid;
+        public float TransitionDuration;    // How long the transition took/will take
+        
+        [Header("Optional Context")]
+        public string TriggerSource;       // e.g., "Keyboard", "Mouse Click", "UI Button", "ZoomOut"
+        public string UserContext;         // Optional user-specific context
+        
+        /// <summary>
+        /// Get a human-readable description of the level change
+        /// </summary>
+        public string GetDescription()
+        {
+            var description = $"Changed camera level from {PreviousLevel} to {NewLevel}";
+            
+            if (TargetObject != null)
+            {
+                description += $" focusing on {TargetObject.name}";
+            }
+            
+            if (!string.IsNullOrEmpty(TriggerSource))
+            {
+                description += $" via {TriggerSource}";
+            }
+            
+            return description;
+        }
+
+        /// <summary>
+        /// Check if this represents a valid level change
+        /// </summary>
+        public bool IsValidTransition => IsValid && NewLevel != PreviousLevel;
+
+        /// <summary>
+        /// Check if this is a zoom in operation (going to a more detailed level)
+        /// </summary>
+        public bool IsZoomIn => (int)NewLevel > (int)PreviousLevel;
+
+        /// <summary>
+        /// Check if this is a zoom out operation (going to a less detailed level)
+        /// </summary>
+        public bool IsZoomOut => (int)NewLevel < (int)PreviousLevel;
+
+        /// <summary>
+        /// Get the number of levels changed (positive for zoom in, negative for zoom out)
+        /// </summary>
+        public int LevelDelta => (int)NewLevel - (int)PreviousLevel;
+
+        /// <summary>
+        /// Check if this transition has a specific target
+        /// </summary>
+        public bool HasTarget => TargetObject != null;
+
+        /// <summary>
+        /// Get the time elapsed since the event (for debugging/analytics)
+        /// </summary>
+        public System.TimeSpan TimeSinceEvent => System.DateTime.Now - Timestamp;
+    }
+
+}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<engine:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:engine="UnityEngine.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd"
+>
+    <!-- Menu Section Template for organizing actions within menus -->
+    <engine:VisualElement name="menu-section" class="menu-section">
+        <engine:Label name="section-title" text="Section Title" class="menu-section-title" />
+        <engine:VisualElement name="section-divider" class="menu-divider" />
+        <engine:VisualElement name="section-content" class="menu-section-content">
+            <!-- Section content will be populated dynamically by code -->
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>

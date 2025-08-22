@@ -1,0 +1,717 @@
+/* 
+ * Project Chimera - Settings & Configuration Styles
+ * Comprehensive system preferences interface with gaming aesthetics
+ */
+
+/* === ROOT AND LAYOUT === */
+.settings-root {
+    flex-direction: column;
+    height: 100%;
+    background-color: rgb(8, 12, 20);
+    color: rgb(220, 220, 220);
+    font-size: 14px;
+}
+
+/* === HEADER SECTION === */
+.settings-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, rgb(20, 15, 35), rgb(35, 25, 50));
+    border-bottom-width: 2px;
+    border-bottom-color: rgb(150, 100, 255);
+    min-height: 80px;
+}
+
+.header-left {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.panel-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: rgb(200, 150, 255);
+    margin-bottom: 4px;
+}
+
+.panel-subtitle {
+    font-size: 14px;
+    color: rgb(170, 130, 220);
+    font-weight: 500;
+}
+
+/* === PROFILE SECTION === */
+.profile-section {
+    flex-direction: row;
+    align-items: center;
+}
+
+.profile-label {
+    font-size: 12px;
+    color: rgb(150, 180, 220);
+    margin-right: 8px;
+    font-weight: 500;
+}
+
+.profile-dropdown {
+    background-color: rgb(25, 35, 50);
+    border-color: rgb(70, 100, 140);
+    border-radius: 6px;
+    color: rgb(220, 220, 220);
+    margin-right: 12px;
+    min-width: 150px;
+}
+
+.profile-name-field {
+    background-color: rgb(25, 35, 50);
+    border-color: rgb(70, 100, 140);
+    border-radius: 6px;
+    color: rgb(220, 220, 220);
+    margin-right: 12px;
+    min-width: 150px;
+}
+
+.profile-actions {
+    flex-direction: row;
+    align-items: center;
+}
+
+.profile-btn {
+    padding: 6px 12px;
+    margin-left: 6px;
+    border-radius: 4px;
+    border-width: 0;
+    font-weight: 500;
+    font-size: 12px;
+    transition-duration: 0.2s;
+}
+
+.save-btn {
+    background-color: rgb(120, 180, 120);
+    color: white;
+}
+
+.save-btn:hover {
+    background-color: rgb(140, 200, 140);
+    scale: 1.05;
+}
+
+.delete-btn {
+    background-color: rgb(200, 100, 100);
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: rgb(220, 120, 120);
+    scale: 1.05;
+}
+
+.duplicate-btn {
+    background-color: rgb(100, 150, 200);
+    color: white;
+}
+
+.duplicate-btn:hover {
+    background-color: rgb(120, 170, 220);
+    scale: 1.05;
+}
+
+.import-btn, .export-btn {
+    background-color: rgb(180, 120, 60);
+    color: white;
+}
+
+.import-btn:hover, .export-btn:hover {
+    background-color: rgb(200, 140, 80);
+    scale: 1.05;
+}
+
+/* === TAB NAVIGATION === */
+.tab-navigation {
+    flex-direction: row;
+    background-color: rgb(18, 24, 32);
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(45, 65, 85);
+    padding: 0 24px;
+}
+
+.nav-tab {
+    padding: 12px 20px;
+    background-color: transparent;
+    color: rgb(150, 180, 220);
+    border-width: 0;
+    border-bottom-width: 3px;
+    border-bottom-color: transparent;
+    font-size: 14px;
+    font-weight: 500;
+    transition-duration: 0.3s;
+    margin-right: 4px;
+}
+
+.nav-tab:hover {
+    background-color: rgba(150, 100, 255, 0.1);
+    color: rgb(200, 150, 255);
+}
+
+.tab-active {
+    color: rgb(200, 150, 255);
+    border-bottom-color: rgb(150, 100, 255);
+    background-color: rgba(150, 100, 255, 0.15);
+}
+
+/* === MAIN CONTENT === */
+.settings-main {
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.tab-panel {
+    height: 100%;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.hidden {
+    display: none;
+}
+
+.settings-scroll {
+    flex-grow: 1;
+}
+
+.settings-content {
+    flex-direction: column;
+    padding: 24px;
+}
+
+/* === SETTINGS SECTIONS === */
+.settings-section {
+    margin-bottom: 32px;
+    padding: 20px;
+    background-color: rgb(15, 22, 30);
+    border-radius: 12px;
+    border-width: 1px;
+    border-color: rgb(45, 65, 85);
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: rgb(200, 220, 255);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(45, 65, 85);
+}
+
+.section-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.section-actions {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* === SETTING ROWS === */
+.setting-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(45, 65, 85, 0.5);
+    min-height: 40px;
+}
+
+.setting-row:last-child {
+    border-bottom-width: 0;
+}
+
+.setting-label {
+    font-size: 13px;
+    color: rgb(180, 200, 230);
+    font-weight: 500;
+    min-width: 200px;
+    flex-shrink: 0;
+}
+
+/* === SETTING CONTROLS === */
+.setting-dropdown {
+    background-color: rgb(25, 35, 50);
+    border-color: rgb(70, 100, 140);
+    border-radius: 6px;
+    color: rgb(220, 220, 220);
+    min-width: 150px;
+    margin-left: 16px;
+}
+
+.setting-slider {
+    flex-grow: 1;
+    margin: 0 16px;
+    max-width: 200px;
+}
+
+.setting-slider > .unity-base-slider__dragger {
+    background-color: rgb(150, 100, 255);
+    border-radius: 50%;
+    width: 14px;
+    height: 14px;
+    border-width: 2px;
+    border-color: rgb(130, 80, 235);
+}
+
+.setting-slider > .unity-base-slider__tracker {
+    background-color: rgb(60, 60, 80);
+    height: 4px;
+    border-radius: 2px;
+}
+
+.setting-slider > .unity-base-slider__fill {
+    background-color: rgb(150, 100, 255);
+    border-radius: 2px;
+}
+
+.setting-toggle {
+    margin-left: 16px;
+}
+
+.setting-toggle > .unity-toggle__input {
+    background-color: rgb(40, 40, 50);
+    border-color: rgb(70, 100, 140);
+    border-radius: 10px;
+    width: 40px;
+    height: 20px;
+}
+
+.setting-toggle > .unity-toggle__input:checked {
+    background-color: rgb(150, 100, 255);
+    border-color: rgb(130, 80, 235);
+}
+
+.setting-toggle > .unity-toggle__input > .unity-toggle__checkmark {
+    background-color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    margin: 2px;
+    transition-duration: 0.2s;
+}
+
+.setting-toggle > .unity-toggle__input:checked > .unity-toggle__checkmark {
+    translate: 18px 0;
+}
+
+.setting-field {
+    background-color: rgb(25, 35, 50);
+    border-color: rgb(70, 100, 140);
+    border-radius: 6px;
+    color: rgb(220, 220, 220);
+    min-width: 200px;
+    margin-left: 16px;
+    padding: 6px 10px;
+}
+
+.setting-value {
+    font-size: 12px;
+    font-weight: bold;
+    color: rgb(150, 100, 255);
+    font-family: "Roboto Mono", monospace;
+    min-width: 60px;
+    text-align: center;
+    margin-left: 8px;
+}
+
+/* === KEYBINDINGS === */
+.keybindings-container {
+    background-color: rgb(25, 35, 50);
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgb(70, 100, 140);
+    padding: 16px;
+    min-height: 200px;
+    align-items: center;
+    justify-content: center;
+}
+
+.placeholder-text {
+    color: rgb(120, 140, 160);
+    font-style: italic;
+    text-align: center;
+}
+
+/* === SYSTEM ACTIONS === */
+.system-actions {
+    flex-direction: row;
+    flex-grow: 1;
+    justify-content: flex-end;
+}
+
+.action-btn {
+    padding: 8px 16px;
+    margin-left: 8px;
+    border-radius: 6px;
+    border-width: 0;
+    font-weight: 500;
+    transition-duration: 0.2s;
+}
+
+.reset-btn {
+    background-color: rgb(200, 140, 80);
+    color: white;
+}
+
+.reset-btn:hover {
+    background-color: rgb(220, 160, 100);
+    scale: 1.05;
+}
+
+.clear-btn {
+    background-color: rgb(120, 120, 120);
+    color: white;
+}
+
+.clear-btn:hover {
+    background-color: rgb(140, 140, 140);
+    scale: 1.05;
+}
+
+.reset-all-btn {
+    background-color: rgb(200, 100, 100);
+    color: white;
+}
+
+.reset-all-btn:hover {
+    background-color: rgb(220, 120, 120);
+    scale: 1.05;
+}
+
+/* === SETTINGS ACTIONS BAR === */
+.settings-actions {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background-color: rgb(15, 22, 30);
+    border-top-width: 1px;
+    border-top-color: rgb(45, 65, 85);
+    min-height: 70px;
+}
+
+.actions-section {
+    flex-direction: row;
+    align-items: center;
+}
+
+.status-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: rgb(120, 200, 80);
+    font-family: "Roboto Mono", monospace;
+}
+
+.info-text {
+    font-size: 12px;
+    color: rgb(150, 180, 220);
+    font-style: italic;
+}
+
+.revert-btn {
+    background-color: rgb(120, 120, 120);
+    color: white;
+}
+
+.revert-btn:hover {
+    background-color: rgb(140, 140, 140);
+}
+
+.revert-btn:disabled {
+    background-color: rgb(60, 60, 70);
+    color: rgb(120, 120, 130);
+    scale: 1;
+}
+
+.defaults-btn {
+    background-color: rgb(180, 120, 60);
+    color: white;
+}
+
+.defaults-btn:hover {
+    background-color: rgb(200, 140, 80);
+}
+
+.apply-btn {
+    background-color: rgb(150, 100, 255);
+    color: white;
+}
+
+.apply-btn:hover {
+    background-color: rgb(170, 120, 255);
+}
+
+.apply-btn:disabled {
+    background-color: rgb(60, 60, 70);
+    color: rgb(120, 120, 130);
+    scale: 1;
+}
+
+/* === HOVER EFFECTS === */
+.settings-section:hover {
+    background-color: rgb(18, 26, 35);
+    border-color: rgb(55, 75, 95);
+}
+
+.setting-row:hover {
+    background-color: rgba(150, 100, 255, 0.05);
+    border-radius: 6px;
+    margin: 0 -8px;
+    padding: 12px 8px;
+}
+
+/* === RESPONSIVE BEHAVIOR === */
+.setting-dropdown:focus, .setting-field:focus {
+    border-color: rgb(150, 100, 255);
+    box-shadow: 0 0 8px rgba(150, 100, 255, 0.3);
+}
+
+.setting-slider:hover > .unity-base-slider__dragger {
+    background-color: rgb(170, 120, 255);
+    scale: 1.1;
+}
+
+.setting-toggle:hover > .unity-toggle__input {
+    border-color: rgb(150, 100, 255);
+}
+
+/* === ANIMATIONS === */
+@keyframes settings-glow {
+    0% { box-shadow: 0 0 10px rgba(150, 100, 255, 0.3); }
+    50% { box-shadow: 0 0 25px rgba(150, 100, 255, 0.6); }
+    100% { box-shadow: 0 0 10px rgba(150, 100, 255, 0.3); }
+}
+
+.settings-header {
+    animation: settings-glow 5s infinite;
+}
+
+@keyframes slider-highlight {
+    0% { background-color: rgb(150, 100, 255); }
+    50% { background-color: rgb(200, 150, 255); }
+    100% { background-color: rgb(150, 100, 255); }
+}
+
+.setting-slider:focus > .unity-base-slider__fill {
+    animation: slider-highlight 2s infinite;
+}
+
+@keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.settings-section {
+    animation: fade-in-up 0.3s ease-out;
+}
+
+@keyframes toggle-switch {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.setting-toggle > .unity-toggle__input:checked > .unity-toggle__checkmark {
+    animation: toggle-switch 0.3s ease-out;
+}
+
+/* === SPECIAL STATES === */
+.setting-row.modified {
+    background-color: rgba(150, 100, 255, 0.1);
+    border-left-width: 3px;
+    border-left-color: rgb(150, 100, 255);
+    padding-left: 5px;
+}
+
+.setting-row.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.setting-value.changed {
+    color: rgb(255, 200, 100);
+    font-weight: bold;
+}
+
+/* === TAB SPECIFIC STYLING === */
+.graphics-panel .setting-slider > .unity-base-slider__dragger {
+    background-color: rgb(100, 200, 100);
+    border-color: rgb(80, 180, 80);
+}
+
+.audio-panel .setting-slider > .unity-base-slider__dragger {
+    background-color: rgb(255, 150, 100);
+    border-color: rgb(235, 130, 80);
+}
+
+.controls-panel .setting-slider > .unity-base-slider__dragger {
+    background-color: rgb(100, 150, 255);
+    border-color: rgb(80, 130, 235);
+}
+
+.network-panel .setting-slider > .unity-base-slider__dragger {
+    background-color: rgb(120, 200, 255);
+    border-color: rgb(100, 180, 235);
+}
+
+.accessibility-panel .setting-slider > .unity-base-slider__dragger {
+    background-color: rgb(255, 200, 100);
+    border-color: rgb(235, 180, 80);
+}
+
+.advanced-panel .setting-slider > .unity-base-slider__dragger {
+    background-color: rgb(200, 100, 150);
+    border-color: rgb(180, 80, 130);
+}
+
+/* === RESPONSIVE DESIGN === */
+@media (max-width: 1200px) {
+    .settings-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 20px 24px;
+        min-height: 120px;
+    }
+    
+    .profile-section {
+        margin-top: 16px;
+        flex-wrap: wrap;
+    }
+    
+    .profile-actions {
+        margin-top: 8px;
+        width: 100%;
+    }
+    
+    .setting-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .setting-label {
+        margin-bottom: 8px;
+        min-width: auto;
+    }
+    
+    .setting-dropdown, .setting-field {
+        margin-left: 0;
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .setting-slider {
+        margin: 8px 0;
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .setting-toggle {
+        margin-left: 0;
+    }
+    
+    .setting-value {
+        margin-left: 0;
+        margin-top: 4px;
+    }
+}
+
+@media (max-width: 800px) {
+    .tab-navigation {
+        flex-wrap: wrap;
+        padding: 8px 16px;
+    }
+    
+    .nav-tab {
+        margin-bottom: 4px;
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+    
+    .settings-content {
+        padding: 16px;
+    }
+    
+    .settings-section {
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+    
+    .settings-actions {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 16px;
+    }
+    
+    .actions-section {
+        margin-bottom: 8px;
+        justify-content: center;
+    }
+    
+    .actions-section:last-child {
+        margin-bottom: 0;
+    }
+}
+
+/* === SCROLLBARS === */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: rgb(30, 30, 40);
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: rgb(150, 100, 255);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(170, 120, 255);
+}
+
+/* === HIGH CONTRAST MODE === */
+.high-contrast .settings-root {
+    background-color: rgb(0, 0, 0);
+    color: rgb(255, 255, 255);
+}
+
+.high-contrast .settings-section {
+    background-color: rgb(20, 20, 20);
+    border-color: rgb(255, 255, 255);
+    border-width: 2px;
+}
+
+.high-contrast .setting-dropdown, 
+.high-contrast .setting-field {
+    background-color: rgb(40, 40, 40);
+    border-color: rgb(255, 255, 255);
+    color: rgb(255, 255, 255);
+}
+
+.high-contrast .setting-slider > .unity-base-slider__dragger {
+    background-color: rgb(255, 255, 255);
+    border-color: rgb(0, 0, 0);
+}
+
+.high-contrast .setting-toggle > .unity-toggle__input:checked {
+    background-color: rgb(255, 255, 255);
+    border-color: rgb(0, 0, 0);
+}
+
+.high-contrast .setting-toggle > .unity-toggle__input:checked > .unity-toggle__checkmark {
+    background-color: rgb(0, 0, 0);
+}

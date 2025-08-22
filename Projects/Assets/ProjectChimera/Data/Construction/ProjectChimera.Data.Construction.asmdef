@@ -1,0 +1,17 @@
+{
+    "name": "ProjectChimera.Data.Construction",
+    "rootNamespace": "ProjectChimera.Data.Construction",
+    "references": [
+        "ProjectChimera.Core",
+        "ProjectChimera.Shared"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

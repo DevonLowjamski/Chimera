@@ -1,0 +1,19 @@
+{
+    "name": "ProjectChimera.Data.Facilities",
+    "rootNamespace": "ProjectChimera.Data.Facilities",
+    "references": [
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data.Environment",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Data.Equipment"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

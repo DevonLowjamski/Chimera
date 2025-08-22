@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<engine:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:engine="UnityEngine.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd"
+>
+    <!-- Menu Container Template for contextual menus -->
+    <engine:VisualElement name="menu-container" class="menu-container">
+        <engine:VisualElement name="menu-header" class="menu-header">
+            <engine:Label name="menu-title" text="Menu Title" class="menu-header" />
+        </engine:VisualElement>
+        
+        <engine:VisualElement name="menu-content" class="menu-content">
+            <!-- Content will be populated dynamically by code -->
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>

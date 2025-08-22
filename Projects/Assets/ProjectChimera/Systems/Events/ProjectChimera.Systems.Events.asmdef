@@ -1,0 +1,19 @@
+{
+    "name": "ProjectChimera.Systems.Events",
+    "rootNamespace": "ProjectChimera.Systems.Events",
+    "references": [
+        "ProjectChimera.Core",
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data.Events",
+        "ProjectChimera.Systems.Gameplay"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

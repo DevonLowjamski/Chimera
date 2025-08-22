@@ -1,0 +1,25 @@
+{
+    "name": "ProjectChimera.Systems.Registry",
+    "rootNamespace": "ProjectChimera.Systems.Registry",
+    "references": [
+        "ProjectChimera.Core",
+        "ProjectChimera.Data",
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Data.Cultivation",
+        "ProjectChimera.Data.Genetics",
+        "ProjectChimera.Data.Economy",
+        "ProjectChimera.Data.Economy.Market",
+        "ProjectChimera.Data.Economy.Trading",
+        "ProjectChimera.Data.Economy.Configuration"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

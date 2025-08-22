@@ -1,0 +1,252 @@
+using UnityEngine;
+using ProjectChimera.Shared;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.UI
+{
+    /// <summary>
+    /// Configuration for Advanced Menu System
+    /// Defines menu behavior, styling, and performance settings
+    /// </summary>
+    [CreateAssetMenu(fileName = "New Advanced Menu Config", menuName = "Project Chimera/UI/Advanced Menu Config")]
+    public class AdvancedMenuConfig : ChimeraConfigSO
+    {
+        [Header("Menu Behavior")]
+        [SerializeField] private bool _enableDynamicCategories = true;
+        [SerializeField] private bool _enableContextAwareFiltering = true;
+        [SerializeField] private bool _closeOnActionExecute = true;
+        [SerializeField] private bool _closeOnClickOutside = true;
+        [SerializeField, Range(0f, 30f)] private float _autoCloseTimeout = 10f;
+        
+        [Header("Visual Settings")]
+        [SerializeField] private Vector2 _menuSize = new Vector2(300f, 400f);
+        [SerializeField] private Vector2 _menuOffset = new Vector2(10f, 10f);
+        [SerializeField] private float _animationDuration = 0.3f;
+        [SerializeField] private AnimationCurve _showAnimation = AnimationCurve.EaseInOut(0, 0, 1, 1);
+        [SerializeField] private AnimationCurve _hideAnimation = AnimationCurve.EaseInOut(0, 1, 1, 0);
+        
+        [Header("Category Settings")]
+        [SerializeField] private int _maxCategoriesPerMenu = 6;
+        [SerializeField] private bool _showEmptyCategories = false;
+        [SerializeField] private bool _sortCategoriesByPriority = true;
+        [SerializeField] private bool _groupCategoriesByPillar = true;
+        
+        [Header("Action Settings")]
+        [SerializeField] private int _maxActionsPerCategory = 10;
+        [SerializeField] private bool _showDisabledActions = true;
+        [SerializeField] private bool _showActionIcons = true;
+        [SerializeField] private bool _showActionTooltips = true;
+        [SerializeField] private bool _enableActionPreview = true;
+        
+        [Header("Performance Settings")]
+        [SerializeField] private bool _enableMenuCaching = true;
+        [SerializeField] private float _cacheLifetime = 30f;
+        [SerializeField] private int _maxConcurrentMenus = 5;
+        [SerializeField] private float _updateInterval = 0.1f;
+        [SerializeField] private bool _enableLOD = true;
+        
+        [Header("Input Settings")]
+        [SerializeField] private bool _enableMouseSupport = true;
+        [SerializeField] private bool _enableKeyboardNavigation = true;
+        [SerializeField] private bool _enableControllerSupport = false;
+        [SerializeField] private KeyCode _toggleKey = KeyCode.Tab;
+        [SerializeField] private KeyCode _cancelKey = KeyCode.Escape;
+        
+        [Header("Accessibility")]
+        [SerializeField] private bool _enableHighContrast = false;
+        [SerializeField] private bool _enableLargeText = false;
+        [SerializeField] private bool _enableColorBlindSupport = false;
+        [SerializeField, Range(0.5f, 2f)] private float _uiScale = 1f;
+        
+        [Header("Default Categories")]
+        [SerializeField] private List<MenuCategoryConfig> _defaultCategories = new List<MenuCategoryConfig>();
+        
+        [Header("Style Themes")]
+        [SerializeField] private MenuStyleTheme _defaultTheme;
+        [SerializeField] private List<MenuStyleTheme> _alternativeThemes = new List<MenuStyleTheme>();
+        
+        // Public Properties
+        public bool EnableDynamicCategories => _enableDynamicCategories;
+        public bool EnableContextAwareFiltering => _enableContextAwareFiltering;
+        public bool CloseOnActionExecute => _closeOnActionExecute;
+        public bool CloseOnClickOutside => _closeOnClickOutside;
+        public float AutoCloseTimeout => _autoCloseTimeout;
+        public Vector2 MenuSize => _menuSize;
+        public Vector2 MenuOffset => _menuOffset;
+        public float AnimationDuration => _animationDuration;
+        public AnimationCurve ShowAnimation => _showAnimation;
+        public AnimationCurve HideAnimation => _hideAnimation;
+        public int MaxCategoriesPerMenu => _maxCategoriesPerMenu;
+        public bool ShowEmptyCategories => _showEmptyCategories;
+        public bool SortCategoriesByPriority => _sortCategoriesByPriority;
+        public bool GroupCategoriesByPillar => _groupCategoriesByPillar;
+        public int MaxActionsPerCategory => _maxActionsPerCategory;
+        public bool ShowDisabledActions => _showDisabledActions;
+        public bool ShowActionIcons => _showActionIcons;
+        public bool ShowActionTooltips => _showActionTooltips;
+        public bool EnableActionPreview => _enableActionPreview;
+        public bool EnableMenuCaching => _enableMenuCaching;
+        public float CacheLifetime => _cacheLifetime;
+        public int MaxConcurrentMenus => _maxConcurrentMenus;
+        public float UpdateInterval => _updateInterval;
+        public bool EnableLOD => _enableLOD;
+        public bool EnableMouseSupport => _enableMouseSupport;
+        public bool EnableKeyboardNavigation => _enableKeyboardNavigation;
+        public bool EnableControllerSupport => _enableControllerSupport;
+        public KeyCode ToggleKey => _toggleKey;
+        public KeyCode CancelKey => _cancelKey;
+        public bool EnableHighContrast => _enableHighContrast;
+        public bool EnableLargeText => _enableLargeText;
+        public bool EnableColorBlindSupport => _enableColorBlindSupport;
+        public float UIScale => _uiScale;
+        public List<MenuCategoryConfig> DefaultCategories => _defaultCategories;
+        public MenuStyleTheme DefaultTheme => _defaultTheme;
+        public List<MenuStyleTheme> AlternativeThemes => _alternativeThemes;
+        
+        /// <summary>
+        /// Get style theme by name
+        /// </summary>
+        public MenuStyleTheme GetTheme(string themeName)
+        {
+            if (string.IsNullOrEmpty(themeName))
+                return _defaultTheme;
+            
+            var theme = _alternativeThemes.Find(t => t.ThemeName == themeName);
+            return theme ?? _defaultTheme;
+        }
+        
+        /// <summary>
+        /// Get default category configuration
+        /// </summary>
+        public MenuCategoryConfig GetDefaultCategory(string pillarType, string categoryName)
+        {
+            return _defaultCategories.Find(c => c.PillarType == pillarType && c.CategoryName == categoryName);
+        }
+        
+        protected override bool ValidateDataSpecific()
+        {
+            bool isValid = true;
+            
+            if (_menuSize.x <= 0 || _menuSize.y <= 0)
+            {
+                Debug.LogError($"Advanced Menu Config {name}: Menu size must be positive", this);
+                isValid = false;
+            }
+            
+            if (_animationDuration < 0)
+            {
+                Debug.LogError($"Advanced Menu Config {name}: Animation duration cannot be negative", this);
+                isValid = false;
+            }
+            
+            if (_maxCategoriesPerMenu <= 0)
+            {
+                Debug.LogWarning($"Advanced Menu Config {name}: Max categories per menu should be positive", this);
+            }
+            
+            if (_maxActionsPerCategory <= 0)
+            {
+                Debug.LogWarning($"Advanced Menu Config {name}: Max actions per category should be positive", this);
+            }
+            
+            if (_updateInterval <= 0)
+            {
+                Debug.LogError($"Advanced Menu Config {name}: Update interval must be positive", this);
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+    }
+    
+    /// <summary>
+    /// Configuration for a menu category
+    /// </summary>
+    [System.Serializable]
+    public class MenuCategoryConfig
+    {
+        [SerializeField] private string _categoryName;
+        [SerializeField] private string _displayName;
+        [SerializeField] private string _description;
+        [SerializeField] private string _icon;
+        [SerializeField] private string _pillarType;
+        [SerializeField] private int _priority = 50;
+        [SerializeField] private string[] _requiredSkills = new string[0];
+        [SerializeField] private Color _categoryColor = Color.white;
+        [SerializeField] private bool _isEnabled = true;
+        
+        public string CategoryName => _categoryName;
+        public string DisplayName => _displayName;
+        public string Description => _description;
+        public string Icon => _icon;
+        public string PillarType => _pillarType;
+        public int Priority => _priority;
+        public string[] RequiredSkills => _requiredSkills;
+        public Color CategoryColor => _categoryColor;
+        public bool IsEnabled => _isEnabled;
+    }
+    
+    /// <summary>
+    /// Visual style theme for menu system
+    /// </summary>
+    [System.Serializable]
+    public class MenuStyleTheme
+    {
+        [SerializeField] private string _themeName;
+        [SerializeField] private Color _backgroundColor = new Color(0.2f, 0.2f, 0.2f, 0.9f);
+        [SerializeField] private Color _borderColor = new Color(0.4f, 0.4f, 0.4f, 1f);
+        [SerializeField] private Color _textColor = Color.white;
+        [SerializeField] private Color _highlightColor = new Color(0.3f, 0.6f, 1f, 1f);
+        [SerializeField] private Color _disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+        
+        [Header("Category Colors")]
+        [SerializeField] private Color _constructionColor = new Color(1f, 0.6f, 0.2f, 1f);
+        [SerializeField] private Color _cultivationColor = new Color(0.2f, 0.8f, 0.2f, 1f);
+        [SerializeField] private Color _geneticsColor = new Color(0.6f, 0.2f, 1f, 1f);
+        
+        [Header("Fonts")]
+        [SerializeField] private Font _titleFont;
+        [SerializeField] private Font _bodyFont;
+        [SerializeField] private int _titleFontSize = 16;
+        [SerializeField] private int _bodyFontSize = 12;
+        
+        [Header("Spacing")]
+        [SerializeField] private float _padding = 8f;
+        [SerializeField] private float _margin = 4f;
+        [SerializeField] private float _borderWidth = 2f;
+        [SerializeField] private float _cornerRadius = 4f;
+        
+        // Public Properties
+        public string ThemeName => _themeName;
+        public Color BackgroundColor => _backgroundColor;
+        public Color BorderColor => _borderColor;
+        public Color TextColor => _textColor;
+        public Color HighlightColor => _highlightColor;
+        public Color DisabledColor => _disabledColor;
+        public Color ConstructionColor => _constructionColor;
+        public Color CultivationColor => _cultivationColor;
+        public Color GeneticsColor => _geneticsColor;
+        public Font TitleFont => _titleFont;
+        public Font BodyFont => _bodyFont;
+        public int TitleFontSize => _titleFontSize;
+        public int BodyFontSize => _bodyFontSize;
+        public float Padding => _padding;
+        public float Margin => _margin;
+        public float BorderWidth => _borderWidth;
+        public float CornerRadius => _cornerRadius;
+        
+        /// <summary>
+        /// Get color for specific pillar type
+        /// </summary>
+        public Color GetPillarColor(string pillarType)
+        {
+            switch (pillarType?.ToLower())
+            {
+                case "construction": return _constructionColor;
+                case "cultivation": return _cultivationColor;
+                case "genetics": return _geneticsColor;
+                default: return _textColor;
+            }
+        }
+    }
+}

@@ -1,0 +1,26 @@
+{
+    "name": "ProjectChimera.Systems.Camera",
+    "rootNamespace": "ProjectChimera.Systems.Camera",
+    "references": [
+        "ProjectChimera.Core",
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Data.UI",
+        "ProjectChimera.Data.Cultivation",
+        "ProjectChimera.Data.Facilities",
+        "ProjectChimera.Data.Camera",
+        "ProjectChimera.Data.Events",
+        "ProjectChimera.Systems.Gameplay",
+        "Cinemachine"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

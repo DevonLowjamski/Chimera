@@ -1,0 +1,30 @@
+{
+    "name": "ProjectChimera.Systems.Save",
+    "rootNamespace": "ProjectChimera.Systems.Save",
+    "references": [
+        "ProjectChimera.Core",
+		"ProjectChimera.Data",
+		"ProjectChimera.Data.Shared",
+		"ProjectChimera.Data.Cultivation",
+        "ProjectChimera.Data.Genetics",
+        "ProjectChimera.Data.Economy",
+        "ProjectChimera.Shared",
+        "ProjectChimera.Systems",
+        "ProjectChimera.Systems.Cultivation",
+        "ProjectChimera.Systems.Genetics",
+        "ProjectChimera.Systems.Environment",
+        "ProjectChimera.Systems.Economy",
+        "ProjectChimera.Systems.Progression",
+        "ProjectChimera.Systems.AI",
+        "ProjectChimera.Systems.Facilities"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

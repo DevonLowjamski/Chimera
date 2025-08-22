@@ -1,0 +1,19 @@
+using System;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.Economy
+{
+    [System.Serializable]
+    public class RiskProfile
+    {
+        public RiskTolerance Tolerance;
+        public float RiskScore;
+    }
+
+    public enum RiskTolerance
+    {
+        Low,
+        Medium,
+        High
+    }
+}

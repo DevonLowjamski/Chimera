@@ -1,0 +1,18 @@
+{
+    "name": "ProjectChimera.Data.SpeedTree",
+    "rootNamespace": "ProjectChimera.Data.SpeedTree",
+    "references": [
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data.Genetics",
+        "ProjectChimera.Data.Shared"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

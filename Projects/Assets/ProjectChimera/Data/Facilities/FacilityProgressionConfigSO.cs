@@ -1,0 +1,52 @@
+using UnityEngine;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.Facilities
+{
+    /// <summary>
+    /// Configuration for facility progression system
+    /// </summary>
+    [CreateAssetMenu(fileName = "New Facility Progression Config", menuName = "Project Chimera/Facilities/Progression Config")]
+    public class FacilityProgressionConfigSO : ScriptableObject
+    {
+        [Header("Progression Settings")]
+        [SerializeField] private bool _enableAutoUpgrade = false;
+        [SerializeField] private float _experienceGainRate = 1.0f;
+        [SerializeField] private float _capitalRequirementMultiplier = 1.5f;
+        
+        [Header("Facility Tiers")]
+        [SerializeField] private List<FacilityTierSO> _availableTiers = new List<FacilityTierSO>();
+        
+        [Header("Upgrade Requirements")]
+        [SerializeField] private AnimationCurve _capitalRequirementCurve = AnimationCurve.Linear(1, 10000, 5, 100000);
+        [SerializeField] private AnimationCurve _experienceRequirementCurve = AnimationCurve.Linear(1, 100, 5, 1000);
+        
+        // Properties
+        public bool EnableAutoUpgrade => _enableAutoUpgrade;
+        public float ExperienceGainRate => _experienceGainRate;
+        public float CapitalRequirementMultiplier => _capitalRequirementMultiplier;
+        public List<FacilityTierSO> AvailableTiers => _availableTiers;
+        
+        public float GetCapitalRequirement(int tierLevel)
+        {
+            return _capitalRequirementCurve.Evaluate(tierLevel) * _capitalRequirementMultiplier;
+        }
+        
+        public float GetExperienceRequirement(int tierLevel)
+        {
+            return _experienceRequirementCurve.Evaluate(tierLevel) * _experienceGainRate;
+        }
+
+        public FacilityProgressionData CreateDefaultProgressionData()
+        {
+            return new FacilityProgressionData
+            {
+                Capital = 50000f,
+                TotalPlants = 0,
+                Experience = 0f,
+                TotalHarvests = 0,
+                UnlockedTiers = 1
+            };
+        }
+    }
+}

@@ -1,0 +1,30 @@
+{
+    "name": "ProjectChimera.Systems.Environment",
+    "rootNamespace": "ProjectChimera.Systems.Environment",
+    "references": [
+        "ProjectChimera.Core",
+        "ProjectChimera.Core.DependencyInjection",
+        "ProjectChimera.Core.ServiceContainer",
+        "ProjectChimera.Data",
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Data.Cultivation",
+        "ProjectChimera.Data.Facilities",
+        "ProjectChimera.Data.Equipment",
+        "ProjectChimera.Data.Environment",
+        "ProjectChimera.Data.Genetics",
+        "ProjectChimera.Data.Simulation",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

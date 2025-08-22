@@ -1,0 +1,26 @@
+using UnityEngine;
+
+namespace ProjectChimera.Data.UI
+{
+    /// <summary>
+    /// Interface for contextual menu providers to break circular dependencies
+    /// Allows Camera system to communicate with UI without direct reference
+    /// </summary>
+    public interface IContextualMenuProvider
+    {
+        /// <summary>
+        /// Show context menu at specified screen position
+        /// </summary>
+        void ShowContextMenu(Vector3 screenPosition, GameObject targetObject = null);
+        
+        /// <summary>
+        /// Hide the context menu if visible
+        /// </summary>
+        void HideMenu();
+        
+        /// <summary>
+        /// Check if context menu is currently visible
+        /// </summary>
+        bool IsMenuVisible { get; }
+    }
+}

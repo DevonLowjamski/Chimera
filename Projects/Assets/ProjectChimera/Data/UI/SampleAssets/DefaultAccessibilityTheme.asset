@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f3e8d1c4b6a9e2f5c8d1a4e7b0c3f6e, type: 3}
+  m_Name: DefaultAccessibilityTheme
+  _dataVersion: 1
+  _description: Default accessibility theme for Project Chimera UI systems with standard accessibility features enabled.
+  _textScaleMultiplier: 1
+  _enableHighContrast: 0
+  _enableBoldText: 0
+  _minimumFontWeight: 400
+  _enableColorBlindSupport: 0
+  _colorBlindnessType: 0
+  _highContrastTextColor: {r: 1, g: 1, b: 1, a: 1}
+  _highContrastBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
+  _focusIndicatorColor: {r: 1, g: 1, b: 0, a: 1}
+  _enableKeyboardNavigation: 1
+  _enableTabNavigation: 1
+  _enableArrowKeyNavigation: 1
+  _navigationRepeatDelay: 0.5
+  _enableFocusIndicators: 1
+  _focusIndicatorWidth: 3
+  _enableScreenReader: 1
+  _enableLiveRegions: 1
+  _enableAriaLabels: 1
+  _announceDelay: 0.5
+  _maxAnnouncementLength: 200
+  _enableAudioCues: 1
+  _audioVolume: 0.7
+  _focusSound: {fileID: 0}
+  _selectSound: {fileID: 0}
+  _errorSound: {fileID: 0}
+  _successSound: {fileID: 0}
+  _reduceMotion: 0
+  _disableAnimations: 0
+  _animationSpeedMultiplier: 1
+  _enableSystemAnimationSettings: 1

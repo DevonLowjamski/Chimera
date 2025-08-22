@@ -1,0 +1,22 @@
+{
+    "name": "ProjectChimera.Systems.Progression",
+    "rootNamespace": "",
+    "references": [
+        "ProjectChimera.Core",
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Systems",
+        "ProjectChimera.Systems.Analytics",
+        "ProjectChimera.Systems.Services.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

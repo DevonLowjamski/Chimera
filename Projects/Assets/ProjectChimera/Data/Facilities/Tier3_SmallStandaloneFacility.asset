@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a400e8f930964df0aabfb406601131b, type: 3}
+  m_Name: Tier3_SmallStandaloneFacility
+  _tierName: Small Standalone Facility
+  _tierLevel: 3
+  _sceneName: 06_Warehouse_Small_Standalone
+  _facilityIcon: {fileID: 0}
+  _requiredCapital: 75000
+  _requiredPlants: 20
+  _requiredExperience: 1500
+  _requiredHarvests: 8
+  _maxPlantCapacity: 36
+  _efficiencyMultiplier: 1.5
+  _unlockCost: 125000

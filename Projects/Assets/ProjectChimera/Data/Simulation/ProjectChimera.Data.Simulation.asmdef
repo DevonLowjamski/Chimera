@@ -1,0 +1,21 @@
+{
+    "name": "ProjectChimera.Data.Simulation",
+    "rootNamespace": "ProjectChimera.Data.Simulation",
+    "references": [
+        "ProjectChimera.Core",
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Data.Genetics",
+        "ProjectChimera.Data.Equipment",
+        "ProjectChimera.Data.Construction"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

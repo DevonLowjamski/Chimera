@@ -1,0 +1,27 @@
+{
+    "name": "ProjectChimera.Systems.Diagnostics",
+    "rootNamespace": "",
+    "references": [
+        "ProjectChimera.Core",
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Systems",
+        "ProjectChimera.Systems.Analytics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.analytics",
+            "expression": "1.0.0",
+            "define": "UNITY_SERVICES_ANALYTICS"
+        }
+    ],
+    "noEngineReferences": false
+}

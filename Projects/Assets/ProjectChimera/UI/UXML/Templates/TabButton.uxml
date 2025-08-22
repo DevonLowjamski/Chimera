@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<engine:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:engine="UnityEngine.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd"
+>
+    <!-- Tab Button Template for contextual menu tabs -->
+    <engine:Button name="tab-button" class="tab-button">
+        <engine:VisualElement name="tab-content" class="tab-content">
+            <engine:VisualElement name="tab-icon" class="button-icon" />
+            <engine:Label name="tab-label" text="Tab" class="button-text" />
+        </engine:VisualElement>
+    </engine:Button>
+</engine:UXML>

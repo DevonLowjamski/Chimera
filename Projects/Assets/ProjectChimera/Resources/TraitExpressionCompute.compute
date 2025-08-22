@@ -1,0 +1,154 @@
+#pragma kernel CalculateTraitExpression
+
+// Phase 3.2: GPU-accelerated trait expression calculations
+// Compute shader for high-performance genetic calculations
+
+struct GenotypeGPUData
+{
+    float heightAllele1;
+    float heightAllele2;
+    float thcAllele1;
+    float thcAllele2;
+    float cbdAllele1;
+    float cbdAllele2;
+    float yieldAllele1;
+    float yieldAllele2;
+    float overallFitness;
+    float inbreedingCoeff;
+    float reserved1;
+    float reserved2;
+    float reserved3;
+    float reserved4;
+    float reserved5;
+    float reserved6;
+};
+
+struct EnvironmentData
+{
+    float temperature;
+    float humidity;
+    float lightIntensity;
+    float co2Level;
+    float nutrientLevel;
+    float waterAvailability;
+    float reserved1;
+    float reserved2;
+};
+
+struct TraitExpressionResult
+{
+    float heightExpression;
+    float thcExpression;
+    float cbdExpression;
+    float yieldExpression;
+    float overallFitness;
+    float stressLevel;
+    float adaptiveCapacity;
+    float reserved;
+};
+
+RWStructuredBuffer<GenotypeGPUData> GenotypeData;
+RWStructuredBuffer<EnvironmentData> EnvironmentData;
+RWStructuredBuffer<TraitExpressionResult> Results;
+
+// Genetic calculation constants
+static const float OPTIMAL_TEMPERATURE = 24.0;
+static const float OPTIMAL_HUMIDITY = 60.0;
+static const float OPTIMAL_LIGHT = 600.0;
+static const float OPTIMAL_CO2 = 1200.0;
+
+// Helper functions for genetic calculations
+float CalculateAlleleEffect(float allele1, float allele2, bool dominanceRelation)
+{
+    if (dominanceRelation && allele1 > allele2)
+        return allele1;
+    else if (dominanceRelation && allele2 > allele1)
+        return allele2;
+    else
+        return (allele1 + allele2) * 0.5; // Additive effect
+}
+
+float CalculateEnvironmentalModifier(float envValue, float optimal, float tolerance)
+{
+    float deviation = abs(envValue - optimal);
+    return saturate(1.0 - (deviation / tolerance));
+}
+
+float CalculateStress(float temperature, float humidity, float light)
+{
+    float tempStress = saturate((abs(temperature - OPTIMAL_TEMPERATURE) - 5.0) / 5.0);
+    float humidStress = saturate((abs(humidity - OPTIMAL_HUMIDITY) - 20.0) / 20.0);
+    float lightStress = saturate((abs(light - OPTIMAL_LIGHT) - 200.0) / 200.0);
+    
+    return (tempStress + humidStress + lightStress) / 3.0;
+}
+
+float CalculateEpistaticInteraction(float trait1, float trait2)
+{
+    // THC-CBD epistatic interaction
+    float centered1 = trait1 - 0.5;
+    float centered2 = trait2 - 0.5;
+    return centered1 * centered2 * 2.0;
+}
+
+[numthreads(64, 1, 1)]
+void CalculateTraitExpression(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    
+    // Bounds check
+    uint numElements, stride;
+    GenotypeData.GetDimensions(numElements, stride);
+    if (index >= numElements)
+        return;
+    
+    GenotypeGPUData genotype = GenotypeData[index];
+    EnvironmentData environment = EnvironmentData[index];
+    TraitExpressionResult result;
+    
+    // Calculate basic trait expressions
+    
+    // Height trait calculation
+    float heightGenetic = CalculateAlleleEffect(genotype.heightAllele1, genotype.heightAllele2, true);
+    float heightEnvModifier = CalculateEnvironmentalModifier(environment.temperature, OPTIMAL_TEMPERATURE, 10.0);
+    result.heightExpression = saturate(heightGenetic * heightEnvModifier);
+    
+    // THC trait calculation
+    float thcGenetic = CalculateAlleleEffect(genotype.thcAllele1, genotype.thcAllele2, false);
+    float thcEnvModifier = CalculateEnvironmentalModifier(environment.lightIntensity, OPTIMAL_LIGHT, 300.0);
+    result.thcExpression = saturate(thcGenetic * thcEnvModifier);
+    
+    // CBD trait calculation
+    float cbdGenetic = CalculateAlleleEffect(genotype.cbdAllele1, genotype.cbdAllele2, false);
+    float cbdEnvModifier = CalculateEnvironmentalModifier(environment.co2Level, OPTIMAL_CO2, 400.0);
+    result.cbdExpression = saturate(cbdGenetic * cbdEnvModifier);
+    
+    // Yield trait calculation
+    float yieldGenetic = CalculateAlleleEffect(genotype.yieldAllele1, genotype.yieldAllele2, false);
+    float yieldEnvModifier = (CalculateEnvironmentalModifier(environment.nutrientLevel, 100.0, 30.0) + 
+                             CalculateEnvironmentalModifier(environment.waterAvailability, 100.0, 20.0)) * 0.5;
+    result.yieldExpression = saturate(yieldGenetic * yieldEnvModifier);
+    
+    // Apply epistatic interactions
+    float thcCbdInteraction = CalculateEpistaticInteraction(result.thcExpression, result.cbdExpression);
+    result.thcExpression = saturate(result.thcExpression * (1.0 + thcCbdInteraction * 0.2));
+    result.cbdExpression = saturate(result.cbdExpression * (1.0 - thcCbdInteraction * 0.1));
+    
+    // Apply pleiotropic effects (height affecting yield)
+    float heightPleiotropicEffect = (result.heightExpression - 0.5) * 0.15;
+    result.yieldExpression = saturate(result.yieldExpression * (1.0 + heightPleiotropicEffect));
+    
+    // Calculate stress response
+    result.stressLevel = CalculateStress(environment.temperature, environment.humidity, environment.lightIntensity);
+    
+    // Calculate adaptive capacity based on genetic fitness and environmental stress
+    result.adaptiveCapacity = saturate(genotype.overallFitness - genotype.inbreedingCoeff * 0.3);
+    
+    // Calculate overall fitness
+    float baseFitness = (result.heightExpression + result.thcExpression + result.cbdExpression + result.yieldExpression) * 0.25;
+    float stressPenalty = result.stressLevel * 0.3;
+    result.overallFitness = saturate(baseFitness - stressPenalty);
+    
+    // Store result
+    Results[index] = result;
+}

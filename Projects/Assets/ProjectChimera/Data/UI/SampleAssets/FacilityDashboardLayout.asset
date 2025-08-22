@@ -1,0 +1,217 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3d4e5f6789012345678901234abcdef, type: 3}
+  m_Name: FacilityDashboardLayout
+  _layoutName: Facility Overview Dashboard
+  _description: Primary dashboard layout for facility management and monitoring
+  _dashboardType: 0
+  _isDefault: 1
+  _gridSize: {x: 12, y: 8}
+  _gridCellSize: 100
+  _gridSpacing: 8
+  _enableGridSnap: 1
+  _allowOverlap: 0
+  _widgets:
+  - WidgetId: facility-status
+    WidgetType: StatusOverview
+    DisplayName: Facility Status
+    Position: {x: 0, y: 0}
+    Size: {x: 6, y: 2}
+    IsResizable: 1
+    IsDraggable: 1
+    IsRemovable: 0
+    Priority: 10
+    Settings: {}
+  - WidgetId: environmental-monitor
+    WidgetType: EnvironmentalChart
+    DisplayName: Environmental Conditions
+    Position: {x: 6, y: 0}
+    Size: {x: 6, y: 3}
+    IsResizable: 1
+    IsDraggable: 1
+    IsRemovable: 1
+    Priority: 8
+    Settings: {}
+  - WidgetId: plant-health
+    WidgetType: PlantHealthGrid
+    DisplayName: Plant Health Overview
+    Position: {x: 0, y: 2}
+    Size: {x: 6, y: 3}
+    IsResizable: 1
+    IsDraggable: 1
+    IsRemovable: 1
+    Priority: 9
+    Settings: {}
+  - WidgetId: quick-actions
+    WidgetType: ActionPanel
+    DisplayName: Quick Actions
+    Position: {x: 0, y: 5}
+    Size: {x: 4, y: 2}
+    IsResizable: 0
+    IsDraggable: 1
+    IsRemovable: 0
+    Priority: 7
+    Settings: {}
+  - WidgetId: alerts-panel
+    WidgetType: AlertsDisplay
+    DisplayName: Active Alerts
+    Position: {x: 4, y: 5}
+    Size: {x: 4, y: 2}
+    IsResizable: 1
+    IsDraggable: 1
+    IsRemovable: 1
+    Priority: 6
+    Settings: {}
+  - WidgetId: financial-summary
+    WidgetType: FinancialSummary
+    DisplayName: Financial Overview
+    Position: {x: 8, y: 3}
+    Size: {x: 4, y: 4}
+    IsResizable: 1
+    IsDraggable: 1
+    IsRemovable: 1
+    Priority: 5
+    Settings: {}
+  _maxWidgets: 20
+  _enableWidgetResize: 1
+  _enableWidgetDrag: 1
+  _enableWidgetMenu: 1
+  _quickActions:
+  - ActionId: emergency-stop
+    DisplayName: Emergency Stop
+    IconName: stop-circle
+    Description: Immediately stop all automated systems
+    Shortcut: 27
+    RequireConfirmation: 1
+    Priority: 10
+  - ActionId: optimize-environment
+    DisplayName: Optimize Environment
+    IconName: settings
+    Description: Auto-optimize environmental conditions
+    Shortcut: 0
+    RequireConfirmation: 0
+    Priority: 8
+  - ActionId: start-harvest
+    DisplayName: Start Harvest
+    IconName: harvest
+    Description: Begin harvest cycle for ready plants
+    Shortcut: 0
+    RequireConfirmation: 1
+    Priority: 7
+  - ActionId: system-health-check
+    DisplayName: System Health Check
+    IconName: health
+    Description: Run comprehensive system diagnostics
+    Shortcut: 0
+    RequireConfirmation: 0
+    Priority: 6
+  _quickActionPlacement: 0
+  _maxQuickActions: 8
+  _statusIndicators:
+  - IndicatorId: facility-power
+    DisplayName: Power Status
+    DataSource: PowerManager.TotalPowerUsage
+    StatusType: 3
+    ShowValue: 1
+    ShowIcon: 1
+    Priority: 10
+  - IndicatorId: water-level
+    DisplayName: Water Level
+    DataSource: IrrigationManager.WaterLevel
+    StatusType: 3
+    ShowValue: 1
+    ShowIcon: 1
+    Priority: 9
+  - IndicatorId: co2-level
+    DisplayName: CO2 Level
+    DataSource: EnvironmentalManager.CO2Level
+    StatusType: 3
+    ShowValue: 1
+    ShowIcon: 1
+    Priority: 8
+  - IndicatorId: total-plants
+    DisplayName: Total Plants
+    DataSource: PlantManager.TotalPlants
+    StatusType: 3
+    ShowValue: 1
+    ShowIcon: 1
+    Priority: 7
+  _enableStatusBar: 1
+  _statusBarPosition: 1
+  _enableAlerts: 1
+  _alertPlacement: 1
+  _maxVisibleAlerts: 5
+  _alertDuration: 10
+  _enableAlertGrouping: 1
+  _enableQuickNavigation: 1
+  _navigationItems:
+  - ItemId: dashboard
+    DisplayName: Dashboard
+    TargetPanel: dashboard
+    IconName: home
+    Shortcut: 282
+    Priority: 10
+    IsVisible: 1
+  - ItemId: environmental
+    DisplayName: Environmental
+    TargetPanel: environmental
+    IconName: thermometer
+    Shortcut: 283
+    Priority: 9
+    IsVisible: 1
+  - ItemId: financial
+    DisplayName: Financial
+    TargetPanel: financial
+    IconName: dollar-sign
+    Shortcut: 284
+    Priority: 8
+    IsVisible: 1
+  - ItemId: ai-advisor
+    DisplayName: AI Advisor
+    TargetPanel: ai-advisor
+    IconName: brain
+    Shortcut: 285
+    Priority: 7
+    IsVisible: 1
+  - ItemId: automation
+    DisplayName: Automation
+    TargetPanel: automation
+    IconName: cog
+    Shortcut: 286
+    Priority: 6
+    IsVisible: 1
+  - ItemId: research
+    DisplayName: Research
+    TargetPanel: research
+    IconName: flask
+    Shortcut: 287
+    Priority: 5
+    IsVisible: 1
+  - ItemId: data-visualization
+    DisplayName: Analytics
+    TargetPanel: data-visualization
+    IconName: chart-bar
+    Shortcut: 288
+    Priority: 4
+    IsVisible: 1
+  - ItemId: settings
+    DisplayName: Settings
+    TargetPanel: settings
+    IconName: settings
+    Shortcut: 289
+    Priority: 3
+    IsVisible: 1
+  _navigationStyle: 0
+  _allowUserCustomization: 1
+  _saveUserLayouts: 1
+  _enableLayoutPresets: 1
+  _restrictedWidgets: []

@@ -1,0 +1,90 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6789012345678901234ab, type: 3}
+  m_Name: DefaultUITheme
+  _themeName: Default Gaming Theme
+  _description: Project Chimera's default dark theme optimized for cannabis cultivation simulation
+  _isDarkTheme: 1
+  _category: 0
+  _primaryColor: {r: 0.6, g: 0.4, b: 1, a: 1}
+  _secondaryColor: {r: 0.4, g: 0.8, b: 1, a: 1}
+  _accentColor: {r: 1, g: 0.8, b: 0.4, a: 1}
+  _warningColor: {r: 1, g: 0.8, b: 0.4, a: 1}
+  _errorColor: {r: 1, g: 0.5, b: 0.5, a: 1}
+  _successColor: {r: 0.5, g: 1, b: 0.5, a: 1}
+  _backgroundColor: {r: 0.03137255, g: 0.047058824, b: 0.078431375, a: 1}
+  _surfaceColor: {r: 0.05882353, g: 0.08627451, b: 0.11764706, a: 1}
+  _cardColor: {r: 0.09019608, g: 0.14117647, b: 0.1764706, a: 1}
+  _modalBackgroundColor: {r: 0, g: 0, b: 0, a: 0.7}
+  _overlayColor: {r: 0, g: 0, b: 0, a: 0.5}
+  _textColor: {r: 0.85882354, g: 0.85882354, b: 0.85882354, a: 1}
+  _textSecondaryColor: {r: 0.6666667, g: 0.78431374, b: 0.8862745, a: 1}
+  _textMutedColor: {r: 0.47058824, g: 0.5529412, b: 0.6392157, a: 1}
+  _textDisabledColor: {r: 0.47058824, g: 0.47058824, b: 0.5137255, a: 1}
+  _borderColor: {r: 0.1764706, g: 0.2509804, b: 0.33333334, a: 1}
+  _borderActiveColor: {r: 0.6, g: 0.4, b: 1, a: 1}
+  _borderFocusColor: {r: 0.6, g: 0.4, b: 1, a: 0.6}
+  _dividerColor: {r: 0.1764706, g: 0.2509804, b: 0.33333334, a: 0.5}
+  _buttonPrimaryColor: {r: 0.6, g: 0.4, b: 1, a: 1}
+  _buttonSecondaryColor: {r: 0.39215687, g: 0.5882353, b: 0.78431374, a: 1}
+  _buttonHoverColor: {r: 0.6666667, g: 0.47058824, b: 1, a: 1}
+  _buttonActiveColor: {r: 0.5294118, g: 0.33333334, b: 0.9254902, a: 1}
+  _buttonDisabledColor: {r: 0.23921569, g: 0.23921569, b: 0.28235295, a: 1}
+  _healthyColor: {r: 0.47058824, g: 0.8, b: 0.47058824, a: 1}
+  _cautionColor: {r: 1, g: 0.78431374, b: 0.39215687, a: 1}
+  _criticalColor: {r: 1, g: 0.47058824, b: 0.47058824, a: 1}
+  _neutralColor: {r: 0.6666667, g: 0.6666667, b: 0.6666667, a: 1}
+  _chartColors:
+  - {r: 0.6, g: 0.4, b: 1, a: 1}
+  - {r: 0.4, g: 0.8, b: 1, a: 1}
+  - {r: 0.47058824, g: 0.8, b: 0.47058824, a: 1}
+  - {r: 1, g: 0.78431374, b: 0.39215687, a: 1}
+  - {r: 1, g: 0.47058824, b: 0.47058824, a: 1}
+  - {r: 0.8, g: 0.47058824, b: 1, a: 1}
+  - {r: 0.47058824, g: 1, b: 0.8, a: 1}
+  - {r: 1, g: 0.8, b: 0.47058824, a: 1}
+  _primaryFont: {fileID: 0}
+  _secondaryFont: {fileID: 0}
+  _monospaceFont: {fileID: 0}
+  _baseFontSize: 14
+  _defaultFontStyle: 0
+  _baseSpacing: 8
+  _borderRadius: 6
+  _shadowBlur: 4
+  _shadowOffset: {x: 0, y: 2}
+  _shadowColor: {r: 0, g: 0, b: 0, a: 0.25}
+  _transitionDuration: 0.2
+  _easingCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _enableAnimations: 1

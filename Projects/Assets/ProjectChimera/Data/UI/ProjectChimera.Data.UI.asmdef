@@ -1,0 +1,19 @@
+{
+    "name": "ProjectChimera.Data.UI",
+    "rootNamespace": "ProjectChimera.Data.UI",
+    "references": [
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data.Shared"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+

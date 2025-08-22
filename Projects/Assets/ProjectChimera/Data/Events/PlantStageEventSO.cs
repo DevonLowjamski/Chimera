@@ -1,0 +1,120 @@
+using UnityEngine;
+using ProjectChimera.Shared;
+
+namespace ProjectChimera.Data.Events
+{
+    /// <summary>
+    /// Data payload for plant stage transition events
+    /// </summary>
+    [System.Serializable]
+    public class PlantStageTransitionData
+    {
+        public string PlantId;
+        public string PreviousStage;
+        public string NewStage;
+        public float TransitionTime;
+        public float StageProgress;
+        public bool IsStressTransition;
+        public string TransitionReason;
+    }
+
+    /// <summary>
+    /// Data payload for plant stage progress events
+    /// </summary>
+    [System.Serializable]
+    public class PlantStageProgressData
+    {
+        public string PlantId;
+        public string CurrentStage;
+        public float Progress; // 0.0 to 1.0
+        public float TimeInStage;
+        public float EstimatedTimeRemaining;
+        public float GrowthRate;
+        public bool IsHealthy;
+    }
+
+    /// <summary>
+    /// Base event for plant stage-related events
+    /// </summary>
+    public abstract class PlantStageEventSO : TypedGameEventSO<PlantStageTransitionData>
+    {
+        [Header("Plant Stage Event Configuration")]
+        [SerializeField] protected bool _logEvents = true;
+        [SerializeField] protected bool _trackStageHistory = true;
+        
+        public override void Invoke(PlantStageTransitionData data)
+        {
+            if (_logEvents)
+            {
+                Debug.Log($"Plant Stage Event: Plant {data.PlantId} transitioned from {data.PreviousStage} to {data.NewStage}", this);
+            }
+            
+            base.Invoke(data);
+        }
+    }
+
+    /// <summary>
+    /// Event for plant stage transitions
+    /// </summary>
+    [CreateAssetMenu(fileName = "PlantStageTransitionEvent", menuName = "Project Chimera/Events/Plant Stage Transition")]
+    public class PlantStageTransitionEventSO : PlantStageEventSO
+    {
+        /// <summary>
+        /// Raise the plant stage transition event
+        /// </summary>
+        public void RaiseTransition(string plantId, string previousStage, string newStage, float transitionTime, bool isStressTransition = false, string reason = "")
+        {
+            var data = new PlantStageTransitionData
+            {
+                PlantId = plantId,
+                PreviousStage = previousStage,
+                NewStage = newStage,
+                TransitionTime = transitionTime,
+                IsStressTransition = isStressTransition,
+                TransitionReason = reason
+            };
+            
+            Invoke(data);
+        }
+    }
+
+    /// <summary>
+    /// Event for plant stage progress updates
+    /// </summary>
+    [CreateAssetMenu(fileName = "PlantStageProgressEvent", menuName = "Project Chimera/Events/Plant Stage Progress")]
+    public class PlantStageProgressEventSO : TypedGameEventSO<PlantStageProgressData>
+    {
+        [Header("Progress Event Configuration")]
+        [SerializeField] private bool _logProgressEvents = false;
+        [SerializeField] private float _progressLogThreshold = 0.25f; // Log every 25% progress
+        private float _lastLoggedProgress = 0f;
+        
+        /// <summary>
+        /// Raise the plant stage progress event
+        /// </summary>
+        public void RaiseProgress(string plantId, string currentStage, float progress, float timeInStage, float estimatedTimeRemaining, float growthRate, bool isHealthy = true)
+        {
+            var data = new PlantStageProgressData
+            {
+                PlantId = plantId,
+                CurrentStage = currentStage,
+                Progress = progress,
+                TimeInStage = timeInStage,
+                EstimatedTimeRemaining = estimatedTimeRemaining,
+                GrowthRate = growthRate,
+                IsHealthy = isHealthy
+            };
+            
+            // Log progress at threshold intervals
+            if (_logProgressEvents && (progress - _lastLoggedProgress) >= _progressLogThreshold)
+            {
+                Debug.Log($"Plant Progress: {plantId} in {currentStage} is {progress:P1} complete", this);
+                _lastLoggedProgress = progress;
+            }
+            
+            Invoke(data);
+        }
+        
+
+    }
+}

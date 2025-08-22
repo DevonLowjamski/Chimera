@@ -1,0 +1,94 @@
+/* Chart Widgets Styles */
+
+.chart-widget {
+    background-color: rgba(32, 32, 32, 0.9);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    margin: 5px;
+}
+
+.chart-widget:hover {
+    border-color: rgba(0, 150, 255, 0.3);
+    background-color: rgba(40, 40, 40, 0.9);
+}
+
+.line-chart {
+    /* Specific styles for line charts */
+}
+
+.bar-chart {
+    /* Specific styles for bar charts */
+}
+
+.sparkline-widget {
+    background-color: rgba(20, 20, 20, 0.2);
+    border-width: 0;
+    border-radius: 3px;
+    margin: 2px;
+}
+
+.chart-container {
+    flex-direction: column;
+    align-items: center;
+    margin: 10px;
+    padding: 10px;
+    background-color: rgba(50, 50, 50, 0.7);
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.chart-container:hover {
+    background-color: rgba(60, 60, 60, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.chart-title {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 8px;
+    -unity-font-style: bold;
+    text-align: center;
+}
+
+/* Chart grid for dashboard layout */
+.charts-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-items: flex-start;
+    padding: 10px;
+}
+
+/* Responsive chart sizing */
+@media (max-width: 1200px) {
+    .chart-widget {
+        width: 280px;
+        height: 180px;
+    }
+}
+
+@media (max-width: 800px) {
+    .charts-grid {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .chart-widget {
+        width: 320px;
+        height: 200px;
+        margin: 10px 0;
+    }
+}
+
+/* Animation classes for future enhancement */
+.chart-fade-in {
+    transition-property: opacity;
+    transition-duration: 0.3s;
+    opacity: 1;
+}
+
+.chart-fade-out {
+    opacity: 0;
+}

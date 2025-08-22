@@ -1,0 +1,20 @@
+{
+    "name": "ProjectChimera.Core",
+    "rootNamespace": "ProjectChimera.Core",
+    "references": [
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data",
+        "ProjectChimera.Data.Genetics",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Data.Economy"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

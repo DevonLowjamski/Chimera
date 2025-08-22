@@ -1,0 +1,296 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core;
+
+namespace ProjectChimera.Systems.Construction
+{
+    /// <summary>
+    /// Specialized validator for structural integrity checking in 3D grid construction.
+    /// Handles weight distribution, load calculations, and stack height limits.
+    /// </summary>
+    public class StructuralIntegrityValidator : MonoBehaviour
+    {
+        [Header("Structural Integrity Settings")]
+        [SerializeField] private float _maxVerticalLoad = 100f; // Max weight per foundation cell
+        [SerializeField] private float _structuralSafetyFactor = 1.5f;
+        [SerializeField] private int _maxStackHeight = 10; // Max objects in vertical stack
+        [SerializeField] private float _baseCapacityPerCell = 10f; // Base units per grid cell
+        
+        [Header("Weight Calculation")]
+        [SerializeField] private float _structureWeightMultiplier = 2.0f;
+        [SerializeField] private float _equipmentWeightMultiplier = 1.5f;
+        [SerializeField] private float _decorationWeightMultiplier = 0.5f;
+        [SerializeField] private float _utilityWeightMultiplier = 1.0f;
+        
+        [Header("Support Capacity")]
+        [SerializeField] private float _structureSupportMultiplier = 2f; // Structures are strong
+        [SerializeField] private float _equipmentSupportMultiplier = 1f; // Equipment moderate capacity
+        [SerializeField] private float _defaultSupportMultiplier = 0.5f; // Other types limited
+        
+        // Core references
+        private GridSystem _gridSystem;
+        
+        // Structural integrity events
+        public System.Action<Vector3Int> OnStructuralOverload;
+        public System.Action<Vector3Int> OnStackHeightExceeded;
+        public System.Action<Vector3Int, float> OnSupportCapacityWarning;
+        
+        private void Awake()
+        {
+            FindRequiredComponents();
+        }
+        
+        private void FindRequiredComponents()
+        {
+            _gridSystem = FindObjectOfType<GridSystem>();
+            if (_gridSystem == null)
+                Debug.LogWarning($"[StructuralIntegrityValidator] GridSystem not found - structural validation may not work properly");
+        }
+        
+        /// <summary>
+        /// Validate structural integrity for object placement
+        /// </summary>
+        public void ValidateStructuralIntegrity(GridPlaceable placeable, Vector3Int gridPosition, PlacementValidationResult result)
+        {
+            if (_gridSystem == null || gridPosition.z == 0) return; // Ground level doesn't need structural validation
+            
+            // Calculate weight and check support
+            float objectWeight = CalculateObjectWeight(placeable);
+            var supportPositions = GetSupportPositions(gridPosition, placeable.GridSize);
+            
+            if (supportPositions.Count == 0)
+            {
+                result.AddError("No structural support found for elevated placement");
+                OnStructuralOverload?.Invoke(gridPosition);
+                return;
+            }
+            
+            // Check each support position
+            foreach (var supportPos in supportPositions)
+            {
+                float supportCapacity = CalculateSupportCapacity(supportPos);
+                float currentLoad = CalculateCurrentVerticalLoad(supportPos);
+                float additionalLoad = objectWeight / supportPositions.Count;
+                float totalLoad = currentLoad + additionalLoad;
+                float maxSafeLoad = supportCapacity * _structuralSafetyFactor;
+                
+                if (totalLoad > maxSafeLoad)
+                {
+                    result.AddError($"Structural overload at support position {supportPos}: {totalLoad:F1}/{maxSafeLoad:F1} units");
+                    OnStructuralOverload?.Invoke(gridPosition);
+                    return;
+                }
+                else if (totalLoad > supportCapacity)
+                {
+                    result.AddWarning($"High structural load at {supportPos}: {totalLoad:F1}/{supportCapacity:F1} units");
+                    OnSupportCapacityWarning?.Invoke(supportPos, totalLoad / supportCapacity);
+                }
+            }
+            
+            // Check stack height limits
+            int stackHeight = GetVerticalStackHeight(gridPosition);
+            if (stackHeight >= _maxStackHeight)
+            {
+                result.AddError($"Maximum stack height exceeded: {stackHeight}/{_maxStackHeight} levels");
+                OnStackHeightExceeded?.Invoke(gridPosition);
+            }
+        }
+        
+        /// <summary>
+        /// Check if object can be safely removed without causing structural collapse
+        /// </summary>
+        public bool CanSafelyRemove(Vector3Int gridPosition, out List<Vector3Int> affectedPositions)
+        {
+            affectedPositions = new List<Vector3Int>();
+            if (_gridSystem == null) return true;
+            
+            foreach (var dependentPos in GetDependentObjects(gridPosition))
+            {
+                var cell = _gridSystem.GetGridCell(dependentPos);
+                if (cell?.OccupyingObject != null && !HasAlternativeSupport(dependentPos, gridPosition))
+                {
+                    affectedPositions.Add(dependentPos);
+                }
+            }
+            
+            return affectedPositions.Count == 0;
+        }
+        
+        /// <summary>
+        /// Get all objects that would be affected by cascading removal
+        /// </summary>
+        public List<Vector3Int> GetCascadingRemovalPositions(Vector3Int removedPosition)
+        {
+            var cascading = new List<Vector3Int>();
+            var toCheck = new Queue<Vector3Int>();
+            var checkedPositions = new HashSet<Vector3Int>();
+            
+            toCheck.Enqueue(removedPosition);
+            checkedPositions.Add(removedPosition);
+            
+            while (toCheck.Count > 0)
+            {
+                var current = toCheck.Dequeue();
+                foreach (var dependent in GetDependentObjects(current))
+                {
+                    if (checkedPositions.Contains(dependent)) continue;
+                    checkedPositions.Add(dependent);
+                    
+                    if (!HasAlternativeSupport(dependent, current))
+                    {
+                        cascading.Add(dependent);
+                        toCheck.Enqueue(dependent);
+                    }
+                }
+            }
+            
+            return cascading;
+        }
+        
+        #region Weight and Load Calculations
+        
+        private float CalculateObjectWeight(GridPlaceable placeable)
+        {
+            // Calculate weight based on object size and type
+            float baseWeight = placeable.GridSize.x * placeable.GridSize.y * placeable.GridSize.z;
+            
+            float typeMultiplier = placeable.Type switch
+            {
+                PlaceableType.Structure => _structureWeightMultiplier,
+                PlaceableType.Equipment => _equipmentWeightMultiplier,
+                PlaceableType.Decoration => _decorationWeightMultiplier,
+                PlaceableType.Utility => _utilityWeightMultiplier,
+                _ => 1.0f
+            };
+            
+            return baseWeight * typeMultiplier;
+        }
+        
+        private float CalculateSupportCapacity(Vector3Int supportPosition)
+        {
+            if (_gridSystem == null) return 0f;
+            
+            var cell = _gridSystem.GetGridCell(supportPosition);
+            if (cell?.OccupyingObject == null) return 0f;
+            
+            // Base capacity depends on object size
+            var supportObject = cell.OccupyingObject;
+            float baseCapacity = supportObject.GridSize.x * supportObject.GridSize.y * _baseCapacityPerCell;
+            
+            float typeMultiplier = supportObject.Type switch
+            {
+                PlaceableType.Structure => _structureSupportMultiplier,
+                PlaceableType.Equipment => _equipmentSupportMultiplier,
+                _ => _defaultSupportMultiplier
+            };
+            
+            return baseCapacity * typeMultiplier;
+        }
+        
+        private float CalculateCurrentVerticalLoad(Vector3Int supportPosition)
+        {
+            if (_gridSystem == null) return 0f;
+            
+            float totalLoad = 0f;
+            for (int z = supportPosition.z + 1; z < _gridSystem.MaxHeightLevels; z++)
+            {
+                var cell = _gridSystem.GetGridCell(new Vector3Int(supportPosition.x, supportPosition.y, z));
+                if (cell?.OccupyingObject != null)
+                    totalLoad += CalculateObjectWeight(cell.OccupyingObject);
+            }
+            
+            return totalLoad;
+        }
+        
+        #endregion
+        
+        #region Support and Stack Analysis
+        
+        private List<Vector3Int> GetSupportPositions(Vector3Int gridPosition, Vector3Int size)
+        {
+            var supports = new List<Vector3Int>();
+            if (_gridSystem == null) return supports;
+            
+            // Get positions directly below the object
+            for (int x = 0; x < size.x; x++)
+            {
+                for (int y = 0; y < size.y; y++)
+                {
+                    Vector3Int supportPos = new Vector3Int(gridPosition.x + x, gridPosition.y + y, gridPosition.z - 1);
+                    if (_gridSystem.GetGridCell(supportPos)?.IsOccupied == true)
+                        supports.Add(supportPos);
+                }
+            }
+            
+            return supports;
+        }
+        
+        private int GetVerticalStackHeight(Vector3Int gridPosition)
+        {
+            if (_gridSystem == null) return 0;
+            
+            int height = 0;
+            
+            // Count objects below
+            for (int z = gridPosition.z - 1; z >= 0; z--)
+            {
+                if (_gridSystem.GetGridCell(new Vector3Int(gridPosition.x, gridPosition.y, z))?.IsOccupied == true)
+                    height++;
+                else break;
+            }
+            
+            // Count objects above (including current)
+            for (int z = gridPosition.z; z < _gridSystem.MaxHeightLevels; z++)
+            {
+                if (_gridSystem.GetGridCell(new Vector3Int(gridPosition.x, gridPosition.y, z))?.IsOccupied == true)
+                    height++;
+                else break;
+            }
+            
+            return height;
+        }
+        
+        private List<Vector3Int> GetDependentObjects(Vector3Int supportPosition)
+        {
+            var dependent = new List<Vector3Int>();
+            if (_gridSystem == null) return dependent;
+            
+            // Check positions above this one
+            for (int z = supportPosition.z + 1; z < _gridSystem.MaxHeightLevels; z++)
+            {
+                Vector3Int checkPos = new Vector3Int(supportPosition.x, supportPosition.y, z);
+                var cell = _gridSystem.GetGridCell(checkPos);
+                
+                if (cell?.IsOccupied == true && 
+                    GetSupportPositions(checkPos, cell.OccupyingObject.GridSize).Contains(supportPosition))
+                {
+                    dependent.Add(checkPos);
+                }
+            }
+            
+            return dependent;
+        }
+        
+        private bool HasAlternativeSupport(Vector3Int objectPosition, Vector3Int excludePosition)
+        {
+            if (_gridSystem == null) return false;
+            
+            var cell = _gridSystem.GetGridCell(objectPosition);
+            if (cell?.OccupyingObject == null) return false;
+            
+            var supports = GetSupportPositions(objectPosition, cell.OccupyingObject.GridSize);
+            supports.Remove(excludePosition);
+            
+            if (supports.Count == 0) return false;
+            
+            float weight = CalculateObjectWeight(cell.OccupyingObject);
+            float capacity = 0f;
+            foreach (var pos in supports)
+                capacity += CalculateSupportCapacity(pos);
+            
+            return capacity >= weight;
+        }
+        
+        #endregion
+    }
+}

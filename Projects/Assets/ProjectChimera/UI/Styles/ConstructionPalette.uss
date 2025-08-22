@@ -1,0 +1,331 @@
+/* Construction Palette Styles for Project Chimera Phase 4 */
+
+/* Main palette container */
+.construction-palette {
+    background-color: rgba(20, 25, 30, 0.95);
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.1);
+    padding: 8px;
+    min-width: 300px;
+    max-width: 400px;
+    min-height: 400px;
+    flex-direction: column;
+}
+
+/* Tab container */
+.tab-container {
+    flex-direction: row;
+    margin-bottom: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+    padding-bottom: 4px;
+}
+
+/* Tab buttons */
+.palette-tab {
+    background-color: rgba(60, 70, 80, 0.8);
+    border-radius: 4px 4px 0 0;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 8px 16px;
+    margin-right: 2px;
+    -unity-text-align: middle-center;
+    transition-duration: 0.2s;
+    flex-grow: 1;
+}
+
+.palette-tab:hover {
+    background-color: rgba(80, 90, 100, 0.9);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.palette-tab.active {
+    background-color: rgba(100, 120, 140, 1.0);
+    color: rgb(255, 255, 255);
+    border-bottom-color: transparent;
+}
+
+/* Specific tab colors */
+.construction-tab.active {
+    background-color: rgba(120, 80, 40, 1.0);
+}
+
+.schematics-tab.active {
+    background-color: rgba(40, 120, 80, 1.0);
+}
+
+.tools-tab.active {
+    background-color: rgba(80, 40, 120, 1.0);
+}
+
+/* Search container */
+.search-container {
+    flex-direction: row;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+.palette-search {
+    flex-grow: 1;
+    margin-right: 8px;
+    background-color: rgba(40, 50, 60, 0.8);
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgb(255, 255, 255);
+    padding: 4px 8px;
+}
+
+.palette-search:focus {
+    border-color: rgba(100, 150, 200, 0.8);
+}
+
+.category-filter {
+    min-width: 120px;
+    background-color: rgba(40, 50, 60, 0.8);
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgb(255, 255, 255);
+}
+
+/* Content container */
+.palette-content {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+/* Panel containers */
+.palette-panel {
+    flex-grow: 1;
+    padding: 4px;
+}
+
+.construction-panel {
+    /* Construction-specific styling */
+}
+
+.schematics-panel {
+    /* Schematics-specific styling */
+}
+
+.tools-panel {
+    /* Tools-specific styling */
+}
+
+/* Item grid */
+.palette-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding: 4px;
+}
+
+/* Palette items */
+.palette-item {
+    width: 80px;
+    height: 100px;
+    background-color: rgba(50, 60, 70, 0.8);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.1);
+    margin: 4px;
+    padding: 8px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition-duration: 0.2s;
+    cursor: link;
+}
+
+.palette-item:hover {
+    background-color: rgba(70, 80, 90, 0.9);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.palette-item:active {
+    background-color: rgba(90, 100, 110, 1.0);
+    transform: scale(0.95);
+}
+
+/* Item type specific styling */
+.palette-item-construction {
+    border-left-color: rgba(120, 80, 40, 0.8);
+    border-left-width: 3px;
+}
+
+.palette-item-schematic {
+    border-left-color: rgba(40, 120, 80, 0.8);
+    border-left-width: 3px;
+}
+
+.palette-item-tool {
+    border-left-color: rgba(80, 40, 120, 0.8);
+    border-left-width: 3px;
+}
+
+/* Item icon */
+.palette-item-icon {
+    width: 32px;
+    height: 32px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin-bottom: 4px;
+    flex-shrink: 0;
+}
+
+/* Item name */
+.palette-item-name {
+    color: rgb(255, 255, 255);
+    font-size: 10px;
+    -unity-text-align: middle-center;
+    white-space: normal;
+    -unity-word-wrap: true;
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Selected item */
+.palette-item.selected {
+    background-color: rgba(100, 150, 200, 0.8);
+    border-color: rgb(100, 150, 200);
+}
+
+/* Disabled item */
+.palette-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.palette-item.disabled:hover {
+    transform: none;
+    background-color: rgba(50, 60, 70, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Loading state */
+.palette-loading {
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.palette-loading-text {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+}
+
+/* Empty state */
+.palette-empty {
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.palette-empty-text {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    -unity-text-align: middle-center;
+}
+
+/* Scrollview customization */
+.palette-panel .unity-scroll-view__content-container {
+    padding: 4px;
+}
+
+.palette-panel .unity-scroller--vertical {
+    width: 16px;
+}
+
+.palette-panel .unity-scroller--vertical .unity-slider {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.palette-panel .unity-scroller--vertical .unity-slider .unity-slider__tracker {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.palette-panel .unity-scroller--vertical .unity-slider .unity-slider__dragger {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    border-width: 0;
+}
+
+.palette-panel .unity-scroller--vertical .unity-slider .unity-slider__dragger:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Responsive design for smaller screens */
+@media screen and (max-width: 600px) {
+    .construction-palette {
+        min-width: 280px;
+        max-width: 320px;
+    }
+    
+    .palette-item {
+        width: 70px;
+        height: 90px;
+    }
+    
+    .palette-item-icon {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .palette-item-name {
+        font-size: 9px;
+    }
+}
+
+/* Dark theme adjustments */
+.unity-theme-dark .construction-palette {
+    background-color: rgba(15, 20, 25, 0.98);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.unity-theme-dark .palette-item {
+    background-color: rgba(25, 35, 45, 0.9);
+}
+
+.unity-theme-dark .palette-item:hover {
+    background-color: rgba(45, 55, 65, 1.0);
+}
+
+/* High contrast mode */
+.unity-theme-high-contrast .palette-item {
+    border-width: 2px;
+    border-color: rgb(255, 255, 255);
+}
+
+.unity-theme-high-contrast .palette-item.selected {
+    background-color: rgb(0, 120, 215);
+    border-color: rgb(255, 255, 255);
+}
+
+/* Animation classes */
+.palette-fade-in {
+    transition-duration: 0.3s;
+    transition-property: opacity;
+    opacity: 0;
+}
+
+.palette-fade-in.visible {
+    opacity: 1;
+}
+
+.palette-slide-in {
+    transition-duration: 0.3s;
+    transition-property: translate;
+    translate: 0 -20px;
+}
+
+.palette-slide-in.visible {
+    translate: 0 0;
+}

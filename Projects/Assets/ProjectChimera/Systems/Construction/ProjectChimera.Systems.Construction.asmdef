@@ -1,0 +1,23 @@
+{
+    "name": "ProjectChimera.Systems.Construction",
+    "rootNamespace": "ProjectChimera.Systems.Construction",
+    "references": [
+        "ProjectChimera.Core",
+        "ProjectChimera.Core.Events",
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Data.Construction",
+        "ProjectChimera.Data.Facilities",
+        "ProjectChimera.Data.Equipment",
+        "ProjectChimera.Data.Economy"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

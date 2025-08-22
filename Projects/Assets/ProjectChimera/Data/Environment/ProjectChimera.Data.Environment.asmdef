@@ -1,0 +1,16 @@
+{
+    "name": "ProjectChimera.Data.Environment",
+    "rootNamespace": "ProjectChimera.Data.Environment",
+    "references": [
+        "ProjectChimera.Shared"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

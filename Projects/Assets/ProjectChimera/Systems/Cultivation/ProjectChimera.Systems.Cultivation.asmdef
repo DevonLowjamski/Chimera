@@ -1,0 +1,31 @@
+{
+    "name": "ProjectChimera.Systems.Cultivation",
+    "rootNamespace": "ProjectChimera.Systems.Cultivation",
+    "references": [
+        "ProjectChimera.Core",
+        "ProjectChimera.Core.Events",
+        "ProjectChimera.Core.ServiceContainer",
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Data.Cultivation",
+        "ProjectChimera.Data.Environment",
+        "ProjectChimera.Data.Simulation",
+        "ProjectChimera.Data.Facilities",
+        "ProjectChimera.Data.Genetics",
+        "ProjectChimera.Data.Equipment",
+        "ProjectChimera.Data.Events",
+        "ProjectChimera.Systems.Environment",
+        "ProjectChimera.Systems.Economy",
+        "ProjectChimera.Systems",
+        "Unity.ugui"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
