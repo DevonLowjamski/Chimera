@@ -275,6 +275,23 @@ namespace ProjectChimera.Testing.Phase2_1
         public void UpdateMarketPrices() { }
         public void Initialize() { }
         public void Shutdown() { }
+
+        // IChimeraManager implementation
+        public ManagerMetrics GetMetrics()
+        {
+            return new ManagerMetrics
+            {
+                ManagerName = ManagerName,
+                IsHealthy = true,
+                Performance = 1f,
+                ManagedItems = 0,
+                Uptime = 0f,
+                LastActivity = "Mock Test Implementation"
+            };
+        }
+
+        public string GetStatus() => "Mock Economy Manager - Test Mode";
+        public bool ValidateHealth() => true;
     }
     
     public class MockProgressionManager : IProgressionManager
@@ -303,6 +320,23 @@ namespace ProjectChimera.Testing.Phase2_1
         public System.Collections.Generic.IEnumerable<string> GetUnlockedAchievements() => new List<string>();
         public void Initialize() { }
         public void Shutdown() { }
+
+        // IChimeraManager implementation
+        public ManagerMetrics GetMetrics()
+        {
+            return new ManagerMetrics
+            {
+                ManagerName = ManagerName,
+                IsHealthy = true,
+                Performance = 1f,
+                ManagedItems = _unlockedSkills.Count,
+                Uptime = 0f,
+                LastActivity = "Mock Test Implementation"
+            };
+        }
+
+        public string GetStatus() => $"Mock Progression Manager - Level {PlayerLevel}, {SkillPoints} SP";
+        public bool ValidateHealth() => true;
     }
     
     public class MockTimeManager : ITimeManager
@@ -321,6 +355,23 @@ namespace ProjectChimera.Testing.Phase2_1
         public void ResetSpeedLevel() { }
         public void Initialize() { }
         public void Shutdown() { }
+
+        // IChimeraManager implementation
+        public ManagerMetrics GetMetrics()
+        {
+            return new ManagerMetrics
+            {
+                ManagerName = ManagerName,
+                IsHealthy = true,
+                Performance = 1f,
+                ManagedItems = 0,
+                Uptime = 0f,
+                LastActivity = "Mock Test Implementation"
+            };
+        }
+
+        public string GetStatus() => $"Mock Time Manager - Speed: {CurrentSpeedLevel}";
+        public bool ValidateHealth() => true;
     }
     
     // Enhanced Mock Services for Testing

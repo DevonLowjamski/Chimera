@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ProjectChimera.Core.ServiceContainer
+namespace ProjectChimera.Core
 {
     /// <summary>
     /// PC014-1a: Core interface for dependency injection service container

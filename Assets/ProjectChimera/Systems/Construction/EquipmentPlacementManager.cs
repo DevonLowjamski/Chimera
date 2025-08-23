@@ -149,8 +149,10 @@ namespace ProjectChimera.Systems.Construction
             LogInfo("EquipmentPlacementManager initialized successfully");
         }
         
-        protected override void OnManagerUpdate()
+        private void Update()
         {
+            if (!IsInitialized) return;
+            
             float currentTime = Time.time;
             
             UpdatePlacementQueue();

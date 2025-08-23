@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Linq;
-using ProjectChimera.Core.DependencyInjection;
 
 namespace ProjectChimera.Core.Bootstrappers
 {
@@ -52,7 +51,7 @@ namespace ProjectChimera.Core.Bootstrappers
 
         private void InitializeServiceContainer()
         {
-            _container = new ServiceContainer();
+            _container = ServiceContainerFactory.Instance;
             Debug.Log("[ServiceContainerBootstrapper] Service container created and configured");
         }
 

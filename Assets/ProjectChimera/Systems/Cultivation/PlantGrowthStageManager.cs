@@ -569,6 +569,31 @@ namespace ProjectChimera.Systems.Cultivation
             Debug.LogWarning("[PlantGrowthStageManager] Could not find ITimeManager implementation");
             return null;
         }
+
+        // IChimeraManager implementation
+        public ManagerMetrics GetMetrics()
+        {
+            return new ManagerMetrics
+            {
+                ManagerName = ManagerName,
+                IsHealthy = ValidateHealth(),
+                Performance = IsInitialized ? 1f : 0f,
+                ManagedItems = _plantStageTracking.Count,
+                Uptime = IsInitialized ? Time.time / 3600f : 0f,
+                LastActivity = IsInitialized ? "Tracking Plant Growth" : "Not Initialized"
+            };
+        }
+
+        public string GetStatus()
+        {
+            if (!IsInitialized) return "Not Initialized";
+            return $"Active - Tracking {_plantStageTracking.Count} plants";
+        }
+
+        public bool ValidateHealth()
+        {
+            return IsInitialized && _plantStageTracking.Count <= _maxTrackedPlants;
+        }
     }
     
     /// <summary>

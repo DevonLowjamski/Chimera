@@ -306,6 +306,51 @@ namespace ProjectChimera.Core.DependencyInjection
             return container;
         }
     }
+
+    /// <summary>
+    /// Advanced service descriptor for compatibility with Phase 0 DI unification
+    /// </summary>
+    public class AdvancedServiceDescriptor : ServiceRegistration
+    {
+        public string Name { get; set; }
+        public int Priority { get; set; } = 0;
+        public bool IsDecorator { get; set; } = false;
+        public bool IsOpenGeneric { get; set; } = false;
+        public string[] Tags { get; set; } = new string[0];
+    }
+
+    /// <summary>
+    /// Container verification result for validation
+    /// </summary>
+    public class ContainerVerificationResult
+    {
+        public bool IsValid { get; set; }
+        public List<string> Errors { get; set; } = new List<string>();
+        public List<string> Warnings { get; set; } = new List<string>();
+        public List<string> ValidationMessages { get; set; } = new List<string>();
+        public int VerifiedServices { get; set; }
+        public int TotalServices { get; set; }
+        public TimeSpan VerificationTime { get; set; }
+    }
+
+    /// <summary>
+    /// Service validation result for compatibility
+    /// </summary>
+    public class ServiceValidationResult
+    {
+        public bool IsValid { get; set; }
+        public string Message { get; set; }
+        public int TotalServices { get; set; }
+        public int ValidServiceCount { get; set; }
+        public int InvalidServiceCount { get; set; }
+        public List<Type> ValidServices { get; set; } = new List<Type>();
+        public List<Type> InvalidServices { get; set; } = new List<Type>();
+        public List<string> Errors { get; set; } = new List<string>();
+        public List<string> ValidationMessages { get; set; } = new List<string>();
+        
+        public static ServiceValidationResult Success() => new ServiceValidationResult { IsValid = true };
+        public static ServiceValidationResult Failure(string message) => new ServiceValidationResult { IsValid = false, Message = message };
+    }
     
     /// <summary>
     /// Attribute for marking classes that should be automatically registered with DI
@@ -346,4 +391,5 @@ namespace ProjectChimera.Core.DependencyInjection
     {
         void OnDependenciesInjected();
     }
+
 }

@@ -76,7 +76,7 @@ namespace ProjectChimera.Systems.Cultivation
             Debug.Log("[CultivationManager] Modular cultivation system shutdown complete.");
         }
         
-        protected override void Update()
+        private void Update()
         {
             if (!IsInitialized || !_enableCultivationSystem) return;
             
@@ -89,24 +89,49 @@ namespace ProjectChimera.Systems.Cultivation
         
         private void InitializeComponents()
         {
-            // Initialize in dependency order
-            _plantLifecycleManager = new PlantLifecycleManager(null, null); // Will set dependencies after creation
-            _environmentalManager = new CultivationEnvironmentalManager(_plantLifecycleManager);
-            _harvestManager = new HarvestManager(_plantLifecycleManager);
-            _plantCareManager = new PlantCareManager(_plantLifecycleManager);
-            // GrowthProcessor works with our cultivation environmental manager interface
-            _growthProcessor = new GrowthProcessor(_plantLifecycleManager, _environmentalManager);
+            // Use unified DI container approach instead of manual instantiation
+            var serviceContainer = ServiceContainerFactory.Instance;
             
-            // Update dependencies for PlantLifecycleManager
+            try
+            {
+                // Register components with DI container for proper dependency management
+                _plantLifecycleManager = new PlantLifecycleManager(null, null); // Will set dependencies after creation
+                serviceContainer?.RegisterSingleton<IPlantLifecycleManager>(_plantLifecycleManager);
+                
+                _environmentalManager = new CultivationEnvironmentalManager(_plantLifecycleManager);
+                serviceContainer?.RegisterSingleton<IEnvironmentalManager>(_environmentalManager);
+                
+                _harvestManager = new HarvestManager(_plantLifecycleManager);
+                serviceContainer?.RegisterSingleton<IHarvestManager>(_harvestManager);
+                
+                _plantCareManager = new PlantCareManager(_plantLifecycleManager);
+                serviceContainer?.RegisterSingleton<IPlantCareManager>(_plantCareManager);
+                
+                // GrowthProcessor works with our cultivation environmental manager interface
+                _growthProcessor = new GrowthProcessor(_plantLifecycleManager, _environmentalManager);
+                serviceContainer?.RegisterSingleton<IGrowthProcessor>(_growthProcessor);
+                
+                Debug.Log("[CultivationManager] All components registered with unified DI container");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[CultivationManager] Failed to register components with DI container: {ex.Message}");
+            }
+            
+            // SECURITY FIX: Replace dangerous reflection with proper dependency injection
             if (_plantLifecycleManager is PlantLifecycleManager lifecycleManager)
             {
-                // Set dependencies via constructor replacement or setter injection
-                // For now, we'll use a temporary approach - in full DI implementation, this would be handled by container
-                System.Reflection.FieldInfo envField = typeof(PlantLifecycleManager).GetField("_environmentalManager", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                System.Reflection.FieldInfo harvestField = typeof(PlantLifecycleManager).GetField("_harvestManager", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                
-                envField?.SetValue(lifecycleManager, _environmentalManager);
-                harvestField?.SetValue(lifecycleManager, _harvestManager);
+                // Use explicit dependency injection method instead of dangerous reflection
+                try 
+                {
+                    lifecycleManager.SetDependencies(_environmentalManager, _harvestManager);
+                    Debug.Log("[CultivationManager] PlantLifecycleManager dependencies injected safely via explicit method");
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"[CultivationManager] Failed to inject dependencies into PlantLifecycleManager: {ex.Message}");
+                    Debug.LogError("[CultivationManager] PlantLifecycleManager.SetDependencies method may not be implemented yet");
+                }
             }
             
             // Initialize all components

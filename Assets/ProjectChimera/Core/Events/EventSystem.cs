@@ -189,10 +189,8 @@ namespace ProjectChimera.Core.Events
             base.Awake(); // Call ChimeraManager's Awake
         }
         
-        protected override void Update()
+        private void Update()
         {
-            base.Update(); // Call ChimeraManager's Update
-            
             // Process queued events each frame
             EventSystem.ProcessQueuedEvents();
         }

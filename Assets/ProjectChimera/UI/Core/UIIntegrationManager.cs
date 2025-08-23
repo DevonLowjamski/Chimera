@@ -70,8 +70,10 @@ namespace ProjectChimera.UI.Core
             // LogInfo("UI Integration Manager initialized with comprehensive manager communication");
         }
         
-        protected override void OnManagerUpdate()
+        private void Update()
         {
+            if (!IsInitialized) return;
+            
             // Process any pending integration tasks
             if (!_isProcessingTasks && _integrationTasks.Count > 0)
             {

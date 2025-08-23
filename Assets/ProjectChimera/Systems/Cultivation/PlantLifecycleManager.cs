@@ -53,6 +53,20 @@ namespace ProjectChimera.Systems.Cultivation
             _harvestManager = harvestManager;
         }
         
+        /// <summary>
+        /// Sets dependencies for PlantLifecycleManager after creation to resolve circular dependency issues.
+        /// Used when PlantLifecycleManager needs to be created before its dependencies are available.
+        /// </summary>
+        /// <param name="environmentalManager">The environmental manager dependency</param>
+        /// <param name="harvestManager">The harvest manager dependency</param>
+        public void SetDependencies(IEnvironmentalManager environmentalManager, IHarvestManager harvestManager)
+        {
+            _environmentalManager = environmentalManager ?? throw new System.ArgumentNullException(nameof(environmentalManager));
+            _harvestManager = harvestManager ?? throw new System.ArgumentNullException(nameof(harvestManager));
+            
+            Debug.Log("[PlantLifecycleManager] Dependencies successfully injected via SetDependencies method");
+        }
+        
         public void Initialize()
         {
             if (IsInitialized) return;

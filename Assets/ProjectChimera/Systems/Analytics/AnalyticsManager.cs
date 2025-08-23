@@ -53,13 +53,14 @@ namespace ProjectChimera.Systems.Analytics
         {
             try
             {
-                var serviceLocator = ProjectChimera.Core.DependencyInjection.ServiceLocator.Instance;
-                return serviceLocator?.GetService<IAnalyticsService>();
+                var serviceContainer = ServiceContainerFactory.Instance;
+                return serviceContainer?.TryResolve<IAnalyticsService>();
             }
             catch (System.Exception ex)
             {
                 Debug.LogWarning($"[AnalyticsManager] Failed to get service from DI container: {ex.Message}");
-                return UnityEngine.Object.FindObjectOfType<AnalyticsManager>();
+                // Return null instead of using FindObjectOfType anti-pattern
+                return null;
             }
         }
 
@@ -155,28 +156,6 @@ namespace ProjectChimera.Systems.Analytics
             {
                 UpdateMetrics();
                 _lastUpdateTime = Time.time;
-            }
-        }
-
-        #endregion
-
-        #region DIChimeraManager Implementation
-
-        protected override void RegisterSelfWithServiceLocator()
-        {
-            base.RegisterSelfWithServiceLocator();
-            
-            // Ensure IAnalyticsService interface is explicitly registered
-            try
-            {
-                ServiceLocator.RegisterSingleton<IAnalyticsService>(this);
-                
-                if (_enableDebugLogging)
-                    Debug.Log("[AnalyticsManager] Successfully registered IAnalyticsService interface with DI container");
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError($"[AnalyticsManager] Failed to register IAnalyticsService interface: {ex.Message}");
             }
         }
 

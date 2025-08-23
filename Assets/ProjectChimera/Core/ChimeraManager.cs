@@ -3,15 +3,17 @@ using UnityEngine;
 namespace ProjectChimera.Core
 {
     /// <summary>
-    /// Simple metrics class for UI compatibility
+    /// Generic metrics class for all manager types.
+    /// Provides basic performance and status information.
     /// </summary>
     public class ManagerMetrics
     {
-        public virtual object ActiveProjects { get; set; } = 0;
-        public virtual object CompletedProjects { get; set; } = 0;
-        public virtual object TotalValue { get; set; } = 0f;
-        public virtual object ActiveWorkers { get; set; } = 0;
-        public virtual object ConstructionEfficiency { get; set; } = 1f;
+        public string ManagerName { get; set; } = string.Empty;
+        public bool IsHealthy { get; set; } = true;
+        public float Performance { get; set; } = 1f;
+        public int ManagedItems { get; set; } = 0;
+        public float Uptime { get; set; } = 0f;
+        public string LastActivity { get; set; } = "Initialized";
     }
 
     /// <summary>
@@ -27,7 +29,19 @@ namespace ProjectChimera.Core
 
     /// <summary>
     /// Base class for all Project Chimera manager components.
-    /// Managers coordinate major game systems and maintain singleton-like behavior.
+    /// 
+    /// SINGLE RESPONSIBILITY: Manages the lifecycle and health monitoring of game system managers.
+    /// 
+    /// This class is responsible ONLY for:
+    /// - Manager initialization and shutdown lifecycle
+    /// - Health monitoring and diagnostics
+    /// - Basic metrics collection and reporting
+    /// - Unity MonoBehaviour integration
+    /// 
+    /// This class does NOT handle:
+    /// - Domain-specific business logic (handled by derived managers)
+    /// - Update loops (handled by centralized update bus system)
+    /// - Direct game object manipulation (handled by service components)
     /// </summary>
     public abstract class ChimeraManager : ChimeraMonoBehaviour, IChimeraManager
     {
@@ -55,48 +69,52 @@ namespace ProjectChimera.Core
         /// </summary>
         public virtual ManagerPriority Priority => ManagerPriority.Normal;
 
-        // Events that UI systems expect to be available
-        public virtual event System.Action<object> OnMarketConditionsChanged;
-        public virtual event System.Action<object> OnPlantDeletedObject;
-        public virtual event System.Action<object> OnPlantHarvestedObject;
-        public virtual event System.Action<object> OnPlantStageChangedObject;
-        public virtual event System.Action<object> OnResearchCompletedObject;
-        public virtual event System.Action<object> OnResearchStartedObject;
-        public virtual event System.Action<object> OnSaleCompletedObject;
-        public virtual event System.Action<object> OnProjectStartedObject;
-        public virtual event System.Action<object> OnProjectCompletedObject;
-        public virtual event System.Action<object> OnConstructionIssueObject;
-        public virtual event System.Action<object> OnConditionsChangedObject;
-        public virtual event System.Action<object> OnAlertTriggeredObject;
+        /// <summary>
+        /// Gets comprehensive metrics for this manager.
+        /// Override in derived classes to provide specific metrics.
+        /// </summary>
+        public virtual ManagerMetrics GetMetrics()
+        {
+            return new ManagerMetrics
+            {
+                ManagerName = ManagerName,
+                IsHealthy = ValidateHealth(),
+                Performance = GetEfficiency(),
+                ManagedItems = GetManagedItemCount(),
+                Uptime = GetUptime(),
+                LastActivity = GetLastActivity()
+            };
+        }
         
-        // Additional events without Object suffix that UI systems may expect
-        public virtual event System.Action<object> OnPlantAdded;
-        public virtual event System.Action<object> OnPlantHarvested;
-        public virtual event System.Action<object> OnPlantStageChanged;
-        public virtual event System.Action<object> OnResearchCompleted;
-        public virtual event System.Action<object> OnResearchStarted;
-        public virtual event System.Action<object> OnSaleCompleted;
-        public virtual event System.Action<object> OnProjectStarted;
-        public virtual event System.Action<object> OnProjectCompleted;
-        public virtual event System.Action<object> OnConstructionIssue;
+        /// <summary>
+        /// Gets the current operational status of this manager.
+        /// Override in derived classes to provide specific status information.
+        /// </summary>
+        public virtual string GetStatus() => IsInitialized ? "Active" : "Inactive";
         
-        // Properties that UI systems may access
-        public virtual object PlayerFunds { get; protected set; }
-        public virtual object PowerConsumption { get; protected set; }
-        public virtual object PerformanceMetrics { get; protected set; }
-        public virtual object Metrics { get; protected set; } = new { ActiveProjects = 0, CompletedProjects = 0, ConstructionEfficiency = 1f, TotalValue = 0f, ActiveWorkers = 0 };
-        public virtual object AllProjects { get; protected set; }
+        /// <summary>
+        /// Gets the current efficiency rating (0.0 to 1.0).
+        /// Override in derived classes to provide specific efficiency calculations.
+        /// </summary>
+        public virtual float GetEfficiency() => IsInitialized ? 1f : 0f;
         
-        // Additional properties that UI systems expect
-        public virtual object GetAtlData { get; protected set; } = new object();
-        public virtual object ProjectName { get; protected set; } = "Default Project";
-        public virtual object Status { get; protected set; } = "Active";
-        public virtual object Efficiency { get; protected set; } = 1f;
-        public virtual object ActiveProjects { get; protected set; } = 0;
-        public virtual object CompletedProjects { get; protected set; } = 0;
-        public virtual object TotalValue { get; protected set; } = 0f;
-        public virtual object ActiveWorkers { get; protected set; } = 0;
-        public virtual object ConstructionEfficiency { get; protected set; } = 1f;
+        /// <summary>
+        /// Gets the number of items this manager is currently managing.
+        /// Override in derived classes to provide specific counts.
+        /// </summary>
+        protected virtual int GetManagedItemCount() => 0;
+        
+        /// <summary>
+        /// Gets the uptime in hours since initialization.
+        /// Override in derived classes for more precise tracking.
+        /// </summary>
+        protected virtual float GetUptime() => IsInitialized ? Time.time / 3600f : 0f;
+        
+        /// <summary>
+        /// Gets a description of the last significant activity.
+        /// Override in derived classes to track specific activities.
+        /// </summary>
+        protected virtual string GetLastActivity() => IsInitialized ? "Running" : "Not Initialized";
 
         protected override void Awake()
         {
@@ -191,43 +209,21 @@ namespace ProjectChimera.Core
         }
 
         /// <summary>
-        /// Called every frame if the manager needs to perform updates.
-        /// Override in derived classes that need frame-by-frame updates.
+        /// Validates that the manager is functioning correctly.
+        /// Override in derived classes to provide specific health checks.
         /// </summary>
-        protected virtual void Update()
+        public virtual bool ValidateHealth()
         {
-            if (!IsInitialized) return;
-
-            OnManagerUpdate();
+            return IsInitialized;
         }
 
         /// <summary>
-        /// Override this method to implement manager-specific update logic.
-        /// Only called when the manager is initialized.
+        /// Gets detailed diagnostic information about the manager.
+        /// Override in derived classes to provide specific diagnostics.
         /// </summary>
-        protected virtual void OnManagerUpdate()
+        public virtual string GetDiagnostics()
         {
-            // Base implementation - override in derived classes
-        }
-
-        /// <summary>
-        /// Called at fixed intervals for physics-related updates.
-        /// Override in derived classes that need fixed timestep updates.
-        /// </summary>
-        protected virtual void FixedUpdate()
-        {
-            if (!IsInitialized) return;
-
-            OnManagerFixedUpdate();
-        }
-
-        /// <summary>
-        /// Override this method to implement manager-specific fixed update logic.
-        /// Only called when the manager is initialized.
-        /// </summary>
-        protected virtual void OnManagerFixedUpdate()
-        {
-            // Base implementation - override in derived classes
+            return $"Manager: {ManagerName}, Initialized: {IsInitialized}, Priority: {Priority}";
         }
 
 

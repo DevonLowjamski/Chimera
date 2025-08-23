@@ -74,9 +74,9 @@ namespace ProjectChimera.Systems.Construction
             LogInfo($"SchematicUnlockManager initialized - {TotalSchematics} schematics, {UnlockedSchematics} unlocked");
         }
         
-        protected override void OnManagerUpdate()
+        private void Update()
         {
-            if (!_enableUnlockSystem) return;
+            if (!IsInitialized || !_enableUnlockSystem) return;
             
             // Refresh unlock cache periodically
             if (_enableUnlockCaching && Time.time - _lastCacheRefresh >= _cacheRefreshInterval)

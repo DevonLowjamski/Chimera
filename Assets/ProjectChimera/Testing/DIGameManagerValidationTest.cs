@@ -171,7 +171,7 @@ namespace ProjectChimera.Testing
                         }
                         else
                         {
-                            LogValidation($"Service container verified: {verification.ServicesValidated} services");
+                            LogValidation($"Service container verified: {verification.VerifiedServices} services");
                         }
                     }
                     catch (Exception ex)

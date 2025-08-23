@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace ProjectChimera.Core.DependencyInjection
@@ -151,6 +152,7 @@ namespace ProjectChimera.Core.DependencyInjection
         
         /// <summary>
         /// Global bootstrapper instance for easy access
+        /// Replaces FindObjectOfType anti-pattern with proper DI container registration
         /// </summary>
         public static ServiceBootstrapper Instance
         {
@@ -158,10 +160,19 @@ namespace ProjectChimera.Core.DependencyInjection
             {
                 if (_instance == null)
                 {
-                    _instance = FindObjectOfType<ServiceBootstrapper>();
+                    // Try to get from DI container first
+                    try
+                    {
+                        _instance = ServiceContainerFactory.Instance?.TryResolve<ServiceBootstrapper>();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"[ServiceBootstrapper] Failed to resolve from DI container: {ex.Message}");
+                    }
+                    
                     if (_instance == null)
                     {
-                        Debug.LogWarning("[ServiceBootstrapper] No ServiceBootstrapper found in scene");
+                        Debug.LogWarning("[ServiceBootstrapper] No ServiceBootstrapper registered in DI container");
                     }
                 }
                 return _instance;

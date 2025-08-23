@@ -85,8 +85,10 @@ namespace ProjectChimera.Systems.Economy
             LogInfo($"ContractGenerationService initialized with {AvailableContractsCount} available contracts");
         }
         
-        protected override void OnManagerUpdate()
+        private void Update()
         {
+            if (!IsInitialized) return;
+            
             float currentTime = Time.time;
             
             // Check if it's time to generate new contracts

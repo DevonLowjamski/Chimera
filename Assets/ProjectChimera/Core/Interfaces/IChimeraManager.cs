@@ -4,7 +4,13 @@ namespace ProjectChimera.Core
 {
     /// <summary>
     /// Interface for all Project Chimera manager components.
-    /// Provides common functionality for initialization, lifecycle management, and identification.
+    /// 
+    /// SINGLE RESPONSIBILITY: Defines the contract for manager lifecycle and health monitoring.
+    /// 
+    /// Provides common functionality for:
+    /// - Manager identification and lifecycle management
+    /// - Health monitoring and diagnostics
+    /// - Basic performance metrics
     /// </summary>
     public interface IChimeraManager
     {
@@ -29,5 +35,20 @@ namespace ProjectChimera.Core
         /// Should be safe to call even if not initialized.
         /// </summary>
         void Shutdown();
+        
+        /// <summary>
+        /// Gets comprehensive performance and status metrics.
+        /// </summary>
+        ManagerMetrics GetMetrics();
+        
+        /// <summary>
+        /// Gets the current operational status.
+        /// </summary>
+        string GetStatus();
+        
+        /// <summary>
+        /// Validates that the manager is functioning correctly.
+        /// </summary>
+        bool ValidateHealth();
     }
 } 

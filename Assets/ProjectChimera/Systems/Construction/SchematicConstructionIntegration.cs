@@ -69,8 +69,10 @@ namespace ProjectChimera.Systems.Construction
             LogInfo($"SchematicConstructionIntegration initialized - {IntegratedSchematicsCount} schematics integrated");
         }
         
-        protected override void OnManagerUpdate()
+        private void Update()
         {
+            if (!IsInitialized) return;
+            
             float currentTime = Time.time;
             
             // Periodic integration check

@@ -27,21 +27,5 @@ namespace ProjectChimera.Core.DependencyInjection
         }
     }
     
-    public class ServiceValidationResult
-    {
-        public bool IsValid { get; set; }
-        public int TotalServices { get; set; }
-        public int ValidServiceCount { get; set; }
-        public int InvalidServiceCount { get; set; }
-        public List<Type> ValidServices { get; set; } = new List<Type>();
-        public List<Type> InvalidServices { get; set; } = new List<Type>();
-        public List<string> Errors { get; set; } = new List<string>();
-        
-        public string GetSummary()
-        {
-            return $"Validation: {(IsValid ? "PASSED" : "FAILED")} | " +
-                   $"Valid: {ValidServiceCount}/{TotalServices} | " +
-                   $"Errors: {Errors.Count}";
-        }
-    }
+    // ServiceValidationResult moved to DITypes.cs to avoid namespace conflicts
 }

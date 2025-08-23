@@ -197,8 +197,10 @@ namespace ProjectChimera.Systems.Economy
             Debug.Log("[TradingManager] Orchestrator shutdown complete");
         }
         
-        protected override void OnManagerUpdate()
+        private void Update()
         {
+            if (!IsInitialized) return;
+            
             // Components handle their own update cycles
             // Orchestrator just coordinates if needed
         }

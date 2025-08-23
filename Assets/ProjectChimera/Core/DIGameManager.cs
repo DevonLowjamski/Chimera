@@ -77,7 +77,7 @@ namespace ProjectChimera.Core
         /// <summary>
         /// Access to the global service container
         /// </summary>
-        public IChimeraServiceContainer GlobalServiceContainer => ServiceContainer;
+        public ProjectChimera.Core.IServiceContainer GlobalServiceContainer => ServiceContainer;
 
         /// <summary>
         /// Access to the manager registry
@@ -164,19 +164,19 @@ namespace ProjectChimera.Core
 
         #region Dependency Injection Override
 
-        protected override IChimeraServiceContainer GetOrCreateServiceContainer()
+        protected override ProjectChimera.Core.IServiceContainer GetOrCreateServiceContainer()
         {
-            // Create the global service container for the entire game
-            var container = ChimeraDIContainerFactory.CreateForDevelopment();
+            // Use ServiceContainerFactory as the sole standardized DI approach per Phase 0 goals
+            var container = ServiceContainerFactory.Instance;
             
-            // Register core game services
+            // Register core game services with the unified container
             RegisterCoreServices(container);
             
             LogDebug("Global service container created and configured");
             return container;
         }
 
-        private void RegisterCoreServices(IChimeraServiceContainer container)
+        private void RegisterCoreServices(ProjectChimera.Core.IServiceContainer container)
         {
             try
             {
@@ -191,7 +191,7 @@ namespace ProjectChimera.Core
                 }
 
                 // Register factory methods for creating managers
-                container.RegisterFactory<IChimeraServiceContainer>(locator => container);
+                container.RegisterFactory<ProjectChimera.Core.IServiceContainer>(locator => container);
 
                 LogDebug("Core services registered with container");
             }

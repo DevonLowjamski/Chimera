@@ -712,10 +712,8 @@ namespace ProjectChimera.UI.Core
             }
         }
         
-        protected override void Update()
+        private void Update()
         {
-            base.Update();
-            
             if (!_isInitialized || _persistenceConfig == null || !_persistenceConfig.EnableAutosave)
                 return;
                 

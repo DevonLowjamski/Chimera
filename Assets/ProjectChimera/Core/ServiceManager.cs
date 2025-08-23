@@ -40,12 +40,31 @@ namespace ProjectChimera.Core.DependencyInjection
             {
                 if (_instance == null)
                 {
-                    _instance = FindObjectOfType<ServiceManager>();
+                    // Try to get from DI container first
+                    try
+                    {
+                        _instance = ServiceContainerFactory.Instance?.TryResolve<ServiceManager>();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"[ServiceManager] Failed to resolve from DI container: {ex.Message}");
+                    }
+                    
                     if (_instance == null)
                     {
                         var gameObject = new GameObject("ServiceManager");
                         _instance = gameObject.AddComponent<ServiceManager>();
                         DontDestroyOnLoad(gameObject);
+                        
+                        // Register with DI container
+                        try
+                        {
+                            ServiceContainerFactory.Instance?.RegisterSingleton<ServiceManager>(_instance);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogWarning($"[ServiceManager] Failed to register with DI container: {ex.Message}");
+                        }
                     }
                 }
                 return _instance;

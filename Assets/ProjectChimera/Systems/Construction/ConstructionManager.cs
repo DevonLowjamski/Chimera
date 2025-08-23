@@ -84,8 +84,10 @@ namespace ProjectChimera.Systems.Construction
             LogInfo("Grid-based ConstructionManager initialized successfully");
         }
         
-        protected override void OnManagerUpdate()
+        private void Update()
         {
+            if (!IsInitialized) return;
+            
             float currentTime = Time.time;
             
             UpdateConstructionProgress();

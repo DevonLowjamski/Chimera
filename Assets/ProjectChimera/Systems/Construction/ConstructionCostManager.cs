@@ -102,8 +102,10 @@ namespace ProjectChimera.Systems.Construction
             LogInfo("Grid-based ConstructionCostManager initialized successfully");
         }
         
-        protected override void OnManagerUpdate()
+        private void Update()
         {
+            if (!IsInitialized) return;
+            
             UpdateCostTracking();
             UpdateResourceManagement();
             UpdateBudgetAlerts();

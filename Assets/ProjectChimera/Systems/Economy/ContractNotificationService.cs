@@ -79,9 +79,9 @@ namespace ProjectChimera.Systems.Economy
             LogInfo("ContractNotificationService initialized with comprehensive notification support");
         }
         
-        protected override void OnManagerUpdate()
+        private void Update()
         {
-            if (!_enableContractNotifications) return;
+            if (!IsInitialized || !_enableContractNotifications) return;
             
             // Update contract state tracking
             UpdateContractStates();

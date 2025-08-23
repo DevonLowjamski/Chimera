@@ -107,20 +107,28 @@ namespace ProjectChimera.Core.DependencyInjection
                 return;
             }
 
-            // Register factory methods for creating manager interfaces
-            // These will fallback to null implementations if no actual manager is found
+            // Register factory methods for creating manager interfaces with proper DI resolution
+            // These will fallback to null implementations if no actual manager is registered
             
             container.RegisterFactory<ITimeManager>(locator => 
-                FindObjectOfType<TimeManager>() as ITimeManager ?? new NullTimeManager());
+                locator.TryResolve<TimeManager>() as ITimeManager ?? 
+                locator.TryResolve<ITimeManager>() ?? 
+                new NullTimeManager());
                 
             container.RegisterFactory<IDataManager>(locator => 
-                FindObjectOfType<DataManager>() as IDataManager ?? new NullDataManager());
+                locator.TryResolve<DataManager>() as IDataManager ?? 
+                locator.TryResolve<IDataManager>() ?? 
+                new NullDataManager());
                 
             container.RegisterFactory<IEventManager>(locator => 
-                FindObjectOfType<EventManager>() as IEventManager ?? new InMemoryEventManager());
+                locator.TryResolve<EventManager>() as IEventManager ?? 
+                locator.TryResolve<IEventManager>() ?? 
+                new InMemoryEventManager());
                 
             container.RegisterFactory<ISettingsManager>(locator => 
-                FindObjectOfType<SettingsManager>() as ISettingsManager ?? new PlayerPrefsSettingsManager());
+                locator.TryResolve<SettingsManager>() as ISettingsManager ?? 
+                locator.TryResolve<ISettingsManager>() ?? 
+                new PlayerPrefsSettingsManager());
                 
             
             LogModuleAction("Manager interface factories registered");
@@ -148,14 +156,14 @@ namespace ProjectChimera.Core.DependencyInjection
 
         private void ValidateUnityManagers()
         {
-            // Validate that essential Unity components are available
-            var gameManager = FindObjectOfType<GameManager>();
+            // Validate that essential Unity components are available via DI container
+            var gameManager = ServiceContainerFactory.Instance?.TryResolve<GameManager>();
             if (gameManager == null)
             {
-                Debug.LogWarning("[ChimeraServiceModule] GameManager not found - some services may not function correctly");
+                Debug.LogWarning("[ChimeraServiceModule] GameManager not registered in DI container - some services may not function correctly");
             }
 
-            var serviceManager = FindObjectOfType<ServiceManager>();
+            var serviceManager = ServiceContainerFactory.Instance?.TryResolve<ServiceManager>();
             if (serviceManager == null)
             {
                 Debug.LogWarning("[ChimeraServiceModule] ServiceManager not found in scene");
@@ -238,6 +246,23 @@ namespace ProjectChimera.Core.DependencyInjection
             if (CurrentSpeedLevel > TimeSpeedLevel.Slow) CurrentSpeedLevel--;
         }
         public void ResetSpeedLevel() => CurrentSpeedLevel = TimeSpeedLevel.Normal;
+
+        // IChimeraManager implementation
+        public ManagerMetrics GetMetrics()
+        {
+            return new ManagerMetrics
+            {
+                ManagerName = ManagerName,
+                IsHealthy = true,
+                Performance = 1f,
+                ManagedItems = 0,
+                Uptime = 0f,
+                LastActivity = "Null Implementation"
+            };
+        }
+
+        public string GetStatus() => "Null Implementation - Always Active";
+        public bool ValidateHealth() => true;
     }
 
     public class NullDataManager : IDataManager
@@ -254,6 +279,23 @@ namespace ProjectChimera.Core.DependencyInjection
         public void AutoSave() { }
         public void DeleteSave(string saveFileName) { }
         public System.Collections.Generic.IEnumerable<string> GetSaveFiles() => new string[0];
+
+        // IChimeraManager implementation
+        public ManagerMetrics GetMetrics()
+        {
+            return new ManagerMetrics
+            {
+                ManagerName = ManagerName,
+                IsHealthy = true,
+                Performance = 1f,
+                ManagedItems = 0,
+                Uptime = 0f,
+                LastActivity = "Null Implementation"
+            };
+        }
+
+        public string GetStatus() => "Null Implementation - No Save Data";
+        public bool ValidateHealth() => true;
     }
 
     public class InMemoryEventManager : IEventManager
@@ -268,6 +310,23 @@ namespace ProjectChimera.Core.DependencyInjection
         public void Publish<T>(T eventData) where T : class { }
         public void PublishImmediate<T>(T eventData) where T : class { }
         public int GetSubscriberCount<T>() where T : class => 0;
+
+        // IChimeraManager implementation
+        public ManagerMetrics GetMetrics()
+        {
+            return new ManagerMetrics
+            {
+                ManagerName = ManagerName,
+                IsHealthy = true,
+                Performance = 1f,
+                ManagedItems = 0,
+                Uptime = 0f,
+                LastActivity = "Null Implementation"
+            };
+        }
+
+        public string GetStatus() => "Null Implementation - In Memory";
+        public bool ValidateHealth() => true;
     }
 
     public class PlayerPrefsSettingsManager : ISettingsManager
@@ -284,6 +343,23 @@ namespace ProjectChimera.Core.DependencyInjection
         public void LoadSettings() { }
         public void ResetToDefaults() { }
         public System.Collections.Generic.IEnumerable<string> GetAllSettingKeys() => new string[0];
+
+        // IChimeraManager implementation
+        public ManagerMetrics GetMetrics()
+        {
+            return new ManagerMetrics
+            {
+                ManagerName = ManagerName,
+                IsHealthy = true,
+                Performance = 1f,
+                ManagedItems = 0,
+                Uptime = 0f,
+                LastActivity = "Null Implementation"
+            };
+        }
+
+        public string GetStatus() => "Null Implementation - PlayerPrefs";
+        public bool ValidateHealth() => true;
     }
 
     #endregion

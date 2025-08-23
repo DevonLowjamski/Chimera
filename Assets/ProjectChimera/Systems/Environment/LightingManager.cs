@@ -100,7 +100,7 @@ namespace ProjectChimera.Systems.Environment
             LogInfo("LightingManager initialized with advanced spectrum and DLI control");
         }
 
-        protected override void OnManagerUpdate()
+        private void Update()
         {
             if (!IsInitialized) return;
             

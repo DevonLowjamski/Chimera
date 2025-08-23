@@ -33,7 +33,7 @@ namespace ProjectChimera.Core
         
         // Core components
         private ManagerRegistry _managerRegistry;
-        private IChimeraServiceContainer _serviceContainer;
+        private IServiceContainer _serviceContainer;
         
         // Health tracking
         private Dictionary<Type, ServiceHealthData> _serviceHealthHistory = new Dictionary<Type, ServiceHealthData>();
@@ -65,7 +65,7 @@ namespace ProjectChimera.Core
         /// <summary>
         /// Initialize the health monitor with required dependencies
         /// </summary>
-        public void Initialize(ManagerRegistry managerRegistry, IChimeraServiceContainer serviceContainer = null)
+        public void Initialize(ManagerRegistry managerRegistry, IServiceContainer serviceContainer = null)
         {
             _managerRegistry = managerRegistry ?? throw new ArgumentNullException(nameof(managerRegistry));
             _serviceContainer = serviceContainer;
@@ -369,7 +369,7 @@ namespace ProjectChimera.Core
                 var containerResult = _serviceContainer.Verify();
                 result.IsValid = containerResult.IsValid;
                 result.Errors.AddRange(containerResult.Errors);
-                result.ServicesValidated = containerResult.ServicesValidated;
+                result.ServicesValidated = containerResult.VerifiedServices;
             }
             catch (Exception ex)
             {

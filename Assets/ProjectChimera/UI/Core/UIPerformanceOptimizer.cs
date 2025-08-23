@@ -558,11 +558,9 @@ namespace ProjectChimera.UI.Core
             };
         }
         
-        protected override void Update()
+        private void Update()
         {
-            base.Update();
-            
-            if (!_enableAutomaticOptimization)
+            if (!IsInitialized || !_enableAutomaticOptimization)
                 return;
             
             _framesSinceLastOptimization++;

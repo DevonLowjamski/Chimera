@@ -4,23 +4,40 @@ using ProjectChimera.UI.Panels;
 using ProjectChimera.UI.Core;
 using ProjectChimera.Data.Construction;
 using ProjectChimera.Systems.Construction;
+using ProjectChimera.Core;
 
 namespace ProjectChimera.UI.Managers
 {
     /// <summary>
     /// Manager for the Construction Palette UI system in Project Chimera Phase 4.
     /// Handles palette lifecycle, integration with construction systems, and UI state management.
+    /// 
+    /// DEPENDENCY INJECTION: Uses constructor injection for testability and explicit dependencies.
     /// </summary>
     public class ConstructionPaletteManager : MonoBehaviour
     {
         [Header("Palette Configuration")]
-        [SerializeField] private ConstructionPalettePanel _palettePanel;
         [SerializeField] private bool _showPaletteOnStart = true;
         [SerializeField] private bool _hideOnEscape = true;
         
-        [Header("Integration")]
-        [SerializeField] private GridPlacementController _placementController;
-        [SerializeField] private UIManager _uiManager;
+        // Dependencies resolved via DI container (explicit dependencies for testability)
+        private ConstructionPalettePanel _palettePanel;
+        private GridPlacementController _placementController;
+        private UIManager _uiManager;
+        
+        /// <summary>
+        /// Initialize dependencies explicitly for testability.
+        /// For testing: call this method with mock dependencies.
+        /// For runtime: dependencies are resolved automatically via DI container.
+        /// </summary>
+        public void Initialize(ConstructionPalettePanel palettePanel = null, 
+                              GridPlacementController placementController = null, 
+                              UIManager uiManager = null)
+        {
+            _palettePanel = palettePanel;
+            _placementController = placementController;
+            _uiManager = uiManager;
+        }
         
         [Header("Keyboard Shortcuts")]
         [SerializeField] private KeyCode _togglePaletteKey = KeyCode.B;
@@ -44,7 +61,7 @@ namespace ProjectChimera.UI.Managers
         
         private void Awake()
         {
-            FindReferences();
+            ResolveDependencies();
         }
         
         private void Start()
@@ -58,34 +75,36 @@ namespace ProjectChimera.UI.Managers
         }
         
         /// <summary>
-        /// Find required component references
+        /// Resolve dependencies from DI container if not explicitly provided.
+        /// This method supports both explicit dependency injection (for testing) 
+        /// and automatic resolution (for runtime).
         /// </summary>
-        private void FindReferences()
+        private void ResolveDependencies()
         {
             if (_palettePanel == null)
             {
-                _palettePanel = FindObjectOfType<ConstructionPalettePanel>();
+                _palettePanel = ServiceContainerFactory.Instance?.TryResolve<ConstructionPalettePanel>();
                 if (_palettePanel == null)
                 {
-                    Debug.LogError("[ConstructionPaletteManager] ConstructionPalettePanel not found in scene. Please ensure a palette panel is present.");
+                    Debug.LogError("[ConstructionPaletteManager] ConstructionPalettePanel not registered in DI container. Explicit dependency injection required for testing.");
                 }
             }
             
             if (_placementController == null)
             {
-                _placementController = FindObjectOfType<GridPlacementController>();
+                _placementController = ServiceContainerFactory.Instance?.TryResolve<GridPlacementController>();
                 if (_placementController == null)
                 {
-                    Debug.LogError("[ConstructionPaletteManager] GridPlacementController not found in scene. Construction placement will not function properly.");
+                    Debug.LogError("[ConstructionPaletteManager] GridPlacementController not registered in DI container. Construction placement will not function properly.");
                 }
             }
             
             if (_uiManager == null)
             {
-                _uiManager = FindObjectOfType<UIManager>();
+                _uiManager = ServiceContainerFactory.Instance?.TryResolve<UIManager>();
                 if (_uiManager == null)
                 {
-                    Debug.LogWarning("[ConstructionPaletteManager] UIManager not found in scene. Some UI integration features may not work.");
+                    Debug.LogWarning("[ConstructionPaletteManager] UIManager not registered in DI container. Some UI integration features may not work.");
                 }
             }
         }

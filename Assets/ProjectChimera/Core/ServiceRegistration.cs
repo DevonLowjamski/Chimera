@@ -1,4 +1,5 @@
 using System;
+using ProjectChimera.Core.DependencyInjection;
 
 namespace ProjectChimera.Core
 {

@@ -15,9 +15,8 @@ namespace ProjectChimera.Core
         [SerializeField] protected bool _autoRegisterWithContainer = true;
         [SerializeField] private ServiceLifetime _serviceLifetime = ServiceLifetime.Singleton;
 
-        protected IChimeraServiceContainer ServiceContainer { get; private set; }
-        protected ProjectChimera.Core.DependencyInjection.IServiceProvider ServiceProvider { get; private set; }
-        protected IServiceLocator ServiceLocator { get; private set; }
+        protected ProjectChimera.Core.IServiceContainer ServiceContainer { get; private set; }
+        protected global::System.IServiceProvider ServiceProvider { get; private set; }
 
         private bool _isDisposed = false;
 
@@ -43,32 +42,28 @@ namespace ProjectChimera.Core
         #region Dependency Injection
 
         /// <summary>
-        /// Initialize dependency injection for this manager using standardized ServiceLocator route
+        /// Initialize dependency injection for this manager using standardized ServiceContainer approach
         /// </summary>
         protected virtual void InitializeDependencyInjection()
         {
             try
             {
-                // Use ServiceLocator as the standardized DI route
-                ServiceLocator = ProjectChimera.Core.DependencyInjection.ServiceLocator.Instance;
-                Debug.Log($"[DIChimeraManager] Using ServiceLocator as standard DI route for {ManagerName}");
-
-                // Fallback to ServiceContainer for backward compatibility
+                // Use ServiceContainer as the sole standardized DI approach
                 ServiceContainer = GetOrCreateServiceContainer();
-                // TODO: Initialize service provider wrapper when legacy integration is needed
-                // ServiceProvider = ServiceContainerIntegration.ToServiceProvider(ServiceContainer);
+                ServiceProvider = (global::System.IServiceProvider)ProjectChimera.Core.DependencyInjection.ServiceContainerIntegration.ToServiceProvider(ServiceContainer);
+                
+                Debug.Log($"[DIChimeraManager] Using ServiceContainer as sole DI provider for {ManagerName}");
 
-                // Auto-register this manager with ServiceLocator (preferred route)
+                // Auto-register this manager with ServiceContainer
                 if (_autoRegisterWithContainer)
                 {
-                    RegisterSelfWithServiceLocator();
-                    RegisterSelfWithContainer(); // Keep for backward compatibility
+                    RegisterSelfWithContainer();
                 }
 
                 // Resolve dependencies
                 ResolveDependencies();
 
-                Debug.Log($"[DIChimeraManager] Dependency injection initialized for {ManagerName} via ServiceLocator");
+                Debug.Log($"[DIChimeraManager] Dependency injection initialized for {ManagerName} via ServiceContainer");
             }
             catch (Exception ex)
             {
@@ -79,21 +74,16 @@ namespace ProjectChimera.Core
         /// <summary>
         /// Get or create the global service container
         /// </summary>
-        protected virtual IChimeraServiceContainer GetOrCreateServiceContainer()
+        protected virtual ProjectChimera.Core.IServiceContainer GetOrCreateServiceContainer()
         {
-            // Create new container for this instance
-            var container = ChimeraDIContainerFactory.CreateForDevelopment();
-            
-            // TODO: Implement proper container sharing mechanism in future iteration
-            // For now, each DIChimeraManager gets its own container instance
-            
-            return container;
+            // Use ServiceContainerFactory as the sole standardized DI approach per Phase 0 goals
+            return ServiceContainerFactory.Instance;
         }
 
         /// <summary>
         /// Set the service container for this manager (protected access for derived classes)
         /// </summary>
-        protected void SetServiceContainer(IChimeraServiceContainer container)
+        protected void SetServiceContainer(ProjectChimera.Core.IServiceContainer container)
         {
             ServiceContainer = container;
         }
@@ -125,39 +115,6 @@ namespace ProjectChimera.Core
             Debug.Log($"[DIChimeraManager] Registered {ManagerName} as concrete type");
         }
 
-        /// <summary>
-        /// Register this manager with the ServiceLocator (standardized DI route)
-        /// </summary>
-        protected virtual void RegisterSelfWithServiceLocator()
-        {
-            try
-            {
-                var managerType = GetType();
-                
-                // Register concrete type with ServiceLocator
-                ProjectChimera.Core.DependencyInjection.ServiceLocator.Instance.RegisterSingleton(managerType, this);
-                
-                // Register interfaces if they exist
-                var interfaceTypes = managerType.GetInterfaces()
-                    .Where(i => i != typeof(IDisposable)) // Skip IDisposable
-                    .ToArray();
-                
-                foreach (var interfaceType in interfaceTypes)
-                {
-                    if (interfaceType.Name.Contains("Manager") || interfaceType.Name.StartsWith("I"))
-                    {
-                        ProjectChimera.Core.DependencyInjection.ServiceLocator.Instance.RegisterSingleton(interfaceType, this);
-                        Debug.Log($"[DIChimeraManager] Registered {ManagerName} as {interfaceType.Name} with ServiceLocator");
-                    }
-                }
-                
-                Debug.Log($"[DIChimeraManager] Successfully registered {ManagerName} with ServiceLocator (standard DI route)");
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[DIChimeraManager] Failed to register {ManagerName} with ServiceLocator: {ex.Message}");
-            }
-        }
 
         /// <summary>
         /// Override this method to resolve dependencies using the service container
@@ -298,9 +255,9 @@ namespace ProjectChimera.Core
     /// </summary>
     public class ServiceContainerComponent : MonoBehaviour
     {
-        public IServiceContainer Container { get; private set; }
+        public ProjectChimera.Core.IServiceContainer Container { get; private set; }
 
-        public void Initialize(IServiceContainer container)
+        public void Initialize(ProjectChimera.Core.IServiceContainer container)
         {
             Container = container ?? throw new ArgumentNullException(nameof(container));
             Debug.Log("[ServiceContainerComponent] Service container attached to GameObject");

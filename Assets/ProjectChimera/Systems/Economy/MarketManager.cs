@@ -60,8 +60,10 @@ namespace ProjectChimera.Systems.Economy
             // Cleanup resources
         }
         
-        protected override void OnManagerUpdate()
+        private void Update()
         {
+            if (!IsInitialized) return;
+            
             // No complex market dynamics - marketplace is stable with fixed prices
             // Only basic maintenance operations if needed
         }

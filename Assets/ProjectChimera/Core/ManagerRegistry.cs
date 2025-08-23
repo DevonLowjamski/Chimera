@@ -29,7 +29,7 @@ namespace ProjectChimera.Core
         private readonly Dictionary<ChimeraManager, DateTime> _registrationTimes = new Dictionary<ChimeraManager, DateTime>();
         
         // Service container reference
-        private IChimeraServiceContainer _serviceContainer;
+        private IServiceContainer _serviceContainer;
         
         // Events
         public System.Action<ChimeraManager> OnManagerRegistered;
@@ -46,7 +46,7 @@ namespace ProjectChimera.Core
         /// <summary>
         /// Initialize the manager registry with optional service container
         /// </summary>
-        public void Initialize(IChimeraServiceContainer serviceContainer = null)
+        public void Initialize(IServiceContainer serviceContainer = null)
         {
             _serviceContainer = serviceContainer;
             LogDebug("Manager registry initialized");
@@ -475,7 +475,7 @@ namespace ProjectChimera.Core
         /// <summary>
         /// Set or update the service container reference
         /// </summary>
-        public void SetServiceContainer(IChimeraServiceContainer serviceContainer)
+        public void SetServiceContainer(IServiceContainer serviceContainer)
         {
             _serviceContainer = serviceContainer;
             LogDebug($"Service container {(serviceContainer != null ? "set" : "cleared")}");

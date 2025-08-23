@@ -82,7 +82,7 @@ namespace ProjectChimera.Systems.Environment
             IsInitialized = false;
         }
         
-        protected override void OnManagerUpdate()
+        private void Update()
         {
             if (!IsInitialized) return;
             

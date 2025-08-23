@@ -103,8 +103,10 @@ namespace ProjectChimera.Systems.Economy
             LogInfo($"CurrencyManager initialized with ${_startingCash:F2} starting cash");
         }
         
-        protected override void OnManagerUpdate()
+        private void Update()
         {
+            if (!IsInitialized) return;
+            
             float currentTime = Time.time;
             
             // Generate periodic financial reports

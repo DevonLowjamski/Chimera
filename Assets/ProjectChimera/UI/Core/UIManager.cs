@@ -94,10 +94,10 @@ namespace ProjectChimera.UI.Core
             if (!_enableGlobalNotifications)
                 return;
                 
-            // Find or create NotificationManager
+            // Resolve NotificationManager via DI container
             if (_notificationManager == null)
             {
-                _notificationManager = FindObjectOfType<NotificationManager>();
+                _notificationManager = ServiceContainerFactory.Instance?.TryResolve<NotificationManager>();
             }
             
             if (_notificationManager == null)

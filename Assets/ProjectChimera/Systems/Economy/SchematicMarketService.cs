@@ -78,8 +78,10 @@ namespace ProjectChimera.Systems.Economy
             LogInfo($"SchematicMarketService initialized with {TotalSchematicsCount} total schematics");
         }
         
-        protected override void OnManagerUpdate()
+        private void Update()
         {
+            if (!IsInitialized) return;
+            
             float currentTime = Time.time;
             
             // Check for market refresh

@@ -31,6 +31,13 @@ namespace ProjectChimera.Systems.Cultivation
         IEnumerable<PlantInstanceSO> GetPlantsByStage(PlantGrowthStage stage);
         IEnumerable<PlantInstanceSO> GetPlantsNeedingAttention();
         
+        /// <summary>
+        /// Sets dependencies for PlantLifecycleManager after creation to resolve circular dependency issues.
+        /// </summary>
+        /// <param name="environmentalManager">The environmental manager dependency</param>
+        /// <param name="harvestManager">The harvest manager dependency</param>
+        void SetDependencies(IEnvironmentalManager environmentalManager, IHarvestManager harvestManager);
+        
         int ActivePlantCount { get; }
         int TotalPlantsGrown { get; }
         int TotalPlantsHarvested { get; }

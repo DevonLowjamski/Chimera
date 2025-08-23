@@ -56,9 +56,9 @@ namespace ProjectChimera.Systems.Economy
             LogInfo("Contract tracking service shut down");
         }
 
-        protected override void OnManagerUpdate()
+        private void Update()
         {
-            if (!_enableAutoTracking) return;
+            if (!IsInitialized || !_enableAutoTracking) return;
 
             if (Time.time % _trackingUpdateInterval < Time.deltaTime)
             {

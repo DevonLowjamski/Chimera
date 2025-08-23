@@ -538,6 +538,23 @@ namespace ProjectChimera.Testing.Phase2_2
             public System.Collections.Generic.IEnumerable<string> GetUnlockedAchievements() => new string[0];
             public void Initialize() { }
             public void Shutdown() { }
+
+            // IChimeraManager implementation
+            public ManagerMetrics GetMetrics()
+            {
+                return new ManagerMetrics
+                {
+                    ManagerName = ManagerName,
+                    IsHealthy = true,
+                    Performance = 1f,
+                    ManagedItems = 0,
+                    Uptime = 0f,
+                    LastActivity = "Mock Test Implementation"
+                };
+            }
+
+            public string GetStatus() => $"Mock Progression Manager - Level {PlayerLevel}, {SkillPoints} SP";
+            public bool ValidateHealth() => true;
         }
     }
 }

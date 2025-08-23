@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using ProjectChimera.Core;
+using ServiceLocatorAdapter = ProjectChimera.Core.ServiceLocatorAdapter;
 
 namespace ProjectChimera.Core.DependencyInjection
 {
@@ -14,7 +16,7 @@ namespace ProjectChimera.Core.DependencyInjection
         private readonly List<Action<IServiceContainer>> _registrationActions = new List<Action<IServiceContainer>>();
         private readonly List<IServiceModule> _modules = new List<IServiceModule>();
 
-        public ServiceContainerBuilder() : this(new ServiceContainer()) { }
+        public ServiceContainerBuilder() : this(new Core.ServiceContainer()) { }
 
         public ServiceContainerBuilder(IServiceContainer container)
         {
@@ -91,6 +93,7 @@ namespace ProjectChimera.Core.DependencyInjection
         /// Register a named service
         /// </summary>
         public ServiceContainerBuilder AddNamed<TInterface, TImplementation>(string name)
+            where TInterface : class
             where TImplementation : class, TInterface, new()
         {
             _registrationActions.Add(container => container.RegisterNamed<TInterface, TImplementation>(name));
@@ -101,6 +104,7 @@ namespace ProjectChimera.Core.DependencyInjection
         /// Register a conditional service
         /// </summary>
         public ServiceContainerBuilder AddConditional<TInterface, TImplementation>(Func<IServiceLocator, bool> condition)
+            where TInterface : class
             where TImplementation : class, TInterface, new()
         {
             _registrationActions.Add(container => container.RegisterConditional<TInterface, TImplementation>(condition));
@@ -111,8 +115,8 @@ namespace ProjectChimera.Core.DependencyInjection
         /// Register a decorator
         /// </summary>
         public ServiceContainerBuilder AddDecorator<TInterface, TDecorator>()
-            where TDecorator : class, TInterface
             where TInterface : class
+            where TDecorator : class, TInterface, new()
         {
             _registrationActions.Add(container => container.RegisterDecorator<TInterface, TDecorator>());
             return this;
@@ -122,6 +126,7 @@ namespace ProjectChimera.Core.DependencyInjection
         /// Register a service with initialization callback
         /// </summary>
         public ServiceContainerBuilder AddWithCallback<TInterface, TImplementation>(Action<TImplementation> initializer)
+            where TInterface : class
             where TImplementation : class, TInterface, new()
         {
             _registrationActions.Add(container => container.RegisterWithCallback<TInterface, TImplementation>(initializer));
@@ -287,7 +292,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 {
                     try
                     {
-                        module.ConfigureServices(_container);
+                        module.ConfigureServices(new ServiceLocatorAdapter(_container));
                         Debug.Log($"[ServiceContainerBuilder] Module '{module.ModuleName}' configured");
                     }
                     catch (Exception ex)
@@ -302,7 +307,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 {
                     try
                     {
-                        module.Initialize(_container);
+                        module.Initialize(new ServiceLocatorAdapter(_container));
                         Debug.Log($"[ServiceContainerBuilder] Module '{module.ModuleName}' initialized");
                     }
                     catch (Exception ex)
