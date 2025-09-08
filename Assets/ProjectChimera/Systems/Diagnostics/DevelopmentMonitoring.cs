@@ -1,10 +1,13 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Profiling;
-using ProjectChimera.Systems.Analytics;
+using ProjectChimera.Core;
+// Removed ProjectChimera.Systems.Analytics - violates architectural layers (Infrastructure cannot reference Application Services)
 
 namespace ProjectChimera.Systems.Diagnostics
 {
@@ -13,7 +16,7 @@ namespace ProjectChimera.Systems.Diagnostics
     /// Provides custom performance profiling and debug overlays for development builds
     /// Integrates with Unity 6.2 diagnostics while adding Project Chimera-specific insights
     /// </summary>
-    public class DevelopmentMonitoring : MonoBehaviour
+    public class DevelopmentMonitoring : MonoBehaviour, ITickable
     {
         [Header("Development Monitoring Configuration")]
         [SerializeField] private bool _enableDevelopmentMonitoring = true;
@@ -42,10 +45,9 @@ namespace ProjectChimera.Systems.Diagnostics
         [SerializeField] private long _memoryWarningThreshold = 1024 * 1024 * 512; // 512MB
         [SerializeField] private long _memoryCriticalThreshold = 1024 * 1024 * 1024; // 1GB
         
-        // Core Systems
-        private Unity62DiagnosticsIntegration _unity62Diagnostics;
-        private DataPipelineIntegration _dataPipeline;
-        private AdvancedAnalytics _analytics;
+        // Core Systems - Unity62DiagnosticsIntegration not yet implemented, removed temporarily
+        // Removed DataPipelineIntegration and AdvancedAnalytics - architectural violation fixed
+        // These should be accessed via events or moved to appropriate layer
         
         // Monitoring State
         private bool _overlayVisible = false;
@@ -78,6 +80,8 @@ namespace ProjectChimera.Systems.Diagnostics
         
         private void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             FindSystemReferences();
             SetupGUIStyles();
             
@@ -87,8 +91,8 @@ namespace ProjectChimera.Systems.Diagnostics
             }
         }
         
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             if (!_enableDevelopmentMonitoring) return;
             
             HandleInput();
@@ -97,7 +101,8 @@ namespace ProjectChimera.Systems.Diagnostics
             {
                 CollectPerformanceData();
                 _lastProfilingTime = Time.time;
-            }
+            
+    }
         }
         
         private void OnGUI()
@@ -116,14 +121,13 @@ namespace ProjectChimera.Systems.Diagnostics
             return;
 #endif
             
-            Debug.Log("[DevelopmentMonitoring] Development monitoring system initialized");
+            ChimeraLogger.Log("[DevelopmentMonitoring] Development monitoring system initialized");
         }
         
         private void FindSystemReferences()
         {
-            _unity62Diagnostics = UnityEngine.Object.FindObjectOfType<Unity62DiagnosticsIntegration>();
-            _dataPipeline = UnityEngine.Object.FindObjectOfType<DataPipelineIntegration>();
-            _analytics = UnityEngine.Object.FindObjectOfType<AdvancedAnalytics>();
+            // TODO: Implement Unity62DiagnosticsIntegration service when available
+            // Removed DataPipelineIntegration and AdvancedAnalytics resolution - architectural violation fixed
         }
         
         private void SetupGUIStyles()
@@ -171,7 +175,7 @@ namespace ProjectChimera.Systems.Diagnostics
                 StartMemoryTracking();
             }
             
-            Debug.Log("[DevelopmentMonitoring] Development monitoring started");
+            ChimeraLogger.Log("[DevelopmentMonitoring] Development monitoring started");
         }
         
         private void InitializeSystemHealthTracking()
@@ -202,12 +206,12 @@ namespace ProjectChimera.Systems.Diagnostics
         
         private void StartPerformanceProfiling()
         {
-            Debug.Log("[DevelopmentMonitoring] Performance profiling started");
+            ChimeraLogger.Log("[DevelopmentMonitoring] Performance profiling started");
         }
         
         private void StartMemoryTracking()
         {
-            Debug.Log("[DevelopmentMonitoring] Memory tracking started");
+            ChimeraLogger.Log("[DevelopmentMonitoring] Memory tracking started");
         }
         
         private void HandleInput()
@@ -255,7 +259,8 @@ namespace ProjectChimera.Systems.Diagnostics
             UpdateSystemHealth(sample);
             
             // Send to Unity 6.2 diagnostics if available
-            if (_unity62Diagnostics != null)
+            // Diagnostics integration temporarily disabled
+            // if (_unity62Diagnostics != null)
             {
                 _ = SendSampleToUnityDiagnosticsAsync(sample);
             }
@@ -381,7 +386,7 @@ namespace ProjectChimera.Systems.Diagnostics
                 _recentAlerts.RemoveAt(0);
             }
             
-            Debug.LogWarning($"[DevelopmentMonitoring] Performance Alert: {message}");
+            ChimeraLogger.LogWarning($"[DevelopmentMonitoring] Performance Alert: {message}");
         }
         
         private void UpdateSystemHealth(PerformanceProfileSample sample)
@@ -454,7 +459,7 @@ namespace ProjectChimera.Systems.Diagnostics
                 ["dev_construction_buildings"] = sample.ConstructionMetrics?.ActiveBuildings ?? 0
             };
             
-            await _unity62Diagnostics.SendCustomEventAsync("dev_performance_sample", diagnosticsData);
+            // await _unity62Diagnostics.SendCustomEventAsync("dev_performance_sample", diagnosticsData);
         }
         
         private void DrawDebugOverlay()
@@ -648,17 +653,34 @@ namespace ProjectChimera.Systems.Diagnostics
         {
             _performanceSamples.Clear();
             _recentAlerts.Clear();
-            Debug.Log("[DevelopmentMonitoring] Performance data cleared");
+            ChimeraLogger.Log("[DevelopmentMonitoring] Performance data cleared");
         }
         
         private void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             if (_enableDevelopmentMonitoring)
             {
-                Debug.Log("[DevelopmentMonitoring] Development monitoring stopped");
+                ChimeraLogger.Log("[DevelopmentMonitoring] Development monitoring stopped");
             }
         }
+    
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+    
+    public virtual void OnRegistered() 
+    { 
+        // Override in derived classes if needed
     }
+    
+    public virtual void OnUnregistered() 
+    { 
+        // Override in derived classes if needed
+    }
+
+}
     
     // Data Structures
     

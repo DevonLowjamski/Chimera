@@ -5,7 +5,7 @@
         "ProjectChimera.Core",
         "ProjectChimera.Shared",
         "ProjectChimera.Data.Shared",
-        "ProjectChimera.Systems.Gameplay"
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

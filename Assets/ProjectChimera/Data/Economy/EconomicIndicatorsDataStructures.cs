@@ -26,13 +26,13 @@ namespace ProjectChimera.Data.Economy.Indicators
         public float RiskScore = 0.5f;
         public DateTime LastTradeDate;
         public List<string> AchievedMilestones = new List<string>();
-        
+
         public void UpdateMetrics(TradeExecutionResult result)
         {
             TotalTrades++;
             TotalVolume += result.TradeValue;
             LastTradeDate = DateTime.Now;
-            
+
             if (result.Success)
             {
                 SuccessfulTrades++;
@@ -42,7 +42,7 @@ namespace ProjectChimera.Data.Economy.Indicators
             {
                 FailedTrades++;
             }
-            
+
             WinRate = TotalTrades > 0 ? (float)SuccessfulTrades / TotalTrades : 0f;
             AverageTradeValue = TotalTrades > 0 ? TotalVolume / TotalTrades : 0m;
         }
@@ -58,19 +58,7 @@ namespace ProjectChimera.Data.Economy.Indicators
         public string ErrorMessage;
     }
 
-    [System.Serializable]
-    public class PerformanceMetrics
-    {
-        public string MetricId;
-        public string MetricName;
-        public float CurrentValue = 0f;
-        public float TargetValue = 0f;
-        public float BenchmarkValue = 0f;
-        public MetricType Type = MetricType.Ratio;
-        public TrendDirection Trend = TrendDirection.Stable;
-        public DateTime LastUpdated;
-        public List<HistoricalValue> History = new List<HistoricalValue>();
-    }
+
 
     [System.Serializable]
     public class HistoricalValue
@@ -104,7 +92,7 @@ namespace ProjectChimera.Data.Economy.Indicators
         public DateTime LastAnalysis;
         public List<EconomicIndicatorTrend> CurrentTrends = new List<EconomicIndicatorTrend>();
         public AnalysisFrequency UpdateFrequency = AnalysisFrequency.Daily;
-        
+
         public void PerformAnalysis()
         {
             LastAnalysis = DateTime.Now;
@@ -136,7 +124,7 @@ namespace ProjectChimera.Data.Economy.Indicators
         public TrendAnalysisSystem TrendAnalysis;
         public DateTime LastUpdate;
         public AnalyticsConfiguration Configuration;
-        
+
         public void Initialize()
         {
             IsActive = true;
@@ -145,7 +133,7 @@ namespace ProjectChimera.Data.Economy.Indicators
             Configuration = new AnalyticsConfiguration();
             LastUpdate = DateTime.Now;
         }
-        
+
         public void Initialize(bool enableAnalytics)
         {
             IsActive = enableAnalytics;
@@ -228,7 +216,7 @@ namespace ProjectChimera.Data.Economy.Indicators
         public List<RiskFactor> GlobalRiskFactors = new List<RiskFactor>();
         public DateTime LastAssessment;
         public RiskAssessmentSettings Settings;
-        
+
         public void Initialize()
         {
             IsActive = true;
@@ -236,7 +224,7 @@ namespace ProjectChimera.Data.Economy.Indicators
             Settings = new RiskAssessmentSettings();
             SetupGlobalRiskFactors();
         }
-        
+
         public void Initialize(bool enableRiskAssessment)
         {
             IsActive = enableRiskAssessment;
@@ -245,7 +233,7 @@ namespace ProjectChimera.Data.Economy.Indicators
                 Initialize();
             }
         }
-        
+
         public RiskAssessment AssessRisk(string assetId, decimal investmentAmount)
         {
             var riskScore = CalculateRiskScore(assetId);
@@ -258,12 +246,12 @@ namespace ProjectChimera.Data.Economy.Indicators
                 AssessmentDate = DateTime.Now
             };
         }
-        
+
         private float CalculateRiskScore(string assetId)
         {
             return 0.5f; // Placeholder implementation
         }
-        
+
         private RiskLevel DetermineRiskLevel(float riskScore)
         {
             if (riskScore < 0.3f) return RiskLevel.Low;
@@ -271,7 +259,7 @@ namespace ProjectChimera.Data.Economy.Indicators
             if (riskScore < 0.8f) return RiskLevel.High;
             return RiskLevel.VeryHigh;
         }
-        
+
         private void SetupGlobalRiskFactors()
         {
             GlobalRiskFactors.Add(new RiskFactor
@@ -360,7 +348,7 @@ namespace ProjectChimera.Data.Economy.Indicators
         public List<string> AvailableReports = new List<string>();
         public ReportingConfiguration Configuration;
         public List<ScheduledReport> ScheduledReports = new List<ScheduledReport>();
-        
+
         public FinancialReport GenerateReport(ReportType type, DateTime startDate, DateTime endDate)
         {
             LastReportGenerated = DateTime.Now;

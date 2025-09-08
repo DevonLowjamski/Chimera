@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections;
 using System.Linq;
@@ -43,7 +44,7 @@ namespace ProjectChimera.Systems.Scene
             var testResults = new System.Text.StringBuilder();
 
             // Test 1: Validate BootManager exists and is minimal
-            var bootManager = FindObjectOfType<BootManager>();
+            var bootManager = ServiceContainerFactory.Instance?.TryResolve<BootManager>();
             if (bootManager != null)
             {
                 testResults.AppendLine("✅ BootManager found");
@@ -57,7 +58,7 @@ namespace ProjectChimera.Systems.Scene
 
             // Test 2: Validate DIGameManager is created
             yield return new WaitForSeconds(1f); // Give boot time to create DIGameManager
-            var diGameManager = FindObjectOfType<DIGameManager>();
+            var diGameManager = ServiceContainerFactory.Instance?.TryResolve<DIGameManager>();
             if (diGameManager != null)
             {
                 testResults.AppendLine("✅ DIGameManager created");
@@ -151,7 +152,7 @@ namespace ProjectChimera.Systems.Scene
         {
             if (_enableDetailedLogging)
             {
-                Debug.Log($"[BootSystemTest] {message}");
+                ChimeraLogger.Log($"[BootSystemTest] {message}");
             }
         }
 
@@ -167,7 +168,7 @@ namespace ProjectChimera.Systems.Scene
             }
             else
             {
-                Debug.LogWarning("[BootSystemTest] Test can only be run in Play mode");
+                ChimeraLogger.LogWarning("[BootSystemTest] Test can only be run in Play mode");
             }
         }
     }

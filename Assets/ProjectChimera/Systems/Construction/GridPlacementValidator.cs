@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Data.Construction;
 
 namespace ProjectChimera.Systems.Construction
@@ -12,7 +13,7 @@ namespace ProjectChimera.Systems.Construction
     /// Handles collision detection, foundation requirements, and basic placement validation.
     /// Delegates complex validation to specialized validator components.
     /// </summary>
-    public class GridPlacementValidator : MonoBehaviour
+    public class GridPlacementValidator : MonoBehaviour, ITickable
     {
         [Header("3D Validation Settings")]
         [SerializeField] private bool _enableSpaceValidation = true;
@@ -48,14 +49,28 @@ namespace ProjectChimera.Systems.Construction
             _validationCache.Clear();
         }
         
+        
+        public int Priority => TickPriority.ConstructionSystem;
+        public bool Enabled => enabled && _enableValidationCaching;
+        
         private void Start()
         {
-            _gridSystem = FindObjectOfType<GridSystem>();
+            _gridSystem = ServiceContainerFactory.Instance?.TryResolve<IGridSystem>() as GridSystem;
             _structuralValidator = GetComponent<StructuralIntegrityValidator>();
             _heightClearanceValidator = GetComponent<HeightClearanceValidator>();
+            
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
         }
         
-        private void Update() => CleanExpiredCache();
+        private void OnDestroy()
+        {
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
+        }
+        
+        public void Tick(float deltaTime)
+        {
+            CleanExpiredCache();
+        }
         
         /// <summary>
         /// Comprehensive 3D placement validation for single object

@@ -1,9 +1,9 @@
 using UnityEngine;
 using System.Collections.Generic;
-using ProjectChimera.Core;
 using ProjectChimera.Shared;
 using ProjectChimera.Data.Genetics;
 using System;
+using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 using ProjectChimera.Data.Shared;
 
 namespace ProjectChimera.Data.Cultivation
@@ -485,13 +485,13 @@ namespace ProjectChimera.Data.Cultivation
             
             if (_nutrientLines == null || _nutrientLines.Length == 0)
             {
-                Debug.LogWarning($"FertigationSystemSO '{name}' has no nutrient lines configured.", this);
+                SharedLogger.LogWarning($"FertigationSystemSO '{name}' has no nutrient lines configured.", this);
                 isValid = false;
             }
             
             if (_stageNutrientProfiles == null || _stageNutrientProfiles.Length == 0)
             {
-                Debug.LogWarning($"FertigationSystemSO '{name}' has no stage nutrient profiles.", this);
+                SharedLogger.LogWarning($"FertigationSystemSO '{name}' has no stage nutrient profiles.", this);
                 isValid = false;
             }
             
@@ -499,20 +499,20 @@ namespace ProjectChimera.Data.Cultivation
             {
                 if (profile.TargetEC <= 0f || profile.TargetEC > 3f)
                 {
-                    Debug.LogWarning($"FertigationSystemSO '{name}' has invalid EC target for stage {profile.GrowthStage}.", this);
+                    SharedLogger.LogWarning($"FertigationSystemSO '{name}' has invalid EC target for stage {profile.GrowthStage}.", this);
                     isValid = false;
                 }
                 
                 if (profile.TargetpH < 4f || profile.TargetpH > 8f)
                 {
-                    Debug.LogWarning($"FertigationSystemSO '{name}' has invalid pH target for stage {profile.GrowthStage}.", this);
+                    SharedLogger.LogWarning($"FertigationSystemSO '{name}' has invalid pH target for stage {profile.GrowthStage}.", this);
                     isValid = false;
                 }
             }
             
             if (_dosingAccuracy <= 0f || _dosingAccuracy > 0.5f)
             {
-                Debug.LogWarning($"FertigationSystemSO '{name}' has invalid dosing accuracy.", this);
+                SharedLogger.LogWarning($"FertigationSystemSO '{name}' has invalid dosing accuracy.", this);
                 _dosingAccuracy = 0.02f;
                 isValid = false;
             }

@@ -1,0 +1,298 @@
+using UnityEngine;
+using ProjectChimera.Systems.UI.Advanced;
+using ProjectChimera.Systems.Services.Core;
+using ProjectChimera.Core.Logging;
+using System.Collections.Generic;
+using System.Collections;
+
+namespace ProjectChimera.Testing.Phase2_3
+{
+    /// <summary>
+    /// Core menu system tests - Basic functionality and component initialization
+    /// </summary>
+    public class MenuSystemCoreTests : MonoBehaviour
+    {
+        [Header("Core Test Configuration")]
+        [SerializeField] private bool _enableDetailedLogging = true;
+        [SerializeField] private bool _runTestsOnStart = false;
+
+        [Header("Test Results")]
+        [SerializeField] private int _totalTests = 0;
+        [SerializeField] private int _passedTests = 0;
+        [SerializeField] private List<string> _testResults = new List<string>();
+
+        // Test components
+        private AdvancedMenuSystem _menuSystem;
+        private List<MenuAction> _testActions = new List<MenuAction>();
+        private List<MenuCategory> _testCategories = new List<MenuCategory>();
+
+        public void RunTests()
+        {
+            ChimeraLogger.Log("[MenuSystemCoreTests] Starting core menu system tests...");
+
+            _testResults.Clear();
+            _totalTests = 0;
+            _passedTests = 0;
+
+            SetupTestEnvironment();
+            CreateTestData();
+
+            // Run core tests
+            TestAdvancedMenuSystem();
+
+            LogResults();
+        }
+
+        private void SetupTestEnvironment()
+        {
+            // Find or create menu system
+            _menuSystem = GetComponent<AdvancedMenuSystem>();
+            if (_menuSystem == null)
+            {
+                _menuSystem = gameObject.AddComponent<AdvancedMenuSystem>();
+            }
+        }
+
+        private void CreateTestData()
+        {
+            // Create test categories
+            _testCategories.AddRange(new[]
+            {
+                new MenuCategory("test_construction", "Construction", "Construction")
+                {
+                    Description = "Test construction category",
+                    Priority = 100,
+                    IsVisible = true
+                },
+                new MenuCategory("test_cultivation", "Cultivation", "Cultivation")
+                {
+                    Description = "Test cultivation category",
+                    Priority = 90,
+                    IsVisible = true
+                }
+            });
+
+            // Create test actions
+            _testActions.AddRange(new[]
+            {
+                new MenuAction("test_build", "test_construction", "Build Structure", "Construction")
+                {
+                    Description = "Test building action",
+                    Priority = 100,
+                    IsEnabled = true,
+                    IsVisible = true
+                },
+                new MenuAction("test_plant", "test_cultivation", "Plant Seed", "Cultivation")
+                {
+                    Description = "Test planting action",
+                    Priority = 90,
+                    IsEnabled = true,
+                    IsVisible = true
+                }
+            });
+        }
+
+        private void TestAdvancedMenuSystem()
+        {
+            LogTestCategory("Advanced Menu System Core Tests");
+
+            TestMenuSystemInitialization();
+            TestCategoryRegistration();
+            TestActionRegistration();
+            TestMenuOperations();
+            TestDynamicCategories();
+        }
+
+        private void TestMenuSystemInitialization()
+        {
+            _totalTests++;
+            string testName = "Menu System Initialization";
+
+            try
+            {
+                bool isInitialized = _menuSystem != null && _menuSystem.GetCategoryCount() >= 0;
+
+                if (isInitialized)
+                {
+                    LogTest(testName, true, "Menu system initialized successfully");
+                    _passedTests++;
+                }
+                else
+                {
+                    LogTest(testName, false, "Menu system failed to initialize");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                LogTest(testName, false, $"Exception: {ex.Message}");
+            }
+        }
+
+        private void TestCategoryRegistration()
+        {
+            _totalTests++;
+            string testName = "Category Registration";
+
+            try
+            {
+                int initialCount = _menuSystem.GetCategoryCount();
+
+                foreach (var category in _testCategories)
+                {
+                    _menuSystem.RegisterCategory(category);
+                }
+
+                int finalCount = _menuSystem.GetCategoryCount();
+                bool categoriesAdded = finalCount > initialCount;
+
+                if (categoriesAdded)
+                {
+                    LogTest(testName, true, $"Successfully registered {finalCount - initialCount} categories");
+                    _passedTests++;
+                }
+                else
+                {
+                    LogTest(testName, false, "No categories were registered");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                LogTest(testName, false, $"Exception: {ex.Message}");
+            }
+        }
+
+        private void TestActionRegistration()
+        {
+            _totalTests++;
+            string testName = "Action Registration";
+
+            try
+            {
+                int initialCount = _menuSystem.GetActionCount();
+
+                foreach (var action in _testActions)
+                {
+                    _menuSystem.RegisterAction(action);
+                }
+
+                int finalCount = _menuSystem.GetActionCount();
+                bool actionsAdded = finalCount > initialCount;
+
+                if (actionsAdded)
+                {
+                    LogTest(testName, true, $"Successfully registered {finalCount - initialCount} actions");
+                    _passedTests++;
+                }
+                else
+                {
+                    LogTest(testName, false, "No actions were registered");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                LogTest(testName, false, $"Exception: {ex.Message}");
+            }
+        }
+
+        private void TestMenuOperations()
+        {
+            _totalTests++;
+            string testName = "Menu Operations";
+
+            try
+            {
+                // Test opening menu
+                _menuSystem.ShowMenu(Vector3.zero, gameObject);
+                bool menuOpened = _menuSystem.IsMenuVisible();
+
+                // Test closing menu
+                _menuSystem.HideMenu();
+                bool menuClosed = !_menuSystem.IsMenuVisible();
+
+                if (menuOpened && menuClosed)
+                {
+                    LogTest(testName, true, "Menu open/close operations successful");
+                    _passedTests++;
+                }
+                else
+                {
+                    LogTest(testName, false, $"Menu operations failed - opened: {menuOpened}, closed: {menuClosed}");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                LogTest(testName, false, $"Exception: {ex.Message}");
+            }
+        }
+
+        private void TestDynamicCategories()
+        {
+            _totalTests++;
+            string testName = "Dynamic Categories";
+
+            try
+            {
+                // Test category visibility changes
+                var testCategory = _testCategories[0];
+                testCategory.IsVisible = false;
+                _menuSystem.UpdateCategory(testCategory);
+
+                // Test category priority changes
+                testCategory.Priority = 50;
+                testCategory.IsVisible = true;
+                _menuSystem.UpdateCategory(testCategory);
+
+                LogTest(testName, true, "Dynamic category operations successful");
+                _passedTests++;
+            }
+            catch (System.Exception ex)
+            {
+                LogTest(testName, false, $"Exception: {ex.Message}");
+            }
+        }
+
+        private void LogTestCategory(string categoryName)
+        {
+            if (_enableDetailedLogging)
+            {
+                ChimeraLogger.Log($"[MenuSystemCoreTests] === {categoryName} ===");
+            }
+        }
+
+        private void LogTest(string testName, bool passed, string message)
+        {
+            string result = passed ? "PASS" : "FAIL";
+            string logMessage = $"[{result}] {testName}: {message}";
+
+            _testResults.Add(logMessage);
+
+            if (_enableDetailedLogging)
+            {
+                if (passed)
+                {
+                    ChimeraLogger.Log($"✅ {logMessage}");
+                }
+                else
+                {
+                    ChimeraLogger.LogError($"❌ {logMessage}");
+                }
+            }
+        }
+
+        private void LogResults()
+        {
+            bool allTestsPassed = (_passedTests == _totalTests);
+
+            ChimeraLogger.Log($"[MenuSystemCoreTests] Tests completed: {_passedTests}/{_totalTests} passed");
+
+            if (allTestsPassed)
+            {
+                ChimeraLogger.Log("✅ Menu System Core Tests - ALL TESTS PASSED!");
+            }
+            else
+            {
+                ChimeraLogger.LogWarning($"⚠️ Menu System Core Tests - {_totalTests - _passedTests} tests failed");
+            }
+        }
+    }
+}

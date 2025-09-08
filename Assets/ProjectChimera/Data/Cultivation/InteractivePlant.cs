@@ -1,8 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
-using ProjectChimera.Core;
 using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Shared;
+using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 
 // Type alias removed - Events namespace no longer exists after cleanup
 

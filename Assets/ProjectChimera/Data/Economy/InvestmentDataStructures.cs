@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic;
+using ProjectChimera.Data.Economy.Indicators;
 
 namespace ProjectChimera.Data.Economy.Investments
 {
@@ -28,16 +29,16 @@ namespace ProjectChimera.Data.Economy.Investments
         public DateTime LastUpdated;
         public PortfolioStrategy Strategy = PortfolioStrategy.Balanced;
         public RiskTolerance RiskProfile = RiskTolerance.Moderate;
-        
+
         // Additional property for Holdings collection
-        public List<InvestmentHolding> Holdings 
-        { 
+        public List<InvestmentHolding> Holdings
+        {
             get
             {
                 var holdings = new List<InvestmentHolding>();
                 foreach (var stock in StockHoldings.Values)
                 {
-                    holdings.Add(new InvestmentHolding { 
+                    holdings.Add(new InvestmentHolding {
                         HoldingId = stock.Symbol,
                         Symbol = stock.Symbol,
                         CurrentValue = (float)stock.CurrentValue,
@@ -46,7 +47,7 @@ namespace ProjectChimera.Data.Economy.Investments
                 }
                 foreach (var commodity in CommodityHoldings.Values)
                 {
-                    holdings.Add(new InvestmentHolding { 
+                    holdings.Add(new InvestmentHolding {
                         HoldingId = commodity.CommodityType,
                         Symbol = commodity.CommodityType,
                         CurrentValue = (float)commodity.CurrentValue,
@@ -84,7 +85,7 @@ namespace ProjectChimera.Data.Economy.Investments
         public DateTime LastUpdated;
         public StockSector Sector = StockSector.Technology;
         public DividendInfo DividendInfo;
-        
+
         public float CurrentValue => (float)TotalValue;
         public decimal UnrealizedGain => (CurrentPrice - AveragePrice) * Shares;
         public float GainLossPercentage => AveragePrice > 0 ? (float)((CurrentPrice - AveragePrice) / AveragePrice * 100) : 0f;
@@ -101,7 +102,7 @@ namespace ProjectChimera.Data.Economy.Investments
         public DateTime LastUpdated;
         public CommodityCategory Category = CommodityCategory.Energy;
         public string Exchange;
-        
+
         public float CurrentValue => (float)TotalValue;
         public decimal UnrealizedGain => (CurrentPrice - AveragePrice) * Quantity;
     }
@@ -117,7 +118,7 @@ namespace ProjectChimera.Data.Economy.Investments
         public decimal MarginRequired = 5000m;
         public FuturesType Type = FuturesType.Commodity;
         public decimal ContractSize = 100m;
-        
+
         public decimal UnrealizedPnL => (CurrentPrice - EntryPrice) * Contracts * ContractSize;
         public decimal TotalValue => CurrentPrice * Contracts * ContractSize;
     }
@@ -134,9 +135,9 @@ namespace ProjectChimera.Data.Economy.Investments
         public OptionStyle Style = OptionStyle.American;
         public decimal ImpliedVolatility = 0.25m;
         public decimal Delta = 0.5m;
-        
+
         public decimal TotalValue => Premium * Contracts * 100; // Options contract multiplier
-        public decimal TimeValue => Premium - Math.Max(0, OptionType == OptionType.Call ? 
+        public decimal TimeValue => Premium - Math.Max(0, OptionType == OptionType.Call ?
             StrikePrice - CurrentUnderlyingPrice : CurrentUnderlyingPrice - StrikePrice);
         public decimal CurrentUnderlyingPrice = 105m; // Would be fetched from market data
     }
@@ -153,7 +154,7 @@ namespace ProjectChimera.Data.Economy.Investments
         public PropertyCategory Category = PropertyCategory.Residential;
         public string Location;
         public float CapitalizationRate = 0.06f;
-        
+
         public decimal UnrealizedGain => CurrentValue - PurchasePrice;
         public decimal AnnualIncome => MonthlyIncome * 12;
         public float ROI => PurchasePrice > 0 ? (float)(AnnualIncome / PurchasePrice * 100) : 0f;
@@ -171,7 +172,7 @@ namespace ProjectChimera.Data.Economy.Investments
         public DateTime LastCouponDate;
         public BondType Type = BondType.Corporate;
         public CreditRating Rating = CreditRating.BBB;
-        
+
         public decimal YieldToMaturity { get; set; } = 0.055m; // 5.5%
         public decimal AccruedInterest { get; set; } = 25m;
         public decimal TotalValue => CurrentPrice + AccruedInterest;
@@ -207,17 +208,7 @@ namespace ProjectChimera.Data.Economy.Investments
         public List<PerformanceMetric> Metrics = new List<PerformanceMetric>();
     }
 
-    [System.Serializable]
-    public class PerformanceMetric
-    {
-        public string MetricName;
-        public MetricType Type = MetricType.Return;
-        public float Value = 0f;
-        public DateTime CalculationDate;
-        public TimePeriod Period = TimePeriod.YearToDate;
-        public float BenchmarkValue = 0f;
-        public string Benchmark = "S&P 500";
-    }
+
 
     [System.Serializable]
     public class InvestmentObjective
@@ -232,18 +223,7 @@ namespace ProjectChimera.Data.Economy.Investments
         public InvestmentTimeHorizon TimeHorizon = InvestmentTimeHorizon.LongTerm;
     }
 
-    [System.Serializable]
-    public class RiskAssessment
-    {
-        public string AssessmentId;
-        public DateTime AssessmentDate;
-        public RiskTolerance RiskTolerance = RiskTolerance.Moderate;
-        public float OverallRiskScore = 0.5f;
-        public Dictionary<string, float> RiskFactors = new Dictionary<string, float>();
-        public List<RiskRecommendation> Recommendations = new List<RiskRecommendation>();
-        public float ValueAtRisk = 0.05f; // 5% VaR
-        public float Beta = 1.0f;
-    }
+
 
     [System.Serializable]
     public class RiskRecommendation
@@ -289,7 +269,7 @@ namespace ProjectChimera.Data.Economy.Investments
         public VentureType Type = VentureType.Business;
         public decimal CurrentValue = 120000m;
         public float ROI => TotalInvestment > 0 ? (float)((CurrentValue - TotalInvestment) / TotalInvestment * 100) : 0f;
-        
+
         // Additional properties needed by EnhancedEconomicGamingManager
         public string InitiatorId;
         public List<string> Partners = new List<string>();
@@ -325,13 +305,13 @@ namespace ProjectChimera.Data.Economy.Investments
         public DateTime ProposalDate;
         public ProposalStatus Status = ProposalStatus.Pending;
         public VentureCategory Category = VentureCategory.Technology;
-        
+
         // Additional properties needed by EnhancedEconomicGamingManager
         public string VentureName;
         public string Objective;
         public List<string> Partners = new List<string>();
         public Dictionary<string, decimal> ResourceContributions = new Dictionary<string, decimal>();
-        
+
         public decimal ProjectedROI => RequiredInvestment > 0 ? (ExpectedReturns - RequiredInvestment) / RequiredInvestment * 100 : 0m;
     }
 
@@ -735,15 +715,7 @@ namespace ProjectChimera.Data.Economy.Investments
         Insurance
     }
 
-    public enum StrategyType
-    {
-        AssetAllocation,
-        DollarCostAveraging,
-        ValueInvesting,
-        GrowthInvesting,
-        IndexInvesting,
-        ActiveManagement
-    }
+
 
     public enum FinancingType
     {

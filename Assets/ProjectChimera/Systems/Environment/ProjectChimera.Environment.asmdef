@@ -3,9 +3,10 @@
     "rootNamespace": "ProjectChimera.Systems.Environment",
     "references": [
         "ProjectChimera.Core",
-        "ProjectChimera.Core.DependencyInjection",
-        "ProjectChimera.Core.ServiceContainer",
         "ProjectChimera.Data",
+        "ProjectChimera.Systems.Events",
+        "ProjectChimera.Systems.Registry",
+        "ProjectChimera.Systems.Diagnostics",
         "ProjectChimera.Shared",
         "ProjectChimera.Data.Shared",
         "ProjectChimera.Data.Cultivation",
@@ -16,7 +17,8 @@
         "ProjectChimera.Data.Simulation",
         "Unity.RenderPipelines.Universal.Runtime",
         "Unity.RenderPipelines.Core.Runtime",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

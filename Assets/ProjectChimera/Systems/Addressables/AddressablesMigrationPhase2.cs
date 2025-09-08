@@ -169,7 +169,7 @@ namespace ProjectChimera.Systems.Addressables
         
         private void Awake()
         {
-            _addressablesInfrastructure = FindObjectOfType<AddressablesInfrastructure>();
+            _addressablesInfrastructure = ServiceContainerFactory.Instance?.TryResolve<AddressablesInfrastructure>();
             if (_addressablesInfrastructure == null)
             {
                 LoggingInfrastructure.LogError("AddressablesMigrationPhase2", 

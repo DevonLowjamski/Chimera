@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using UnityEngine.UIElements;
 using ProjectChimera.Systems.UI.Advanced;
@@ -101,14 +102,14 @@ namespace ProjectChimera.Systems.UI.Advanced
             
             if (_menuSystem == null)
             {
-                Debug.LogError("[InputSystemIntegration] AdvancedMenuSystem component required");
+                ChimeraLogger.LogError("[InputSystemIntegration] AdvancedMenuSystem component required");
                 enabled = false;
                 return;
             }
             
             if (_playerInput == null)
             {
-                Debug.LogError("[InputSystemIntegration] PlayerInput component required");
+                ChimeraLogger.LogError("[InputSystemIntegration] PlayerInput component required");
                 enabled = false;
                 return;
             }
@@ -758,13 +759,13 @@ namespace ProjectChimera.Systems.UI.Advanced
         private void StartSearchMode()
         {
             // Implementation for search mode UI
-            Debug.Log("[InputSystemIntegration] Search mode activated");
+            ChimeraLogger.Log("[InputSystemIntegration] Search mode activated");
         }
         
         private void EndSearchMode()
         {
             _searchQuery = "";
-            Debug.Log("[InputSystemIntegration] Search mode deactivated");
+            ChimeraLogger.Log("[InputSystemIntegration] Search mode deactivated");
         }
         
         private bool IsActionOnCooldown(InputAction action)
@@ -848,19 +849,19 @@ namespace ProjectChimera.Systems.UI.Advanced
             {
                 if (device is Gamepad)
                 {
-                    Debug.Log("[InputSystemIntegration] Gamepad connected");
+                    ChimeraLogger.Log("[InputSystemIntegration] Gamepad connected");
                     SwitchNavigationMode(NavigationMode.Controller);
                 }
                 else if (device is Keyboard)
                 {
-                    Debug.Log("[InputSystemIntegration] Keyboard connected");
+                    ChimeraLogger.Log("[InputSystemIntegration] Keyboard connected");
                 }
             }
             else if (change == InputDeviceChange.Removed)
             {
                 if (device is Gamepad)
                 {
-                    Debug.Log("[InputSystemIntegration] Gamepad disconnected");
+                    ChimeraLogger.Log("[InputSystemIntegration] Gamepad disconnected");
                     SwitchNavigationMode(NavigationMode.Keyboard);
                 }
             }

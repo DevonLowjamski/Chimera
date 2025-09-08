@@ -1,5 +1,7 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Core.Events;
 using System.Collections.Generic;
@@ -12,7 +14,7 @@ namespace ProjectChimera.Systems.Environment
     /// Replaces monolithic EnvironmentalManager with service-based architecture
     /// Focuses solely on coordination, delegation, and high-level environmental state
     /// </summary>
-    public class EnvironmentManager : DIChimeraManager
+    public class EnvironmentManager : DIChimeraManager, ITickable
     {
         [Header("Environment Coordination")]
         [SerializeField] private float _environmentalUpdateInterval = 2f;
@@ -42,7 +44,7 @@ namespace ProjectChimera.Systems.Environment
         
         protected override void OnManagerInitialize()
         {
-            Debug.Log("[EnvironmentManager] Initializing lean environment coordination system...");
+            ChimeraLogger.Log("[EnvironmentManager] Initializing lean environment coordination system...");
             
             // Initialize environmental services
             _atmosphereService = new AtmosphereService();
@@ -57,14 +59,14 @@ namespace ProjectChimera.Systems.Environment
             _lastEnvironmentalUpdate = Time.time;
             
             IsInitialized = true;
-            Debug.Log($"[EnvironmentManager] Initialized successfully. Services active: AtmosphereService, HVAC_Service");
+            ChimeraLogger.Log($"[EnvironmentManager] Initialized successfully. Services active: AtmosphereService, HVAC_Service");
         }
         
         protected override void OnManagerShutdown()
         {
             if (!IsInitialized) return;
             
-            Debug.Log("[EnvironmentManager] Shutting down environment coordination...");
+            ChimeraLogger.Log("[EnvironmentManager] Shutting down environment coordination...");
             
             // Shutdown services
             _atmosphereService?.Shutdown();
@@ -77,7 +79,12 @@ namespace ProjectChimera.Systems.Environment
             IsInitialized = false;
         }
         
-        private void Update()
+        #region ITickable Implementation
+        
+        int ITickable.Priority => TickPriority.EnvironmentalManager;
+        bool ITickable.Enabled => IsInitialized;
+        
+        public void Tick(float deltaTime)
         {
             if (!IsInitialized) return;
             
@@ -88,6 +95,18 @@ namespace ProjectChimera.Systems.Environment
                 _lastEnvironmentalUpdate = currentTime;
             }
         }
+        
+        public void OnRegistered()
+        {
+            ChimeraLogger.LogVerbose("[EnvironmentManager] Registered with UpdateOrchestrator");
+        }
+        
+        public void OnUnregistered()
+        {
+            ChimeraLogger.LogVerbose("[EnvironmentManager] Unregistered from UpdateOrchestrator");
+        }
+        
+        #endregion
         
         /// <summary>
         /// Updates all environmental systems through service coordination
@@ -127,7 +146,7 @@ namespace ProjectChimera.Systems.Environment
             
             if (_enableEnvironmentalLogging)
             {
-                Debug.Log($"[EnvironmentManager] Environmental update: T={_globalConditions.Temperature:F1}°C, H={_globalConditions.Humidity:F1}%, L={_globalConditions.LightIntensity:F0}PPFD");
+                ChimeraLogger.Log($"[EnvironmentManager] Environmental update: T={_globalConditions.Temperature:F1}°C, H={_globalConditions.Humidity:F1}%, L={_globalConditions.LightIntensity:F0}PPFD");
             }
         }
         
@@ -223,7 +242,7 @@ namespace ProjectChimera.Systems.Environment
                 
                 if (_enableEnvironmentalLogging)
                 {
-                    Debug.Log($"[EnvironmentManager] Significant environmental change detected");
+                    ChimeraLogger.Log($"[EnvironmentManager] Significant environmental change detected");
                 }
             }
         }

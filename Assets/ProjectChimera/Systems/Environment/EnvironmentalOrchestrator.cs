@@ -1,8 +1,10 @@
+using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Core.Events;
+using ProjectChimera.Core.Updates;
 using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
 
 namespace ProjectChimera.Systems.Environment
@@ -12,7 +14,7 @@ namespace ProjectChimera.Systems.Environment
     /// Coordinates with the new EnvironmentManager and its services
     /// Provides high-level environmental coordination and optimization
     /// </summary>
-    public class EnvironmentalOrchestrator : ChimeraManager
+    public class EnvironmentalOrchestrator : ChimeraManager, ITickable
     {
         [Header("Orchestrator Configuration")]
         [SerializeField] private bool _enableAutoEnvironmentalControl = true;
@@ -49,9 +51,13 @@ namespace ProjectChimera.Systems.Environment
             set => _enableAutoEnvironmentalControl = value; 
         }
         
+        // ITickable implementation
+        int ITickable.Priority => TickPriority.EnvironmentalManager;
+        public bool Enabled => IsInitialized;
+        
         protected override void OnManagerInitialize()
         {
-            Debug.Log("[EnvironmentalOrchestrator] Initializing environmental orchestration system...");
+            ChimeraLogger.Log("[EnvironmentalOrchestrator] Initializing environmental orchestration system...");
             
             // Get references to managers
             _environmentManager = GameManager.Instance?.GetManager<EnvironmentManager>();
@@ -61,20 +67,29 @@ namespace ProjectChimera.Systems.Environment
             
             if (_environmentManager == null)
             {
-                Debug.LogWarning("[EnvironmentalOrchestrator] EnvironmentManager not found - some features may be limited");
+                ChimeraLogger.LogWarning("[EnvironmentalOrchestrator] EnvironmentManager not found - some features may be limited");
             }
             
             _lastEnvironmentalUpdate = Time.time;
             IsInitialized = true;
             
-            Debug.Log($"[EnvironmentalOrchestrator] Initialized with {(_environmentManager != null ? "full" : "limited")} environmental integration");
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+            
+            ChimeraLogger.Log($"[EnvironmentalOrchestrator] Initialized with {(_environmentManager != null ? "full" : "limited")} environmental integration");
         }
         
         protected override void OnManagerShutdown()
         {
             if (!IsInitialized) return;
             
-            Debug.Log("[EnvironmentalOrchestrator] Shutting down environmental orchestration...");
+            ChimeraLogger.Log("[EnvironmentalOrchestrator] Shutting down environmental orchestration...");
+            
+            // Unregister from UpdateOrchestrator
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
             
             _zoneConditions.Clear();
             _activeAlerts.Clear();
@@ -82,7 +97,7 @@ namespace ProjectChimera.Systems.Environment
             IsInitialized = false;
         }
         
-        private void Update()
+        public void Tick(float deltaTime)
         {
             if (!IsInitialized) return;
             
@@ -134,7 +149,7 @@ namespace ProjectChimera.Systems.Environment
             // Check for significant changes
             if (HasSignificantChange(previousConditions, globalConditions))
             {
-                Debug.Log($"[EnvironmentalOrchestrator] Significant environmental change detected: T={globalConditions.Temperature:F1}°C, H={globalConditions.Humidity:F1}%");
+                ChimeraLogger.Log($"[EnvironmentalOrchestrator] Significant environmental change detected: T={globalConditions.Temperature:F1}°C, H={globalConditions.Humidity:F1}%");
                 _onEnvironmentalAlert?.Raise();
             }
         }
@@ -248,7 +263,7 @@ namespace ProjectChimera.Systems.Environment
             // Trigger optimization event
             _onEnvironmentalOptimization?.Raise();
             
-            Debug.Log($"[EnvironmentalOrchestrator] Environmental optimization applied: T={optimizedConditions.Temperature:F1}°C, H={optimizedConditions.Humidity:F1}%");
+            ChimeraLogger.Log($"[EnvironmentalOrchestrator] Environmental optimization applied: T={optimizedConditions.Temperature:F1}°C, H={optimizedConditions.Humidity:F1}%");
         }
         
         /// <summary>
@@ -291,19 +306,19 @@ namespace ProjectChimera.Systems.Environment
         private void CoordinateClimateZones()
         {
             // Placeholder for climate zone coordination
-            Debug.Log("[EnvironmentalOrchestrator] Coordinating climate zones");
+            ChimeraLogger.Log("[EnvironmentalOrchestrator] Coordinating climate zones");
         }
         
         private void CoordinateHVACZones()
         {
             // Placeholder for HVAC zone coordination  
-            Debug.Log("[EnvironmentalOrchestrator] Coordinating HVAC zones");
+            ChimeraLogger.Log("[EnvironmentalOrchestrator] Coordinating HVAC zones");
         }
         
         private void CoordinateSensorNetwork()
         {
             // Placeholder for sensor network coordination
-            Debug.Log("[EnvironmentalOrchestrator] Coordinating sensor network");
+            ChimeraLogger.Log("[EnvironmentalOrchestrator] Coordinating sensor network");
         }
         
         private bool HasSignificantChange(EnvironmentalConditions previous, EnvironmentalConditions current)

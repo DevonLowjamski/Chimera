@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Linq;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core.Bootstrappers
 {
@@ -20,7 +21,7 @@ namespace ProjectChimera.Core.Bootstrappers
         {
             if (_instance != null && _instance != this)
             {
-                Debug.LogWarning("[ServiceContainerBootstrapper] Multiple instances detected. Destroying duplicate.");
+                ChimeraLogger.LogWarning("[ServiceContainerBootstrapper] Multiple instances detected. Destroying duplicate.");
                 DestroyImmediate(gameObject);
                 return;
             }
@@ -46,20 +47,20 @@ namespace ProjectChimera.Core.Bootstrappers
                 ValidateServiceRegistrations();
             }
 
-            Debug.Log($"[ServiceContainerBootstrapper] Service container initialized.");
+            ChimeraLogger.Log($"[ServiceContainerBootstrapper] Service container initialized.");
         }
 
         private void InitializeServiceContainer()
         {
             _container = ServiceContainerFactory.Instance;
-            Debug.Log("[ServiceContainerBootstrapper] Service container created and configured");
+            ChimeraLogger.Log("[ServiceContainerBootstrapper] Service container created and configured");
         }
 
         private void RegisterCoreServices()
         {
             if (_enableDetailedLogging)
             {
-                Debug.Log("[ServiceContainerBootstrapper] Core services registered (simplified)");
+                ChimeraLogger.Log("[ServiceContainerBootstrapper] Core services registered (simplified)");
             }
         }
 
@@ -67,7 +68,7 @@ namespace ProjectChimera.Core.Bootstrappers
         {
             if (_enableDetailedLogging)
             {
-                Debug.Log("[ServiceContainerBootstrapper] Cultivation services registration prepared (services will be registered when assemblies are available)");
+                ChimeraLogger.Log("[ServiceContainerBootstrapper] Cultivation services registration prepared (services will be registered when assemblies are available)");
             }
         }
 
@@ -75,7 +76,7 @@ namespace ProjectChimera.Core.Bootstrappers
         {
             if (_enableDetailedLogging)
             {
-                Debug.Log("[ServiceContainerBootstrapper] Environmental services registered (simplified)");
+                ChimeraLogger.Log("[ServiceContainerBootstrapper] Environmental services registered (simplified)");
             }
         }
 
@@ -83,7 +84,7 @@ namespace ProjectChimera.Core.Bootstrappers
         {
             if (_enableDetailedLogging)
             {
-                Debug.Log("[ServiceContainerBootstrapper] Genetics services prepared for registration (implementations pending)");
+                ChimeraLogger.Log("[ServiceContainerBootstrapper] Genetics services prepared for registration (implementations pending)");
             }
         }
 
@@ -91,7 +92,7 @@ namespace ProjectChimera.Core.Bootstrappers
         {
             if (_enableDetailedLogging)
             {
-                Debug.Log("[ServiceContainerBootstrapper] Economy services registered (simplified)");
+                ChimeraLogger.Log("[ServiceContainerBootstrapper] Economy services registered (simplified)");
             }
         }
 
@@ -99,7 +100,7 @@ namespace ProjectChimera.Core.Bootstrappers
         {
             if (_enableDetailedLogging)
             {
-                Debug.Log("[ServiceContainerBootstrapper] Progression services registered (simplified)");
+                ChimeraLogger.Log("[ServiceContainerBootstrapper] Progression services registered (simplified)");
             }
         }
 
@@ -107,7 +108,7 @@ namespace ProjectChimera.Core.Bootstrappers
         {
             if (_enableDetailedLogging)
             {
-                Debug.Log("[ServiceContainerBootstrapper] AI services registered (simplified)");
+                ChimeraLogger.Log("[ServiceContainerBootstrapper] AI services registered (simplified)");
             }
         }
 
@@ -116,11 +117,11 @@ namespace ProjectChimera.Core.Bootstrappers
             try
             {
                 // Validation logic has been removed as it is not supported by the current IServiceContainer interface.
-                Debug.Log("[ServiceContainerBootstrapper] ✅ Service registration validation skipped.");
+                ChimeraLogger.Log("[ServiceContainerBootstrapper] ✅ Service registration validation skipped.");
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[ServiceContainerBootstrapper] ❌ Service validation failed: {ex.Message}");
+                ChimeraLogger.LogError($"[ServiceContainerBootstrapper] ❌ Service validation failed: {ex.Message}");
             }
         }
 
@@ -131,7 +132,7 @@ namespace ProjectChimera.Core.Bootstrappers
             
             if (_enableDetailedLogging)
             {
-                Debug.Log($"[ServiceContainerBootstrapper] Manually registered: {typeof(TInterface).Name}");
+                ChimeraLogger.Log($"[ServiceContainerBootstrapper] Manually registered: {typeof(TInterface).Name}");
             }
         }
 
@@ -144,11 +145,11 @@ namespace ProjectChimera.Core.Bootstrappers
         {
             if (_container == null)
             {
-                Debug.LogWarning("[ServiceContainerBootstrapper] Service container not initialized");
+                ChimeraLogger.LogWarning("[ServiceContainerBootstrapper] Service container not initialized");
                 return;
             }
             
-            Debug.Log("[ServiceContainerBootstrapper] Service registration logging is not supported in the current implementation.");
+            ChimeraLogger.Log("[ServiceContainerBootstrapper] Service registration logging is not supported in the current implementation.");
         }
 
         void OnDestroy()
@@ -157,7 +158,7 @@ namespace ProjectChimera.Core.Bootstrappers
             {
                 _instance = null;
                 _container = null;
-                Debug.Log("[ServiceContainerBootstrapper] Service container destroyed");
+                ChimeraLogger.Log("[ServiceContainerBootstrapper] Service container destroyed");
             }
         }
 
@@ -173,7 +174,7 @@ namespace ProjectChimera.Core.Bootstrappers
             }
             else
             {
-                Debug.LogWarning("ServiceContainerBootstrapper not found in scene");
+                ChimeraLogger.LogWarning("ServiceContainerBootstrapper not found in scene");
             }
         }
 
@@ -186,7 +187,7 @@ namespace ProjectChimera.Core.Bootstrappers
             }
             else
             {
-                Debug.LogWarning("ServiceContainerBootstrapper not found in scene");
+                ChimeraLogger.LogWarning("ServiceContainerBootstrapper not found in scene");
             }
         }
 #endif

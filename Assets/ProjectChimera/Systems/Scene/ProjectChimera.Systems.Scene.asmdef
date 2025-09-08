@@ -4,7 +4,8 @@
     "references": [
         "ProjectChimera.Core",
         "ProjectChimera.Shared",
-        "ProjectChimera.Systems.Prefabs"
+        "ProjectChimera.Systems.Prefabs",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

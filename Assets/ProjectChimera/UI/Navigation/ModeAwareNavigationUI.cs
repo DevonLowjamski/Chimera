@@ -1,9 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
+using ProjectChimera.Core;
 using ProjectChimera.Core.DependencyInjection;
 using ProjectChimera.Systems.Gameplay;
 using ProjectChimera.Data.Events;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Navigation
 {
@@ -19,51 +21,51 @@ namespace ProjectChimera.UI.Navigation
         [SerializeField] private bool _showModeSpecificOptions = true;
         [SerializeField] private bool _animateTransitions = true;
         [SerializeField] private bool _debugMode = false;
-        
+
         [Header("Main Navigation")]
         [SerializeField] private GameObject _mainNavigationPanel;
         [SerializeField] private Button _cultivationNavButton;
         [SerializeField] private Button _constructionNavButton;
         [SerializeField] private Button _geneticsNavButton;
         [SerializeField] private Text _currentModeLabel;
-        
+
         [Header("Mode-Specific Navigation")]
         [SerializeField] private GameObject _cultivationNavPanel;
         [SerializeField] private GameObject _constructionNavPanel;
         [SerializeField] private GameObject _geneticsNavPanel;
-        
+
         [Header("Cultivation Navigation")]
         [SerializeField] private Button _plantsOverviewButton;
         [SerializeField] private Button _careScheduleButton;
         [SerializeField] private Button _harvestPlannerButton;
         [SerializeField] private Button _environmentControlButton;
         [SerializeField] private Button _nutrientManagementButton;
-        
+
         [Header("Construction Navigation")]
         [SerializeField] private Button _blueprintsButton;
         [SerializeField] private Button _facilityDesignButton;
         [SerializeField] private Button _utilitiesButton;
         [SerializeField] private Button _equipmentButton;
         [SerializeField] private Button _constructionProjectsButton;
-        
+
         [Header("Genetics Navigation")]
         [SerializeField] private Button _breedingLabButton;
         [SerializeField] private Button _geneticAnalysisButton;
         [SerializeField] private Button _traitLibraryButton;
         [SerializeField] private Button _crossbreedingButton;
         [SerializeField] private Button _phenotypeTrackerButton;
-        
+
         [Header("Visual Styling")]
         [SerializeField] private Color _activeModeColor = new Color(0.2f, 0.8f, 0.2f, 1f);
         [SerializeField] private Color _inactiveModeColor = new Color(0.6f, 0.6f, 0.6f, 1f);
         [SerializeField] private Color _hoverColor = new Color(0.9f, 0.9f, 0.9f, 1f);
         [SerializeField] private float _transitionDuration = 0.3f;
-        
+
         [Header("Navigation Breadcrumb")]
         [SerializeField] private GameObject _breadcrumbPanel;
         [SerializeField] private Text _breadcrumbText;
         [SerializeField] private Button _backButton;
-        
+
         [Header("Quick Actions")]
         [SerializeField] private GameObject _quickActionsPanel;
         [SerializeField] private Button _quickAction1Button;
@@ -72,24 +74,24 @@ namespace ProjectChimera.UI.Navigation
         [SerializeField] private Text _quickAction1Label;
         [SerializeField] private Text _quickAction2Label;
         [SerializeField] private Text _quickAction3Label;
-        
+
         [Header("Event Channels")]
         [SerializeField] private ModeChangedEventSO _modeChangedEvent;
-        
+
         // Services
         private IGameplayModeController _modeController;
-        
+
         // State tracking
         private bool _isInitialized = false;
         private GameplayMode _currentMode = GameplayMode.Cultivation;
         private string _currentSection = "";
         private List<string> _navigationHistory = new List<string>();
-        
+
         // Navigation button references for easy management
         private Dictionary<GameplayMode, Button> _modeButtons;
         private Dictionary<GameplayMode, GameObject> _modeNavPanels;
         private Dictionary<GameplayMode, List<NavigationItem>> _modeNavigationItems;
-        
+
         [System.Serializable]
         public class NavigationItem
         {
@@ -98,59 +100,59 @@ namespace ProjectChimera.UI.Navigation
             public string targetSection;
             public bool requiresSpecialAccess;
         }
-        
+
         private void Start()
         {
             InitializeNavigation();
         }
-        
+
         private void OnDestroy()
         {
             UnsubscribeFromEvents();
         }
-        
+
         private void InitializeNavigation()
         {
             try
             {
                 // Get the gameplay mode controller service
-                _modeController = ProjectChimera.Core.DependencyInjection.ServiceLocator.Instance.GetService<IGameplayModeController>();
-                
+                _modeController = ServiceContainerFactory.Instance?.TryResolve<IGameplayModeController>();
+
                 if (_modeController == null)
                 {
-                    Debug.LogError("[ModeAwareNavigationUI] GameplayModeController service not found!");
+                    ChimeraLogger.LogError("[ModeAwareNavigationUI] GameplayModeController service not found!");
                     return;
                 }
-                
+
                 // Initialize navigation dictionaries
                 SetupNavigationDictionaries();
-                
+
                 // Subscribe to mode change events
                 SubscribeToEvents();
-                
+
                 // Subscribe to navigation button events
                 SubscribeToNavigationControls();
-                
+
                 // Initialize navigation state
                 _currentMode = _modeController.CurrentMode;
                 UpdateNavigationForMode(_currentMode);
-                
+
                 // Set initial UI state
                 InitializeUIState();
-                
+
                 _isInitialized = true;
-                
+
                 if (_debugMode)
                 {
-                    Debug.Log($"[ModeAwareNavigationUI] Initialized with mode: {_currentMode}");
+                    ChimeraLogger.Log($"[ModeAwareNavigationUI] Initialized with mode: {_currentMode}");
                 }
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[ModeAwareNavigationUI] Error during initialization: {ex.Message}");
+                ChimeraLogger.LogError($"[ModeAwareNavigationUI] Error during initialization: {ex.Message}");
             }
         }
-        
+
         private void SetupNavigationDictionaries()
         {
             // Main mode buttons
@@ -160,7 +162,7 @@ namespace ProjectChimera.UI.Navigation
                 { GameplayMode.Construction, _constructionNavButton },
                 { GameplayMode.Genetics, _geneticsNavButton }
             };
-            
+
             // Mode-specific navigation panels
             _modeNavPanels = new Dictionary<GameplayMode, GameObject>
             {
@@ -168,7 +170,7 @@ namespace ProjectChimera.UI.Navigation
                 { GameplayMode.Construction, _constructionNavPanel },
                 { GameplayMode.Genetics, _geneticsNavPanel }
             };
-            
+
             // Mode-specific navigation items
             _modeNavigationItems = new Dictionary<GameplayMode, List<NavigationItem>>
             {
@@ -177,7 +179,7 @@ namespace ProjectChimera.UI.Navigation
                 { GameplayMode.Genetics, SetupGeneticsNavigation() }
             };
         }
-        
+
         private List<NavigationItem> SetupCultivationNavigation()
         {
             return new List<NavigationItem>
@@ -189,7 +191,7 @@ namespace ProjectChimera.UI.Navigation
                 new NavigationItem { name = "Nutrient Management", button = _nutrientManagementButton, targetSection = "NutrientManagement" }
             };
         }
-        
+
         private List<NavigationItem> SetupConstructionNavigation()
         {
             return new List<NavigationItem>
@@ -201,7 +203,7 @@ namespace ProjectChimera.UI.Navigation
                 new NavigationItem { name = "Construction Projects", button = _constructionProjectsButton, targetSection = "ConstructionProjects" }
             };
         }
-        
+
         private List<NavigationItem> SetupGeneticsNavigation()
         {
             return new List<NavigationItem>
@@ -213,7 +215,7 @@ namespace ProjectChimera.UI.Navigation
                 new NavigationItem { name = "Phenotype Tracker", button = _phenotypeTrackerButton, targetSection = "PhenotypeTracker" }
             };
         }
-        
+
         private void SubscribeToEvents()
         {
             if (_modeChangedEvent != null)
@@ -222,10 +224,10 @@ namespace ProjectChimera.UI.Navigation
             }
             else
             {
-                Debug.LogWarning("[ModeAwareNavigationUI] ModeChangedEvent not assigned");
+                ChimeraLogger.LogWarning("[ModeAwareNavigationUI] ModeChangedEvent not assigned");
             }
         }
-        
+
         private void UnsubscribeFromEvents()
         {
             if (_modeChangedEvent != null)
@@ -233,7 +235,7 @@ namespace ProjectChimera.UI.Navigation
                 _modeChangedEvent.Unsubscribe(OnModeChanged);
             }
         }
-        
+
         private void SubscribeToNavigationControls()
         {
             // Main mode navigation buttons
@@ -241,17 +243,17 @@ namespace ProjectChimera.UI.Navigation
             {
                 _cultivationNavButton.onClick.AddListener(() => OnModeNavigationClicked(GameplayMode.Cultivation));
             }
-            
+
             if (_constructionNavButton != null)
             {
                 _constructionNavButton.onClick.AddListener(() => OnModeNavigationClicked(GameplayMode.Construction));
             }
-            
+
             if (_geneticsNavButton != null)
             {
                 _geneticsNavButton.onClick.AddListener(() => OnModeNavigationClicked(GameplayMode.Genetics));
             }
-            
+
             // Mode-specific navigation buttons
             foreach (var modeNavItems in _modeNavigationItems)
             {
@@ -264,125 +266,125 @@ namespace ProjectChimera.UI.Navigation
                     }
                 }
             }
-            
+
             // Breadcrumb navigation
             if (_backButton != null)
             {
                 _backButton.onClick.AddListener(OnBackButtonClicked);
             }
-            
+
             // Quick actions
             if (_quickAction1Button != null)
             {
                 _quickAction1Button.onClick.AddListener(() => OnQuickActionClicked(1));
             }
-            
+
             if (_quickAction2Button != null)
             {
                 _quickAction2Button.onClick.AddListener(() => OnQuickActionClicked(2));
             }
-            
+
             if (_quickAction3Button != null)
             {
                 _quickAction3Button.onClick.AddListener(() => OnQuickActionClicked(3));
             }
         }
-        
+
         private void InitializeUIState()
         {
             // Set initial button states
             UpdateModeButtonVisuals(_currentMode);
-            
+
             // Update current mode label
             if (_currentModeLabel != null)
             {
                 _currentModeLabel.text = GetModeDisplayName(_currentMode);
             }
-            
+
             // Initialize breadcrumb
             UpdateBreadcrumb();
-            
+
             // Setup quick actions
             UpdateQuickActions(_currentMode);
         }
-        
+
         private void OnModeChanged(ModeChangeEventData eventData)
         {
             if (_debugMode)
             {
-                Debug.Log($"[ModeAwareNavigationUI] Mode changed: {eventData.PreviousMode} → {eventData.NewMode}");
+                ChimeraLogger.Log($"[ModeAwareNavigationUI] Mode changed: {eventData.PreviousMode} → {eventData.NewMode}");
             }
-            
+
             _currentMode = eventData.NewMode;
             UpdateNavigationForMode(_currentMode);
         }
-        
+
         private void UpdateNavigationForMode(GameplayMode mode)
         {
             // Update mode button visuals
             UpdateModeButtonVisuals(mode);
-            
+
             // Show/hide mode-specific navigation panels
             UpdateModeNavigationPanels(mode);
-            
+
             // Update current mode label
             if (_currentModeLabel != null)
             {
                 _currentModeLabel.text = GetModeDisplayName(mode);
             }
-            
+
             // Update breadcrumb
             ClearNavigationHistory();
             UpdateBreadcrumb();
-            
+
             // Update quick actions
             UpdateQuickActions(mode);
-            
+
             if (_debugMode)
             {
-                Debug.Log($"[ModeAwareNavigationUI] Navigation updated for mode: {mode}");
+                ChimeraLogger.Log($"[ModeAwareNavigationUI] Navigation updated for mode: {mode}");
             }
         }
-        
+
         private void UpdateModeButtonVisuals(GameplayMode activeMode)
         {
             if (!_enableModeHighlighting) return;
-            
+
             foreach (var kvp in _modeButtons)
             {
                 var mode = kvp.Key;
                 var button = kvp.Value;
-                
+
                 if (button == null) continue;
-                
+
                 var isActive = mode == activeMode;
                 var targetColor = isActive ? _activeModeColor : _inactiveModeColor;
-                
+
                 // Update button colors
                 var colors = button.colors;
                 colors.normalColor = targetColor;
                 colors.highlightedColor = isActive ? _activeModeColor : _hoverColor;
                 colors.selectedColor = targetColor;
                 button.colors = colors;
-                
+
                 // Update button interactability (optional: disable current mode button)
                 // button.interactable = !isActive;
             }
         }
-        
+
         private void UpdateModeNavigationPanels(GameplayMode activeMode)
         {
             if (!_showModeSpecificOptions) return;
-            
+
             foreach (var kvp in _modeNavPanels)
             {
                 var mode = kvp.Key;
                 var panel = kvp.Value;
-                
+
                 if (panel == null) continue;
-                
+
                 bool shouldShow = mode == activeMode;
-                
+
                 if (_animateTransitions)
                 {
                     // Animate panel transitions (placeholder - would use actual animation system)
@@ -394,34 +396,34 @@ namespace ProjectChimera.UI.Navigation
                 }
             }
         }
-        
+
         private void UpdateBreadcrumb()
         {
             if (_breadcrumbPanel == null) return;
-            
+
             string breadcrumbText = GetModeDisplayName(_currentMode);
-            
+
             if (!string.IsNullOrEmpty(_currentSection))
             {
                 breadcrumbText += $" > {_currentSection}";
             }
-            
+
             if (_breadcrumbText != null)
             {
                 _breadcrumbText.text = breadcrumbText;
             }
-            
+
             // Show/hide back button based on navigation history
             if (_backButton != null)
             {
                 _backButton.gameObject.SetActive(_navigationHistory.Count > 0);
             }
         }
-        
+
         private void UpdateQuickActions(GameplayMode mode)
         {
             if (_quickActionsPanel == null) return;
-            
+
             // Configure quick actions based on current mode
             switch (mode)
             {
@@ -430,13 +432,13 @@ namespace ProjectChimera.UI.Navigation
                     SetQuickAction(2, "Check Health", _quickAction2Button, _quickAction2Label);
                     SetQuickAction(3, "Harvest Ready", _quickAction3Button, _quickAction3Label);
                     break;
-                    
+
                 case GameplayMode.Construction:
                     SetQuickAction(1, "Place Wall", _quickAction1Button, _quickAction1Label);
                     SetQuickAction(2, "Add Equipment", _quickAction2Button, _quickAction2Label);
                     SetQuickAction(3, "View Blueprint", _quickAction3Button, _quickAction3Label);
                     break;
-                    
+
                 case GameplayMode.Genetics:
                     SetQuickAction(1, "Analyze Genetics", _quickAction1Button, _quickAction1Label);
                     SetQuickAction(2, "Start Breeding", _quickAction2Button, _quickAction2Label);
@@ -444,26 +446,26 @@ namespace ProjectChimera.UI.Navigation
                     break;
             }
         }
-        
+
         private void SetQuickAction(int actionNumber, string actionName, Button button, Text label)
         {
             if (button != null)
             {
                 button.gameObject.SetActive(true);
             }
-            
+
             if (label != null)
             {
                 label.text = actionName;
             }
         }
-        
+
         private void ClearNavigationHistory()
         {
             _navigationHistory.Clear();
             _currentSection = "";
         }
-        
+
         private void AddToNavigationHistory(string section)
         {
             if (!string.IsNullOrEmpty(_currentSection))
@@ -472,7 +474,7 @@ namespace ProjectChimera.UI.Navigation
             }
             _currentSection = section;
         }
-        
+
         private string GetModeDisplayName(GameplayMode mode)
         {
             return mode switch
@@ -483,36 +485,36 @@ namespace ProjectChimera.UI.Navigation
                 _ => mode.ToString()
             };
         }
-        
+
         #region Event Handlers
-        
+
         private void OnModeNavigationClicked(GameplayMode mode)
         {
             if (_modeController != null)
             {
                 _modeController.SetMode(mode, "Navigation UI");
             }
-            
+
             if (_debugMode)
             {
-                Debug.Log($"[ModeAwareNavigationUI] Mode navigation clicked: {mode}");
+                ChimeraLogger.Log($"[ModeAwareNavigationUI] Mode navigation clicked: {mode}");
             }
         }
-        
+
         private void OnSectionNavigationClicked(string targetSection)
         {
             AddToNavigationHistory(targetSection);
             UpdateBreadcrumb();
-            
+
             if (_debugMode)
             {
-                Debug.Log($"[ModeAwareNavigationUI] Section navigation clicked: {targetSection}");
+                ChimeraLogger.Log($"[ModeAwareNavigationUI] Section navigation clicked: {targetSection}");
             }
-            
+
             // Here you would trigger the actual section change in your game
             // For now, it's just tracked for breadcrumb navigation
         }
-        
+
         private void OnBackButtonClicked()
         {
             if (_navigationHistory.Count > 0)
@@ -520,12 +522,12 @@ namespace ProjectChimera.UI.Navigation
                 var previousSection = _navigationHistory[_navigationHistory.Count - 1];
                 _navigationHistory.RemoveAt(_navigationHistory.Count - 1);
                 _currentSection = previousSection;
-                
+
                 UpdateBreadcrumb();
-                
+
                 if (_debugMode)
                 {
-                    Debug.Log($"[ModeAwareNavigationUI] Back button clicked, returned to: {previousSection}");
+                    ChimeraLogger.Log($"[ModeAwareNavigationUI] Back button clicked, returned to: {previousSection}");
                 }
             }
             else
@@ -533,40 +535,40 @@ namespace ProjectChimera.UI.Navigation
                 // Return to mode overview
                 _currentSection = "";
                 UpdateBreadcrumb();
-                
+
                 if (_debugMode)
                 {
-                    Debug.Log("[ModeAwareNavigationUI] Back button clicked, returned to mode overview");
+                    ChimeraLogger.Log("[ModeAwareNavigationUI] Back button clicked, returned to mode overview");
                 }
             }
         }
-        
+
         private void OnQuickActionClicked(int actionNumber)
         {
             string actionName = "";
-            
+
             switch (_currentMode)
             {
                 case GameplayMode.Cultivation:
                     actionName = actionNumber switch
                     {
                         1 => "Water Plants",
-                        2 => "Check Health", 
+                        2 => "Check Health",
                         3 => "Harvest Ready",
                         _ => "Unknown"
                     };
                     break;
-                    
+
                 case GameplayMode.Construction:
                     actionName = actionNumber switch
                     {
                         1 => "Place Wall",
                         2 => "Add Equipment",
-                        3 => "View Blueprint", 
+                        3 => "View Blueprint",
                         _ => "Unknown"
                     };
                     break;
-                    
+
                 case GameplayMode.Genetics:
                     actionName = actionNumber switch
                     {
@@ -577,19 +579,19 @@ namespace ProjectChimera.UI.Navigation
                     };
                     break;
             }
-            
+
             if (_debugMode)
             {
-                Debug.Log($"[ModeAwareNavigationUI] Quick action clicked: {actionName} (Action {actionNumber})");
+                ChimeraLogger.Log("SYSTEM", $"[ModeAwareNavigationUI] Quick action clicked: {actionName} (Action {actionNumber})");
             }
-            
+
             // Here you would trigger the actual quick action in your game
         }
-        
+
         #endregion
-        
+
         #region Public Interface
-        
+
         /// <summary>
         /// Manually refresh the navigation UI
         /// </summary>
@@ -598,14 +600,14 @@ namespace ProjectChimera.UI.Navigation
             if (_isInitialized && _modeController != null)
             {
                 UpdateNavigationForMode(_modeController.CurrentMode);
-                
+
                 if (_debugMode)
                 {
-                    Debug.Log("[ModeAwareNavigationUI] Navigation refreshed manually");
+                    ChimeraLogger.Log("[ModeAwareNavigationUI] Navigation refreshed manually");
                 }
             }
         }
-        
+
         /// <summary>
         /// Navigate to a specific section programmatically
         /// </summary>
@@ -613,33 +615,33 @@ namespace ProjectChimera.UI.Navigation
         {
             AddToNavigationHistory(sectionName);
             UpdateBreadcrumb();
-            
+
             if (_debugMode)
             {
-                Debug.Log($"[ModeAwareNavigationUI] Programmatic navigation to: {sectionName}");
+                ChimeraLogger.Log($"[ModeAwareNavigationUI] Programmatic navigation to: {sectionName}");
             }
         }
-        
+
         /// <summary>
         /// Enable/disable debug mode at runtime
         /// </summary>
         public void SetDebugMode(bool enabled)
         {
             _debugMode = enabled;
-            Debug.Log($"[ModeAwareNavigationUI] Debug mode {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.Log($"[ModeAwareNavigationUI] Debug mode {(enabled ? "enabled" : "disabled")}");
         }
-        
+
         /// <summary>
         /// Get current navigation state
         /// </summary>
         public GameplayMode CurrentMode => _currentMode;
         public string CurrentSection => _currentSection;
         public int NavigationHistoryDepth => _navigationHistory.Count;
-        
+
         #endregion
-        
+
         #if UNITY_EDITOR
-        
+
         /// <summary>
         /// Editor-only method for testing navigation
         /// </summary>
@@ -652,8 +654,7 @@ namespace ProjectChimera.UI.Navigation
                 var currentMode = _modeController.CurrentMode;
                 var nextMode = currentMode switch
                 {
-                    GameplayMode.Cultivation => GameplayMode.Construction,
-                    GameplayMode.Construction => GameplayMode.Genetics,
+                    GameplayMode.Cultivation => GameplayMode.Construction, GameplayMode.Construction => GameplayMode.Genetics,
                     GameplayMode.Genetics => GameplayMode.Cultivation,
                     _ => GameplayMode.Cultivation
                 };
@@ -661,10 +662,10 @@ namespace ProjectChimera.UI.Navigation
             }
             else
             {
-                Debug.Log("[ModeAwareNavigationUI] Test only works during play mode with initialized controller");
+                ChimeraLogger.Log("[ModeAwareNavigationUI] Test only works during play mode with initialized controller");
             }
         }
-        
+
         #endif
     }
 }

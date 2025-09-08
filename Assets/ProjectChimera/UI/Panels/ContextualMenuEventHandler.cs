@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using ProjectChimera.UI.Components;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -86,7 +87,7 @@ namespace ProjectChimera.UI.Panels
                 if (!validationResult.IsValid)
                 {
                     OnCommandValidationFailed?.Invoke(validationResult.ErrorMessage);
-                    Debug.LogWarning($"[ContextualMenuEventHandler] Command validation failed: {validationResult.ErrorMessage}");
+                    ChimeraLogger.LogWarning($"[ContextualMenuEventHandler] Command validation failed: {validationResult.ErrorMessage}");
                     return;
                 }
                 
@@ -95,7 +96,7 @@ namespace ProjectChimera.UI.Panels
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ContextualMenuEventHandler] Error handling menu item click: {ex.Message}");
+                ChimeraLogger.LogError($"[ContextualMenuEventHandler] Error handling menu item click: {ex.Message}");
                 OnCommandValidationFailed?.Invoke($"Error executing command: {ex.Message}");
             }
         }
@@ -160,7 +161,7 @@ namespace ProjectChimera.UI.Panels
             _wiringManager.Clear();
             _validator.Reset();
             
-            Debug.Log("[ContextualMenuEventHandler] Cleared all handlers and commands");
+            ChimeraLogger.Log("[ContextualMenuEventHandler] Cleared all handlers and commands");
         }
     }
     

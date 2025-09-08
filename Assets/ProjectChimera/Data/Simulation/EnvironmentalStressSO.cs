@@ -1,5 +1,4 @@
 using UnityEngine;
-using ProjectChimera.Core;
 using ProjectChimera.Shared;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Genetics;
@@ -19,41 +18,41 @@ namespace ProjectChimera.Data.Simulation
         [SerializeField] private StressType _stressType = StressType.Temperature;
         [SerializeField, TextArea(3, 5)] private string _stressDescription;
         [SerializeField] private StressSeverity _baseSeverity = StressSeverity.Moderate;
-        
+
         [Header("Stress Thresholds")]
         [SerializeField] private StressThreshold _mildStressThreshold;
         [SerializeField] private StressThreshold _moderateStressThreshold;
         [SerializeField] private StressThreshold _severeStressThreshold;
         [SerializeField] private StressThreshold _lethalStressThreshold;
-        
+
         [Header("Stress Effects")]
         [SerializeField] private List<StressEffect> _immediateEffects = new List<StressEffect>();
         [SerializeField] private List<StressEffect> _cumulativeEffects = new List<StressEffect>();
         [SerializeField] private List<StressEffect> _longTermEffects = new List<StressEffect>();
-        
+
         [Header("Damage Mechanics")]
         [SerializeField] private DamageType _damageType = DamageType.Reversible;
         [SerializeField] private AnimationCurve _damageCurve;
         [SerializeField, Range(0f, 1f)] private float _maxDamagePerHour = 0.1f;
         [SerializeField, Range(0f, 100f)] private float _lethalThreshold = 90f;
-        
+
         [Header("Recovery Mechanisms")]
         [SerializeField] private bool _allowsRecovery = true;
         [SerializeField] private AnimationCurve _recoveryCurve;
         [SerializeField, Range(0f, 1f)] private float _maxRecoveryPerHour = 0.05f;
         [SerializeField, Range(0f, 1f)] private float _permanentDamageRatio = 0.1f;
-        
+
         [Header("Adaptation and Tolerance")]
         [SerializeField] private bool _allowsAdaptation = false;
         [SerializeField, Range(0f, 1f)] private float _adaptationRate = 0.01f;
         [SerializeField, Range(0f, 2f)] private float _maxAdaptationBonus = 0.3f;
         [SerializeField] private List<ToleranceModifier> _geneticToleranceModifiers = new List<ToleranceModifier>();
-        
+
         [Header("Interactive Effects")]
         [SerializeField] private List<StressInteraction> _interactiveStresses = new List<StressInteraction>();
         [SerializeField] private bool _hasCompoundingEffects = true;
         [SerializeField, Range(1f, 3f)] private float _compoundingMultiplier = 1.5f;
-        
+
         // Public Properties
         public string StressName => _stressName;
         public StressType StressType => _stressType;
@@ -82,7 +81,7 @@ namespace ProjectChimera.Data.Simulation
         public List<StressInteraction> InteractiveStresses => _interactiveStresses;
         public bool HasCompoundingEffects => _hasCompoundingEffects;
         public float CompoundingMultiplier => _compoundingMultiplier;
-        
+
         /// <summary>
         /// Gets the stress multiplier based on base severity for stress level calculations.
         /// </summary>
@@ -100,7 +99,7 @@ namespace ProjectChimera.Data.Simulation
                 }
             }
         }
-        
+
         /// <summary>
         /// Evaluates the current stress level based on environmental conditions.
         /// </summary>
@@ -109,7 +108,7 @@ namespace ProjectChimera.Data.Simulation
         public float EvaluateStressLevel(EnvironmentalConditions environment)
         {
             float environmentalValue = GetEnvironmentalValue(environment);
-            
+
             if (environmentalValue <= _mildStressThreshold.ThresholdValue)
                 return 0f;
             else if (environmentalValue <= _moderateStressThreshold.ThresholdValue)
@@ -121,7 +120,7 @@ namespace ProjectChimera.Data.Simulation
             else
                 return 1f;
         }
-        
+
         /// <summary>
         /// Calculates damage accumulation over time based on stress level.
         /// </summary>
@@ -132,14 +131,14 @@ namespace ProjectChimera.Data.Simulation
         public float CalculateDamageAccumulation(float stressLevel, float deltaTime, float currentDamage)
         {
             if (stressLevel <= 0f) return currentDamage;
-            
+
             float damageRate = _damageCurve != null ? _damageCurve.Evaluate(stressLevel) : stressLevel;
             damageRate *= _maxDamagePerHour;
-            
+
             float newDamage = currentDamage + (damageRate * deltaTime);
             return Mathf.Min(100f, newDamage);
         }
-        
+
         /// <summary>
         /// Calculates recovery over time when stress is reduced.
         /// </summary>
@@ -151,17 +150,17 @@ namespace ProjectChimera.Data.Simulation
         {
             if (!_allowsRecovery || stressLevel > 0.1f || currentDamage <= 0f)
                 return currentDamage;
-            
+
             float recoveryRate = _recoveryCurve != null ? _recoveryCurve.Evaluate(1f - stressLevel) : (1f - stressLevel);
             recoveryRate *= _maxRecoveryPerHour;
-            
+
             // Account for permanent damage
             float recoverableDamage = currentDamage * (1f - _permanentDamageRatio);
             float recovery = recoveryRate * deltaTime;
-            
+
             return Mathf.Max(currentDamage * _permanentDamageRatio, currentDamage - recovery);
         }
-        
+
         /// <summary>
         /// Applies stress effects to specific plant traits.
         /// </summary>
@@ -173,13 +172,13 @@ namespace ProjectChimera.Data.Simulation
         {
             var effects = GetEffectsForSeverity(severity);
             var targetEffect = effects.Find(e => e.AffectedTrait == trait);
-            
+
             if (targetEffect == null) return 1f;
-            
+
             float effectStrength = Mathf.Lerp(1f, targetEffect.EffectMagnitude, stressLevel);
             return targetEffect.IsNegativeEffect ? effectStrength : (2f - effectStrength);
         }
-        
+
         /// <summary>
         /// Calculates genetic tolerance modifier for a specific strain.
         /// </summary>
@@ -187,7 +186,7 @@ namespace ProjectChimera.Data.Simulation
         {
             // Base tolerance from strain characteristics
             float tolerance = 1f;
-            
+
             // Apply specific genetic modifiers
             foreach (var modifier in _geneticToleranceModifiers)
             {
@@ -196,10 +195,10 @@ namespace ProjectChimera.Data.Simulation
                     tolerance *= modifier.ToleranceMultiplier;
                 }
             }
-            
+
             return tolerance;
         }
-        
+
         private float GetEnvironmentalValue(EnvironmentalConditions environment)
         {
             switch (_stressType)
@@ -216,7 +215,7 @@ namespace ProjectChimera.Data.Simulation
                     return 0f;
             }
         }
-        
+
         private List<StressEffect> GetEffectsForSeverity(StressSeverity severity)
         {
             switch (severity)
@@ -232,38 +231,38 @@ namespace ProjectChimera.Data.Simulation
                     return _immediateEffects;
             }
         }
-        
+
         private bool IsModifierApplicable(ToleranceModifier modifier, PlantStrainSO strain)
         {
             // Check if strain has the required characteristics for this tolerance modifier
             // This is a simplified check - could be made more sophisticated
             return modifier.ApplicableStrainTypes.Contains(strain.StrainType);
         }
-        
+
         protected override bool ValidateDataSpecific()
         {
             bool isValid = true;
-            
+
             if (string.IsNullOrEmpty(_stressName))
-                Debug.LogError($"Environmental Stress {name}: Stress name cannot be empty");
-                
+                SharedLogger.LogError($"Environmental Stress {name}: Stress name cannot be empty");
+
             if (_maxDamagePerHour <= 0f)
-                Debug.LogError($"Environmental Stress {name}: Max damage per hour must be positive");
-                
+                SharedLogger.LogError($"Environmental Stress {name}: Max damage per hour must be positive");
+
             if (_allowsRecovery && _maxRecoveryPerHour <= 0f)
-                Debug.LogWarning($"Environmental Stress {name}: Recovery enabled but max recovery rate is zero");
-            
+                SharedLogger.LogWarning($"Environmental Stress {name}: Recovery enabled but max recovery rate is zero");
+
             return isValid;
         }
     }
-    
+
     [System.Serializable]
     public class StressThreshold
     {
         public float ThresholdValue;
         public string ThresholdDescription;
     }
-    
+
     [System.Serializable]
     public class StressEffect
     {
@@ -273,16 +272,16 @@ namespace ProjectChimera.Data.Simulation
         public EffectDuration Duration = EffectDuration.WhileStressed;
         [TextArea(2, 3)] public string EffectDescription;
     }
-    
+
     [System.Serializable]
     public class ToleranceModifier
     {
         public string ModifierName;
-        public List<StrainType> ApplicableStrainTypes = new List<StrainType>();
+        public List<ProjectChimera.Data.Genetics.StrainType> ApplicableStrainTypes = new List<ProjectChimera.Data.Genetics.StrainType>();
         [Range(0.5f, 2f)] public float ToleranceMultiplier = 1f;
         [TextArea(2, 3)] public string ModifierDescription;
     }
-    
+
     [System.Serializable]
     public class StressInteraction
     {
@@ -291,7 +290,7 @@ namespace ProjectChimera.Data.Simulation
         [Range(0.5f, 3f)] public float InteractionStrength = 1.5f;
         [TextArea(2, 3)] public string InteractionDescription;
     }
-    
+
     public enum StressType
     {
         Temperature,
@@ -306,7 +305,7 @@ namespace ProjectChimera.Data.Simulation
         Physical,
         Biotic
     }
-    
+
     public enum StressSeverity
     {
         Mild,
@@ -314,7 +313,7 @@ namespace ProjectChimera.Data.Simulation
         Severe,
         Lethal
     }
-    
+
     public enum DamageType
     {
         Reversible,
@@ -322,7 +321,7 @@ namespace ProjectChimera.Data.Simulation
         Permanent,
         Lethal
     }
-    
+
     public enum EffectDuration
     {
         Immediate,
@@ -330,7 +329,7 @@ namespace ProjectChimera.Data.Simulation
         Cumulative,
         Permanent
     }
-    
+
     public enum InteractionType
     {
         Additive,

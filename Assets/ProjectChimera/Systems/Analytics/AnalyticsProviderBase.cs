@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,7 +38,7 @@ namespace ProjectChimera.Systems.Analytics
             if (!_metricCalculators.ContainsKey(metricName))
             {
                 if (_enableDebugLogging)
-                    Debug.LogWarning($"[{_providerName}] Metric '{metricName}' not found");
+                    ChimeraLogger.LogWarning($"[{_providerName}] Metric '{metricName}' not found");
                 return 0f;
             }
 
@@ -47,7 +48,7 @@ namespace ProjectChimera.Systems.Analytics
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[{_providerName}] Error calculating metric '{metricName}': {ex.Message}");
+                ChimeraLogger.LogError($"[{_providerName}] Error calculating metric '{metricName}': {ex.Message}");
                 return 0f;
             }
         }
@@ -95,7 +96,7 @@ namespace ProjectChimera.Systems.Analytics
             _metricCalculators[metricName] = calculator;
 
             if (_enableDebugLogging)
-                Debug.Log($"[{_providerName}] Registered metric: {metricName} ({displayName})");
+                ChimeraLogger.Log($"[{_providerName}] Registered metric: {metricName} ({displayName})");
         }
 
         /// <summary>
@@ -179,18 +180,18 @@ namespace ProjectChimera.Systems.Analytics
                     validationResults.Add(isValid);
                     
                     if (!isValid && _enableDebugLogging)
-                        Debug.LogWarning($"[{_providerName}] Metric '{metric.Key}' returned invalid value: {value}");
+                        ChimeraLogger.LogWarning($"[{_providerName}] Metric '{metric.Key}' returned invalid value: {value}");
                 }
                 catch (Exception ex)
                 {
                     validationResults.Add(false);
-                    Debug.LogError($"[{_providerName}] Metric '{metric.Key}' validation failed: {ex.Message}");
+                    ChimeraLogger.LogError($"[{_providerName}] Metric '{metric.Key}' validation failed: {ex.Message}");
                 }
             }
             
             var allValid = validationResults.All(r => r);
             if (_enableDebugLogging)
-                Debug.Log($"[{_providerName}] Metric validation: {validationResults.Count(r => r)}/{validationResults.Count} passed");
+                ChimeraLogger.Log($"[{_providerName}] Metric validation: {validationResults.Count(r => r)}/{validationResults.Count} passed");
             
             return allValid;
         }

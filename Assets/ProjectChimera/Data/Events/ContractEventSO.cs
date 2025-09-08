@@ -1,6 +1,7 @@
 using UnityEngine;
 using ProjectChimera.Data.Economy;
 using System;
+using ProjectChimera.Shared;
 
 namespace ProjectChimera.Data.Events
 {
@@ -139,7 +140,7 @@ namespace ProjectChimera.Data.Events
             // Log event if enabled
             if (_logEvents)
             {
-                Debug.Log($"[ContractEvent] {data.EventType}: {data.ContractTitle} ({data.ContractId}) - {data.EventDescription}");
+                SharedLogger.Log($"[ContractEvent] {data.EventType}: {data.ContractTitle} ({data.ContractId}) - {data.EventDescription}");
             }
             
             base.Invoke(data);

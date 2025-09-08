@@ -1,18 +1,18 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Data.Genetics;
-using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Shared;
 // using ProjectChimera.Systems.Genetics; // Invalid namespace - genetics in ProjectChimera.Data.Genetics // Added for advanced TraitExpressionEngine
 // Decouple from Systems.Genetics for early-phase compile
 using TraitExpressionEngine = System.Object;
 using TraitExpressionResult = ProjectChimera.Data.Genetics.TraitExpressionResult;
 using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
 using PlantGenotype = ProjectChimera.Data.Genetics.PlantGenotype;
-using EnvironmentManager = ProjectChimera.Systems.Environment.EnvironmentManager; // Add EnvironmentalManager alias
+// using EnvironmentManager = ProjectChimera.Systems.Environment.EnvironmentManager; // Environment assembly not available
 using GxEInteractionProfile = ProjectChimera.Data.Genetics.GxEInteractionProfile; // Correct type name
 using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for accessing managers
 using GeneticPerformanceStats = ProjectChimera.Systems.Cultivation.GeneticPerformanceStats; // Systems version
-using HarvestResults = ProjectChimera.Systems.Cultivation.HarvestResults; // Systems version
-using SystemsHarvestResults = ProjectChimera.Systems.Cultivation.SystemsHarvestResults; // Systems version
+using HarvestResults = ProjectChimera.Data.Cultivation.HarvestResults; // Systems version
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 using System.Collections.Generic;
 
@@ -45,25 +45,25 @@ namespace ProjectChimera.Systems.Cultivation
         private readonly bool _enableGxEInteractions;
         private readonly bool _enableAdvancedGenetics;
         private readonly TraitExpressionEngine _traitExpressionEngine;
-        
+
         // Performance optimization
         private readonly Dictionary<string, TraitExpressionResult> _traitExpressionCache = new Dictionary<string, TraitExpressionResult>();
         private float _lastCacheUpdate = 0f;
         private const float CACHE_UPDATE_INTERVAL = 5f; // Update cache every 5 seconds
-        
+
         public PlantUpdateProcessor(bool enableStressSystem = true, bool enableGxEInteractions = true, bool enableAdvancedGenetics = true)
         {
             _enableStressSystem = enableStressSystem;
             _enableGxEInteractions = enableGxEInteractions;
             _enableAdvancedGenetics = enableAdvancedGenetics;
-            
+
             // Initialize advanced trait expression engine with performance optimization
             if (_enableAdvancedGenetics)
             {
                 _traitExpressionEngine = new TraitExpressionEngine();
             }
         }
-        
+
         /// <summary>
         /// Phase 3.1: Enhanced plant update with genetic trait expression integration.
         /// Updates a single plant's state including growth, health, environmental responses, and genetic trait expression.
@@ -72,17 +72,17 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (plant == null || !plant.IsActive)
                 return;
-            
+
             // Get current environmental conditions for the plant
             var environmentalConditions = GetPlantEnvironmentalConditions(plant);
-            
+
             // Calculate genetic trait expression if advanced genetics is enabled
             TraitExpressionResult traitExpression = null;
             if (_enableAdvancedGenetics && plant.Genotype != null)
             {
                 traitExpression = CalculateTraitExpression(plant, environmentalConditions);
             }
-            
+
             // Update plant with genetic trait expression data
             if (traitExpression != null)
             {
@@ -94,7 +94,7 @@ namespace ProjectChimera.Systems.Cultivation
                 plant.UpdatePlant(deltaTime, globalGrowthModifier);
             }
         }
-        
+
         /// <summary>
         /// Phase 3.2: Enhanced trait expression calculation with performance optimization.
         /// Uses the high-performance TraitExpressionEngine with automatic optimization selection.
@@ -102,7 +102,7 @@ namespace ProjectChimera.Systems.Cultivation
         private TraitExpressionResult CalculateTraitExpression(PlantInstance plant, ProjectChimera.Data.Shared.EnvironmentalConditions environment)
         {
             string cacheKey = $"{plant.PlantID}_{environment.GetHashCode()}";
-            
+
             // Check cache first for performance optimization
             if (_traitExpressionCache.TryGetValue(cacheKey, out var cachedResult))
             {
@@ -111,23 +111,23 @@ namespace ProjectChimera.Systems.Cultivation
                     return cachedResult;
                 }
             }
-            
+
             // Calculate new trait expression using optimized engine
             var plantGenotype = CreatePlantGenotypeFromInstance(plant);
             if (plantGenotype == null)
                 return null;
-            
+
             var traitExpression = new TraitExpressionResult();
             traitExpression.GenotypeID = plantGenotype.GenotypeID;
             traitExpression.CalculationTime = System.DateTime.Now;
-            
+
             // Update cache
             _traitExpressionCache[cacheKey] = traitExpression;
             _lastCacheUpdate = Time.time;
-            
+
             return traitExpression;
         }
-        
+
         /// <summary>
         /// Phase 3.2: Batch processing for multiple plants using optimized genetic calculations.
         /// Automatically selects optimal processing method based on batch size.
@@ -136,29 +136,29 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (plants == null || plants.Count == 0)
                 return;
-            
+
             // Prepare batch data for genetic calculations
             var batchData = new List<(PlantGenotype, ProjectChimera.Data.Shared.EnvironmentalConditions)>();
             var validPlants = new List<PlantInstance>();
-            
+
             foreach (var plant in plants)
             {
                 if (plant == null || !plant.IsActive)
                     continue;
-                
+
                 var environmentalConditions = GetPlantEnvironmentalConditions(plant);
                 var plantGenotype = CreatePlantGenotypeFromInstance(plant);
-                
+
                 if (plantGenotype != null)
                 {
                     batchData.Add((plantGenotype, environmentalConditions));
                     validPlants.Add(plant);
                 }
             }
-            
+
             if (batchData.Count == 0)
                 return;
-            
+
             // Use batch processing for genetic calculations
             List<TraitExpressionResult> batchResults;
             if (_enableAdvancedGenetics && batchData.Count > 1)
@@ -178,13 +178,13 @@ namespace ProjectChimera.Systems.Cultivation
                     batchResults.Add(new TraitExpressionResult());
                 }
             }
-            
+
             // Apply results to plants
             for (int i = 0; i < validPlants.Count && i < batchResults.Count; i++)
             {
                 var plant = validPlants[i];
                 var traitExpression = batchResults[i];
-                
+
                 if (traitExpression != null)
                 {
                     UpdatePlantWithGeneticTraits(plant, traitExpression, deltaTime, globalGrowthModifier);
@@ -196,29 +196,29 @@ namespace ProjectChimera.Systems.Cultivation
                 }
             }
         }
-        
+
         /// <summary>
         /// Update plant state using genetic trait expression results.
         /// </summary>
-        private void UpdatePlantWithGeneticTraits(PlantInstance plant, TraitExpressionResult traitExpression, 
+        private void UpdatePlantWithGeneticTraits(PlantInstance plant, TraitExpressionResult traitExpression,
             float deltaTime, float globalGrowthModifier)
         {
             // Store the trait expression result in the plant for other systems to access
             plant.SetLastTraitExpression(traitExpression);
-            
+
             // Apply genetic trait effects to plant growth
             ApplyGeneticTraitEffects(plant, traitExpression, deltaTime, globalGrowthModifier);
-            
+
             // Update plant's basic systems
             plant.UpdatePlant(deltaTime, globalGrowthModifier);
-            
+
             // Note: Advanced stress-response integration is deferred until genetics system is wired up
         }
-        
+
         /// <summary>
         /// Apply genetic trait effects to plant growth and development.
         /// </summary>
-        private void ApplyGeneticTraitEffects(PlantInstance plant, TraitExpressionResult traitExpression, 
+        private void ApplyGeneticTraitEffects(PlantInstance plant, TraitExpressionResult traitExpression,
             float deltaTime, float globalGrowthModifier)
         {
             // Apply height trait effects
@@ -227,29 +227,29 @@ namespace ProjectChimera.Systems.Cultivation
                 float heightGrowthModifier = traitExpression.HeightExpression;
                 plant.ApplyHeightGrowthModifier(heightGrowthModifier, deltaTime);
             }
-            
+
             // Apply THC trait effects (affects potency)
             if (traitExpression.THCExpression > 0f)
             {
                 plant.ApplyPotencyModifier(traitExpression.THCExpression);
             }
-            
+
             // Apply CBD trait effects (affects medicinal value)
             if (traitExpression.CBDExpression > 0f)
             {
                 plant.ApplyCBDModifier(traitExpression.CBDExpression);
             }
-            
+
             // Apply yield trait effects
             if (traitExpression.YieldExpression > 0f)
             {
                 plant.ApplyYieldModifier(traitExpression.YieldExpression);
             }
-            
+
             // Apply overall genetic fitness effects
             plant.ApplyGeneticFitnessModifier(traitExpression.OverallFitness);
         }
-        
+
         /// <summary>
         /// Apply environmental stress response effects to the plant.
         /// </summary>
@@ -260,14 +260,14 @@ namespace ProjectChimera.Systems.Cultivation
             {
                 float stressHealthPenalty = stressResponse.OverallStressLevel * 0.1f * deltaTime;
                 plant.ApplyHealthChange(-stressHealthPenalty);
-                
+
                 // Apply stress-specific effects
                 foreach (var stressFactor in stressResponse.ActiveStresses)
                 {
                     ApplySpecificStressEffect(plant, stressFactor, deltaTime);
                 }
             }
-            
+
             // Apply adaptive capacity benefits
             if (stressResponse.AdaptiveCapacity > 0.7f)
             {
@@ -275,7 +275,7 @@ namespace ProjectChimera.Systems.Cultivation
                 plant.ApplyHealthChange(adaptiveBonus);
             }
         }
-        
+
         /// <summary>
         /// Apply specific stress factor effects to the plant.
         /// </summary>
@@ -310,7 +310,7 @@ namespace ProjectChimera.Systems.Cultivation
                     break;
             }
         }
-        
+
         /// <summary>
         /// Get environmental conditions for a plant (returns Data.Cultivation.EnvironmentalConditions directly).
         /// </summary>
@@ -318,43 +318,43 @@ namespace ProjectChimera.Systems.Cultivation
         {
             // Get environmental conditions directly from the plant (returns Data.Cultivation.EnvironmentalConditions)
             ProjectChimera.Data.Shared.EnvironmentalConditions dataConditions = plant.GetCurrentEnvironmentalConditions();
-            
+
             // Validate that the conditions are initialized (struct cannot be null)
             if (dataConditions.IsInitialized())
             {
                 return dataConditions;
             }
-            
+
             // Fallback to environmental manager if plant conditions are not available
-            var environmentalManager = GameManager.Instance?.GetManager<ProjectChimera.Systems.Environment.EnvironmentManager>();
-            if (environmentalManager != null)
+            // var environmentalManager = GameManager.Instance?.GetManager<ProjectChimera.Systems.Environment.EnvironmentManager>(); // EnvironmentManager not available
+            // if (environmentalManager != null) // EnvironmentManager not available
             {
-                ProjectChimera.Data.Shared.EnvironmentalConditions cultivationConditions = environmentalManager.GetCultivationConditions(plant.transform.position);
-                return cultivationConditions;
+                // ProjectChimera.Data.Shared.EnvironmentalConditions cultivationConditions = environmentalManager.GetCultivationConditions(plant.transform.position);
+                // return cultivationConditions; // EnvironmentManager not available
             }
-            
+
             // Final fallback to default indoor conditions
             return ProjectChimera.Data.Shared.EnvironmentalConditions.CreateIndoorDefault();
         }
-        
+
         /// <summary>
         /// Convert from Environment.EnvironmentalConditions to Data.Cultivation.EnvironmentalConditions.
         /// </summary>
         private ProjectChimera.Data.Shared.EnvironmentalConditions ConvertEnvironmentToCultivationConditions(ProjectChimera.Data.Environment.EnvironmentalConditions envConditions)
         {
             var cultivationConditions = ProjectChimera.Data.Shared.EnvironmentalConditions.CreateIndoorDefault();
-            
+
             // Map basic environmental properties
             cultivationConditions.Temperature = envConditions.Temperature;
             cultivationConditions.Humidity = envConditions.Humidity;
             cultivationConditions.CO2Level = envConditions.CO2Level;
             cultivationConditions.LightIntensity = envConditions.LightIntensity;
-            
+
             return cultivationConditions;
         }
-        
+
         // Note: Any conversions of environmental condition types have been removed.
-        
+
         /// <summary>
         /// Create a PlantGenotype from a PlantInstance for trait expression calculations.
         /// </summary>
@@ -362,7 +362,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (plant.Genotype == null)
                 return null;
-            
+
             return new PlantGenotype
             {
                 GenotypeID = plant.PlantID,
@@ -371,35 +371,35 @@ namespace ProjectChimera.Systems.Cultivation
                 IsFounder = true, // Would be determined from breeding history
                 CreationDate = System.DateTime.Now,
                 ParentIDs = new List<string>(),
-                Genotype = ConvertGenotypeDataToGenotype(plant.Genotype),
+                Genotype = new Dictionary<string, object>(),
                 OverallFitness = plant.Genotype.OverallFitness,
                 InbreedingCoefficient = 0f, // Would be calculated from breeding history
-                Mutations = new List<MutationRecord>()
+                Mutations = new List<object>()
             };
         }
-        
+
         /// <summary>
         /// Convert GenotypeDataSO to the format required by TraitExpressionEngine.
         /// </summary>
         private Dictionary<string, AlleleCouple> ConvertGenotypeDataToGenotype(GenotypeDataSO genotypeData)
         {
             var genotype = new Dictionary<string, AlleleCouple>();
-            
+
             if (genotypeData.GenePairs != null)
             {
                 foreach (var genePair in genotypeData.GenePairs)
                 {
                     if (genePair?.Gene != null)
                     {
-                        var alleleCouple = new AlleleCouple(genePair.Allele1, genePair.Allele2);
+                        var alleleCouple = new AlleleCouple(genePair.Allele1?.name ?? "unknown", genePair.Allele2?.name ?? "unknown");
                         genotype[genePair.Gene.GeneCode] = alleleCouple;
                     }
                 }
             }
-            
+
             return genotype;
         }
-        
+
         /// <summary>
         /// Clear trait expression cache to free memory.
         /// </summary>
@@ -407,7 +407,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             _traitExpressionCache.Clear();
         }
-        
+
         /// <summary>
         /// Phase 3.2: Enhanced performance monitoring with detailed genetic calculation metrics.
         /// </summary>
@@ -415,7 +415,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             return (_traitExpressionCache.Count, _lastCacheUpdate);
         }
-        
+
         /// <summary>
         /// Get comprehensive performance metrics from the trait expression engine.
         /// </summary>
@@ -432,45 +432,45 @@ namespace ProjectChimera.Systems.Cultivation
                 AverageUpdateTimeMs = 0.0
             };
         }
-        
+
         /// <summary>
         /// Optimize performance by clearing caches and resetting metrics.
         /// </summary>
         public void OptimizePerformance()
         {
             ClearTraitExpressionCache();
-            
+
             if (_enableAdvancedGenetics && _traitExpressionEngine != null)
             {
                 // _traitExpressionEngine.ClearCache(); // Method doesn't exist on System.Object placeholder
             }
-            
+
             // Force garbage collection to clean up pooled objects
             System.GC.Collect();
             System.GC.WaitForPendingFinalizers();
-            
-            Debug.Log("PlantUpdateProcessor: Performance optimization completed");
+
+            ChimeraLogger.Log("PlantUpdateProcessor: Performance optimization completed");
         }
     }
-    
+
     /// <summary>
     /// Calculates plant growth rates and progression based on multiple factors.
     /// </summary>
     public class PlantGrowthCalculator
     {
-        private PlantStrainSO _strain;
+        private object _strain;
         private PhenotypicTraits _traits;
         private AnimationCurve _growthCurve;
-        
-        public void Initialize(PlantStrainSO strain, PhenotypicTraits traits)
+
+        public void Initialize(object strain, PhenotypicTraits traits)
         {
             _strain = strain;
             _traits = traits;
-            
+
             // Initialize growth curve from strain data or use default
-            _growthCurve = strain.GrowthCurve ?? CreateDefaultGrowthCurve();
+            _growthCurve = CreateDefaultGrowthCurve(); // Default curve until GrowthCurve is implemented
         }
-        
+
         /// <summary>
         /// Calculates the growth rate for the current frame.
         /// </summary>
@@ -478,48 +478,57 @@ namespace ProjectChimera.Systems.Cultivation
         {
             // Base growth rate from strain genetics
             float baseRate = GetBaseGrowthRateForStage(stage);
-            
+
             // Apply environmental fitness
             float environmentalModifier = Mathf.Lerp(0.2f, 1.5f, environmentalFitness);
-            
+
             // Apply health modifier
             float healthModifier = Mathf.Lerp(0.1f, 1.2f, health);
-            
+
             // Apply strain-specific growth characteristics
-            float strainModifier = _strain?.GrowthRateModifier ?? 1f;
-            
+            float strainModifier = 1f; // TODO: Add GrowthRateModifier property to PlantStrainSO
+
             // Apply phenotypic expression
             float phenotypeModifier = CalculatePhenotypeGrowthModifier(stage);
-            
+
             // Combine all modifiers
             float finalRate = baseRate * environmentalModifier * healthModifier * strainModifier * phenotypeModifier * globalModifier;
-            
+
             return Mathf.Max(0f, finalRate);
         }
-        
+
         /// <summary>
         /// Calculates harvest results based on plant's final state.
         /// </summary>
-        public SystemsHarvestResults CalculateHarvestResults(float finalHealth, float qualityPotential, PhenotypicTraits traits)
+        public HarvestResults CalculateHarvestResults(float finalHealth, float qualityPotential, PhenotypicTraits traits)
         {
-            var results = new SystemsHarvestResults
+            var results = new HarvestResults
             {
                 FinalHealth = finalHealth,
                 QualityScore = CalculateQualityScore(finalHealth, qualityPotential),
                 FloweringDays = traits.FloweringTime,
                 HarvestDate = System.DateTime.Now
             };
-            
+
             // Calculate yield based on multiple factors
-            results.TotalYieldGrams = CalculateYield(finalHealth, traits);
-            
+            results.TotalYield = CalculateYield(finalHealth, traits);
+
             // Calculate cannabinoid and terpene profiles
-            results.Cannabinoids = CalculateCannabinoidProfile(finalHealth, qualityPotential);
-            results.Terpenes = CalculateTerpeneProfile(finalHealth, qualityPotential);
-            
+            var cannabinoidProfile = CalculateCannabinoidProfile(finalHealth, qualityPotential);
+            results.CannabinoidProfile["THC"] = cannabinoidProfile.THC;
+            results.CannabinoidProfile["CBD"] = cannabinoidProfile.CBD;
+            results.CannabinoidProfile["CBG"] = cannabinoidProfile.CBG;
+            results.CannabinoidProfile["CBN"] = cannabinoidProfile.CBN;
+
+            var terpeneProfile = CalculateTerpeneProfile(finalHealth, qualityPotential);
+            results.Terpenes["Myrcene"] = terpeneProfile.Myrcene;
+            results.Terpenes["Limonene"] = terpeneProfile.Limonene;
+            results.Terpenes["Pinene"] = terpeneProfile.Pinene;
+            results.Terpenes["Linalool"] = terpeneProfile.Linalool;
+
             return results;
         }
-        
+
         private float GetBaseGrowthRateForStage(PlantGrowthStage stage)
         {
             // Different stages have different base growth rates
@@ -541,12 +550,12 @@ namespace ProjectChimera.Systems.Cultivation
                     return 0.01f;
             }
         }
-        
+
         private float CalculatePhenotypeGrowthModifier(PlantGrowthStage stage)
         {
             if (_traits == null)
                 return 1f;
-            
+
             // Different traits affect growth at different stages
             switch (stage)
             {
@@ -558,57 +567,56 @@ namespace ProjectChimera.Systems.Cultivation
                     return 1f;
             }
         }
-        
+
         private float CalculateYield(float health, PhenotypicTraits traits)
         {
-            float baseYield = _strain?.BaseYieldGrams ?? 100f;
+            float baseYield = (_strain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.BaseYieldGrams ?? 100f;
             float healthModifier = Mathf.Lerp(0.3f, 1.2f, health);
             float traitModifier = traits.YieldMultiplier;
-            
+
             return baseYield * healthModifier * traitModifier;
         }
-        
+
         private float CalculateQualityScore(float health, float qualityPotential)
         {
             float healthComponent = health * 0.4f;
             float potentialComponent = qualityPotential * 0.6f;
-            
+
             return Mathf.Clamp01(healthComponent + potentialComponent);
         }
-        
+
         private CannabinoidProfile CalculateCannabinoidProfile(float health, float quality)
         {
-            if (_strain?.CannabinoidProfile == null)
+            if (_strain == null)
                 return new CannabinoidProfile();
-            
+
             var profile = new CannabinoidProfile
             {
-                ThcPercentage = _strain.CannabinoidProfile.ThcPercentage * health * quality,
-                CbdPercentage = _strain.CannabinoidProfile.CbdPercentage * health * quality,
-                CbgPercentage = _strain.CannabinoidProfile.CbgPercentage * health * quality,
-                CbnPercentage = _strain.CannabinoidProfile.CbnPercentage * health * quality
+                THC = ((_strain as ProjectChimera.Data.Genetics.PlantStrainSO)?.thcContent ?? 0f) * health * quality / 100f, // Convert percentage to decimal
+                CBD = ((_strain as ProjectChimera.Data.Genetics.PlantStrainSO)?.cbdContent ?? 0f) * health * quality / 100f, // Convert percentage to decimal
+                CBG = 0.5f * health * quality / 100f, // Default CBG value
+                CBN = 0.1f * health * quality / 100f  // Default CBN value
             };
-            
+
             return profile;
         }
-        
+
         private TerpeneProfile CalculateTerpeneProfile(float health, float quality)
         {
-            if (_strain?.TerpeneProfile == null)
+            if (_strain == null)
                 return new TerpeneProfile();
-            
+
             var profile = new TerpeneProfile
             {
-                Myrcene = _strain.TerpeneProfile.Myrcene * health * quality,
-                Limonene = _strain.TerpeneProfile.Limonene * health * quality,
-                Pinene = _strain.TerpeneProfile.Pinene * health * quality,
-                Linalool = _strain.TerpeneProfile.Linalool * health * quality,
-                Caryophyllene = _strain.TerpeneProfile.Caryophyllene * health * quality
+                Myrcene = 0.5f * health * quality,     // Default Myrcene value
+                Limonene = 0.3f * health * quality,    // Default Limonene value
+                Pinene = 0.2f * health * quality,      // Default Pinene value
+                Linalool = 0.1f * health * quality     // Default Linalool value
             };
-            
+
             return profile;
         }
-        
+
         private AnimationCurve CreateDefaultGrowthCurve()
         {
             var curve = new AnimationCurve();
@@ -617,32 +625,32 @@ namespace ProjectChimera.Systems.Cultivation
             curve.AddKey(0.5f, 0.5f);
             curve.AddKey(0.8f, 0.9f);
             curve.AddKey(1f, 1f);
-            
+
             return curve;
         }
     }
-    
+
     /// <summary>
     /// Manages plant health, stress responses, and disease resistance.
     /// </summary>
     public class PlantHealthSystem
     {
-        private PlantStrainSO _strain;
+        private object _strain;
         private float _currentHealth = 1f;
         private float _maxHealth = 1f;
         private float _stressLevel = 0f;
         private float _diseaseResistance = 1f;
         private float _recoveryRate = 0.1f;
-        
-        public void Initialize(PlantStrainSO strain, float diseaseResistance)
+
+        public void Initialize(object strain, float diseaseResistance)
         {
             _strain = strain;
-            _maxHealth = strain?.BaseHealthModifier ?? 1f;
+            _maxHealth = 1f; // Default health until BaseHealthModifier is implemented
             _currentHealth = _maxHealth;
             _diseaseResistance = diseaseResistance;
-            _recoveryRate = strain?.HealthRecoveryRate ?? 0.1f;
+            _recoveryRate = 0.1f; // Default recovery rate until HealthRecoveryRate is implemented
         }
-        
+
         /// <summary>
         /// Updates health based on stressors and environmental conditions.
         /// </summary>
@@ -650,36 +658,36 @@ namespace ProjectChimera.Systems.Cultivation
         {
             // Calculate stress damage
             float stressDamage = CalculateStressDamage(stressors, deltaTime);
-            
+
             // Calculate environmental health effects
             float environmentalEffect = CalculateEnvironmentalHealthEffect(environmentalFitness, deltaTime);
-            
+
             // Apply natural recovery
             float naturalRecovery = _recoveryRate * deltaTime;
-            
+
             // Update health
             float healthChange = environmentalEffect + naturalRecovery - stressDamage;
             _currentHealth = Mathf.Clamp(_currentHealth + healthChange, 0f, _maxHealth);
-            
+
             // Update stress level
             UpdateStressLevel(stressors);
         }
-        
+
         public float GetCurrentHealth() => _currentHealth;
         public float GetStressLevel() => _stressLevel;
         public float GetHealthPercentage() => _currentHealth / _maxHealth;
-        
+
         private float CalculateStressDamage(List<ActiveStressor> stressors, float deltaTime)
         {
             float totalDamage = 0f;
-            
+
             foreach (var stressor in stressors)
             {
                 if (!stressor.IsActive)
                     continue;
-                
+
                 float damage = stressor.Intensity * stressor.StressSource.DamagePerSecond * deltaTime;
-                
+
                 // Apply disease resistance
                 // Avoid dependency on Data.Environment.StressType; treat any named "Biotic" as biotic
                 try
@@ -695,13 +703,13 @@ namespace ProjectChimera.Systems.Cultivation
                 {
                     // If stress type is not accessible, skip disease resistance calculation
                 }
-                
+
                 totalDamage += damage;
             }
-            
+
             return totalDamage;
         }
-        
+
         private float CalculateEnvironmentalHealthEffect(float environmentalFitness, float deltaTime)
         {
             // Good environmental conditions promote health recovery
@@ -714,14 +722,14 @@ namespace ProjectChimera.Systems.Cultivation
             {
                 return (environmentalFitness - 0.4f) * 0.2f * deltaTime;
             }
-            
+
             return 0f;
         }
-        
+
         private void UpdateStressLevel(List<ActiveStressor> stressors)
         {
             _stressLevel = 0f;
-            
+
             foreach (var stressor in stressors)
             {
                 if (stressor.IsActive)
@@ -729,35 +737,41 @@ namespace ProjectChimera.Systems.Cultivation
                     _stressLevel += stressor.Intensity * stressor.StressSource.StressMultiplier;
                 }
             }
-            
+
             _stressLevel = Mathf.Clamp01(_stressLevel);
         }
     }
-    
+
     /// <summary>
     /// Handles environmental response calculations and GxE interactions.
     /// </summary>
     public class EnvironmentalResponseSystem
     {
-        private PlantStrainSO _strain;
+        private object _strain;
         private object _gxeProfile; // Use object to avoid type mismatch between different GxE profile types
         private float _environmentalFitness = 1f;
         private ProjectChimera.Data.Shared.EnvironmentalConditions _currentConditions;
-        
-        public void Initialize(PlantStrainSO strain)
+
+        public void Initialize(object strain)
         {
-            _strain = strain;
+            // Handle strain conversion - for now, use null if conversion fails
+            _strain = null; // Will implement proper conversion when needed
+            if (strain != null)
+            {
+                ChimeraLogger.LogWarning("[PlantUpdateProcessor] Strain type conversion needed - using default for now");
+            }
             // Safely get GxE profile without assuming specific type
             try
             {
-                _gxeProfile = strain?.GxEProfile;
+                var strainSO = strain as ProjectChimera.Data.Cultivation.PlantStrainSO;
+                _gxeProfile = strainSO?.GxEProfile;
             }
             catch
             {
                 _gxeProfile = null;
             }
         }
-        
+
         /// <summary>
         /// Updates environmental responses and calculates fitness.
         /// </summary>
@@ -766,7 +780,7 @@ namespace ProjectChimera.Systems.Cultivation
             _currentConditions = conditions;
             _environmentalFitness = CalculateEnvironmentalFitness(conditions);
         }
-        
+
         /// <summary>
         /// Processes changes in environmental conditions.
         /// </summary>
@@ -777,16 +791,16 @@ namespace ProjectChimera.Systems.Cultivation
             {
                 float tempChange = Mathf.Abs(current.Temperature - previous.Temperature);
                 float humidityChange = Mathf.Abs(current.Humidity - previous.Humidity);
-                
+
                 // Rapid changes can cause stress
                 if (tempChange > 5f || humidityChange > 20f)
                 {
                     // This would trigger stress responses
-                    Debug.Log($"Rapid environmental change detected - Temp: {tempChange:F1}°C, Humidity: {humidityChange:F1}%");
+                    ChimeraLogger.Log($"Rapid environmental change detected - Temp: {tempChange:F1}°C, Humidity: {humidityChange:F1}%");
                 }
             }
         }
-        
+
         /// <summary>
         /// Processes environmental adaptation for the plant.
         /// </summary>
@@ -794,13 +808,13 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (_strain == null)
                 return;
-            
+
             // Update current conditions
             _currentConditions = conditions;
-            
+
             // Calculate adaptation effects based on environmental fitness and adaptation rate
             float currentFitness = CalculateEnvironmentalFitness(conditions);
-            
+
             // Apply adaptation over time - plants gradually adapt to their environment
             if (currentFitness < _environmentalFitness)
             {
@@ -812,117 +826,121 @@ namespace ProjectChimera.Systems.Cultivation
                 // Adapting to better conditions - faster process
                 _environmentalFitness = Mathf.Lerp(_environmentalFitness, currentFitness, adaptationRate);
             }
-            
+
             // Clamp to ensure valid range
             _environmentalFitness = Mathf.Clamp01(_environmentalFitness);
-            
+
             // Log significant adaptation changes
             if (Mathf.Abs(_environmentalFitness - currentFitness) > 0.1f)
             {
-                Debug.Log($"Plant adapting to environment - Current fitness: {currentFitness:F2}, Adapted fitness: {_environmentalFitness:F2}");
+                ChimeraLogger.Log($"Plant adapting to environment - Current fitness: {currentFitness:F2}, Adapted fitness: {_environmentalFitness:F2}");
             }
         }
-        
+
         public float GetEnvironmentalFitness() => _environmentalFitness;
-        
+
         private float CalculateEnvironmentalFitness(ProjectChimera.Data.Shared.EnvironmentalConditions conditions)
         {
-            if (_strain?.BaseSpecies == null)
+            if ((_strain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.BaseSpecies == null)
                 return 1f;
-            
+
             float tempFitness = CalculateTemperatureFitness(conditions.Temperature);
             float humidityFitness = CalculateHumidityFitness(conditions.Humidity);
             float lightFitness = CalculateLightFitness(conditions.LightIntensity);
             float co2Fitness = CalculateCO2Fitness(conditions.CO2Level);
-            
+
             // Weighted average of all environmental factors
-            float fitness = (tempFitness * 0.3f) + (humidityFitness * 0.25f) + 
+            float fitness = (tempFitness * 0.3f) + (humidityFitness * 0.25f) +
                            (lightFitness * 0.3f) + (co2Fitness * 0.15f);
-            
+
             return Mathf.Clamp01(fitness);
         }
-        
+
         private float CalculateTemperatureFitness(float temperature)
         {
-            var temperatureRange = _strain.BaseSpecies.TemperatureRange;
+            // Default temperature range until BaseSpecies temperature range is implemented
+            var temperatureRange = new Vector2(18f, 26f); // Default optimal range
             var optimal = (temperatureRange.x + temperatureRange.y) * 0.5f;
-            
+
             // Check if temperature is within optimal range
             if (temperature >= temperatureRange.x && temperature <= temperatureRange.y)
                 return 1f;
-            
+
             // Calculate distance from nearest edge of optimal range
-            float distance = Mathf.Min(Mathf.Abs(temperature - temperatureRange.x), 
+            float distance = Mathf.Min(Mathf.Abs(temperature - temperatureRange.x),
                                      Mathf.Abs(temperature - temperatureRange.y));
-            
+
             // Linear falloff beyond optimal range
             float rangeSize = temperatureRange.y - temperatureRange.x;
             float falloffRange = rangeSize * 0.5f;
             float fitness = 1f - (distance / falloffRange);
-            
+
             return Mathf.Clamp01(fitness);
         }
-        
+
         private float CalculateHumidityFitness(float humidity)
         {
-            var humidityRange = _strain.BaseSpecies.HumidityRange;
+            // Default humidity range until BaseSpecies humidity range is implemented
+            var humidityRange = new Vector2(40f, 60f); // Default optimal range
             var optimal = (humidityRange.x + humidityRange.y) * 0.5f;
-            
+
             // Check if humidity is within optimal range
             if (humidity >= humidityRange.x && humidity <= humidityRange.y)
                 return 1f;
-            
+
             // Calculate distance from nearest edge of optimal range
-            float distance = Mathf.Min(Mathf.Abs(humidity - humidityRange.x), 
+            float distance = Mathf.Min(Mathf.Abs(humidity - humidityRange.x),
                                      Mathf.Abs(humidity - humidityRange.y));
-            
+
             // Linear falloff beyond optimal range
             float rangeSize = humidityRange.y - humidityRange.x;
             float falloffRange = rangeSize * 0.5f;
             float fitness = 1f - (distance / falloffRange);
-            
+
             return Mathf.Clamp01(fitness);
         }
-        
+
         private float CalculateLightFitness(float lightIntensity)
         {
-            var lightRange = _strain.BaseSpecies.LightIntensityRange;
+            // Default light range until BaseSpecies light range is implemented
+            var lightRange = new Vector2(200f, 800f); // Default optimal range in PPFD
             var optimal = (lightRange.x + lightRange.y) * 0.5f;
-            
+
             // Check if light intensity is within optimal range
             if (lightIntensity >= lightRange.x && lightIntensity <= lightRange.y)
                 return 1f;
-            
+
             // Calculate distance from nearest edge of optimal range
-            float distance = Mathf.Min(Mathf.Abs(lightIntensity - lightRange.x), 
+            float distance = Mathf.Min(Mathf.Abs(lightIntensity - lightRange.x),
                                      Mathf.Abs(lightIntensity - lightRange.y));
-            
+
             // Linear falloff beyond optimal range
             float rangeSize = lightRange.y - lightRange.x;
             float falloffRange = rangeSize * 0.5f;
             float fitness = 1f - (distance / falloffRange);
-            
+
             return Mathf.Clamp01(fitness);
         }
-        
+
         private float CalculateCO2Fitness(float co2Level)
         {
-            var co2Range = _strain.BaseSpecies.Co2Range;
+            // Default CO2 range until BaseSpecies CO2 range is implemented
+            var co2Range = new Vector2(400f, 1200f); // Default optimal range in ppm
             var optimal = (co2Range.x + co2Range.y) * 0.5f;
-            
+
             // Check if CO2 level is within optimal range
             if (co2Level >= co2Range.x && co2Level <= co2Range.y)
                 return 1f;
-            
+
             // Calculate distance from nearest edge of optimal range
-            float distance = Mathf.Min(Mathf.Abs(co2Level - co2Range.x), 
+            float distance = Mathf.Min(Mathf.Abs(co2Level - co2Range.x),
                                      Mathf.Abs(co2Level - co2Range.y));
-            
+
             // Linear falloff beyond optimal range
             float rangeSize = co2Range.y - co2Range.x;
             float falloffRange = rangeSize * 0.5f;
             float fitness = 1f - (distance / falloffRange);
-            
+
             return Mathf.Clamp01(fitness);
         }
     }

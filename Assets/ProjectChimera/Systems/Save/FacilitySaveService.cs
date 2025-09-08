@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Save;
@@ -41,7 +42,7 @@ namespace ProjectChimera.Systems.Save
         private void InitializeService()
         {
             _isInitialized = true;
-            Debug.Log("[FacilitySaveService] Service initialized successfully");
+            ChimeraLogger.Log("[FacilitySaveService] Service initialized successfully");
         }
 
         private void RegisterWithSaveManager()
@@ -50,11 +51,11 @@ namespace ProjectChimera.Systems.Save
             if (saveManager != null)
             {
                 saveManager.RegisterSaveService(this);
-                Debug.Log("[FacilitySaveService] Registered with SaveManager");
+                ChimeraLogger.Log("[FacilitySaveService] Registered with SaveManager");
             }
             else
             {
-                Debug.LogWarning("[FacilitySaveService] SaveManager not found - integration disabled");
+                ChimeraLogger.LogWarning("[FacilitySaveService] SaveManager not found - integration disabled");
             }
         }
 
@@ -66,7 +67,7 @@ namespace ProjectChimera.Systems.Save
         {
             if (!IsAvailable)
             {
-                Debug.LogWarning("[FacilitySaveService] Service not available for state gathering");
+                ChimeraLogger.LogWarning("[FacilitySaveService] Service not available for state gathering");
                 return new FacilityStateDTO
                 {
                     SaveTimestamp = DateTime.Now,
@@ -77,7 +78,7 @@ namespace ProjectChimera.Systems.Save
 
             try
             {
-                Debug.Log("[FacilitySaveService] Gathering facility state...");
+                ChimeraLogger.Log("[FacilitySaveService] Gathering facility state...");
 
                 var facilityState = new FacilityStateDTO
                 {
@@ -124,12 +125,12 @@ namespace ProjectChimera.Systems.Save
                     }
                 };
 
-                Debug.Log($"[FacilitySaveService] Facility state gathered: {facilityState.OwnedFacilities.Count} facilities");
+                ChimeraLogger.Log($"[FacilitySaveService] Facility state gathered: {facilityState.OwnedFacilities.Count} facilities");
                 return facilityState;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[FacilitySaveService] Error gathering facility state: {ex.Message}");
+                ChimeraLogger.LogError($"[FacilitySaveService] Error gathering facility state: {ex.Message}");
                 return new FacilityStateDTO
                 {
                     SaveTimestamp = DateTime.Now,
@@ -142,19 +143,19 @@ namespace ProjectChimera.Systems.Save
         {
             if (!IsAvailable)
             {
-                Debug.LogWarning("[FacilitySaveService] Service not available for state application");
+                ChimeraLogger.LogWarning("[FacilitySaveService] Service not available for state application");
                 return;
             }
 
             if (facilityData == null)
             {
-                Debug.LogWarning("[FacilitySaveService] No facility data to apply");
+                ChimeraLogger.LogWarning("[FacilitySaveService] No facility data to apply");
                 return;
             }
 
             try
             {
-                Debug.Log($"[FacilitySaveService] Applying facility state with {facilityData.OwnedFacilities?.Count ?? 0} facilities");
+                ChimeraLogger.Log($"[FacilitySaveService] Applying facility state with {facilityData.OwnedFacilities?.Count ?? 0} facilities");
 
                 // Apply facility ownership
                 if (facilityData.OwnedFacilities != null)
@@ -174,11 +175,11 @@ namespace ProjectChimera.Systems.Save
                     await ApplySceneIntegration(facilityData.SceneMappings);
                 }
 
-                Debug.Log("[FacilitySaveService] Facility state applied successfully");
+                ChimeraLogger.Log("[FacilitySaveService] Facility state applied successfully");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[FacilitySaveService] Error applying facility state: {ex.Message}");
+                ChimeraLogger.LogError($"[FacilitySaveService] Error applying facility state: {ex.Message}");
             }
         }
 
@@ -197,7 +198,7 @@ namespace ProjectChimera.Systems.Save
 
             try
             {
-                Debug.Log($"[FacilitySaveService] Processing {offlineHours:F2} hours of offline facility progression");
+                ChimeraLogger.Log($"[FacilitySaveService] Processing {offlineHours:F2} hours of offline facility progression");
 
                 // Calculate facility maintenance and degradation
                 float maintenanceCosts = CalculateMaintenanceCosts(offlineHours);
@@ -221,7 +222,7 @@ namespace ProjectChimera.Systems.Save
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[FacilitySaveService] Error processing offline progression: {ex.Message}");
+                ChimeraLogger.LogError($"[FacilitySaveService] Error processing offline progression: {ex.Message}");
                 return new OfflineProgressionResult
                 {
                     SystemName = SystemName,
@@ -238,12 +239,12 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplyFacilityOwnership(System.Collections.Generic.List<OwnedFacilityDTO> facilities)
         {
-            Debug.Log($"[FacilitySaveService] Applying ownership for {facilities.Count} facilities");
+            ChimeraLogger.Log($"[FacilitySaveService] Applying ownership for {facilities.Count} facilities");
             
             // Facility ownership application would integrate with actual facility management systems
             foreach (var facility in facilities)
             {
-                Debug.Log($"[FacilitySaveService] Restoring facility: {facility.FacilityName} (Tier: {facility.TierName})");
+                ChimeraLogger.Log($"[FacilitySaveService] Restoring facility: {facility.FacilityName} (Tier: {facility.TierName})");
             }
             
             await Task.CompletedTask;
@@ -251,7 +252,7 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplyFacilityProgression(FacilityProgressionDTO progression)
         {
-            Debug.Log($"[FacilitySaveService] Applying facility progression (XP: {progression.Experience})");
+            ChimeraLogger.Log($"[FacilitySaveService] Applying facility progression (XP: {progression.Experience})");
             
             // Facility progression application would integrate with actual progression systems
             await Task.CompletedTask;
@@ -259,7 +260,7 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplySceneIntegration(System.Collections.Generic.List<FacilitySceneMappingDTO> sceneMappings)
         {
-            Debug.Log($"[FacilitySaveService] Applying scene mappings ({sceneMappings.Count} entries)");
+            ChimeraLogger.Log($"[FacilitySaveService] Applying scene mappings ({sceneMappings.Count} entries)");
             
             // Scene integration application would integrate with actual scene management systems
             await Task.CompletedTask;

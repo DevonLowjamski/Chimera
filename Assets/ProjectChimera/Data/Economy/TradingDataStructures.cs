@@ -614,15 +614,7 @@ namespace ProjectChimera.Data.Economy.Trading
         Suspended
     }
 
-    public enum StrategyType
-    {
-        Manual,
-        SemiAutomated,
-        FullyAutomated,
-        Algorithmic,
-        HighFrequency,
-        Arbitrage
-    }
+
 
     public enum RuleType
     {
@@ -856,13 +848,7 @@ namespace ProjectChimera.Data.Economy.Trading
         public StrategyStatus Status = StrategyStatus.Active;
     }
 
-    public enum StrategyStatus
-    {
-        Active,
-        Inactive,
-        Testing,
-        Paused
-    }
+
 
     #endregion
 
@@ -881,7 +867,7 @@ namespace ProjectChimera.Data.Economy.Trading
         public int SuccessfulTransactions = 0;
         public float AverageRating = 0.5f;
         public DateTime LastUpdated = DateTime.Now;
-        
+
         // Additional reputation metrics
         public int TransactionCount { get; set; }
         public float ReliabilityScore = 0.5f;
@@ -908,7 +894,7 @@ namespace ProjectChimera.Data.Economy.Trading
         public DateTime LastRestocked = DateTime.Now;
         public bool IsAvailable = true;
         public string Description;
-        
+
         // Additional properties for compatibility
         public MarketProductSO Product;
         public float QualityRange = 1.0f;

@@ -1,0 +1,320 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.Genetics
+{
+    /// <summary>
+    /// Strain rarity classification
+    /// </summary>
+    public enum StrainRarity
+    {
+        Common,
+        Uncommon,
+        Rare,
+        VeryRare,
+        Legendary,
+        Epic,
+        Custom
+    }
+
+    public enum StrainType
+    {
+        Sativa,
+        Indica,
+        Hybrid,
+        Ruderalis,
+        Auto
+    }
+
+    /// <summary>
+    /// Photoperiod sensitivity levels
+    /// </summary>
+    public enum PhotoperiodSensitivity
+    {
+        Low,
+        Medium,
+        High,
+        VeryHigh,
+        Auto,
+        Photoperiod
+    }
+
+    /// <summary>
+    /// Cannabinoid profile data
+    /// </summary>
+    [System.Serializable]
+    public class CannabinoidProfile
+    {
+        public float thcContent;
+        public float cbdContent;
+        public float cbnContent;
+        public float cbgContent;
+        public float thcvContent;
+        public float cbcContent;
+        public float ThcPercentage => thcContent;
+        public float CbdPercentage => cbdContent;
+
+        // Properties with correct casing for code access
+        public float THC { get => thcContent; set => thcContent = value; }
+        public float CBD { get => cbdContent; set => cbdContent = value; }
+        public float CBN { get => cbnContent; set => cbnContent = value; }
+        public float CBG { get => cbgContent; set => cbgContent = value; }
+        public float THCV { get => thcvContent; set => thcvContent = value; }
+        public float CBC { get => cbcContent; set => cbcContent = value; }
+    }
+
+    /// <summary>
+    /// Terpene profile data
+    /// </summary>
+    [System.Serializable]
+    public class TerpeneProfile
+    {
+        public float myrcene;
+        public float limonene;
+        public float pinene;
+        public float linalool;
+        public float caryophyllene;
+        public float humulene;
+        public float terpinolene;
+        public float ocimene;
+
+        // Properties with correct casing for code access
+        public float Myrcene { get => myrcene; set => myrcene = value; }
+        public float Limonene { get => limonene; set => limonene = value; }
+        public float Pinene { get => pinene; set => pinene = value; }
+        public float Linalool { get => linalool; set => linalool = value; }
+        public float Caryophyllene { get => caryophyllene; set => caryophyllene = value; }
+        public float Humulene { get => humulene; set => humulene = value; }
+        public float Terpinolene { get => terpinolene; set => terpinolene = value; }
+        public float Ocimene { get => ocimene; set => ocimene = value; }
+    }
+
+    /// <summary>
+    /// Leaf structure characteristics
+    /// </summary>
+    [System.Serializable]
+    public class LeafStructure
+    {
+        public int leafletCount;
+        public float leafSize;
+        public float leafThickness;
+        public Color leafColor;
+        public float serrationIntensity;
+        public bool broad;
+        public bool dense;
+
+        public bool Broad => broad;
+        public bool Dense => dense;
+    }
+
+    /// <summary>
+    /// Bud structure characteristics
+    /// </summary>
+    [System.Serializable]
+    public class BudStructure
+    {
+        public float budDensity;
+        public float calyxSize;
+        public float trichomeDensity;
+        public float pistilLength;
+        public Color budColor;
+        public float resinProduction;
+        public bool dense;
+
+        public bool Dense => dense;
+    }
+
+    /// <summary>
+    /// Effects profile for strain
+    /// </summary>
+    [System.Serializable]
+    public class EffectsProfile
+    {
+        public float euphoria;
+        public float relaxation;
+        public float creativity;
+        public float focus;
+        public float sedation;
+        public float appetite;
+        public float energyLevel;
+        public float socialEffect;
+    }
+
+    /// <summary>
+    /// Allele couple for genetic traits
+    /// </summary>
+    [System.Serializable]
+    public class AlleleCouple
+    {
+        public string allele1;
+        public string allele2;
+        public float expressionStrength;
+        public bool isDominant;
+
+        public string Allele1 { get => allele1; set => allele1 = value; }
+        public string Allele2 { get => allele2; set => allele2 = value; }
+
+        public AlleleCouple() { }
+
+        public AlleleCouple(string allele1, string allele2)
+        {
+            this.allele1 = allele1;
+            this.allele2 = allele2;
+            this.expressionStrength = 1.0f;
+            this.isDominant = false;
+        }
+    }
+
+        /// <summary>
+    /// Medical application types
+    /// </summary>
+    public enum MedicalApplication
+    {
+        PainRelief,
+        InflammationReduction,
+        AnxietyReduction,
+        NauseaReduction,
+        AppetiteStimulation,
+        InsomniaeTreatment
+    }
+
+    /// <summary>
+    /// Medical application data details
+    /// </summary>
+    [System.Serializable]
+    public class MedicalApplicationData
+    {
+        public string condition;
+        public float effectiveness;
+        public string dosage;
+        public string administrationMethod;
+        public List<string> sideEffects;
+        public bool painRelief;
+        public bool inflammationReduction;
+        public bool anxietyReduction;
+        public bool nauseaReduction;
+        public bool appetiteStimulation;
+        public bool insomniaTreatment;
+
+        public bool PainRelief
+        {
+            get => painRelief;
+            set => painRelief = value;
+        }
+
+        public bool InflammationReduction
+        {
+            get => inflammationReduction;
+            set => inflammationReduction = value;
+        }
+
+        public bool AnxietyReduction
+        {
+            get => anxietyReduction;
+            set => anxietyReduction = value;
+        }
+
+        public bool NauseaReduction
+        {
+            get => nauseaReduction;
+            set => nauseaReduction = value;
+        }
+
+        public bool AppetiteStimulation
+        {
+            get => appetiteStimulation;
+            set => appetiteStimulation = value;
+        }
+
+        public bool InsomniaeTreatment
+        {
+            get => insomniaTreatment;
+            set => insomniaTreatment = value;
+        }
+    }
+
+    /// <summary>
+    /// Genetic mutation data
+    /// </summary>
+    [System.Serializable]
+    public class GeneticMutation
+    {
+        public string mutationId;
+        public MutationType mutationType;
+        public float mutationRate;
+        public string affectedTrait;
+        public float impactStrength;
+
+        public string ImpactStrengthAsString
+        {
+            get => impactStrength.ToString();
+            set => float.TryParse(value, out impactStrength);
+        }
+        public bool isBeneficial;
+        public string geneLocusAffected;
+        public string phenotypicEffect;
+        public string description;
+        public string occurrenceDate;
+
+                public string MutationId
+        {
+            get => mutationId;
+            set => mutationId = value;
+        }
+
+        public string MutationID
+        {
+            get => mutationId;
+            set => mutationId = value;
+        }
+
+        public MutationType MutationType
+        {
+            get => mutationType;
+            set => mutationType = value;
+        }
+
+        public string GeneLocusAffected
+        {
+            get => geneLocusAffected;
+            set => geneLocusAffected = value;
+        }
+
+        public string PhenotypicEffect
+        {
+            get => phenotypicEffect;
+            set => phenotypicEffect = value;
+        }
+
+        public string Description
+        {
+            get => description;
+            set => description = value;
+        }
+
+                public string OccurrenceDate
+        {
+            get => occurrenceDate;
+            set => occurrenceDate = value;
+        }
+
+        public System.DateTime OccurrenceDateAsDateTime
+        {
+            get => System.DateTime.TryParse(occurrenceDate, out var date) ? date : System.DateTime.Now;
+            set => occurrenceDate = value.ToString();
+        }
+
+        public bool IsBeneficial
+        {
+            get => isBeneficial;
+            set => isBeneficial = value;
+        }
+
+        public bool IsHarmful
+        {
+            get => !isBeneficial;
+            set => isBeneficial = !value;
+        }
+    }
+}

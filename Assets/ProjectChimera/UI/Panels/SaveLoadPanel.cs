@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Data.Save;
 using SaveResult = ProjectChimera.Data.Save.SaveResult;
 using LoadResult = ProjectChimera.Data.Save.LoadResult;
@@ -18,7 +19,7 @@ namespace ProjectChimera.UI.Panels
     /// Provides an intuitive interface for managing save slots, creating new saves,
     /// loading existing games, and viewing save file details with visual feedback.
     /// </summary>
-    public class SaveLoadPanel : UIPanel
+    public class SaveLoadPanel : UIPanel, ITickable
     {
         [Header("Save/Load Configuration")]
         [SerializeField] private bool _enableSavePreview = true;
@@ -78,14 +79,21 @@ namespace ProjectChimera.UI.Panels
             CreateUI();
             SubscribeToEvents();
             RefreshSaveSlots();
+            
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+            
             LogInfo("SaveLoadPanel initialized");
             return;
         }
         
-        private void Update()
+        #region ITickable Implementation
+        
+        public int Priority => TickPriority.UIManager;
+        public bool Enabled => IsInitialized && _enableAutoRefresh;
+        
+        public void Tick(float deltaTime)
         {
-            // if (_saveManager == null) return;
-            
             // Auto-refresh save slots periodically
             if (_enableAutoRefresh && Time.time - _lastRefreshTime >= _refreshInterval)
             {
@@ -96,6 +104,8 @@ namespace ProjectChimera.UI.Panels
             // Update UI state based on save/load operations
             UpdateUIState();
         }
+        
+        #endregion
         
         private void CreateUI()
         {
@@ -914,6 +924,14 @@ namespace ProjectChimera.UI.Panels
             // }
             
             base.OnBeforeHide();
+        }
+        
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
         }
     }
 }

@@ -1,8 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Core.DependencyInjection;
 using ProjectChimera.Systems.Gameplay;
 using ProjectChimera.Data.Events;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Gameplay
 {
@@ -11,7 +14,7 @@ namespace ProjectChimera.UI.Gameplay
     /// Provides buttons for Cultivation, Construction, and Genetics modes
     /// Phase 2 implementation following roadmap requirements
     /// </summary>
-    public class ModeToggleUI : MonoBehaviour
+    public class ModeToggleUI : MonoBehaviour, ITickable
     {
         [Header("Mode Toggle Buttons")]
         [SerializeField] private Button _cultivationButton;
@@ -50,15 +53,28 @@ namespace ProjectChimera.UI.Gameplay
         private void Start()
         {
             InitializeUI();
+            
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
         
         private void OnDestroy()
         {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+            
             UnsubscribeFromEvents();
             UnsubscribeFromButtons();
         }
         
-        private void Update()
+        #region ITickable Implementation
+        
+        public int Priority => TickPriority.UIManager;
+        public bool Enabled => _enableHotkeys && _isInitialized;
+        
+        public void Tick(float deltaTime)
         {
             // Handle keyboard shortcuts if enabled
             if (_enableHotkeys && _isInitialized)
@@ -67,16 +83,18 @@ namespace ProjectChimera.UI.Gameplay
             }
         }
         
+        #endregion
+        
         private void InitializeUI()
         {
             try
             {
                 // Get the gameplay mode controller service
-                _modeController = ProjectChimera.Core.DependencyInjection.ServiceLocator.Instance.GetService<IGameplayModeController>();
+                _modeController = ServiceContainerFactory.Instance?.TryResolve<IGameplayModeController>();
                 
                 if (_modeController == null)
                 {
-                    Debug.LogError("[ModeToggleUI] GameplayModeController service not found!");
+                    ChimeraLogger.LogError("[ModeToggleUI] GameplayModeController service not found!");
                     return;
                 }
                 
@@ -97,12 +115,12 @@ namespace ProjectChimera.UI.Gameplay
                 
                 if (_debugMode)
                 {
-                    Debug.Log($"[ModeToggleUI] Initialized with current mode: {_currentMode}");
+                    ChimeraLogger.Log($"[ModeToggleUI] Initialized with current mode: {_currentMode}");
                 }
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[ModeToggleUI] Error during initialization: {ex.Message}");
+                ChimeraLogger.LogError($"[ModeToggleUI] Error during initialization: {ex.Message}");
             }
         }
         
@@ -132,7 +150,7 @@ namespace ProjectChimera.UI.Gameplay
             {
                 if (kvp.Value == null)
                 {
-                    Debug.LogError($"[ModeToggleUI] {kvp.Key} button is not assigned!");
+                    ChimeraLogger.LogError($"[ModeToggleUI] {kvp.Key} button is not assigned!");
                 }
             }
             
@@ -140,7 +158,7 @@ namespace ProjectChimera.UI.Gameplay
             {
                 if (kvp.Value == null)
                 {
-                    Debug.LogWarning($"[ModeToggleUI] {kvp.Key} label is not assigned (optional)");
+                    ChimeraLogger.LogWarning($"[ModeToggleUI] {kvp.Key} label is not assigned (optional)");
                 }
             }
         }
@@ -153,7 +171,7 @@ namespace ProjectChimera.UI.Gameplay
             }
             else
             {
-                Debug.LogWarning("[ModeToggleUI] ModeChangedEvent not assigned - UI may not update properly");
+                ChimeraLogger.LogWarning("[ModeToggleUI] ModeChangedEvent not assigned - UI may not update properly");
             }
         }
         
@@ -223,17 +241,17 @@ namespace ProjectChimera.UI.Gameplay
         {
             if (!_isInitialized)
             {
-                Debug.LogWarning("[ModeToggleUI] UI not initialized, ignoring button click");
+                ChimeraLogger.LogWarning("[ModeToggleUI] UI not initialized, ignoring button click");
                 return;
             }
             
             if (_debugMode)
             {
-                Debug.Log($"[ModeToggleUI] Mode button clicked: {mode}");
+                ChimeraLogger.Log($"[ModeToggleUI] Mode button clicked: {mode}");
             }
             
             // Phase 2 Verification: UI button produces identical behavior to keyboard
-            Debug.Log($"[ModeToggleUI] Phase 2 Verification - UI button click for {mode} mode (identical to keyboard behavior)");
+            ChimeraLogger.Log("SYSTEM", $"[ModeToggleUI] Phase 2 Verification - UI button click for {mode} mode (identical to keyboard behavior)");
             
             // Set the mode through the controller (which will trigger the event)
             // This produces the same result as keyboard shortcuts - single event, same validation, same cooldown
@@ -244,7 +262,7 @@ namespace ProjectChimera.UI.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[ModeToggleUI] Received mode change event: {eventData.PreviousMode} → {eventData.NewMode}");
+                ChimeraLogger.Log($"[ModeToggleUI] Received mode change event: {eventData.PreviousMode} → {eventData.NewMode}");
             }
             
             _currentMode = eventData.NewMode;
@@ -319,7 +337,7 @@ namespace ProjectChimera.UI.Gameplay
                 
                 if (_debugMode)
                 {
-                    Debug.Log($"[ModeToggleUI] UI refreshed, current mode: {_currentMode}");
+                    ChimeraLogger.Log($"[ModeToggleUI] UI refreshed, current mode: {_currentMode}");
                 }
             }
         }
@@ -344,7 +362,7 @@ namespace ProjectChimera.UI.Gameplay
         public void SetDebugMode(bool enabled)
         {
             _debugMode = enabled;
-            Debug.Log($"[ModeToggleUI] Debug mode {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.Log($"[ModeToggleUI] Debug mode {(enabled ? "enabled" : "disabled")}");
         }
         
         #if UNITY_EDITOR
@@ -359,7 +377,7 @@ namespace ProjectChimera.UI.Gameplay
             _inactiveColor = new Color(0.7f, 0.7f, 0.7f, 1f);    // Light Gray
             _hoverColor = new Color(0.9f, 0.9f, 0.9f, 1f);       // Very Light Gray
             
-            Debug.Log("[ModeToggleUI] Default colors set up");
+            ChimeraLogger.Log("[ModeToggleUI] Default colors set up");
         }
         
         /// <summary>
@@ -374,7 +392,7 @@ namespace ProjectChimera.UI.Gameplay
             }
             else
             {
-                Debug.Log("[ModeToggleUI] UI refresh only works during play mode");
+                ChimeraLogger.Log("[ModeToggleUI] UI refresh only works during play mode");
             }
         }
         

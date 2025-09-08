@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectChimera.Data.Shared;
+using ProjectChimera.Shared;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -15,7 +16,7 @@ namespace ProjectChimera.Data.Genetics
         [Header("Strain Database")]
         [SerializeField] private List<PlantStrainSO> _baseStrains = new List<PlantStrainSO>();
         [SerializeField] private List<CannabisStrainAssetSO> _strainAssets = new List<CannabisStrainAssetSO>();
-        
+
         [Header("Database Configuration")]
         [SerializeField] private bool _autoGenerateStrains = true;
         [SerializeField] private int _maxStrains = 100;
@@ -133,7 +134,7 @@ namespace ProjectChimera.Data.Genetics
                 _baseStrains.Add(strain);
             }
 
-            Debug.Log($"Generated {defaultStrains.Length} default cannabis strains");
+            SharedLogger.Log($"Generated {defaultStrains.Length} default cannabis strains");
         }
 
         /// <summary>
@@ -145,14 +146,14 @@ namespace ProjectChimera.Data.Genetics
             var strainIds = _baseStrains.Where(s => s != null).Select(s => s.StrainId).ToList();
             if (strainIds.Count != strainIds.Distinct().Count())
             {
-                Debug.LogError("Cannabis Strain Database contains duplicate strain IDs");
+                SharedLogger.LogError("Cannabis Strain Database contains duplicate strain IDs");
                 return false;
             }
 
             // Check for null entries
             if (_baseStrains.Any(s => s == null))
             {
-                Debug.LogWarning("Cannabis Strain Database contains null strain entries");
+                SharedLogger.LogWarning("Cannabis Strain Database contains null strain entries");
                 _baseStrains.RemoveAll(s => s == null);
             }
 
@@ -170,9 +171,9 @@ namespace ProjectChimera.Data.Genetics
                 IndicaStrains = _baseStrains.Count(s => s.StrainType == StrainType.Indica),
                 SativaStrains = _baseStrains.Count(s => s.StrainType == StrainType.Sativa),
                 HybridStrains = _baseStrains.Count(s => s.StrainType == StrainType.Hybrid),
-                AverageThc = _baseStrains.Average(s => s.THCContent()),
-                AverageCbd = _baseStrains.Average(s => s.CBDContent()),
-                AverageYield = _baseStrains.Average(s => s.BaseYield())
+                AverageThc = _baseStrains.Average(s => s.THCContent),
+                AverageCbd = _baseStrains.Average(s => s.CBDContent),
+                AverageYield = _baseStrains.Average(s => s.BaseYield)
             };
         }
 

@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Construction;
 
@@ -8,60 +9,61 @@ namespace ProjectChimera.Systems.Construction
     /// Integration component that connects BlueprintOverlayRenderer with GridPlacementController.
     /// Handles enhanced visual feedback during schematic placement with unlit rendering and outlines.
     /// </summary>
-    public class BlueprintOverlayIntegration : ChimeraManager
-    {
+    public class BlueprintOverlayIntegration : ChimeraManager, ITickable{
         [Header("Integration Configuration")]
         [SerializeField] private bool _enableOverlayIntegration = true;
         [SerializeField] private bool _autoCreateOverlayRenderer = true;
         [SerializeField] private bool _useDynamicValidation = true;
         [SerializeField] private float _overlayUpdateInterval = 0.1f;
-        
+
         [Header("Visual Configuration")]
         [SerializeField] private bool _enableValidationColorChange = true;
         [SerializeField] private bool _enableSmoothTransitions = true;
         [SerializeField] private bool _showUtilityConnections = true;
         [SerializeField] private float _transitionSpeed = 5f;
-        
+
         // System references
         private GridPlacementController _placementController;
         private BlueprintOverlayRenderer _overlayRenderer;
-        
+
         // Integration state
         private OverlayInstance _currentOverlay;
         private bool _isValidationActive = false;
         private float _lastUpdateTime = 0f;
         private Vector3 _lastPosition = Vector3.zero;
         private Quaternion _lastRotation = Quaternion.identity;
-        
+
         // Events
         public System.Action<OverlayInstance> OnOverlayValidationChanged;
         public System.Action<Vector3, Quaternion> OnOverlayMoved;
         public System.Action<SchematicSO> OnSchematicOverlayCreated;
-        
+
         public override ManagerPriority Priority => ManagerPriority.Normal;
-        
+
         // Public Properties
         public bool OverlayIntegrationEnabled => _enableOverlayIntegration;
         public OverlayInstance CurrentOverlay => _currentOverlay;
         public bool HasActiveOverlay => _currentOverlay != null;
         public BlueprintOverlayRenderer OverlayRenderer => _overlayRenderer;
-        
+
         protected override void OnManagerInitialize()
         {
             InitializeIntegration();
             SetupEventHandlers();
-            
+
             LogInfo($"BlueprintOverlayIntegration initialized - Auto-create renderer: {_autoCreateOverlayRenderer}");
         }
-        
-        private void Update()
+
+        public void Tick(float deltaTime)
+
+
         {
             if (!_enableOverlayIntegration) return;
-            
+
             UpdateOverlayIntegration();
             UpdateValidationState();
         }
-        
+
         /// <summary>
         /// Create overlay for schematic placement
         /// </summary>
@@ -72,35 +74,35 @@ namespace ProjectChimera.Systems.Construction
                 LogWarning("Cannot create schematic overlay - integration disabled or invalid state");
                 return;
             }
-            
+
             // Clear existing overlay
             ClearCurrentOverlay();
-            
+
             // Create new overlay
             _currentOverlay = _overlayRenderer.CreateSchematicOverlay(schematic, position, rotation, OverlayType.Blueprint);
-            
+
             if (_currentOverlay != null)
             {
                 _lastPosition = position;
                 _lastRotation = rotation;
                 _isValidationActive = _useDynamicValidation;
-                
+
                 OnSchematicOverlayCreated?.Invoke(schematic);
-                
+
                 LogInfo($"Created overlay for schematic: {schematic.SchematicName}");
             }
         }
-        
+
         /// <summary>
         /// Update overlay position during placement
         /// </summary>
         public void UpdateOverlayPosition(Vector3 newPosition, Quaternion newRotation)
         {
             if (_currentOverlay == null || _overlayRenderer == null) return;
-            
+
             bool positionChanged = Vector3.Distance(_lastPosition, newPosition) > 0.01f;
             bool rotationChanged = Quaternion.Angle(_lastRotation, newRotation) > 0.1f;
-            
+
             if (positionChanged || rotationChanged)
             {
                 if (_enableSmoothTransitions)
@@ -111,28 +113,28 @@ namespace ProjectChimera.Systems.Construction
                 {
                     _overlayRenderer.MoveOverlay(_currentOverlay, newPosition, newRotation, false);
                 }
-                
+
                 _lastPosition = newPosition;
                 _lastRotation = newRotation;
-                
+
                 OnOverlayMoved?.Invoke(newPosition, newRotation);
             }
         }
-        
+
         /// <summary>
         /// Update overlay validation state (valid/invalid placement)
         /// </summary>
         public void UpdateValidationState(bool isValid)
         {
             if (_currentOverlay == null || _overlayRenderer == null) return;
-            
+
             if (_enableValidationColorChange)
             {
                 _overlayRenderer.UpdateOverlayValidation(_currentOverlay, isValid);
                 OnOverlayValidationChanged?.Invoke(_currentOverlay);
             }
         }
-        
+
         /// <summary>
         /// Clear current overlay
         /// </summary>
@@ -143,11 +145,11 @@ namespace ProjectChimera.Systems.Construction
                 _overlayRenderer.DestroyOverlay(_currentOverlay);
                 _currentOverlay = null;
                 _isValidationActive = false;
-                
+
                 LogInfo("Cleared current schematic overlay");
             }
         }
-        
+
         /// <summary>
         /// Toggle overlay rendering on/off
         /// </summary>
@@ -159,7 +161,7 @@ namespace ProjectChimera.Systems.Construction
                 LogInfo($"Blueprint overlay rendering {(enabled ? "enabled" : "disabled")}");
             }
         }
-        
+
         /// <summary>
         /// Get validation data for current overlay
         /// </summary>
@@ -167,7 +169,7 @@ namespace ProjectChimera.Systems.Construction
         {
             if (_currentOverlay == null || _placementController == null)
                 return new OverlayValidationData { IsValid = false };
-            
+
             // In a full implementation, would check placement validation
             return new OverlayValidationData
             {
@@ -177,48 +179,48 @@ namespace ProjectChimera.Systems.Construction
                 ValidationMessage = "Placement is valid"
             };
         }
-        
+
         private void InitializeIntegration()
         {
             // Find placement controller
-            _placementController = FindObjectOfType<GridPlacementController>();
+            _placementController = ServiceContainerFactory.Instance?.TryResolve<IGridPlacementController>() as GridPlacementController;
             if (_placementController == null)
             {
                 LogError("GridPlacementController not found - overlay integration disabled");
                 _enableOverlayIntegration = false;
                 return;
             }
-            
+
             // Find or create overlay renderer
-            _overlayRenderer = FindObjectOfType<BlueprintOverlayRenderer>();
+            _overlayRenderer = ServiceContainerFactory.Instance?.TryResolve<BlueprintOverlayRenderer>();
             if (_overlayRenderer == null && _autoCreateOverlayRenderer)
             {
                 var rendererGO = new GameObject("BlueprintOverlayRenderer");
                 _overlayRenderer = rendererGO.AddComponent<BlueprintOverlayRenderer>();
                 rendererGO.transform.SetParent(transform);
-                
+
                 LogInfo("Auto-created BlueprintOverlayRenderer");
             }
-            
+
             if (_overlayRenderer == null)
             {
                 LogError("BlueprintOverlayRenderer not found - overlay integration disabled");
                 _enableOverlayIntegration = false;
             }
         }
-        
+
         private void SetupEventHandlers()
         {
             // In a full implementation, would subscribe to placement controller events
             // For now, we'll use Update method to monitor state changes
         }
-        
+
         private void UpdateOverlayIntegration()
         {
             if (Time.time - _lastUpdateTime < _overlayUpdateInterval) return;
-            
+
             _lastUpdateTime = Time.time;
-            
+
             // Monitor placement controller state
             if (_placementController != null)
             {
@@ -227,12 +229,12 @@ namespace ProjectChimera.Systems.Construction
                 UpdateBasedOnPlacementState();
             }
         }
-        
+
         private void UpdateBasedOnPlacementState()
         {
             // Simplified state monitoring
             // In full implementation, would be event-driven
-            
+
             if (_placementController.IsInSchematicPlacementMode)
             {
                 var currentSchematic = _placementController.CurrentSchematic;
@@ -247,7 +249,7 @@ namespace ProjectChimera.Systems.Construction
                     // Update existing overlay position
                     Vector3 mouseWorldPos = GetMouseWorldPosition();
                     UpdateOverlayPosition(mouseWorldPos, Quaternion.identity);
-                    
+
                     // Update validation state using input handler
                     Vector3Int gridPos = Vector3Int.zero;
                     var inputHandler = _placementController.GetComponent<GridInputHandler>();
@@ -265,11 +267,11 @@ namespace ProjectChimera.Systems.Construction
                 ClearCurrentOverlay();
             }
         }
-        
+
         private void UpdateValidationState()
         {
             if (!_isValidationActive || _currentOverlay == null) return;
-            
+
             // Update validation based on placement controller state
             if (_placementController != null)
             {
@@ -284,33 +286,68 @@ namespace ProjectChimera.Systems.Construction
                 UpdateValidationState(isValid);
             }
         }
-        
+
         private Vector3 GetMouseWorldPosition()
         {
             var camera = Camera.main;
             if (camera == null) return Vector3.zero;
-            
+
             var mousePos = Input.mousePosition;
             var ray = camera.ScreenPointToRay(mousePos);
-            
+
             // Simple ground plane intersection
             var plane = new Plane(Vector3.up, Vector3.zero);
             if (plane.Raycast(ray, out float distance))
             {
                 return ray.GetPoint(distance);
             }
-            
+
             return Vector3.zero;
         }
-        
+
         protected override void OnManagerShutdown()
         {
             ClearCurrentOverlay();
-            
+
             LogInfo("BlueprintOverlayIntegration shutdown");
         }
+
+        #region Unity Lifecycle
+
+        protected override void Start()
+        {
+            base.Start();
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
+        }
+
+        protected override void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
+            base.OnDestroy();
+        }
+
+        #endregion
+
+        #region ITickable Implementation
+
+        int ITickable.Priority => 0;
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+        public virtual void OnRegistered()
+        {
+            // Override in derived classes if needed
+        }
+
+        public virtual void OnUnregistered()
+        {
+            // Override in derived classes if needed
+        }
+
+        #endregion
     }
-    
+
     /// <summary>
     /// Validation data for overlay placement
     /// </summary>
@@ -323,4 +360,5 @@ namespace ProjectChimera.Systems.Construction
         public string ValidationMessage;
         public float ConfidenceLevel;
     }
+
 }

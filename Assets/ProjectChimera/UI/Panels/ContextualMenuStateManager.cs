@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using ProjectChimera.Core.Logging;
 
 // Assembly reference fix applied - enums converted to const strings, Vector2 replaced with float components
 
@@ -19,38 +20,38 @@ namespace ProjectChimera.UI.Panels
         private readonly MenuConfigurationManager _configManager;
         private readonly MenuTransitionController _transitionController;
         private readonly MenuStateCore _stateCore;
-        
+
         // Event forwarding from core components
         public event Action<string> OnMenuOpened
         {
             add { _stateCore.OnMenuOpened += value; }
             remove { _stateCore.OnMenuOpened -= value; }
         }
-        
+
         public event Action<string> OnMenuClosed
         {
             add { _stateCore.OnMenuClosed += value; }
             remove { _stateCore.OnMenuClosed -= value; }
         }
-        
+
         public event Action<string, string> OnMenuItemSelected
         {
             add { _stateCore.OnMenuItemSelected += value; }
             remove { _stateCore.OnMenuItemSelected -= value; }
         }
-        
+
         public event Action<string> OnMenuModeChanged
         {
             add { _stateCore.OnMenuModeChanged += value; }
             remove { _stateCore.OnMenuModeChanged -= value; }
         }
-        
+
         public event Action OnMenuVisibilityChanged
         {
             add { _stateCore.OnMenuVisibilityChanged += value; }
             remove { _stateCore.OnMenuVisibilityChanged -= value; }
         }
-        
+
         // State property forwarding
         public string CurrentMode => _stateCore.CurrentMode;
         public bool IsMenuOpen => _stateCore.IsMenuOpen;
@@ -61,18 +62,18 @@ namespace ProjectChimera.UI.Panels
         public float MenuPositionY => _stateCore.MenuPositionY;
         public bool IsTransitioning => _transitionController.IsTransitioning;
         public float TransitionProgress => _transitionController.TransitionProgress;
-        
+
         public ContextualMenuStateManager()
         {
             // Initialize components
             _configManager = new MenuConfigurationManager();
             _transitionController = new MenuTransitionController();
             _stateCore = new MenuStateCore(_configManager, _transitionController);
-            
+
             // Set up automatic transition updates
             ConnectTransitionUpdates();
         }
-        
+
         /// <summary>
         /// Opens a contextual menu for the specified mode
         /// </summary>
@@ -80,7 +81,7 @@ namespace ProjectChimera.UI.Panels
         {
             return _stateCore.OpenMenu(mode, positionX, positionY);
         }
-        
+
         /// <summary>
         /// Closes the currently open menu
         /// </summary>
@@ -88,7 +89,7 @@ namespace ProjectChimera.UI.Panels
         {
             return _stateCore.CloseMenu();
         }
-        
+
         /// <summary>
         /// Selects a menu item
         /// </summary>
@@ -96,7 +97,7 @@ namespace ProjectChimera.UI.Panels
         {
             return _stateCore.SelectMenuItem(itemId);
         }
-        
+
         /// <summary>
         /// Changes the current menu mode
         /// </summary>
@@ -104,7 +105,7 @@ namespace ProjectChimera.UI.Panels
         {
             return _stateCore.ChangeMode(newMode);
         }
-        
+
         /// <summary>
         /// Sets menu visibility without changing open state
         /// </summary>
@@ -112,7 +113,7 @@ namespace ProjectChimera.UI.Panels
         {
             _stateCore.SetVisibility(visible);
         }
-        
+
         /// <summary>
         /// Sets menu focus state
         /// </summary>
@@ -120,7 +121,7 @@ namespace ProjectChimera.UI.Panels
         {
             _stateCore.SetFocus(hasFocus);
         }
-        
+
         /// <summary>
         /// Updates menu position
         /// </summary>
@@ -128,7 +129,7 @@ namespace ProjectChimera.UI.Panels
         {
             _stateCore.SetPosition(x, y);
         }
-        
+
         /// <summary>
         /// Gets menu configuration for a mode
         /// </summary>
@@ -136,7 +137,7 @@ namespace ProjectChimera.UI.Panels
         {
             return _configManager.GetMenuConfig(mode);
         }
-        
+
         /// <summary>
         /// Registers a new menu mode with configuration
         /// </summary>
@@ -144,7 +145,7 @@ namespace ProjectChimera.UI.Panels
         {
             _configManager.RegisterMode(mode, config);
         }
-        
+
         /// <summary>
         /// Gets available menu modes
         /// </summary>
@@ -152,7 +153,7 @@ namespace ProjectChimera.UI.Panels
         {
             return _configManager.AvailableModes;
         }
-        
+
         /// <summary>
         /// Gets menu history for a mode
         /// </summary>
@@ -160,7 +161,7 @@ namespace ProjectChimera.UI.Panels
         {
             return _configManager.GetMenuHistory(mode);
         }
-        
+
         /// <summary>
         /// Clears all menu state
         /// </summary>
@@ -170,7 +171,7 @@ namespace ProjectChimera.UI.Panels
             _transitionController.Reset();
             _configManager.ClearHistory();
         }
-        
+
         /// <summary>
         /// Updates transition progress (called by animation system)
         /// </summary>
@@ -178,7 +179,7 @@ namespace ProjectChimera.UI.Panels
         {
             _transitionController.SetTransitionProgress(progress);
         }
-        
+
         /// <summary>
         /// Updates transition automatically (call from Update loop if needed)
         /// </summary>
@@ -186,7 +187,7 @@ namespace ProjectChimera.UI.Panels
         {
             _transitionController.UpdateTransition();
         }
-        
+
         /// <summary>
         /// Gets transition parameters for UI systems
         /// </summary>
@@ -194,7 +195,7 @@ namespace ProjectChimera.UI.Panels
         {
             return _transitionController.GetTransitionParams(transitionType);
         }
-        
+
         /// <summary>
         /// Gets current state information
         /// </summary>
@@ -202,7 +203,7 @@ namespace ProjectChimera.UI.Panels
         {
             return _stateCore.GetCurrentState();
         }
-        
+
         /// <summary>
         /// Gets configuration manager for advanced operations
         /// </summary>
@@ -210,7 +211,7 @@ namespace ProjectChimera.UI.Panels
         {
             return _configManager;
         }
-        
+
         /// <summary>
         /// Gets transition controller for advanced operations
         /// </summary>
@@ -218,9 +219,9 @@ namespace ProjectChimera.UI.Panels
         {
             return _transitionController;
         }
-        
 
-        
+
+
         /// <summary>
         /// Set updates paused state
         /// </summary>
@@ -228,7 +229,7 @@ namespace ProjectChimera.UI.Panels
         {
             _stateCore.SetUpdatesPaused(paused);
         }
-        
+
         /// <summary>
         /// Handle selection changed event
         /// </summary>
@@ -236,9 +237,9 @@ namespace ProjectChimera.UI.Panels
         {
             _stateCore.OnSelectionChanged(newSelection);
         }
-        
 
-        
+
+
         /// <summary>
         /// Connects transition controller updates to provide automatic progress updates
         /// </summary>
@@ -248,15 +249,15 @@ namespace ProjectChimera.UI.Panels
             // UI systems can subscribe to transition events for visual updates
             _transitionController.OnTransitionUpdate += (transitionType, progress) => {
                 // This can be used by UI systems to update visual transitions
-                Debug.Log($"[ContextualMenuStateManager] Transition update: {transitionType} at {progress:P1}");
+                ChimeraLogger.Log($"[ContextualMenuStateManager] Transition update: {transitionType} at {progress:P1}");
             };
-            
+
             _transitionController.OnTransitionComplete += (transitionType, wasOpening) => {
-                Debug.Log($"[ContextualMenuStateManager] Transition complete: {transitionType} (was opening: {wasOpening})");
+                ChimeraLogger.Log("SYSTEM", $"[ContextualMenuStateManager] Transition complete: {transitionType} (was opening: {wasOpening})");
             };
         }
     }
-    
+
     /// <summary>
     /// Configuration for a contextual menu mode
     /// </summary>
@@ -271,7 +272,7 @@ namespace ProjectChimera.UI.Panels
         public string TransitionType = MenuTransition.Fade;
         public float TransitionDuration = 0.2f;
     }
-    
+
     /// <summary>
     /// Menu position types
     /// </summary>
@@ -282,7 +283,7 @@ namespace ProjectChimera.UI.Panels
         public const string Fixed = "Fixed";
         public const string Context = "Context";
     }
-    
+
     /// <summary>
     /// Menu transition types
     /// </summary>

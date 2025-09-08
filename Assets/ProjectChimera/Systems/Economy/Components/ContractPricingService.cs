@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Economy;
@@ -491,7 +492,7 @@ namespace ProjectChimera.Systems.Economy.Components
         private void LogInfo(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[ContractPricingService] {message}");
+                ChimeraLogger.Log($"[ContractPricingService] {message}");
         }
     }
     

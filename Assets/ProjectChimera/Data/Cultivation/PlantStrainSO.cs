@@ -1,0 +1,53 @@
+using UnityEngine;
+using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
+
+namespace ProjectChimera.Data.Cultivation
+{
+    /// <summary>
+    /// Plant strain ScriptableObject
+    /// </summary>
+    [CreateAssetMenu(fileName = "PlantStrain", menuName = "Project Chimera/Cultivation/Plant Strain")]
+    public class PlantStrainSO : ScriptableObject
+    {
+        [Header("Basic Information")]
+        public string strainName;
+        public string StrainName => strainName;
+        public string description;
+        public StrainType StrainType;
+
+        [Header("Genetics")]
+        public float BaseYieldGrams = 100f;
+
+        [Header("Species Information")]
+        public ProjectChimera.Data.Genetics.BaseSpecies BaseSpecies;
+        public ProjectChimera.Data.Genetics.GeneticProfile GxEProfile;
+
+        [Header("Growth Properties")]
+        public float growthRate = 1.0f;
+        public float yieldMultiplier = 1.0f;
+        public PlantGrowthStage preferredStage = PlantGrowthStage.Vegetative;
+
+        [Header("Quality Metrics")]
+        public float thcContent = 15.0f;
+        public float cbdContent = 1.0f;
+        public float harvestQuality = 80.0f;
+
+        [Header("Yield Range")]
+        public float minYield = 50.0f;
+        public float maxYield = 150.0f;
+
+        public (float min, float max) GetModifiedYieldRange()
+        {
+            return (minYield * yieldMultiplier, maxYield * yieldMultiplier);
+        }
+    }
+
+    public enum StrainType
+    {
+        Sativa,
+        Indica,
+        Hybrid,
+        Ruderalis,
+        Auto
+    }
+}

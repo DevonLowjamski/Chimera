@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,7 +53,7 @@ namespace ProjectChimera.Core.DependencyInjection
                         // Create instance of the discovered service
                         instance = Activator.CreateInstance(bestImplementation);
                         
-                        Debug.Log($"[ServiceDiscovery] Auto-discovered: {serviceType.Name} -> {bestImplementation.Name}");
+                        ChimeraLogger.Log($"[ServiceDiscovery] Auto-discovered: {serviceType.Name} -> {bestImplementation.Name}");
                         return true;
                     }
                 }
@@ -60,7 +61,7 @@ namespace ProjectChimera.Core.DependencyInjection
             catch (Exception ex)
             {
                 _validationErrors++;
-                Debug.LogWarning($"[ServiceDiscovery] Service discovery failed for {serviceType.Name}: {ex.Message}");
+                ChimeraLogger.LogWarning($"[ServiceDiscovery] Service discovery failed for {serviceType.Name}: {ex.Message}");
             }
             
             return false;
@@ -98,7 +99,7 @@ namespace ProjectChimera.Core.DependencyInjection
                     catch (Exception ex)
                     {
                         // Skip assemblies that can't be reflected
-                        Debug.LogWarning($"[ServiceDiscovery] Failed to reflect assembly {assembly.FullName}: {ex.Message}");
+                        ChimeraLogger.LogWarning($"[ServiceDiscovery] Failed to reflect assembly {assembly.FullName}: {ex.Message}");
                     }
                 }
                 
@@ -108,7 +109,7 @@ namespace ProjectChimera.Core.DependencyInjection
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ServiceDiscovery] Error during implementation discovery: {ex.Message}");
+                ChimeraLogger.LogError($"[ServiceDiscovery] Error during implementation discovery: {ex.Message}");
             }
             
             return implementations;
@@ -168,7 +169,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 if (!constructors.Any(c => c.GetParameters().Length == 0))
                 {
                     _validationErrors++;
-                    Debug.LogWarning($"[ServiceDiscovery] No parameterless constructor found for {implementationType.Name}");
+                    ChimeraLogger.LogWarning($"[ServiceDiscovery] No parameterless constructor found for {implementationType.Name}");
                     return false;
                 }
                 
@@ -177,7 +178,7 @@ namespace ProjectChimera.Core.DependencyInjection
             catch (Exception ex)
             {
                 _validationErrors++;
-                Debug.LogError($"[ServiceDiscovery] Validation failed for {implementationType.Name}: {ex.Message}");
+                ChimeraLogger.LogError($"[ServiceDiscovery] Validation failed for {implementationType.Name}: {ex.Message}");
                 return false;
             }
         }
@@ -241,7 +242,7 @@ namespace ProjectChimera.Core.DependencyInjection
             _implementationCache.Clear();
             _cacheTimestamps.Clear();
             _discoveredTypes.Clear();
-            Debug.Log("[ServiceDiscovery] Discovery cache cleared");
+            ChimeraLogger.Log("[ServiceDiscovery] Discovery cache cleared");
         }
     }
 }

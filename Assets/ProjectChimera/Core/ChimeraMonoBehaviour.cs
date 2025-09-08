@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core
 {
@@ -108,7 +109,7 @@ namespace ProjectChimera.Core
         /// <param name="message">The message to log</param>
         protected void LogInfo(string message)
         {
-            Debug.Log($"[Chimera][{GetType().Name}] {message}", this);
+            ChimeraLogger.Log($"[Chimera][{GetType().Name}] {message}", this);
         }
 
         /// <summary>
@@ -119,7 +120,7 @@ namespace ProjectChimera.Core
         {
             if (_enableDebugLogging)
             {
-                Debug.Log($"[Chimera][{GetType().Name}] {message}", this);
+                ChimeraLogger.Log($"[Chimera][{GetType().Name}] {message}", this);
             }
         }
 
@@ -129,7 +130,7 @@ namespace ProjectChimera.Core
         /// <param name="message">The warning message to log</param>
         protected void LogWarning(string message)
         {
-            Debug.LogWarning($"[Chimera][{GetType().Name}] {message}", this);
+            ChimeraLogger.LogWarning($"[Chimera][{GetType().Name}] {message}", this);
         }
 
         /// <summary>
@@ -138,7 +139,7 @@ namespace ProjectChimera.Core
         /// <param name="message">The error message to log</param>
         protected void LogError(string message)
         {
-            Debug.LogError($"[Chimera][{GetType().Name}] {message}", this);
+            ChimeraLogger.LogError($"[Chimera][{GetType().Name}] {message}", this);
         }
 
         /// <summary>

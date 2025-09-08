@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
-using ProjectChimera.Systems.Services.Core;
-using ProjectChimera.Systems.UI.Advanced;
+// using ProjectChimera.Systems.Services.Core; // Removed - namespace doesn't exist
+// using ProjectChimera.Systems.UI.Advanced; // Removed - namespace doesn't exist
 
 namespace ProjectChimera.Systems.Analytics
 {
@@ -19,7 +19,7 @@ namespace ProjectChimera.Systems.Analytics
         bool ValidateState(object state);
         event Action<string, object> OnStateChanged;
     }
-    
+
     /// <summary>
     /// System state representation
     /// </summary>
@@ -32,13 +32,13 @@ namespace ProjectChimera.Systems.Analytics
         public DateTime LastModified;
         public bool IsValid;
         public Dictionary<string, object> Metadata;
-        
+
         public SystemState()
         {
             Metadata = new Dictionary<string, object>();
         }
     }
-    
+
     /// <summary>
     /// State snapshot containing all system states at a point in time
     /// </summary>
@@ -51,14 +51,14 @@ namespace ProjectChimera.Systems.Analytics
         public long EstimatedSize;
         public bool IsCompressed;
         public Dictionary<string, object> Metadata;
-        
+
         public StateSnapshot()
         {
             SystemStates = new Dictionary<string, object>();
             Metadata = new Dictionary<string, object>();
         }
     }
-    
+
     /// <summary>
     /// Synchronization operation
     /// </summary>
@@ -76,21 +76,21 @@ namespace ProjectChimera.Systems.Analytics
         public bool Success;
         public string ErrorMessage;
         public Dictionary<string, object> Metadata;
-        
+
         public SyncOperation()
         {
             Metadata = new Dictionary<string, object>();
         }
-        
+
         public TimeSpan GetProcessingTime()
         {
             if (StartedAt == default || CompletedAt == default)
                 return TimeSpan.Zero;
-            
+
             return CompletedAt - StartedAt;
         }
     }
-    
+
     /// <summary>
     /// Types of synchronization operations
     /// </summary>
@@ -104,7 +104,7 @@ namespace ProjectChimera.Systems.Analytics
         SnapshotCreation,
         SnapshotRestore
     }
-    
+
     /// <summary>
     /// Synchronization modes
     /// </summary>
@@ -115,7 +115,7 @@ namespace ProjectChimera.Systems.Analytics
         Optimistic,
         Pessimistic
     }
-    
+
     /// <summary>
     /// State conflict representation
     /// </summary>
@@ -130,13 +130,13 @@ namespace ProjectChimera.Systems.Analytics
         public object BaseState;
         public DateTime DetectedAt;
         public Dictionary<string, object> ConflictMetadata;
-        
+
         public StateConflict()
         {
             ConflictMetadata = new Dictionary<string, object>();
         }
     }
-    
+
     /// <summary>
     /// Types of state conflicts
     /// </summary>
@@ -148,7 +148,7 @@ namespace ProjectChimera.Systems.Analytics
         NetworkPartition,
         ValidationFailure
     }
-    
+
     /// <summary>
     /// Conflict resolution strategies
     /// </summary>
@@ -160,7 +160,7 @@ namespace ProjectChimera.Systems.Analytics
         ManualResolution,
         Rollback
     }
-    
+
     /// <summary>
     /// Conflict resolution context
     /// </summary>
@@ -175,7 +175,7 @@ namespace ProjectChimera.Systems.Analytics
         public bool Success;
         public string ErrorMessage;
     }
-    
+
     /// <summary>
     /// Result of conflict resolution
     /// </summary>
@@ -184,7 +184,7 @@ namespace ProjectChimera.Systems.Analytics
         public bool Success;
         public object ResolvedState;
         public string ErrorMessage;
-        
+
         public static ConflictResolutionResult Successful(object resolvedState)
         {
             return new ConflictResolutionResult
@@ -193,7 +193,7 @@ namespace ProjectChimera.Systems.Analytics
                 ResolvedState = resolvedState
             };
         }
-        
+
         public static ConflictResolutionResult Failed(string errorMessage)
         {
             return new ConflictResolutionResult
@@ -203,7 +203,7 @@ namespace ProjectChimera.Systems.Analytics
             };
         }
     }
-    
+
     /// <summary>
     /// Synchronization result
     /// </summary>
@@ -214,7 +214,7 @@ namespace ProjectChimera.Systems.Analytics
         public TimeSpan Duration;
         public bool ConflictDetected;
         public bool StateChanged;
-        
+
         public static SyncResult Successful(TimeSpan duration, bool stateChanged = true)
         {
             return new SyncResult
@@ -224,7 +224,7 @@ namespace ProjectChimera.Systems.Analytics
                 StateChanged = stateChanged
             };
         }
-        
+
         public static SyncResult Failed(string errorMessage, TimeSpan duration = default)
         {
             return new SyncResult
@@ -235,7 +235,7 @@ namespace ProjectChimera.Systems.Analytics
             };
         }
     }
-    
+
     /// <summary>
     /// Synchronization metrics
     /// </summary>
@@ -252,39 +252,39 @@ namespace ProjectChimera.Systems.Analytics
         public int StateHistorySize;
         public Dictionary<string, long> OperationCounts;
         public Dictionary<string, float> SystemLatencies;
-        
+
         public SyncMetrics()
         {
             OperationCounts = new Dictionary<string, long>();
             SystemLatencies = new Dictionary<string, float>();
         }
-        
+
         public float GetSuccessRate()
         {
             var totalOperations = SuccessfulSyncs + FailedSyncs;
             return totalOperations > 0 ? (float)SuccessfulSyncs / totalOperations : 0f;
         }
     }
-    
+
     /// <summary>
     /// Adapter for Service Layer Coordinator
     /// </summary>
     public class ServiceCoordinatorSyncAdapter : ISyncableSystem
     {
         private readonly ServiceLayerCoordinator _coordinator;
-        
+
         public event Action<string, object> OnStateChanged;
-        
+
         public ServiceCoordinatorSyncAdapter(ServiceLayerCoordinator coordinator)
         {
             _coordinator = coordinator;
         }
-        
+
         public string GetSystemId()
         {
             return "service_coordinator";
         }
-        
+
         public object GetCurrentState()
         {
             // Return a representation of the current service state
@@ -295,7 +295,7 @@ namespace ProjectChimera.Systems.Analytics
                 last_command = GetLastCommandTimestamp()
             };
         }
-        
+
         public async Task<bool> ApplyState(object state)
         {
             // Service coordinator state is typically read-only
@@ -303,57 +303,55 @@ namespace ProjectChimera.Systems.Analytics
             await Task.Delay(1);
             return true;
         }
-        
+
         public async Task<bool> RestoreState(object state)
         {
             // Restore service coordinator state if needed
             await Task.Delay(1);
             return true;
         }
-        
+
         public bool ValidateState(object state)
         {
             // Validate service coordinator state
             return state != null;
         }
-        
+
         private int GetActiveServiceCount()
         {
             // In a real implementation, query the coordinator for active services
             return 3; // Mock value
         }
-        
+
         private DateTime GetLastCommandTimestamp()
         {
             // In a real implementation, get the last command timestamp
             return DateTime.UtcNow;
         }
     }
-    
+
     /// <summary>
     /// Adapter for Advanced Menu System
     /// </summary>
     public class MenuSystemSyncAdapter : ISyncableSystem
     {
         private readonly AdvancedMenuSystem _menuSystem;
-        
+
         public event Action<string, object> OnStateChanged;
-        
+
         public MenuSystemSyncAdapter(AdvancedMenuSystem menuSystem)
         {
             _menuSystem = menuSystem;
-            
+
             // Subscribe to menu events to detect state changes
-            _menuSystem.OnMenuOpened += OnMenuStateChanged;
-            _menuSystem.OnMenuClosed += OnMenuStateChanged;
-            _menuSystem.OnActionExecuted += OnActionExecuted;
+            _menuSystem.OnMenuStateChanged += HandleMenuStateChanged;
         }
-        
+
         public string GetSystemId()
         {
             return "advanced_menu_system";
         }
-        
+
         public object GetCurrentState()
         {
             return new
@@ -365,7 +363,7 @@ namespace ProjectChimera.Systems.Analytics
                 action_count = _menuSystem.GetActionCount()
             };
         }
-        
+
         public async Task<bool> ApplyState(object state)
         {
             // Menu system state changes are typically user-driven
@@ -373,33 +371,38 @@ namespace ProjectChimera.Systems.Analytics
             await Task.Delay(1);
             return true;
         }
-        
+
         public async Task<bool> RestoreState(object state)
         {
             // Restore menu system state
             await Task.Delay(1);
-            
+
             // In a real implementation, restore menu state from the provided data
             return true;
         }
-        
+
         public bool ValidateState(object state)
         {
             // Validate menu system state
             return state != null;
         }
-        
+
+        private void HandleMenuStateChanged()
+        {
+            OnStateChanged?.Invoke(GetSystemId(), GetCurrentState());
+        }
+
         private void OnMenuStateChanged(string menuId)
         {
             OnStateChanged?.Invoke(GetSystemId(), GetCurrentState());
         }
-        
+
         private void OnActionExecuted(string actionId, MenuAction action)
         {
             OnStateChanged?.Invoke(GetSystemId(), GetCurrentState());
         }
     }
-    
+
     /// <summary>
     /// Generic syncable system adapter
     /// </summary>
@@ -410,9 +413,9 @@ namespace ProjectChimera.Systems.Analytics
         private readonly Func<object, Task<bool>> _applyStateFunc;
         private readonly Func<object, Task<bool>> _restoreStateFunc;
         private readonly Func<object, bool> _validateStateFunc;
-        
+
         public event Action<string, object> OnStateChanged;
-        
+
         public GenericSystemAdapter(
             string systemId,
             Func<object> getState,
@@ -426,17 +429,17 @@ namespace ProjectChimera.Systems.Analytics
             _restoreStateFunc = restoreState ?? (async _ => { await Task.Delay(1); return true; });
             _validateStateFunc = validateState ?? (_ => true);
         }
-        
+
         public string GetSystemId() => _systemId;
-        
+
         public object GetCurrentState() => _getStateFunc?.Invoke();
-        
+
         public async Task<bool> ApplyState(object state) => await _applyStateFunc(state);
-        
+
         public async Task<bool> RestoreState(object state) => await _restoreStateFunc(state);
-        
+
         public bool ValidateState(object state) => _validateStateFunc(state);
-        
+
         public void TriggerStateChange()
         {
             OnStateChanged?.Invoke(_systemId, GetCurrentState());

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using ProjectChimera.Core.DependencyInjection;
+using ProjectChimera.Core.Logging;
 using ContainerVerificationResult = ProjectChimera.Core.DependencyInjection.ContainerVerificationResult;
 using AdvancedServiceDescriptor = ProjectChimera.Core.DependencyInjection.AdvancedServiceDescriptor;
 
@@ -10,7 +11,7 @@ namespace ProjectChimera.Core
 {
     /// <summary>
     /// Concrete implementation of IServiceContainer for Project Chimera.
-    /// Provides basic dependency injection functionality with lifecycle management.
+    /// Simplified core focusing on basic registration and resolution with advanced features delegated to specialized components.
     /// </summary>
     public class ServiceContainer : IServiceContainer, IDisposable
     {
@@ -20,7 +21,19 @@ namespace ProjectChimera.Core
         private readonly object _lock = new object();
         private bool _disposed = false;
 
+        // Specialized components for advanced features
+        private readonly Lazy<ServiceContainerAdvancedFeatures> _advancedFeatures;
+        private readonly Lazy<ServiceContainerValidator> _validator;
+
+        public ServiceContainer()
+        {
+            _advancedFeatures = new Lazy<ServiceContainerAdvancedFeatures>(() => new ServiceContainerAdvancedFeatures(this));
+            _validator = new Lazy<ServiceContainerValidator>(() => new ServiceContainerValidator(this));
+        }
+
         public bool IsDisposed => _disposed;
+        public ServiceContainerAdvancedFeatures Advanced => _advancedFeatures.Value;
+        public ServiceContainerValidator Validator => _validator.Value;
 
         public event Action<ServiceRegistration> ServiceRegistered;
         public event Action<Type, object> ServiceResolved;
@@ -317,104 +330,73 @@ namespace ProjectChimera.Core
             ServiceRegistered?.Invoke(registration);
         }
 
+        // Advanced features delegated to specialized components
         public void RegisterCollection<TInterface>(params Type[] implementations) where TInterface : class
         {
-            // Basic implementation - register each implementation
-            foreach (var impl in implementations)
-            {
-                var registration = new ServiceRegistration(typeof(TInterface), impl, ServiceLifetime.Transient, null, null);
-                _services[impl] = registration;
-                ServiceRegistered?.Invoke(registration);
-            }
+            Advanced.RegisterCollection<TInterface>(implementations);
         }
 
         public void RegisterNamed<TInterface, TImplementation>(string name) 
             where TInterface : class
             where TImplementation : class, TInterface, new()
         {
-            // Named services not fully supported in basic implementation
-            RegisterTransient<TInterface, TImplementation>();
+            Advanced.RegisterNamed<TInterface, TImplementation>(name);
         }
 
         public void RegisterConditional<TInterface, TImplementation>(Func<IServiceLocator, bool> condition) 
             where TInterface : class
             where TImplementation : class, TInterface, new()
         {
-            // Conditional registration not fully supported in basic implementation
-            RegisterTransient<TInterface, TImplementation>();
+            Advanced.RegisterConditional<TInterface, TImplementation>(condition);
         }
 
         public void RegisterDecorator<TInterface, TDecorator>() 
             where TInterface : class
             where TDecorator : class, TInterface, new()
         {
-            // Decorator pattern not fully supported in basic implementation
-            RegisterTransient<TInterface, TDecorator>();
+            Advanced.RegisterDecorator<TInterface, TDecorator>();
         }
 
         public void RegisterWithCallback<TInterface, TImplementation>(Action<TImplementation> initializer) 
             where TInterface : class
             where TImplementation : class, TInterface, new()
         {
-            // Callback registration not fully supported in basic implementation
-            RegisterTransient<TInterface, TImplementation>();
+            Advanced.RegisterWithCallback<TInterface, TImplementation>(initializer);
         }
 
         public void RegisterOpenGeneric(Type serviceType, Type implementationType)
         {
-            // Open generic registration not fully supported in basic implementation
-            var registration = new ServiceRegistration(serviceType, implementationType, ServiceLifetime.Transient, null, null);
-            _services[serviceType] = registration;
-            ServiceRegistered?.Invoke(registration);
+            Advanced.RegisterOpenGeneric(serviceType, implementationType);
         }
 
         public T ResolveNamed<T>(string name) where T : class
         {
-            // Named resolution not fully supported in basic implementation
-            return Resolve<T>();
+            return Advanced.ResolveNamed<T>(name);
         }
 
         public IEnumerable<T> ResolveWhere<T>(Func<T, bool> predicate) where T : class
         {
-            return ResolveAll<T>().Where(predicate);
+            return Advanced.ResolveWhere<T>(predicate);
         }
 
         public T ResolveOrCreate<T>(Func<T> factory) where T : class
         {
-            var service = TryResolve<T>();
-            return service ?? factory();
+            return Advanced.ResolveOrCreate<T>(factory);
         }
 
         public T ResolveLast<T>() where T : class
         {
-            return ResolveAll<T>().LastOrDefault();
+            return Advanced.ResolveLast<T>();
         }
 
         public T ResolveWithLifetime<T>(ServiceLifetime lifetime) where T : class
         {
-            // Lifetime-specific resolution not fully supported in basic implementation
-            return Resolve<T>();
+            return Advanced.ResolveWithLifetime<T>(lifetime);
         }
 
         public ContainerVerificationResult Verify()
         {
-            var result = new ContainerVerificationResult
-            {
-                IsValid = true,
-                ValidationMessages = new List<string>()
-            };
-            
-            try
-            {
-                ValidateServices();
-            }
-            catch (Exception ex)
-            {
-                result.IsValid = false;
-                result.ValidationMessages.Add(ex.Message);
-            }
-            
-            return result;
+            return Validator.Verify();
         }
 
         public IEnumerable<AdvancedServiceDescriptor> GetServiceDescriptors()
@@ -457,35 +439,33 @@ namespace ProjectChimera.Core
 
             lock (_lock)
             {
-                foreach (var instance in _singletonInstances.Values.OfType<IDisposable>())
-                {
-                    try
-                    {
-                        instance.Dispose();
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError($"Error disposing singleton service: {ex.Message}");
-                    }
-                }
-
-                foreach (var instance in _scopedInstances.Values.OfType<IDisposable>())
-                {
-                    try
-                    {
-                        instance.Dispose();
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError($"Error disposing scoped service: {ex.Message}");
-                    }
-                }
+                DisposeInstances(_singletonInstances.Values, "singleton");
+                DisposeInstances(_scopedInstances.Values, "scoped");
 
                 Clear();
                 _disposed = true;
             }
         }
 
+        #endregion
+
+        #region Private Helper Methods
+        
+        private void DisposeInstances(IEnumerable<object> instances, string instanceType)
+        {
+            foreach (var instance in instances.OfType<IDisposable>())
+            {
+                try
+                {
+                    instance.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    ChimeraLogger.LogError($"Error disposing {instanceType} service: {ex.Message}");
+                }
+            }
+        }
+        
         #endregion
     }
 

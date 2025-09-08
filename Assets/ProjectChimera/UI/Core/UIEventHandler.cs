@@ -14,22 +14,22 @@ namespace ProjectChimera.UI.Core
     {
         private Queue<UIEvent> _pendingEvents = new Queue<UIEvent>();
         private Dictionary<string, List<System.Action<UIEvent>>> _eventHandlers = new Dictionary<string, List<System.Action<UIEvent>>>();
-        
+
         // Input handling
         private bool _isKeyboardNavigationEnabled = true;
         private VisualElement _currentFocusedElement;
         private List<VisualElement> _focusableElements = new List<VisualElement>();
-        
+
         public void RegisterEventHandler(string eventType, System.Action<UIEvent> handler)
         {
             if (!_eventHandlers.ContainsKey(eventType))
             {
                 _eventHandlers[eventType] = new List<System.Action<UIEvent>>();
             }
-            
+
             _eventHandlers[eventType].Add(handler);
         }
-        
+
         public void UnregisterEventHandler(string eventType, System.Action<UIEvent> handler)
         {
             if (_eventHandlers.TryGetValue(eventType, out var handlers))
@@ -37,12 +37,12 @@ namespace ProjectChimera.UI.Core
                 handlers.Remove(handler);
             }
         }
-        
+
         public void QueueEvent(UIEvent uiEvent)
         {
             _pendingEvents.Enqueue(uiEvent);
         }
-        
+
         public void ProcessPendingEvents()
         {
             while (_pendingEvents.Count > 0)
@@ -50,10 +50,10 @@ namespace ProjectChimera.UI.Core
                 var uiEvent = _pendingEvents.Dequeue();
                 ProcessEvent(uiEvent);
             }
-            
+
             HandleKeyboardInput();
         }
-        
+
         private void ProcessEvent(UIEvent uiEvent)
         {
             if (_eventHandlers.TryGetValue(uiEvent.EventType, out var handlers))
@@ -66,16 +66,16 @@ namespace ProjectChimera.UI.Core
                     }
                     catch (System.Exception ex)
                     {
-                        Debug.LogError($"Error processing UI event {uiEvent.EventType}: {ex.Message}");
+                        ProjectChimera.Core.Logging.ChimeraLogger.LogError($"Error processing UI event {uiEvent.EventType}: {ex.Message}");
                     }
                 }
             }
         }
-        
+
         private void HandleKeyboardInput()
         {
             if (!_isKeyboardNavigationEnabled) return;
-            
+
             if (Input.GetKeyDown(KeyCode.Tab))
             {
                 NavigateToNextElement();
@@ -89,20 +89,20 @@ namespace ProjectChimera.UI.Core
                 ActivateCurrentElement();
             }
         }
-        
+
         private void NavigateToNextElement()
         {
             if (_focusableElements.Count == 0) return;
-            
-            int currentIndex = _currentFocusedElement != null ? 
+
+            int currentIndex = _currentFocusedElement != null ?
                 _focusableElements.IndexOf(_currentFocusedElement) : -1;
-            
+
             int nextIndex = (currentIndex + 1) % _focusableElements.Count;
             var nextElement = _focusableElements[nextIndex];
-            
+
             SetFocus(nextElement);
         }
-        
+
         private void ActivateCurrentElement()
         {
             if (_currentFocusedElement is Button button)
@@ -119,23 +119,23 @@ namespace ProjectChimera.UI.Core
                 QueueEvent(new UIEvent("element_activated", _currentFocusedElement));
             }
         }
-        
+
         public void SetFocus(VisualElement element)
         {
             if (_currentFocusedElement != null)
             {
                 _currentFocusedElement.RemoveFromClassList("focused");
             }
-            
+
             _currentFocusedElement = element;
-            
+
             if (element != null)
             {
                 element.AddToClassList("focused");
                 element.Focus();
             }
         }
-        
+
         public void RegisterFocusableElement(VisualElement element)
         {
             if (!_focusableElements.Contains(element))
@@ -143,29 +143,29 @@ namespace ProjectChimera.UI.Core
                 _focusableElements.Add(element);
             }
         }
-        
+
         public void UnregisterFocusableElement(VisualElement element)
         {
             _focusableElements.Remove(element);
-            
+
             if (_currentFocusedElement == element)
             {
                 _currentFocusedElement = null;
             }
         }
-        
+
         public void EnableKeyboardNavigation(bool enabled)
         {
             _isKeyboardNavigationEnabled = enabled;
         }
-        
+
         public void ClearFocusableElements()
         {
             _focusableElements.Clear();
             _currentFocusedElement = null;
         }
     }
-    
+
     [System.Serializable]
     public class UIEvent
     {
@@ -173,7 +173,7 @@ namespace ProjectChimera.UI.Core
         public object Data;
         public VisualElement Source;
         public System.DateTime Timestamp;
-        
+
         public UIEvent(string eventType, object data, VisualElement source = null)
         {
             EventType = eventType;

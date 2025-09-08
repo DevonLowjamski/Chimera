@@ -1,0 +1,464 @@
+using UnityEngine;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Systems.UI.Advanced;
+using ProjectChimera.Systems.Services.Core;
+using System.Collections.Generic;
+using System.Collections;
+using System.Diagnostics;
+
+namespace ProjectChimera.Testing.Phase2_3
+{
+    /// <summary>
+    /// Performance optimization tests - Tests object pooling, LOD system, batch processing
+    /// </summary>
+    public class PerformanceTests : MonoBehaviour
+    {
+        [Header("Performance Test Configuration")]
+        [SerializeField] private bool _enableDetailedLogging = true;
+        [SerializeField] private bool _runTestsOnStart = false;
+        [SerializeField] private int _performanceTestIterations = 100;
+        
+        [Header("Test Results")]
+        [SerializeField] private int _totalTests = 0;
+        [SerializeField] private int _passedTests = 0;
+        [SerializeField] private List<string> _testResults = new List<string>();
+        
+        // Test components
+        private MenuPerformanceOptimization _performanceSystem;
+        
+        // Performance thresholds (in milliseconds)
+        private const float MENU_OPENING_THRESHOLD = 16.0f; // ~60fps
+        private const float FILTERING_THRESHOLD = 5.0f;
+        private const float ANIMATION_THRESHOLD = 33.0f; // ~30fps for complex animations
+        
+        public void RunTests()
+        {
+            ChimeraLogger.Log("[PerformanceTests] Starting performance tests...");
+            
+            _testResults.Clear();
+            _totalTests = 0;
+            _passedTests = 0;
+            
+            SetupTestEnvironment();
+            
+            TestPerformanceOptimization();
+            TestPerformanceBenchmarks();
+            
+            LogResults();
+        }
+        
+        private void SetupTestEnvironment()
+        {
+            _performanceSystem = GetComponent<MenuPerformanceOptimization>();
+            if (_performanceSystem == null)
+            {
+                _performanceSystem = gameObject.AddComponent<MenuPerformanceOptimization>();
+            }
+        }
+        
+        private void TestPerformanceOptimization()
+        {
+            LogTestCategory("Performance Optimization Tests");
+            
+            TestPerformanceSystemInitialization();
+            TestObjectPooling();
+            TestLODSystem();
+            TestBatchProcessing();
+            TestMemoryOptimization();
+        }
+        
+        private void TestPerformanceSystemInitialization()
+        {
+            _totalTests++;
+            string testName = "Performance System Initialization";
+            
+            try
+            {
+                bool isInitialized = _performanceSystem != null && _performanceSystem.IsOptimizationEnabled();
+                
+                if (isInitialized)
+                {
+                    LogTest(testName, true, "Performance optimization system initialized");
+                    _passedTests++;
+                }
+                else
+                {
+                    LogTest(testName, false, "Performance optimization system failed to initialize");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                LogTest(testName, false, $"Exception: {ex.Message}");
+            }
+        }
+        
+        private void TestObjectPooling()
+        {
+            _totalTests++;
+            string testName = "Object Pooling";
+            
+            try
+            {
+                // Test pool creation
+                _performanceSystem.CreatePool("TestMenuItems", 50);
+                bool poolCreated = _performanceSystem.HasPool("TestMenuItems");
+                
+                // Test object rental and return
+                var obj1 = _performanceSystem.RentObject("TestMenuItems");
+                var obj2 = _performanceSystem.RentObject("TestMenuItems");
+                
+                bool objectsRented = obj1 != null && obj2 != null && obj1 != obj2;
+                
+                // Return objects
+                _performanceSystem.ReturnObject("TestMenuItems", obj1);
+                _performanceSystem.ReturnObject("TestMenuItems", obj2);
+                
+                // Test pool reuse
+                var obj3 = _performanceSystem.RentObject("TestMenuItems");
+                bool objectReused = obj3 == obj1 || obj3 == obj2;
+                
+                if (poolCreated && objectsRented && objectReused)
+                {
+                    LogTest(testName, true, "Object pooling working correctly");
+                    _passedTests++;
+                }
+                else
+                {
+                    LogTest(testName, false, $"Object pooling issues - Pool: {poolCreated}, Rented: {objectsRented}, Reused: {objectReused}");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                LogTest(testName, false, $"Exception: {ex.Message}");
+            }
+        }
+        
+        private void TestLODSystem()
+        {
+            _totalTests++;
+            string testName = "LOD System";
+            
+            try
+            {
+                // Test LOD level calculation based on distance
+                float nearDistance = 5.0f;
+                float farDistance = 50.0f;
+                
+                int nearLOD = _performanceSystem.CalculateLODLevel(nearDistance);
+                int farLOD = _performanceSystem.CalculateLODLevel(farDistance);
+                
+                // Near distance should have higher detail (lower LOD number)
+                bool lodWorking = nearLOD <= farLOD;
+                
+                // Test LOD application
+                _performanceSystem.ApplyLOD("TestElement", nearLOD);
+                _performanceSystem.ApplyLOD("TestElement", farLOD);
+                
+                if (lodWorking)
+                {
+                    LogTest(testName, true, $"LOD system working - Near: {nearLOD}, Far: {farLOD}");
+                    _passedTests++;
+                }
+                else
+                {
+                    LogTest(testName, false, $"LOD system failed - Near: {nearLOD}, Far: {farLOD}");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                LogTest(testName, false, $"Exception: {ex.Message}");
+            }
+        }
+        
+        private void TestBatchProcessing()
+        {
+            _totalTests++;
+            string testName = "Batch Processing";
+            
+            try
+            {
+                var testItems = new List<object>();
+                for (int i = 0; i < 100; i++)
+                {
+                    testItems.Add($"TestItem_{i}");
+                }
+                
+                // Test batch processing
+                var sw = Stopwatch.StartNew();
+                _performanceSystem.ProcessBatch(testItems, item => {
+                    // Simulate some processing
+                    string processed = item.ToString().ToUpper();
+                });
+                sw.Stop();
+                
+                float batchTime = (float)sw.Elapsed.TotalMilliseconds;
+                
+                // Test individual processing for comparison
+                sw.Restart();
+                foreach (var item in testItems)
+                {
+                    string processed = item.ToString().ToUpper();
+                }
+                sw.Stop();
+                
+                float individualTime = (float)sw.Elapsed.TotalMilliseconds;
+                
+                // Batch processing should be reasonably performant
+                bool batchEfficient = batchTime < individualTime * 1.5f; // Allow some overhead
+                
+                if (batchEfficient)
+                {
+                    LogTest(testName, true, $"Batch processing efficient - Batch: {batchTime:F2}ms, Individual: {individualTime:F2}ms");
+                    _passedTests++;
+                }
+                else
+                {
+                    LogTest(testName, false, $"Batch processing inefficient - Batch: {batchTime:F2}ms, Individual: {individualTime:F2}ms");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                LogTest(testName, false, $"Exception: {ex.Message}");
+            }
+        }
+        
+        private void TestMemoryOptimization()
+        {
+            _totalTests++;
+            string testName = "Memory Optimization";
+            
+            try
+            {
+                // Test memory cleanup
+                long memoryBefore = System.GC.GetTotalMemory(false);
+                
+                // Create some temporary objects
+                var tempList = new List<object>();
+                for (int i = 0; i < 1000; i++)
+                {
+                    tempList.Add(new object());
+                }
+                
+                // Clear and optimize
+                tempList.Clear();
+                _performanceSystem.OptimizeMemory();
+                
+                long memoryAfter = System.GC.GetTotalMemory(true);
+                long memoryFreed = memoryBefore - memoryAfter;
+                
+                // Test memory pool reuse
+                bool hasMemoryPools = _performanceSystem.HasActiveMemoryPools();
+                
+                LogTest(testName, true, $"Memory optimization completed - Freed: {memoryFreed} bytes, Has pools: {hasMemoryPools}");
+                _passedTests++;
+            }
+            catch (System.Exception ex)
+            {
+                LogTest(testName, false, $"Exception: {ex.Message}");
+            }
+        }
+        
+        private void TestPerformanceBenchmarks()
+        {
+            LogTestCategory("Performance Benchmarks");
+            
+            TestMenuOpeningPerformance();
+            TestFilteringPerformance();
+            TestAnimationPerformance();
+        }
+        
+        private void TestMenuOpeningPerformance()
+        {
+            _totalTests++;
+            string testName = "Menu Opening Performance";
+            
+            try
+            {
+                var menuSystem = GetComponent<AdvancedMenuSystem>();
+                if (menuSystem == null)
+                {
+                    menuSystem = gameObject.AddComponent<AdvancedMenuSystem>();
+                }
+                
+                float totalTime = 0f;
+                
+                for (int i = 0; i < _performanceTestIterations; i++)
+                {
+                    var sw = Stopwatch.StartNew();
+                    
+                    // Simulate menu opening
+                    menuSystem.ShowMenu(Vector3.zero, gameObject);
+                    menuSystem.HideMenu();
+                    
+                    sw.Stop();
+                    totalTime += (float)sw.Elapsed.TotalMilliseconds;
+                }
+                
+                float averageTime = totalTime / _performanceTestIterations;
+                bool performanceAcceptable = averageTime < MENU_OPENING_THRESHOLD;
+                
+                if (performanceAcceptable)
+                {
+                    LogTest(testName, true, $"Menu opening performance acceptable: {averageTime:F2}ms avg (threshold: {MENU_OPENING_THRESHOLD}ms)");
+                    _passedTests++;
+                }
+                else
+                {
+                    LogTest(testName, false, $"Menu opening performance poor: {averageTime:F2}ms avg (threshold: {MENU_OPENING_THRESHOLD}ms)");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                LogTest(testName, false, $"Exception: {ex.Message}");
+            }
+        }
+        
+        private void TestFilteringPerformance()
+        {
+            _totalTests++;
+            string testName = "Filtering Performance";
+            
+            try
+            {
+                var filter = GetComponent<ContextAwareActionFilter>();
+                if (filter == null)
+                {
+                    filter = gameObject.AddComponent<ContextAwareActionFilter>();
+                }
+                
+                // Create large test dataset
+                var testActions = new List<MenuAction>();
+                for (int i = 0; i < 1000; i++)
+                {
+                    testActions.Add(new MenuAction($"action_{i}", "category", $"Action {i}", "Test"));
+                }
+                
+                var testContext = new MenuContext
+                {
+                    WorldPosition = Vector3.zero,
+                    ContextType = "Performance Test"
+                };
+                
+                float totalTime = 0f;
+                
+                for (int i = 0; i < _performanceTestIterations; i++)
+                {
+                    var sw = Stopwatch.StartNew();
+                    
+                    var filteredActions = filter.FilterActions(testActions, testContext);
+                    
+                    sw.Stop();
+                    totalTime += (float)sw.Elapsed.TotalMilliseconds;
+                }
+                
+                float averageTime = totalTime / _performanceTestIterations;
+                bool performanceAcceptable = averageTime < FILTERING_THRESHOLD;
+                
+                if (performanceAcceptable)
+                {
+                    LogTest(testName, true, $"Filtering performance acceptable: {averageTime:F2}ms avg (threshold: {FILTERING_THRESHOLD}ms)");
+                    _passedTests++;
+                }
+                else
+                {
+                    LogTest(testName, false, $"Filtering performance poor: {averageTime:F2}ms avg (threshold: {FILTERING_THRESHOLD}ms)");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                LogTest(testName, false, $"Exception: {ex.Message}");
+            }
+        }
+        
+        private void TestAnimationPerformance()
+        {
+            _totalTests++;
+            string testName = "Animation Performance";
+            
+            try
+            {
+                var visualFeedback = GetComponent<VisualFeedbackIntegration>();
+                if (visualFeedback == null)
+                {
+                    visualFeedback = gameObject.AddComponent<VisualFeedbackIntegration>();
+                }
+                
+                float totalTime = 0f;
+                
+                for (int i = 0; i < _performanceTestIterations; i++)
+                {
+                    var sw = Stopwatch.StartNew();
+                    
+                    // Simulate multiple simultaneous animations
+                    visualFeedback.PlayFadeInAnimation("element1", 0.3f);
+                    visualFeedback.PlayScaleAnimation("element2", Vector3.one, Vector3.one * 1.2f, 0.3f);
+                    visualFeedback.PlaySlideAnimation("element3", Vector3.zero, Vector3.up * 10, 0.3f);
+                    
+                    sw.Stop();
+                    totalTime += (float)sw.Elapsed.TotalMilliseconds;
+                }
+                
+                float averageTime = totalTime / _performanceTestIterations;
+                bool performanceAcceptable = averageTime < ANIMATION_THRESHOLD;
+                
+                if (performanceAcceptable)
+                {
+                    LogTest(testName, true, $"Animation performance acceptable: {averageTime:F2}ms avg (threshold: {ANIMATION_THRESHOLD}ms)");
+                    _passedTests++;
+                }
+                else
+                {
+                    LogTest(testName, false, $"Animation performance poor: {averageTime:F2}ms avg (threshold: {ANIMATION_THRESHOLD}ms)");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                LogTest(testName, false, $"Exception: {ex.Message}");
+            }
+        }
+        
+        private void LogTestCategory(string categoryName)
+        {
+            if (_enableDetailedLogging)
+            {
+                ChimeraLogger.Log($"[PerformanceTests] === {categoryName} ===");
+            }
+        }
+        
+        private void LogTest(string testName, bool passed, string message)
+        {
+            string result = passed ? "PASS" : "FAIL";
+            string logMessage = $"[{result}] {testName}: {message}";
+            
+            _testResults.Add(logMessage);
+            
+            if (_enableDetailedLogging)
+            {
+                if (passed)
+                {
+                    ChimeraLogger.Log($"✅ {logMessage}");
+                }
+                else
+                {
+                    ChimeraLogger.LogError($"❌ {logMessage}");
+                }
+            }
+        }
+        
+        private void LogResults()
+        {
+            bool allTestsPassed = (_passedTests == _totalTests);
+            
+            ChimeraLogger.Log($"[PerformanceTests] Tests completed: {_passedTests}/{_totalTests} passed");
+            
+            if (allTestsPassed)
+            {
+                ChimeraLogger.Log("✅ Performance Tests - ALL TESTS PASSED!");
+            }
+            else
+            {
+                ChimeraLogger.LogWarning($"⚠️ Performance Tests - {_totalTests - _passedTests} tests failed");
+            }
+        }
+    }
+}

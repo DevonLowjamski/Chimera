@@ -5,6 +5,8 @@ using ProjectChimera.UI.Core;
 using ProjectChimera.Data.Construction;
 using ProjectChimera.Systems.Construction;
 using ProjectChimera.UI.Panels.Components;
+using ProjectChimera.Shared;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -312,17 +314,17 @@ namespace ProjectChimera.UI.Panels
         
         private void OnAddSchematicClicked()
         {
-            Debug.Log("Add Schematic functionality not implemented yet");
+            ChimeraLogger.Log("Add Schematic functionality not implemented yet");
         }
         
         private void OnImportClicked()
         {
-            Debug.Log("Import functionality not implemented yet");
+            ChimeraLogger.Log("Import functionality not implemented yet");
         }
         
         private void OnExportClicked()
         {
-            Debug.Log("Export functionality not implemented yet");
+            ChimeraLogger.Log("Export functionality not implemented yet");
         }
         
         private void OnRefreshClicked()
@@ -430,11 +432,11 @@ namespace ProjectChimera.UI.Panels
             if (_placementController != null)
             {
                 _placementController.StartSchematicPlacement(schematic);
-                Debug.Log($"Started placement for schematic: {schematic.SchematicName}");
+                ChimeraLogger.Log($"Started placement for schematic: {schematic.SchematicName}");
             }
             else
             {
-                Debug.LogWarning("No placement controller assigned");
+                ChimeraLogger.LogWarning("No placement controller assigned");
             }
         }
         
@@ -443,7 +445,7 @@ namespace ProjectChimera.UI.Panels
         /// </summary>
         private void ShowSchematicContextMenu(SchematicSO schematic)
         {
-            Debug.Log($"Context menu for: {schematic.SchematicName}");
+            ChimeraLogger.Log($"Context menu for: {schematic.SchematicName}");
         }
         
         /// <summary>

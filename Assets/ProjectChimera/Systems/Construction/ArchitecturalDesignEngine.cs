@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 #if false // Temporarily disabled to break error cascade - will be re-enabled after Phase 3.4
 // Architectural Design Engine functionality preserved but disabled for compilation
 
@@ -15,7 +16,7 @@ namespace ProjectChimera.Systems.Construction
     {
         void Start()
         {
-            Debug.Log("Architectural Design Engine temporarily disabled");
+            ChimeraLogger.Log("Architectural Design Engine temporarily disabled");
         }
     }
 }

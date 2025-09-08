@@ -2,9 +2,11 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System.Linq;
+using ProjectChimera.Core;
 using ProjectChimera.UI.Core;
 using ProjectChimera.Data.Construction;
 using ProjectChimera.Systems.Construction;
+using ProjectChimera.Shared;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -88,7 +90,7 @@ namespace ProjectChimera.UI.Panels
         {
             if (_placementController == null)
             {
-                _placementController = FindObjectOfType<GridPlacementController>();
+                _placementController = ServiceContainerFactory.Instance?.TryResolve<IGridPlacementController>() as GridPlacementController;
             }
         }
         
@@ -621,15 +623,7 @@ namespace ProjectChimera.UI.Panels
         }
     }
     
-    /// <summary>
-    /// Palette tab types
-    /// </summary>
-    public enum PaletteTab
-    {
-        Construction,
-        Schematics,
-        Tools
-    }
+    // PaletteTab enum moved to ProjectChimera.Shared for cross-assembly access
     
     /// <summary>
     /// Palette item types

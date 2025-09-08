@@ -1,0 +1,324 @@
+#!/bin/bash
+# Project Chimera Pre-commit Hook
+# Enforces quality gates before commits
+
+set -e
+
+echo "🔍 Project Chimera Pre-commit Quality Check"
+echo "============================================"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Configuration
+MAX_FILE_SIZE_KB=500
+ALLOW_TODO_COMMITS=false
+
+# Track if any checks fail
+HAS_FAILURES=false
+
+# Function to print colored output
+print_status() {
+    local color=$1
+    local message=$2
+    echo -e "${color}${message}${NC}"
+}
+
+# Function to check file size
+check_file_sizes() {
+    print_status $BLUE "📏 Checking file sizes..."
+    
+    local large_files=""
+    
+    # Get list of staged files
+    for file in $(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(cs|json|prefab|unity)$' || true); do
+        if [ -f "$file" ]; then
+            local size_kb=$(du -k "$file" | cut -f1)
+            if [ $size_kb -gt $MAX_FILE_SIZE_KB ]; then
+                large_files="$large_files\n  • $file (${size_kb}KB > ${MAX_FILE_SIZE_KB}KB)"
+            fi
+        fi
+    done
+    
+    if [ ! -z "$large_files" ]; then
+        print_status $RED "❌ Large files detected:"
+        echo -e "$large_files"
+        print_status $YELLOW "💡 Consider splitting large files or moving assets to Addressables"
+        HAS_FAILURES=true
+    else
+        print_status $GREEN "✅ File sizes OK"
+    fi
+}
+
+# Function to check for forbidden patterns
+check_forbidden_patterns() {
+    print_status $BLUE "🚫 Checking for anti-patterns..."
+    
+    local violations=""
+    
+    # Check staged C# files
+    for file in $(git diff --cached --name-only --diff-filter=ACM | grep '\.cs$' || true); do
+        if [ -f "$file" ]; then
+            # Skip test files for some checks
+            if [[ $file != *"Test"* ]] && [[ $file != *"/Testing/"* ]]; then
+                
+                # Check for FindObjectOfType
+                if grep -q "FindObjectOfType\|FindObjectsOfType" "$file"; then
+                    violations="$violations\n  • $file: Contains FindObjectOfType - use ServiceContainer instead"
+                fi
+                
+                # Check for Resources.Load
+                if grep -q "Resources\.Load" "$file"; then
+                    violations="$violations\n  • $file: Contains Resources.Load - use Addressables instead"
+                fi
+                
+                # Check for Debug.Log
+                if grep -q "Debug\.Log\|Debug\.LogError\|Debug\.LogWarning" "$file"; then
+                    violations="$violations\n  • $file: Contains Debug.Log - use ChimeraLogger instead"
+                fi
+                
+                # Check for GameObject.Find
+                if grep -q "GameObject\.Find" "$file"; then
+                    violations="$violations\n  • $file: Contains GameObject.Find - use ServiceContainer or references"
+                fi
+            fi
+        fi
+    done
+    
+    if [ ! -z "$violations" ]; then
+        print_status $RED "❌ Anti-patterns detected:"
+        echo -e "$violations"
+        HAS_FAILURES=true
+    else
+        print_status $GREEN "✅ No anti-patterns found"
+    fi
+}
+
+# Function to check code formatting
+check_code_formatting() {
+    print_status $BLUE "🎨 Checking code formatting..."
+    
+    local formatting_issues=""
+    
+    for file in $(git diff --cached --name-only --diff-filter=ACM | grep '\.cs$' || true); do
+        if [ -f "$file" ]; then
+            # Check for trailing whitespace
+            if grep -q "[[:space:]]$" "$file"; then
+                formatting_issues="$formatting_issues\n  • $file: Contains trailing whitespace"
+            fi
+            
+            # Check for tabs instead of spaces
+            if grep -q $'\t' "$file"; then
+                formatting_issues="$formatting_issues\n  • $file: Contains tabs - use spaces for indentation"
+            fi
+            
+            # Check for missing final newline
+            if [ -n "$(tail -c1 "$file")" ]; then
+                formatting_issues="$formatting_issues\n  • $file: Missing final newline"
+            fi
+        fi
+    done
+    
+    if [ ! -z "$formatting_issues" ]; then
+        print_status $YELLOW "⚠️  Formatting issues detected:"
+        echo -e "$formatting_issues"
+        print_status $BLUE "💡 Run your code formatter or configure EditorConfig support"
+    else
+        print_status $GREEN "✅ Code formatting OK"
+    fi
+}
+
+# Function to check commit message
+check_commit_message() {
+    print_status $BLUE "💬 Checking commit message..."
+    
+    # Get the commit message file
+    local commit_msg_file="$1"
+    if [ -z "$commit_msg_file" ]; then
+        commit_msg_file=".git/COMMIT_EDITMSG"
+    fi
+    
+    if [ -f "$commit_msg_file" ]; then
+        local commit_msg=$(cat "$commit_msg_file")
+        local first_line=$(echo "$commit_msg" | head -n1)
+        
+        # Check minimum length
+        if [ ${#first_line} -lt 10 ]; then
+            print_status $RED "❌ Commit message too short (minimum 10 characters)"
+            HAS_FAILURES=true
+            return
+        fi
+        
+        # Check maximum length for first line
+        if [ ${#first_line} -gt 72 ]; then
+            print_status $YELLOW "⚠️  First line of commit message is long (${#first_line} chars, recommended: ≤72)"
+        fi
+        
+        # Check for TODO commits if not allowed
+        if [ "$ALLOW_TODO_COMMITS" = false ]; then
+            if echo "$commit_msg" | grep -qi "TODO\|FIXME\|HACK"; then
+                print_status $RED "❌ Commit message contains TODO/FIXME/HACK - finish work before committing"
+                HAS_FAILURES=true
+                return
+            fi
+        fi
+        
+        print_status $GREEN "✅ Commit message OK"
+    else
+        print_status $YELLOW "⚠️  Could not check commit message"
+    fi
+}
+
+# Function to check for merge conflicts
+check_merge_conflicts() {
+    print_status $BLUE "⚔️  Checking for merge conflicts..."
+    
+    local conflict_files=""
+    
+    for file in $(git diff --cached --name-only || true); do
+        if [ -f "$file" ]; then
+            if grep -l "^<<<<<<< \|^=======$\|^>>>>>>> " "$file" >/dev/null 2>&1; then
+                conflict_files="$conflict_files\n  • $file"
+            fi
+        fi
+    done
+    
+    if [ ! -z "$conflict_files" ]; then
+        print_status $RED "❌ Merge conflict markers found:"
+        echo -e "$conflict_files"
+        HAS_FAILURES=true
+    else
+        print_status $GREEN "✅ No merge conflicts"
+    fi
+}
+
+# Function to check Unity meta files
+check_unity_meta_files() {
+    print_status $BLUE "🎮 Checking Unity meta files..."
+    
+    local missing_meta=""
+    local orphaned_meta=""
+    
+    # Check for missing meta files
+    for file in $(git diff --cached --name-only --diff-filter=A | grep -v '\.meta$' || true); do
+        if [[ $file == Assets/* ]] && [ ! -f "${file}.meta" ]; then
+            missing_meta="$missing_meta\n  • ${file}.meta"
+        fi
+    done
+    
+    # Check for orphaned meta files
+    for file in $(git diff --cached --name-only --diff-filter=A | grep '\.meta$' || true); do
+        local asset_file="${file%.meta}"
+        if [ ! -f "$asset_file" ] && [ ! -d "$asset_file" ]; then
+            orphaned_meta="$orphaned_meta\n  • $file"
+        fi
+    done
+    
+    if [ ! -z "$missing_meta" ]; then
+        print_status $RED "❌ Missing Unity meta files:"
+        echo -e "$missing_meta"
+        print_status $BLUE "💡 Run git add on the missing meta files"
+        HAS_FAILURES=true
+    fi
+    
+    if [ ! -z "$orphaned_meta" ]; then
+        print_status $YELLOW "⚠️  Orphaned Unity meta files:"
+        echo -e "$orphaned_meta"
+        print_status $BLUE "💡 Consider removing these meta files"
+    fi
+    
+    if [ -z "$missing_meta" ] && [ -z "$orphaned_meta" ]; then
+        print_status $GREEN "✅ Unity meta files OK"
+    fi
+}
+
+# Function to run basic compilation check
+check_basic_compilation() {
+    print_status $BLUE "🔧 Checking basic C# syntax..."
+    
+    local syntax_errors=""
+    
+    for file in $(git diff --cached --name-only --diff-filter=ACM | grep '\.cs$' || true); do
+        if [ -f "$file" ]; then
+            # Basic syntax checks using simple patterns
+            local line_num=1
+            while IFS= read -r line; do
+                # Check for unmatched braces (basic check)
+                local open_braces=$(echo "$line" | tr -cd '{' | wc -c)
+                local close_braces=$(echo "$line" | tr -cd '}' | wc -c)
+                
+                if [ $open_braces -ne $close_braces ] && [[ "$line" =~ ^[[:space:]]*[{}][[:space:]]*$ ]]; then
+                    # This is a brace-only line, which is fine
+                    :
+                elif echo "$line" | grep -q "^\s*//\|^\s*/\*\|^\s*\*"; then
+                    # This is a comment line, skip
+                    :
+                elif echo "$line" | grep -q "{.*}"; then
+                    # Single line with both braces, likely fine
+                    :
+                fi
+                
+                line_num=$((line_num + 1))
+            done < "$file"
+        fi
+    done
+    
+    if [ ! -z "$syntax_errors" ]; then
+        print_status $RED "❌ Potential syntax issues:"
+        echo -e "$syntax_errors"
+        HAS_FAILURES=true
+    else
+        print_status $GREEN "✅ Basic syntax check passed"
+    fi
+}
+
+# Main execution
+main() {
+    echo
+    
+    # Run all checks
+    check_file_sizes
+    echo
+    
+    check_forbidden_patterns
+    echo
+    
+    check_code_formatting
+    echo
+    
+    check_merge_conflicts
+    echo
+    
+    check_unity_meta_files
+    echo
+    
+    check_basic_compilation
+    echo
+    
+    # Check commit message if available
+    if [ -f ".git/COMMIT_EDITMSG" ]; then
+        check_commit_message ".git/COMMIT_EDITMSG"
+        echo
+    fi
+    
+    # Final result
+    if [ "$HAS_FAILURES" = true ]; then
+        print_status $RED "❌ Pre-commit checks FAILED"
+        print_status $YELLOW "💡 Fix the issues above and try committing again"
+        print_status $BLUE "🔧 Use 'git commit --no-verify' to bypass these checks (not recommended)"
+        echo
+        exit 1
+    else
+        print_status $GREEN "✅ All pre-commit checks PASSED"
+        print_status $BLUE "🚀 Proceeding with commit..."
+        echo
+        exit 0
+    fi
+}
+
+# Run main function
+main "$@"

@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -5,6 +6,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using ProjectChimera.Data.Save;
 using ProjectChimera.Core;
+using ProjectChimera.Core.DependencyInjection;
 
 namespace ProjectChimera.Systems.Save
 {
@@ -421,10 +423,11 @@ namespace ProjectChimera.Systems.Save
                 // Auto-detect systems if enabled
                 if (_autoDetectSystems)
                 {
-                    _constructionSystem = FindObjectOfType<MonoBehaviour>() as IConstructionSystem;
-                    _gridManager = FindObjectOfType<MonoBehaviour>() as IGridManager;
-                    _placementSystem = FindObjectOfType<MonoBehaviour>() as IPlacementSystem;
-                    _utilitySystem = FindObjectOfType<MonoBehaviour>() as IUtilitySystem;
+                    var serviceContainer = ServiceContainerFactory.Instance;
+                    _constructionSystem = serviceContainer?.TryResolve<IConstructionSystem>();
+                    _gridManager = serviceContainer?.TryResolve<IGridManager>();
+                    _placementSystem = serviceContainer?.TryResolve<IPlacementSystem>();
+                    _utilitySystem = serviceContainer?.TryResolve<IUtilitySystem>();
                 }
 
                 _systemsInitialized = true;
@@ -651,9 +654,9 @@ namespace ProjectChimera.Systems.Save
         private async Task<ConstructionCostSummaryDTO> GatherCostSummaryAsync() => new ConstructionCostSummaryDTO();
         private async Task<List<UtilitySystemDTO>> GatherUtilitySystemsAsync() => new List<UtilitySystemDTO>();
 
-        private void LogInfo(string message) => Debug.Log($"[ConstructionSaveProvider] {message}");
-        private void LogWarning(string message) => Debug.LogWarning($"[ConstructionSaveProvider] {message}");
-        private void LogError(string message) => Debug.LogError($"[ConstructionSaveProvider] {message}");
+        private void LogInfo(string message) => ChimeraLogger.Log($"[ConstructionSaveProvider] {message}");
+        private void LogWarning(string message) => ChimeraLogger.LogWarning($"[ConstructionSaveProvider] {message}");
+        private void LogError(string message) => ChimeraLogger.LogError($"[ConstructionSaveProvider] {message}");
 
         #endregion
     }

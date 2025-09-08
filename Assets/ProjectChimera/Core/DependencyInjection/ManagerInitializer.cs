@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,7 +39,7 @@ namespace ProjectChimera.Core.DependencyInjection
         {
             if (_isInitialized)
             {
-                Debug.LogWarning("[ManagerInitializer] Managers already initialized");
+                ChimeraLogger.LogWarning("[ManagerInitializer] Managers already initialized");
                 return;
             }
             
@@ -54,11 +55,11 @@ namespace ProjectChimera.Core.DependencyInjection
                 }
                 
                 _isInitialized = true;
-                Debug.Log($"[ManagerInitializer] Initialized {_instances.Count} managers successfully");
+                ChimeraLogger.Log($"[ManagerInitializer] Initialized {_instances.Count} managers successfully");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ManagerInitializer] Failed to initialize managers: {ex.Message}");
+                ChimeraLogger.LogError($"[ManagerInitializer] Failed to initialize managers: {ex.Message}");
                 throw;
             }
         }
@@ -106,7 +107,7 @@ namespace ProjectChimera.Core.DependencyInjection
                     }
                     catch (Exception ex)
                     {
-                        Debug.LogError($"[ManagerInitializer] Custom initialization failed for {managerType.Name}: {ex.Message}");
+                        ChimeraLogger.LogError($"[ManagerInitializer] Custom initialization failed for {managerType.Name}: {ex.Message}");
                     }
                 }
                 
@@ -119,11 +120,11 @@ namespace ProjectChimera.Core.DependencyInjection
                     }
                     catch (Exception ex)
                     {
-                        Debug.LogError($"[ManagerInitializer] Dependency notification failed for {managerType.Name}: {ex.Message}");
+                        ChimeraLogger.LogError($"[ManagerInitializer] Dependency notification failed for {managerType.Name}: {ex.Message}");
                     }
                 }
                 
-                Debug.Log($"[ManagerInitializer] Initialized manager: {managerType.Name}");
+                ChimeraLogger.Log($"[ManagerInitializer] Initialized manager: {managerType.Name}");
             }
             else
             {
@@ -139,10 +140,27 @@ namespace ProjectChimera.Core.DependencyInjection
             try
             {
                 // Try to find existing GameObject with the manager
-                var existing = UnityEngine.Object.FindObjectOfType(registration.ManagerType) as ChimeraManager;
+                var existing = ServiceContainerFactory.Instance?.TryResolve(registration.ManagerType) as ChimeraManager;
+                
+                // If not found in service container, try to find by common GameObject names
+                if (existing == null)
+                {
+                    var managerName = registration.ManagerType.Name;
+                    var gameObjectNames = new[] { managerName, managerName.Replace("Manager", ""), $"{managerName}Instance" };
+                    
+                    foreach (var name in gameObjectNames)
+                    {
+                        var gameObj = GameObject.Find(name);
+                        if (gameObj != null)
+                        {
+                            existing = gameObj.GetComponent(registration.ManagerType) as ChimeraManager;
+                            if (existing != null) break;
+                        }
+                    }
+                }
                 if (existing != null)
                 {
-                    Debug.Log($"[ManagerInitializer] Found existing instance of {registration.ManagerType.Name}");
+                    ChimeraLogger.Log($"[ManagerInitializer] Found existing instance of {registration.ManagerType.Name}");
                     return existing;
                 }
                 
@@ -159,12 +177,12 @@ namespace ProjectChimera.Core.DependencyInjection
                 // Don't destroy on load for persistent managers
                 UnityEngine.Object.DontDestroyOnLoad(managerObject);
                 
-                Debug.Log($"[ManagerInitializer] Created new instance of {registration.ManagerType.Name}");
+                ChimeraLogger.Log($"[ManagerInitializer] Created new instance of {registration.ManagerType.Name}");
                 return managerComponent;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ManagerInitializer] Failed to create {registration.ManagerType.Name}: {ex.Message}");
+                ChimeraLogger.LogError($"[ManagerInitializer] Failed to create {registration.ManagerType.Name}: {ex.Message}");
                 return null;
             }
         }
@@ -227,7 +245,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 }
             }
             
-            Debug.Log($"[ManagerInitializer] Calculated initialization order: {string.Join(" → ", _initializationOrder.Select(t => t.Name))}");
+            ChimeraLogger.Log($"[ManagerInitializer] Calculated initialization order: {string.Join(" → ", _initializationOrder.Select(t => t.Name))}");
         }
         
         /// <summary>
@@ -237,7 +255,7 @@ namespace ProjectChimera.Core.DependencyInjection
         {
             _isInitialized = false;
             _initializationOrder.Clear();
-            Debug.Log("[ManagerInitializer] Reset initialization state");
+            ChimeraLogger.Log("[ManagerInitializer] Reset initialization state");
         }
         
         /// <summary>

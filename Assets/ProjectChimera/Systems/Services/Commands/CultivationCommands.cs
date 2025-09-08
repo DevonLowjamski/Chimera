@@ -2,6 +2,7 @@ using UnityEngine;
 using ProjectChimera.Systems.Services.Core;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Shared;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Services.Commands
 {
@@ -81,7 +82,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[PlantSeedCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.LogError($"[PlantSeedCommand] Error executing command: {ex.Message}");
                 return CommandResult.Failure($"Error planting seed: {ex.Message}");
             }
         }
@@ -144,7 +145,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[WaterPlantCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.LogError($"[WaterPlantCommand] Error executing command: {ex.Message}");
                 return CommandResult.Failure($"Error watering plant: {ex.Message}");
             }
         }
@@ -198,7 +199,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[FeedPlantCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.LogError($"[FeedPlantCommand] Error executing command: {ex.Message}");
                 return CommandResult.Failure($"Error feeding plant: {ex.Message}");
             }
         }
@@ -255,7 +256,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[TrainPlantCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.LogError($"[TrainPlantCommand] Error executing command: {ex.Message}");
                 return CommandResult.Failure($"Error training plant: {ex.Message}");
             }
         }
@@ -310,7 +311,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[HarvestPlantCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.LogError($"[HarvestPlantCommand] Error executing command: {ex.Message}");
                 return CommandResult.Failure($"Error harvesting plant: {ex.Message}");
             }
         }
@@ -371,7 +372,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[AdjustEnvironmentCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.LogError($"[AdjustEnvironmentCommand] Error executing command: {ex.Message}");
                 return CommandResult.Failure($"Error adjusting environment: {ex.Message}");
             }
         }

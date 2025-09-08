@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Core;
@@ -42,9 +43,9 @@ namespace ProjectChimera.Systems.Construction
         
         private void FindRequiredComponents()
         {
-            _gridSystem = FindObjectOfType<GridSystem>();
+            _gridSystem = ServiceContainerFactory.Instance?.TryResolve<IGridSystem>() as GridSystem;
             if (_gridSystem == null)
-                Debug.LogWarning($"[StructuralIntegrityValidator] GridSystem not found - structural validation may not work properly");
+                ChimeraLogger.LogWarning($"[StructuralIntegrityValidator] GridSystem not found - structural validation may not work properly");
         }
         
         /// <summary>

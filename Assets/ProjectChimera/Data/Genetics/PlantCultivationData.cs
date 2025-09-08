@@ -1,0 +1,194 @@
+using UnityEngine;
+using ProjectChimera.Shared;
+using ProjectChimera.Data.Shared;
+
+namespace ProjectChimera.Data.Genetics
+{
+    /// <summary>
+    /// Contains cultivation-specific data for cannabis strains including growth parameters, 
+    /// difficulty, and cultivation system properties. Separated from PlantStrainSO to follow 
+    /// Single Responsibility Principle.
+    /// </summary>
+    [CreateAssetMenu(fileName = "New Plant Cultivation Data", menuName = "Project Chimera/Genetics/Plant Cultivation Data", order = 11)]
+    public class PlantCultivationData : ChimeraDataSO
+    {
+        [Header("Cultivation Difficulty")]
+        [SerializeField] private DifficultyLevel _cultivationDifficulty = DifficultyLevel.Intermediate;
+        [SerializeField, Range(0f, 1f)] private float _beginnerFriendliness = 0.5f;
+        [SerializeField, Range(0f, 1f)] private float _environmentalSensitivity = 0.5f;
+
+        [Header("Growth System Properties")]
+        [SerializeField] private AnimationCurve _growthCurve;
+        [SerializeField, Range(0.5f, 2f)] private float _baseHealthModifier = 1f;
+        [SerializeField, Range(0.01f, 0.5f)] private float _healthRecoveryRate = 0.1f;
+        [SerializeField, Range(20f, 200f)] private float _baseYieldGrams = 100f;
+        [SerializeField, Range(0.5f, 2f)] private float _baseQualityModifier = 1f;
+        [SerializeField, Range(0.5f, 2f)] private float _basePotencyModifier = 1f;
+        [SerializeField, Range(40f, 120f)] private int _baseFloweringTime = 60;
+        [SerializeField, Range(0.3f, 5f)] private float _baseHeight = 1.5f;
+
+        [Header("Environmental Requirements")]
+        [SerializeField] private Vector2 _optimalTemperatureRange = new Vector2(20f, 26f);
+        [SerializeField] private Vector2 _optimalHumidityRange = new Vector2(40f, 60f);
+        [SerializeField] private Vector2 _optimalPHRange = new Vector2(6.0f, 7.0f);
+        [SerializeField] private Vector2 _optimalLightIntensityRange = new Vector2(300f, 600f);
+        [SerializeField, Range(0f, 2000f)] private float _co2Preference = 400f;
+
+        [Header("Nutrient Requirements")]
+        [SerializeField] private Vector2 _nitrogenRange = new Vector2(100f, 150f);
+        [SerializeField] private Vector2 _phosphorusRange = new Vector2(50f, 80f);
+        [SerializeField] private Vector2 _potassiumRange = new Vector2(150f, 200f);
+        [SerializeField] private Vector2 _calciumRange = new Vector2(100f, 150f);
+        [SerializeField] private Vector2 _magnesiumRange = new Vector2(25f, 50f);
+
+        [Header("Water Management")]
+        [SerializeField] private Vector2 _wateringFrequencyDays = new Vector2(2f, 4f);
+        [SerializeField, Range(0.5f, 3f)] private float _waterConsumptionMultiplier = 1f;
+        [SerializeField, Range(0f, 1f)] private float _droughtTolerance = 0.5f;
+        [SerializeField, Range(0f, 1f)] private float _overWateringTolerance = 0.5f;
+
+        [Header("Training and Care")]
+        [SerializeField] private bool _respondsToLST = true;  // Low Stress Training
+        [SerializeField] private bool _respondsToHST = true;  // High Stress Training
+        [SerializeField] private bool _respondsToSCROG = true; // Screen of Green
+        [SerializeField] private bool _respondsToSOG = true;   // Sea of Green
+        [SerializeField, Range(0f, 1f)] private float _pruningTolerance = 0.7f;
+        [SerializeField, Range(0f, 1f)] private float _defoliationTolerance = 0.6f;
+
+        // Public Properties
+        public DifficultyLevel CultivationDifficulty => _cultivationDifficulty;
+        public float BeginnerFriendliness => _beginnerFriendliness;
+        public float EnvironmentalSensitivity => _environmentalSensitivity;
+
+        // Growth System Properties
+        public AnimationCurve GrowthCurve => _growthCurve;
+        public float BaseHealthModifier => _baseHealthModifier;
+        public float HealthRecoveryRate => _healthRecoveryRate;
+        public float BaseYieldGrams => _baseYieldGrams;
+        public float BaseQualityModifier => _baseQualityModifier;
+        public float BasePotencyModifier => _basePotencyModifier;
+        public int BaseFloweringTime => _baseFloweringTime;
+        public float BaseHeight => _baseHeight;
+
+        // Environmental Requirements
+        public Vector2 OptimalTemperatureRange => _optimalTemperatureRange;
+        public Vector2 OptimalHumidityRange => _optimalHumidityRange;
+        public Vector2 OptimalPHRange => _optimalPHRange;
+        public Vector2 OptimalLightIntensityRange => _optimalLightIntensityRange;
+        public float CO2Preference => _co2Preference;
+
+        // Nutrient Requirements
+        public Vector2 NitrogenRange => _nitrogenRange;
+        public Vector2 PhosphorusRange => _phosphorusRange;
+        public Vector2 PotassiumRange => _potassiumRange;
+        public Vector2 CalciumRange => _calciumRange;
+        public Vector2 MagnesiumRange => _magnesiumRange;
+
+        // Water Management
+        public Vector2 WateringFrequencyDays => _wateringFrequencyDays;
+        public float WaterConsumptionMultiplier => _waterConsumptionMultiplier;
+        public float DroughtTolerance => _droughtTolerance;
+        public float OverWateringTolerance => _overWateringTolerance;
+
+        // Training and Care
+        public bool RespondsToLST => _respondsToLST;
+        public bool RespondsToHST => _respondsToHST;
+        public bool RespondsToSCROG => _respondsToSCROG;
+        public bool RespondsToSOG => _respondsToSOG;
+        public float PruningTolerance => _pruningTolerance;
+        public float DefoliationTolerance => _defoliationTolerance;
+
+        // Calculated Properties
+        public float YieldPotential => _baseYieldGrams;
+
+        /// <summary>
+        /// Gets the base yield in grams for this cultivation profile.
+        /// </summary>
+        public float BaseYield()
+        {
+            return _baseYieldGrams;
+        }
+
+        /// <summary>
+        /// Calculates environmental stress based on current conditions.
+        /// </summary>
+        public float CalculateEnvironmentalStress(float temperature, float humidity, float ph, float lightIntensity)
+        {
+            float temperatureStress = CalculateRangeStress(temperature, _optimalTemperatureRange);
+            float humidityStress = CalculateRangeStress(humidity, _optimalHumidityRange);
+            float phStress = CalculateRangeStress(ph, _optimalPHRange);
+            float lightStress = CalculateRangeStress(lightIntensity, _optimalLightIntensityRange);
+
+            float totalStress = (temperatureStress + humidityStress + phStress + lightStress) / 4f;
+            return totalStress * _environmentalSensitivity;
+        }
+
+        /// <summary>
+        /// Calculates nutrient stress based on current nutrient levels.
+        /// </summary>
+        public float CalculateNutrientStress(float nitrogen, float phosphorus, float potassium, float calcium, float magnesium)
+        {
+            float nStress = CalculateRangeStress(nitrogen, _nitrogenRange);
+            float pStress = CalculateRangeStress(phosphorus, _phosphorusRange);
+            float kStress = CalculateRangeStress(potassium, _potassiumRange);
+            float caStress = CalculateRangeStress(calcium, _calciumRange);
+            float mgStress = CalculateRangeStress(magnesium, _magnesiumRange);
+
+            return (nStress + pStress + kStress + caStress + mgStress) / 5f;
+        }
+
+        /// <summary>
+        /// Determines if the plant needs water based on cultivation preferences.
+        /// </summary>
+        public bool NeedsWater(float daysSinceLastWatering, float soilMoisture)
+        {
+            float averageFrequency = (_wateringFrequencyDays.x + _wateringFrequencyDays.y) / 2f;
+            float adjustedFrequency = averageFrequency / _waterConsumptionMultiplier;
+            
+            return daysSinceLastWatering >= adjustedFrequency || soilMoisture < (0.3f + _droughtTolerance * 0.2f);
+        }
+
+        private float CalculateRangeStress(float value, Vector2 optimalRange)
+        {
+            if (value >= optimalRange.x && value <= optimalRange.y)
+                return 0f; // No stress, within optimal range
+
+            if (value < optimalRange.x)
+            {
+                float distance = optimalRange.x - value;
+                return Mathf.Clamp01(distance / optimalRange.x);
+            }
+            else
+            {
+                float distance = value - optimalRange.y;
+                float maxRange = optimalRange.y * 2f; // Assume stress maxes at 2x optimal
+                return Mathf.Clamp01(distance / maxRange);
+            }
+        }
+
+        public override bool ValidateData()
+        {
+            bool isValid = base.ValidateData();
+
+            if (_growthCurve == null)
+            {
+                SharedLogger.LogWarning($"[Chimera] PlantCultivationData '{DisplayName}' has no growth curve assigned.");
+                isValid = false;
+            }
+
+            if (_baseYieldGrams <= 0)
+            {
+                SharedLogger.LogWarning($"[Chimera] PlantCultivationData '{DisplayName}' has invalid base yield.");
+                isValid = false;
+            }
+
+            if (_baseFloweringTime <= 0)
+            {
+                SharedLogger.LogWarning($"[Chimera] PlantCultivationData '{DisplayName}' has invalid flowering time.");
+                isValid = false;
+            }
+
+            return isValid;
+        }
+    }
+}

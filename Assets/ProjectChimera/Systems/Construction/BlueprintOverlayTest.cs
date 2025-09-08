@@ -1,4 +1,6 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
+using ProjectChimera.Core;
 using ProjectChimera.Data.Construction;
 
 namespace ProjectChimera.Systems.Construction
@@ -61,16 +63,16 @@ namespace ProjectChimera.Systems.Construction
             _testResults = results.ToString();
             
             results.AppendLine($"\\n=== OVERALL RESULT: {(allTestsPassed ? "PASSED" : "FAILED")} ===");
-            Debug.Log(results.ToString());
+            ChimeraLogger.Log(results.ToString());
         }
         
         private bool TestSystemReferences(System.Text.StringBuilder results)
         {
             results.AppendLine("\\n1. Testing System References:");
             
-            _overlayRenderer = FindObjectOfType<BlueprintOverlayRenderer>();
-            _overlayIntegration = FindObjectOfType<BlueprintOverlayIntegration>();
-            _placementController = FindObjectOfType<GridPlacementController>();
+            _overlayRenderer = ServiceContainerFactory.Instance?.TryResolve<BlueprintOverlayRenderer>();
+            _overlayIntegration = ServiceContainerFactory.Instance?.TryResolve<BlueprintOverlayIntegration>();
+            _placementController = ServiceContainerFactory.Instance?.TryResolve<IGridPlacementController>() as GridPlacementController;
             
             bool rendererFound = _overlayRenderer != null;
             bool integrationFound = _overlayIntegration != null;
@@ -297,7 +299,7 @@ namespace ProjectChimera.Systems.Construction
         {
             if (_overlayRenderer == null || _testSchematic == null)
             {
-                Debug.LogWarning("Required components not available for movement test");
+                ChimeraLogger.LogWarning("Required components not available for movement test");
                 return;
             }
             
@@ -332,7 +334,7 @@ namespace ProjectChimera.Systems.Construction
             yield return new WaitForSeconds(1f);
             _overlayRenderer.DestroyOverlay(overlay);
             
-            Debug.Log("Overlay movement test completed");
+            ChimeraLogger.Log("Overlay movement test completed");
         }
         
         [ContextMenu("Test Integration System")]
@@ -340,22 +342,22 @@ namespace ProjectChimera.Systems.Construction
         {
             if (_overlayIntegration == null)
             {
-                Debug.LogWarning("BlueprintOverlayIntegration not found");
+                ChimeraLogger.LogWarning("BlueprintOverlayIntegration not found");
                 return;
             }
             
-            Debug.Log($"Integration Enabled: {_overlayIntegration.OverlayIntegrationEnabled}");
-            Debug.Log($"Has Active Overlay: {_overlayIntegration.HasActiveOverlay}");
-            Debug.Log($"Overlay Renderer: {(_overlayIntegration.OverlayRenderer != null ? "Found" : "Not Found")}");
+            ChimeraLogger.Log($"Integration Enabled: {_overlayIntegration.OverlayIntegrationEnabled}");
+            ChimeraLogger.Log($"Has Active Overlay: {_overlayIntegration.HasActiveOverlay}");
+            ChimeraLogger.Log($"Overlay Renderer: {(_overlayIntegration.OverlayRenderer != null ? "Found" : "Not Found")}");
             
             if (_testSchematic != null)
             {
                 _overlayIntegration.CreateSchematicOverlay(_testSchematic, _testPosition, Quaternion.identity);
-                Debug.Log("Created test overlay through integration system");
+                ChimeraLogger.Log("Created test overlay through integration system");
                 
                 // Test validation
                 var validationData = _overlayIntegration.GetValidationData();
-                Debug.Log($"Validation: {validationData.IsValid} - {validationData.ValidationMessage}");
+                ChimeraLogger.Log($"Validation: {validationData.IsValid} - {validationData.ValidationMessage}");
                 
                 // Cleanup after test duration
                 Invoke(nameof(CleanupIntegrationTest), _testDuration);
@@ -367,7 +369,7 @@ namespace ProjectChimera.Systems.Construction
             if (_overlayIntegration != null)
             {
                 _overlayIntegration.ClearCurrentOverlay();
-                Debug.Log("Integration test cleanup completed");
+                ChimeraLogger.Log("Integration test cleanup completed");
             }
         }
     }

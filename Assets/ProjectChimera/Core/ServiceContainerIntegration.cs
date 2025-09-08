@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,8 +44,8 @@ namespace ProjectChimera.Core.DependencyInjection
             if (target == null)
                 throw new ArgumentNullException(nameof(target));
 
-            Debug.Log("[ServiceContainerIntegration] Migrating services from IServiceProvider to IServiceContainer");
-            Debug.LogWarning("[ServiceContainerIntegration] Service migration requires manual registration of services");
+            ChimeraLogger.Log("[ServiceContainerIntegration] Migrating services from IServiceProvider to IServiceContainer");
+            ChimeraLogger.LogWarning("[ServiceContainerIntegration] Service migration requires manual registration of services");
         }
     }
 
@@ -182,12 +183,12 @@ namespace ProjectChimera.Core.DependencyInjection
         public void Clear()
         {
             _additionalServices.Clear();
-            Debug.LogWarning("[ServiceProviderContainerAdapter] Cannot clear services from underlying IServiceProvider");
+            ChimeraLogger.LogWarning("[ServiceProviderContainerAdapter] Cannot clear services from underlying IServiceProvider");
         }
 
         public IDictionary<Type, ProjectChimera.Core.ServiceRegistration> GetRegistrations()
         {
-            Debug.LogWarning("[ServiceProviderContainerAdapter] Cannot get registrations from underlying IServiceProvider");
+            ChimeraLogger.LogWarning("[ServiceProviderContainerAdapter] Cannot get registrations from underlying IServiceProvider");
             return new Dictionary<Type, ProjectChimera.Core.ServiceRegistration>();
         }
         

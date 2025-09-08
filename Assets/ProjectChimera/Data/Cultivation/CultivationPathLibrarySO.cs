@@ -2,7 +2,6 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ProjectChimera.Core;
 using ProjectChimera.Shared;
 
 namespace ProjectChimera.Data.Cultivation
@@ -34,7 +33,7 @@ namespace ProjectChimera.Data.Cultivation
             
             if (_availablePaths == null || _availablePaths.Count == 0)
             {
-                Debug.LogWarning($"CultivationPathLibrarySO '{name}' has no available paths.", this);
+                SharedLogger.LogWarning($"CultivationPathLibrarySO '{name}' has no available paths.", this);
             }
             
             return isValid;

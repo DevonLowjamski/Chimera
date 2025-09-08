@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using ProjectChimera.Shared;
 
 namespace ProjectChimera.Data.Genetics
 {
@@ -28,13 +29,16 @@ namespace ProjectChimera.Data.Genetics
         
         // Missing properties for Systems layer compatibility
         public new float OverallFitness { get; set; } = 1.0f; // Intentional shadow to make settable in derived type
+        
+        public int AlleleCount => QuantitativeTraitLoci?.Count ?? 0;
+        public List<object> Genes { get; set; } = new List<object>();
         public string GenotypeID { get; set; } // Settable property for PlantInstanceSO
-        public PlantStrainSO StrainOrigin { get; set; } // Settable property for PlantInstanceSO  
+        public object StrainOrigin { get; set; } // Settable property for PlantInstanceSO  
         public int Generation { get; set; } // Settable property for PlantInstanceSO
         public bool IsFounder { get; set; } // Missing property for PlantInstanceSO
         public System.DateTime CreationDate { get; set; } // Settable property for PlantInstanceSO
-        public Dictionary<string, AlleleCouple> Genotype { get; set; } = new Dictionary<string, AlleleCouple>(); // Missing property for PlantInstanceSO
-        public new List<MutationRecord> Mutations { get; set; } = new List<MutationRecord>(); // Intentional shadow
+        public Dictionary<string, object> Genotype { get; set; } = new Dictionary<string, object>(); // Missing property for PlantInstanceSO
+        public new List<object> Mutations { get; set; } = new List<object>(); // Intentional shadow
         
         public PlantGenotype() : base()
         {

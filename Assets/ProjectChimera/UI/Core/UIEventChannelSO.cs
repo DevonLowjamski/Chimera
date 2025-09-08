@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using ProjectChimera.Core;
 using ProjectChimera.Shared;
 using ProjectChimera.UI.Core;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Core
 {
@@ -49,7 +50,7 @@ namespace ProjectChimera.UI.Core
         {
             if (_logEvents)
             {
-                Debug.Log($"[{_channelName}] UI Event: {eventData.EventType} - {eventData.Message}");
+                ChimeraLogger.Log($"[{_channelName}] UI Event: {eventData.EventType} - {eventData.Message}");
             }
             
             // Add to history
@@ -166,7 +167,7 @@ namespace ProjectChimera.UI.Core
         public void ClearHistory()
         {
             _eventHistory.Clear();
-            Debug.Log($"[{_channelName}] Event history cleared");
+            ChimeraLogger.Log($"[{_channelName}] Event history cleared");
         }
         
         protected override void OnValidate()

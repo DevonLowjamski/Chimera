@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
 using ProjectChimera.Systems.Registry;
 
 namespace ProjectChimera.Systems.Registry
@@ -43,7 +44,7 @@ namespace ProjectChimera.Systems.Registry
         {
             if (!File.Exists(managerFilePath))
             {
-                Debug.LogError($"Manager file not found: {managerFilePath}");
+                ChimeraLogger.LogError($"Manager file not found: {managerFilePath}");
                 return null;
             }
 
@@ -68,12 +69,12 @@ namespace ProjectChimera.Systems.Registry
                 // Validate decomposition feasibility
                 ValidateDecomposition(result);
                 
-                Debug.Log($"Analysis complete for {result.ManagerName}: {result.TotalLines} lines → {result.ProposedServices.Count} services");
+                ChimeraLogger.Log($"Analysis complete for {result.ManagerName}: {result.TotalLines} lines → {result.ProposedServices.Count} services");
                 return result;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Failed to analyze manager {managerFilePath}: {ex.Message}");
+                ChimeraLogger.LogError($"Failed to analyze manager {managerFilePath}: {ex.Message}");
                 return null;
             }
         }
@@ -85,7 +86,7 @@ namespace ProjectChimera.Systems.Registry
         {
             if (analysis == null || !analysis.IsValid)
             {
-                Debug.LogError("Invalid analysis result provided for decomposition");
+                ChimeraLogger.LogError("Invalid analysis result provided for decomposition");
                 return null;
             }
 
@@ -127,13 +128,13 @@ namespace ProjectChimera.Systems.Registry
                 RegisterDecomposedServices(analysis, result);
 
                 result.IsSuccessful = true;
-                Debug.Log($"Decomposition complete for {analysis.ManagerName}: {result.CreatedFiles.Count} files created");
+                ChimeraLogger.Log($"Decomposition complete for {analysis.ManagerName}: {result.CreatedFiles.Count} files created");
                 
                 return result;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Failed to decompose manager {analysis.ManagerName}: {ex.Message}");
+                ChimeraLogger.LogError($"Failed to decompose manager {analysis.ManagerName}: {ex.Message}");
                 result.IsSuccessful = false;
                 result.ErrorMessage = ex.Message;
                 return result;
@@ -160,7 +161,7 @@ namespace ProjectChimera.Systems.Registry
                 case "LiveEventsManager":
                     return CreateLiveEventsDecompositionPlan();
                 default:
-                    Debug.LogWarning($"No predefined plan available for {managerName}");
+                    ChimeraLogger.LogWarning($"No predefined plan available for {managerName}");
                     return null;
             }
         }
@@ -622,7 +623,7 @@ namespace ProjectChimera.Systems.Registry
         {
             // Services will be registered when they are instantiated
             // This method can be used for additional registry configuration
-            Debug.Log($"Prepared {analysis.ProposedServices.Count} services for registration in ServiceRegistry");
+            ChimeraLogger.Log($"Prepared {analysis.ProposedServices.Count} services for registration in ServiceRegistry");
         }
 
         private string GenerateServiceInterface(ProposedService service, string originalManager)
@@ -690,7 +691,7 @@ namespace ProjectChimera.Systems.Registry
                 sb.AppendLine("        {");
                 sb.AppendLine($"            // TODO: Implement {method} logic from original manager");
                 sb.AppendLine("            #if CHIMERA_FEATURE_DEVELOPMENT");
-                sb.AppendLine("            UnityEngine.Debug.LogWarning($\"Method {method} not yet implemented in decomposed service\");");
+                sb.AppendLine("            ChimeraLogger.LogWarning($\"Method {method} not yet implemented in decomposed service\");");
                 sb.AppendLine("            #else");
                 sb.AppendLine("            throw new NotImplementedException($\"Method {method} requires full implementation\");");
                 sb.AppendLine("            #endif");

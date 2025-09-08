@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.UI.Core;
 
 namespace ProjectChimera.UI.Core
@@ -11,7 +12,7 @@ namespace ProjectChimera.UI.Core
     /// Advanced performance optimizer for UI systems in Project Chimera.
     /// Implements intelligent pooling, batching, and optimization strategies.
     /// </summary>
-    public class UIPerformanceOptimizer : ChimeraManager
+    public class UIPerformanceOptimizer : ChimeraManager, ITickable
     {
         [Header("Optimization Configuration")]
         [SerializeField] private bool _enableAutomaticOptimization = true;
@@ -558,7 +559,12 @@ namespace ProjectChimera.UI.Core
             };
         }
         
-        private void Update()
+        #region ITickable Implementation
+        
+        public int Priority => TickPriority.UIManager;
+        public bool Enabled => IsInitialized && _enableAutomaticOptimization;
+        
+        public void Tick(float deltaTime)
         {
             if (!IsInitialized || !_enableAutomaticOptimization)
                 return;
@@ -575,7 +581,7 @@ namespace ProjectChimera.UI.Core
             ProcessUpdateBatches();
             
             // Periodic optimization
-            _optimizationTimer += Time.deltaTime;
+            _optimizationTimer += deltaTime;
             if (_optimizationTimer >= _optimizationInterval)
             {
                 PerformPeriodicOptimization();
@@ -583,13 +589,15 @@ namespace ProjectChimera.UI.Core
             }
             
             // Pool cleanup
-            _poolCleanupTimer += Time.deltaTime;
+            _poolCleanupTimer += deltaTime;
             if (_poolCleanupTimer >= _poolCleanupInterval)
             {
                 QueueOptimization(new UIOptimizationTask(UIOptimizationType.PoolCleanup, UIOptimizationStrategy.Conservative));
                 _poolCleanupTimer = 0f;
             }
         }
+        
+        #endregion
         
         /// <summary>
         /// Perform periodic optimization
@@ -693,11 +701,20 @@ namespace ProjectChimera.UI.Core
                 StartOptimizationRoutine();
             }
             
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+            
             LogInfo("UI Performance Optimizer initialized successfully");
         }
         
         protected override void OnManagerShutdown()
         {
+            // Unregister from UpdateOrchestrator
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+            
             StopOptimizationRoutine();
             ClearAllPools();
             _batchProcessors.Clear();

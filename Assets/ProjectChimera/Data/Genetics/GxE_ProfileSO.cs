@@ -197,19 +197,19 @@ namespace ProjectChimera.Data.Genetics
             
             if (string.IsNullOrEmpty(_profileName))
             {
-                Debug.LogError($"GxE Profile {name}: Profile name cannot be empty", this);
+                SharedLogger.LogError($"GxE Profile {name}: Profile name cannot be empty");
                 isValid = false;
             }
             
             if (_responseCurves.Count == 0)
             {
-                Debug.LogWarning($"GxE Profile {name}: No response curves defined", this);
+                SharedLogger.LogWarning($"GxE Profile {name}: No response curves defined");
                 isValid = false;
             }
             
             if (!_appliesToAllTraits && _targetTraits.Count == 0)
             {
-                Debug.LogWarning($"GxE Profile {name}: No target traits specified", this);
+                SharedLogger.LogWarning($"GxE Profile {name}: No target traits specified");
                 isValid = false;
             }
             

@@ -285,25 +285,25 @@ namespace ProjectChimera.Data.Economy
             
             if (string.IsNullOrEmpty(_contractName))
             {
-                Debug.LogError($"Contract {name}: Contract name cannot be empty", this);
+                SharedLogger.LogError($"Contract {name}: Contract name cannot be empty", this);
                 isValid = false;
             }
                 
             if (string.IsNullOrEmpty(_contractorName))
             {
-                Debug.LogError($"Contract {name}: Contractor name must be assigned", this);
+                SharedLogger.LogError($"Contract {name}: Contractor name must be assigned", this);
                 isValid = false;
             }
                 
             if (_terms.TotalContractValue <= 0f)
             {
-                Debug.LogError($"Contract {name}: Contract value must be positive", this);
+                SharedLogger.LogError($"Contract {name}: Contract value must be positive", this);
                 isValid = false;
             }
                 
             if (_productSpecs.Count == 0)
             {
-                Debug.LogWarning($"Contract {name}: No product specifications defined", this);
+                SharedLogger.LogWarning($"Contract {name}: No product specifications defined", this);
                 isValid = false;
             }
             

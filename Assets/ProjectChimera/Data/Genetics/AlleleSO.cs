@@ -282,25 +282,25 @@ namespace ProjectChimera.Data.Genetics
 
             if (_parentGene == null)
             {
-                Debug.LogWarning($"[Chimera] AlleleSO '{DisplayName}' has no parent gene assigned.", this);
+                SharedLogger.LogWarning($"[Chimera] AlleleSO '{DisplayName}' has no parent gene assigned.");
                 isValid = false;
             }
 
             if (string.IsNullOrEmpty(_alleleName))
             {
-                Debug.LogWarning($"[Chimera] AlleleSO '{DisplayName}' has no allele name assigned.", this);
+                SharedLogger.LogWarning($"[Chimera] AlleleSO '{DisplayName}' has no allele name assigned.");
                 isValid = false;
             }
 
             if (_isDominant && _isRecessive)
             {
-                Debug.LogWarning($"[Chimera] AlleleSO '{DisplayName}' cannot be both dominant and recessive.", this);
+                SharedLogger.LogWarning($"[Chimera] AlleleSO '{DisplayName}' cannot be both dominant and recessive.");
                 isValid = false;
             }
 
             if (_causesLethalPhenotype && _isDesirableForBreeding)
             {
-                Debug.LogWarning($"[Chimera] AlleleSO '{DisplayName}' is lethal but marked as desirable for breeding.", this);
+                SharedLogger.LogWarning($"[Chimera] AlleleSO '{DisplayName}' is lethal but marked as desirable for breeding.");
                 isValid = false;
             }
 

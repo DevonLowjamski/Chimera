@@ -1,8 +1,11 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
+using ProjectChimera.Core;
 
 namespace ProjectChimera.Systems.Diagnostics
 {
@@ -11,7 +14,7 @@ namespace ProjectChimera.Systems.Diagnostics
     /// Replaces Debug.Log statements with proper structured logging
     /// Integrates with Unity 6.2 diagnostics while providing development-specific logging
     /// </summary>
-    public class LoggingInfrastructure : MonoBehaviour
+    public class LoggingInfrastructure : MonoBehaviour, ITickable
     {
         [Header("Logging Configuration")]
         [SerializeField] private LogLevel _minimumLogLevel = LogLevel.Info;
@@ -33,7 +36,8 @@ namespace ProjectChimera.Systems.Diagnostics
         [SerializeField] private bool _enableAsyncLogging = true;
         
         // Core Systems
-        private Unity62DiagnosticsIntegration _unity62Diagnostics;
+        // Diagnostics integration temporarily disabled
+        // private Unity62DiagnosticsIntegration _unity62Diagnostics;
         
         // Logging State
         private readonly Queue<LogEntry> _logBuffer = new Queue<LogEntry>();
@@ -68,6 +72,8 @@ namespace ProjectChimera.Systems.Diagnostics
         
         private void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             FindSystemReferences();
             SetupLogDestinations();
             
@@ -75,13 +81,14 @@ namespace ProjectChimera.Systems.Diagnostics
             LogInfo("LoggingInfrastructure", "Logging system initialized successfully");
         }
         
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             if (Time.time - _lastFlushTime >= _flushInterval)
             {
                 FlushLogBuffer();
                 _lastFlushTime = Time.time;
-            }
+            
+    }
         }
         
         private void InitializeLogging()
@@ -99,12 +106,13 @@ namespace ProjectChimera.Systems.Diagnostics
             // Redirect Unity log handler
             Application.logMessageReceived += HandleUnityLogMessage;
             
-            Debug.Log("[LoggingInfrastructure] Logging infrastructure initialized");
+            ChimeraLogger.Log("[LoggingInfrastructure] Logging infrastructure initialized");
         }
         
         private void FindSystemReferences()
         {
-            _unity62Diagnostics = UnityEngine.Object.FindObjectOfType<Unity62DiagnosticsIntegration>();
+            // Diagnostics integration temporarily disabled
+            // _unity62Diagnostics = ServiceContainerFactory.Instance?.TryResolve<Unity62DiagnosticsIntegration>();
         }
         
         private void SetupLogDestinations()
@@ -126,11 +134,12 @@ namespace ProjectChimera.Systems.Diagnostics
             }
             
             // Unity Diagnostics destination
-            if (_enableUnityDiagnosticsLogging && _unity62Diagnostics != null)
-            {
-                var unityDestination = new UnityDiagnosticsLogDestination(_unity62Diagnostics);
-                _logDestinations["unity_diagnostics"] = unityDestination;
-            }
+            // Diagnostics integration temporarily disabled
+            // if (_enableUnityDiagnosticsLogging && _unity62Diagnostics != null)
+            // {
+            //     var unityDestination = new UnityDiagnosticsLogDestination(_unity62Diagnostics);
+            //     _logDestinations["unity_diagnostics"] = unityDestination;
+            // }
         }
         
         private void HandleUnityLogMessage(string logString, string stackTrace, LogType type)
@@ -269,7 +278,7 @@ namespace ProjectChimera.Systems.Diagnostics
                 catch (Exception ex)
                 {
                     // Fallback to Unity Debug.Log to avoid infinite recursion
-                    Debug.LogError($"[LoggingInfrastructure] Failed to write to log destination: {ex.Message}");
+                    ChimeraLogger.LogError($"[LoggingInfrastructure] Failed to write to log destination: {ex.Message}");
                 }
             }
         }
@@ -285,7 +294,7 @@ namespace ProjectChimera.Systems.Diagnostics
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[LoggingInfrastructure] Failed to flush log destination: {ex.Message}");
+                    ChimeraLogger.LogError($"[LoggingInfrastructure] Failed to flush log destination: {ex.Message}");
                 }
             }
         }
@@ -305,7 +314,7 @@ namespace ProjectChimera.Systems.Diagnostics
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[LoggingInfrastructure] Failed to cleanup old log files: {ex.Message}");
+                ChimeraLogger.LogError($"[LoggingInfrastructure] Failed to cleanup old log files: {ex.Message}");
             }
         }
         
@@ -370,6 +379,8 @@ namespace ProjectChimera.Systems.Diagnostics
         
         private void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             if (_instance == this)
             {
                 Application.logMessageReceived -= HandleUnityLogMessage;
@@ -384,7 +395,22 @@ namespace ProjectChimera.Systems.Diagnostics
                 _instance = null;
             }
         }
+    
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+    
+    public virtual void OnRegistered() 
+    { 
+        // Override in derived classes if needed
     }
+    
+    public virtual void OnUnregistered() 
+    { 
+        // Override in derived classes if needed
+    }
+
+}
     
     // Log Entry Structure
     [System.Serializable]
@@ -450,13 +476,13 @@ namespace ProjectChimera.Systems.Diagnostics
             {
                 case LogLevel.Error:
                 case LogLevel.Critical:
-                    Debug.LogError(message);
+                    ChimeraLogger.LogError(message);
                     break;
                 case LogLevel.Warning:
-                    Debug.LogWarning(message);
+                    ChimeraLogger.LogWarning(message);
                     break;
                 default:
-                    Debug.Log(message);
+                    ChimeraLogger.Log(message);
                     break;
             }
         }
@@ -521,7 +547,7 @@ namespace ProjectChimera.Systems.Diagnostics
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[FileLogDestination] Failed to write log: {ex.Message}");
+                    ChimeraLogger.LogError($"[FileLogDestination] Failed to write log: {ex.Message}");
                 }
             }
         }
@@ -545,7 +571,7 @@ namespace ProjectChimera.Systems.Diagnostics
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[FileLogDestination] Failed to rotate log file: {ex.Message}");
+                ChimeraLogger.LogError($"[FileLogDestination] Failed to rotate log file: {ex.Message}");
             }
         }
         

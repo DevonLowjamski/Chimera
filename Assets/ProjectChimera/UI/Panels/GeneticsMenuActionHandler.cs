@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -43,7 +44,7 @@ namespace ProjectChimera.UI.Panels
                     break;
                 default:
                     OnGeneticsActionTriggered?.Invoke("item_clicked", itemId);
-                    Debug.Log($"[GeneticsMenuActionHandler] Handled item click: {itemId}");
+                    ChimeraLogger.Log($"[GeneticsMenuActionHandler] Handled item click: {itemId}");
                     break;
             }
         }
@@ -52,7 +53,7 @@ namespace ProjectChimera.UI.Panels
         public bool ShowParentSelector(string parent) 
         { 
             OnGeneticsActionTriggered?.Invoke("show-parent-selector", parent); 
-            Debug.Log($"[GeneticsMenuActionHandler] Showing parent selector: {parent}");
+            ChimeraLogger.Log($"[GeneticsMenuActionHandler] Showing parent selector: {parent}");
             return true; 
         }
         
@@ -60,14 +61,14 @@ namespace ProjectChimera.UI.Panels
         public bool PreviewBreedingResults() 
         { 
             OnGeneticsActionTriggered?.Invoke("preview-offspring", ""); 
-            Debug.Log("[GeneticsMenuActionHandler] Previewing breeding results");
+            ChimeraLogger.Log("[GeneticsMenuActionHandler] Previewing breeding results");
             return true; 
         }
         
         public bool ShowBreedingParameters() 
         { 
             OnGeneticsActionTriggered?.Invoke("show-breeding-params", ""); 
-            Debug.Log("[GeneticsMenuActionHandler] Showing breeding parameters");
+            ChimeraLogger.Log("[GeneticsMenuActionHandler] Showing breeding parameters");
             return true; 
         }
         
@@ -75,21 +76,21 @@ namespace ProjectChimera.UI.Panels
         public bool OpenStrainLibrary() 
         { 
             OnGeneticsActionTriggered?.Invoke("open-strain-library", ""); 
-            Debug.Log("[GeneticsMenuActionHandler] Opening strain library");
+            ChimeraLogger.Log("[GeneticsMenuActionHandler] Opening strain library");
             return true; 
         }
         
         public bool CreateNewStrain() 
         { 
             OnGeneticsActionTriggered?.Invoke("create-new-strain", ""); 
-            Debug.Log("[GeneticsMenuActionHandler] Creating new strain");
+            ChimeraLogger.Log("[GeneticsMenuActionHandler] Creating new strain");
             return true; 
         }
         
         public bool ImportStrain() 
         { 
             OnGeneticsActionTriggered?.Invoke("import-strain", ""); 
-            Debug.Log("[GeneticsMenuActionHandler] Importing strain");
+            ChimeraLogger.Log("[GeneticsMenuActionHandler] Importing strain");
             return true; 
         }
         
@@ -97,21 +98,21 @@ namespace ProjectChimera.UI.Panels
         public bool AnalyzeSelectedStrains() 
         { 
             OnGeneticsActionTriggered?.Invoke("analyze-genetics", ""); 
-            Debug.Log("[GeneticsMenuActionHandler] Analyzing selected strains");
+            ChimeraLogger.Log("[GeneticsMenuActionHandler] Analyzing selected strains");
             return true; 
         }
         
         public bool ViewStrainDetails() 
         { 
             OnGeneticsActionTriggered?.Invoke("view-strain-details", ""); 
-            Debug.Log("[GeneticsMenuActionHandler] Viewing strain details");
+            ChimeraLogger.Log("[GeneticsMenuActionHandler] Viewing strain details");
             return true; 
         }
         
         public bool CompareSelectedStrains() 
         { 
             OnGeneticsActionTriggered?.Invoke("compare-strains", ""); 
-            Debug.Log("[GeneticsMenuActionHandler] Comparing selected strains");
+            ChimeraLogger.Log("[GeneticsMenuActionHandler] Comparing selected strains");
             return true; 
         }
         
@@ -119,28 +120,28 @@ namespace ProjectChimera.UI.Panels
         public bool CloneSelectedStrain() 
         { 
             OnGeneticsActionTriggered?.Invoke("clone-strain", ""); 
-            Debug.Log("[GeneticsMenuActionHandler] Cloning selected strain");
+            ChimeraLogger.Log("[GeneticsMenuActionHandler] Cloning selected strain");
             return true; 
         }
         
         public bool MutateSelectedStrain() 
         { 
             OnGeneticsActionTriggered?.Invoke("mutate-genes", ""); 
-            Debug.Log("[GeneticsMenuActionHandler] Mutating selected strain");
+            ChimeraLogger.Log("[GeneticsMenuActionHandler] Mutating selected strain");
             return true; 
         }
         
         public bool SaveSelectedStrain() 
         { 
             OnGeneticsActionTriggered?.Invoke("save-strain", ""); 
-            Debug.Log("[GeneticsMenuActionHandler] Saving selected strain");
+            ChimeraLogger.Log("[GeneticsMenuActionHandler] Saving selected strain");
             return true; 
         }
         
         public bool CompareGeneticsDetails() 
         { 
             OnGeneticsActionTriggered?.Invoke("compare-genetics", ""); 
-            Debug.Log("[GeneticsMenuActionHandler] Comparing genetics details");
+            ChimeraLogger.Log("[GeneticsMenuActionHandler] Comparing genetics details");
             return true; 
         }
         
@@ -148,28 +149,28 @@ namespace ProjectChimera.UI.Panels
         public bool OpenAnalysisTools() 
         { 
             OnGeneticsActionTriggered?.Invoke("open-analysis-tools", ""); 
-            Debug.Log("[GeneticsMenuActionHandler] Opening analysis tools");
+            ChimeraLogger.Log("[GeneticsMenuActionHandler] Opening analysis tools");
             return true; 
         }
         
         public bool OpenTraitMapping() 
         { 
             OnGeneticsActionTriggered?.Invoke("open-trait-mapping", ""); 
-            Debug.Log("[GeneticsMenuActionHandler] Opening trait mapping");
+            ChimeraLogger.Log("[GeneticsMenuActionHandler] Opening trait mapping");
             return true; 
         }
         
         public bool OpenPedigreeChart() 
         { 
             OnGeneticsActionTriggered?.Invoke("open-pedigree", ""); 
-            Debug.Log("[GeneticsMenuActionHandler] Opening pedigree chart");
+            ChimeraLogger.Log("[GeneticsMenuActionHandler] Opening pedigree chart");
             return true; 
         }
         
         public bool OpenBreedingCalculator() 
         { 
             OnGeneticsActionTriggered?.Invoke("open-calculator", ""); 
-            Debug.Log("[GeneticsMenuActionHandler] Opening breeding calculator");
+            ChimeraLogger.Log("[GeneticsMenuActionHandler] Opening breeding calculator");
             return true; 
         }
         
@@ -208,7 +209,7 @@ namespace ProjectChimera.UI.Panels
                 case "open-calculator":
                     return true;
                 default:
-                    Debug.LogWarning($"[GeneticsMenuActionHandler] Unknown action: {actionId}");
+                    ChimeraLogger.LogWarning($"[GeneticsMenuActionHandler] Unknown action: {actionId}");
                     return false;
             }
         }

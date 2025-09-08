@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.UI.Components;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -111,7 +112,7 @@ namespace ProjectChimera.UI.Panels
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[ConstructionContextMenu] Error handling menu selection: {ex.Message}");
+                ChimeraLogger.LogError($"[ConstructionContextMenu] Error handling menu selection: {ex.Message}");
                 return false;
             }
         }
@@ -196,7 +197,7 @@ namespace ProjectChimera.UI.Panels
                 case "Delete Facility":
                     return _actionHandler.DeleteSelectedFacility();
                 default:
-                    Debug.LogWarning($"[ConstructionContextMenu] Unhandled action: {menuItem}");
+                    ChimeraLogger.LogWarning($"[ConstructionContextMenu] Unhandled action: {menuItem}");
                     return false;
             }
         }
@@ -236,7 +237,7 @@ namespace ProjectChimera.UI.Panels
         public void Activate()
         {
             IsActive = true;
-            Debug.Log("[ConstructionContextMenu] Activated");
+            ChimeraLogger.Log("[ConstructionContextMenu] Activated");
         }
         
         /// <summary>
@@ -248,7 +249,7 @@ namespace ProjectChimera.UI.Panels
             _placementManager.Reset();
             _selectedFacilities.Clear();
             
-            Debug.Log("[ConstructionContextMenu] Deactivated");
+            ChimeraLogger.Log("[ConstructionContextMenu] Deactivated");
         }
         
         /// <summary>

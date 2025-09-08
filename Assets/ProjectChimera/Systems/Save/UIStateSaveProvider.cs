@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -427,12 +428,12 @@ namespace ProjectChimera.Systems.Save
                 // Auto-detect systems if enabled
                 if (_autoDetectSystems)
                 {
-                    _uiManager = FindObjectOfType<MonoBehaviour>() as IUIManager;
-                    _layoutManager = FindObjectOfType<MonoBehaviour>() as IUILayoutManager;
-                    _themeManager = FindObjectOfType<MonoBehaviour>() as IUIThemeManager;
-                    _preferencesManager = FindObjectOfType<MonoBehaviour>() as IUIPreferencesManager;
-                    _modeManager = FindObjectOfType<MonoBehaviour>() as IUIModeManager;
-                    _localizationManager = FindObjectOfType<MonoBehaviour>() as IUILocalizationManager;
+                    _uiManager = ServiceContainerFactory.Instance?.TryResolve<IUIManager>();
+                    _layoutManager = ServiceContainerFactory.Instance?.TryResolve<IUILayoutManager>();
+                    _themeManager = ServiceContainerFactory.Instance?.TryResolve<IUIThemeManager>();
+                    _preferencesManager = ServiceContainerFactory.Instance?.TryResolve<IUIPreferencesManager>();
+                    _modeManager = ServiceContainerFactory.Instance?.TryResolve<IUIModeManager>();
+                    _localizationManager = ServiceContainerFactory.Instance?.TryResolve<IUILocalizationManager>();
                 }
 
                 _systemsInitialized = true;
@@ -735,9 +736,9 @@ namespace ProjectChimera.Systems.Save
         private async Task<UICameraStateDTO> GatherCameraStateAsync() => new UICameraStateDTO();
         private async Task<UILocalizationStateDTO> GatherLocalizationStateAsync() => new UILocalizationStateDTO();
 
-        private void LogInfo(string message) => Debug.Log($"[UIStateSaveProvider] {message}");
-        private void LogWarning(string message) => Debug.LogWarning($"[UIStateSaveProvider] {message}");
-        private void LogError(string message) => Debug.LogError($"[UIStateSaveProvider] {message}");
+        private void LogInfo(string message) => ChimeraLogger.Log($"[UIStateSaveProvider] {message}");
+        private void LogWarning(string message) => ChimeraLogger.LogWarning($"[UIStateSaveProvider] {message}");
+        private void LogError(string message) => ChimeraLogger.LogError($"[UIStateSaveProvider] {message}");
 
         #endregion
     }

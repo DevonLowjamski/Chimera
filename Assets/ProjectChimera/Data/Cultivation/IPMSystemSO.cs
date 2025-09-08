@@ -1,5 +1,4 @@
 using UnityEngine;
-using ProjectChimera.Core;
 using ProjectChimera.Shared;
 using ProjectChimera.Data.Genetics;
 using System;
@@ -469,25 +468,25 @@ namespace ProjectChimera.Data.Cultivation
             
             if (_beneficialOrganisms == null || _beneficialOrganisms.Length == 0)
             {
-                Debug.LogWarning($"IPMSystemSO '{name}' has no beneficial organisms configured.", this);
+                SharedLogger.LogWarning($"IPMSystemSO '{name}' has no beneficial organisms configured.", this);
                 isValid = false;
             }
             
             if (_monitoringProtocols == null || _monitoringProtocols.Length == 0)
             {
-                Debug.LogWarning($"IPMSystemSO '{name}' has no monitoring protocols configured.", this);
+                SharedLogger.LogWarning($"IPMSystemSO '{name}' has no monitoring protocols configured.", this);
                 isValid = false;
             }
             
             if (_culturalPractices == null || _culturalPractices.Length == 0)
             {
-                Debug.LogWarning($"IPMSystemSO '{name}' has no cultural practices configured.", this);
+                SharedLogger.LogWarning($"IPMSystemSO '{name}' has no cultural practices configured.", this);
                 isValid = false;
             }
             
             if (_treatmentProtocols == null || _treatmentProtocols.Length == 0)
             {
-                Debug.LogWarning($"IPMSystemSO '{name}' has no treatment protocols configured.", this);
+                SharedLogger.LogWarning($"IPMSystemSO '{name}' has no treatment protocols configured.", this);
                 isValid = false;
             }
             
@@ -496,13 +495,13 @@ namespace ProjectChimera.Data.Cultivation
             {
                 if (beneficial.OptimalTemperature.x >= beneficial.OptimalTemperature.y)
                 {
-                    Debug.LogWarning($"IPMSystemSO '{name}' has invalid temperature range for {beneficial.OrganismName}.", this);
+                    SharedLogger.LogWarning($"IPMSystemSO '{name}' has invalid temperature range for {beneficial.OrganismName}.", this);
                     isValid = false;
                 }
                 
                 if (beneficial.ReleaseRate <= 0f)
                 {
-                    Debug.LogWarning($"IPMSystemSO '{name}' has invalid release rate for {beneficial.OrganismName}.", this);
+                    SharedLogger.LogWarning($"IPMSystemSO '{name}' has invalid release rate for {beneficial.OrganismName}.", this);
                     isValid = false;
                 }
             }

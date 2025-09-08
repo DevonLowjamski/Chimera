@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Shared;
+using ProjectChimera.Core.Logging;
 using DataAlleleCouple = ProjectChimera.Data.Genetics.AlleleCouple;
 
 using DataMutationRecord = ProjectChimera.Data.Genetics.MutationRecord;
@@ -26,41 +27,41 @@ namespace ProjectChimera.Systems.Genetics
         {
             if (genotypeDataSO == null)
             {
-                Debug.LogError("[GenotypeFactory] GenotypeDataSO is null");
+                ChimeraLogger.LogError("[GenotypeFactory] GenotypeDataSO is null");
                 return null;
             }
 
             var plantGenotype = new PlantGenotype();
-            
+
             // Map identity properties
             plantGenotype.GenotypeID = genotypeDataSO.IndividualID ?? genotypeDataSO.name;
             plantGenotype.StrainOrigin = genotypeDataSO.ParentStrain;
             plantGenotype.Generation = genotypeDataSO.Generation;
             plantGenotype.IsFounder = genotypeDataSO.Generation <= 1;
             plantGenotype.CreationDate = System.DateTime.Now;
-            
+
             // Map genetic properties
             plantGenotype.OverallFitness = genotypeDataSO.OverallFitness;
-            plantGenotype.PlantSpecies = genotypeDataSO.Species?.CommonName ?? "Cannabis";
-            plantGenotype.Cultivar = genotypeDataSO.ParentStrain?.StrainName ?? "Unknown";
-            
+            plantGenotype.PlantSpecies = genotypeDataSO.Species?.speciesName ?? "Cannabis";
+            plantGenotype.Cultivar = genotypeDataSO.ParentStrain?.strainName ?? "Unknown";
+
             // Convert gene pairs to allele couples
-            plantGenotype.Genotype = new Dictionary<string, DataAlleleCouple>();
+            plantGenotype.Genotype = new Dictionary<string, object>();
             foreach (var genePair in genotypeDataSO.GenePairs)
             {
                 if (genePair.Gene != null)
                 {
-                    var alleleCouple = new DataAlleleCouple(genePair.Allele1, genePair.Allele2);
-                    
-                    plantGenotype.Genotype[genePair.Gene.name] = alleleCouple;
+                    var alleleCouple = new ProjectChimera.Data.Genetics.AlleleCouple(genePair.Allele1?.name ?? "unknown", genePair.Allele2?.name ?? "unknown");
+
+                    plantGenotype.Genotype[genePair.Gene.name] = (object)alleleCouple;
                 }
             }
-            
+
             // Convert mutation history
-            plantGenotype.Mutations = new List<DataMutationRecord>();
+            plantGenotype.Mutations = new List<object>();
             foreach (var mutation in genotypeDataSO.MutationHistory)
             {
-                var mutationRecord = new DataMutationRecord
+                var mutationRecord = (object)new ProjectChimera.Data.Genetics.MutationRecord
                 {
                     MutationId = System.Guid.NewGuid().ToString(),
                     AffectedGene = mutation.Gene?.name ?? "Unknown",
@@ -69,16 +70,16 @@ namespace ProjectChimera.Systems.Genetics
                     OccurrenceDate = System.DateTime.Now,
                     IsBeneficial = false
                 };
-                
-                plantGenotype.Mutations.Add(mutationRecord);
+
+                plantGenotype.Mutations.Add((object)mutationRecord);
             }
-            
+
             // Map additional plant properties
             MapSpecificTraits(genotypeDataSO, plantGenotype);
-            
+
             return plantGenotype;
         }
-        
+
         /// <summary>
         /// Convert runtime PlantGenotype back to GenotypeDataSO
         /// For saving runtime changes back to ScriptableObject format
@@ -90,35 +91,35 @@ namespace ProjectChimera.Systems.Genetics
         {
             if (plantGenotype == null)
             {
-                Debug.LogError("[GenotypeFactory] PlantGenotype is null");
+                ChimeraLogger.LogError("[GenotypeFactory] PlantGenotype is null");
                 return null;
             }
-            
+
             GenotypeDataSO genotypeDataSO = targetSO;
             if (genotypeDataSO == null)
             {
                 genotypeDataSO = ScriptableObject.CreateInstance<GenotypeDataSO>();
             }
-            
+
             // Map identity properties back using reflection for read-only properties
             var type = typeof(GenotypeDataSO);
-            
+
             // Set individual ID
             var individualIdField = type.GetField("_individualID", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             individualIdField?.SetValue(genotypeDataSO, plantGenotype.GenotypeID);
-            
-            // Set parent strain  
+
+            // Set parent strain
             var parentStrainField = type.GetField("_parentStrain", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             parentStrainField?.SetValue(genotypeDataSO, plantGenotype.StrainOrigin);
-            
+
             // Set generation
             var generationField = type.GetField("_generation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             generationField?.SetValue(genotypeDataSO, plantGenotype.Generation);
-            
+
             // Set overall fitness
             var fitnessField = type.GetField("_overallFitness", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             fitnessField?.SetValue(genotypeDataSO, plantGenotype.OverallFitness);
-            
+
             // Convert allele couples back to gene pairs
             var genePairs = new List<GenePair>();
             foreach (var kvp in plantGenotype.Genotype)
@@ -129,40 +130,43 @@ namespace ProjectChimera.Systems.Genetics
                     var genePair = new GenePair
                     {
                         Gene = geneDefinition,
-                        Allele1 = kvp.Value.Allele1,
-                        Allele2 = kvp.Value.Allele2
+                        Allele1 = null, // kvp.Value.Allele1,
+                        Allele2 = null  // kvp.Value.Allele2
                     };
-                    
+
                     genePairs.Add(genePair);
                 }
             }
             // Set gene pairs using reflection for read-only property
             var genePairsField = type.GetField("_genePairs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             genePairsField?.SetValue(genotypeDataSO, genePairs);
-            
+
             // Convert mutations back
             var mutationHistory = new List<MutationEvent>();
             foreach (var mutation in plantGenotype.Mutations)
             {
-                var mutationEvent = new MutationEvent
+                if (mutation is ProjectChimera.Data.Genetics.MutationRecord mutationRecord)
                 {
-                    Gene = FindGeneDefinition(mutation.AffectedGene),
-                    FromAllele = null, // Not available in MutationRecord
-                    ToAllele = null,   // Not available in MutationRecord
-                    MutationTime = 0f, // Not available in MutationRecord
-                    Generation = 1, // Default since not available in current MutationRecord
-                    MutationDescription = $"Mutation effect: {mutation.EffectMagnitude}"
-                };
-                
-                mutationHistory.Add(mutationEvent);
+                    var mutationEvent = new MutationEvent
+                    {
+                        Gene = FindGeneDefinition(mutationRecord.AffectedGene),
+                        FromAllele = null, // Not available in MutationRecord
+                        ToAllele = null,   // Not available in MutationRecord
+                        MutationTime = 0f, // Not available in MutationRecord
+                        Generation = 1, // Default since not available in current MutationRecord
+                        MutationDescription = $"Mutation effect: {mutationRecord.EffectMagnitude}"
+                    };
+
+                    mutationHistory.Add(mutationEvent);
+                }
             }
             // Set mutation history using reflection for read-only property
             var mutationHistoryField = type.GetField("_mutationHistory", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             mutationHistoryField?.SetValue(genotypeDataSO, mutationHistory);
-            
+
             return genotypeDataSO;
         }
-        
+
         /// <summary>
         /// Create a new PlantGenotype from a strain template
         /// </summary>
@@ -173,35 +177,36 @@ namespace ProjectChimera.Systems.Genetics
         {
             if (strainTemplate == null)
             {
-                Debug.LogError("[GenotypeFactory] PlantStrainSO is null");
+                ChimeraLogger.LogError("[GenotypeFactory] PlantStrainSO is null");
                 return null;
             }
-            
+
             var plantGenotype = new PlantGenotype();
-            
+
             // Set identity
             plantGenotype.GenotypeID = individualId ?? System.Guid.NewGuid().ToString();
             plantGenotype.StrainOrigin = strainTemplate;
             plantGenotype.Generation = 1;
             plantGenotype.IsFounder = true;
             plantGenotype.CreationDate = System.DateTime.Now;
-            
+
             // Set species info
             plantGenotype.PlantSpecies = "Cannabis";
             plantGenotype.Cultivar = strainTemplate.StrainName;
-            
+
             // Generate genotype from strain genetics
-            plantGenotype.Genotype = GenerateGenotypeFromStrain(strainTemplate);
-            
+            var strainGenotype = GenerateGenotypeFromStrain(strainTemplate);
+            plantGenotype.Genotype = strainGenotype.ToDictionary(kvp => kvp.Key, kvp => (object)new ProjectChimera.Data.Genetics.AlleleCouple(kvp.Value.Allele1, kvp.Value.Allele2));
+
             // Initialize with no mutations
-            plantGenotype.Mutations = new List<DataMutationRecord>();
-            
+            plantGenotype.Mutations = new List<object>();
+
             // Set fitness based on strain quality
             plantGenotype.OverallFitness = CalculateStrainFitness(strainTemplate);
-            
+
             return plantGenotype;
         }
-        
+
         /// <summary>
         /// Create offspring genotype from two parent genotypes
         /// Implements Mendelian inheritance with crossover
@@ -214,40 +219,43 @@ namespace ProjectChimera.Systems.Genetics
         {
             if (parent1 == null || parent2 == null)
             {
-                Debug.LogError("[GenotypeFactory] Parent genotypes cannot be null");
+                ChimeraLogger.LogError("[GenotypeFactory] Parent genotypes cannot be null");
                 return null;
             }
-            
+
             var offspring = new PlantGenotype();
-            
+
             // Set identity
             offspring.GenotypeID = offspringId ?? System.Guid.NewGuid().ToString();
             offspring.Generation = Mathf.Max(parent1.Generation, parent2.Generation) + 1;
             offspring.IsFounder = false;
             offspring.CreationDate = System.DateTime.Now;
-            
+
             // Determine strain origin (favor higher fitness parent)
             offspring.StrainOrigin = parent1.OverallFitness >= parent2.OverallFitness ? parent1.StrainOrigin : parent2.StrainOrigin;
             offspring.PlantSpecies = parent1.PlantSpecies;
             offspring.Cultivar = $"{parent1.Cultivar} × {parent2.Cultivar}";
-            
+
             // Perform genetic crossover
-            offspring.Genotype = PerformGeneticCrossover(parent1.Genotype, parent2.Genotype);
-            
+            var parent1Dict = parent1.Genotype.ToDictionary(kvp => kvp.Key, kvp => kvp.Value as ProjectChimera.Data.Genetics.AlleleCouple).Where(kvp => kvp.Value != null).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            var parent2Dict = parent2.Genotype.ToDictionary(kvp => kvp.Key, kvp => kvp.Value as ProjectChimera.Data.Genetics.AlleleCouple).Where(kvp => kvp.Value != null).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            var crossoverResult = PerformGeneticCrossover(parent1Dict, parent2Dict);
+            offspring.Genotype = crossoverResult.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value);
+
             // Combine mutation histories
-            offspring.Mutations = new List<DataMutationRecord>();
+            offspring.Mutations = new List<object>();
             offspring.Mutations.AddRange(parent1.Mutations);
             offspring.Mutations.AddRange(parent2.Mutations);
-            
+
             // Apply new mutations if any occur
             ApplyNewMutations(offspring);
-            
+
             // Calculate offspring fitness
             offspring.OverallFitness = CalculateOffspringFitness(parent1, parent2);
-            
+
             return offspring;
         }
-        
+
         /// <summary>
         /// Validate genotype data integrity
         /// </summary>
@@ -256,50 +264,53 @@ namespace ProjectChimera.Systems.Genetics
         public static GenotypeValidationResult ValidateGenotype(PlantGenotype genotype)
         {
             var result = new GenotypeValidationResult { IsValid = true };
-            
+
             if (genotype == null)
             {
                 result.IsValid = false;
                 result.Issues.Add("Genotype is null");
                 return result;
             }
-            
+
             // Check required fields
             if (string.IsNullOrEmpty(genotype.GenotypeID))
             {
                 result.IsValid = false;
                 result.Issues.Add("GenotypeID is required");
             }
-            
+
             if (genotype.Genotype == null || genotype.Genotype.Count == 0)
             {
                 result.IsValid = false;
                 result.Issues.Add("Genotype dictionary is empty");
             }
-            
+
             // Validate allele couples
             foreach (var kvp in genotype.Genotype)
             {
-                if (kvp.Value.Allele1 == null || kvp.Value.Allele2 == null)
+                if (kvp.Value is ProjectChimera.Data.Genetics.AlleleCouple couple)
                 {
-                    result.Issues.Add($"Incomplete allele couple for gene: {kvp.Key}");
+                    if (couple.Allele1 == null || couple.Allele2 == null)
+                    {
+                        result.Issues.Add($"Incomplete allele couple for gene: {kvp.Key}");
+                    }
                 }
             }
-            
+
             // Check fitness bounds
             if (genotype.OverallFitness < 0f || genotype.OverallFitness > 2f)
             {
                 result.Issues.Add("OverallFitness is out of valid range (0-2)");
             }
-            
+
             if (result.Issues.Count > 0)
             {
                 result.IsValid = false;
             }
-            
+
             return result;
         }
-        
+
         /// <summary>
         /// Check compatibility between two genotypes for breeding
         /// </summary>
@@ -309,14 +320,14 @@ namespace ProjectChimera.Systems.Genetics
         public static BreedingCompatibilityResult CheckBreedingCompatibility(PlantGenotype genotype1, PlantGenotype genotype2)
         {
             var result = new BreedingCompatibilityResult { IsCompatible = true, CompatibilityScore = 1f };
-            
+
             if (genotype1 == null || genotype2 == null)
             {
                 result.IsCompatible = false;
                 result.Issues.Add("One or both genotypes are null");
                 return result;
             }
-            
+
             // Check species compatibility
             if (genotype1.PlantSpecies != genotype2.PlantSpecies)
             {
@@ -324,94 +335,94 @@ namespace ProjectChimera.Systems.Genetics
                 result.Issues.Add("Different species cannot breed");
                 return result;
             }
-            
+
             // Check for inbreeding depression
             if (genotype1.StrainOrigin == genotype2.StrainOrigin)
             {
                 result.CompatibilityScore *= 0.8f; // Reduce compatibility for same strain
                 result.Issues.Add("Inbreeding detected - reduced compatibility");
             }
-            
+
             // Check genetic diversity
             int commonGenes = genotype1.Genotype.Keys.Intersect(genotype2.Genotype.Keys).Count();
             int totalGenes = genotype1.Genotype.Keys.Union(genotype2.Genotype.Keys).Count();
             float geneticSimilarity = (float)commonGenes / totalGenes;
-            
+
             if (geneticSimilarity > 0.9f)
             {
                 result.CompatibilityScore *= 0.7f;
                 result.Issues.Add("High genetic similarity - reduced compatibility");
             }
-            
+
             // Check fitness levels
             if (genotype1.OverallFitness < 0.3f || genotype2.OverallFitness < 0.3f)
             {
                 result.CompatibilityScore *= 0.6f;
                 result.Issues.Add("Low fitness parent detected");
             }
-            
+
             return result;
         }
-        
+
         // Private helper methods
         private static void MapSpecificTraits(GenotypeDataSO source, PlantGenotype target)
         {
             // Map any specific trait properties that exist in the SO
             // This can be expanded as needed for additional trait mappings
-            
+
             if (source.Species != null)
             {
-                target.PlantSpecies = source.Species.CommonName;
+                target.PlantSpecies = source.Species.speciesName;
             }
         }
-        
+
         private static GeneDefinitionSO FindGeneDefinition(string geneId)
         {
             // In a full implementation, this would search a gene database
             // For now, return null - would need access to gene library
             return null;
         }
-        
+
         private static Dictionary<string, DataAlleleCouple> GenerateGenotypeFromStrain(PlantStrainSO strain)
         {
             var genotype = new Dictionary<string, DataAlleleCouple>();
-            
+
             // In a full implementation, this would generate based on strain genetics
             // For now, create a basic genotype structure
-            
+
             return genotype;
         }
-        
+
         private static float CalculateStrainFitness(PlantStrainSO strain)
         {
             // Calculate fitness based on strain properties
-            return strain.BaseYield() * 0.4f + strain.THCLevel * 0.3f + strain.GrowthRateModifier * 0.3f;
+            return strain.BaseYield * 0.4f + strain.THCContent * 0.3f + strain.GrowthRateModifier * 0.3f;
         }
-        
-        private static Dictionary<string, DataAlleleCouple> PerformGeneticCrossover(
-            Dictionary<string, DataAlleleCouple> parent1Genotype, 
-            Dictionary<string, DataAlleleCouple> parent2Genotype)
+
+        private static Dictionary<string, ProjectChimera.Data.Genetics.AlleleCouple> PerformGeneticCrossover(
+            Dictionary<string, ProjectChimera.Data.Genetics.AlleleCouple> parent1Genotype,
+            Dictionary<string, ProjectChimera.Data.Genetics.AlleleCouple> parent2Genotype)
         {
-            var offspringGenotype = new Dictionary<string, DataAlleleCouple>();
-            
+            var offspringGenotype = new Dictionary<string, ProjectChimera.Data.Genetics.AlleleCouple>();
+
             // Get all genes from both parents
             var allGenes = parent1Genotype.Keys.Union(parent2Genotype.Keys);
-            
+
             foreach (var geneId in allGenes)
             {
-                DataAlleleCouple offspring;
-                
+                ProjectChimera.Data.Genetics.AlleleCouple offspring;
+
                 // Randomly select alleles from each parent
                 if (parent1Genotype.ContainsKey(geneId) && parent2Genotype.ContainsKey(geneId))
                 {
                     var parent1Couple = parent1Genotype[geneId];
                     var parent2Couple = parent2Genotype[geneId];
-                    
+
                     // Random segregation - select one allele from each parent
-                    var allele1 = Random.value < 0.5f ? parent1Couple.Allele1 : parent1Couple.Allele2;
-                    var allele2 = Random.value < 0.5f ? parent2Couple.Allele1 : parent2Couple.Allele2;
-                    
-                    offspring = new DataAlleleCouple(allele1, allele2);
+                    var allele1 = Random.value < 0.5f ? parent1Couple.allele1 : parent1Couple.allele2;
+                    var allele2 = Random.value < 0.5f ? parent2Couple.allele1 : parent2Couple.allele2;
+
+                    offspring = new ProjectChimera.Data.Genetics.AlleleCouple(allele1 ?? "unknown", allele2 ?? "unknown");
                 }
                 else if (parent1Genotype.ContainsKey(geneId))
                 {
@@ -426,29 +437,29 @@ namespace ProjectChimera.Systems.Genetics
                 else
                 {
                     // This shouldn't happen, but handle it gracefully
-                    offspring = new DataAlleleCouple(null, null);
+                    offspring = new DataAlleleCouple("unknown", "unknown");
                 }
-                
+
                 offspringGenotype[geneId] = offspring;
             }
-            
+
             return offspringGenotype;
         }
-        
+
         private static DominanceType DetermineDominance(AlleleSO allele1, AlleleSO allele2)
         {
             if (allele1 == null || allele2 == null) return DominanceType.Codominant;
             if (allele1 == allele2) return DominanceType.Homozygous;
-            
+
             // Simplified dominance determination
             return DominanceType.Heterozygous;
         }
-        
+
         private static void ApplyNewMutations(PlantGenotype offspring)
         {
             // Apply random mutations with low probability
             float mutationRate = 0.001f; // 0.1% chance per gene
-            
+
             foreach (var geneId in offspring.Genotype.Keys.ToList())
             {
                 if (Random.value < mutationRate)
@@ -462,22 +473,22 @@ namespace ProjectChimera.Systems.Genetics
                         OccurrenceDate = System.DateTime.Now,
                         IsBeneficial = Random.Range(-0.1f, 0.1f) > 0f
                     };
-                    
+
                     offspring.Mutations.Add(mutation);
                 }
             }
         }
-        
+
         private static float CalculateOffspringFitness(PlantGenotype parent1, PlantGenotype parent2)
         {
             // Basic fitness calculation - average of parents with some variation
             float averageFitness = (parent1.OverallFitness + parent2.OverallFitness) / 2f;
             float variation = Random.Range(-0.1f, 0.1f);
-            
+
             return Mathf.Clamp(averageFitness + variation, 0.1f, 2f);
         }
     }
-    
+
     /// <summary>
     /// Result of genotype validation
     /// </summary>
@@ -486,7 +497,7 @@ namespace ProjectChimera.Systems.Genetics
         public bool IsValid { get; set; } = true;
         public List<string> Issues { get; set; } = new List<string>();
     }
-    
+
     /// <summary>
     /// Result of breeding compatibility check
     /// </summary>

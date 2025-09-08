@@ -1,5 +1,7 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
+using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 
 namespace ProjectChimera.Systems.Prefabs
 {
@@ -23,7 +25,7 @@ namespace ProjectChimera.Systems.Prefabs
 
         public void InitializeDefaults()
         {
-            Debug.Log("[PlantPrefabLibrary] Minimal initialization - full implementation pending PlantGrowthStage resolution");
+            ChimeraLogger.Log("[PlantPrefabLibrary] Minimal initialization - full implementation pending PlantGrowthStage resolution");
         }
 
         public GameObject GetRandomPlantPrefab()

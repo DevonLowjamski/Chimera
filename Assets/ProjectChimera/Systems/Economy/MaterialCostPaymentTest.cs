@@ -1,4 +1,6 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
+using ProjectChimera.Core;
 using ProjectChimera.Data.Construction;
 using ProjectChimera.Data.Economy;
 
@@ -57,15 +59,15 @@ namespace ProjectChimera.Systems.Economy
             _testResults = results.ToString();
             
             results.AppendLine($"\n=== OVERALL RESULT: {(allTestsPassed ? "PASSED" : "FAILED")} ===");
-            Debug.Log(results.ToString());
+            ChimeraLogger.Log(results.ToString());
         }
         
         private bool TestSystemReferences(System.Text.StringBuilder results)
         {
             results.AppendLine("\n1. Testing System References:");
             
-            _paymentSystem = FindObjectOfType<MaterialCostPaymentSystem>();
-            _currencyManager = FindObjectOfType<CurrencyManager>();
+            _paymentSystem = ServiceContainerFactory.Instance?.TryResolve<IMaterialCostPaymentSystem>() as MaterialCostPaymentSystem;
+            _currencyManager = ServiceContainerFactory.Instance?.TryResolve<IEconomyManager>() as CurrencyManager;
             
             bool paymentSystemFound = _paymentSystem != null;
             bool currencyManagerFound = _currencyManager != null;
@@ -203,17 +205,17 @@ namespace ProjectChimera.Systems.Economy
         {
             if (_currencyManager == null)
             {
-                _currencyManager = FindObjectOfType<CurrencyManager>();
+                _currencyManager = ServiceContainerFactory.Instance?.TryResolve<IEconomyManager>() as CurrencyManager;
             }
             
             if (_currencyManager != null)
             {
                 _currencyManager.SetCurrencyForTesting(CurrencyType.Cash, _testFunds);
-                Debug.Log($"Set test funds to ${_testFunds:F2}");
+                ChimeraLogger.Log($"Set test funds to ${_testFunds:F2}");
             }
             else
             {
-                Debug.LogWarning("CurrencyManager not found");
+                ChimeraLogger.LogWarning("CurrencyManager not found");
             }
         }
         
@@ -222,17 +224,17 @@ namespace ProjectChimera.Systems.Economy
         {
             if (_paymentSystem == null || _testSchematic == null)
             {
-                Debug.LogWarning("Required components not available for test");
+                ChimeraLogger.LogWarning("Required components not available for test");
                 return;
             }
             
             var validation = _paymentSystem.ValidatePayment(_testSchematic);
-            Debug.Log($"Payment validation: {validation.CanAfford} - {validation.ValidationMessage}");
+            ChimeraLogger.Log($"Payment validation: {validation.CanAfford} - {validation.ValidationMessage}");
             
             if (validation.CanAfford)
             {
                 bool success = _paymentSystem.ProcessPayment(_testSchematic);
-                Debug.Log($"Payment result: {(success ? "SUCCESS" : "FAILED")}");
+                ChimeraLogger.Log($"Payment result: {(success ? "SUCCESS" : "FAILED")}");
             }
         }
     }

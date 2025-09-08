@@ -1,0 +1,70 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.Save
+{
+    /// <summary>
+    /// Main economy state DTO that aggregates all economy subsystems
+    /// This is the primary DTO for saving/loading the entire economic system state
+    /// </summary>
+    [System.Serializable]
+    public class EconomyStateDTO
+    {
+        [Header("Economy System State")]
+        public MarketStateDTO MarketState;
+        public TradingStateDTO TradingState;
+        public PlayerEconomyStateDTO PlayerEconomyState;
+        public FinancialStateDTO FinancialState;
+        
+        [Header("Market Products")]
+        public List<MarketProductDTO> AvailableProducts = new List<MarketProductDTO>();
+        public Dictionary<string, float> ProductPrices = new Dictionary<string, float>();
+        public Dictionary<string, MarketProductPerformanceDTO> ProductPerformance = new Dictionary<string, MarketProductPerformanceDTO>();
+        
+        [Header("Transaction History")]
+        public List<TransactionRecordDTO> TransactionHistory = new List<TransactionRecordDTO>();
+        public List<TradingOpportunityDTO> AvailableOpportunities = new List<TradingOpportunityDTO>();
+        
+        [Header("Economic Indicators")]
+        public EconomicIndicatorsDTO EconomicIndicators;
+        public MarketConditionsDTO CurrentMarketConditions;
+        
+        [Header("System Configuration")]
+        public bool EnableEconomySystem = true;
+        public bool EnableDynamicPricing = true;
+        public bool EnableSupplyDemandTracking = true;
+        public float PriceUpdateFrequency = 4.0f;
+        public float TransactionProcessingInterval = 0.1f;
+        
+        [Header("Save Metadata")]
+        public DateTime SaveTimestamp;
+        public string SaveVersion = "1.0";
+    }
+    
+    /// <summary>
+    /// Contract DTO for contractual agreements
+    /// </summary>
+    [System.Serializable]
+    public class ContractDTO
+    {
+        [Header("Contract Details")]
+        public string ContractId;
+        public string ContractType;
+        public DateTime StartDate;
+        public DateTime EndDate;
+        
+        [Header("Parties")]
+        public string ClientId;
+        public string ProviderId;
+        
+        [Header("Terms")]
+        public Dictionary<string, object> ContractTerms = new Dictionary<string, object>();
+        public float ContractValue;
+        public string Status; // "Active", "Completed", "Cancelled"
+        
+        [Header("Performance")]
+        public float CompletionPercentage;
+        public DateTime LastUpdate;
+    }
+}

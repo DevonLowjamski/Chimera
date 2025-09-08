@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Systems.Analytics;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels.Components
 {
@@ -511,13 +512,13 @@ namespace ProjectChimera.UI.Panels.Components
         private void LogInfo(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[DataDashboardConfiguration] {message}");
+                ChimeraLogger.Log($"[DataDashboardConfiguration] {message}");
         }
 
         private void LogWarning(string message)
         {
             if (_enableDebugLogging)
-                Debug.LogWarning($"[DataDashboardConfiguration] {message}");
+                ChimeraLogger.LogWarning($"[DataDashboardConfiguration] {message}");
         }
     }
 }

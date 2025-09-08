@@ -1,7 +1,9 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using UnityEngine.UI;
 // using TMPro;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Systems.Environment;
 
 // Removed dependency on Systems.Cultivation to avoid cross-assembly reference
@@ -19,7 +21,7 @@ namespace ProjectChimera.Systems.Environment
     /// Environmental sensor component that provides accurate readings
     /// and supports IoT-style monitoring and alerts.
     /// </summary>
-    public class EnvironmentalSensor : MonoBehaviour
+    public class EnvironmentalSensor : MonoBehaviour, ITickable
     {
         [Header("Sensor Configuration")]
         [SerializeField] private LocalSensorType _sensorType;
@@ -99,10 +101,20 @@ namespace ProjectChimera.Systems.Environment
             SetupSensorVisualization();
             SetStatus(SensorStatus.Active);
             StartReading();
+            
+            // Register with UpdateOrchestrator for centralized update management
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
         
-        private void Update()
+        #region ITickable Implementation
+
+        public int Priority => TickPriority.EnvironmentalManager;
+        public bool Enabled => !_needsCalibration && _isOnline && _status == SensorStatus.Active;
+
+        public void Tick(float deltaTime)
         {
+            if (!Enabled) return;
+            
             float currentTime = Time.time;
             
             // Take readings at specified interval
@@ -122,6 +134,8 @@ namespace ProjectChimera.Systems.Environment
             // Update visual indicators
             UpdateVisualization();
         }
+
+        #endregion
         
         #region Initialization
         
@@ -449,7 +463,7 @@ namespace ProjectChimera.Systems.Environment
             // Trigger alert
             OnAlertTriggered?.Invoke(this, alert);
             
-            Debug.LogWarning($"Sensor Alert [{_sensorId}]: {alert.Message}");
+            ChimeraLogger.LogWarning($"Sensor Alert [{_sensorId}]: {alert.Message}");
         }
         
         private void ClearAlert()
@@ -541,7 +555,7 @@ namespace ProjectChimera.Systems.Environment
             
             // Data transmitted successfully
             // In a real implementation, this would send to a cloud service or local server
-            Debug.Log($"Data transmitted: {packet.SensorId} - {packet.Reading:F2} {GetUnitString()}");
+            ChimeraLogger.Log($"Data transmitted: {packet.SensorId} - {packet.Reading:F2} {GetUnitString()}");
         }
         
         private float GetBatteryLevel()
@@ -687,7 +701,7 @@ namespace ProjectChimera.Systems.Environment
             _calibrationOffset = knownValue - _rawReading;
             _needsCalibration = false;
             
-            Debug.Log($"Sensor {_sensorId} calibrated with offset: {_calibrationOffset:F2}");
+            ChimeraLogger.Log($"Sensor {_sensorId} calibrated with offset: {_calibrationOffset:F2}");
         }
         
         public void CalibrateMultiplier(float knownValue)
@@ -697,7 +711,7 @@ namespace ProjectChimera.Systems.Environment
                 _calibrationMultiplier = knownValue / _rawReading;
                 _needsCalibration = false;
                 
-                Debug.Log($"Sensor {_sensorId} calibrated with multiplier: {_calibrationMultiplier:F2}");
+                ChimeraLogger.Log($"Sensor {_sensorId} calibrated with multiplier: {_calibrationMultiplier:F2}");
             }
         }
         
@@ -807,6 +821,12 @@ namespace ProjectChimera.Systems.Environment
         
         private void OnDestroy()
         {
+            // Unregister from UpdateOrchestrator
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+            
             StopAllCoroutines();
         }
     }

@@ -1,4 +1,6 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
+using ProjectChimera.Core;
 using ProjectChimera.Core.DependencyInjection;
 
 namespace ProjectChimera.Systems.Scene
@@ -7,13 +9,13 @@ namespace ProjectChimera.Systems.Scene
     {
         public static ISceneLoader GetSceneLoader()
         {
-            var serviceLocator = ServiceLocator.Instance;
-            if (serviceLocator != null)
+            var serviceContainer = ServiceContainerFactory.Instance;
+            if (serviceContainer != null)
             {
-                return serviceLocator.GetService<ISceneLoader>();
+                return serviceContainer.TryResolve<ISceneLoader>();
             }
             
-            Debug.LogError("[SceneUtils] ServiceLocator not available - cannot get SceneLoader service");
+            ChimeraLogger.LogError("[SceneUtils] ServiceContainer not available - cannot get SceneLoader service");
             return null;
         }
 
@@ -39,7 +41,7 @@ namespace ProjectChimera.Systems.Scene
         {
             if (!SceneConstants.IsWarehouseScene(warehouseType))
             {
-                Debug.LogWarning($"[SceneUtils] Invalid warehouse scene: {warehouseType}, defaulting to Small Bay");
+                ChimeraLogger.LogWarning($"[SceneUtils] Invalid warehouse scene: {warehouseType}, defaulting to Small Bay");
                 warehouseType = SceneConstants.WAREHOUSE_SMALL_BAY;
             }
 
@@ -59,7 +61,7 @@ namespace ProjectChimera.Systems.Scene
                 }
                 else
                 {
-                    Debug.LogWarning("[SceneUtils] No active scene to restart");
+                    ChimeraLogger.LogWarning("[SceneUtils] No active scene to restart");
                 }
             }
         }

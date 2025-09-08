@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
 using UnityEngine;
 using ProjectChimera.Core;
@@ -37,7 +38,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (IsInitialized) return;
             
-            Debug.Log("[CultivationZoneManager] Initializing zone management system...");
+            ChimeraLogger.Log("[CultivationZoneManager] Initializing zone management system...");
             
             // Initialize default environment if not set
             if (_defaultEnvironment.Temperature == 0f)
@@ -49,12 +50,12 @@ namespace ProjectChimera.Systems.Cultivation
             CreateZone("default", _defaultEnvironment);
             
             IsInitialized = true;
-            Debug.Log($"[CultivationZoneManager] Initialized with default zone. Max zones: {_maxZones}");
+            ChimeraLogger.Log($"[CultivationZoneManager] Initialized with default zone. Max zones: {_maxZones}");
         }
         
         public void Shutdown()
         {
-            Debug.Log("[CultivationZoneManager] Shutting down zone management...");
+            ChimeraLogger.Log("[CultivationZoneManager] Shutting down zone management...");
             
             _zoneEnvironments.Clear();
             _zonePlants.Clear();
@@ -70,19 +71,19 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (string.IsNullOrEmpty(zoneId))
             {
-                Debug.LogWarning("[CultivationZoneManager] Cannot create zone with null or empty ID");
+                ChimeraLogger.LogWarning("[CultivationZoneManager] Cannot create zone with null or empty ID");
                 return false;
             }
             
             if (_zoneEnvironments.ContainsKey(zoneId))
             {
-                Debug.LogWarning($"[CultivationZoneManager] Zone '{zoneId}' already exists");
+                ChimeraLogger.LogWarning($"[CultivationZoneManager] Zone '{zoneId}' already exists");
                 return false;
             }
             
             if (_zoneEnvironments.Count >= _maxZones)
             {
-                Debug.LogWarning($"[CultivationZoneManager] Maximum zone limit ({_maxZones}) reached");
+                ChimeraLogger.LogWarning($"[CultivationZoneManager] Maximum zone limit ({_maxZones}) reached");
                 return false;
             }
             
@@ -91,7 +92,7 @@ namespace ProjectChimera.Systems.Cultivation
             _zoneMetrics[zoneId] = new ZoneMetrics();
             
             OnZoneCreated?.Invoke(zoneId);
-            Debug.Log($"[CultivationZoneManager] Created zone '{zoneId}'");
+            ChimeraLogger.Log($"[CultivationZoneManager] Created zone '{zoneId}'");
             
             return true;
         }
@@ -103,13 +104,13 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (zoneId == "default")
             {
-                Debug.LogWarning("[CultivationZoneManager] Cannot remove default zone");
+                ChimeraLogger.LogWarning("[CultivationZoneManager] Cannot remove default zone");
                 return false;
             }
             
             if (!_zoneEnvironments.ContainsKey(zoneId))
             {
-                Debug.LogWarning($"[CultivationZoneManager] Zone '{zoneId}' does not exist");
+                ChimeraLogger.LogWarning($"[CultivationZoneManager] Zone '{zoneId}' does not exist");
                 return false;
             }
             
@@ -127,7 +128,7 @@ namespace ProjectChimera.Systems.Cultivation
             _zoneMetrics.Remove(zoneId);
             
             OnZoneRemoved?.Invoke(zoneId);
-            Debug.Log($"[CultivationZoneManager] Removed zone '{zoneId}'");
+            ChimeraLogger.Log($"[CultivationZoneManager] Removed zone '{zoneId}'");
             
             return true;
         }
@@ -139,7 +140,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!_zoneEnvironments.ContainsKey(zoneId))
             {
-                Debug.LogWarning($"[CultivationZoneManager] Zone '{zoneId}' does not exist. Creating it.");
+                ChimeraLogger.LogWarning($"[CultivationZoneManager] Zone '{zoneId}' does not exist. Creating it.");
                 CreateZone(zoneId, environment);
                 return;
             }
@@ -147,7 +148,7 @@ namespace ProjectChimera.Systems.Cultivation
             _zoneEnvironments[zoneId] = environment;
             OnZoneEnvironmentChanged?.Invoke(zoneId, environment);
             
-            Debug.Log($"[CultivationZoneManager] Updated environment for zone '{zoneId}'");
+            ChimeraLogger.Log($"[CultivationZoneManager] Updated environment for zone '{zoneId}'");
         }
         
         /// <summary>
@@ -167,7 +168,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!_zonePlants.ContainsKey(zoneId))
             {
-                Debug.LogWarning($"[CultivationZoneManager] Zone '{zoneId}' does not exist. Using default zone.");
+                ChimeraLogger.LogWarning($"[CultivationZoneManager] Zone '{zoneId}' does not exist. Using default zone.");
                 zoneId = "default";
             }
             
@@ -184,7 +185,7 @@ namespace ProjectChimera.Systems.Cultivation
                 LastUpdated = System.DateTime.Now
             };
             
-            Debug.Log($"[CultivationZoneManager] Added plant '{plantId}' to zone '{zoneId}'");
+            ChimeraLogger.Log($"[CultivationZoneManager] Added plant '{plantId}' to zone '{zoneId}'");
         }
         
         /// <summary>
@@ -290,7 +291,7 @@ namespace ProjectChimera.Systems.Cultivation
         /// </summary>
         public void OptimizeZoneDistribution()
         {
-            Debug.Log("[CultivationZoneManager] Optimizing zone distribution...");
+            ChimeraLogger.Log("[CultivationZoneManager] Optimizing zone distribution...");
             
             // Simple optimization: ensure no zone is overcrowded
             int totalPlants = 0;
@@ -304,7 +305,7 @@ namespace ProjectChimera.Systems.Cultivation
             // Log current distribution
             foreach (var kvp in _zonePlants)
             {
-                Debug.Log($"[CultivationZoneManager] Zone '{kvp.Key}': {kvp.Value.Count} plants (target: {targetPlantsPerZone})");
+                ChimeraLogger.Log($"[CultivationZoneManager] Zone '{kvp.Key}': {kvp.Value.Count} plants (target: {targetPlantsPerZone})");
             }
         }
         

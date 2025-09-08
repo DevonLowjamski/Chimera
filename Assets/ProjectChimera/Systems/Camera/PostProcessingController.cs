@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 
 namespace ProjectChimera.Systems.Camera
@@ -24,7 +25,7 @@ namespace ProjectChimera.Systems.Camera
         /// </summary>
         public void ShakeCamera(float intensity = 1f, float duration = 0.5f)
         {
-            Debug.Log($"[PostProcessingController] Camera shake: intensity={intensity}, duration={duration}");
+            ChimeraLogger.Log($"[PostProcessingController] Camera shake: intensity={intensity}, duration={duration}");
             // Implementation would apply camera shake effect
         }
     }

@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 using ProjectChimera.Systems.UI.Advanced;
 using System.Collections;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.UI.Advanced
 {
@@ -75,7 +76,7 @@ namespace ProjectChimera.Systems.UI.Advanced
             var rootDocument = GetComponent<UIDocument>();
             if (rootDocument == null)
             {
-                Debug.LogError("[VisualFeedbackSystem] UIDocument component required");
+                ChimeraLogger.LogError("[VisualFeedbackSystem] UIDocument component required");
                 return;
             }
             

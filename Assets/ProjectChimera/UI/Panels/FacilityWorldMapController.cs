@@ -1,8 +1,11 @@
 using UnityEngine;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.UI.Core;
 using ProjectChimera.Systems.Facilities;
 using ProjectChimera.Data.Facilities;
+using ProjectChimera.Core.Logging;
+
 
 namespace ProjectChimera.UI.Panels
 {
@@ -10,7 +13,7 @@ namespace ProjectChimera.UI.Panels
     /// Controller for the facility world map panel.
     /// Handles opening/closing the world map and integration with input systems.
     /// </summary>
-    public class FacilityWorldMapController : ChimeraMonoBehaviour
+    public class FacilityWorldMapController : ChimeraMonoBehaviour, ITickable
     {
         [Header("World Map Configuration")]
         [SerializeField] private KeyCode _openWorldMapKey = KeyCode.M;
@@ -22,28 +25,36 @@ namespace ProjectChimera.UI.Panels
 
         // Manager references
         private UIManager _uiManager;
-        private FacilityManager _facilityManager;
+        private IFacilityManager _facilityManager; // Placeholder for FacilityManager
 
         private void Start()
         {
             // Get manager references
             _uiManager = GameManager.Instance?.GetManager<UIManager>();
-            _facilityManager = GameManager.Instance?.GetManager<FacilityManager>();
+            _facilityManager = ServiceContainerFactory.Instance?.TryResolve<IFacilityManager>(); // Placeholder - FacilityManager not yet implemented
 
             if (_uiManager == null)
             {
-                Debug.LogError("[FacilityWorldMapController] UIManager not found!");
+                ChimeraLogger.LogError("[FacilityWorldMapController] UIManager not found!");
             }
 
             if (_facilityManager == null)
             {
-                Debug.LogError("[FacilityWorldMapController] FacilityManager not found!");
+                ChimeraLogger.LogError("[FacilityWorldMapController] FacilityManager not found!");
             }
 
-            Debug.Log("[FacilityWorldMapController] Initialized facility world map controller");
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+
+            ChimeraLogger.Log("[FacilityWorldMapController] Initialized facility world map controller");
         }
 
-        private void Update()
+        #region ITickable Implementation
+
+        public int Priority => TickPriority.UIManager;
+        public bool Enabled => enabled;
+
+        public void Tick(float deltaTime)
         {
             // Handle world map toggle input
             if (Input.GetKeyDown(_openWorldMapKey))
@@ -52,6 +63,8 @@ namespace ProjectChimera.UI.Panels
             }
         }
 
+        #endregion
+
         /// <summary>
         /// Toggles the world map panel open/closed
         /// </summary>
@@ -59,7 +72,7 @@ namespace ProjectChimera.UI.Panels
         {
             if (_worldMapPanel == null)
             {
-                Debug.LogError("[FacilityWorldMapController] World map panel reference not set!");
+                ChimeraLogger.LogError("[FacilityWorldMapController] World map panel reference not set!");
                 return;
             }
 
@@ -80,11 +93,11 @@ namespace ProjectChimera.UI.Panels
         {
             if (_worldMapPanel == null || _facilityManager == null)
             {
-                Debug.LogError("[FacilityWorldMapController] Missing references for world map!");
+                ChimeraLogger.LogError("[FacilityWorldMapController] Missing references for world map!");
                 return;
             }
 
-            Debug.Log("[FacilityWorldMapController] Opening facility world map");
+            ChimeraLogger.Log("[FacilityWorldMapController] Opening facility world map");
 
             // Pause game if configured
             if (_pauseGameWhenOpen)
@@ -106,11 +119,11 @@ namespace ProjectChimera.UI.Panels
         {
             if (_worldMapPanel == null)
             {
-                Debug.LogError("[FacilityWorldMapController] World map panel reference not set!");
+                ChimeraLogger.LogError("[FacilityWorldMapController] World map panel reference not set!");
                 return;
             }
 
-            Debug.Log("[FacilityWorldMapController] Closing facility world map");
+            ChimeraLogger.Log("[FacilityWorldMapController] Closing facility world map");
 
             // Resume game if it was paused
             if (_pauseGameWhenOpen)
@@ -129,17 +142,17 @@ namespace ProjectChimera.UI.Panels
         {
             if (_facilityManager == null)
             {
-                Debug.LogError("[FacilityWorldMapController] FacilityManager not available for quick switch");
+                ChimeraLogger.LogError("[FacilityWorldMapController] FacilityManager not available for quick switch");
                 return;
             }
 
-            Debug.Log($"[FacilityWorldMapController] Quick switching to facility with tier: {tierName}");
+            ChimeraLogger.Log($"[FacilityWorldMapController] Quick switching to facility with tier: {tierName}");
 
             var success = await _facilityManager.QuickSwitchByTierName(tierName);
             if (success)
             {
-                Debug.Log($"[FacilityWorldMapController] Quick switch to {tierName} successful");
-                
+                ChimeraLogger.Log($"[FacilityWorldMapController] Quick switch to {tierName} successful");
+
                 // Refresh the world map if it's open
                 if (_worldMapPanel != null && _worldMapPanel.IsVisible)
                 {
@@ -148,7 +161,7 @@ namespace ProjectChimera.UI.Panels
             }
             else
             {
-                Debug.LogWarning($"[FacilityWorldMapController] Quick switch to {tierName} failed");
+                ChimeraLogger.LogWarning($"[FacilityWorldMapController] Quick switch to {tierName} failed");
             }
         }
 
@@ -159,7 +172,7 @@ namespace ProjectChimera.UI.Panels
         {
             if (_facilityManager == null)
             {
-                Debug.LogError("[FacilityWorldMapController] FacilityManager not available");
+                ChimeraLogger.LogError("[FacilityWorldMapController] FacilityManager not available");
                 return;
             }
 
@@ -171,7 +184,7 @@ namespace ProjectChimera.UI.Panels
                 _worldMapPanel.RefreshFacilityData();
             }
 
-            Debug.Log("[FacilityWorldMapController] Checked for facility upgrades");
+            ChimeraLogger.Log("[FacilityWorldMapController] Checked for facility upgrades");
         }
 
         #region Public API for External Systems
@@ -194,9 +207,17 @@ namespace ProjectChimera.UI.Panels
         /// </summary>
         public FacilityProgressionStatistics GetFacilityStatistics()
         {
-            return _facilityManager?.GetProgressionStatistics();
+            return _facilityManager?.GetProgressionStatisticsTyped();
         }
 
         #endregion
+
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+        }
     }
 }

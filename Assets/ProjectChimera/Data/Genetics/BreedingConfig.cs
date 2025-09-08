@@ -160,19 +160,19 @@ namespace ProjectChimera.Data.Genetics
             
             if (_baseBreedingTime <= 0f)
             {
-                Debug.LogError($"Breeding Config {name}: Base breeding time must be positive", this);
+                SharedLogger.LogError($"Breeding Config {name}: Base breeding time must be positive");
                 isValid = false;
             }
             
             if (_baseSuccessRate <= 0f || _baseSuccessRate > 1f)
             {
-                Debug.LogError($"Breeding Config {name}: Base success rate must be between 0 and 1", this);
+                SharedLogger.LogError($"Breeding Config {name}: Base success rate must be between 0 and 1");
                 isValid = false;
             }
             
             if (_mutationRate < 0f || _mutationRate > 0.5f)
             {
-                Debug.LogWarning($"Breeding Config {name}: Mutation rate seems unusually high", this);
+                SharedLogger.LogWarning($"Breeding Config {name}: Mutation rate seems unusually high");
             }
             
             return isValid;

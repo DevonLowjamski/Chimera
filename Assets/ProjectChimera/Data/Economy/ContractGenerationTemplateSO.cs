@@ -207,12 +207,12 @@ namespace ProjectChimera.Data.Economy
             
             if (_contractorProfiles.Count == 0)
             {
-                Debug.LogWarning($"ContractGenerationTemplate {name}: No contractor profiles defined", this);
+                SharedLogger.LogWarning($"ContractGenerationTemplate {name}: No contractor profiles defined", this);
             }
             
             if (_baseValuePerKg <= 0f)
             {
-                Debug.LogError($"ContractGenerationTemplate {name}: Base value per kg must be positive", this);
+                SharedLogger.LogError($"ContractGenerationTemplate {name}: Base value per kg must be positive", this);
                 isValid = false;
             }
             

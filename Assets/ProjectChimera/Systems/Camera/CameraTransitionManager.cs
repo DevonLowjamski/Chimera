@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections;
 using ProjectChimera.Data.Camera;
@@ -335,7 +336,7 @@ namespace ProjectChimera.Systems.Camera
 
             if (_enableDebugLogging)
             {
-                Debug.Log($"[CameraTransitionManager] Level transition to {request.TargetLevel} completed");
+                ChimeraLogger.Log($"[CameraTransitionManager] Level transition to {request.TargetLevel} completed");
             }
         }
 
@@ -516,7 +517,7 @@ namespace ProjectChimera.Systems.Camera
         /// </summary>
         public bool ZoomTo(CameraLevel targetLevel)
         {
-            Debug.Log($"[CameraTransitionManager] Zooming to level: {targetLevel}");
+            ChimeraLogger.Log($"[CameraTransitionManager] Zooming to level: {targetLevel}");
             // Implementation would initiate zoom transition
             return true;
         }
@@ -526,7 +527,7 @@ namespace ProjectChimera.Systems.Camera
         /// </summary>
         public bool ZoomTo(CameraLevel targetLevel, Transform anchor)
         {
-            Debug.Log($"[CameraTransitionManager] Zooming to level: {targetLevel} with anchor: {anchor?.name}");
+            ChimeraLogger.Log($"[CameraTransitionManager] Zooming to level: {targetLevel} with anchor: {anchor?.name}");
             // Implementation would initiate zoom transition with anchor
             return true;
         }
@@ -536,7 +537,7 @@ namespace ProjectChimera.Systems.Camera
         /// </summary>
         public bool ZoomTo(CameraLevel targetLevel, Vector3 customPosition)
         {
-            Debug.Log($"[CameraTransitionManager] Zooming to level: {targetLevel} at position: {customPosition}");
+            ChimeraLogger.Log($"[CameraTransitionManager] Zooming to level: {targetLevel} at position: {customPosition}");
             // Implementation would initiate zoom transition to custom position
             return true;
         }
@@ -555,7 +556,7 @@ namespace ProjectChimera.Systems.Camera
         /// </summary>
         public void OrbitAroundTarget(float yaw, float pitch, float duration = -1f)
         {
-            Debug.Log($"[CameraTransitionManager] Orbiting around target: yaw={yaw}, pitch={pitch}, duration={duration}");
+            ChimeraLogger.Log($"[CameraTransitionManager] Orbiting around target: yaw={yaw}, pitch={pitch}, duration={duration}");
             // Implementation would perform orbit transition
         }
         
@@ -566,7 +567,7 @@ namespace ProjectChimera.Systems.Camera
         {
             if (target == null) return false;
             
-            Debug.Log($"[CameraTransitionManager] Focusing on target: {target.name}");
+            ChimeraLogger.Log($"[CameraTransitionManager] Focusing on target: {target.name}");
             // Implementation would initiate focus transition
             return true;
         }
@@ -577,7 +578,7 @@ namespace ProjectChimera.Systems.Camera
         public void MoveCameraToPosition(Vector3 position, Quaternion rotation, float duration = -1f)
         {
             float actualDuration = duration > 0 ? duration : _defaultTransitionDuration;
-            Debug.Log($"[CameraTransitionManager] Moving camera to position: {position}, rotation: {rotation}, duration: {actualDuration}");
+            ChimeraLogger.Log($"[CameraTransitionManager] Moving camera to position: {position}, rotation: {rotation}, duration: {actualDuration}");
             // Implementation would initiate camera movement
         }
         
@@ -587,7 +588,7 @@ namespace ProjectChimera.Systems.Camera
         // TODO: CinematicSequence type needs to be defined
         // public void PlayCinematicSequence(CinematicSequence sequence)
         // {
-        //     Debug.Log($"[CameraTransitionManager] Playing cinematic sequence");
+        //     ChimeraLogger.Log($"[CameraTransitionManager] Playing cinematic sequence");
         //     // Implementation would play cinematic sequence
         // }
         
@@ -611,7 +612,7 @@ namespace ProjectChimera.Systems.Camera
         /// </summary>
         public bool FocusOnPosition(Vector3 position, Transform anchorReference = null)
         {
-            Debug.Log($"[CameraTransitionManager] Focusing on position: {position}, anchor: {anchorReference?.name}");
+            ChimeraLogger.Log($"[CameraTransitionManager] Focusing on position: {position}, anchor: {anchorReference?.name}");
             // Implementation would focus on position
             return true;
         }

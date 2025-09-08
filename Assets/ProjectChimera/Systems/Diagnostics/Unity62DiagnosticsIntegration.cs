@@ -1,4 +1,5 @@
 using System;
+using ProjectChimera.Core.Updates;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -6,7 +7,9 @@ using UnityEngine;
 using Unity.Services.Core;
 using Unity.Services.Analytics;
 #endif
-using ProjectChimera.Systems.Analytics;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
+// using ProjectChimera.Systems.Analytics; // Analytics namespace not available
 
 namespace ProjectChimera.Systems.Diagnostics
 {
@@ -15,7 +18,7 @@ namespace ProjectChimera.Systems.Diagnostics
     /// Leverages built-in diagnostic data collection and Unity Dashboard
     /// Replaces custom analytics systems with Unity's integrated solutions
     /// </summary>
-    public class Unity62DiagnosticsIntegration : MonoBehaviour
+    public class Unity62DiagnosticsIntegration : MonoBehaviour, ITickable
     {
         [Header("Unity 6.2 Diagnostics Configuration")]
         [SerializeField] private bool _enableUnityAnalytics = true;
@@ -38,8 +41,9 @@ namespace ProjectChimera.Systems.Diagnostics
         [SerializeField] private int _maxOfflineEvents = 1000;
         
         // Integration Systems
-        private DataPipelineIntegration _dataPipeline;
-        private AdvancedAnalytics _advancedAnalytics;
+        // Analytics integration components - temporarily disabled until Analytics namespace is available
+        // private DataPipelineIntegration _dataPipeline;
+        // private AdvancedAnalytics _advancedAnalytics;
         
         // Unity Analytics State
         private bool _isUnityServicesInitialized = false;
@@ -68,17 +72,20 @@ namespace ProjectChimera.Systems.Diagnostics
         
         private void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             FindSystemReferences();
             _ = InitializeUnityServicesAsync();
         }
         
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             if (_isAnalyticsInitialized)
             {
                 ProcessEventQueue();
                 CollectPerformanceData();
-            }
+            
+    }
         }
         
         private void InitializeDiagnostics()
@@ -90,19 +97,20 @@ namespace ProjectChimera.Systems.Diagnostics
             _sessionParameters["game_version"] = Application.version;
             _sessionParameters["platform"] = Application.platform.ToString();
             
-            Debug.Log("[Unity62DiagnosticsIntegration] Diagnostics system initialized");
+            ChimeraLogger.Log("[Unity62DiagnosticsIntegration] Diagnostics system initialized");
         }
         
         private void FindSystemReferences()
         {
-            _dataPipeline = UnityEngine.Object.FindObjectOfType<DataPipelineIntegration>();
-            _advancedAnalytics = UnityEngine.Object.FindObjectOfType<AdvancedAnalytics>();
+            // Analytics integration temporarily disabled until Analytics namespace is available
+            // _dataPipeline = ServiceContainerFactory.Instance?.TryResolve<DataPipelineIntegration>();
+            // _advancedAnalytics = ServiceContainerFactory.Instance?.TryResolve<AdvancedAnalytics>();
             
-            if (_dataPipeline == null)
-                Debug.LogWarning("[Unity62DiagnosticsIntegration] DataPipelineIntegration not found");
+            // if (_dataPipeline == null)
+            //     ChimeraLogger.LogWarning("[Unity62DiagnosticsIntegration] DataPipelineIntegration not found");
             
-            if (_advancedAnalytics == null)
-                Debug.LogWarning("[Unity62DiagnosticsIntegration] AdvancedAnalytics not found");
+            // if (_advancedAnalytics == null)
+            //     ChimeraLogger.LogWarning("[Unity62DiagnosticsIntegration] AdvancedAnalytics not found");
         }
         
         private async Task InitializeUnityServicesAsync()
@@ -118,7 +126,7 @@ namespace ProjectChimera.Systems.Diagnostics
                     _isUnityServicesInitialized = true;
                     OnUnityServicesInitialized?.Invoke();
                     
-                    Debug.Log("[Unity62DiagnosticsIntegration] Unity Services initialized successfully");
+                    ChimeraLogger.Log("[Unity62DiagnosticsIntegration] Unity Services initialized successfully");
                 }
                 
                 // Initialize Analytics if enabled
@@ -157,7 +165,7 @@ namespace ProjectChimera.Systems.Diagnostics
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[Unity62DiagnosticsIntegration] Failed to initialize Unity Services: {ex.Message}");
+                ChimeraLogger.LogError($"[Unity62DiagnosticsIntegration] Failed to initialize Unity Services: {ex.Message}");
                 OnDiagnosticsError?.Invoke($"Unity Services initialization failed: {ex.Message}");
             }
         }
@@ -186,11 +194,11 @@ namespace ProjectChimera.Systems.Diagnostics
                 // Send session start event
                 await SendSessionStartEventAsync();
                 
-                Debug.Log("[Unity62DiagnosticsIntegration] Unity Analytics initialized successfully");
+                ChimeraLogger.Log("[Unity62DiagnosticsIntegration] Unity Analytics initialized successfully");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[Unity62DiagnosticsIntegration] Failed to initialize Analytics: {ex.Message}");
+                ChimeraLogger.LogError($"[Unity62DiagnosticsIntegration] Failed to initialize Analytics: {ex.Message}");
                 OnDiagnosticsError?.Invoke($"Analytics initialization failed: {ex.Message}");
             }
         }
@@ -219,7 +227,7 @@ namespace ProjectChimera.Systems.Diagnostics
             // Unity 6.2 automatically handles crash reporting
             // Just need to enable and configure preferences
             
-            Debug.Log("[Unity62DiagnosticsIntegration] Crash reporting configured - Unity 6.2 automatic collection enabled");
+            ChimeraLogger.Log("[Unity62DiagnosticsIntegration] Crash reporting configured - Unity 6.2 automatic collection enabled");
             
             // Configure additional crash context if needed
             SetCrashContext("project_chimera_version", Application.version);
@@ -233,7 +241,7 @@ namespace ProjectChimera.Systems.Diagnostics
             // Unity 6.2 built-in performance monitoring
             // Configure additional performance metrics specific to Project Chimera
             
-            Debug.Log("[Unity62DiagnosticsIntegration] Performance reporting configured - Unity 6.2 automatic collection enabled");
+            ChimeraLogger.Log("[Unity62DiagnosticsIntegration] Performance reporting configured - Unity 6.2 automatic collection enabled");
             
             // Set performance tracking context
             SetPerformanceContext("cultivation_scale", "large");
@@ -246,7 +254,7 @@ namespace ProjectChimera.Systems.Diagnostics
             // Unity 6.2 cloud diagnostics configuration
             // Integrates with Unity Dashboard for real-time insights
             
-            Debug.Log("[Unity62DiagnosticsIntegration] Cloud diagnostics configured - Unity Dashboard integration enabled");
+            ChimeraLogger.Log("[Unity62DiagnosticsIntegration] Cloud diagnostics configured - Unity Dashboard integration enabled");
             
             // Configure cloud diagnostic preferences
             var cloudConfig = new Dictionary<string, object>
@@ -303,10 +311,11 @@ namespace ProjectChimera.Systems.Diagnostics
 #endif
                 
                 // Also send to internal analytics system if available
-                if (_advancedAnalytics != null)
-                {
-                    _advancedAnalytics.CollectEvent(eventName, "unity_diagnostics", eventData);
-                }
+                // Analytics integration temporarily disabled
+                // if (_advancedAnalytics != null)
+                // {
+                //     _advancedAnalytics.CollectEvent(eventName, "unity_diagnostics", eventData);
+                // }
                 
                 var customEvent = new CustomDiagnosticEvent
                 {
@@ -319,12 +328,12 @@ namespace ProjectChimera.Systems.Diagnostics
                 
                 if (_enableDebugMode)
                 {
-                    Debug.Log($"[Unity62DiagnosticsIntegration] Sent custom event: {eventName}");
+                    ChimeraLogger.Log($"[Unity62DiagnosticsIntegration] Sent custom event: {eventName}");
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[Unity62DiagnosticsIntegration] Failed to send custom event {eventName}: {ex.Message}");
+                ChimeraLogger.LogError($"[Unity62DiagnosticsIntegration] Failed to send custom event {eventName}: {ex.Message}");
                 OnDiagnosticsError?.Invoke($"Failed to send event {eventName}: {ex.Message}");
             }
         }
@@ -469,14 +478,14 @@ namespace ProjectChimera.Systems.Diagnostics
         {
             // Unity 6.2 crash context setting
             // Note: Actual Unity crash context API would be used here
-            Debug.Log($"[Unity62DiagnosticsIntegration] Set crash context: {key} = {value}");
+            ChimeraLogger.Log($"[Unity62DiagnosticsIntegration] Set crash context: {key} = {value}");
         }
         
         public void SetPerformanceContext(string key, string value)
         {
             // Unity 6.2 performance context setting
             // Note: Actual Unity performance context API would be used here
-            Debug.Log($"[Unity62DiagnosticsIntegration] Set performance context: {key} = {value}");
+            ChimeraLogger.Log($"[Unity62DiagnosticsIntegration] Set performance context: {key} = {value}");
         }
         
         public void ConfigureBuildProfileDiagnostics(string buildProfile)
@@ -491,7 +500,7 @@ namespace ProjectChimera.Systems.Diagnostics
                 ["analytics_enabled"] = _enableUnityAnalytics
             };
             
-            Debug.Log($"[Unity62DiagnosticsIntegration] Configured diagnostics for build profile: {buildProfile}");
+            ChimeraLogger.Log($"[Unity62DiagnosticsIntegration] Configured diagnostics for build profile: {buildProfile}");
         }
         
         public List<PerformanceDiagnosticData> GetRecentPerformanceData(int maxEntries = 50)
@@ -528,7 +537,7 @@ namespace ProjectChimera.Systems.Diagnostics
             if (_isAnalyticsInitialized)
             {
                 // Note: Actual Unity Analytics consent API would be used here
-                Debug.Log($"[Unity62DiagnosticsIntegration] Data collection consent updated: {hasConsent}");
+                ChimeraLogger.Log($"[Unity62DiagnosticsIntegration] Data collection consent updated: {hasConsent}");
             }
         }
         
@@ -571,6 +580,8 @@ namespace ProjectChimera.Systems.Diagnostics
         
         private async void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             if (_isAnalyticsInitialized)
             {
                 await SendCustomEventAsync("session_end", new Dictionary<string, object>
@@ -582,7 +593,22 @@ namespace ProjectChimera.Systems.Diagnostics
                 });
             }
         }
+    
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+    
+    public virtual void OnRegistered() 
+    { 
+        // Override in derived classes if needed
     }
+    
+    public virtual void OnUnregistered() 
+    { 
+        // Override in derived classes if needed
+    }
+
+}
     
     /// <summary>
     /// Custom diagnostic event structure

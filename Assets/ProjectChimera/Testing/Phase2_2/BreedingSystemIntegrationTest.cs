@@ -5,6 +5,7 @@ using ProjectChimera.Systems.Services.Commands;
 using ProjectChimera.Systems.Services.Core;
 using ProjectChimera.Core;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Testing.Phase2_2
 {
@@ -39,7 +40,7 @@ namespace ProjectChimera.Testing.Phase2_2
         
         public void RunAllTests()
         {
-            Debug.Log("[BreedingSystemIntegrationTest] Starting Phase 2.2.4 breeding system tests...");
+            ChimeraLogger.Log("[BreedingSystemIntegrationTest] Starting Phase 2.2.4 breeding system tests...");
             
             _testResults.Clear();
             _totalTests = 0;
@@ -61,22 +62,22 @@ namespace ProjectChimera.Testing.Phase2_2
             
             _allTestsPassed = (_passedTests == _totalTests);
             
-            Debug.Log($"[BreedingSystemIntegrationTest] Tests completed: {_passedTests}/{_totalTests} passed");
+            ChimeraLogger.Log($"[BreedingSystemIntegrationTest] Tests completed: {_passedTests}/{_totalTests} passed");
             
             if (_allTestsPassed)
             {
-                Debug.Log("✅ Phase 2.2.4: Breeding System Integration - ALL TESTS PASSED!");
+                ChimeraLogger.Log("✅ Phase 2.2.4: Breeding System Integration - ALL TESTS PASSED!");
             }
             else
             {
-                Debug.LogWarning($"⚠️ Phase 2.2.4: Breeding System Integration - {_totalTests - _passedTests} tests failed");
+                ChimeraLogger.LogWarning($"⚠️ Phase 2.2.4: Breeding System Integration - {_totalTests - _passedTests} tests failed");
             }
         }
         
         private void SetupTestEnvironment()
         {
-            // Create or find breeding system
-            _breedingSystem = FindObjectOfType<BreedingSystemIntegration>();
+            // Create or find breeding system - try ServiceContainer first for testing
+            _breedingSystem = ServiceContainerFactory.Instance?.TryResolve<BreedingSystemIntegration>();
             if (_breedingSystem == null)
             {
                 var go = new GameObject("Test_BreedingSystem");
@@ -479,9 +480,9 @@ namespace ProjectChimera.Testing.Phase2_2
             if (_enableDetailedLogging)
             {
                 if (passed)
-                    Debug.Log($"[BreedingSystemIntegrationTest] {fullMessage}");
+                    ChimeraLogger.Log($"[BreedingSystemIntegrationTest] {fullMessage}");
                 else
-                    Debug.LogWarning($"[BreedingSystemIntegrationTest] {fullMessage}");
+                    ChimeraLogger.LogWarning($"[BreedingSystemIntegrationTest] {fullMessage}");
             }
         }
         

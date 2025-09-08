@@ -1,6 +1,9 @@
 using UnityEngine;
+using ProjectChimera.Core.Updates;
 using UnityEngine.UI;
+using ProjectChimera.Core;
 using ProjectChimera.Core.DependencyInjection;
+using ProjectChimera.Core.Logging;
 using ProjectChimera.Systems.Gameplay;
 using ProjectChimera.Systems.Camera;
 using ProjectChimera.Data.Events;
@@ -15,52 +18,52 @@ namespace ProjectChimera.UI.Menus
     /// Shows relevant actions and options for the active mode and selected objects
     /// Phase 2 implementation following roadmap requirements
     /// </summary>
-    public class ModeAwareContextualMenu : MonoBehaviour, IContextualMenuProvider
+    public class ModeAwareContextualMenu : MonoBehaviour, ITickable, IContextualMenuProvider
     {
         [Header("Menu Configuration")]
         [SerializeField] private bool _enableModeContextualMenus = true;
         [SerializeField] private bool _showObjectSpecificActions = true;
         [SerializeField] private bool _enableQuickActions = true;
         [SerializeField] private bool _debugMode = false;
-        
+
         [Header("Main Context Menu")]
         [SerializeField] private GameObject _contextMenuPanel;
         [SerializeField] private Transform _menuItemsContainer;
         [SerializeField] private Button _contextMenuItemPrefab;
-        
+
         [Header("Right-Click Menu")]
         [SerializeField] private GameObject _rightClickMenuPanel;
         [SerializeField] private Transform _rightClickItemsContainer;
         [SerializeField] private Button _rightClickItemPrefab;
-        
+
         [Header("Mode-Specific Menus")]
         [SerializeField] private GameObject _cultivationContextMenu;
         [SerializeField] private GameObject _constructionContextMenu;
         [SerializeField] private GameObject _geneticsContextMenu;
-        
+
         [Header("Object-Specific Menus")]
         [SerializeField] private GameObject _plantContextMenu;
         [SerializeField] private GameObject _equipmentContextMenu;
         [SerializeField] private GameObject _facilityContextMenu;
-        
+
         [Header("Menu Styling")]
         [SerializeField] private Color _menuBackgroundColor = new Color(0.1f, 0.1f, 0.1f, 0.9f);
         [SerializeField] private Color _menuItemColor = new Color(0.8f, 0.8f, 0.8f, 1f);
         [SerializeField] private Color _menuItemHoverColor = new Color(1f, 1f, 1f, 1f);
         [SerializeField] private Color _disabledItemColor = new Color(0.5f, 0.5f, 0.5f, 0.6f);
-        
+
         [Header("Animation Settings")]
         [SerializeField] private float _menuFadeInDuration = 0.2f;
         [SerializeField] private float _menuFadeOutDuration = 0.15f;
         [SerializeField] private AnimationCurve _menuAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-        
+
         [Header("Event Channels")]
         [SerializeField] private ModeChangedEventSO _modeChangedEvent;
         [SerializeField] private CameraLevelChangedEventSO _cameraLevelChangedEvent;
-        
+
         // Services
         private IGameplayModeController _modeController;
-        
+
         // State tracking
         private bool _isInitialized = false;
         private GameplayMode _currentMode = GameplayMode.Cultivation;
@@ -68,15 +71,15 @@ namespace ProjectChimera.UI.Menus
         private GameObject _selectedObject = null;
         private Vector3 _menuPosition = Vector3.zero;
         private bool _isMenuVisible = false;
-        
+
         // Camera level integration
         private CameraLevelContextualMenuIntegrator _cameraIntegrator;
-        
+
         // Menu management
         private List<ContextMenuItem> _currentMenuItems = new List<ContextMenuItem>();
         private Dictionary<GameplayMode, List<ContextMenuItem>> _modeMenuItems;
         private Dictionary<string, List<ContextMenuItem>> _objectTypeMenuItems;
-        
+
         [System.Serializable]
         public class ContextMenuItem
         {
@@ -88,7 +91,7 @@ namespace ProjectChimera.UI.Menus
             public GameplayMode[] validModes;
             public string[] validObjectTypes;
             public System.Action<GameObject> action;
-            
+
             public ContextMenuItem(string name, string action, bool enabled = true)
             {
                 displayName = name;
@@ -99,64 +102,69 @@ namespace ProjectChimera.UI.Menus
                 validObjectTypes = new string[] { };
             }
         }
-        
+
         private void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             InitializeContextualMenu();
         }
-        
-        private void Update()
-        {
+
+            public void Tick(float deltaTime)
+    {
             HandleInput();
-        }
-        
+
+    }
+
         private void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             UnsubscribeFromEvents();
         }
-        
+
         private void InitializeContextualMenu()
         {
             try
             {
                 // Get the gameplay mode controller service
-                _modeController = ProjectChimera.Core.DependencyInjection.ServiceLocator.Instance.GetService<IGameplayModeController>();
-                
+                _modeController = ServiceContainerFactory.Instance?.TryResolve<IGameplayModeController>();
+
                 if (_modeController == null)
                 {
-                    Debug.LogError("[ModeAwareContextualMenu] GameplayModeController service not found!");
+                    ChimeraLogger.LogError("[ModeAwareContextualMenu] GameplayModeController service not found!");
                     return;
                 }
-                
+
                 // Initialize menu items
                 SetupModeMenuItems();
                 SetupObjectTypeMenuItems();
-                
+
                 // Find camera level integrator
-                _cameraIntegrator = FindObjectOfType<CameraLevelContextualMenuIntegrator>();
-                
+                _cameraIntegrator = ServiceContainerFactory.Instance?.TryResolve<CameraLevelContextualMenuIntegrator>();
+
                 // Subscribe to mode change events
                 SubscribeToEvents();
-                
+
                 // Initialize menu state
                 _currentMode = _modeController.CurrentMode;
-                
+
                 // Hide all menus initially
                 HideAllMenus();
-                
+
                 _isInitialized = true;
-                
+
                 if (_debugMode)
                 {
-                    Debug.Log($"[ModeAwareContextualMenu] Initialized with mode: {_currentMode}");
+                    ChimeraLogger.Log($"[ModeAwareContextualMenu] Initialized with mode: {_currentMode}");
                 }
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[ModeAwareContextualMenu] Error during initialization: {ex.Message}");
+                ChimeraLogger.LogError($"[ModeAwareContextualMenu] Error during initialization: {ex.Message}");
             }
         }
-        
+
         private void SetupModeMenuItems()
         {
             _modeMenuItems = new Dictionary<GameplayMode, List<ContextMenuItem>>
@@ -166,7 +174,7 @@ namespace ProjectChimera.UI.Menus
                 { GameplayMode.Genetics, CreateGeneticsMenuItems() }
             };
         }
-        
+
         private List<ContextMenuItem> CreateCultivationMenuItems()
         {
             return new List<ContextMenuItem>
@@ -181,7 +189,7 @@ namespace ProjectChimera.UI.Menus
                 new ContextMenuItem("Schedule Care", "ScheduleCare")
             };
         }
-        
+
         private List<ContextMenuItem> CreateConstructionMenuItems()
         {
             return new List<ContextMenuItem>
@@ -196,7 +204,7 @@ namespace ProjectChimera.UI.Menus
                 new ContextMenuItem("Check Connections", "CheckConnections") { requiresSelection = true, validObjectTypes = new[] { "Equipment" } }
             };
         }
-        
+
         private List<ContextMenuItem> CreateGeneticsMenuItems()
         {
             return new List<ContextMenuItem>
@@ -211,7 +219,7 @@ namespace ProjectChimera.UI.Menus
                 new ContextMenuItem("Export Genetics", "ExportGenetics") { requiresSelection = true, validObjectTypes = new[] { "Plant" } }
             };
         }
-        
+
         private void SetupObjectTypeMenuItems()
         {
             _objectTypeMenuItems = new Dictionary<string, List<ContextMenuItem>>
@@ -221,7 +229,7 @@ namespace ProjectChimera.UI.Menus
                 { "Facility", CreateFacilityMenuItems() }
             };
         }
-        
+
         private List<ContextMenuItem> CreatePlantMenuItems()
         {
             return new List<ContextMenuItem>
@@ -233,7 +241,7 @@ namespace ProjectChimera.UI.Menus
                 new ContextMenuItem("Tag Plant", "TagPlant")
             };
         }
-        
+
         private List<ContextMenuItem> CreateEquipmentMenuItems()
         {
             return new List<ContextMenuItem>
@@ -245,7 +253,7 @@ namespace ProjectChimera.UI.Menus
                 new ContextMenuItem("Remove Equipment", "RemoveEquipment") { validModes = new[] { GameplayMode.Construction } }
             };
         }
-        
+
         private List<ContextMenuItem> CreateFacilityMenuItems()
         {
             return new List<ContextMenuItem>
@@ -256,7 +264,7 @@ namespace ProjectChimera.UI.Menus
                 new ContextMenuItem("Facility Settings", "FacilitySettings")
             };
         }
-        
+
         private void SubscribeToEvents()
         {
             if (_modeChangedEvent != null)
@@ -265,32 +273,32 @@ namespace ProjectChimera.UI.Menus
             }
             else
             {
-                Debug.LogWarning("[ModeAwareContextualMenu] ModeChangedEvent not assigned");
+                ChimeraLogger.LogWarning("[ModeAwareContextualMenu] ModeChangedEvent not assigned");
             }
-            
+
             if (_cameraLevelChangedEvent != null)
             {
                 _cameraLevelChangedEvent.Subscribe(OnCameraLevelChanged);
             }
             else
             {
-                Debug.LogWarning("[ModeAwareContextualMenu] CameraLevelChangedEvent not assigned");
+                ChimeraLogger.LogWarning("[ModeAwareContextualMenu] CameraLevelChangedEvent not assigned");
             }
         }
-        
+
         private void UnsubscribeFromEvents()
         {
             if (_modeChangedEvent != null)
             {
                 _modeChangedEvent.Unsubscribe(OnModeChanged);
             }
-            
+
             if (_cameraLevelChangedEvent != null)
             {
                 _cameraLevelChangedEvent.Unsubscribe(OnCameraLevelChanged);
             }
         }
-        
+
         private void HandleInput()
         {
             // Handle right-click for context menu
@@ -299,7 +307,7 @@ namespace ProjectChimera.UI.Menus
                 Vector3 mousePosition = Input.mousePosition;
                 ShowContextMenuAtPosition(mousePosition);
             }
-            
+
             // Hide menu when clicking elsewhere or pressing escape
             if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Escape))
             {
@@ -309,54 +317,54 @@ namespace ProjectChimera.UI.Menus
                 }
             }
         }
-        
+
         private void OnModeChanged(ModeChangeEventData eventData)
         {
             if (_debugMode)
             {
-                Debug.Log($"[ModeAwareContextualMenu] Mode changed: {eventData.PreviousMode} → {eventData.NewMode}");
+                ChimeraLogger.Log($"[ModeAwareContextualMenu] Mode changed: {eventData.PreviousMode} → {eventData.NewMode}");
             }
-            
+
             _currentMode = eventData.NewMode;
-            
+
             // Hide current menu if visible (it may no longer be valid)
             if (_isMenuVisible)
             {
                 HideContextMenu();
             }
-            
+
             // Update mode-specific menu visibility
             UpdateModeSpecificMenus(_currentMode);
         }
-        
+
         private void OnCameraLevelChanged(CameraLevelChangeEventData eventData)
         {
             if (_debugMode)
             {
-                Debug.Log($"[ModeAwareContextualMenu] Camera level changed: {eventData.PreviousLevel} → {eventData.NewLevel}");
+                ChimeraLogger.Log($"[ModeAwareContextualMenu] Camera level changed: {eventData.PreviousLevel} → {eventData.NewLevel}");
             }
-            
+
             _currentCameraLevel = eventData.NewLevel;
-            
+
             // Update selected object if provided
             if (eventData.TargetObject != null)
             {
                 _selectedObject = eventData.TargetObject.gameObject;
             }
-            
+
             // Hide current menu if visible (it may no longer be valid for new level)
             if (_isMenuVisible)
             {
                 HideContextMenu();
             }
-            
+
             // Notify camera integrator about the level change
             if (_cameraIntegrator != null)
             {
                 _cameraIntegrator.RefreshMenu();
             }
         }
-        
+
         private void UpdateModeSpecificMenus(GameplayMode mode)
         {
             // Show/hide mode-specific context menu panels
@@ -364,68 +372,68 @@ namespace ProjectChimera.UI.Menus
             {
                 _cultivationContextMenu.SetActive(mode == GameplayMode.Cultivation);
             }
-            
+
             if (_constructionContextMenu != null)
             {
                 _constructionContextMenu.SetActive(mode == GameplayMode.Construction);
             }
-            
+
             if (_geneticsContextMenu != null)
             {
                 _geneticsContextMenu.SetActive(mode == GameplayMode.Genetics);
             }
         }
-        
+
         private void ShowContextMenuAtPosition(Vector3 screenPosition)
         {
             // Detect what object is under the cursor
             GameObject targetObject = GetObjectUnderCursor();
             _selectedObject = targetObject;
             _menuPosition = screenPosition;
-            
+
             // Build menu items for current context
             List<ContextMenuItem> validMenuItems = GetValidMenuItems(targetObject);
-            
+
             if (validMenuItems.Count == 0)
             {
                 if (_debugMode)
                 {
-                    Debug.Log("[ModeAwareContextualMenu] No valid menu items for current context");
+                    ChimeraLogger.Log("[ModeAwareContextualMenu] No valid menu items for current context");
                 }
                 return;
             }
-            
+
             // Show the context menu
             DisplayContextMenu(validMenuItems, screenPosition);
-            
+
             if (_debugMode)
             {
                 string objectName = targetObject ? targetObject.name : "None";
-                Debug.Log($"[ModeAwareContextualMenu] Context menu shown at {screenPosition} for object: {objectName}");
+                ChimeraLogger.Log($"[ModeAwareContextualMenu] Context menu shown at {screenPosition} for object: {objectName}");
             }
         }
-        
+
         private GameObject GetObjectUnderCursor()
         {
             // Cast a ray from camera through mouse position
             Camera mainCamera = Camera.main;
             if (mainCamera == null) return null;
-            
+
             Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
-            
+
             if (Physics.Raycast(ray, out hit))
             {
                 return hit.collider.gameObject;
             }
-            
+
             return null;
         }
-        
+
         private List<ContextMenuItem> GetValidMenuItems(GameObject targetObject)
         {
             List<ContextMenuItem> validItems = new List<ContextMenuItem>();
-            
+
             // Add camera level-specific menu items first
             if (_cameraIntegrator != null && _cameraIntegrator.AreLevelBasedMenusEnabled)
             {
@@ -439,14 +447,14 @@ namespace ProjectChimera.UI.Menus
                     {
                         contextItem.validObjectTypes = new[] { cameraItem.targetTag };
                     }
-                    
+
                     if (IsMenuItemValid(contextItem, targetObject))
                     {
                         validItems.Add(contextItem);
                     }
                 }
             }
-            
+
             // Add mode-specific menu items
             if (_modeMenuItems.TryGetValue(_currentMode, out var modeItems))
             {
@@ -458,7 +466,7 @@ namespace ProjectChimera.UI.Menus
                     }
                 }
             }
-            
+
             // Add object-specific menu items
             if (targetObject != null && _showObjectSpecificActions)
             {
@@ -474,18 +482,18 @@ namespace ProjectChimera.UI.Menus
                     }
                 }
             }
-            
+
             return validItems;
         }
-        
+
         private bool IsMenuItemValid(ContextMenuItem item, GameObject targetObject)
         {
             // Check if item is enabled
             if (!item.isEnabled) return false;
-            
+
             // Check if item requires selection but no object is selected
             if (item.requiresSelection && targetObject == null) return false;
-            
+
             // Check if current mode is valid for this item
             bool modeValid = false;
             foreach (var validMode in item.validModes)
@@ -497,7 +505,7 @@ namespace ProjectChimera.UI.Menus
                 }
             }
             if (!modeValid) return false;
-            
+
             // Check if object type is valid for this item
             if (targetObject != null && item.validObjectTypes.Length > 0)
             {
@@ -513,10 +521,10 @@ namespace ProjectChimera.UI.Menus
                 }
                 if (!objectTypeValid) return false;
             }
-            
+
             return true;
         }
-        
+
         private string GetObjectType(GameObject obj)
         {
             // Determine object type based on tags or component types
@@ -524,134 +532,134 @@ namespace ProjectChimera.UI.Menus
             if (obj.CompareTag("Equipment")) return "Equipment";
             if (obj.CompareTag("Facility")) return "Facility";
             if (obj.name.Contains("Wall") || obj.name.Contains("Door") || obj.name.Contains("Window")) return obj.name.Split('_')[0];
-            
+
             return "Unknown";
         }
-        
+
         private void DisplayContextMenu(List<ContextMenuItem> menuItems, Vector3 screenPosition)
         {
             // Clear existing menu items
             ClearMenuItems();
-            
+
             // Show context menu panel
             if (_contextMenuPanel != null)
             {
                 _contextMenuPanel.SetActive(true);
-                
+
                 // Position the menu at cursor position
                 RectTransform menuRect = _contextMenuPanel.GetComponent<RectTransform>();
                 if (menuRect != null)
                 {
                     menuRect.position = screenPosition;
-                    
+
                     // Adjust position if menu goes off-screen
                     AdjustMenuPosition(menuRect);
                 }
             }
-            
+
             // Create menu item buttons
             foreach (var menuItem in menuItems)
             {
                 CreateMenuItemButton(menuItem);
             }
-            
+
             _currentMenuItems = menuItems;
             _isMenuVisible = true;
-            
+
             // Animate menu appearance (placeholder)
             AnimateMenuIn();
         }
-        
+
         private void CreateMenuItemButton(ContextMenuItem menuItem)
         {
             if (_contextMenuItemPrefab == null || _menuItemsContainer == null) return;
-            
+
             // Instantiate menu item button
             Button menuButton = Instantiate(_contextMenuItemPrefab, _menuItemsContainer);
-            
+
             // Set button text
             Text buttonText = menuButton.GetComponentInChildren<Text>();
             if (buttonText != null)
             {
                 buttonText.text = menuItem.displayName;
             }
-            
+
             // Set button colors
             var colors = menuButton.colors;
             colors.normalColor = menuItem.isEnabled ? _menuItemColor : _disabledItemColor;
             colors.highlightedColor = _menuItemHoverColor;
             menuButton.colors = colors;
-            
+
             // Set button interactivity
             menuButton.interactable = menuItem.isEnabled;
-            
+
             // Add click handler
             if (menuItem.isEnabled)
             {
                 menuButton.onClick.AddListener(() => OnMenuItemClicked(menuItem));
             }
         }
-        
+
         private void AdjustMenuPosition(RectTransform menuRect)
         {
             // Get screen bounds
             Vector2 screenSize = new Vector2(Screen.width, Screen.height);
             Vector2 menuSize = menuRect.sizeDelta;
-            
+
             Vector3 adjustedPosition = menuRect.position;
-            
+
             // Adjust X position if menu goes off right edge
             if (adjustedPosition.x + menuSize.x > screenSize.x)
             {
                 adjustedPosition.x = screenSize.x - menuSize.x;
             }
-            
+
             // Adjust Y position if menu goes off bottom edge
             if (adjustedPosition.y - menuSize.y < 0)
             {
                 adjustedPosition.y = menuSize.y;
             }
-            
+
             menuRect.position = adjustedPosition;
         }
-        
+
         private void ClearMenuItems()
         {
             if (_menuItemsContainer == null) return;
-            
+
             // Destroy all existing menu item GameObjects
             foreach (Transform child in _menuItemsContainer)
             {
                 Destroy(child.gameObject);
             }
         }
-        
+
         private void HideContextMenu()
         {
             if (!_isMenuVisible) return;
-            
+
             // Animate menu disappearance (placeholder)
             AnimateMenuOut();
-            
+
             // Clear menu items
             ClearMenuItems();
             _currentMenuItems.Clear();
-            
+
             // Hide menu panel
             if (_contextMenuPanel != null)
             {
                 _contextMenuPanel.SetActive(false);
             }
-            
+
             _isMenuVisible = false;
             _selectedObject = null;
-            
+
             if (_debugMode)
             {
-                Debug.Log("[ModeAwareContextualMenu] Context menu hidden");
+                ChimeraLogger.Log("[ModeAwareContextualMenu] Context menu hidden");
             }
         }
-        
+
         private void HideAllMenus()
         {
             if (_contextMenuPanel != null) _contextMenuPanel.SetActive(false);
@@ -659,10 +667,10 @@ namespace ProjectChimera.UI.Menus
             if (_cultivationContextMenu != null) _cultivationContextMenu.SetActive(false);
             if (_constructionContextMenu != null) _constructionContextMenu.SetActive(false);
             if (_geneticsContextMenu != null) _geneticsContextMenu.SetActive(false);
-            
+
             _isMenuVisible = false;
         }
-        
+
         private void AnimateMenuIn()
         {
             // Placeholder for menu animation - would use actual animation system
@@ -676,7 +684,7 @@ namespace ProjectChimera.UI.Menus
                 canvasGroup.alpha = 1f;
             }
         }
-        
+
         private void AnimateMenuOut()
         {
             // Placeholder for menu animation - would use actual animation system
@@ -689,21 +697,21 @@ namespace ProjectChimera.UI.Menus
                 }
             }
         }
-        
+
         private void OnMenuItemClicked(ContextMenuItem menuItem)
         {
             if (_debugMode)
             {
-                Debug.Log($"[ModeAwareContextualMenu] Menu item clicked: {menuItem.actionName}");
+                ChimeraLogger.Log($"[ModeAwareContextualMenu] Menu item clicked: {menuItem.actionName}");
             }
-            
+
             // Execute menu item action
             ExecuteMenuAction(menuItem.actionName, _selectedObject);
-            
+
             // Hide menu after action
             HideContextMenu();
         }
-        
+
         private void ExecuteMenuAction(string actionName, GameObject targetObject)
         {
             // Check if this is a camera level action first
@@ -713,10 +721,10 @@ namespace ProjectChimera.UI.Menus
                 _cameraIntegrator.ExecuteCameraLevelAction(actionName, target);
                 return;
             }
-            
+
             // This would integrate with your actual game systems
             // For now, it's a placeholder implementation
-            
+
             switch (actionName)
             {
                 // Cultivation actions
@@ -730,7 +738,7 @@ namespace ProjectChimera.UI.Menus
                 case "ScheduleCare":
                     ExecuteCultivationAction(actionName, targetObject);
                     break;
-                    
+
                 // Construction actions
                 case "PlaceWall":
                 case "AddDoor":
@@ -742,7 +750,7 @@ namespace ProjectChimera.UI.Menus
                 case "CheckConnections":
                     ExecuteConstructionAction(actionName, targetObject);
                     break;
-                    
+
                 // Genetics actions
                 case "AnalyzeGenetics":
                 case "ViewLineage":
@@ -754,7 +762,7 @@ namespace ProjectChimera.UI.Menus
                 case "ExportGenetics":
                     ExecuteGeneticsAction(actionName, targetObject);
                     break;
-                    
+
                 // Object-specific actions
                 case "SelectPlant":
                 case "MovePlant":
@@ -772,60 +780,60 @@ namespace ProjectChimera.UI.Menus
                 case "FacilitySettings":
                     ExecuteObjectAction(actionName, targetObject);
                     break;
-                    
+
                 default:
                     if (_debugMode)
                     {
-                        Debug.LogWarning($"[ModeAwareContextualMenu] Unknown action: {actionName}");
+                        ChimeraLogger.LogWarning($"[ModeAwareContextualMenu] Unknown action: {actionName}");
                     }
                     break;
             }
         }
-        
+
         private void ExecuteCultivationAction(string actionName, GameObject targetObject)
         {
             if (_debugMode)
             {
                 string objectName = targetObject ? targetObject.name : "None";
-                Debug.Log($"[ModeAwareContextualMenu] Executing cultivation action '{actionName}' on object: {objectName}");
+                ChimeraLogger.Log($"[ModeAwareContextualMenu] Executing cultivation action '{actionName}' on object: {objectName}");
             }
-            
+
             // Placeholder for actual cultivation system integration
         }
-        
+
         private void ExecuteConstructionAction(string actionName, GameObject targetObject)
         {
             if (_debugMode)
             {
                 string objectName = targetObject ? targetObject.name : "None";
-                Debug.Log($"[ModeAwareContextualMenu] Executing construction action '{actionName}' on object: {objectName}");
+                ChimeraLogger.Log($"[ModeAwareContextualMenu] Executing construction action '{actionName}' on object: {objectName}");
             }
-            
+
             // Placeholder for actual construction system integration
         }
-        
+
         private void ExecuteGeneticsAction(string actionName, GameObject targetObject)
         {
             if (_debugMode)
             {
                 string objectName = targetObject ? targetObject.name : "None";
-                Debug.Log($"[ModeAwareContextualMenu] Executing genetics action '{actionName}' on object: {objectName}");
+                ChimeraLogger.Log($"[ModeAwareContextualMenu] Executing genetics action '{actionName}' on object: {objectName}");
             }
-            
+
             // Placeholder for actual genetics system integration
         }
-        
+
         private void ExecuteObjectAction(string actionName, GameObject targetObject)
         {
             if (_debugMode)
             {
                 string objectName = targetObject ? targetObject.name : "None";
-                Debug.Log($"[ModeAwareContextualMenu] Executing object action '{actionName}' on object: {objectName}");
+                ChimeraLogger.Log($"[ModeAwareContextualMenu] Executing object action '{actionName}' on object: {objectName}");
             }
-            
+
             // Placeholder for actual object manipulation system integration
         }
-        
+
         private bool IsCameraLevelAction(string actionName)
         {
             // Check if action is a camera level specific action
@@ -837,9 +845,9 @@ namespace ProjectChimera.UI.Menus
                    actionName.Contains("Info") || actionName.Contains("Actions") ||
                    actionName.Contains("Stats") || actionName.Contains("Settings");
         }
-        
+
         #region Public Interface
-        
+
         /// <summary>
         /// Manually show context menu at specified position
         /// </summary>
@@ -848,7 +856,7 @@ namespace ProjectChimera.UI.Menus
             _selectedObject = targetObject;
             ShowContextMenuAtPosition(screenPosition);
         }
-        
+
         /// <summary>
         /// Hide the context menu if visible
         /// </summary>
@@ -859,16 +867,16 @@ namespace ProjectChimera.UI.Menus
                 HideContextMenu();
             }
         }
-        
+
         /// <summary>
         /// Enable/disable debug mode at runtime
         /// </summary>
         public void SetDebugMode(bool enabled)
         {
             _debugMode = enabled;
-            Debug.Log($"[ModeAwareContextualMenu] Debug mode {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.Log($"[ModeAwareContextualMenu] Debug mode {(enabled ? "enabled" : "disabled")}");
         }
-        
+
         /// <summary>
         /// Get current menu state
         /// </summary>
@@ -876,11 +884,11 @@ namespace ProjectChimera.UI.Menus
         public GameplayMode CurrentMode => _currentMode;
         public CameraLevel CurrentCameraLevel => _currentCameraLevel;
         public GameObject SelectedObject => _selectedObject;
-        
+
         #endregion
-        
+
         #if UNITY_EDITOR
-        
+
         /// <summary>
         /// Editor-only method for testing context menu
         /// </summary>
@@ -894,10 +902,24 @@ namespace ProjectChimera.UI.Menus
             }
             else
             {
-                Debug.Log("[ModeAwareContextualMenu] Test only works during play mode");
+                ChimeraLogger.Log("[ModeAwareContextualMenu] Test only works during play mode");
             }
         }
-        
+
         #endif
+
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+    public virtual void OnRegistered()
+    {
+        // Override in derived classes if needed
     }
+
+    public virtual void OnUnregistered()
+    {
+        // Override in derived classes if needed
+    }
+}
 }

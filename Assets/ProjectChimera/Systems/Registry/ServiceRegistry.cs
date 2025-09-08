@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +23,8 @@ namespace ProjectChimera.Systems.Registry
             {
                 if (_instance == null)
                 {
-                    _instance = FindObjectOfType<ServiceRegistry>();
+                    // Try ServiceContainer first, then fall back to scene search, finally create if needed
+                    _instance = ServiceContainerFactory.Instance?.TryResolve<ServiceRegistry>();
                     if (_instance == null)
                     {
                         GameObject go = new GameObject("ServiceRegistry");
@@ -99,7 +101,7 @@ namespace ProjectChimera.Systems.Registry
         {
             if (service == null)
             {
-                Debug.LogError($"Cannot register null service of type {typeof(T).Name}");
+                ChimeraLogger.LogError($"Cannot register null service of type {typeof(T).Name}");
                 return;
             }
 
@@ -107,7 +109,7 @@ namespace ProjectChimera.Systems.Registry
             
             if (_services.ContainsKey(serviceType))
             {
-                Debug.LogWarning($"Service {serviceType.Name} is already registered. Replacing existing service.");
+                ChimeraLogger.LogWarning($"Service {serviceType.Name} is already registered. Replacing existing service.");
             }
 
             _services[serviceType] = service;
@@ -130,7 +132,7 @@ namespace ProjectChimera.Systems.Registry
 
             OnServiceRegistered?.Invoke(service);
             
-            Debug.Log($"Registered service: {serviceType.Name} in domain: {domain}");
+            ChimeraLogger.Log($"Registered service: {serviceType.Name} in domain: {domain}");
         }
 
         /// <summary>
@@ -144,7 +146,7 @@ namespace ProjectChimera.Systems.Registry
                 return service as T;
             }
             
-            Debug.LogWarning($"Service {serviceType.Name} not found in registry");
+            ChimeraLogger.LogWarning($"Service {serviceType.Name} not found in registry");
             return null;
         }
 
@@ -158,7 +160,7 @@ namespace ProjectChimera.Systems.Registry
                 return service;
             }
             
-            Debug.LogWarning($"Service {serviceName} not found in registry");
+            ChimeraLogger.LogWarning($"Service {serviceName} not found in registry");
             return null;
         }
 
@@ -200,7 +202,7 @@ namespace ProjectChimera.Systems.Registry
         /// </summary>
         public void InitializeAllServices()
         {
-            Debug.Log($"Initializing {_services.Count} registered services...");
+            ChimeraLogger.Log($"Initializing {_services.Count} registered services...");
             
             foreach (var service in _services.Values)
             {
@@ -210,11 +212,11 @@ namespace ProjectChimera.Systems.Registry
                     {
                         service.Initialize();
                         OnServiceInitialized?.Invoke(service);
-                        Debug.Log($"Initialized service: {service.GetType().Name}");
+                        ChimeraLogger.Log($"Initialized service: {service.GetType().Name}");
                     }
                     catch (Exception ex)
                     {
-                        Debug.LogError($"Failed to initialize service {service.GetType().Name}: {ex.Message}");
+                        ChimeraLogger.LogError($"Failed to initialize service {service.GetType().Name}: {ex.Message}");
                     }
                 }
             }
@@ -222,7 +224,7 @@ namespace ProjectChimera.Systems.Registry
             if (AllServicesInitialized)
             {
                 OnAllServicesInitialized?.Invoke();
-                Debug.Log("All services initialized successfully");
+                ChimeraLogger.Log("All services initialized successfully");
             }
         }
 
@@ -231,7 +233,7 @@ namespace ProjectChimera.Systems.Registry
         /// </summary>
         public void ShutdownAllServices()
         {
-            Debug.Log($"Shutting down {_services.Count} registered services...");
+            ChimeraLogger.Log($"Shutting down {_services.Count} registered services...");
             
             foreach (var service in _services.Values.Reverse())
             {
@@ -239,11 +241,11 @@ namespace ProjectChimera.Systems.Registry
                 {
                     service.Shutdown();
                     OnServiceShutdown?.Invoke(service);
-                    Debug.Log($"Shutdown service: {service.GetType().Name}");
+                    ChimeraLogger.Log($"Shutdown service: {service.GetType().Name}");
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"Failed to shutdown service {service.GetType().Name}: {ex.Message}");
+                    ChimeraLogger.LogError($"Failed to shutdown service {service.GetType().Name}: {ex.Message}");
                 }
             }
             
@@ -284,7 +286,7 @@ namespace ProjectChimera.Systems.Registry
         private void RegisterCoreServices()
         {
             // Core services will be auto-registered by GameManager and other systems
-            Debug.Log("ServiceRegistry ready for service registration");
+            ChimeraLogger.Log("ServiceRegistry ready for service registration");
         }
 
         #endregion
@@ -319,14 +321,14 @@ namespace ProjectChimera.Systems.Registry
         [ContextMenu("Log Service Registry Status")]
         public void LogRegistryStatus()
         {
-            Debug.Log($"=== SERVICE REGISTRY STATUS ===");
-            Debug.Log($"Total Services: {RegisteredServiceCount}");
-            Debug.Log($"Initialized: {InitializedServiceCount}");
-            Debug.Log($"Pending: {RegisteredServiceCount - InitializedServiceCount}");
+            ChimeraLogger.Log($"=== SERVICE REGISTRY STATUS ===");
+            ChimeraLogger.Log($"Total Services: {RegisteredServiceCount}");
+            ChimeraLogger.Log($"Initialized: {InitializedServiceCount}");
+            ChimeraLogger.Log($"Pending: {RegisteredServiceCount - InitializedServiceCount}");
             
             foreach (var domain in _servicesByDomain)
             {
-                Debug.Log($"Domain {domain.Key}: {domain.Value.Count} services");
+                ChimeraLogger.Log($"Domain {domain.Key}: {domain.Value.Count} services");
             }
         }
 

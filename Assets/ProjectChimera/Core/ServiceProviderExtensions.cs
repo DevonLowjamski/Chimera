@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core.DependencyInjection
 {
@@ -247,7 +248,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[ServiceProviderExtensions] Error executing action on service {typeof(T).Name}: {ex.Message}");
+                    ChimeraLogger.LogError($"[ServiceProviderExtensions] Error executing action on service {typeof(T).Name}: {ex.Message}");
                 }
             }
         }
@@ -270,7 +271,7 @@ namespace ProjectChimera.Core.DependencyInjection
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ServiceProviderExtensions] Error getting services of type {typeof(T).Name}: {ex.Message}");
+                ChimeraLogger.LogError($"[ServiceProviderExtensions] Error getting services of type {typeof(T).Name}: {ex.Message}");
                 return false;
             }
         }

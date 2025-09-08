@@ -3,8 +3,9 @@
     "rootNamespace": "ProjectChimera.Systems.Cultivation",
     "references": [
         "ProjectChimera.Core",
-        "ProjectChimera.Core.Events",
-        "ProjectChimera.Core.ServiceContainer",
+        "ProjectChimera.Systems.Events",
+        "ProjectChimera.Systems.Registry",
+        "ProjectChimera.Systems.Diagnostics",
         "ProjectChimera.Shared",
         "ProjectChimera.Data.Shared",
         "ProjectChimera.Data.Cultivation",
@@ -14,10 +15,7 @@
         "ProjectChimera.Data.Genetics",
         "ProjectChimera.Data.Equipment",
         "ProjectChimera.Data.Events",
-        "ProjectChimera.Systems.Environment",
-        "ProjectChimera.Systems.Economy",
-        "ProjectChimera.Systems",
-        "Unity.ugui"
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,9 +1,9 @@
 using UnityEngine;
-using ProjectChimera.Core;
 using ProjectChimera.Shared;
 using ProjectChimera.Data.Genetics;
 using System;
 using ProjectChimera.Data.Shared;
+using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 
 namespace ProjectChimera.Data.Cultivation
 {
@@ -286,7 +286,7 @@ namespace ProjectChimera.Data.Cultivation
             // Validate stage targets
             if (_stageTargets == null || _stageTargets.Length == 0)
             {
-                Debug.LogWarning($"VPDManagementSO '{name}' has no stage targets defined.", this);
+                SharedLogger.LogWarning($"VPDManagementSO '{name}' has no stage targets defined.", this);
                 isValid = false;
             }
             else
@@ -295,13 +295,13 @@ namespace ProjectChimera.Data.Cultivation
                 {
                     if (target.MinVPD >= target.MaxVPD)
                     {
-                        Debug.LogWarning($"VPDManagementSO '{name}' has invalid VPD range for stage {target.Stage}.", this);
+                        SharedLogger.LogWarning($"VPDManagementSO '{name}' has invalid VPD range for stage {target.Stage}.", this);
                         isValid = false;
                     }
                     
                     if (target.OptimalVPD < target.MinVPD || target.OptimalVPD > target.MaxVPD)
                     {
-                        Debug.LogWarning($"VPDManagementSO '{name}' has optimal VPD outside valid range for stage {target.Stage}.", this);
+                        SharedLogger.LogWarning($"VPDManagementSO '{name}' has optimal VPD outside valid range for stage {target.Stage}.", this);
                         isValid = false;
                     }
                 }
@@ -314,7 +314,7 @@ namespace ProjectChimera.Data.Cultivation
                 {
                     if (adjustment.VPDMultiplier <= 0f || adjustment.VPDMultiplier > 2f)
                     {
-                        Debug.LogWarning($"VPDManagementSO '{name}' has invalid VPD multiplier: {adjustment.VPDMultiplier}.", this);
+                        SharedLogger.LogWarning($"VPDManagementSO '{name}' has invalid VPD multiplier: {adjustment.VPDMultiplier}.", this);
                         isValid = false;
                     }
                 }
@@ -323,7 +323,7 @@ namespace ProjectChimera.Data.Cultivation
             // Validate control parameters
             if (_vpdChangeRateLimit <= 0f)
             {
-                Debug.LogWarning($"VPDManagementSO '{name}' has invalid VPD change rate limit.", this);
+                SharedLogger.LogWarning($"VPDManagementSO '{name}' has invalid VPD change rate limit.", this);
                 _vpdChangeRateLimit = 0.1f;
                 isValid = false;
             }

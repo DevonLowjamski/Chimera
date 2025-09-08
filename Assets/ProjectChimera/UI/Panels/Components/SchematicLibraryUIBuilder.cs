@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Data.Construction;
+using ProjectChimera.Shared;
 
 namespace ProjectChimera.UI.Panels.Components
 {
@@ -695,14 +696,7 @@ namespace ProjectChimera.UI.Panels.Components
         #endregion
     }
     
-    /// <summary>
-    /// Library view modes
-    /// </summary>
-    public enum LibraryViewMode
-    {
-        Grid,
-        List
-    }
+    // LibraryViewMode enum moved to ProjectChimera.Shared for cross-assembly access
     
     /// <summary>
     /// Library sort modes

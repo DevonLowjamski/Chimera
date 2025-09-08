@@ -1,7 +1,6 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
-using ProjectChimera.Core;
 
 namespace ProjectChimera.Data.Construction
 {

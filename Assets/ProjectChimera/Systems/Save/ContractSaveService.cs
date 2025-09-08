@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Save;
@@ -59,7 +60,7 @@ namespace ProjectChimera.Systems.Save
         private void InitializeService()
         {
             _isInitialized = true;
-            Debug.Log("[ContractSaveService] Service initialized successfully");
+            ChimeraLogger.Log("[ContractSaveService] Service initialized successfully");
         }
 
         private void RegisterWithSaveManager()
@@ -69,11 +70,11 @@ namespace ProjectChimera.Systems.Save
             {
                 _saveManager = saveManager;
                 // Register with save manager
-                Debug.Log("[ContractSaveService] Registered with SaveManager");
+                ChimeraLogger.Log("[ContractSaveService] Registered with SaveManager");
             }
             else
             {
-                Debug.LogWarning("[ContractSaveService] SaveManager not found - save integration disabled");
+                ChimeraLogger.LogWarning("[ContractSaveService] SaveManager not found - save integration disabled");
             }
         }
 
@@ -87,9 +88,9 @@ namespace ProjectChimera.Systems.Save
             }
 
             if (_contractGenerationService == null)
-                Debug.LogWarning("[ContractSaveService] ContractGenerationService not found");
+                ChimeraLogger.LogWarning("[ContractSaveService] ContractGenerationService not found");
             if (_contractTrackingService == null)
-                Debug.LogWarning("[ContractSaveService] ContractTrackingService not found");
+                ChimeraLogger.LogWarning("[ContractSaveService] ContractTrackingService not found");
         }
 
         #endregion
@@ -141,12 +142,12 @@ namespace ProjectChimera.Systems.Save
                     ValidateContractData(contractsState);
                 }
 
-                Debug.Log($"[ContractSaveService] Successfully gathered contract state: {contractsState.ActiveContracts.Count} active, {contractsState.CompletedContracts.Count} completed contracts");
+                ChimeraLogger.Log($"[ContractSaveService] Successfully gathered contract state: {contractsState.ActiveContracts.Count} active, {contractsState.CompletedContracts.Count} completed contracts");
                 return contractsState;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ContractSaveService] Error gathering contract state: {ex.Message}");
+                ChimeraLogger.LogError($"[ContractSaveService] Error gathering contract state: {ex.Message}");
                 return new ContractsStateDTO { SaveTimestamp = DateTime.Now, SaveVersion = "1.0" };
             }
         }
@@ -158,7 +159,7 @@ namespace ProjectChimera.Systems.Save
         {
             if (contractData == null)
             {
-                Debug.LogWarning("[ContractSaveService] Contract data is null - cannot apply state");
+                ChimeraLogger.LogWarning("[ContractSaveService] Contract data is null - cannot apply state");
                 return;
             }
 
@@ -166,7 +167,7 @@ namespace ProjectChimera.Systems.Save
 
             try
             {
-                Debug.Log($"[ContractSaveService] Applying contract state from {contractData.SaveTimestamp}");
+                ChimeraLogger.Log($"[ContractSaveService] Applying contract state from {contractData.SaveTimestamp}");
 
                 // Apply generation state
                 if (contractData.GenerationState != null && _contractGenerationService != null)
@@ -204,11 +205,11 @@ namespace ProjectChimera.Systems.Save
                     await ApplyPlayerStats(contractData.PlayerStats);
                 }
 
-                Debug.Log("[ContractSaveService] Contract state applied successfully");
+                ChimeraLogger.Log("[ContractSaveService] Contract state applied successfully");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ContractSaveService] Error applying contract state: {ex.Message}");
+                ChimeraLogger.LogError($"[ContractSaveService] Error applying contract state: {ex.Message}");
             }
         }
 
@@ -244,12 +245,12 @@ namespace ProjectChimera.Systems.Save
 
                 result.Description = $"Processed {expiredContracts} expired contracts, {completedContracts} automatic completions";
                 
-                Debug.Log($"[ContractSaveService] Offline progression: {offlineHours}h, {result.Description}");
+                ChimeraLogger.Log($"[ContractSaveService] Offline progression: {offlineHours}h, {result.Description}");
                 return result;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ContractSaveService] Error processing offline progression: {ex.Message}");
+                ChimeraLogger.LogError($"[ContractSaveService] Error processing offline progression: {ex.Message}");
                 return new OfflineProgressionResult
                 {
                     SystemName = SystemName,
@@ -385,7 +386,7 @@ namespace ProjectChimera.Systems.Save
             if (_contractGenerationService == null) return;
 
             // Temporary implementation - will apply settings when service methods are available
-            Debug.Log($"[ContractSaveService] Applying generation state: Active={generationState.IsGenerationActive}");
+            ChimeraLogger.Log($"[ContractSaveService] Applying generation state: Active={generationState.IsGenerationActive}");
             
             await Task.Delay(1); // Async consistency
         }
@@ -395,7 +396,7 @@ namespace ProjectChimera.Systems.Save
             if (_contractTrackingService == null) return;
 
             // Temporary implementation - will apply settings when service methods are available
-            Debug.Log($"[ContractSaveService] Applying tracking state: Active={trackingState.IsTrackingActive}");
+            ChimeraLogger.Log($"[ContractSaveService] Applying tracking state: Active={trackingState.IsTrackingActive}");
             
             await Task.Delay(1); // Async consistency
         }
@@ -403,7 +404,7 @@ namespace ProjectChimera.Systems.Save
         private async Task ApplyMarketState(ContractMarketStateDTO marketState)
         {
             // Temporary implementation - will apply market settings when service methods are available
-            Debug.Log($"[ContractSaveService] Applying market state: Demand={marketState.MarketDemandModifier}");
+            ChimeraLogger.Log($"[ContractSaveService] Applying market state: Demand={marketState.MarketDemandModifier}");
             
             await Task.Delay(1); // Async consistency
         }
@@ -413,7 +414,7 @@ namespace ProjectChimera.Systems.Save
             if (_contractTrackingService == null) return;
 
             // Temporary implementation - will restore contracts when service methods are available
-            Debug.Log($"[ContractSaveService] Applying {activeContracts.Count} active contracts");
+            ChimeraLogger.Log($"[ContractSaveService] Applying {activeContracts.Count} active contracts");
             
             await Task.Delay(1); // Async consistency
         }
@@ -423,7 +424,7 @@ namespace ProjectChimera.Systems.Save
             if (_contractTrackingService == null) return;
 
             // Temporary implementation - will restore contracts when service methods are available
-            Debug.Log($"[ContractSaveService] Applying {completedContracts.Count} completed contracts");
+            ChimeraLogger.Log($"[ContractSaveService] Applying {completedContracts.Count} completed contracts");
             
             await Task.Delay(1); // Async consistency
         }
@@ -433,7 +434,7 @@ namespace ProjectChimera.Systems.Save
             if (_contractTrackingService == null) return;
 
             // Temporary implementation - will restore stats when service methods are available
-            Debug.Log($"[ContractSaveService] Applying player stats: Completed={playerStats.TotalContractsCompleted}");
+            ChimeraLogger.Log($"[ContractSaveService] Applying player stats: Completed={playerStats.TotalContractsCompleted}");
             
             await Task.Delay(1); // Async consistency
         }
@@ -495,7 +496,7 @@ namespace ProjectChimera.Systems.Save
             if (_contractTrackingService == null) return 0;
 
             // Temporary implementation - will process expiration when service methods are available
-            Debug.Log($"[ContractSaveService] Processing contract expirations for {offlineHours} hours");
+            ChimeraLogger.Log($"[ContractSaveService] Processing contract expirations for {offlineHours} hours");
             return 0;
         }
 
@@ -504,7 +505,7 @@ namespace ProjectChimera.Systems.Save
             if (_contractTrackingService == null) return 0;
 
             // Temporary implementation - will process completions when service methods are available
-            Debug.Log($"[ContractSaveService] Processing automatic completions for {offlineHours} hours");
+            ChimeraLogger.Log($"[ContractSaveService] Processing automatic completions for {offlineHours} hours");
             return 0;
         }
 

@@ -1,3 +1,5 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +11,7 @@ namespace ProjectChimera.Systems.Analytics
     /// Registry for managing analytics providers and their integration with AnalyticsManager
     /// Automatically discovers providers and manages metric collection from multiple sources
     /// </summary>
-    public class AnalyticsProviderRegistry : MonoBehaviour
+    public class AnalyticsProviderRegistry : MonoBehaviour, ITickable
     {
         [Header("Registry Configuration")]
         [SerializeField] private bool _enableAutoDiscovery = true;
@@ -30,16 +32,19 @@ namespace ProjectChimera.Systems.Analytics
 
         private void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             InitializeRegistry();
         }
 
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             if (_enableAutoDiscovery && Time.time >= _lastDiscoveryTime + _discoveryInterval)
             {
                 DiscoverProviders();
                 _lastDiscoveryTime = Time.time;
-            }
+
+    }
         }
 
         #endregion
@@ -54,7 +59,7 @@ namespace ProjectChimera.Systems.Analytics
                 _analyticsService = AnalyticsManager.GetService();
                 if (_analyticsService == null)
                 {
-                    Debug.LogWarning("[AnalyticsProviderRegistry] AnalyticsService not available - registry will operate in limited mode");
+                    ChimeraLogger.LogWarning("[AnalyticsProviderRegistry] AnalyticsService not available - registry will operate in limited mode");
                 }
 
                 // Initial discovery
@@ -62,11 +67,11 @@ namespace ProjectChimera.Systems.Analytics
                 _lastDiscoveryTime = Time.time;
 
                 if (_enableDebugLogging)
-                    Debug.Log("[AnalyticsProviderRegistry] Registry initialized successfully");
+                    ChimeraLogger.Log("[AnalyticsProviderRegistry] Registry initialized successfully");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[AnalyticsProviderRegistry] Failed to initialize: {ex.Message}");
+                ChimeraLogger.LogError($"[AnalyticsProviderRegistry] Failed to initialize: {ex.Message}");
             }
         }
 
@@ -79,9 +84,10 @@ namespace ProjectChimera.Systems.Analytics
             try
             {
                 var discoveredCount = 0;
-                
+
                 // Find all MonoBehaviour components that implement IAnalyticsProvider
-                var allComponents = UnityEngine.Object.FindObjectsOfType<MonoBehaviour>();
+                // TODO: ServiceContainer.GetAll<MonoBehaviour>()
+                var allComponents = new MonoBehaviour[0];
                 foreach (var component in allComponents)
                 {
                     if (component is IAnalyticsProvider provider)
@@ -96,11 +102,11 @@ namespace ProjectChimera.Systems.Analytics
                 }
 
                 if (_enableDebugLogging && discoveredCount > 0)
-                    Debug.Log($"[AnalyticsProviderRegistry] Discovered {discoveredCount} new providers");
+                    ChimeraLogger.Log($"[AnalyticsProviderRegistry] Discovered {discoveredCount} new providers");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[AnalyticsProviderRegistry] Error during provider discovery: {ex.Message}");
+                ChimeraLogger.LogError($"[AnalyticsProviderRegistry] Error during provider discovery: {ex.Message}");
             }
         }
 
@@ -115,7 +121,7 @@ namespace ProjectChimera.Systems.Analytics
                 if (_providers.ContainsKey(providerName))
                 {
                     if (_enableDebugLogging)
-                        Debug.LogWarning($"[AnalyticsProviderRegistry] Provider '{providerName}' already registered");
+                        ChimeraLogger.LogWarning($"[AnalyticsProviderRegistry] Provider '{providerName}' already registered");
                     return;
                 }
 
@@ -124,7 +130,7 @@ namespace ProjectChimera.Systems.Analytics
                 {
                     if (!baseProvider.ValidateMetrics())
                     {
-                        Debug.LogWarning($"[AnalyticsProviderRegistry] Provider '{providerName}' failed validation");
+                        ChimeraLogger.LogWarning($"[AnalyticsProviderRegistry] Provider '{providerName}' failed validation");
                     }
                 }
 
@@ -149,11 +155,11 @@ namespace ProjectChimera.Systems.Analytics
                 OnProvidersChanged?.Invoke();
 
                 if (_enableDebugLogging)
-                    Debug.Log($"[AnalyticsProviderRegistry] Registered provider '{providerName}' with {provider.GetAvailableMetrics().Count()} metrics");
+                    ChimeraLogger.Log($"[AnalyticsProviderRegistry] Registered provider '{providerName}' with {provider.GetAvailableMetrics().Count()} metrics");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[AnalyticsProviderRegistry] Failed to register provider '{providerName}': {ex.Message}");
+                ChimeraLogger.LogError($"[AnalyticsProviderRegistry] Failed to register provider '{providerName}': {ex.Message}");
             }
         }
 
@@ -177,11 +183,11 @@ namespace ProjectChimera.Systems.Analytics
                 OnProvidersChanged?.Invoke();
 
                 if (_enableDebugLogging)
-                    Debug.Log($"[AnalyticsProviderRegistry] Unregistered provider '{providerName}'");
+                    ChimeraLogger.Log($"[AnalyticsProviderRegistry] Unregistered provider '{providerName}'");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[AnalyticsProviderRegistry] Failed to unregister provider '{providerName}': {ex.Message}");
+                ChimeraLogger.LogError($"[AnalyticsProviderRegistry] Failed to unregister provider '{providerName}': {ex.Message}");
             }
         }
 
@@ -197,15 +203,15 @@ namespace ProjectChimera.Systems.Analytics
                 {
                     var collector = new ProviderMetricCollector(provider, metricName);
                     var fullMetricName = $"{providerName}_{metricName}";
-                    
+
                     _analyticsService.RegisterMetricCollector(fullMetricName, collector);
 
                     if (_enableDebugLogging)
-                        Debug.Log($"[AnalyticsProviderRegistry] Registered metric collector: {fullMetricName}");
+                        ChimeraLogger.Log($"[AnalyticsProviderRegistry] Registered metric collector: {fullMetricName}");
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[AnalyticsProviderRegistry] Failed to register metric collector '{metricName}' for provider '{providerName}': {ex.Message}");
+                    ChimeraLogger.LogError($"[AnalyticsProviderRegistry] Failed to register metric collector '{metricName}' for provider '{providerName}': {ex.Message}");
                 }
             }
         }
@@ -225,7 +231,7 @@ namespace ProjectChimera.Systems.Analytics
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[AnalyticsProviderRegistry] Failed to unregister metric collector '{metricName}' for provider '{providerName}': {ex.Message}");
+                    ChimeraLogger.LogError($"[AnalyticsProviderRegistry] Failed to unregister metric collector '{metricName}' for provider '{providerName}': {ex.Message}");
                 }
             }
         }
@@ -291,7 +297,22 @@ namespace ProjectChimera.Systems.Analytics
         }
 
         #endregion
+
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+    public virtual void OnRegistered()
+    {
+        // Override in derived classes if needed
     }
+
+    public virtual void OnUnregistered()
+    {
+        // Override in derived classes if needed
+    }
+
+}
 
     /// <summary>
     /// Metric collector that wraps an analytics provider
@@ -325,3 +346,5 @@ namespace ProjectChimera.Systems.Analytics
         public List<string> AvailableMetrics { get; set; } = new List<string>();
     }
 }
+
+

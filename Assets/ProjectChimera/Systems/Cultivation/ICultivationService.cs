@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
-using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Genetics;
+using ProjectChimera.Data.Cultivation;
 using ProjectChimera.Data.Environment;
 using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
@@ -24,20 +25,20 @@ namespace ProjectChimera.Systems.Cultivation
     /// </summary>
     public interface IPlantLifecycleManager : ICultivationService
     {
-        PlantInstanceSO PlantSeed(string plantName, PlantStrainSO strain, GenotypeDataSO genotype, Vector3 position, string zoneId = "default");
+        PlantInstanceSO PlantSeed(string plantName, object strain, GenotypeDataSO genotype, Vector3 position, string zoneId = "default");
         bool RemovePlant(string plantId, bool isHarvest = false);
         PlantInstanceSO GetPlant(string plantId);
         IEnumerable<PlantInstanceSO> GetAllPlants();
         IEnumerable<PlantInstanceSO> GetPlantsByStage(PlantGrowthStage stage);
         IEnumerable<PlantInstanceSO> GetPlantsNeedingAttention();
-        
+
         /// <summary>
         /// Sets dependencies for PlantLifecycleManager after creation to resolve circular dependency issues.
         /// </summary>
         /// <param name="environmentalManager">The environmental manager dependency</param>
         /// <param name="harvestManager">The harvest manager dependency</param>
         void SetDependencies(IEnvironmentalManager environmentalManager, IHarvestManager harvestManager);
-        
+
         int ActivePlantCount { get; }
         int TotalPlantsGrown { get; }
         int TotalPlantsHarvested { get; }
@@ -81,7 +82,7 @@ namespace ProjectChimera.Systems.Cultivation
     /// <summary>
     /// Interface for harvest management
     /// </summary>
-    public interface IHarvestManager : ICultivationService
+    public interface ICultivationHarvestManager : ICultivationService
     {
         void ProcessHarvest(PlantInstanceSO plant);
         void AddHarvestToInventory(PlantInstanceSO plant, float yieldAmount, float qualityScore);

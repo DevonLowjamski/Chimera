@@ -1,0 +1,24 @@
+using System;
+using UnityEngine;
+
+namespace ProjectChimera.Data.Genetics
+{
+    [Serializable]
+    public class BaseSpecies
+    {
+        [Header("Species Information")]
+        public string SpeciesName;
+        public string ScientificName;
+
+        [Header("Growth Characteristics")]
+        public Vector2 TemperatureRange = new Vector2(18f, 26f);
+        public Vector2 HumidityRange = new Vector2(40f, 60f);
+        public Vector2 LightRange = new Vector2(200f, 1000f);
+        public Vector2 CO2Range = new Vector2(400f, 1200f);
+
+        [Header("Yield Information")]
+        public Vector2 YieldPerPlantRange = new Vector2(50f, 150f);
+        public float BaseHealthModifier = 1f;
+        public float HealthRecoveryRate = 0.1f;
+    }
+}

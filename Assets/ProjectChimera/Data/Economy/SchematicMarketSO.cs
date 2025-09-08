@@ -156,24 +156,24 @@ namespace ProjectChimera.Data.Economy
             
             if (string.IsNullOrEmpty(_marketName))
             {
-                Debug.LogError($"SchematicMarket {name}: Market name cannot be empty", this);
+                SharedLogger.LogError($"SchematicMarket {name}: Market name cannot be empty", this);
                 isValid = false;
             }
             
             if (_schematicCategories.Count == 0)
             {
-                Debug.LogWarning($"SchematicMarket {name}: No schematic categories defined", this);
+                SharedLogger.LogWarning($"SchematicMarket {name}: No schematic categories defined", this);
             }
             
             if (_basePriceMultiplier <= 0f)
             {
-                Debug.LogError($"SchematicMarket {name}: Base price multiplier must be positive", this);
+                SharedLogger.LogError($"SchematicMarket {name}: Base price multiplier must be positive", this);
                 isValid = false;
             }
             
             if (_skillPointInflation <= 1f)
             {
-                Debug.LogWarning($"SchematicMarket {name}: Skill point inflation should be > 1.0 for progression", this);
+                SharedLogger.LogWarning($"SchematicMarket {name}: Skill point inflation should be > 1.0 for progression", this);
             }
             
             return isValid;
@@ -327,31 +327,31 @@ namespace ProjectChimera.Data.Economy
             
             if (string.IsNullOrEmpty(_schematicId))
             {
-                Debug.LogError($"ConstructionSchematic {name}: Schematic ID cannot be empty", this);
+                SharedLogger.LogError($"ConstructionSchematic {name}: Schematic ID cannot be empty", this);
                 isValid = false;
             }
             
             if (string.IsNullOrEmpty(_schematicName))
             {
-                Debug.LogError($"ConstructionSchematic {name}: Schematic name cannot be empty", this);
+                SharedLogger.LogError($"ConstructionSchematic {name}: Schematic name cannot be empty", this);
                 isValid = false;
             }
             
             if (_skillPointCost < 0f)
             {
-                Debug.LogError($"ConstructionSchematic {name}: Skill point cost cannot be negative", this);
+                SharedLogger.LogError($"ConstructionSchematic {name}: Skill point cost cannot be negative", this);
                 isValid = false;
             }
             
             if (_unlockLevel < 1)
             {
-                Debug.LogError($"ConstructionSchematic {name}: Unlock level must be at least 1", this);
+                SharedLogger.LogError($"ConstructionSchematic {name}: Unlock level must be at least 1", this);
                 isValid = false;
             }
             
             if (_gridSize.x <= 0 || _gridSize.y <= 0)
             {
-                Debug.LogError($"ConstructionSchematic {name}: Grid size must be positive", this);
+                SharedLogger.LogError($"ConstructionSchematic {name}: Grid size must be positive", this);
                 isValid = false;
             }
             

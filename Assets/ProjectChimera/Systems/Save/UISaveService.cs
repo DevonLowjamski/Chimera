@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Save;
@@ -40,7 +41,7 @@ namespace ProjectChimera.Systems.Save
         private void InitializeService()
         {
             _isInitialized = true;
-            Debug.Log("[UISaveService] Service initialized successfully");
+            ChimeraLogger.Log("[UISaveService] Service initialized successfully");
         }
 
         private void RegisterWithSaveManager()
@@ -49,11 +50,11 @@ namespace ProjectChimera.Systems.Save
             if (saveManager != null)
             {
                 saveManager.RegisterSaveService(this);
-                Debug.Log("[UISaveService] Registered with SaveManager");
+                ChimeraLogger.Log("[UISaveService] Registered with SaveManager");
             }
             else
             {
-                Debug.LogWarning("[UISaveService] SaveManager not found - integration disabled");
+                ChimeraLogger.LogWarning("[UISaveService] SaveManager not found - integration disabled");
             }
         }
 
@@ -65,7 +66,7 @@ namespace ProjectChimera.Systems.Save
         {
             if (!IsAvailable)
             {
-                Debug.LogWarning("[UISaveService] Service not available for state gathering");
+                ChimeraLogger.LogWarning("[UISaveService] Service not available for state gathering");
                 return new UIStateDTO
                 {
                     SaveTimestamp = DateTime.Now,
@@ -76,7 +77,7 @@ namespace ProjectChimera.Systems.Save
 
             try
             {
-                Debug.Log("[UISaveService] Gathering UI state...");
+                ChimeraLogger.Log("[UISaveService] Gathering UI state...");
 
                 var uiState = new UIStateDTO
                 {
@@ -183,12 +184,12 @@ namespace ProjectChimera.Systems.Save
                     }
                 };
 
-                Debug.Log($"[UISaveService] UI state gathered: {uiState.UIPanelStates.Count} panels, Mode: {uiState.UIModeState.CurrentMode}");
+                ChimeraLogger.Log($"[UISaveService] UI state gathered: {uiState.UIPanelStates.Count} panels, Mode: {uiState.UIModeState.CurrentMode}");
                 return uiState;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[UISaveService] Error gathering UI state: {ex.Message}");
+                ChimeraLogger.LogError($"[UISaveService] Error gathering UI state: {ex.Message}");
                 return new UIStateDTO
                 {
                     SaveTimestamp = DateTime.Now,
@@ -202,19 +203,19 @@ namespace ProjectChimera.Systems.Save
         {
             if (!IsAvailable)
             {
-                Debug.LogWarning("[UISaveService] Service not available for state application");
+                ChimeraLogger.LogWarning("[UISaveService] Service not available for state application");
                 return;
             }
 
             if (uiData == null)
             {
-                Debug.LogWarning("[UISaveService] No UI data to apply");
+                ChimeraLogger.LogWarning("[UISaveService] No UI data to apply");
                 return;
             }
 
             try
             {
-                Debug.Log($"[UISaveService] Applying UI state with {uiData.UIPanelStates?.Count ?? 0} panels");
+                ChimeraLogger.Log($"[UISaveService] Applying UI state with {uiData.UIPanelStates?.Count ?? 0} panels");
 
                 // Apply UI mode state
                 if (uiData.UIModeState != null)
@@ -246,11 +247,11 @@ namespace ProjectChimera.Systems.Save
                     await ApplyWindowManagement(uiData.WindowManagement);
                 }
 
-                Debug.Log("[UISaveService] UI state applied successfully");
+                ChimeraLogger.Log("[UISaveService] UI state applied successfully");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[UISaveService] Error applying UI state: {ex.Message}");
+                ChimeraLogger.LogError($"[UISaveService] Error applying UI state: {ex.Message}");
             }
         }
 
@@ -260,7 +261,7 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplyUIModeState(UIModeStateDTO modeState)
         {
-            Debug.Log($"[UISaveService] Applying UI mode state (Current: {modeState.CurrentMode})");
+            ChimeraLogger.Log($"[UISaveService] Applying UI mode state (Current: {modeState.CurrentMode})");
             
             // UI mode state application would integrate with actual UI mode systems
             await Task.CompletedTask;
@@ -268,7 +269,7 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplyUILevelState(UILevelStateDTO levelState)
         {
-            Debug.Log($"[UISaveService] Applying UI level state (Level: {levelState.CurrentLevel}, Complexity: {levelState.UIComplexity})");
+            ChimeraLogger.Log($"[UISaveService] Applying UI level state (Level: {levelState.CurrentLevel}, Complexity: {levelState.UIComplexity})");
             
             // UI level state application would integrate with actual UI complexity systems
             await Task.CompletedTask;
@@ -276,12 +277,12 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplyUIPanelStates(System.Collections.Generic.List<UIPanelStateDTO> panelStates)
         {
-            Debug.Log($"[UISaveService] Applying {panelStates.Count} panel states");
+            ChimeraLogger.Log($"[UISaveService] Applying {panelStates.Count} panel states");
             
             // Panel state application would integrate with actual UI panel management systems
             foreach (var panel in panelStates)
             {
-                Debug.Log($"[UISaveService] Restoring panel: {panel.PanelName} (Visible: {panel.IsVisible}, Position: {panel.Position})");
+                ChimeraLogger.Log($"[UISaveService] Restoring panel: {panel.PanelName} (Visible: {panel.IsVisible}, Position: {panel.Position})");
                 
                 // This would involve:
                 // 1. Finding the actual UI panel by ID
@@ -295,7 +296,7 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplyUserPreferences(UIUserPreferencesDTO preferences)
         {
-            Debug.Log($"[UISaveService] Applying user preferences (Theme: {preferences.Theme}, Scale: {preferences.UIScale})");
+            ChimeraLogger.Log($"[UISaveService] Applying user preferences (Theme: {preferences.Theme}, Scale: {preferences.UIScale})");
             
             // User preferences application would integrate with actual UI theming and settings systems
             await Task.CompletedTask;
@@ -303,7 +304,7 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplyWindowManagement(UIWindowManagementDTO windowManagement)
         {
-            Debug.Log($"[UISaveService] Applying window management ({windowManagement.ActiveWindows.Count} active windows)");
+            ChimeraLogger.Log($"[UISaveService] Applying window management ({windowManagement.ActiveWindows.Count} active windows)");
             
             // Window management application would integrate with actual window management systems
             await Task.CompletedTask;

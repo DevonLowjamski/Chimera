@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 
 namespace ProjectChimera.Systems.Analytics.Providers
@@ -8,15 +9,15 @@ namespace ProjectChimera.Systems.Analytics.Providers
     /// </summary>
     public class EconomicAnalyticsProvider : AnalyticsProviderBase, IEconomicAnalyticsProvider
     {
-        private ProjectChimera.Systems.Economy.CurrencyManager _currencyManager;
-        
+        private ICurrencyManager _currencyManager;
+
         // Financial tracking
         private float _currentBalance = 10000f;
         private float _totalRevenue = 0f;
         private float _totalExpenses = 0f;
         private float _dailyRevenue = 0f;
         private float _dailyExpenses = 0f;
-        
+
         // Performance tracking
         private float _lastUpdateTime;
         private float _revenueAccumulator;
@@ -32,17 +33,17 @@ namespace ProjectChimera.Systems.Analytics.Providers
 
         #region Initialization
 
-        public void Initialize(ProjectChimera.Systems.Economy.CurrencyManager currencyManager)
+        public void Initialize(ICurrencyManager currencyManager)
         {
             _currencyManager = currencyManager;
-            
+
             if (_currencyManager != null)
             {
-                _currentBalance = _currencyManager.GetBalance();
+                _currentBalance = _currencyManager.GetCurrentCash();
             }
-            
+
             if (_enableDebugLogging)
-                Debug.Log("[EconomicAnalyticsProvider] Initialized with CurrencyManager");
+                ChimeraLogger.Log("[EconomicAnalyticsProvider] Initialized with CurrencyManager");
         }
 
         #endregion
@@ -94,7 +95,7 @@ namespace ProjectChimera.Systems.Analytics.Providers
                 }
                 catch (System.Exception ex)
                 {
-                    Debug.LogWarning($"[EconomicAnalyticsProvider] Error getting cash balance: {ex.Message}");
+                    ChimeraLogger.LogWarning($"[EconomicAnalyticsProvider] Error getting cash balance: {ex.Message}");
                 }
             }
 
@@ -129,7 +130,7 @@ namespace ProjectChimera.Systems.Analytics.Providers
         {
             var revenue = GetDailyRevenue();
             if (revenue <= 0) return 0f;
-            
+
             var profit = revenue - GetDailyExpenses();
             return RoundForDisplay(CalculatePercentage(profit, revenue));
         }
@@ -142,29 +143,29 @@ namespace ProjectChimera.Systems.Analytics.Providers
         {
             var currentTime = Time.time;
             var deltaTime = currentTime - _lastUpdateTime;
-            
+
             if (deltaTime <= 0) return;
 
             // Simulate revenue generation based on cultivation
             var hourlyRevenue = SimulateHourlyRevenue();
             var hourlyExpenses = SimulateHourlyExpenses();
-            
+
             // Update accumulators
             _revenueAccumulator += hourlyRevenue * (deltaTime / 3600f);
             _expenseAccumulator += hourlyExpenses * (deltaTime / 3600f);
-            
+
             // Update daily rates (smoothed)
             var smoothingFactor = 0.1f;
             _dailyRevenue = Mathf.Lerp(_dailyRevenue, hourlyRevenue * 24f, smoothingFactor);
             _dailyExpenses = Mathf.Lerp(_dailyExpenses, hourlyExpenses * 24f, smoothingFactor);
-            
+
             // Update totals
             _totalRevenue += _revenueAccumulator;
             _totalExpenses += _expenseAccumulator;
-            
+
             // Update cash balance
             _currentBalance += _revenueAccumulator - _expenseAccumulator;
-            
+
             // Reset accumulators
             _revenueAccumulator = 0f;
             _expenseAccumulator = 0f;
@@ -177,7 +178,7 @@ namespace ProjectChimera.Systems.Analytics.Providers
             var baseRevenue = 50f; // $50/hour base
             var efficiencyMultiplier = Random.Range(0.8f, 1.2f);
             var marketMultiplier = Mathf.Sin(Time.time * 0.01f) * 0.2f + 1f; // Market fluctuation
-            
+
             return baseRevenue * efficiencyMultiplier * marketMultiplier;
         }
 
@@ -187,7 +188,7 @@ namespace ProjectChimera.Systems.Analytics.Providers
             var baseExpenses = 25f; // $25/hour base
             var facilitySize = GetFacilitySize();
             var sizeMultiplier = 1f + (facilitySize - 50f) / 100f; // Scale with facility size
-            
+
             return baseExpenses * sizeMultiplier * Random.Range(0.9f, 1.1f);
         }
 
@@ -211,7 +212,7 @@ namespace ProjectChimera.Systems.Analytics.Providers
         {
             var totalInvestment = GetTotalExpenses();
             if (totalInvestment <= 0) return 0f;
-            
+
             var profit = GetTotalRevenue() - totalInvestment;
             return CalculatePercentage(profit, totalInvestment);
         }
@@ -226,10 +227,10 @@ namespace ProjectChimera.Systems.Analytics.Providers
         {
             var netFlow = GetNetCashFlow();
             var currentBalance = GetCurrentCashBalance();
-            
+
             if (netFlow >= 0) return 0f; // Already profitable
             if (netFlow == 0) return float.MaxValue; // Never breaks even
-            
+
             return currentBalance / Mathf.Abs(netFlow);
         }
 
@@ -237,7 +238,7 @@ namespace ProjectChimera.Systems.Analytics.Providers
         {
             var plants = GetPlantCount();
             var revenue = GetDailyRevenue();
-            
+
             return plants > 0 ? revenue / plants : 0f;
         }
 
@@ -245,7 +246,7 @@ namespace ProjectChimera.Systems.Analytics.Providers
         {
             var plants = GetPlantCount();
             var expenses = GetDailyExpenses();
-            
+
             return plants > 0 ? expenses / plants : 0f;
         }
 
@@ -253,9 +254,9 @@ namespace ProjectChimera.Systems.Analytics.Providers
         {
             var revenuePerPlant = GetRevenuePerPlant();
             var costPerPlant = GetCostPerPlant();
-            
+
             if (costPerPlant <= 0) return 100f;
-            
+
             return CalculatePercentage(revenuePerPlant - costPerPlant, revenuePerPlant);
         }
 
@@ -265,7 +266,7 @@ namespace ProjectChimera.Systems.Analytics.Providers
             var profitMargin = GetProfitMargin();
             var cashRatio = CalculatePercentage(GetCurrentCashBalance(), GetDailyExpenses() * 30f); // 30 days of expenses
             var roiScore = Mathf.Clamp(GetROI(), 0f, 100f);
-            
+
             return RoundForDisplay((profitMargin + cashRatio + roiScore) / 3f);
         }
 
@@ -274,7 +275,7 @@ namespace ProjectChimera.Systems.Analytics.Providers
             // Simulate market value based on revenue potential
             var annualRevenue = GetDailyRevenue() * 365f;
             var marketMultiplier = 2.5f; // 2.5x revenue as market value
-            
+
             return annualRevenue * marketMultiplier;
         }
 
@@ -283,7 +284,7 @@ namespace ProjectChimera.Systems.Analytics.Providers
             // Simulate asset utilization
             var facilitySize = GetFacilitySize();
             var optimalSize = 75f; // Optimal facility size
-            
+
             return CalculatePercentage(facilitySize, optimalSize);
         }
 
@@ -305,9 +306,9 @@ namespace ProjectChimera.Systems.Analytics.Providers
             catch (System.Exception ex)
             {
                 if (_enableDebugLogging)
-                    Debug.LogWarning($"[EconomicAnalyticsProvider] Could not get plant count: {ex.Message}");
+                    ChimeraLogger.LogWarning($"[EconomicAnalyticsProvider] Could not get plant count: {ex.Message}");
             }
-            
+
             return 50f; // Default plant count
         }
 
@@ -325,9 +326,9 @@ namespace ProjectChimera.Systems.Analytics.Providers
             catch (System.Exception ex)
             {
                 if (_enableDebugLogging)
-                    Debug.LogWarning($"[EconomicAnalyticsProvider] Could not get facility size: {ex.Message}");
+                    ChimeraLogger.LogWarning($"[EconomicAnalyticsProvider] Could not get facility size: {ex.Message}");
             }
-            
+
             return 60f; // Default facility size
         }
 
@@ -338,9 +339,9 @@ namespace ProjectChimera.Systems.Analytics.Providers
         public void SetInitialBalance(float balance)
         {
             _currentBalance = balance;
-            
+
             if (_enableDebugLogging)
-                Debug.Log($"[EconomicAnalyticsProvider] Initial balance set to ${balance:F2}");
+                ChimeraLogger.Log($"[EconomicAnalyticsProvider] Initial balance set to ${balance:F2}");
         }
 
         public void RecordTransaction(float amount, bool isRevenue)
@@ -355,9 +356,9 @@ namespace ProjectChimera.Systems.Analytics.Providers
                 _totalExpenses += amount;
                 _currentBalance -= amount;
             }
-            
+
             if (_enableDebugLogging)
-                Debug.Log($"[EconomicAnalyticsProvider] Recorded {(isRevenue ? "revenue" : "expense")}: ${amount:F2}");
+                ChimeraLogger.Log($"[EconomicAnalyticsProvider] Recorded {(isRevenue ? "revenue" : "expense")}: ${amount:F2}");
         }
 
         #endregion

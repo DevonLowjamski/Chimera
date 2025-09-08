@@ -5,9 +5,7 @@
         "ProjectChimera.Core",
         "ProjectChimera.Shared",
         "ProjectChimera.Data",
-        "ProjectChimera.Data.Shared",
-        "ProjectChimera.Systems",
-        "ProjectChimera.Systems.Analytics"
+        "ProjectChimera.Data.Shared"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

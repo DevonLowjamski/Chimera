@@ -1,0 +1,335 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Data.Shared;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
+using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
+// using object = ProjectChimera.Data.Shared.object;  // Commented out - invalid reference
+
+namespace ProjectChimera.Systems.Cultivation
+{
+    /// <summary>
+    /// Implementation for environmental control and zone management
+    /// </summary>
+    public class EnvironmentControl : IEnvironmentControl
+    {
+        private Dictionary<string, EnvironmentalConditions> _zoneEnvironments = new Dictionary<string, EnvironmentalConditions>();
+        private float _automationEfficiency = 1.0f;
+        private bool _autoWateringEnabled = true;
+        private bool _autoFeedingEnabled = true;
+        private bool _isInitialized = false;
+
+        public Dictionary<string, EnvironmentalConditions> ZoneEnvironments => new Dictionary<string, EnvironmentalConditions>(_zoneEnvironments);
+
+        public Action<string, EnvironmentalConditions> OnZoneEnvironmentChanged { get; set; }
+        public Action<string> OnEquipmentMaintenanceRequired { get; set; }
+        public Action<float> OnAutomationEfficiencyChanged { get; set; }
+
+        public void Initialize()
+        {
+            InitializeDefaultZones();
+            _isInitialized = true;
+            ChimeraLogger.Log("[EnvironmentControl] Environment control system initialized");
+        }
+
+        public void Shutdown()
+        {
+            _zoneEnvironments.Clear();
+            _isInitialized = false;
+            ChimeraLogger.Log("[EnvironmentControl] Environment control system shutdown");
+        }
+
+        public void SetZoneEnvironment(string zoneId, EnvironmentalConditions environment)
+        {
+            if (!_isInitialized)
+            {
+                ChimeraLogger.LogWarning("[EnvironmentControl] Cannot set zone environment - system not initialized");
+                return;
+            }
+
+            var previousEnvironment = GetZoneEnvironment(zoneId);
+            _zoneEnvironments[zoneId] = environment;
+
+            OnZoneEnvironmentChanged?.Invoke(zoneId, environment);
+
+            ChimeraLogger.Log($"[EnvironmentControl] Zone {zoneId} environment updated - Temp: {environment.Temperature:F1}°C, Humidity: {environment.Humidity:P0}");
+        }
+
+        public EnvironmentalConditions GetZoneEnvironment(string zoneId)
+        {
+            if (string.IsNullOrEmpty(zoneId))
+            {
+                return EnvironmentalConditions.CreateIndoorDefault();
+            }
+
+            if (_zoneEnvironments.TryGetValue(zoneId, out var environment))
+            {
+                return environment;
+            }
+
+            // Return default environment for unknown zones
+            var defaultEnvironment = EnvironmentalConditions.CreateIndoorDefault();
+            _zoneEnvironments[zoneId] = defaultEnvironment;
+            return defaultEnvironment;
+        }
+
+        public void ProcessEnvironmentalChanges(float deltaTime)
+        {
+            if (!_isInitialized)
+            {
+                return;
+            }
+
+            // Simulate minor environmental fluctuations
+            foreach (var zoneId in _zoneEnvironments.Keys.ToList())
+            {
+                var environment = _zoneEnvironments[zoneId];
+
+                // Add small random variations to simulate natural fluctuations
+                environment.Temperature += UnityEngine.Random.Range(-0.1f, 0.1f) * deltaTime;
+                environment.Humidity += UnityEngine.Random.Range(-0.005f, 0.005f) * deltaTime;
+
+                // Clamp values to reasonable ranges
+                environment.Temperature = Mathf.Clamp(environment.Temperature, 15f, 35f);
+                environment.Humidity = Mathf.Clamp01(environment.Humidity);
+
+                _zoneEnvironments[zoneId] = environment;
+            }
+        }
+
+        public void ProcessOfflineEnvironmentalChanges(float offlineHours)
+        {
+            if (!_isInitialized || offlineHours <= 0f)
+            {
+                return;
+            }
+
+            int zonesProcessed = 0;
+
+            foreach (var zoneId in _zoneEnvironments.Keys.ToList())
+            {
+                try
+                {
+                    var environment = _zoneEnvironments[zoneId];
+
+                    // Simulate environmental drift during offline period
+                    float tempDrift = UnityEngine.Random.Range(-2f, 2f) * (offlineHours / 24f);
+                    float humidityDrift = UnityEngine.Random.Range(-0.05f, 0.05f) * (offlineHours / 24f);
+
+                    environment.Temperature += tempDrift;
+                    environment.Humidity += humidityDrift;
+
+                    // Clamp to reasonable ranges
+                    environment.Temperature = Mathf.Clamp(environment.Temperature, 15f, 35f);
+                    environment.Humidity = Mathf.Clamp01(environment.Humidity);
+
+                    _zoneEnvironments[zoneId] = environment;
+                    zonesProcessed++;
+                }
+                catch (Exception ex)
+                {
+                    ChimeraLogger.LogError($"[EnvironmentControl] Error processing offline environmental changes for zone {zoneId}: {ex.Message}");
+                }
+            }
+
+            ChimeraLogger.Log($"[EnvironmentControl] Processed offline environmental changes for {zonesProcessed} zones over {offlineHours:F1} hours");
+        }
+
+        public bool IsAutoWateringEnabled()
+        {
+            return _autoWateringEnabled && _automationEfficiency > 0.1f;
+        }
+
+        public bool IsAutoFeedingEnabled()
+        {
+            return _autoFeedingEnabled && _automationEfficiency > 0.1f;
+        }
+
+        public void ProcessAutomationSystemWear(float offlineHours)
+        {
+            if (offlineHours <= 0f)
+            {
+                return;
+            }
+
+            // Automation systems lose efficiency over time
+            float wearRate = 0.0001f; // 0.01% efficiency loss per hour
+            float totalWear = wearRate * offlineHours;
+
+            float previousEfficiency = _automationEfficiency;
+            _automationEfficiency = Mathf.Max(0f, _automationEfficiency - totalWear);
+
+            if (totalWear > 0.01f) // 1% or more efficiency loss
+            {
+                ChimeraLogger.Log($"[EnvironmentControl] Automation systems lost {totalWear:P2} efficiency during offline period");
+                OnAutomationEfficiencyChanged?.Invoke(_automationEfficiency);
+            }
+
+            // Check if maintenance is required
+            if (_automationEfficiency < 0.7f && previousEfficiency >= 0.7f)
+            {
+                OnEquipmentMaintenanceRequired?.Invoke("Automation system efficiency below 70%");
+            }
+        }
+
+        public void ProcessOfflineEquipmentMaintenance(float offlineHours)
+        {
+            ChimeraLogger.Log($"[EnvironmentControl] Processing equipment maintenance for {offlineHours:F1} hours");
+
+            // Simulate equipment degradation during offline period
+            int equipmentCount = SimulateEquipmentDegradation(offlineHours);
+
+            // Check for equipment failures or maintenance alerts
+            int maintenanceAlerts = CheckEquipmentMaintenanceAlerts(offlineHours);
+
+            // Process automation system wear
+            ProcessAutomationSystemWear(offlineHours);
+
+            ChimeraLogger.Log($"[EnvironmentControl] Equipment maintenance processed: {equipmentCount} pieces tracked, " +
+                     $"{maintenanceAlerts} maintenance alerts");
+        }
+
+        public int SimulateEquipmentDegradation(float offlineHours)
+        {
+            // Equipment degradation simulation - ready for equipment manager integration
+            // Basic degradation tracking for offline progression
+            int equipmentPieces = 10; // Assume 10 pieces of equipment
+            int degradedPieces = 0;
+
+            for (int i = 1; i <= equipmentPieces; i++)
+            {
+                // Each piece degrades slightly over time
+                float degradationRate = 0.001f; // 0.1% per hour
+                float totalDegradation = degradationRate * offlineHours;
+
+                // Log significant degradation
+                if (totalDegradation > 0.05f) // 5% or more degradation
+                {
+                    degradedPieces++;
+
+                    if (totalDegradation > 0.2f) // 20% degradation requires maintenance
+                    {
+                        OnEquipmentMaintenanceRequired?.Invoke($"Equipment piece {i} requires maintenance");
+                    }
+                }
+            }
+
+            return equipmentPieces;
+        }
+
+        public int CheckEquipmentMaintenanceAlerts(float offlineHours)
+        {
+            // Simulate maintenance alert generation based on equipment usage
+            int maintenanceAlerts = 0;
+
+            // Generate alerts based on offline duration
+            if (offlineHours > 168f) // 1 week
+            {
+                maintenanceAlerts += 1;
+                OnEquipmentMaintenanceRequired?.Invoke("Weekly maintenance check required");
+            }
+
+            if (offlineHours > 720f) // 1 month
+            {
+                maintenanceAlerts += 2;
+                OnEquipmentMaintenanceRequired?.Invoke("Monthly deep maintenance required");
+            }
+
+            return maintenanceAlerts;
+        }
+
+        public float CalculateEnvironmentalStress(EnvironmentalConditions conditions)
+        {
+            // Calculate stress based on deviation from optimal conditions
+            float optimalTemp = 24f; // 24°C optimal temperature
+            float optimalHumidity = 0.6f; // 60% optimal humidity
+
+            float tempStress = Mathf.Abs(conditions.Temperature - optimalTemp) / 10f; // Normalize to 0-1
+            float humidityStress = Mathf.Abs(conditions.Humidity - optimalHumidity) * 2f; // Normalize to 0-1
+
+            return Mathf.Clamp01((tempStress + humidityStress) / 2f);
+        }
+
+        public bool IsEnvironmentOptimal(string zoneId)
+        {
+            var environment = GetZoneEnvironment(zoneId);
+            float stress = CalculateEnvironmentalStress(environment);
+            return stress < 0.2f; // Less than 20% stress is considered optimal
+        }
+
+        public EnvironmentalConditions GetOptimalEnvironmentForStage(PlantGrowthStage stage)
+        {
+            return stage switch
+            {
+                PlantGrowthStage.Seedling => new EnvironmentalConditions
+                {
+                    Temperature = 22f,
+                    Humidity = 0.7f,
+                    LightIntensity = 0.6f,
+                    CO2Level = 400f
+                },
+                PlantGrowthStage.Vegetative => new EnvironmentalConditions
+                {
+                    Temperature = 24f,
+                    Humidity = 0.6f,
+                    LightIntensity = 0.8f,
+                    CO2Level = 600f
+                },
+                PlantGrowthStage.Flowering => new EnvironmentalConditions
+                {
+                    Temperature = 22f,
+                    Humidity = 0.5f,
+                    LightIntensity = 0.9f,
+                    CO2Level = 800f
+                },
+                PlantGrowthStage.Harvestable => new EnvironmentalConditions
+                {
+                    Temperature = 20f,
+                    Humidity = 0.4f,
+                    LightIntensity = 0.7f,
+                    CO2Level = 400f
+                },
+                _ => EnvironmentalConditions.CreateIndoorDefault()
+            };
+        }
+
+        public void SetAutomationEnabled(bool watering, bool feeding)
+        {
+            _autoWateringEnabled = watering;
+            _autoFeedingEnabled = feeding;
+
+            ChimeraLogger.Log($"[EnvironmentControl] Automation updated - Watering: {watering}, Feeding: {feeding}");
+        }
+
+        public void RepairAutomationSystem()
+        {
+            _automationEfficiency = 1.0f;
+            OnAutomationEfficiencyChanged?.Invoke(_automationEfficiency);
+            ChimeraLogger.Log("[EnvironmentControl] Automation system repaired - efficiency restored to 100%");
+        }
+
+        private void InitializeDefaultZones()
+        {
+            // Create default indoor zone
+            var defaultZone = EnvironmentalConditions.CreateIndoorDefault();
+            _zoneEnvironments["default"] = defaultZone;
+            _zoneEnvironments["indoor_grow_1"] = defaultZone;
+
+            // Create outdoor zone with different conditions
+            var outdoorZone = new EnvironmentalConditions
+            {
+                Temperature = 20f,
+                Humidity = 0.5f,
+                LightIntensity = 1.0f,
+                CO2Level = 400f
+            };
+            _zoneEnvironments["outdoor_1"] = outdoorZone;
+
+            ChimeraLogger.Log($"[EnvironmentControl] Initialized {_zoneEnvironments.Count} default environmental zones");
+        }
+
+        // NOTE: Duplicate GetOptimalEnvironmentForStage method removed - implementation already exists above
+    }
+}

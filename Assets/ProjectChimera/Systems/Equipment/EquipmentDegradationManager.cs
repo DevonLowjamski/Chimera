@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -253,7 +254,7 @@ namespace ProjectChimera.Systems.Equipment
             RegisterEventListeners();
             StartDegradationProcessing();
             
-            Debug.Log($"[Phase 4.1.b] EquipmentDegradationManager initialized - {monitoredEquipment.Count} equipment units monitored");
+            ChimeraLogger.Log($"[Phase 4.1.b] EquipmentDegradationManager initialized - {monitoredEquipment.Count} equipment units monitored");
         }
         
         protected override void OnManagerShutdown()
@@ -262,7 +263,7 @@ namespace ProjectChimera.Systems.Equipment
             SaveMaintenanceHistory();
             StopDegradationProcessing();
             
-            Debug.Log($"[Phase 4.1.b] EquipmentDegradationManager shutdown - {maintenanceHistory.Count} maintenance records saved");
+            ChimeraLogger.Log($"[Phase 4.1.b] EquipmentDegradationManager shutdown - {maintenanceHistory.Count} maintenance records saved");
         }
         
         private void InitializeReliabilityProfiles()
@@ -380,7 +381,7 @@ namespace ProjectChimera.Systems.Equipment
             
             if (equipment.WearLevel > 0.9f)
             {
-                Debug.LogWarning($"[Phase 4.1.b] Equipment {equipment.EquipmentId} approaching critical wear level: {equipment.WearLevel:F2}");
+                ChimeraLogger.LogWarning($"[Phase 4.1.b] Equipment {equipment.EquipmentId} approaching critical wear level: {equipment.WearLevel:F2}");
             }
         }
         
@@ -507,7 +508,7 @@ namespace ProjectChimera.Systems.Equipment
             equipment.ActiveIssues.Add(malfunction.MalfunctionId);
             equipment.Status = OperationalStatus.Malfunction;
             
-            Debug.LogWarning($"[Phase 4.1.b] Malfunction generated: {equipment.EquipmentId} - {malfunctionType} ({severity})");
+            ChimeraLogger.LogWarning($"[Phase 4.1.b] Malfunction generated: {equipment.EquipmentId} - {malfunctionType} ({severity})");
             
             // Fire malfunction event
             GameManager.Instance.GetManager<EventManager>()?.TriggerEvent("EquipmentMalfunction", malfunction);
@@ -587,7 +588,7 @@ namespace ProjectChimera.Systems.Equipment
             // Identify vulnerabilities
             IdentifySystemVulnerabilities();
             
-            Debug.Log($"[Phase 4.1.b] System health updated - Overall: {systemHealth.OverallSystemHealth:F2}, Critical: {systemHealth.CriticalEquipmentHealth:F2}");
+            ChimeraLogger.Log($"[Phase 4.1.b] System health updated - Overall: {systemHealth.OverallSystemHealth:F2}, Critical: {systemHealth.CriticalEquipmentHealth:F2}");
         }
         
         private float CalculateEquipmentHealth(EquipmentInstance equipment)
@@ -673,7 +674,7 @@ namespace ProjectChimera.Systems.Equipment
             maintenanceHistory.Add(record);
             equipment.LastMaintenance = DateTime.Now;
             
-            Debug.Log($"[Phase 4.1.b] Malfunction repaired: {malfunctionId} (Quality: {repairQuality:F2})");
+            ChimeraLogger.Log($"[Phase 4.1.b] Malfunction repaired: {malfunctionId} (Quality: {repairQuality:F2})");
             
             return true;
         }
@@ -683,7 +684,7 @@ namespace ProjectChimera.Systems.Equipment
             if (!monitoredEquipment.Any(e => e.EquipmentId == equipment.EquipmentId))
             {
                 monitoredEquipment.Add(equipment);
-                Debug.Log($"[Phase 4.1.b] Equipment registered for monitoring: {equipment.EquipmentId}");
+                ChimeraLogger.Log($"[Phase 4.1.b] Equipment registered for monitoring: {equipment.EquipmentId}");
             }
         }
         
@@ -692,7 +693,7 @@ namespace ProjectChimera.Systems.Equipment
             ProcessEquipmentDegradation();
             EvaluateMalfunctionRisk();
             UpdateSystemHealthAssessment();
-            Debug.Log($"[Phase 4.1.b] Manual inspection completed - System Health: {systemHealth.OverallSystemHealth:F2}");
+            ChimeraLogger.Log($"[Phase 4.1.b] Manual inspection completed - System Health: {systemHealth.OverallSystemHealth:F2}");
         }
         
         // Helper methods for malfunction generation
@@ -844,7 +845,7 @@ namespace ProjectChimera.Systems.Equipment
         private void ScheduleMaintenanceTask(EquipmentInstance equipment, MaintenanceType type, MaintenancePriority priority)
         {
             // Implementation for scheduling maintenance tasks
-            Debug.Log($"[Phase 4.1.b] Maintenance scheduled for {equipment.EquipmentId}: {type} ({priority})");
+            ChimeraLogger.Log($"[Phase 4.1.b] Maintenance scheduled for {equipment.EquipmentId}: {type} ({priority})");
         }
         
         private float CalculateMaintenanceBacklogRisk()
@@ -900,7 +901,7 @@ namespace ProjectChimera.Systems.Equipment
         private void SaveMaintenanceHistory()
         {
             // Save maintenance history
-            Debug.Log($"[Phase 4.1.b] Maintenance history saved: {maintenanceHistory.Count} records");
+            ChimeraLogger.Log($"[Phase 4.1.b] Maintenance history saved: {maintenanceHistory.Count} records");
         }
     }
 }

@@ -1,4 +1,6 @@
 using UnityEngine;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Camera;
 using ProjectChimera.Data.Events;
 using ProjectChimera.Data.UI;
@@ -80,7 +82,7 @@ namespace ProjectChimera.Systems.Camera
                 // Auto-find components if not assigned
                 if (_cameraController == null)
                 {
-                    _cameraController = FindObjectOfType<AdvancedCameraController>();
+                    _cameraController = ServiceContainerFactory.Instance?.TryResolve<AdvancedCameraController>();
                 }
                 
                 // Get contextual menu interface from the assigned component
@@ -89,14 +91,14 @@ namespace ProjectChimera.Systems.Camera
                     _contextualMenu = _contextualMenuComponent.GetComponent<IContextualMenuProvider>();
                     if (_contextualMenu == null)
                     {
-                        Debug.LogError("[CameraLevelContextualMenuIntegrator] Assigned component does not implement IContextualMenuProvider!");
+                        ChimeraLogger.LogError("[CameraLevelContextualMenuIntegrator] Assigned component does not implement IContextualMenuProvider!");
                         return;
                     }
                 }
                 else
                 {
                     // Try to find any component that implements the interface
-                    var providers = FindObjectsOfType<MonoBehaviour>();
+                    MonoBehaviour[] providers = /* TODO: Replace FindObjectsOfType with ServiceContainer.GetAll<MonoBehaviour>() */ new MonoBehaviour[0];
                     foreach (var provider in providers)
                     {
                         if (provider is IContextualMenuProvider menuProvider)
@@ -110,13 +112,13 @@ namespace ProjectChimera.Systems.Camera
                 
                 if (_cameraController == null)
                 {
-                    Debug.LogError("[CameraLevelContextualMenuIntegrator] AdvancedCameraController not found!");
+                    ChimeraLogger.LogError("[CameraLevelContextualMenuIntegrator] AdvancedCameraController not found!");
                     return;
                 }
                 
                 if (_contextualMenu == null)
                 {
-                    Debug.LogError("[CameraLevelContextualMenuIntegrator] No IContextualMenuProvider found!");
+                    ChimeraLogger.LogError("[CameraLevelContextualMenuIntegrator] No IContextualMenuProvider found!");
                     return;
                 }
                 
@@ -133,12 +135,12 @@ namespace ProjectChimera.Systems.Camera
                 
                 if (_debugMode)
                 {
-                    Debug.Log($"[CameraLevelContextualMenuIntegrator] Initialized at camera level: {_currentCameraLevel}");
+                    ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Initialized at camera level: {_currentCameraLevel}");
                 }
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[CameraLevelContextualMenuIntegrator] Error during initialization: {ex.Message}");
+                ChimeraLogger.LogError($"[CameraLevelContextualMenuIntegrator] Error during initialization: {ex.Message}");
             }
         }
         
@@ -244,7 +246,7 @@ namespace ProjectChimera.Systems.Camera
             }
             else
             {
-                Debug.LogWarning("[CameraLevelContextualMenuIntegrator] CameraLevelChangedEvent not assigned");
+                ChimeraLogger.LogWarning("[CameraLevelContextualMenuIntegrator] CameraLevelChangedEvent not assigned");
             }
         }
         
@@ -260,7 +262,7 @@ namespace ProjectChimera.Systems.Camera
         {
             if (_debugMode)
             {
-                Debug.Log($"[CameraLevelContextualMenuIntegrator] Camera level changed: {eventData.PreviousLevel} → {eventData.NewLevel}");
+                ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Camera level changed: {eventData.PreviousLevel} → {eventData.NewLevel}");
             }
             
             _currentCameraLevel = eventData.NewLevel;
@@ -293,7 +295,7 @@ namespace ProjectChimera.Systems.Camera
             
             if (_debugMode)
             {
-                Debug.Log($"[CameraLevelContextualMenuIntegrator] Updated menu items for level {_currentCameraLevel}: {_activeMenuItems.Count} items available");
+                ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Updated menu items for level {_currentCameraLevel}: {_activeMenuItems.Count} items available");
             }
         }
         
@@ -354,7 +356,7 @@ namespace ProjectChimera.Systems.Camera
             if (_debugMode)
             {
                 string targetName = target ? target.name : "None";
-                Debug.Log($"[CameraLevelContextualMenuIntegrator] Executing camera level action '{actionName}' with target: {targetName}");
+                ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Executing camera level action '{actionName}' with target: {targetName}");
             }
             
             switch (actionName)
@@ -410,7 +412,7 @@ namespace ProjectChimera.Systems.Camera
                 default:
                     if (_debugMode)
                     {
-                        Debug.LogWarning($"[CameraLevelContextualMenuIntegrator] Unknown camera level action: {actionName}");
+                        ChimeraLogger.LogWarning($"[CameraLevelContextualMenuIntegrator] Unknown camera level action: {actionName}");
                     }
                     break;
             }
@@ -425,7 +427,7 @@ namespace ProjectChimera.Systems.Camera
             {
                 string targetInfo = target ? $" for {target.name}" : "";
                 string levelInfo = _showLevelInMenuTitle ? $" (Level: {_currentCameraLevel})" : "";
-                Debug.Log($"[CameraLevelContextualMenuIntegrator] Would show {actionName} panel{targetInfo}{levelInfo}");
+                ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Would show {actionName} panel{targetInfo}{levelInfo}");
             }
             
             // TODO: Integration with actual UI panels
@@ -478,7 +480,7 @@ namespace ProjectChimera.Systems.Camera
         public void SetDebugMode(bool enabled)
         {
             _debugMode = enabled;
-            Debug.Log($"[CameraLevelContextualMenuIntegrator] Debug mode {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Debug mode {(enabled ? "enabled" : "disabled")}");
         }
         
         /// <summary>
@@ -506,16 +508,16 @@ namespace ProjectChimera.Systems.Camera
         {
             if (Application.isPlaying && _isInitialized)
             {
-                Debug.Log($"[CameraLevelContextualMenuIntegrator] Testing menu for level: {_currentCameraLevel}");
-                Debug.Log($"Available menu items: {_activeMenuItems.Count}");
+                ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Testing menu for level: {_currentCameraLevel}");
+                ChimeraLogger.Log($"Available menu items: {_activeMenuItems.Count}");
                 foreach (var item in _activeMenuItems)
                 {
-                    Debug.Log($"  - {item.displayName} ({item.actionName})");
+                    ChimeraLogger.Log($"  - {item.displayName} ({item.actionName})");
                 }
             }
             else
             {
-                Debug.Log("[CameraLevelContextualMenuIntegrator] Test only works during play mode after initialization");
+                ChimeraLogger.Log("[CameraLevelContextualMenuIntegrator] Test only works during play mode after initialization");
             }
         }
         

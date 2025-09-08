@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Core
 {
@@ -514,7 +515,7 @@ namespace ProjectChimera.UI.Core
                 }
                 catch (System.Exception ex)
                 {
-                    Debug.LogError($"Error updating UI element: {ex.Message}");
+                    ChimeraLogger.LogError($"Error updating UI element: {ex.Message}");
                 }
             }
             

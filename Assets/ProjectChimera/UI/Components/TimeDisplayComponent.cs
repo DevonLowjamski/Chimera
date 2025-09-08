@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.UI.Core;
 
 namespace ProjectChimera.UI.Components
@@ -11,7 +12,7 @@ namespace ProjectChimera.UI.Components
     /// Displays game time, real time, time acceleration, and provides visual/audio feedback
     /// for time-sensitive events, penalties, and deadlines.
     /// </summary>
-    public class TimeDisplayComponent : MonoBehaviour
+    public class TimeDisplayComponent : MonoBehaviour, ITickable
     {
         [Header("Time Display Configuration")]
         [SerializeField] private bool _showGameTime = true;
@@ -93,9 +94,17 @@ namespace ProjectChimera.UI.Components
         {
             SetupTimeUI();
             UpdateTimeDisplay();
+            
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
         
-        private void Update()
+        #region ITickable Implementation
+        
+        public int Priority => TickPriority.UIManager;
+        public bool Enabled => enabled;
+        
+        public void Tick(float deltaTime)
         {
             if (!_isTimePaused)
             {
@@ -105,6 +114,8 @@ namespace ProjectChimera.UI.Components
             UpdateTimeDisplay();
             UpdatePenaltyEffects();
         }
+        
+        #endregion
         
         private void InitializeTimeDisplay()
         {
@@ -488,6 +499,11 @@ namespace ProjectChimera.UI.Components
         
         private void OnDestroy()
         {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+            
             // Clean up events
             OnGameTimeChanged = null;
             OnGameDayChanged = null;

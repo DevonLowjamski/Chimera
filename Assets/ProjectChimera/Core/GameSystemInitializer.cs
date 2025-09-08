@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
@@ -444,12 +445,12 @@ namespace ProjectChimera.Core
         private void LogDebug(string message)
         {
             if (_enablePhaseLogging)
-                Debug.Log($"[GameSystemInitializer] {message}");
+                ChimeraLogger.Log($"[GameSystemInitializer] {message}");
         }
         
         private void LogError(string message)
         {
-            Debug.LogError($"[GameSystemInitializer] {message}");
+            ChimeraLogger.LogError($"[GameSystemInitializer] {message}");
         }
     }
     

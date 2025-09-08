@@ -231,25 +231,25 @@ namespace ProjectChimera.Data.Economy
             
             if (string.IsNullOrEmpty(_productName))
             {
-                Debug.LogError($"MarketProductSO '{name}' has no product name assigned.", this);
+                SharedLogger.LogError($"MarketProductSO '{name}' has no product name assigned.", this);
                 isValid = false;
             }
             
             if (_baseWholesalePrice <= 0f)
             {
-                Debug.LogError($"Market Product {name}: Base wholesale price must be positive");
+                SharedLogger.LogError($"Market Product {name}: Base wholesale price must be positive");
                 isValid = false;
             }
             
             if (_baseRetailPrice <= _baseWholesalePrice)
             {
-                Debug.LogError($"Market Product {name}: Retail price must be higher than wholesale price");
+                SharedLogger.LogError($"Market Product {name}: Retail price must be higher than wholesale price");
                 isValid = false;
             }
             
             if (_shelfLife <= 0f)
             {
-                Debug.LogError($"Market Product {name}: Shelf life must be positive");
+                SharedLogger.LogError($"Market Product {name}: Shelf life must be positive");
                 isValid = false;
             }
             

@@ -1,3 +1,5 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -61,7 +63,7 @@ namespace ProjectChimera.Core.Events
                     }
                     catch (Exception ex)
                     {
-                        Debug.LogError($"Error handling event {eventType.Name}: {ex.Message}");
+                        ChimeraLogger.LogError($"Error handling event {eventType.Name}: {ex.Message}");
                     }
                 }
             }
@@ -107,7 +109,7 @@ namespace ProjectChimera.Core.Events
                     }
                     catch (Exception ex)
                     {
-                        Debug.LogError($"Error handling queued event {eventType.Name}: {ex.Message}");
+                        ChimeraLogger.LogError($"Error handling queued event {eventType.Name}: {ex.Message}");
                     }
                 }
             }
@@ -160,8 +162,7 @@ namespace ProjectChimera.Core.Events
     /// <summary>
     /// Event Manager for Unity integration
     /// </summary>
-    public class EventManager : ChimeraManager
-    {
+    public class EventManager : ChimeraManager, ITickable{
         private static EventManager instance;
         public static EventManager Instance
         {
@@ -189,7 +190,9 @@ namespace ProjectChimera.Core.Events
             base.Awake(); // Call ChimeraManager's Awake
         }
         
-        private void Update()
+        public void Tick(float deltaTime)
+
+        
         {
             // Process queued events each frame
             EventSystem.ProcessQueuedEvents();
@@ -198,7 +201,7 @@ namespace ProjectChimera.Core.Events
         protected override void OnManagerInitialize()
         {
             // Manager-specific initialization
-            Debug.Log("[EventManager] Event system initialized");
+            ChimeraLogger.Log("[EventManager] Event system initialized");
         }
         
         protected override void OnManagerShutdown()
@@ -209,6 +212,34 @@ namespace ProjectChimera.Core.Events
                 EventSystem.ClearAllHandlers();
                 instance = null;
             }
+        }
+
+        protected override void Start()
+        {
+            base.Start();
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
+        }
+
+        protected override void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
+            base.OnDestroy();
+        }
+
+        // ITickable implementation
+        public int Priority => 0;
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+        
+        public virtual void OnRegistered() 
+        { 
+            // Override in derived classes if needed
+        }
+        
+        public virtual void OnUnregistered() 
+        { 
+            // Override in derived classes if needed
         }
     }
 }

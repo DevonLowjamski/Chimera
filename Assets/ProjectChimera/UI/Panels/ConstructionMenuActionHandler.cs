@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -40,7 +41,7 @@ namespace ProjectChimera.UI.Panels
                     break;
                 default:
                     OnConstructionActionTriggered?.Invoke("item_clicked", itemId);
-                    Debug.Log($"[ConstructionMenuActionHandler] Handled item click: {itemId}");
+                    ChimeraLogger.Log($"[ConstructionMenuActionHandler] Handled item click: {itemId}");
                     break;
             }
         }
@@ -49,21 +50,21 @@ namespace ProjectChimera.UI.Panels
         public bool RotateCurrentFacility() 
         { 
             OnConstructionActionTriggered?.Invoke("rotate-current", ""); 
-            Debug.Log("[ConstructionMenuActionHandler] Rotating current facility");
+            ChimeraLogger.Log("[ConstructionMenuActionHandler] Rotating current facility");
             return true; 
         }
         
         public bool ShowFacilityTypeSelector() 
         { 
             OnConstructionActionTriggered?.Invoke("show-facility-selector", ""); 
-            Debug.Log("[ConstructionMenuActionHandler] Showing facility type selector");
+            ChimeraLogger.Log("[ConstructionMenuActionHandler] Showing facility type selector");
             return true; 
         }
         
         public bool ShowFacilitySelector() 
         { 
             OnConstructionActionTriggered?.Invoke("show-facility-selector", ""); 
-            Debug.Log("[ConstructionMenuActionHandler] Showing facility selector");
+            ChimeraLogger.Log("[ConstructionMenuActionHandler] Showing facility selector");
             return true; 
         }
         
@@ -71,14 +72,14 @@ namespace ProjectChimera.UI.Panels
         public bool ShowSchematicSelector() 
         { 
             OnConstructionActionTriggered?.Invoke("show-schematic-selector", ""); 
-            Debug.Log("[ConstructionMenuActionHandler] Showing schematic selector");
+            ChimeraLogger.Log("[ConstructionMenuActionHandler] Showing schematic selector");
             return true; 
         }
         
         public bool SaveCurrentLayout() 
         { 
             OnConstructionActionTriggered?.Invoke("save-layout", ""); 
-            Debug.Log("[ConstructionMenuActionHandler] Saving current layout");
+            ChimeraLogger.Log("[ConstructionMenuActionHandler] Saving current layout");
             return true; 
         }
         
@@ -86,14 +87,14 @@ namespace ProjectChimera.UI.Panels
         public bool OpenConstructionManager() 
         { 
             OnConstructionActionTriggered?.Invoke("open-manager", ""); 
-            Debug.Log("[ConstructionMenuActionHandler] Opening construction manager");
+            ChimeraLogger.Log("[ConstructionMenuActionHandler] Opening construction manager");
             return true; 
         }
         
         public bool ShowFacilityStats() 
         { 
             OnConstructionActionTriggered?.Invoke("show-stats", ""); 
-            Debug.Log("[ConstructionMenuActionHandler] Showing facility stats");
+            ChimeraLogger.Log("[ConstructionMenuActionHandler] Showing facility stats");
             return true; 
         }
         
@@ -101,28 +102,28 @@ namespace ProjectChimera.UI.Panels
         public bool StartFacilityMove() 
         { 
             OnConstructionActionTriggered?.Invoke("start-move", ""); 
-            Debug.Log("[ConstructionMenuActionHandler] Starting facility move");
+            ChimeraLogger.Log("[ConstructionMenuActionHandler] Starting facility move");
             return true; 
         }
         
         public bool RotateSelectedFacility() 
         { 
             OnConstructionActionTriggered?.Invoke("rotate-selected", ""); 
-            Debug.Log("[ConstructionMenuActionHandler] Rotating selected facility");
+            ChimeraLogger.Log("[ConstructionMenuActionHandler] Rotating selected facility");
             return true; 
         }
         
         public bool ShowUpgradeOptions() 
         { 
             OnConstructionActionTriggered?.Invoke("show-upgrades", ""); 
-            Debug.Log("[ConstructionMenuActionHandler] Showing upgrade options");
+            ChimeraLogger.Log("[ConstructionMenuActionHandler] Showing upgrade options");
             return true; 
         }
         
         public bool DeleteSelectedFacility() 
         { 
             OnConstructionActionTriggered?.Invoke("delete-selected", ""); 
-            Debug.Log("[ConstructionMenuActionHandler] Deleting selected facility");
+            ChimeraLogger.Log("[ConstructionMenuActionHandler] Deleting selected facility");
             return true; 
         }
         
@@ -130,21 +131,21 @@ namespace ProjectChimera.UI.Panels
         public bool ValidatePlacementCost(string facilityId, int currentFunds)
         {
             // Placeholder validation logic
-            Debug.Log($"[ConstructionMenuActionHandler] Validating placement cost for {facilityId} with funds {currentFunds}");
+            ChimeraLogger.Log($"[ConstructionMenuActionHandler] Validating placement cost for {facilityId} with funds {currentFunds}");
             return currentFunds >= 10000; // Basic validation
         }
         
         public bool ValidateSkillRequirement(string facilityId, int currentSkillLevel)
         {
             // Placeholder skill validation logic
-            Debug.Log($"[ConstructionMenuActionHandler] Validating skill requirement for {facilityId} with skill level {currentSkillLevel}");
+            ChimeraLogger.Log($"[ConstructionMenuActionHandler] Validating skill requirement for {facilityId} with skill level {currentSkillLevel}");
             return currentSkillLevel >= 1; // Basic validation
         }
         
         public bool ValidateZonePermissions(string facilityId, string zoneType)
         {
             // Placeholder zone validation logic
-            Debug.Log($"[ConstructionMenuActionHandler] Validating zone permissions for {facilityId} in {zoneType}");
+            ChimeraLogger.Log($"[ConstructionMenuActionHandler] Validating zone permissions for {facilityId} in {zoneType}");
             return true; // Basic validation
         }
         
@@ -152,35 +153,35 @@ namespace ProjectChimera.UI.Panels
         public bool CreateFacilityGroup(string[] facilityIds)
         {
             OnConstructionActionTriggered?.Invoke("create-group", string.Join(",", facilityIds));
-            Debug.Log($"[ConstructionMenuActionHandler] Creating facility group with {facilityIds.Length} facilities");
+            ChimeraLogger.Log($"[ConstructionMenuActionHandler] Creating facility group with {facilityIds.Length} facilities");
             return true;
         }
         
         public bool DuplicateFacility(string facilityId)
         {
             OnConstructionActionTriggered?.Invoke("duplicate-facility", facilityId);
-            Debug.Log($"[ConstructionMenuActionHandler] Duplicating facility: {facilityId}");
+            ChimeraLogger.Log($"[ConstructionMenuActionHandler] Duplicating facility: {facilityId}");
             return true;
         }
         
         public bool ShowFacilityBlueprint(string facilityId)
         {
             OnConstructionActionTriggered?.Invoke("show-blueprint", facilityId);
-            Debug.Log($"[ConstructionMenuActionHandler] Showing blueprint for: {facilityId}");
+            ChimeraLogger.Log($"[ConstructionMenuActionHandler] Showing blueprint for: {facilityId}");
             return true;
         }
         
         public bool ExportLayout(string layoutName)
         {
             OnConstructionActionTriggered?.Invoke("export-layout", layoutName);
-            Debug.Log($"[ConstructionMenuActionHandler] Exporting layout: {layoutName}");
+            ChimeraLogger.Log($"[ConstructionMenuActionHandler] Exporting layout: {layoutName}");
             return true;
         }
         
         public bool ImportLayout(string layoutPath)
         {
             OnConstructionActionTriggered?.Invoke("import-layout", layoutPath);
-            Debug.Log($"[ConstructionMenuActionHandler] Importing layout from: {layoutPath}");
+            ChimeraLogger.Log($"[ConstructionMenuActionHandler] Importing layout from: {layoutPath}");
             return true;
         }
         
@@ -217,7 +218,7 @@ namespace ProjectChimera.UI.Panels
                 case "import-layout":
                     return true;
                 default:
-                    Debug.LogWarning($"[ConstructionMenuActionHandler] Unknown action: {actionId}");
+                    ChimeraLogger.LogWarning($"[ConstructionMenuActionHandler] Unknown action: {actionId}");
                     return false;
             }
         }

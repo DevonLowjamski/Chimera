@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core
 {
@@ -96,7 +97,7 @@ namespace ProjectChimera.Core
         /// </summary>
         private void LogInfo(string message)
         {
-            Debug.Log($"[AudioFocusHandler] {message}");
+            ChimeraLogger.Log($"[AudioFocusHandler] {message}");
         }
         
         /// <summary>

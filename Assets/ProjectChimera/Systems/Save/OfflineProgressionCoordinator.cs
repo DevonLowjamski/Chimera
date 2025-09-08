@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
 using System.Collections.Generic;
@@ -523,12 +524,12 @@ namespace ProjectChimera.Systems.Save
 
         protected void LogInfo(string message)
         {
-            Debug.Log($"[{_systemName}OfflineWrapper] {message}");
+            ChimeraLogger.Log($"[{_systemName}OfflineWrapper] {message}");
         }
 
         protected void LogWarning(string message)
         {
-            Debug.LogWarning($"[{_systemName}OfflineWrapper] {message}");
+            ChimeraLogger.LogWarning($"[{_systemName}OfflineWrapper] {message}");
         }
     }
 

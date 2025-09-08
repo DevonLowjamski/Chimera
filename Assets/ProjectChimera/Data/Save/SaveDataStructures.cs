@@ -10,7 +10,7 @@ namespace ProjectChimera.Data.Save
     /// enabling efficient and reliable save/load operations while maintaining
     /// data integrity and version compatibility.
     /// </summary>
-    
+
     /// <summary>
     /// Main save game data container
     /// </summary>
@@ -24,7 +24,7 @@ namespace ProjectChimera.Data.Save
         public string GameVersion;
         public string SaveSystemVersion;
         public TimeSpan PlayTime;
-        
+
         [Header("New DTO-Based System Data")]
         public FacilityStateDTO FacilityData;
         public ConstructionStateDTO ConstructionData;
@@ -33,7 +33,7 @@ namespace ProjectChimera.Data.Save
         public ProgressionStateDTO ProgressionStateData;
         public UIStateDTO UIData;
         public ContractsStateDTO ContractsData;
-        
+
         [Header("Legacy Game Data - Deprecated")]
         public PlayerSaveData PlayerData;
         public CultivationSaveData CultivationData;
@@ -43,12 +43,12 @@ namespace ProjectChimera.Data.Save
         public ObjectiveSaveData ObjectiveData;
         public EventSaveData EventData;
         public GameSettingsSaveData SettingsData;
-        
+
         [Header("Additional Data")]
         public Dictionary<string, object> CustomData = new Dictionary<string, object>();
         public byte[] Checksum; // For data integrity verification
     }
-    
+
     /// <summary>
     /// Version management data structures
     /// </summary>
@@ -61,13 +61,13 @@ namespace ProjectChimera.Data.Save
         public List<string> MajorChanges = new List<string>();
         public bool IsBreakingChange = false;
     }
-    
+
     [System.Serializable]
     public class SaveVersionHistoryWrapper
     {
         public List<SaveVersionInfo> VersionHistory = new List<SaveVersionInfo>();
     }
-    
+
     [System.Serializable]
     public class SaveVersionMetadata
     {
@@ -78,7 +78,7 @@ namespace ProjectChimera.Data.Save
         public string Description;
         public Dictionary<string, object> Metadata = new Dictionary<string, object>();
     }
-    
+
     [System.Serializable]
     public class VersionMigrationResult
     {
@@ -114,7 +114,7 @@ namespace ProjectChimera.Data.Save
         public string ErrorMessage;
         public Dictionary<string, object> ResultData = new Dictionary<string, object>();
     }
-    
+
     /// <summary>
     /// Player profile and progression data
     /// </summary>
@@ -135,7 +135,7 @@ namespace ProjectChimera.Data.Save
         public List<string> UnlockedAchievements = new List<string>();
         public PlayerStatsSaveData Statistics;
     }
-    
+
     /// <summary>
     /// Player statistics tracking
     /// </summary>
@@ -154,7 +154,7 @@ namespace ProjectChimera.Data.Save
         public DateTime FirstPlantGrown;
         public DateTime FirstHarvest;
     }
-    
+
     /// <summary>
     /// Cultivation system save data
     /// </summary>
@@ -168,7 +168,7 @@ namespace ProjectChimera.Data.Save
         public PlantStatisticsSaveData PlantStatistics;
         public CultivationSettingsSaveData Settings;
     }
-    
+
     /// <summary>
     /// Individual plant save data
     /// </summary>
@@ -191,7 +191,7 @@ namespace ProjectChimera.Data.Save
         public DateTime LastCareDate;
         public string FacilityLocation;
     }
-    
+
     /// <summary>
     /// Harvest record save data
     /// </summary>
@@ -214,7 +214,7 @@ namespace ProjectChimera.Data.Save
         public DateTime SoldDate;
         public float SoldPrice;
     }
-    
+
     /// <summary>
     /// Genetic breeding history
     /// </summary>
@@ -232,7 +232,7 @@ namespace ProjectChimera.Data.Save
         public bool IsStable;
         public float SuccessRate;
     }
-    
+
     /// <summary>
     /// Plant cultivation statistics
     /// </summary>
@@ -249,7 +249,7 @@ namespace ProjectChimera.Data.Save
         public Dictionary<string, float> StrainYields = new Dictionary<string, float>();
         public Dictionary<string, int> CauseOfDeathStats = new Dictionary<string, int>();
     }
-    
+
     /// <summary>
     /// Cultivation system settings
     /// </summary>
@@ -264,7 +264,7 @@ namespace ProjectChimera.Data.Save
         public bool EnvironmentalStress;
         public Dictionary<string, float> AutomationThresholds = new Dictionary<string, float>();
     }
-    
+
     /// <summary>
     /// Economic system save data
     /// </summary>
@@ -280,7 +280,7 @@ namespace ProjectChimera.Data.Save
         public EconomicStatisticsSaveData Statistics;
         public MarketConditionsSaveData CurrentMarketConditions;
     }
-    
+
     /// <summary>
     /// Market transaction record
     /// </summary>
@@ -300,7 +300,7 @@ namespace ProjectChimera.Data.Save
         public bool WasProfitable;
         public float ProfitMargin;
     }
-    
+
     /// <summary>
     /// Investment save data
     /// </summary>
@@ -318,7 +318,7 @@ namespace ProjectChimera.Data.Save
         public string RiskLevel;
         public bool IsActive;
     }
-    
+
     /// <summary>
     /// Contract save data
     /// </summary>
@@ -337,7 +337,7 @@ namespace ProjectChimera.Data.Save
         public List<string> RequiredDeliverables = new List<string>();
         public List<string> CompletedDeliverables = new List<string>();
     }
-    
+
     /// <summary>
     /// Economic statistics
     /// </summary>
@@ -354,7 +354,7 @@ namespace ProjectChimera.Data.Save
         public Dictionary<string, float> RevenueByCategory = new Dictionary<string, float>();
         public Dictionary<string, float> ExpensesByCategory = new Dictionary<string, float>();
     }
-    
+
     /// <summary>
     /// Current market conditions
     /// </summary>
@@ -368,7 +368,7 @@ namespace ProjectChimera.Data.Save
         public string OverallMarketCondition; // Bull, Bear, Stable
         public List<string> ActiveMarketEvents = new List<string>();
     }
-    
+
     /// <summary>
     /// Environmental and facility save data
     /// </summary>
@@ -381,7 +381,7 @@ namespace ProjectChimera.Data.Save
         public List<AutomationRuleSaveData> AutomationRules = new List<AutomationRuleSaveData>();
         public EnvironmentalStatisticsSaveData Statistics;
     }
-    
+
     /// <summary>
     /// Facility configuration save data
     /// </summary>
@@ -397,7 +397,7 @@ namespace ProjectChimera.Data.Save
         public float TotalValue;
         public Dictionary<string, object> FacilitySettings = new Dictionary<string, object>();
     }
-    
+
     /// <summary>
     /// Individual room save data
     /// </summary>
@@ -416,7 +416,7 @@ namespace ProjectChimera.Data.Save
         public int CurrentPlantCount;
         public bool IsActive;
     }
-    
+
     /// <summary>
     /// Equipment state save data
     /// </summary>
@@ -438,7 +438,7 @@ namespace ProjectChimera.Data.Save
         public DateTime LastMaintenanceDate;
         public float OperatingHours;
     }
-    
+
     /// <summary>
     /// Environmental conditions save data
     /// </summary>
@@ -455,7 +455,7 @@ namespace ProjectChimera.Data.Save
         public Dictionary<string, float> NutrientLevels = new Dictionary<string, float>();
         public DateTime ReadingTimestamp;
     }
-    
+
     /// <summary>
     /// Environmental reading history
     /// </summary>
@@ -467,7 +467,7 @@ namespace ProjectChimera.Data.Save
         public EnvironmentalConditionsSaveData Conditions;
         public Dictionary<string, bool> AlertsTriggered = new Dictionary<string, bool>();
     }
-    
+
     /// <summary>
     /// Automation rule save data
     /// </summary>
@@ -486,7 +486,7 @@ namespace ProjectChimera.Data.Save
         public DateTime LastTriggered;
         public DateTime CreatedDate;
     }
-    
+
     /// <summary>
     /// Equipment maintenance record
     /// </summary>
@@ -502,7 +502,7 @@ namespace ProjectChimera.Data.Save
         public List<string> PartsReplaced = new List<string>();
         public float DowntimeHours;
     }
-    
+
     /// <summary>
     /// Environmental statistics
     /// </summary>
@@ -517,7 +517,7 @@ namespace ProjectChimera.Data.Save
         public float EnvironmentalStability;
         public Dictionary<string, float> OptimalConditionsPercentage = new Dictionary<string, float>();
     }
-    
+
     /// <summary>
     /// Player progression save data
     /// </summary>
@@ -534,7 +534,7 @@ namespace ProjectChimera.Data.Save
         public Dictionary<string, int> SkillLevels = new Dictionary<string, int>();
         public ProgressionStatisticsSaveData Statistics;
     }
-    
+
     /// <summary>
     /// Achievement save data
     /// </summary>
@@ -548,7 +548,7 @@ namespace ProjectChimera.Data.Save
         public bool IsCompleted;
         public Dictionary<string, object> AchievementData = new Dictionary<string, object>();
     }
-    
+
     /// <summary>
     /// Progression statistics
     /// </summary>
@@ -564,7 +564,7 @@ namespace ProjectChimera.Data.Save
         public DateTime LastLevelUp;
         public Dictionary<string, DateTime> SkillUnlockDates = new Dictionary<string, DateTime>();
     }
-    
+
     /// <summary>
     /// Objectives and challenges save data
     /// </summary>
@@ -580,7 +580,7 @@ namespace ProjectChimera.Data.Save
         public DateTime LastChallengeRefresh;
         public ObjectiveStatisticsSaveData Statistics;
     }
-    
+
     /// <summary>
     /// Active objective progress
     /// </summary>
@@ -596,7 +596,7 @@ namespace ProjectChimera.Data.Save
         public string Difficulty;
         public bool IsCompleted;
     }
-    
+
     /// <summary>
     /// Challenge save data
     /// </summary>
@@ -611,7 +611,7 @@ namespace ProjectChimera.Data.Save
         public bool IsCompleted;
         public List<string> RewardsEarned = new List<string>();
     }
-    
+
     /// <summary>
     /// Objective completion history
     /// </summary>
@@ -625,7 +625,7 @@ namespace ProjectChimera.Data.Save
         public List<string> RewardsReceived = new List<string>();
         public bool WasSkipped;
     }
-    
+
     /// <summary>
     /// Objective system statistics
     /// </summary>
@@ -641,7 +641,7 @@ namespace ProjectChimera.Data.Save
         public DateTime FirstObjectiveCompleted;
         public DateTime LastObjectiveCompleted;
     }
-    
+
     /// <summary>
     /// Random events save data
     /// </summary>
@@ -655,7 +655,7 @@ namespace ProjectChimera.Data.Save
         public float PlayerReputation;
         public DateTime LastEventTime;
     }
-    
+
     /// <summary>
     /// Active event save data
     /// </summary>
@@ -670,7 +670,7 @@ namespace ProjectChimera.Data.Save
         public Dictionary<string, object> EventData = new Dictionary<string, object>();
         public List<string> AvailableChoices = new List<string>();
     }
-    
+
     /// <summary>
     /// Event completion history
     /// </summary>
@@ -685,7 +685,7 @@ namespace ProjectChimera.Data.Save
         public float ReputationChange;
         public bool WasSuccessful;
     }
-    
+
     /// <summary>
     /// Event system statistics
     /// </summary>
@@ -702,7 +702,7 @@ namespace ProjectChimera.Data.Save
         public DateTime FirstEvent;
         public DateTime LastEvent;
     }
-    
+
     /// <summary>
     /// Game settings save data
     /// </summary>
@@ -718,9 +718,9 @@ namespace ProjectChimera.Data.Save
         public bool FirstTimePlaying;
         public DateTime SettingsLastModified;
     }
-    
+
     // Save system operation results
-    
+
     /// <summary>
     /// Result of a save operation
     /// </summary>
@@ -734,7 +734,7 @@ namespace ProjectChimera.Data.Save
         public string ErrorMessage;
         public TimeSpan SaveDuration;
     }
-    
+
     /// <summary>
     /// Result of a load operation
     /// </summary>
@@ -748,7 +748,7 @@ namespace ProjectChimera.Data.Save
         public TimeSpan LoadDuration;
         public bool RequiredMigration;
     }
-    
+
     /// <summary>
     /// Result of loading save data from file
     /// </summary>
@@ -759,19 +759,7 @@ namespace ProjectChimera.Data.Save
         public SaveGameData GameData;
         public string ErrorMessage;
     }
-    
-    /// <summary>
-    /// Data validation result
-    /// </summary>
-    [System.Serializable]
-    public class ValidationResult
-    {
-        public bool IsValid;
-        public string ErrorMessage;
-        public List<string> Warnings = new List<string>();
-        public float CorruptionPercentage;
-    }
-    
+
     /// <summary>
     /// Save slot information for UI display
     /// </summary>
@@ -789,7 +777,7 @@ namespace ProjectChimera.Data.Save
         public long FileSizeBytes;
         public bool IsCorrupted;
     }
-    
+
     /// <summary>
     /// Detailed save slot information
     /// </summary>
@@ -804,7 +792,7 @@ namespace ProjectChimera.Data.Save
         public Texture2D Screenshot;
         public ValidationResult ValidationStatus;
     }
-    
+
     /// <summary>
     /// Save system configuration
     /// </summary>
@@ -821,7 +809,7 @@ namespace ProjectChimera.Data.Save
         public string EncryptionKey;
         public int CompressionLevel;
     }
-    
+
     /// <summary>
     /// Save system performance metrics
     /// </summary>
@@ -841,9 +829,9 @@ namespace ProjectChimera.Data.Save
         public int AutoSavesPerformed;
         public int BackupsCreated;
     }
-    
+
     // Enums for save system
-    
+
     /// <summary>
     /// Types of save operations
     /// </summary>
@@ -855,7 +843,7 @@ namespace ProjectChimera.Data.Save
         Checkpoint,
         Emergency
     }
-    
+
     /// <summary>
     /// Save file format types
     /// </summary>
@@ -867,7 +855,7 @@ namespace ProjectChimera.Data.Save
         Compressed,
         Encrypted
     }
-    
+
     /// <summary>
     /// Data corruption levels
     /// </summary>
@@ -879,7 +867,7 @@ namespace ProjectChimera.Data.Save
         Severe,
         Total
     }
-    
+
     /// <summary>
     /// Save system error types
     /// </summary>

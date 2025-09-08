@@ -277,24 +277,24 @@ namespace ProjectChimera.Data.Construction
             
             if (string.IsNullOrEmpty(_schematicName))
             {
-                Debug.LogError($"Schematic {name}: Schematic name cannot be empty", this);
+                SharedLogger.LogError($"Schematic {name}: Schematic name cannot be empty");
                 isValid = false;
             }
             
             if (_items.Count == 0)
             {
-                Debug.LogWarning($"Schematic {name}: No items defined in schematic", this);
+                SharedLogger.LogWarning($"Schematic {name}: No items defined in schematic");
             }
             
             if (_skillPointCost < 0f)
             {
-                Debug.LogError($"Schematic {name}: Skill point cost cannot be negative", this);
+                SharedLogger.LogError($"Schematic {name}: Skill point cost cannot be negative");
                 isValid = false;
             }
             
             if (_requiredLevel < 1)
             {
-                Debug.LogError($"Schematic {name}: Required level must be at least 1", this);
+                SharedLogger.LogError($"Schematic {name}: Required level must be at least 1");
                 isValid = false;
             }
             
@@ -303,7 +303,7 @@ namespace ProjectChimera.Data.Construction
             {
                 if (!item.IsValid())
                 {
-                    Debug.LogError($"Schematic {name}: Invalid item found - {item.ItemName}", this);
+                    SharedLogger.LogError($"Schematic {name}: Invalid item found - {item.ItemName}");
                     isValid = false;
                 }
             }

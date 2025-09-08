@@ -1,11 +1,14 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Data.Economy;
 using ProjectChimera.Data.Economy.Trading;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using TradingTransactionType = ProjectChimera.Data.Economy.TradingTransactionType;
 using FinancialRecord = ProjectChimera.Data.Economy.FinancialRecord;
+using FinancialTransactionType = ProjectChimera.Data.Economy.FinancialTransactionType;
 using PaymentMethodType = ProjectChimera.Data.Economy.PaymentMethodType;
 
 namespace ProjectChimera.Systems.Economy
@@ -15,24 +18,24 @@ namespace ProjectChimera.Systems.Economy
     /// Extracted from TradingManager for modular architecture.
     /// Handles cash flow, payment methods, and financial record keeping.
     /// </summary>
-    public class TradingFinancialManager : MonoBehaviour
+    public class TradingFinancialManager : MonoBehaviour, ITickable
     {
         [Header("Financial Configuration")]
         [SerializeField] private bool _enableFinancialLogging = true;
         [SerializeField] private float _financialUpdateInterval = 5f; // Update metrics every 5 seconds
         [SerializeField] private int _maxFinancialHistory = 1000;
-        
+
         // Financial data
         private PlayerFinances _playerFinances;
         private float _lastFinancialUpdate = 0f;
-        
+
         // Events
         public System.Action<float, float> OnCashChanged; // oldAmount, newAmount
         public System.Action<float, float> OnBankBalanceChanged; // oldAmount, newAmount
         public System.Action<float, float> OnDebtChanged; // oldAmount, newAmount
         public System.Action<FinancialRecord> OnTransactionRecorded;
         public System.Action<PlayerFinances> OnFinancialMetricsUpdated;
-        
+
         // Properties
         public PlayerFinances PlayerFinances => _playerFinances;
         public float CashOnHand => _playerFinances?.CashOnHand ?? 0f;
@@ -42,7 +45,7 @@ namespace ProjectChimera.Systems.Economy
         public float AvailableCredit => CreditLimit - TotalDebt;
         public float NetWorth => CashOnHand + BankBalance - TotalDebt;
         public float MonthlyProfit => _playerFinances?.MonthlyProfit ?? 0f;
-        
+
         /// <summary>
         /// Initialize financial manager with starting configuration
         /// </summary>
@@ -63,30 +66,40 @@ namespace ProjectChimera.Systems.Economy
                     TransactionHistory = new List<FinancialRecord>()
                 };
             }
-            
+
             LogDebug($"Trading financial manager initialized - Starting Cash: ${CashOnHand:F2}, Credit Limit: ${CreditLimit:F2}");
+
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
-        
-        private void Update()
+
+        #region ITickable Implementation
+
+        public int Priority => TickPriority.EconomyManager;
+        public bool Enabled => _playerFinances != null;
+
+        public void Tick(float deltaTime)
         {
-            _lastFinancialUpdate += Time.deltaTime;
-            
+            _lastFinancialUpdate += deltaTime;
+
             if (_lastFinancialUpdate >= _financialUpdateInterval)
             {
                 UpdateFinancialMetrics();
                 _lastFinancialUpdate = 0f;
             }
         }
-        
+
+        #endregion
+
         #region Payment Processing
-        
+
         /// <summary>
         /// Check if player can afford a transaction
         /// </summary>
         public bool CanAffordTransaction(float cost, PaymentMethod paymentMethod)
         {
             if (cost <= 0) return true;
-            
+
             switch (paymentMethod.PaymentType)
             {
                 case PaymentMethodType.Cash:
@@ -103,7 +116,7 @@ namespace ProjectChimera.Systems.Economy
                     return false;
             }
         }
-        
+
         /// <summary>
         /// Process payment for a transaction
         /// </summary>
@@ -114,7 +127,7 @@ namespace ProjectChimera.Systems.Economy
                 LogError("Cannot process payment for zero or negative amount");
                 return false;
             }
-            
+
             switch (paymentMethod.PaymentType)
             {
                 case PaymentMethodType.Cash:
@@ -130,7 +143,7 @@ namespace ProjectChimera.Systems.Economy
                     return false;
             }
         }
-        
+
         /// <summary>
         /// Process cash payment
         /// </summary>
@@ -141,24 +154,25 @@ namespace ProjectChimera.Systems.Economy
                 float oldCash = _playerFinances.CashOnHand;
                 _playerFinances.CashOnHand -= amount;
                 OnCashChanged?.Invoke(oldCash, _playerFinances.CashOnHand);
-                
+
                 RecordTransaction(new FinancialRecord
                 {
-                    TransactionType = FinancialTransactionType.Purchase,
-                    Amount = -amount,
+                    TransactionType = FinancialTransactionType.Expense,
+                    DebitAmount = amount,
+                    CreditAmount = 0,
                     Description = $"Cash payment of ${amount:F2}",
-                    Timestamp = (float)(System.DateTime.Now - new System.DateTime(1970, 1, 1)).TotalSeconds,
-                    Category = "Trading"
+                    RecordDate = System.DateTime.Now,
+                    AccountCode = "Trading"
                 });
-                
+
                 LogDebug($"Cash payment processed: ${amount:F2} (Remaining: ${CashOnHand:F2})");
                 return true;
             }
-            
+
             LogError($"Insufficient cash: Need ${amount:F2}, have ${CashOnHand:F2}");
             return false;
         }
-        
+
         /// <summary>
         /// Process bank transfer payment
         /// </summary>
@@ -169,24 +183,25 @@ namespace ProjectChimera.Systems.Economy
                 float oldBalance = _playerFinances.BankBalance;
                 _playerFinances.BankBalance -= amount;
                 OnBankBalanceChanged?.Invoke(oldBalance, _playerFinances.BankBalance);
-                
+
                 RecordTransaction(new FinancialRecord
                 {
                     TransactionType = FinancialTransactionType.Transfer,
-                    Amount = -amount,
+                    DebitAmount = amount,
+                    CreditAmount = 0,
                     Description = $"Bank transfer of ${amount:F2}",
-                    Timestamp = (float)(System.DateTime.Now - new System.DateTime(1970, 1, 1)).TotalSeconds,
-                    Category = "Trading"
+                    RecordDate = System.DateTime.Now,
+                    AccountCode = "Trading"
                 });
-                
+
                 LogDebug($"Bank payment processed: ${amount:F2} (Remaining: ${BankBalance:F2})");
                 return true;
             }
-            
+
             LogError($"Insufficient bank balance: Need ${amount:F2}, have ${BankBalance:F2}");
             return false;
         }
-        
+
         /// <summary>
         /// Process credit payment
         /// </summary>
@@ -197,24 +212,25 @@ namespace ProjectChimera.Systems.Economy
                 float oldDebt = _playerFinances.TotalDebt;
                 _playerFinances.TotalDebt += amount;
                 OnDebtChanged?.Invoke(oldDebt, _playerFinances.TotalDebt);
-                
+
                 RecordTransaction(new FinancialRecord
                 {
-                    TransactionType = FinancialTransactionType.Purchase,
-                    Amount = -amount,
+                    TransactionType = FinancialTransactionType.Expense,
+                    DebitAmount = amount,
+                    CreditAmount = 0,
                     Description = $"Credit payment of ${amount:F2}",
-                    Timestamp = (float)(System.DateTime.Now - new System.DateTime(1970, 1, 1)).TotalSeconds,
-                    Category = "Credit"
+                    RecordDate = System.DateTime.Now,
+                    AccountCode = "Credit"
                 });
-                
+
                 LogDebug($"Credit payment processed: ${amount:F2} (Available Credit: ${AvailableCredit:F2})");
                 return true;
             }
-            
+
             LogError($"Credit limit exceeded: Need ${amount:F2}, available credit: ${AvailableCredit:F2}");
             return false;
         }
-        
+
         /// <summary>
         /// Process cryptocurrency payment
         /// </summary>
@@ -224,7 +240,7 @@ namespace ProjectChimera.Systems.Economy
             // In a full implementation, this would handle crypto-specific logic
             return ProcessCashPayment(amount);
         }
-        
+
         /// <summary>
         /// Refund a payment (used when transaction fails)
         /// </summary>
@@ -244,7 +260,7 @@ namespace ProjectChimera.Systems.Economy
                     return false;
             }
         }
-        
+
         /// <summary>
         /// Refund to cash
         /// </summary>
@@ -253,20 +269,21 @@ namespace ProjectChimera.Systems.Economy
             float oldCash = _playerFinances.CashOnHand;
             _playerFinances.CashOnHand += amount;
             OnCashChanged?.Invoke(oldCash, _playerFinances.CashOnHand);
-            
+
             RecordTransaction(new FinancialRecord
             {
-                TransactionType = FinancialTransactionType.Sale, // Refunds are treated as incoming money
-                Amount = amount,
+                TransactionType = FinancialTransactionType.Revenue, // Refunds are treated as incoming money
+                DebitAmount = 0,
+                CreditAmount = amount,
                 Description = $"Refund of ${amount:F2}",
-                Timestamp = (float)(System.DateTime.Now - new System.DateTime(1970, 1, 1)).TotalSeconds,
-                Category = "Refund"
+                RecordDate = System.DateTime.Now,
+                AccountCode = "Refund"
             });
-            
+
             LogDebug($"Cash refund processed: ${amount:F2}");
             return true;
         }
-        
+
         /// <summary>
         /// Refund to bank account
         /// </summary>
@@ -275,20 +292,21 @@ namespace ProjectChimera.Systems.Economy
             float oldBalance = _playerFinances.BankBalance;
             _playerFinances.BankBalance += amount;
             OnBankBalanceChanged?.Invoke(oldBalance, _playerFinances.BankBalance);
-            
+
             RecordTransaction(new FinancialRecord
             {
                 TransactionType = FinancialTransactionType.Transfer,
-                Amount = amount,
+                DebitAmount = 0,
+                CreditAmount = amount,
                 Description = $"Bank refund of ${amount:F2}",
-                Timestamp = (float)(System.DateTime.Now - new System.DateTime(1970, 1, 1)).TotalSeconds,
-                Category = "Refund"
+                RecordDate = System.DateTime.Now,
+                AccountCode = "Refund"
             });
-            
+
             LogDebug($"Bank refund processed: ${amount:F2}");
             return true;
         }
-        
+
         /// <summary>
         /// Refund credit (reduce debt)
         /// </summary>
@@ -297,24 +315,25 @@ namespace ProjectChimera.Systems.Economy
             float oldDebt = _playerFinances.TotalDebt;
             _playerFinances.TotalDebt = Mathf.Max(0f, _playerFinances.TotalDebt - amount);
             OnDebtChanged?.Invoke(oldDebt, _playerFinances.TotalDebt);
-            
+
             RecordTransaction(new FinancialRecord
             {
-                TransactionType = FinancialTransactionType.Loan_Payment,
-                Amount = -amount,
+                TransactionType = FinancialTransactionType.Adjustment,
+                DebitAmount = amount,
+                CreditAmount = 0,
                 Description = $"Credit refund of ${amount:F2}",
-                Timestamp = (float)(System.DateTime.Now - new System.DateTime(1970, 1, 1)).TotalSeconds,
-                Category = "Refund"
+                RecordDate = System.DateTime.Now,
+                AccountCode = "Refund"
             });
-            
+
             LogDebug($"Credit refund processed: ${amount:F2}");
             return true;
         }
-        
+
         #endregion
-        
+
         #region Payment Receipt
-        
+
         /// <summary>
         /// Receive payment for a sale
         /// </summary>
@@ -325,29 +344,30 @@ namespace ProjectChimera.Systems.Economy
                 LogError("Cannot receive zero or negative payment");
                 return;
             }
-            
+
             // For now, all received payments go to cash
             // In a full implementation, this might vary based on payment method
             float oldCash = _playerFinances.CashOnHand;
             _playerFinances.CashOnHand += amount;
             OnCashChanged?.Invoke(oldCash, _playerFinances.CashOnHand);
-            
+
             RecordTransaction(new FinancialRecord
             {
-                TransactionType = FinancialTransactionType.Sale,
-                Amount = amount,
+                TransactionType = FinancialTransactionType.Revenue,
+                DebitAmount = 0,
+                CreditAmount = amount,
                 Description = $"Payment received: ${amount:F2}",
-                Timestamp = (float)(System.DateTime.Now - new System.DateTime(1970, 1, 1)).TotalSeconds,
-                Category = "Trading"
+                RecordDate = System.DateTime.Now,
+                AccountCode = "Trading"
             });
-            
+
             LogDebug($"Payment received: ${amount:F2} via {paymentMethod.PaymentType}");
         }
-        
+
         #endregion
-        
+
         #region Cash Transfers
-        
+
         /// <summary>
         /// Transfer cash between accounts
         /// </summary>
@@ -358,7 +378,7 @@ namespace ProjectChimera.Systems.Economy
                 LogError("Cannot transfer zero or negative amount");
                 return false;
             }
-            
+
             switch (transferType)
             {
                 case CashTransferType.Cash_To_Bank:
@@ -370,7 +390,7 @@ namespace ProjectChimera.Systems.Economy
                     return false;
             }
         }
-        
+
         /// <summary>
         /// Transfer cash to bank
         /// </summary>
@@ -380,30 +400,31 @@ namespace ProjectChimera.Systems.Economy
             {
                 float oldCash = _playerFinances.CashOnHand;
                 float oldBank = _playerFinances.BankBalance;
-                
+
                 _playerFinances.CashOnHand -= amount;
                 _playerFinances.BankBalance += amount;
-                
+
                 OnCashChanged?.Invoke(oldCash, _playerFinances.CashOnHand);
                 OnBankBalanceChanged?.Invoke(oldBank, _playerFinances.BankBalance);
-                
+
                 RecordTransaction(new FinancialRecord
                 {
                     TransactionType = FinancialTransactionType.Transfer,
-                    Amount = -amount,
+                    DebitAmount = amount,
+                    CreditAmount = 0,
                     Description = $"Cash to bank transfer: ${amount:F2}",
-                    Timestamp = (float)(System.DateTime.Now - new System.DateTime(1970, 1, 1)).TotalSeconds,
-                    Category = "Transfer"
+                    RecordDate = System.DateTime.Now,
+                    AccountCode = "Transfer"
                 });
-                
+
                 LogDebug($"Transferred ${amount:F2} from cash to bank");
                 return true;
             }
-            
+
             LogError($"Insufficient cash for transfer: Need ${amount:F2}, have ${CashOnHand:F2}");
             return false;
         }
-        
+
         /// <summary>
         /// Transfer bank to cash
         /// </summary>
@@ -413,90 +434,90 @@ namespace ProjectChimera.Systems.Economy
             {
                 float oldCash = _playerFinances.CashOnHand;
                 float oldBank = _playerFinances.BankBalance;
-                
+
                 _playerFinances.BankBalance -= amount;
                 _playerFinances.CashOnHand += amount;
-                
+
                 OnCashChanged?.Invoke(oldCash, _playerFinances.CashOnHand);
                 OnBankBalanceChanged?.Invoke(oldBank, _playerFinances.BankBalance);
-                
+
                 RecordTransaction(new FinancialRecord
                 {
                     TransactionType = FinancialTransactionType.Transfer,
-                    Amount = amount,
+                    DebitAmount = 0,
+                    CreditAmount = amount,
                     Description = $"Bank to cash transfer: ${amount:F2}",
-                    Timestamp = (float)(System.DateTime.Now - new System.DateTime(1970, 1, 1)).TotalSeconds,
-                    Category = "Transfer"
+                    RecordDate = System.DateTime.Now,
+                    AccountCode = "Transfer"
                 });
-                
+
                 LogDebug($"Transferred ${amount:F2} from bank to cash");
                 return true;
             }
-            
+
             LogError($"Insufficient bank balance for transfer: Need ${amount:F2}, have ${BankBalance:F2}");
             return false;
         }
-        
+
         #endregion
-        
+
         #region Financial Metrics
-        
+
         /// <summary>
         /// Update financial metrics and calculations
         /// </summary>
         private void UpdateFinancialMetrics()
         {
             if (_playerFinances?.TransactionHistory == null) return;
-            
+
             // Calculate monthly profit from recent transactions
             var currentTimestamp = (float)(System.DateTime.Now - new System.DateTime(1970, 1, 1)).TotalSeconds;
             var thirtyDaysInSeconds = 30 * 24 * 60 * 60; // 30 days in seconds
             var recentTransactions = _playerFinances.TransactionHistory
-                .Where(t => (currentTimestamp - t.Timestamp) <= thirtyDaysInSeconds)
+                .Where(t => (System.DateTime.Now - t.RecordDate).TotalSeconds <= thirtyDaysInSeconds)
                 .ToList();
-            
+
             float monthlyRevenue = recentTransactions
-                .Where(t => t.TransactionType == FinancialTransactionType.Sale && t.Amount > 0)
-                .Sum(t => t.Amount);
-            
+                .Where(t => t.TransactionType == FinancialTransactionType.Revenue)
+                .Sum(t => t.CreditAmount);
+
             float monthlyExpenses = recentTransactions
-                .Where(t => (t.TransactionType == FinancialTransactionType.Purchase || 
-                            t.TransactionType == FinancialTransactionType.Fee_Paid) && t.Amount < 0)
-                .Sum(t => Mathf.Abs(t.Amount));
-            
+                .Where(t => t.TransactionType == FinancialTransactionType.Expense)
+                .Sum(t => t.DebitAmount);
+
             _playerFinances.MonthlyProfit = monthlyRevenue - monthlyExpenses;
             _playerFinances.MonthlyCosts = monthlyExpenses;
-            
+
             OnFinancialMetricsUpdated?.Invoke(_playerFinances);
         }
-        
+
         /// <summary>
         /// Get financial summary for a specific time period
         /// </summary>
         public FinancialSummary GetFinancialSummary(int days = 30)
         {
-            var cutoffDate = (float)(System.DateTime.Now.AddDays(-days) - new System.DateTime(1970, 1, 1)).TotalSeconds;
+            var cutoffDate = System.DateTime.Now.AddDays(-days);
             var relevantTransactions = _playerFinances.TransactionHistory
-                .Where(t => t.Timestamp >= cutoffDate)
+                .Where(t => t.RecordDate >= cutoffDate)
                 .ToList();
-            
+
             return new FinancialSummary
             {
                 PeriodDays = days,
-                TotalRevenue = relevantTransactions.Where(t => t.Amount > 0).Sum(t => t.Amount),
-                TotalExpenses = relevantTransactions.Where(t => t.Amount < 0).Sum(t => Mathf.Abs(t.Amount)),
-                NetProfit = relevantTransactions.Sum(t => t.Amount),
+                TotalRevenue = relevantTransactions.Sum(t => t.CreditAmount),
+                TotalExpenses = relevantTransactions.Sum(t => t.DebitAmount),
+                NetProfit = relevantTransactions.Sum(t => t.CreditAmount - t.DebitAmount),
                 TransactionCount = relevantTransactions.Count(),
-                AverageTransactionSize = relevantTransactions.Count() > 0 ? relevantTransactions.Average(t => Mathf.Abs(t.Amount)) : 0f,
+                AverageTransactionSize = relevantTransactions.Count() > 0 ? relevantTransactions.Average(t => t.CreditAmount + t.DebitAmount) : 0f,
                 CurrentNetWorth = NetWorth,
-                CashFlow = relevantTransactions.Sum(t => t.Amount)
+                CashFlow = relevantTransactions.Sum(t => t.CreditAmount - t.DebitAmount)
             };
         }
-        
+
         #endregion
-        
+
         #region Transaction Recording
-        
+
         /// <summary>
         /// Record a financial transaction
         /// </summary>
@@ -504,26 +525,26 @@ namespace ProjectChimera.Systems.Economy
         {
             _playerFinances.TransactionHistory.Add(record);
             OnTransactionRecorded?.Invoke(record);
-            
+
             // Keep history manageable
             if (_playerFinances.TransactionHistory.Count > _maxFinancialHistory)
             {
-                var cutoffDate = (float)(System.DateTime.Now.AddDays(-365) - new System.DateTime(1970, 1, 1)).TotalSeconds; // Keep 1 year of history
-                _playerFinances.TransactionHistory.RemoveAll(r => r.Timestamp < cutoffDate);
+                var cutoffDate = System.DateTime.Now.AddDays(-365); // Keep 1 year of history
+                _playerFinances.TransactionHistory.RemoveAll(r => r.RecordDate < cutoffDate);
             }
         }
-        
+
         /// <summary>
         /// Get recent transaction history
         /// </summary>
         public List<FinancialRecord> GetRecentTransactions(int count = 20)
         {
             return _playerFinances.TransactionHistory
-                .OrderByDescending(t => t.Timestamp)
+                .OrderByDescending(t => t.RecordDate)
                 .Take(count)
                 .ToList();
         }
-        
+
         /// <summary>
         /// Clear transaction history
         /// </summary>
@@ -531,31 +552,39 @@ namespace ProjectChimera.Systems.Economy
         {
             if (keepCurrent)
             {
-                var cutoffDate = (float)(System.DateTime.Now.AddDays(-30) - new System.DateTime(1970, 1, 1)).TotalSeconds; // Keep last 30 days
-                _playerFinances.TransactionHistory.RemoveAll(r => r.Timestamp < cutoffDate);
+                var cutoffDate = System.DateTime.Now.AddDays(-30); // Keep last 30 days
+                _playerFinances.TransactionHistory.RemoveAll(r => r.RecordDate < cutoffDate);
             }
             else
             {
                 _playerFinances.TransactionHistory.Clear();
             }
-            
+
             LogDebug("Financial transaction history cleared");
         }
-        
+
         #endregion
-        
+
         private void LogDebug(string message)
         {
             if (_enableFinancialLogging)
-                Debug.Log($"[TradingFinancialManager] {message}");
+                ChimeraLogger.Log($"[TradingFinancialManager] {message}");
         }
-        
+
         private void LogError(string message)
         {
-            Debug.LogError($"[TradingFinancialManager] {message}");
+            ChimeraLogger.LogError($"[TradingFinancialManager] {message}");
+        }
+
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
         }
     }
-    
+
     [System.Serializable]
     public class FinancialSummary
     {

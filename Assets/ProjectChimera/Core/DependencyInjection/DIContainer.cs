@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using ProjectChimera.Core.DependencyInjection;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core.DependencyInjection
 {
@@ -66,7 +67,7 @@ namespace ProjectChimera.Core.DependencyInjection
             _services[serviceType] = registration;
             
             if (_enableDebugLogging)
-                Debug.Log($"[ChimeraDIContainer] Registered singleton: {serviceType.Name}");
+                ChimeraLogger.Log($"[ChimeraDIContainer] Registered singleton: {serviceType.Name}");
         }
         
         /// <summary>
@@ -89,7 +90,7 @@ namespace ProjectChimera.Core.DependencyInjection
             _services[serviceType] = registration;
             
             if (_enableDebugLogging)
-                Debug.Log($"[ChimeraDIContainer] Registered singleton: {serviceType.Name} -> {implementationType.Name}");
+                ChimeraLogger.Log($"[ChimeraDIContainer] Registered singleton: {serviceType.Name} -> {implementationType.Name}");
         }
         
         /// <summary>
@@ -115,7 +116,7 @@ namespace ProjectChimera.Core.DependencyInjection
             _singletonInstances[serviceType] = instance;
             
             if (_enableDebugLogging)
-                Debug.Log($"[ChimeraDIContainer] Registered singleton instance: {serviceType.Name}");
+                ChimeraLogger.Log($"[ChimeraDIContainer] Registered singleton instance: {serviceType.Name}");
         }
         
         /// <summary>
@@ -135,7 +136,7 @@ namespace ProjectChimera.Core.DependencyInjection
             _services[serviceType] = registration;
             
             if (_enableDebugLogging)
-                Debug.Log($"[ChimeraDIContainer] Registered transient: {serviceType.Name}");
+                ChimeraLogger.Log($"[ChimeraDIContainer] Registered transient: {serviceType.Name}");
         }
         
         /// <summary>
@@ -159,7 +160,7 @@ namespace ProjectChimera.Core.DependencyInjection
             _services[serviceType] = registration;
             
             if (_enableDebugLogging)
-                Debug.Log($"[ChimeraDIContainer] Registered transient: {serviceType.Name} -> {implementationType.Name}");
+                ChimeraLogger.Log($"[ChimeraDIContainer] Registered transient: {serviceType.Name} -> {implementationType.Name}");
         }
         
         /// <summary>
@@ -184,7 +185,7 @@ namespace ProjectChimera.Core.DependencyInjection
             _services[serviceType] = registration;
             
             if (_enableDebugLogging)
-                Debug.Log($"[ChimeraDIContainer] Registered factory: {serviceType.Name}");
+                ChimeraLogger.Log($"[ChimeraDIContainer] Registered factory: {serviceType.Name}");
         }
         
         /// <summary>
@@ -231,7 +232,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 catch (Exception ex)
                 {
                     if (_enableDebugLogging)
-                        Debug.LogWarning($"[ChimeraDIContainer] Failed to resolve {serviceType.Name}: {ex.Message}");
+                        ChimeraLogger.LogWarning($"[ChimeraDIContainer] Failed to resolve {serviceType.Name}: {ex.Message}");
                 }
             }
             

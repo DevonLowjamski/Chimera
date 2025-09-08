@@ -8,7 +8,8 @@
         "ProjectChimera.Data.Shared",
         "ProjectChimera.Systems",
         "ProjectChimera.Systems.Analytics",
-        "ProjectChimera.Systems.Services.Core"
+        "Unity.UIToolkit",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

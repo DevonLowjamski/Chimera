@@ -1,8 +1,8 @@
 using UnityEngine;
-using ProjectChimera.Core;
 using ProjectChimera.Shared;
 using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Shared;
+using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 
 namespace ProjectChimera.Data.Cultivation
 {
@@ -258,7 +258,7 @@ namespace ProjectChimera.Data.Cultivation
             
             if (_baseGrowthMultiplier <= 0f)
             {
-                Debug.LogWarning($"GrowthCalculationSO '{name}' has invalid base growth multiplier: {_baseGrowthMultiplier}", this);
+                SharedLogger.LogWarning($"GrowthCalculationSO '{name}' has invalid base growth multiplier: {_baseGrowthMultiplier}", this);
                 _baseGrowthMultiplier = 1f;
                 isValid = false;
             }
@@ -416,7 +416,7 @@ namespace ProjectChimera.Data.Cultivation
         {
             if (curve == null || curve.keys.Length == 0)
             {
-                Debug.LogWarning($"GrowthCalculationSO '{name}' has invalid {curveName} curve.", this);
+                SharedLogger.LogWarning($"GrowthCalculationSO '{name}' has invalid {curveName} curve.", this);
                 return;
             }
             
@@ -425,7 +425,7 @@ namespace ProjectChimera.Data.Cultivation
             
             if (firstKey.time < minValue || lastKey.time > maxValue)
             {
-                Debug.LogWarning($"GrowthCalculationSO '{name}' {curveName} curve range [{firstKey.time:F1}, {lastKey.time:F1}] outside expected range [{minValue:F1}, {maxValue:F1}].", this);
+                SharedLogger.LogWarning($"GrowthCalculationSO '{name}' {curveName} curve range [{firstKey.time:F1}, {lastKey.time:F1}] outside expected range [{minValue:F1}, {maxValue:F1}].", this);
             }
         }
     }

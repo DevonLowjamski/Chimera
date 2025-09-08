@@ -2,8 +2,12 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System.Linq;
+using ProjectChimera.Core;
 using ProjectChimera.Data.Construction;
 using ProjectChimera.Systems.Construction;
+using ProjectChimera.Systems.Economy;
+using ProjectChimera.Shared;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels.Components
 {
@@ -273,7 +277,7 @@ namespace ProjectChimera.UI.Panels.Components
             if (unlockData.IsUnlocked)
             {
                 // Show material cost
-                var paymentSystem = FindObjectOfType<ProjectChimera.Systems.Economy.MaterialCostPaymentSystem>();
+                var paymentSystem = ServiceContainerFactory.Instance?.TryResolve<IMaterialCostPaymentSystem>();
                 if (paymentSystem != null)
                 {
                     var paymentData = paymentSystem.GetPaymentDisplayData(schematic);
@@ -461,7 +465,7 @@ namespace ProjectChimera.UI.Panels.Components
             
             if (unlockData.IsUnlocked)
             {
-                var paymentSystem = FindObjectOfType<ProjectChimera.Systems.Economy.MaterialCostPaymentSystem>();
+                var paymentSystem = ServiceContainerFactory.Instance?.TryResolve<IMaterialCostPaymentSystem>();
                 if (paymentSystem != null)
                 {
                     var paymentData = paymentSystem.GetPaymentDisplayData(schematic);
@@ -674,7 +678,7 @@ namespace ProjectChimera.UI.Panels.Components
         {
             if (_unlockManager == null)
             {
-                Debug.LogWarning("Unlock manager not available");
+                ChimeraLogger.LogWarning("Unlock manager not available");
                 return;
             }
             
@@ -683,11 +687,11 @@ namespace ProjectChimera.UI.Panels.Components
             if (success)
             {
                 // The display will be refreshed by the parent panel
-                Debug.Log($"Successfully unlocked: {schematic.SchematicName}");
+                ChimeraLogger.Log($"Successfully unlocked: {schematic.SchematicName}");
             }
             else
             {
-                Debug.LogWarning($"Failed to unlock: {schematic.SchematicName}");
+                ChimeraLogger.LogWarning($"Failed to unlock: {schematic.SchematicName}");
             }
         }
         

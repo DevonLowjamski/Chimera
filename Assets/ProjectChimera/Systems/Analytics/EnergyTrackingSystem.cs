@@ -1,8 +1,11 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using ProjectChimera.Systems.Cultivation;
-using ProjectChimera.Systems.Environment;
+// using ProjectChimera.Systems.Cultivation; // Temporarily removed - namespace reorganization
+// using ProjectChimera.Systems.Environment; // Temporarily removed - namespace reorganization
 
 namespace ProjectChimera.Systems.Analytics
 {
@@ -11,7 +14,7 @@ namespace ProjectChimera.Systems.Analytics
     /// Provides realistic energy consumption estimates based on facility operations
     /// Will be enhanced when environmental systems are fully integrated
     /// </summary>
-    public class EnergyTrackingSystem : MonoBehaviour
+    public class EnergyTrackingSystem : MonoBehaviour, ITickable
     {
         [Header("Energy Configuration")]
         [SerializeField] private float _baseEnergyConsumption = 50f; // kWh base facility consumption
@@ -37,8 +40,8 @@ namespace ProjectChimera.Systems.Analytics
         private float _currentHourlyUsage;
 
         // System references
-        private CultivationManager _cultivationManager;
-        private EnvironmentManager _environmentManager;
+        private ICultivationManager _cultivationManager;
+        private IEnvironmentalManager _environmentManager;
 
         public float TotalEnergyConsumed => _totalEnergyConsumed;
         public float CurrentHourlyUsage => _currentHourlyUsage;
@@ -54,10 +57,12 @@ namespace ProjectChimera.Systems.Analytics
 
         private void Start()
         {
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
             FindSystemReferences();
         }
 
-        private void Update()
+        public void Tick(float deltaTime)
         {
             if (_enableDetailedTracking)
             {
@@ -94,17 +99,17 @@ namespace ProjectChimera.Systems.Analytics
             _currentHourlyUsage = 0f;
 
             if (_enableEnergyLogging)
-                Debug.Log("[EnergyTrackingSystem] Energy tracking initialized");
+                ChimeraLogger.Log("[EnergyTrackingSystem] Energy tracking initialized");
         }
 
         private void FindSystemReferences()
         {
-            _cultivationManager = UnityEngine.Object.FindObjectOfType<CultivationManager>();
-            _environmentManager = UnityEngine.Object.FindObjectOfType<EnvironmentManager>();
+            _cultivationManager = ServiceContainerFactory.Instance?.TryResolve<ICultivationManager>();
+            _environmentManager = ServiceContainerFactory.Instance?.TryResolve<IEnvironmentalManager>();
 
             if (_enableEnergyLogging)
             {
-                Debug.Log($"[EnergyTrackingSystem] Found references - Cultivation: {_cultivationManager != null}, Environment: {_environmentManager != null}");
+                ChimeraLogger.Log($"[EnergyTrackingSystem] Found references - Cultivation: {_cultivationManager != null}, Environment: {_environmentManager != null}");
             }
         }
 
@@ -131,7 +136,7 @@ namespace ProjectChimera.Systems.Analytics
 
             if (_enableEnergyLogging && deltaTime > 0.1f) // Log every ~6 minutes
             {
-                Debug.Log($"[EnergyTrackingSystem] Hourly usage: {hourlyConsumption:F2} kWh, Total consumed: {_totalEnergyConsumed:F2} kWh");
+                ChimeraLogger.Log($"[EnergyTrackingSystem] Hourly usage: {hourlyConsumption:F2} kWh, Total consumed: {_totalEnergyConsumed:F2} kWh");
             }
         }
 
@@ -140,8 +145,8 @@ namespace ProjectChimera.Systems.Analytics
             var totalConsumption = _baseEnergyConsumption;
 
             // Get plant count and health for dynamic calculations
-            var activePlants = _cultivationManager?.ActivePlantCount ?? 0;
-            var avgPlantHealth = _cultivationManager?.AveragePlantHealth ?? 1f;
+            var activePlants = _cultivationManager?.GetActivePlantCount() ?? 0;
+            var avgPlantHealth = 1f; // Placeholder - interface doesn't have AveragePlantHealth yet
 
             if (activePlants > 0)
             {
@@ -174,10 +179,10 @@ namespace ProjectChimera.Systems.Analytics
         {
             // HVAC consumption scales with plant count and environmental demands
             var baseConsumption = plantCount * _hvacConsumption;
-            
+
             // Simulate seasonal variations (stub)
             var seasonalMultiplier = 1f + Mathf.Sin(Time.time * 0.1f) * 0.3f; // ±30% seasonal variation
-            
+
             return baseConsumption * seasonalMultiplier;
         }
 
@@ -205,8 +210,8 @@ namespace ProjectChimera.Systems.Analytics
 
         private void UpdateEnergyBreakdowns(float deltaTime)
         {
-            var activePlants = _cultivationManager?.ActivePlantCount ?? 0;
-            var avgPlantHealth = _cultivationManager?.AveragePlantHealth ?? 1f;
+            var activePlants = _cultivationManager?.GetActivePlantCount() ?? 0;
+            var avgPlantHealth = 1f; // Placeholder - interface doesn't have AveragePlantHealth yet
 
             if (activePlants > 0)
             {
@@ -221,9 +226,9 @@ namespace ProjectChimera.Systems.Analytics
             _equipmentEnergyUsage["Other"] += _baseEnergyConsumption * deltaTime;
 
             // Update system breakdown
-            _systemEnergyUsage["Cultivation"] += (CalculateGrowLightConsumption(activePlants, avgPlantHealth) + 
+            _systemEnergyUsage["Cultivation"] += (CalculateGrowLightConsumption(activePlants, avgPlantHealth) +
                                                    CalculateIrrigationConsumption(activePlants)) * deltaTime;
-            _systemEnergyUsage["Climate Control"] += (CalculateHVACConsumption(activePlants, avgPlantHealth) + 
+            _systemEnergyUsage["Climate Control"] += (CalculateHVACConsumption(activePlants, avgPlantHealth) +
                                                       CalculateVentilationConsumption(activePlants)) * deltaTime;
             _systemEnergyUsage["Security"] += CalculateMonitoringConsumption(activePlants) * deltaTime;
             _systemEnergyUsage["Base Facility"] += _baseEnergyConsumption * deltaTime;
@@ -239,8 +244,8 @@ namespace ProjectChimera.Systems.Analytics
         public float GetEnergyEfficiency()
         {
             if (_totalEnergyConsumed <= 0f) return 0f;
-            
-            var totalYield = _cultivationManager?.TotalYieldHarvested ?? 0f;
+
+            var totalYield = _cultivationManager?.GetTotalYieldHarvested() ?? 0f;
             return totalYield / _totalEnergyConsumed;
         }
 
@@ -267,21 +272,45 @@ namespace ProjectChimera.Systems.Analytics
         {
             _totalEnergyConsumed = 0f;
             _currentHourlyUsage = 0f;
-            
+
             foreach (var key in _equipmentEnergyUsage.Keys.ToArray())
             {
                 _equipmentEnergyUsage[key] = 0f;
             }
-            
+
             foreach (var key in _systemEnergyUsage.Keys.ToArray())
             {
                 _systemEnergyUsage[key] = 0f;
             }
 
             if (_enableEnergyLogging)
-                Debug.Log("[EnergyTrackingSystem] Energy tracking reset");
+                ChimeraLogger.Log("[EnergyTrackingSystem] Energy tracking reset");
         }
 
         #endregion
+
+        #region ITickable Implementation
+
+        // ITickable implementation
+        public int Priority => 0;
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+        public virtual void OnRegistered()
+        {
+            // Override in derived classes if needed
+        }
+
+        public virtual void OnUnregistered()
+        {
+            // Override in derived classes if needed
+        }
+
+        #endregion
+
+        protected virtual void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
+        }
     }
 }

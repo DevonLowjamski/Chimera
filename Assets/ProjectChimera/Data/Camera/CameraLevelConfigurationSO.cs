@@ -198,14 +198,14 @@ namespace ProjectChimera.Data.Camera
             
             if (facilityDist <= roomDist || roomDist <= benchDist || benchDist <= plantDist)
             {
-                Debug.LogWarning($"[CameraLevelConfigurationSO] {name}: Level distances should decrease from Facility to Plant");
+                SharedLogger.LogWarning($"[CameraLevelConfigurationSO] {name}: Level distances should decrease from Facility to Plant", this);
             }
             
             // Ensure heights are positive
             if (_facilityLevelSettings.Height <= 0 || _roomLevelSettings.Height <= 0 || 
                 _benchLevelSettings.Height <= 0 || _plantLevelSettings.Height <= 0)
             {
-                Debug.LogWarning($"[CameraLevelConfigurationSO] {name}: All level heights should be positive");
+                SharedLogger.LogWarning($"[CameraLevelConfigurationSO] {name}: All level heights should be positive", this);
             }
             
             // Ensure field of view values are reasonable
@@ -214,21 +214,21 @@ namespace ProjectChimera.Data.Camera
                 var settings = GetLevelSettings(level);
                 if (settings.FieldOfView <= 0 || settings.FieldOfView >= 180)
                 {
-                    Debug.LogWarning($"[CameraLevelConfigurationSO] {name}: Field of view for {level} should be between 0 and 180 degrees");
+                    SharedLogger.LogWarning($"[CameraLevelConfigurationSO] {name}: Field of view for {level} should be between 0 and 180 degrees");
                 }
             }
             
             // Validate global scale multiplier
             if (_globalScaleMultiplier <= 0)
             {
-                Debug.LogWarning($"[CameraLevelConfigurationSO] {name}: Global scale multiplier should be positive");
+                SharedLogger.LogWarning($"[CameraLevelConfigurationSO] {name}: Global scale multiplier should be positive");
                 _globalScaleMultiplier = 1f;
             }
             
             // Validate available levels
             if (_enableLevelLocking && (_availableLevels == null || _availableLevels.Length == 0))
             {
-                Debug.LogWarning($"[CameraLevelConfigurationSO] {name}: Level locking enabled but no available levels specified");
+                SharedLogger.LogWarning($"[CameraLevelConfigurationSO] {name}: Level locking enabled but no available levels specified");
             }
         }
     }

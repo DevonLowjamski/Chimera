@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels.Components
 {
@@ -8,7 +10,7 @@ namespace ProjectChimera.UI.Panels.Components
     /// Handles performance optimization and throttled updates for the analytics dashboard in Project Chimera's game.
     /// Manages frame budget allocation, update queuing, and adaptive performance tuning for cannabis cultivation analytics.
     /// </summary>
-    public class DataDashboardPerformanceManager : MonoBehaviour
+    public class DataDashboardPerformanceManager : MonoBehaviour, ITickable
     {
         [Header("Performance Configuration")]
         [SerializeField] private float _updateBudgetMs = 16.6f; // Target: 60 FPS (16.6ms per frame)
@@ -48,14 +50,24 @@ namespace ProjectChimera.UI.Panels.Components
         private void Awake()
         {
             InitializePerformanceSystem();
+            
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
 
-        private void Update()
+        #region ITickable Implementation
+        
+        public int Priority => TickPriority.UIManager;
+        public bool Enabled => enabled;
+        
+        public void Tick(float deltaTime)
         {
             UpdateFrameTracking();
             ProcessThrottledUpdates();
             MonitorPerformance();
         }
+        
+        #endregion
 
         #region Performance System Initialization
 
@@ -426,13 +438,13 @@ namespace ProjectChimera.UI.Panels.Components
         private void LogInfo(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[DataDashboardPerformance] {message}");
+                ChimeraLogger.Log($"[DataDashboardPerformance] {message}");
         }
 
         private void LogWarning(string message)
         {
             if (_enableDebugLogging)
-                Debug.LogWarning($"[DataDashboardPerformance] {message}");
+                ChimeraLogger.LogWarning($"[DataDashboardPerformance] {message}");
         }
 
         [System.Serializable]
@@ -448,6 +460,14 @@ namespace ProjectChimera.UI.Panels.Components
             public float PerformanceScore;
             public float LastFrameTimeMs;
             public bool IsAdaptiveEnabled;
+        }
+        
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
         }
     }
 }

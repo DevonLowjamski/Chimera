@@ -6,7 +6,6 @@
         "ProjectChimera.Shared",
         "ProjectChimera.Data",
         "ProjectChimera.Data.Shared",
-        "ProjectChimera.Systems",
         "ProjectChimera.Systems.Diagnostics"
     ],
     "includePlatforms": [],

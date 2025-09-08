@@ -8,11 +8,10 @@
         "ProjectChimera.Data.Facilities",
         "ProjectChimera.Data.Events",
         "ProjectChimera.Data.Economy",
+        "ProjectChimera.Systems.Events",
+        "ProjectChimera.Systems.Registry",
         "ProjectChimera.Systems.Scene",
-        "ProjectChimera.Systems.Economy",
-        "ProjectChimera.Systems.Environment",
-        "ProjectChimera.Systems.Cultivation",
-        "ProjectChimera.Systems.Construction"
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

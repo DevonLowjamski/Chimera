@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using ProjectChimera.Core;
 using ProjectChimera.Core.Events;
+using ProjectChimera.Core.Logging;
 
 
 namespace ProjectChimera.Testing
@@ -54,7 +55,7 @@ namespace ProjectChimera.Testing
             _gameManager = DIGameManager.Instance;
             if (_gameManager == null)
             {
-                _gameManager = FindObjectOfType<DIGameManager>();
+                _gameManager = ServiceContainerFactory.Instance?.TryResolve<DIGameManager>();
             }
             
             if (_gameManager == null)
@@ -618,7 +619,7 @@ namespace ProjectChimera.Testing
         private void LogTest(string message)
         {
             if (_enableTestLogging)
-                Debug.Log($"[DIGameManagerTest] {message}");
+                ChimeraLogger.Log($"[DIGameManagerTest] {message}");
         }
         
         /// <summary>

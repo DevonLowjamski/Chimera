@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Core;
 using ProjectChimera.Core.DependencyInjection;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Core.Logging;
 using ProjectChimera.UI.Components;
 
 namespace ProjectChimera.UI.Core
@@ -13,7 +15,7 @@ namespace ProjectChimera.UI.Core
     /// Manages notification display, queuing, positioning, and lifecycle.
     /// Provides persistent notifications, context-aware alerts, and smart queuing.
     /// </summary>
-    public class NotificationManager : MonoBehaviour
+    public class NotificationManager : MonoBehaviour, ITickable
     {
         [Header("Notification Configuration")]
         [SerializeField] private UIDocument _notificationUIDocument;
@@ -99,7 +101,10 @@ namespace ProjectChimera.UI.Core
             // Setup UI
             SetupNotificationUI();
             
-            Debug.Log("[NotificationManager] Enhanced notification system initialized");
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+            
+            ChimeraLogger.LogInitialization("NotificationManager", "Enhanced notification system initialized", this);
         }
         
         private void SetupNotificationUI()
@@ -199,11 +204,18 @@ namespace ProjectChimera.UI.Core
             container.style.maxWidth = _maxNotificationWidth;
         }
         
-        private void Update()
+        #region ITickable Implementation
+        
+        public int Priority => TickPriority.UIManager;
+        public bool Enabled => _notificationUIDocument != null && _notificationContainer != null;
+        
+        public void Tick(float deltaTime)
         {
             ProcessNotificationQueue();
             UpdateActiveNotifications();
         }
+        
+        #endregion
         
         private void ProcessNotificationQueue()
         {
@@ -539,6 +551,14 @@ namespace ProjectChimera.UI.Core
                 NotificationSeverity.Critical => UIStatus.Error,
                 _ => UIStatus.Info
             };
+        }
+        
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
         }
         
         #endregion

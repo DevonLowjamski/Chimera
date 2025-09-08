@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -63,14 +64,14 @@ namespace ProjectChimera.Systems.Environment
         {
             if (IsInitialized)
             {
-                Debug.LogWarning("[AtmosphereService] Already initialized");
+                ChimeraLogger.LogWarning("[AtmosphereService] Already initialized");
                 return;
             }
             
             InitializeAtmosphericCalculations();
             IsInitialized = true;
             
-            Debug.Log("[AtmosphereService] Atmospheric simulation service initialized successfully");
+            ChimeraLogger.Log("[AtmosphereService] Atmospheric simulation service initialized successfully");
         }
         
         public void Shutdown()
@@ -82,7 +83,7 @@ namespace ProjectChimera.Systems.Environment
             _performanceMetrics = new AtmosphericPerformanceMetrics();
             
             IsInitialized = false;
-            Debug.Log("[AtmosphereService] Atmospheric simulation service shutdown completed");
+            ChimeraLogger.Log("[AtmosphereService] Atmospheric simulation service shutdown completed");
         }
         
         /// <summary>
@@ -95,7 +96,7 @@ namespace ProjectChimera.Systems.Environment
         {
             if (!IsInitialized)
             {
-                Debug.LogWarning("[AtmosphereService] Service not initialized");
+                ChimeraLogger.LogWarning("[AtmosphereService] Service not initialized");
                 return baseConditions;
             }
             

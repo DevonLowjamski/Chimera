@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -36,7 +37,7 @@ namespace ProjectChimera.UI.Panels
         {
             if (element == null || string.IsNullOrEmpty(commandId))
             {
-                Debug.LogWarning("[MenuEventWiringManager] Invalid element or command ID");
+                ChimeraLogger.LogWarning("[MenuEventWiringManager] Invalid element or command ID");
                 return;
             }
             
@@ -69,7 +70,7 @@ namespace ProjectChimera.UI.Panels
                 _wiredElements.Add(element);
             }
             
-            Debug.Log($"[MenuEventWiringManager] Wired click event: {commandId} → {element.name}");
+            ChimeraLogger.Log($"[MenuEventWiringManager] Wired click event: {commandId} → {element.name}");
         }
         
         /// <summary>
@@ -96,7 +97,7 @@ namespace ProjectChimera.UI.Panels
                 _elementEventHandlers.Remove(element);
             }
             
-            Debug.Log($"[MenuEventWiringManager] Unwired click event for element: {element.name}");
+            ChimeraLogger.Log($"[MenuEventWiringManager] Unwired click event for element: {element.name}");
         }
         
         /// <summary>
@@ -109,7 +110,7 @@ namespace ProjectChimera.UI.Panels
                 WireClickEvent(kvp.Key, kvp.Value, mode);
             }
             
-            Debug.Log($"[MenuEventWiringManager] Wired {elementCommandMap.Count} elements");
+            ChimeraLogger.Log($"[MenuEventWiringManager] Wired {elementCommandMap.Count} elements");
         }
         
         /// <summary>
@@ -124,7 +125,7 @@ namespace ProjectChimera.UI.Panels
                 UnwireClickEvent(element);
             }
             
-            Debug.Log($"[MenuEventWiringManager] Unwired {elementsToUnwire.Count} elements");
+            ChimeraLogger.Log($"[MenuEventWiringManager] Unwired {elementsToUnwire.Count} elements");
         }
         
         /// <summary>
@@ -134,7 +135,7 @@ namespace ProjectChimera.UI.Panels
         {
             if (!_eventsEnabled)
             {
-                Debug.LogWarning("[MenuEventWiringManager] Events are disabled");
+                ChimeraLogger.LogWarning("[MenuEventWiringManager] Events are disabled");
                 return;
             }
             
@@ -143,11 +144,11 @@ namespace ProjectChimera.UI.Panels
                 // Fire the click event
                 OnMenuItemClicked?.Invoke(mode, commandId);
                 
-                Debug.Log($"[MenuEventWiringManager] Menu item clicked: {commandId} in mode {mode}");
+                ChimeraLogger.Log($"[MenuEventWiringManager] Menu item clicked: {commandId} in mode {mode}");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[MenuEventWiringManager] Error handling menu item click: {ex.Message}");
+                ChimeraLogger.LogError($"[MenuEventWiringManager] Error handling menu item click: {ex.Message}");
             }
         }
         
@@ -164,7 +165,7 @@ namespace ProjectChimera.UI.Panels
             var oldMode = _currentMode;
             _currentMode = mode;
             
-            Debug.Log($"[MenuEventWiringManager] Mode changed from {oldMode} to {mode}");
+            ChimeraLogger.Log($"[MenuEventWiringManager] Mode changed from {oldMode} to {mode}");
         }
         
         /// <summary>
@@ -173,7 +174,7 @@ namespace ProjectChimera.UI.Panels
         public void SetEventsEnabled(bool enabled)
         {
             _eventsEnabled = enabled;
-            Debug.Log($"[MenuEventWiringManager] Events {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.Log($"[MenuEventWiringManager] Events {(enabled ? "enabled" : "disabled")}");
         }
         
         /// <summary>
@@ -224,7 +225,7 @@ namespace ProjectChimera.UI.Panels
         public void FireMenuOpened(string mode)
         {
             OnMenuOpened?.Invoke(mode);
-            Debug.Log($"[MenuEventWiringManager] Menu opened in mode: {mode}");
+            ChimeraLogger.Log($"[MenuEventWiringManager] Menu opened in mode: {mode}");
         }
         
         /// <summary>
@@ -233,7 +234,7 @@ namespace ProjectChimera.UI.Panels
         public void FireMenuClosed(string mode)
         {
             OnMenuClosed?.Invoke(mode);
-            Debug.Log($"[MenuEventWiringManager] Menu closed for mode: {mode}");
+            ChimeraLogger.Log($"[MenuEventWiringManager] Menu closed for mode: {mode}");
         }
         
         /// <summary>
@@ -263,7 +264,7 @@ namespace ProjectChimera.UI.Panels
             _currentMode = "none";
             _eventsEnabled = true;
             
-            Debug.Log("[MenuEventWiringManager] Cleared all event handlers and mappings");
+            ChimeraLogger.Log("[MenuEventWiringManager] Cleared all event handlers and mappings");
         }
     }
     

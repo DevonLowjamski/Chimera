@@ -1,3 +1,6 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Systems.Save.Components;
+using ValidationResult = ProjectChimera.Data.Save.ValidationResult;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -5,6 +8,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using ProjectChimera.Data.Save;
 using ProjectChimera.Core;
+using ProjectChimera.Core.DependencyInjection;
 
 namespace ProjectChimera.Systems.Save
 {
@@ -53,10 +57,10 @@ namespace ProjectChimera.Systems.Save
         private long _estimatedDataSize = 0;
 
         // Dependencies
-        private readonly string[] _dependencies = { 
-            SaveSectionKeys.PLAYER, 
-            SaveSectionKeys.SETTINGS, 
-            SaveSectionKeys.TIME 
+        private readonly string[] _dependencies = {
+            SaveSectionKeys.PLAYER,
+            SaveSectionKeys.SETTINGS,
+            SaveSectionKeys.TIME
         };
 
         #region ISaveSectionProvider Implementation
@@ -85,7 +89,7 @@ namespace ProjectChimera.Systems.Save
             {
                 // Gather core economy state
                 economyData.EconomyState = await GatherEconomyStateAsync();
-                
+
                 // Calculate data size and hash
                 economyData.EstimatedSize = CalculateDataSize(economyData.EconomyState);
                 economyData.DataHash = GenerateDataHash(economyData);
@@ -97,7 +101,7 @@ namespace ProjectChimera.Systems.Save
 
                 LogInfo($"Economy data gathered: {economyData.EconomyState?.AvailableProducts?.Count ?? 0} products, " +
                        $"{economyData.EconomyState?.TransactionHistory?.Count ?? 0} transactions, " +
-                       $"${economyData.EconomyState?.PlayerEconomyState?.CurrentCash ?? 0:F2} cash, " +
+                       $"${economyData.EconomyState?.PlayerEconomyState?.PlayerFinances?.TotalCash ?? 0:F2} cash, " +
                        $"Data size: {economyData.EstimatedSize} bytes");
 
                 return economyData;
@@ -112,7 +116,7 @@ namespace ProjectChimera.Systems.Save
         public async Task<SaveSectionResult> ApplySectionDataAsync(ISaveSectionData sectionData)
         {
             var startTime = DateTime.Now;
-            
+
             try
             {
                 if (!(sectionData is EconomySectionData economyData))
@@ -134,7 +138,7 @@ namespace ProjectChimera.Systems.Save
                 }
 
                 var result = await ApplyEconomyStateAsync(migratedState);
-                
+
                 if (result.Success)
                 {
                     _lastSavedState = migratedState;
@@ -151,7 +155,7 @@ namespace ProjectChimera.Systems.Save
                     { "products_loaded", migratedState?.AvailableProducts?.Count ?? 0 },
                     { "transactions_loaded", migratedState?.TransactionHistory?.Count ?? 0 },
                     { "investments_loaded", migratedState?.PlayerEconomyState?.Investments?.Count ?? 0 },
-                    { "cash_balance", migratedState?.PlayerEconomyState?.CurrentCash ?? 0 }
+                    { "cash_balance", migratedState?.PlayerEconomyState?.PlayerFinances?.TotalCash ?? 0 }
                 });
             }
             catch (Exception ex)
@@ -186,7 +190,7 @@ namespace ProjectChimera.Systems.Save
                 }
 
                 var validationResult = await ValidateEconomyStateAsync(economyData.EconomyState);
-                
+
                 errors.AddRange(validationResult.Errors);
                 warnings.AddRange(validationResult.Warnings);
 
@@ -249,7 +253,7 @@ namespace ProjectChimera.Systems.Save
                 if (migrator != null)
                 {
                     var migratedState = await migrator.MigrateEconomyStateAsync(economyData.EconomyState);
-                    
+
                     var migratedData = new EconomySectionData
                     {
                         SectionKey = SectionKey,
@@ -278,7 +282,7 @@ namespace ProjectChimera.Systems.Save
         public SaveSectionSummary GetSectionSummary()
         {
             var state = _lastSavedState ?? GetCurrentEconomyState();
-            
+
             return new SaveSectionSummary
             {
                 SectionKey = SectionKey,
@@ -291,7 +295,7 @@ namespace ProjectChimera.Systems.Save
                 {
                     { "Available Products", (state?.AvailableProducts?.Count ?? 0).ToString() },
                     { "Transaction History", (state?.TransactionHistory?.Count ?? 0).ToString() },
-                    { "Player Cash", $"${state?.PlayerEconomyState?.CurrentCash ?? 0:F2}" },
+                    { "Player Cash", $"${state?.PlayerEconomyState?.PlayerFinances?.TotalCash ?? 0:F2}" },
                     { "Total Investments", (state?.PlayerEconomyState?.Investments?.Count ?? 0).ToString() },
                     { "Active Loans", (state?.PlayerEconomyState?.UnpaidLoans?.Count ?? 0).ToString() },
                     { "Net Worth", $"${state?.PlayerEconomyState?.TotalNetWorth ?? 0:F2}" },
@@ -312,10 +316,10 @@ namespace ProjectChimera.Systems.Save
             if (currentState == null)
                 return false;
 
-            return _hasChanges || 
+            return _hasChanges ||
                    currentState.AvailableProducts?.Count != _lastSavedState.AvailableProducts?.Count ||
                    currentState.TransactionHistory?.Count != _lastSavedState.TransactionHistory?.Count ||
-                   Math.Abs((currentState.PlayerEconomyState?.CurrentCash ?? 0) - (_lastSavedState.PlayerEconomyState?.CurrentCash ?? 0)) > 0.01f ||
+                   Math.Abs((currentState.PlayerEconomyState?.PlayerFinances?.TotalCash ?? 0) - (_lastSavedState.PlayerEconomyState?.PlayerFinances?.TotalCash ?? 0)) > 0.01f ||
                    DateTime.Now.Subtract(_lastSaveTime).TotalMinutes > 15; // Force save every 15 minutes
         }
 
@@ -347,7 +351,7 @@ namespace ProjectChimera.Systems.Save
 
             _lastSavedState = null;
             _hasChanges = true;
-            
+
             LogInfo("Economy system reset to default state");
         }
 
@@ -421,11 +425,12 @@ namespace ProjectChimera.Systems.Save
                 // Auto-detect systems if enabled
                 if (_autoDetectSystems)
                 {
-                    _marketSystem = FindObjectOfType<MonoBehaviour>() as IMarketSystem;
-                    _tradingSystem = FindObjectOfType<MonoBehaviour>() as ITradingSystem;
-                    _playerEconomySystem = FindObjectOfType<MonoBehaviour>() as IPlayerEconomySystem;
-                    _financialSystem = FindObjectOfType<MonoBehaviour>() as IFinancialSystem;
-                    _economicIndicatorsSystem = FindObjectOfType<MonoBehaviour>() as IEconomicIndicatorsSystem;
+                    var serviceContainer = ServiceContainerFactory.Instance;
+                    _marketSystem = serviceContainer?.TryResolve<IMarketSystem>();
+                    _tradingSystem = serviceContainer?.TryResolve<ITradingSystem>();
+                    _playerEconomySystem = serviceContainer?.TryResolve<IPlayerEconomySystem>();
+                    _financialSystem = serviceContainer?.TryResolve<IFinancialSystem>();
+                    _economicIndicatorsSystem = serviceContainer?.TryResolve<IEconomicIndicatorsSystem>();
                 }
 
                 _systemsInitialized = true;
@@ -499,10 +504,10 @@ namespace ProjectChimera.Systems.Save
                 if (_marketSystem != null && state.MarketState != null)
                 {
                     await _marketSystem.LoadMarketStateAsync(state.MarketState);
-                    
+
                     if (state.AvailableProducts != null)
                         await _marketSystem.LoadAvailableProductsAsync(state.AvailableProducts);
-                    
+
                     if (state.ProductPrices != null)
                         await _marketSystem.LoadProductPricesAsync(state.ProductPrices);
                 }
@@ -512,7 +517,7 @@ namespace ProjectChimera.Systems.Save
                 {
                     if (state.TradingState != null)
                         await _tradingSystem.LoadTradingStateAsync(state.TradingState);
-                    
+
                     if (state.TransactionHistory != null)
                         await _tradingSystem.LoadTransactionHistoryAsync(state.TransactionHistory);
                 }
@@ -534,7 +539,7 @@ namespace ProjectChimera.Systems.Save
                 {
                     if (state.EconomicIndicators != null)
                         await _economicIndicatorsSystem.LoadEconomicIndicatorsAsync(state.EconomicIndicators);
-                    
+
                     if (state.CurrentMarketConditions != null)
                         await _economicIndicatorsSystem.LoadMarketConditionsAsync(state.CurrentMarketConditions);
                 }
@@ -581,7 +586,12 @@ namespace ProjectChimera.Systems.Save
                     AvailableProducts = new List<MarketProductDTO>(),
                     TransactionHistory = new List<TransactionRecordDTO>(),
                     ProductPrices = new Dictionary<string, float>(),
-                    PlayerEconomyState = new PlayerEconomyStateDTO { CurrentCash = 50000f }
+                    PlayerEconomyState = new PlayerEconomyStateDTO
+                    {
+                        IsEconomyActive = true,
+                        LastEconomyUpdate = DateTime.Now,
+                        PlayerFinances = new PlayerFinancesDTO { TotalCash = 50000f }
+                    }
                 },
                 EstimatedSize = 4096 // Minimal size
             };
@@ -608,9 +618,9 @@ namespace ProjectChimera.Systems.Save
             var hashSource = $"{data.Timestamp:yyyy-MM-dd-HH-mm-ss}" +
                            $"{data.EconomyState?.AvailableProducts?.Count ?? 0}" +
                            $"{data.EconomyState?.TransactionHistory?.Count ?? 0}" +
-                           $"{data.EconomyState?.PlayerEconomyState?.CurrentCash ?? 0:F2}" +
+                           $"{data.EconomyState?.PlayerEconomyState?.PlayerFinances?.TotalCash ?? 0:F2}" +
                            $"{data.EstimatedSize}";
-            
+
             return hashSource.GetHashCode().ToString("X8");
         }
 
@@ -621,49 +631,49 @@ namespace ProjectChimera.Systems.Save
 
             int products = state.AvailableProducts?.Count ?? 0;
             int transactions = state.TransactionHistory?.Count ?? 0;
-            float cash = state.PlayerEconomyState?.CurrentCash ?? 0;
-            
+            float cash = state.PlayerEconomyState?.PlayerFinances?.TotalCash ?? 0;
+
             if (products == 0 && transactions == 0)
                 return "Empty economy system";
-            
+
             return $"{products} products, {transactions} transactions, ${cash:F2} cash";
         }
 
         private bool RequiresMigration(string dataVersion) => dataVersion != SectionVersion;
 
         // Validation methods
-        private async Task<EconomyValidationResult> ValidateEconomyStateAsync(EconomyStateDTO state)
+        private async Task<ValidationResult> ValidateEconomyStateAsync(EconomyStateDTO state)
         {
             // Comprehensive validation - placeholder implementation
             await Task.Delay(1);
-            return new EconomyValidationResult { IsValid = true };
+            return new ValidationResult { IsValid = true };
         }
 
-        private EconomyValidationResult ValidateFinancialBalance(EconomyStateDTO state)
+        private ValidationResult ValidateFinancialBalance(EconomyStateDTO state)
         {
-            var result = new EconomyValidationResult { IsValid = true };
-            
+            var result = new ValidationResult { IsValid = true };
+
             // Check for financial balance consistency
             if (state.PlayerEconomyState != null)
             {
-                var expectedNetWorth = state.PlayerEconomyState.CurrentCash + 
+                var expectedNetWorth = (state.PlayerEconomyState.PlayerFinances?.TotalCash ?? 0) +
                                      (state.PlayerEconomyState.Investments?.Sum(i => i.CurrentValue) ?? 0f);
-                
+
                 var actualNetWorth = state.PlayerEconomyState.TotalNetWorth;
                 var discrepancy = Math.Abs(expectedNetWorth - actualNetWorth) / Math.Max(expectedNetWorth, 1);
-                
+
                 if (discrepancy > _maxBalanceDiscrepancy)
                 {
                     result.Errors.Add($"Net worth discrepancy: expected ${expectedNetWorth:F2}, actual ${actualNetWorth:F2}");
                     result.IsValid = false;
                 }
             }
-            
+
             return result;
         }
 
-        private EconomyValidationResult ValidateMarketIntegrity(EconomyStateDTO state) => new EconomyValidationResult { IsValid = true };
-        private EconomyValidationResult ValidateTransactionIntegrity(EconomyStateDTO state) => new EconomyValidationResult { IsValid = true };
+        private ValidationResult ValidateMarketIntegrity(EconomyStateDTO state) => new ValidationResult { IsValid = true };
+        private ValidationResult ValidateTransactionIntegrity(EconomyStateDTO state) => new ValidationResult { IsValid = true };
         private float CalculateDataCorruption(EconomyStateDTO state) => 0.0f;
         private IEconomyMigrator GetVersionMigrator(string fromVersion, string toVersion) => null;
 
@@ -684,9 +694,9 @@ namespace ProjectChimera.Systems.Save
         private async Task<EconomicIndicatorsDTO> GatherEconomicIndicatorsAsync() => new EconomicIndicatorsDTO();
         private async Task<MarketConditionsDTO> GatherMarketConditionsAsync() => new MarketConditionsDTO();
 
-        private void LogInfo(string message) => Debug.Log($"[EconomySaveProvider] {message}");
-        private void LogWarning(string message) => Debug.LogWarning($"[EconomySaveProvider] {message}");
-        private void LogError(string message) => Debug.LogError($"[EconomySaveProvider] {message}");
+        private void LogInfo(string message) => ChimeraLogger.Log($"[EconomySaveProvider] {message}");
+        private void LogWarning(string message) => ChimeraLogger.LogWarning($"[EconomySaveProvider] {message}");
+        private void LogError(string message) => ChimeraLogger.LogError($"[EconomySaveProvider] {message}");
 
         #endregion
     }
@@ -707,8 +717,8 @@ namespace ProjectChimera.Systems.Save
 
         public bool IsValid()
         {
-            return !string.IsNullOrEmpty(SectionKey) && 
-                   !string.IsNullOrEmpty(DataVersion) && 
+            return !string.IsNullOrEmpty(SectionKey) &&
+                   !string.IsNullOrEmpty(DataVersion) &&
                    EconomyState != null;
         }
 
@@ -716,7 +726,7 @@ namespace ProjectChimera.Systems.Save
         {
             var products = EconomyState?.AvailableProducts?.Count ?? 0;
             var transactions = EconomyState?.TransactionHistory?.Count ?? 0;
-            var cash = EconomyState?.PlayerEconomyState?.CurrentCash ?? 0;
+            var cash = EconomyState?.PlayerEconomyState?.PlayerFinances?.TotalCash ?? 0;
             return $"Economy: {products} products, {transactions} transactions, ${cash:F2}";
         }
     }

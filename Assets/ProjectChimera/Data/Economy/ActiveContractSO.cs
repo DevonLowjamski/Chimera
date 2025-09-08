@@ -241,31 +241,31 @@ namespace ProjectChimera.Data.Economy
             
             if (string.IsNullOrEmpty(_contractorName))
             {
-                Debug.LogError($"ActiveContract {name}: Contractor name cannot be empty", this);
+                SharedLogger.LogError($"ActiveContract {name}: Contractor name cannot be empty", this);
                 isValid = false;
             }
             
             if (_quantityRequired <= 0f)
             {
-                Debug.LogError($"ActiveContract {name}: Quantity required must be positive", this);
+                SharedLogger.LogError($"ActiveContract {name}: Quantity required must be positive", this);
                 isValid = false;
             }
             
             if (_contractValue <= 0f)
             {
-                Debug.LogError($"ActiveContract {name}: Contract value must be positive", this);
+                SharedLogger.LogError($"ActiveContract {name}: Contract value must be positive", this);
                 isValid = false;
             }
             
             if (_timeWindowDays <= 0)
             {
-                Debug.LogError($"ActiveContract {name}: Time window must be positive", this);
+                SharedLogger.LogError($"ActiveContract {name}: Time window must be positive", this);
                 isValid = false;
             }
             
             if (_minimumQuality < 0f || _minimumQuality > 1f)
             {
-                Debug.LogError($"ActiveContract {name}: Minimum quality must be between 0 and 1", this);
+                SharedLogger.LogError($"ActiveContract {name}: Minimum quality must be between 0 and 1", this);
                 isValid = false;
             }
             

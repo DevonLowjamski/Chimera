@@ -2,20 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core.DependencyInjection
 {
     internal class ServiceScope : ProjectChimera.Core.IServiceScope
     {
-        private readonly ServiceLocator _parentLocator;
+        private readonly IServiceContainer _parentContainer;
         private readonly Dictionary<Type, object> _scopedInstances = new Dictionary<Type, object>();
         private bool _disposed = false;
 
-        public ProjectChimera.Core.DependencyInjection.IServiceProvider ServiceProvider => new ServiceLocatorProviderAdapter(_parentLocator);
+        public ProjectChimera.Core.DependencyInjection.IServiceProvider ServiceProvider => new ServiceContainerProviderAdapter(_parentContainer);
 
-        internal ServiceScope(ServiceLocator parentLocator)
+        internal ServiceScope(IServiceContainer parentContainer)
         {
-            _parentLocator = parentLocator;
+            _parentContainer = parentContainer;
         }
 
         public void Dispose()
@@ -30,30 +31,30 @@ namespace ProjectChimera.Core.DependencyInjection
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[ServiceScope] Error disposing scoped service: {ex.Message}");
+                    ChimeraLogger.LogError($"[ServiceScope] Error disposing scoped service: {ex.Message}");
                 }
             }
 
             _scopedInstances.Clear();
-            _parentLocator.RemoveScope(this);
+            // Note: ServiceContainer doesn't have RemoveScope - scopes are managed internally
             _disposed = true;
         }
     }
 
-    internal class ServiceLocatorProviderAdapter : ProjectChimera.Core.DependencyInjection.IServiceProvider
+    internal class ServiceContainerProviderAdapter : ProjectChimera.Core.DependencyInjection.IServiceProvider
     {
-        private readonly IServiceLocator _serviceLocator;
+        private readonly IServiceContainer _serviceContainer;
 
-        public ServiceLocatorProviderAdapter(IServiceLocator serviceLocator)
+        public ServiceContainerProviderAdapter(IServiceContainer serviceContainer)
         {
-            _serviceLocator = serviceLocator ?? throw new ArgumentNullException(nameof(serviceLocator));
+            _serviceContainer = serviceContainer ?? throw new ArgumentNullException(nameof(serviceContainer));
         }
 
         public object GetService(Type serviceType)
         {
             try
             {
-                return _serviceLocator.TryResolve<object>();
+                return _serviceContainer.TryResolve(serviceType);
             }
             catch
             {
@@ -65,7 +66,7 @@ namespace ProjectChimera.Core.DependencyInjection
         {
             try
             {
-                return _serviceLocator.TryResolve<T>();
+                return _serviceContainer.TryResolve<T>();
             }
             catch
             {
@@ -75,7 +76,7 @@ namespace ProjectChimera.Core.DependencyInjection
 
         public object GetRequiredService(Type serviceType)
         {
-            var result = _serviceLocator.Resolve<object>();
+            var result = _serviceContainer.Resolve(serviceType);
             if (result == null)
             {
                 throw new InvalidOperationException($"Required service of type {serviceType.Name} could not be resolved");
@@ -87,7 +88,7 @@ namespace ProjectChimera.Core.DependencyInjection
         {
             try
             {
-                var result = _serviceLocator.Resolve<T>();
+                var result = _serviceContainer.Resolve<T>();
                 if (result == null)
                 {
                     throw new InvalidOperationException($"Required service of type {typeof(T).Name} could not be resolved");
@@ -104,9 +105,10 @@ namespace ProjectChimera.Core.DependencyInjection
         {
             try
             {
-                var method = typeof(IServiceLocator).GetMethod(nameof(IServiceLocator.ResolveAll))?.MakeGenericMethod(serviceType);
-                var result = method?.Invoke(_serviceLocator, new object[0]);
-                return result as IEnumerable<object> ?? Array.Empty<object>();
+                // ServiceContainer doesn't have ResolveAll for non-generic types
+                // Return single service as enumerable if available
+                var service = _serviceContainer.TryResolve(serviceType);
+                return service != null ? new[] { service } : Array.Empty<object>();
             }
             catch
             {
@@ -118,7 +120,9 @@ namespace ProjectChimera.Core.DependencyInjection
         {
             try
             {
-                return _serviceLocator.ResolveAll<T>();
+                // ServiceContainer doesn't have ResolveAll - return single service as enumerable
+                var service = _serviceContainer.TryResolve<T>();
+                return service != null ? new[] { service } : Array.Empty<T>();
             }
             catch
             {

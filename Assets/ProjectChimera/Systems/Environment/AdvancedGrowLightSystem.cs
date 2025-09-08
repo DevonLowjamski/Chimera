@@ -1,10 +1,11 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using CultivationLightType = ProjectChimera.Data.Cultivation.LightType;
 using LightSpectrum = ProjectChimera.Data.Shared.LightSpectrumData;
 using System.Collections.Generic;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Shared;
-using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Shared;
 
 namespace ProjectChimera.Systems.Environment
 {
@@ -571,18 +572,18 @@ namespace ProjectChimera.Systems.Environment
         private void LogDebug(string message)
         {
             if (_enableLogging)
-                Debug.Log($"[AdvancedGrowLightSystem] {message}");
+                ChimeraLogger.Log($"[AdvancedGrowLightSystem] {message}");
         }
         
         private void LogWarning(string message)
         {
             if (_enableLogging)
-                Debug.LogWarning($"[AdvancedGrowLightSystem] {message}");
+                ChimeraLogger.LogWarning($"[AdvancedGrowLightSystem] {message}");
         }
         
         private void LogError(string message)
         {
-            Debug.LogError($"[AdvancedGrowLightSystem] {message}");
+            ChimeraLogger.LogError($"[AdvancedGrowLightSystem] {message}");
         }
         
         #endregion

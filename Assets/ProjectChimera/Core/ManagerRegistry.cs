@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
@@ -484,12 +485,12 @@ namespace ProjectChimera.Core
         private void LogDebug(string message)
         {
             if (_enableRegistryLogging)
-                Debug.Log($"[ManagerRegistry] {message}");
+                ChimeraLogger.Log($"[ManagerRegistry] {message}");
         }
         
         private void LogError(string message)
         {
-            Debug.LogError($"[ManagerRegistry] {message}");
+            ChimeraLogger.LogError($"[ManagerRegistry] {message}");
         }
         
         private void OnDestroy()

@@ -212,32 +212,32 @@ namespace ProjectChimera.Data.Equipment
             
             if (string.IsNullOrEmpty(_equipmentName))
             {
-                Debug.LogError($"EquipmentDataSO '{name}' has no equipment name assigned.", this);
+                SharedLogger.LogError($"EquipmentDataSO '{name}' has no equipment name assigned.");
                 isValid = false;
             }
             
             if (_powerConsumption < 0f)
             {
-                Debug.LogError($"EquipmentDataSO '{name}' has negative power consumption: {_powerConsumption}", this);
+                SharedLogger.LogError($"EquipmentDataSO '{name}' has negative power consumption: {_powerConsumption}");
                 isValid = false;
             }
             
             if (_efficiency < 0f || _efficiency > 1f)
             {
-                Debug.LogError($"EquipmentDataSO '{name}' has invalid efficiency: {_efficiency}. Must be between 0-1.", this);
+                SharedLogger.LogError($"EquipmentDataSO '{name}' has invalid efficiency: {_efficiency}. Must be between 0-1.");
                 isValid = false;
             }
             
             if (_purchaseCost <= 0f)
             {
-                Debug.LogError($"EquipmentDataSO '{name}' has invalid purchase cost: {_purchaseCost}", this);
+                SharedLogger.LogError($"EquipmentDataSO '{name}' has invalid purchase cost: {_purchaseCost}");
                 isValid = false;
             }
             
             // Validate performance characteristics
             if (_performanceProfile.MaxOutput <= 0f)
             {
-                Debug.LogError($"EquipmentDataSO '{name}' has invalid max output: {_performanceProfile.MaxOutput}", this);
+                SharedLogger.LogError($"EquipmentDataSO '{name}' has invalid max output: {_performanceProfile.MaxOutput}");
                 isValid = false;
             }
             

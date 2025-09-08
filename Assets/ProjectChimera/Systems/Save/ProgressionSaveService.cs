@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Save;
@@ -41,7 +42,7 @@ namespace ProjectChimera.Systems.Save
         private void InitializeService()
         {
             _isInitialized = true;
-            Debug.Log("[ProgressionSaveService] Service initialized successfully");
+            ChimeraLogger.Log("[ProgressionSaveService] Service initialized successfully");
         }
 
         private void RegisterWithSaveManager()
@@ -50,11 +51,11 @@ namespace ProjectChimera.Systems.Save
             if (saveManager != null)
             {
                 saveManager.RegisterSaveService(this);
-                Debug.Log("[ProgressionSaveService] Registered with SaveManager");
+                ChimeraLogger.Log("[ProgressionSaveService] Registered with SaveManager");
             }
             else
             {
-                Debug.LogWarning("[ProgressionSaveService] SaveManager not found - integration disabled");
+                ChimeraLogger.LogWarning("[ProgressionSaveService] SaveManager not found - integration disabled");
             }
         }
 
@@ -66,7 +67,7 @@ namespace ProjectChimera.Systems.Save
         {
             if (!IsAvailable)
             {
-                Debug.LogWarning("[ProgressionSaveService] Service not available for state gathering");
+                ChimeraLogger.LogWarning("[ProgressionSaveService] Service not available for state gathering");
                 return new ProgressionStateDTO
                 {
                     SaveTimestamp = DateTime.Now,
@@ -77,7 +78,7 @@ namespace ProjectChimera.Systems.Save
 
             try
             {
-                Debug.Log("[ProgressionSaveService] Gathering progression state...");
+                ChimeraLogger.Log("[ProgressionSaveService] Gathering progression state...");
 
                 var progressionState = new ProgressionStateDTO
                 {
@@ -121,12 +122,12 @@ namespace ProjectChimera.Systems.Save
                     }
                 };
 
-                Debug.Log($"[ProgressionSaveService] Progression state gathered: Level {progressionState.PlayerProgress.PlayerLevel}, {progressionState.SkillSystem.UnlockedSkills.Count} skills unlocked");
+                ChimeraLogger.Log($"[ProgressionSaveService] Progression state gathered: Level {progressionState.PlayerProgress.PlayerLevel}, {progressionState.SkillSystem.UnlockedSkills.Count} skills unlocked");
                 return progressionState;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ProgressionSaveService] Error gathering progression state: {ex.Message}");
+                ChimeraLogger.LogError($"[ProgressionSaveService] Error gathering progression state: {ex.Message}");
                 return new ProgressionStateDTO
                 {
                     SaveTimestamp = DateTime.Now,
@@ -140,19 +141,19 @@ namespace ProjectChimera.Systems.Save
         {
             if (!IsAvailable)
             {
-                Debug.LogWarning("[ProgressionSaveService] Service not available for state application");
+                ChimeraLogger.LogWarning("[ProgressionSaveService] Service not available for state application");
                 return;
             }
 
             if (progressionData == null)
             {
-                Debug.LogWarning("[ProgressionSaveService] No progression data to apply");
+                ChimeraLogger.LogWarning("[ProgressionSaveService] No progression data to apply");
                 return;
             }
 
             try
             {
-                Debug.Log($"[ProgressionSaveService] Applying progression state for Level {progressionData.PlayerProgress?.PlayerLevel ?? 1} player");
+                ChimeraLogger.Log($"[ProgressionSaveService] Applying progression state for Level {progressionData.PlayerProgress?.PlayerLevel ?? 1} player");
 
                 // Apply player progress
                 if (progressionData.PlayerProgress != null)
@@ -172,11 +173,11 @@ namespace ProjectChimera.Systems.Save
                     await ApplyAchievementSystem(progressionData.AchievementSystem);
                 }
 
-                Debug.Log("[ProgressionSaveService] Progression state applied successfully");
+                ChimeraLogger.Log("[ProgressionSaveService] Progression state applied successfully");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ProgressionSaveService] Error applying progression state: {ex.Message}");
+                ChimeraLogger.LogError($"[ProgressionSaveService] Error applying progression state: {ex.Message}");
             }
         }
 
@@ -195,7 +196,7 @@ namespace ProjectChimera.Systems.Save
 
             try
             {
-                Debug.Log($"[ProgressionSaveService] Processing {offlineHours:F2} hours of offline progression advancement");
+                ChimeraLogger.Log($"[ProgressionSaveService] Processing {offlineHours:F2} hours of offline progression advancement");
 
                 // Calculate passive skill experience gains
                 float passiveSkillXP = CalculatePassiveSkillExperience(offlineHours);
@@ -219,7 +220,7 @@ namespace ProjectChimera.Systems.Save
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ProgressionSaveService] Error processing offline progression: {ex.Message}");
+                ChimeraLogger.LogError($"[ProgressionSaveService] Error processing offline progression: {ex.Message}");
                 return new OfflineProgressionResult
                 {
                     SystemName = SystemName,
@@ -236,7 +237,7 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplyPlayerProgress(PlayerProgressDTO playerProgress)
         {
-            Debug.Log($"[ProgressionSaveService] Applying player progress (Level: {playerProgress.PlayerLevel}, XP: {playerProgress.TotalExperience})");
+            ChimeraLogger.Log($"[ProgressionSaveService] Applying player progress (Level: {playerProgress.PlayerLevel}, XP: {playerProgress.TotalExperience})");
             
             // Player progress application would integrate with actual progression systems
             await Task.CompletedTask;
@@ -244,12 +245,12 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplySkillSystem(SkillSystemDTO skillSystem)
         {
-            Debug.Log($"[ProgressionSaveService] Applying skill system ({skillSystem.UnlockedSkills.Count} skills unlocked)");
+            ChimeraLogger.Log($"[ProgressionSaveService] Applying skill system ({skillSystem.UnlockedSkills.Count} skills unlocked)");
             
             // Skill system application would integrate with actual skill management systems
             foreach (var skillId in skillSystem.UnlockedSkills)
             {
-                Debug.Log($"[ProgressionSaveService] Restoring skill: {skillId}");
+                ChimeraLogger.Log($"[ProgressionSaveService] Restoring skill: {skillId}");
             }
             
             await Task.CompletedTask;
@@ -257,12 +258,12 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplyAchievementSystem(AchievementSystemDTO achievementSystem)
         {
-            Debug.Log($"[ProgressionSaveService] Applying achievement system ({achievementSystem.UnlockedAchievements} achievements unlocked)");
+            ChimeraLogger.Log($"[ProgressionSaveService] Applying achievement system ({achievementSystem.UnlockedAchievements} achievements unlocked)");
             
             // Achievement system application would integrate with actual achievement systems
             foreach (var achievement in achievementSystem.RecentlyCompletedAchievements)
             {
-                Debug.Log($"[ProgressionSaveService] Recently completed achievement: {achievement}");
+                ChimeraLogger.Log($"[ProgressionSaveService] Recently completed achievement: {achievement}");
             }
             
             await Task.CompletedTask;

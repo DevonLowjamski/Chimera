@@ -1,9 +1,11 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Core;
 using ProjectChimera.Core.Events;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Data.Construction;
 
 namespace ProjectChimera.Systems.Construction
@@ -12,14 +14,16 @@ namespace ProjectChimera.Systems.Construction
     /// Grid-based construction management system for Project Chimera.
     /// Serves as the primary shell coordinating the GridSystem, GridPlacementController,
     /// and ConstructionCostManager for comprehensive construction management.
+    /// 
+    /// DEPENDENCY INJECTION: Uses constructor injection for testability and explicit dependencies.
     /// </summary>
-    public class ConstructionManager : DIChimeraManager
+    public class ConstructionManager : DIChimeraManager, ITickable
     {
-        [Header("Grid Construction System")]
-        [SerializeField] private GridSystem _gridSystem;
-        [SerializeField] private GridPlacementController _placementController;
-        [SerializeField] private InteractiveFacilityConstructor _facilityConstructor;
-        [SerializeField] private ConstructionCostManager _costManager;
+        // Dependencies resolved via DI container (explicit dependencies for testability)
+        private IGridSystem _gridSystem;
+        private IGridPlacementController _placementController;
+        private IInteractiveFacilityConstructor _facilityConstructor;
+        private IConstructionCostManager _costManager;
         
         [Header("Construction Catalog")]
         [SerializeField] private ConstructionCatalog _constructionCatalog;
@@ -54,11 +58,11 @@ namespace ProjectChimera.Systems.Construction
         public override ManagerPriority Priority => ManagerPriority.High;
         
         // Public Properties
-        public GridSystem GridSystem => _gridSystem;
-        public GridPlacementController PlacementController => _placementController;
-        public ConstructionCostManager CostManager => _costManager;
+        public IGridSystem GridSystem => _gridSystem;
+        public IGridPlacementController PlacementController => _placementController;
+        public IConstructionCostManager CostManager => _costManager;
         public ConstructionCatalog ConstructionCatalog => _constructionCatalog;
-        public InteractiveFacilityConstructor FacilityConstructor => _facilityConstructor;
+        public IInteractiveFacilityConstructor FacilityConstructor => _facilityConstructor;
         public Dictionary<string, GridConstructionProject> ActiveProjects => _activeProjects;
         public GridConstructionMetrics ConstructionMetrics => _constructionMetrics;
         public int ActiveProjectCount => _activeProjects.Count;
@@ -81,10 +85,19 @@ namespace ProjectChimera.Systems.Construction
             
             _constructionMetrics = new GridConstructionMetrics();
             
+            // Register with UpdateOrchestrator for centralized ticking
+            var orchestrator = UpdateOrchestrator.Instance;
+            orchestrator?.RegisterTickable(this);
+            
             LogInfo("Grid-based ConstructionManager initialized successfully");
         }
         
-        private void Update()
+        #region ITickable Implementation
+        
+        int ITickable.Priority => TickPriority.ConstructionSystem;
+        bool ITickable.Enabled => IsInitialized;
+        
+        public void Tick(float deltaTime)
         {
             if (!IsInitialized) return;
             
@@ -101,8 +114,24 @@ namespace ProjectChimera.Systems.Construction
             }
         }
         
+        public void OnRegistered()
+        {
+            ChimeraLogger.Log("[ConstructionManager] Registered with UpdateOrchestrator");
+        }
+        
+        public void OnUnregistered()
+        {
+            ChimeraLogger.Log("[ConstructionManager] Unregistered from UpdateOrchestrator");
+        }
+        
+        #endregion
+        
         protected override void OnManagerShutdown()
         {
+            // Unregister from UpdateOrchestrator
+            var orchestrator = UpdateOrchestrator.Instance;
+            orchestrator?.UnregisterTickable(this);
+            
             UnsubscribeFromEvents();
             SaveConstructionState();
             
@@ -296,7 +325,7 @@ namespace ProjectChimera.Systems.Construction
             // Place the actual object on the grid
             if (_gridSystem != null && project.Template.Prefab != null)
             {
-                var worldPosition = _gridSystem.GridToWorldPosition(project.GridCoordinate);
+                var worldPosition = _gridSystem.GridToWorld(project.GridCoordinate);
                 var placedObject = Instantiate(project.Template.Prefab, worldPosition, Quaternion.Euler(0, project.Rotation * 90, 0));
                 
                 var placeable = placedObject.GetComponent<GridPlaceable>();
@@ -305,7 +334,7 @@ namespace ProjectChimera.Systems.Construction
                     // Use the simplified placement API on GridPlaceable
                     placeable.GridCoordinate = project.GridCoordinate;
                     placeable.SetRotation(project.Rotation * 90f);
-                    placeable.PlaceAt(_gridSystem.GridToWorldPosition(project.GridCoordinate));
+                    placeable.PlaceAt(_gridSystem.GridToWorld(project.GridCoordinate));
                     OnObjectPlaced?.Invoke(placeable);
                 }
             }
@@ -418,23 +447,95 @@ namespace ProjectChimera.Systems.Construction
         
         #region Private Implementation
         
+        /// <summary>
+        /// Initialize dependencies explicitly for testability.
+        /// For testing: call this method with mock dependencies.
+        /// For runtime: dependencies are resolved automatically via DI container.
+        /// </summary>
+        public void Initialize(IGridSystem gridSystem = null, 
+                              IGridPlacementController placementController = null, 
+                              IInteractiveFacilityConstructor facilityConstructor = null, 
+                              IConstructionCostManager costManager = null)
+        {
+            _gridSystem = gridSystem;
+            _placementController = placementController;
+            _facilityConstructor = facilityConstructor;
+            _costManager = costManager;
+        }
+
         private void InitializeGridConstructionSystems()
         {
-            // Find core system components
-            if (_gridSystem == null) _gridSystem = FindObjectOfType<GridSystem>();
-            if (_placementController == null) _placementController = FindObjectOfType<GridPlacementController>();
-            if (_facilityConstructor == null) _facilityConstructor = FindObjectOfType<InteractiveFacilityConstructor>();
-            if (_costManager == null) _costManager = FindObjectOfType<ConstructionCostManager>();
+            // Resolve dependencies from DI container if not explicitly provided
+            ResolveDependencies();
             
             // Validate critical components
             if (_gridSystem == null)
             {
-                LogError("GridSystem not found - construction system cannot function properly");
+                LogError("IGridSystem not registered in DI container - construction system cannot function properly");
+            }
+            
+            if (_placementController == null)
+            {
+                LogError("IGridPlacementController not registered in DI container - construction placement will not work");
+            }
+            
+            if (_facilityConstructor == null)
+            {
+                LogWarning("IInteractiveFacilityConstructor not registered in DI container - facility construction may not work");
+            }
+            
+            if (_costManager == null)
+            {
+                LogWarning("IConstructionCostManager not registered in DI container - cost tracking will not work");
             }
             
             if (_constructionCatalog == null)
             {
                 LogWarning("ConstructionCatalog not assigned - no templates available for construction");
+            }
+        }
+        
+        /// <summary>
+        /// Resolve dependencies from DI container if not explicitly provided.
+        /// This method supports both explicit dependency injection (for testing) 
+        /// and automatic resolution (for runtime).
+        /// </summary>
+        private void ResolveDependencies()
+        {
+            if (_gridSystem == null)
+            {
+                _gridSystem = ServiceContainerFactory.Instance?.TryResolve<IGridSystem>();
+                if (_gridSystem == null)
+                {
+                    LogError("[ConstructionManager] IGridSystem not registered in DI container. Explicit dependency injection required for testing.");
+                }
+            }
+            
+            if (_placementController == null)
+            {
+                _placementController = ServiceContainerFactory.Instance?.TryResolve<IGridPlacementController>();
+                if (_placementController == null)
+                {
+                    LogError("[ConstructionManager] IGridPlacementController not registered in DI container. Construction placement will not function properly.");
+                }
+            }
+            
+            if (_facilityConstructor == null)
+            {
+                _facilityConstructor = ServiceContainerFactory.Instance?.TryResolve<IInteractiveFacilityConstructor>();
+                if (_facilityConstructor == null)
+                {
+                    LogWarning("[ConstructionManager] IInteractiveFacilityConstructor not registered in DI container. Facility construction may not work.");
+                }
+            }
+            
+            if (_costManager == null)
+            {
+                _costManager = ServiceContainerFactory.Instance?.TryResolve<IConstructionCostManager>();
+                if (_costManager == null)
+                {
+                    LogWarning("[ConstructionManager] IConstructionCostManager not registered in DI container. Cost tracking will not work.");
+                }
             }
         }
         
@@ -572,14 +673,20 @@ namespace ProjectChimera.Systems.Construction
             LogInfo("Construction state saved");
         }
         
-        private void HandleObjectPlaced(GridPlaceable placeable)
+        private void HandleObjectPlaced(object placeable)
         {
-            OnObjectPlaced?.Invoke(placeable);
+            if (placeable is GridPlaceable gridPlaceable)
+            {
+                OnObjectPlaced?.Invoke(gridPlaceable);
+            }
         }
         
-        private void HandleObjectRemoved(GridPlaceable placeable)
+        private void HandleObjectRemoved(object placeable)
         {
-            OnObjectRemoved?.Invoke(placeable);
+            if (placeable is GridPlaceable gridPlaceable)
+            {
+                OnObjectRemoved?.Invoke(gridPlaceable);
+            }
         }
         
         private void HandleConstructionError(string error)

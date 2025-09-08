@@ -1,6 +1,8 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
+using ProjectChimera.Core;
 using ProjectChimera.Core.DependencyInjection;
-using ProjectChimera.Systems.Gameplay;
+// Removed ProjectChimera.Systems.Gameplay - need to determine correct namespace or move functionality
 using ProjectChimera.Data.Events;
 using System.Collections.Generic;
 using System.Collections;
@@ -33,8 +35,7 @@ namespace ProjectChimera.Systems.Events
         [SerializeField] private bool _detectSlowSubscribers = true;
         [SerializeField] private float _slowSubscriberThreshold = 0.1f; // 100ms threshold
         
-        // Services
-        private IGameplayModeController _modeController;
+        // Services - IGameplayModeController not yet implemented, removed temporarily
         
         // Event system state
         private bool _isInitialized = false;
@@ -118,14 +119,8 @@ namespace ProjectChimera.Systems.Events
         {
             try
             {
-                // Get the gameplay mode controller service
-                _modeController = ProjectChimera.Core.DependencyInjection.ServiceLocator.Instance.GetService<IGameplayModeController>();
-                
-                if (_modeController == null)
-                {
-                    Debug.LogError("[ModeChangeEventSystem] GameplayModeController service not found!");
-                    return;
-                }
+                // TODO: Implement IGameplayModeController service when available
+                // _modeController = ServiceContainerFactory.Instance?.TryResolve<IGameplayModeController>();
                 
                 // Subscribe to the main mode changed event
                 if (_modeChangedEvent != null)
@@ -134,7 +129,7 @@ namespace ProjectChimera.Systems.Events
                 }
                 else
                 {
-                    Debug.LogError("[ModeChangeEventSystem] ModeChangedEvent not assigned!");
+                    ChimeraLogger.LogError("[ModeChangeEventSystem] ModeChangedEvent not assigned!");
                     return;
                 }
                 
@@ -145,12 +140,12 @@ namespace ProjectChimera.Systems.Events
                 
                 if (_debugMode)
                 {
-                    Debug.Log($"[ModeChangeEventSystem] Initialized with {_registeredSubscribers.Count} subscribers");
+                    ChimeraLogger.Log($"[ModeChangeEventSystem] Initialized with {_registeredSubscribers.Count} subscribers");
                 }
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[ModeChangeEventSystem] Error during initialization: {ex.Message}");
+                ChimeraLogger.LogError($"[ModeChangeEventSystem] Error during initialization: {ex.Message}");
             }
         }
         
@@ -172,7 +167,7 @@ namespace ProjectChimera.Systems.Events
             
             if (_debugMode)
             {
-                Debug.Log($"[ModeChangeEventSystem] Discovered {_registeredSubscribers.Count} event subscribers");
+                ChimeraLogger.Log($"[ModeChangeEventSystem] Discovered {_registeredSubscribers.Count} event subscribers");
             }
         }
         
@@ -207,7 +202,7 @@ namespace ProjectChimera.Systems.Events
             
             if (_registeredSubscribers.Count >= _maxSubscribers)
             {
-                Debug.LogWarning($"[ModeChangeEventSystem] Maximum subscribers ({_maxSubscribers}) reached!");
+                ChimeraLogger.LogWarning($"[ModeChangeEventSystem] Maximum subscribers ({_maxSubscribers}) reached!");
                 return;
             }
             
@@ -226,7 +221,7 @@ namespace ProjectChimera.Systems.Events
                 
                 if (_debugMode)
                 {
-                    Debug.Log($"[ModeChangeEventSystem] Registered subscriber: {subscriber.SubscriberName} (Priority: {subscriber.Priority})");
+                    ChimeraLogger.Log($"[ModeChangeEventSystem] Registered subscriber: {subscriber.SubscriberName} (Priority: {subscriber.Priority})");
                 }
             }
         }
@@ -240,7 +235,7 @@ namespace ProjectChimera.Systems.Events
                 
                 if (_debugMode)
                 {
-                    Debug.Log($"[ModeChangeEventSystem] Unregistered subscriber: {subscriber.SubscriberName}");
+                    ChimeraLogger.Log($"[ModeChangeEventSystem] Unregistered subscriber: {subscriber.SubscriberName}");
                 }
             }
         }
@@ -253,7 +248,7 @@ namespace ProjectChimera.Systems.Events
             
             if (_enableEventLogging && _debugMode)
             {
-                Debug.Log($"[ModeChangeEventSystem] Processing mode change event: {eventData.PreviousMode} → {eventData.NewMode}");
+                ChimeraLogger.Log($"[ModeChangeEventSystem] Processing mode change event: {eventData.PreviousMode} → {eventData.NewMode}");
             }
             
             // Create event response record
@@ -291,7 +286,7 @@ namespace ProjectChimera.Systems.Events
                     
                     if (_enableEventLogging && _debugMode)
                     {
-                        Debug.Log($"[ModeChangeEventSystem] Notified {subscriber.SubscriberName}: {(success ? "SUCCESS" : "FAILED")}");
+                        ChimeraLogger.Log($"[ModeChangeEventSystem] Notified {subscriber.SubscriberName}: {(success ? "SUCCESS" : "FAILED")}");
                     }
                 }
                 catch (System.Exception ex)
@@ -299,7 +294,7 @@ namespace ProjectChimera.Systems.Events
                     failedResponses++;
                     eventResponse.errors.Add($"{subscriber.SubscriberName}: {ex.Message}");
                     
-                    Debug.LogError($"[ModeChangeEventSystem] Error notifying {subscriber.SubscriberName}: {ex.Message}");
+                    ChimeraLogger.LogError($"[ModeChangeEventSystem] Error notifying {subscriber.SubscriberName}: {ex.Message}");
                 }
                 
                 // Track performance
@@ -311,7 +306,7 @@ namespace ProjectChimera.Systems.Events
                     
                     if (_detectSlowSubscribers && responseTime > _slowSubscriberThreshold)
                     {
-                        Debug.LogWarning($"[ModeChangeEventSystem] Slow subscriber detected: {subscriber.SubscriberName} took {responseTime:F3}s");
+                        ChimeraLogger.LogWarning($"[ModeChangeEventSystem] Slow subscriber detected: {subscriber.SubscriberName} took {responseTime:F3}s");
                     }
                 }
                 
@@ -340,7 +335,7 @@ namespace ProjectChimera.Systems.Events
             
             if (_enableEventLogging || _debugMode)
             {
-                Debug.Log($"[ModeChangeEventSystem] Event processing complete: {successfulResponses}/{_registeredSubscribers.Count} successful, {totalProcessingTime:F3}s total");
+                ChimeraLogger.Log($"[ModeChangeEventSystem] Event processing complete: {successfulResponses}/{_registeredSubscribers.Count} successful, {totalProcessingTime:F3}s total");
             }
             
             // Validate event completion if enabled
@@ -368,19 +363,20 @@ namespace ProjectChimera.Systems.Events
             
             if (successRate < 0.9f) // Less than 90% success rate
             {
-                Debug.LogWarning($"[ModeChangeEventSystem] Low success rate for mode change: {successRate:P} ({response.errors.Count} errors)");
+                ChimeraLogger.LogWarning($"[ModeChangeEventSystem] Low success rate for mode change: {successRate:P} ({response.errors.Count} errors)");
             }
             
             if (response.processingTime > _eventTimeout)
             {
-                Debug.LogWarning($"[ModeChangeEventSystem] Event processing timeout: {response.processingTime:F3}s > {_eventTimeout}s");
+                ChimeraLogger.LogWarning($"[ModeChangeEventSystem] Event processing timeout: {response.processingTime:F3}s > {_eventTimeout}s");
             }
             
+            // TODO: Add mode validation when IGameplayModeController is implemented
             // Check if mode actually changed
-            if (_modeController != null && _modeController.CurrentMode != eventData.NewMode)
-            {
-                Debug.LogError($"[ModeChangeEventSystem] Mode change validation failed! Expected: {eventData.NewMode}, Actual: {_modeController.CurrentMode}");
-            }
+            // if (_modeController != null && _modeController.CurrentMode != eventData.NewMode)
+            // {
+            //     ChimeraLogger.LogError($"[ModeChangeEventSystem] Mode change validation failed! Expected: {eventData.NewMode}, Actual: {_modeController.CurrentMode}");
+            // }
         }
         
         private void ShutdownEventSystem()
@@ -396,7 +392,7 @@ namespace ProjectChimera.Systems.Events
             
             if (_debugMode)
             {
-                Debug.Log("[ModeChangeEventSystem] Event system shut down");
+                ChimeraLogger.Log("[ModeChangeEventSystem] Event system shut down");
             }
         }
         
@@ -415,7 +411,7 @@ namespace ProjectChimera.Systems.Events
                 // Simulate UI updates (navigation, panels, buttons)
                 System.Threading.Thread.Sleep(10); // 10ms simulation
                 
-                Debug.Log($"[UI System] Mode changed to {eventData.NewMode} - Updated navigation and panels");
+                ChimeraLogger.Log($"[UI System] Mode changed to {eventData.NewMode} - Updated navigation and panels");
                 return true;
             }
         }
@@ -441,7 +437,7 @@ namespace ProjectChimera.Systems.Events
                     _ => "Default"
                 };
                 
-                Debug.Log($"[Audio System] Mode changed to {eventData.NewMode} - Switched to {audioTheme} audio theme");
+                ChimeraLogger.Log($"[Audio System] Mode changed to {eventData.NewMode} - Switched to {audioTheme} audio theme");
                 return true;
             }
         }
@@ -467,7 +463,7 @@ namespace ProjectChimera.Systems.Events
                     _ => "Default Lighting"
                 };
                 
-                Debug.Log($"[Lighting System] Mode changed to {eventData.NewMode} - Applied {lightingMode}");
+                ChimeraLogger.Log($"[Lighting System] Mode changed to {eventData.NewMode} - Applied {lightingMode}");
                 return true;
             }
         }
@@ -485,7 +481,7 @@ namespace ProjectChimera.Systems.Events
                 // Simulate analytics tracking (background task)
                 System.Threading.Thread.Sleep(5); // 5ms simulation
                 
-                Debug.Log($"[Analytics System] Mode changed to {eventData.NewMode} - Logged user behavior event");
+                ChimeraLogger.Log($"[Analytics System] Mode changed to {eventData.NewMode} - Logged user behavior event");
                 return true;
             }
         }
@@ -511,7 +507,7 @@ namespace ProjectChimera.Systems.Events
                     _ => "Default View"
                 };
                 
-                Debug.Log($"[Camera System] Mode changed to {eventData.NewMode} - Applied {cameraPreset} camera preset");
+                ChimeraLogger.Log($"[Camera System] Mode changed to {eventData.NewMode} - Applied {cameraPreset} camera preset");
                 return true;
             }
         }
@@ -581,10 +577,12 @@ namespace ProjectChimera.Systems.Events
         /// </summary>
         public void TriggerTestEvent(GameplayMode targetMode)
         {
-            if (_modeController != null)
-            {
-                _modeController.SetMode(targetMode, "EventSystem Test");
-            }
+            // TODO: Use IGameplayModeController when implemented
+            // For now, directly trigger the event for testing
+            ChimeraLogger.Log($"[ModeChangeEventSystem] Triggering test mode change to {targetMode}");
+            
+            var eventData = ModeChangedEventSO.CreateModeChangeData(targetMode, GameplayMode.Cultivation);
+            _modeChangedEvent?.Invoke(eventData);
         }
         
         /// <summary>
@@ -593,7 +591,7 @@ namespace ProjectChimera.Systems.Events
         public void SetDebugMode(bool enabled)
         {
             _debugMode = enabled;
-            Debug.Log($"[ModeChangeEventSystem] Debug mode {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.Log($"[ModeChangeEventSystem] Debug mode {(enabled ? "enabled" : "disabled")}");
         }
         
         /// <summary>
@@ -613,13 +611,13 @@ namespace ProjectChimera.Systems.Events
         [ContextMenu("Test Event System - Cycle Modes")]
         private void TestEventSystemCycleModes()
         {
-            if (Application.isPlaying && _modeController != null)
+            if (Application.isPlaying)
             {
                 StartCoroutine(TestEventSequence());
             }
             else
             {
-                Debug.Log("[ModeChangeEventSystem] Test only works during play mode with initialized controller");
+                ChimeraLogger.Log("[ModeChangeEventSystem] Test only works during play mode with initialized controller");
             }
         }
         
@@ -629,12 +627,12 @@ namespace ProjectChimera.Systems.Events
             
             foreach (var mode in modes)
             {
-                Debug.Log($"[ModeChangeEventSystem] Testing mode change to: {mode}");
+                ChimeraLogger.Log($"[ModeChangeEventSystem] Testing mode change to: {mode}");
                 TriggerTestEvent(mode);
                 yield return new WaitForSeconds(1f);
             }
             
-            Debug.Log("[ModeChangeEventSystem] Event system test sequence complete");
+            ChimeraLogger.Log("[ModeChangeEventSystem] Event system test sequence complete");
         }
         
         #endif

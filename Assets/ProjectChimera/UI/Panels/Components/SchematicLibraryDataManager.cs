@@ -2,8 +2,12 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Threading.Tasks;
 using ProjectChimera.Data.Construction;
 using ProjectChimera.Systems.Construction;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Systems.Addressables;
 
 namespace ProjectChimera.UI.Panels.Components
 {
@@ -19,20 +23,20 @@ namespace ProjectChimera.UI.Panels.Components
         [SerializeField] private int _itemsPerPage = 20;
         [SerializeField] private LibrarySortMode _defaultSortMode = LibrarySortMode.Name;
         [SerializeField] private bool _defaultSortAscending = true;
-        
+
         // Data state
         private List<SchematicSO> _filteredSchematics = new List<SchematicSO>();
         private List<SchematicSO> _displayedSchematics = new List<SchematicSO>();
         private SchematicSO _selectedSchematic;
-        
+
         // Pagination state
         private int _currentPage = 0;
         private int _totalPages = 0;
-        
+
         // Sorting state
         private LibrarySortMode _currentSortMode;
         private bool _currentSortAscending;
-        
+
         // Events
         public System.Action<List<SchematicSO>> OnSchematicsLoaded;
         public System.Action<List<SchematicSO>> OnFilteredSchematicsChanged;
@@ -40,7 +44,7 @@ namespace ProjectChimera.UI.Panels.Components
         public System.Action<SchematicSO> OnSelectedSchematicChanged;
         public System.Action<int, int, int> OnPaginationChanged; // currentPage, totalPages, totalItems
         public System.Action<LibrarySortMode, bool> OnSortingChanged;
-        
+
         // Properties
         public List<SchematicSO> LibrarySchematics => new List<SchematicSO>(_librarySchemas);
         public List<SchematicSO> FilteredSchematics => new List<SchematicSO>(_filteredSchematics);
@@ -53,12 +57,12 @@ namespace ProjectChimera.UI.Panels.Components
         public int FilteredSchematicCount => _filteredSchematics.Count;
         public LibrarySortMode CurrentSortMode => _currentSortMode;
         public bool CurrentSortAscending => _currentSortAscending;
-        
+
         private void Start()
         {
             Initialize();
         }
-        
+
         /// <summary>
         /// Initialize data manager
         /// </summary>
@@ -66,37 +70,101 @@ namespace ProjectChimera.UI.Panels.Components
         {
             _currentSortMode = _defaultSortMode;
             _currentSortAscending = _defaultSortAscending;
-            
+
             if (_autoLoadOnStart)
             {
-                LoadAllSchematics();
+                _ = LoadAllSchematicsAsync(); // Fire and forget - don't block initialization
             }
         }
-        
+
         #region Data Loading
-        
+
         /// <summary>
-        /// Load all available schematics
+        /// Load all available schematics from Addressables
+        /// </summary>
+        public async Task LoadAllSchematicsAsync()
+        {
+            // Get AddressablesInfrastructure instance
+            var addressablesService = ServiceContainerFactory.Instance?.TryResolve<AddressablesInfrastructure>();
+            if (addressablesService == null)
+            {
+                addressablesService = ServiceContainerFactory.Instance?.TryResolve<AddressablesInfrastructure>();
+                if (addressablesService == null)
+                {
+                    ChimeraLogger.LogWarning("[SchematicLibraryDataManager] AddressablesInfrastructure not found. Creating instance.");
+                    var go = new GameObject("AddressablesInfrastructure");
+                    addressablesService = go.AddComponent<AddressablesInfrastructure>();
+                }
+            }
+
+            try
+            {
+                // Predefined schematic addresses to load
+                var schematicAddresses = new[] {
+                    "Schematics/Core/BasicRooms",
+                    "Schematics/Core/BasicEquipment",
+                    "Schematics/Advanced/AdvancedRooms",
+                    "Schematics/Advanced/AdvancedEquipment",
+                    "Schematics/Pro/AutomationSchematics",
+                    "Schematics/Pro/MonitoringSchematics"
+                };
+
+                _librarySchemas.Clear();
+
+                foreach (var address in schematicAddresses)
+                {
+                    try
+                    {
+                        var schematic = await addressablesService.LoadAssetAsync<SchematicSO>(address);
+                        if (schematic != null)
+                        {
+                            _librarySchemas.Add(schematic);
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        ChimeraLogger.LogWarning($"[SchematicLibraryDataManager] Could not load schematic '{address}': {ex.Message}");
+                    }
+                }
+
+                // Sort initially
+                SortSchematics(_librarySchemas, _currentSortMode, _currentSortAscending);
+
+                OnSchematicsLoaded?.Invoke(_librarySchemas);
+
+                // Update filtered view
+                SetFilteredSchematics(_librarySchemas);
+
+                ProjectChimera.Core.Logging.ChimeraLogger.Log($"[SchematicLibraryDataManager] Loaded {_librarySchemas.Count} schematics via Addressables");
+            }
+            catch (System.Exception ex)
+            {
+                ProjectChimera.Core.Logging.ChimeraLogger.LogError($"[SchematicLibraryDataManager] Failed to load schematics: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Load all available schematics (Legacy)
         /// </summary>
         public void LoadAllSchematics()
         {
             // Load schematics from Resources or AssetDatabase
-            var loadedSchematics = Resources.LoadAll<SchematicSO>("Schematics");
-            
+            var loadedSchematics = AddressablesInfrastructure.LoadAssetsSync<SchematicSO>("Schematics");
+
             _librarySchemas.Clear();
             _librarySchemas.AddRange(loadedSchematics);
-            
+
             // Sort initially
             SortSchematics(_librarySchemas, _currentSortMode, _currentSortAscending);
-            
+
             OnSchematicsLoaded?.Invoke(_librarySchemas);
-            
+
             // Update filtered view
             SetFilteredSchematics(_librarySchemas);
-            
+
             LogDebug($"Loaded {_librarySchemas.Count} schematics");
         }
-        
+
         /// <summary>
         /// Refresh schematic data
         /// </summary>
@@ -104,11 +172,11 @@ namespace ProjectChimera.UI.Panels.Components
         {
             LoadAllSchematics();
         }
-        
+
         #endregion
-        
+
         #region Schematic Management
-        
+
         /// <summary>
         /// Add schematic to library
         /// </summary>
@@ -118,14 +186,14 @@ namespace ProjectChimera.UI.Panels.Components
             {
                 _librarySchemas.Add(schematic);
                 SortSchematics(_librarySchemas, _currentSortMode, _currentSortAscending);
-                
+
                 // Update displays
                 RefreshFilteredView();
-                
+
                 LogDebug($"Added schematic: {schematic.SchematicName}");
             }
         }
-        
+
         /// <summary>
         /// Remove schematic from library
         /// </summary>
@@ -137,14 +205,14 @@ namespace ProjectChimera.UI.Panels.Components
                 {
                     SetSelectedSchematic(null);
                 }
-                
+
                 RefreshFilteredView();
                 LogDebug($"Removed schematic: {schematic.SchematicName}");
                 return true;
             }
             return false;
         }
-        
+
         /// <summary>
         /// Set selected schematic
         /// </summary>
@@ -157,16 +225,16 @@ namespace ProjectChimera.UI.Panels.Components
                 LogDebug($"Selected schematic: {schematic?.SchematicName ?? "None"}");
             }
         }
-        
+
         /// <summary>
         /// Get schematic by name
         /// </summary>
         public SchematicSO GetSchematicByName(string name)
         {
-            return _librarySchemas.FirstOrDefault(s => 
+            return _librarySchemas.FirstOrDefault(s =>
                 string.Equals(s.SchematicName, name, StringComparison.OrdinalIgnoreCase));
         }
-        
+
         /// <summary>
         /// Check if schematic exists in library
         /// </summary>
@@ -174,29 +242,29 @@ namespace ProjectChimera.UI.Panels.Components
         {
             return _librarySchemas.Contains(schematic);
         }
-        
+
         #endregion
-        
+
         #region Filtering and Sorting
-        
+
         /// <summary>
         /// Set filtered schematics (called by search controller)
         /// </summary>
         public void SetFilteredSchematics(List<SchematicSO> filtered)
         {
             _filteredSchematics = new List<SchematicSO>(filtered);
-            
+
             // Apply current sorting to filtered results
             SortSchematics(_filteredSchematics, _currentSortMode, _currentSortAscending);
-            
+
             OnFilteredSchematicsChanged?.Invoke(_filteredSchematics);
-            
+
             // Reset to first page when filters change
             _currentPage = 0;
             UpdatePagination();
             UpdateDisplayedSchematics();
         }
-        
+
         /// <summary>
         /// Refresh filtered view with current filters
         /// </summary>
@@ -206,7 +274,7 @@ namespace ProjectChimera.UI.Panels.Components
             // For now, assume no filters and show all
             SetFilteredSchematics(_librarySchemas);
         }
-        
+
         /// <summary>
         /// Sort schematics by specified criteria
         /// </summary>
@@ -216,51 +284,51 @@ namespace ProjectChimera.UI.Panels.Components
             {
                 _currentSortMode = sortMode;
                 _currentSortAscending = ascending;
-                
+
                 // Apply sorting to all collections
                 SortSchematics(_librarySchemas, sortMode, ascending);
                 SortSchematics(_filteredSchematics, sortMode, ascending);
-                
+
                 OnSortingChanged?.Invoke(sortMode, ascending);
-                
+
                 // Update displayed schematics
                 UpdateDisplayedSchematics();
-                
+
                 LogDebug($"Sorted by {sortMode}, ascending: {ascending}");
             }
         }
-        
+
         /// <summary>
         /// Sort a list of schematics
         /// </summary>
         private void SortSchematics(List<SchematicSO> schematics, LibrarySortMode sortMode, bool ascending)
         {
             if (schematics == null || schematics.Count <= 1) return;
-            
+
             switch (sortMode)
             {
                 case LibrarySortMode.Name:
                     schematics.Sort((a, b) => CompareByName(a, b, ascending));
                     break;
-                    
+
                 case LibrarySortMode.CreationDate:
                     schematics.Sort((a, b) => CompareByDate(a, b, ascending));
                     break;
-                    
+
                 case LibrarySortMode.Complexity:
                     schematics.Sort((a, b) => CompareByComplexity(a, b, ascending));
                     break;
-                    
+
                 case LibrarySortMode.ItemCount:
                     schematics.Sort((a, b) => CompareByItemCount(a, b, ascending));
                     break;
-                    
+
                 case LibrarySortMode.Cost:
                     schematics.Sort((a, b) => CompareByCost(a, b, ascending));
                     break;
             }
         }
-        
+
         /// <summary>
         /// Compare schematics by name
         /// </summary>
@@ -269,7 +337,7 @@ namespace ProjectChimera.UI.Panels.Components
             int result = string.Compare(a.SchematicName, b.SchematicName, StringComparison.OrdinalIgnoreCase);
             return ascending ? result : -result;
         }
-        
+
         /// <summary>
         /// Compare schematics by creation date
         /// </summary>
@@ -278,7 +346,7 @@ namespace ProjectChimera.UI.Panels.Components
             int result = a.CreationDate.CompareTo(b.CreationDate);
             return ascending ? result : -result;
         }
-        
+
         /// <summary>
         /// Compare schematics by complexity
         /// </summary>
@@ -287,7 +355,7 @@ namespace ProjectChimera.UI.Panels.Components
             int result = a.Complexity.CompareTo(b.Complexity);
             return ascending ? result : -result;
         }
-        
+
         /// <summary>
         /// Compare schematics by item count
         /// </summary>
@@ -296,7 +364,7 @@ namespace ProjectChimera.UI.Panels.Components
             int result = a.ItemCount.CompareTo(b.ItemCount);
             return ascending ? result : -result;
         }
-        
+
         /// <summary>
         /// Compare schematics by cost
         /// </summary>
@@ -307,7 +375,7 @@ namespace ProjectChimera.UI.Panels.Components
             int result = costA.CompareTo(costB);
             return ascending ? result : -result;
         }
-        
+
         /// <summary>
         /// Calculate schematic cost for sorting
         /// </summary>
@@ -317,11 +385,11 @@ namespace ProjectChimera.UI.Panels.Components
             // For now, return a simple approximation
             return schematic.ItemCount * 10f; // Placeholder calculation
         }
-        
+
         #endregion
-        
+
         #region Pagination
-        
+
         /// <summary>
         /// Set items per page
         /// </summary>
@@ -333,28 +401,28 @@ namespace ProjectChimera.UI.Panels.Components
                 _currentPage = 0; // Reset to first page
                 UpdatePagination();
                 UpdateDisplayedSchematics();
-                
+
                 LogDebug($"Items per page set to: {itemsPerPage}");
             }
         }
-        
+
         /// <summary>
         /// Go to specific page
         /// </summary>
         public void GoToPage(int pageIndex)
         {
             pageIndex = Mathf.Clamp(pageIndex, 0, _totalPages - 1);
-            
+
             if (_currentPage != pageIndex)
             {
                 _currentPage = pageIndex;
                 UpdateDisplayedSchematics();
                 OnPaginationChanged?.Invoke(_currentPage, _totalPages, _filteredSchematics.Count);
-                
+
                 LogDebug($"Navigated to page: {pageIndex + 1}");
             }
         }
-        
+
         /// <summary>
         /// Navigate pages relative to current
         /// </summary>
@@ -363,7 +431,7 @@ namespace ProjectChimera.UI.Panels.Components
             int newPage = _currentPage + delta;
             GoToPage(newPage);
         }
-        
+
         /// <summary>
         /// Update pagination calculations
         /// </summary>
@@ -373,7 +441,7 @@ namespace ProjectChimera.UI.Panels.Components
             {
                 _totalPages = Mathf.CeilToInt((float)_filteredSchematics.Count / _itemsPerPage);
                 _totalPages = Mathf.Max(_totalPages, 1);
-                
+
                 // Ensure current page is valid
                 _currentPage = Mathf.Clamp(_currentPage, 0, _totalPages - 1);
             }
@@ -382,42 +450,42 @@ namespace ProjectChimera.UI.Panels.Components
                 _totalPages = 1;
                 _currentPage = 0;
             }
-            
+
             OnPaginationChanged?.Invoke(_currentPage, _totalPages, _filteredSchematics.Count);
         }
-        
+
         /// <summary>
         /// Update displayed schematics based on current page
         /// </summary>
         private void UpdateDisplayedSchematics()
         {
             _displayedSchematics.Clear();
-            
+
             if (_filteredSchematics.Count > 0 && _itemsPerPage > 0)
             {
                 int startIndex = _currentPage * _itemsPerPage;
                 int endIndex = Mathf.Min(startIndex + _itemsPerPage, _filteredSchematics.Count);
-                
+
                 for (int i = startIndex; i < endIndex; i++)
                 {
                     _displayedSchematics.Add(_filteredSchematics[i]);
                 }
             }
-            
+
             OnDisplayedSchematicsChanged?.Invoke(_displayedSchematics);
         }
-        
+
         #endregion
-        
+
         #region Utility Methods
-        
+
         /// <summary>
         /// Get all available tags from current schematics
         /// </summary>
         public List<string> GetAllAvailableTags()
         {
             var allTags = new HashSet<string>();
-            
+
             foreach (var schematic in _librarySchemas)
             {
                 if (schematic.Tags != null)
@@ -431,10 +499,10 @@ namespace ProjectChimera.UI.Panels.Components
                     }
                 }
             }
-            
+
             return allTags.OrderBy(tag => tag).ToList();
         }
-        
+
         /// <summary>
         /// Get schematics by category
         /// </summary>
@@ -442,7 +510,7 @@ namespace ProjectChimera.UI.Panels.Components
         {
             return _librarySchemas.Where(s => s.Category == category).ToList();
         }
-        
+
         /// <summary>
         /// Get schematics by complexity
         /// </summary>
@@ -450,17 +518,17 @@ namespace ProjectChimera.UI.Panels.Components
         {
             return _librarySchemas.Where(s => s.Complexity == complexity).ToList();
         }
-        
+
         /// <summary>
         /// Get schematics by tag
         /// </summary>
         public List<SchematicSO> GetSchematicsByTag(string tag)
         {
-            return _librarySchemas.Where(s => 
-                s.Tags != null && s.Tags.Any(t => 
+            return _librarySchemas.Where(s =>
+                s.Tags != null && s.Tags.Any(t =>
                     string.Equals(t, tag, StringComparison.OrdinalIgnoreCase))).ToList();
         }
-        
+
         /// <summary>
         /// Get library statistics
         /// </summary>
@@ -474,7 +542,7 @@ namespace ProjectChimera.UI.Panels.Components
                 TotalPages = _totalPages,
                 CurrentPage = _currentPage + 1
             };
-            
+
             // Count by category
             foreach (ConstructionCategory category in System.Enum.GetValues(typeof(ConstructionCategory)))
             {
@@ -484,7 +552,7 @@ namespace ProjectChimera.UI.Panels.Components
                     stats.SchematicsByCategory[category] = count;
                 }
             }
-            
+
             // Count by complexity
             foreach (SchematicComplexity complexity in System.Enum.GetValues(typeof(SchematicComplexity)))
             {
@@ -494,18 +562,18 @@ namespace ProjectChimera.UI.Panels.Components
                     stats.SchematicsByComplexity[complexity] = count;
                 }
             }
-            
+
             return stats;
         }
-        
+
         #endregion
-        
+
         private void LogDebug(string message)
         {
-            Debug.Log($"[SchematicLibraryDataManager] {message}");
+            ProjectChimera.Core.Logging.ChimeraLogger.Log($"[SchematicLibraryDataManager] {message}");
         }
     }
-    
+
     /// <summary>
     /// Library statistics data
     /// </summary>

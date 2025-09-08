@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -102,7 +103,7 @@ namespace ProjectChimera.Core.DependencyInjection
         {
             _resolutionCache.Clear();
             _cacheTimestamps.Clear();
-            Debug.Log("[ServiceCache] Resolution cache cleared");
+            ChimeraLogger.Log("[ServiceCache] Resolution cache cleared");
         }
         
         /// <summary>
@@ -128,7 +129,7 @@ namespace ProjectChimera.Core.DependencyInjection
             
             if (expiredTypes.Count > 0)
             {
-                Debug.Log($"[ServiceCache] Cleaned up {expiredTypes.Count} expired cache entries");
+                ChimeraLogger.Log($"[ServiceCache] Cleaned up {expiredTypes.Count} expired cache entries");
             }
             
             return expiredTypes.Count;

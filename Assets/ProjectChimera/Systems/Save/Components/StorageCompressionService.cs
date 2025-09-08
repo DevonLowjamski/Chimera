@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System;
 using System.IO;
@@ -8,6 +9,7 @@ using ProjectChimera.Core;
 
 // Type alias to resolve CompressionLevel ambiguity
 using CompressionLevel = System.IO.Compression.CompressionLevel;
+using CompressionAlgorithm = ProjectChimera.Systems.Save.Storage.CompressionAlgorithm;
 
 namespace ProjectChimera.Systems.Save.Components
 {
@@ -315,32 +317,20 @@ namespace ProjectChimera.Systems.Save.Components
         private void LogInfo(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[StorageCompressionService] {message}");
+                ChimeraLogger.Log($"[StorageCompressionService] {message}");
         }
         
         private void LogWarning(string message)
         {
             if (_enableDebugLogging)
-                Debug.LogWarning($"[StorageCompressionService] {message}");
+                ChimeraLogger.LogWarning($"[StorageCompressionService] {message}");
         }
         
         private void LogError(string message)
         {
             if (_enableDebugLogging)
-                Debug.LogError($"[StorageCompressionService] {message}");
+                ChimeraLogger.LogError($"[StorageCompressionService] {message}");
         }
-    }
-    
-    /// <summary>
-    /// Compression algorithms supported by the storage system
-    /// </summary>
-    public enum CompressionAlgorithm
-    {
-        None = 0,
-        GZip = 1,
-        Deflate = 2,
-        Brotli = 3,
-        LZ4 = 4
     }
     
     /// <summary>

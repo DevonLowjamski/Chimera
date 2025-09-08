@@ -1,4 +1,5 @@
 using System;
+using ProjectChimera.Core;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -25,17 +26,17 @@ namespace ProjectChimera.Systems.Addressables
         [SerializeField] private bool _enableResourcesFallback = true;
         [SerializeField] private int _maxCacheSize = 100;
         [SerializeField] private float _cacheExpirationTime = 300f; // 5 minutes
-        
+
         [Header("Debug Configuration")]
         [SerializeField] private bool _enableDebugLogging = true;
         [SerializeField] private bool _logCacheOperations = false;
         [SerializeField] private bool _logLoadingProgress = false;
-        
+
         [Header("Critical Asset Preloading")]
         [SerializeField] private string[] _criticalPrefabAddresses;
         [SerializeField] private string[] _criticalUIAddresses;
         [SerializeField] private string[] _criticalAudioAddresses;
-        
+
         // Asset Management
 #if UNITY_ADDRESSABLES
         private readonly Dictionary<string, AsyncOperationHandle> _loadingOperations = new Dictionary<string, AsyncOperationHandle>();
@@ -44,67 +45,67 @@ namespace ProjectChimera.Systems.Addressables
 #endif
         private readonly Dictionary<string, CachedAsset> _assetCache = new Dictionary<string, CachedAsset>();
         private readonly Dictionary<string, List<GameObject>> _instancePools = new Dictionary<string, List<GameObject>>();
-        
+
         // Reference Tracking
         private readonly Dictionary<GameObject, string> _instanceToAddress = new Dictionary<GameObject, string>();
         private readonly Dictionary<string, int> _referenceCounters = new Dictionary<string, int>();
-        
+
         // Performance Metrics
         private readonly Dictionary<string, LoadingProgress> _loadingProgress = new Dictionary<string, LoadingProgress>();
         private int _totalAssetsLoaded = 0;
         private int _totalAssetsCached = 0;
         private int _cacheHits = 0;
         private int _cacheMisses = 0;
-        
+
         // System References
         private DevelopmentMonitoring _diagnostics;
         private bool _isInitialized = false;
-        
+
         // Events
         public event Action OnAddressablesInitialized;
         public event Action<string, UnityEngine.Object> OnAssetLoaded;
         public event Action<string, string> OnAssetLoadFailed;
         public event Action<string, float> OnLoadingProgress;
-        
+
         // Properties
         public bool IsInitialized => _isInitialized;
         public int CachedAssetCount => _assetCache.Count;
         public int ActiveLoadingOperations => _loadingOperations.Count;
-        
+
         #region Unity Lifecycle
-        
+
         private async void Start()
         {
             await InitializeAsync();
         }
-        
+
         private void OnDestroy()
         {
             Shutdown();
         }
-        
+
         #endregion
-        
+
         #region Initialization
-        
+
         public async Task<bool> InitializeAsync()
         {
             if (_isInitialized) return true;
-            
+
             try
             {
                 LoggingInfrastructure.LogInfo("AddressablesInfrastructure", "Initializing Addressables Infrastructure...");
-                
+
                 // Find diagnostics system
-                _diagnostics = UnityEngine.Object.FindObjectOfType<DevelopmentMonitoring>();
-                
+                _diagnostics = ServiceContainerFactory.Instance?.TryResolve<DevelopmentMonitoring>();
+
                 if (_enableAddressables)
                 {
 #if UNITY_ADDRESSABLES
                     // Initialize Addressables
                     var initHandle = Addressables.InitializeAsync();
                     await initHandle.Task;
-                    
+
                     if (initHandle.Status == AsyncOperationStatus.Succeeded)
                     {
                         _isInitialized = true;
@@ -127,16 +128,16 @@ namespace ProjectChimera.Systems.Addressables
                 {
                     _isInitialized = true;
                 }
-                
+
                 // Preload critical assets
                 if (_criticalPrefabAddresses?.Length > 0 || _criticalUIAddresses?.Length > 0 || _criticalAudioAddresses?.Length > 0)
                 {
                     await PreloadCriticalAssets();
                 }
-                
-                LoggingInfrastructure.LogInfo("AddressablesInfrastructure", 
+
+                LoggingInfrastructure.LogInfo("AddressablesInfrastructure",
                     $"Addressables Infrastructure initialized - Mode: {(_enableAddressables ? "Addressables" : "Resources")}");
-                
+
                 return true;
             }
             catch (Exception ex)
@@ -147,7 +148,7 @@ namespace ProjectChimera.Systems.Addressables
                 return false;
             }
         }
-        
+
         public void Shutdown()
         {
             try
@@ -162,14 +163,14 @@ namespace ProjectChimera.Systems.Addressables
                     }
 #endif
                 }
-                
+
                 _assetCache.Clear();
                 _loadingOperations.Clear();
                 _instancePools.Clear();
                 _instanceToAddress.Clear();
                 _referenceCounters.Clear();
                 _loadingProgress.Clear();
-                
+
                 _isInitialized = false;
                 LoggingInfrastructure.LogInfo("AddressablesInfrastructure", "Addressables Infrastructure shut down");
             }
@@ -178,18 +179,18 @@ namespace ProjectChimera.Systems.Addressables
                 LoggingInfrastructure.LogError("AddressablesInfrastructure", "Error during shutdown", ex);
             }
         }
-        
+
         #endregion
-        
+
         #region Asset Loading
-        
+
         public async Task<T> LoadAssetAsync<T>(string address) where T : UnityEngine.Object
         {
             if (!_isInitialized)
             {
                 await InitializeAsync();
             }
-            
+
             // Check cache first
             if (_enableCaching && _assetCache.TryGetValue(address, out var cached))
             {
@@ -206,9 +207,9 @@ namespace ProjectChimera.Systems.Addressables
                     _assetCache.Remove(address);
                 }
             }
-            
+
             _cacheMisses++;
-            
+
             // Load asset
             T asset = null;
             try
@@ -221,7 +222,7 @@ namespace ProjectChimera.Systems.Addressables
                 {
                     asset = await LoadAssetViaResourcesAsync<T>(address);
                 }
-                
+
                 if (asset == null)
                 {
                     OnAssetLoadFailed?.Invoke(address, "Asset not found in Addressables or Resources");
@@ -233,10 +234,10 @@ namespace ProjectChimera.Systems.Addressables
                 OnAssetLoadFailed?.Invoke(address, ex.Message);
                 LoggingInfrastructure.LogError("AddressablesInfrastructure", $"Exception loading asset {address}", ex);
             }
-            
+
             return asset;
         }
-        
+
         private async Task<T> LoadAssetViaAddressablesAsync<T>(string address) where T : UnityEngine.Object
         {
 #if UNITY_ADDRESSABLES
@@ -249,7 +250,7 @@ namespace ProjectChimera.Systems.Addressables
                     await existingHandle.Task;
                     return existingHandle.Result;
                 }
-                
+
                 // Initialize loading progress
                 if (_enableProgressTracking)
                 {
@@ -260,29 +261,29 @@ namespace ProjectChimera.Systems.Addressables
                         Progress = 0f
                     };
                 }
-                
+
                 // Load via Addressables
                 var handle = Addressables.LoadAssetAsync<T>(address);
                 _loadingOperations[address] = handle;
-                
+
                 // Track progress if enabled
                 if (_enableProgressTracking)
                 {
                     _ = TrackLoadingProgressAsync(address, handle);
                 }
-                
+
                 await handle.Task;
                 var result = handle.Result;
-                
+
                 // Remove from loading operations
                 _loadingOperations.Remove(address);
-                
+
                 // Cache if successful
                 if (result != null)
                 {
                     CacheAsset(address, result, handle);
                 }
-                
+
                 OnAssetLoaded?.Invoke(address, result);
                 return result;
             }
@@ -297,23 +298,23 @@ namespace ProjectChimera.Systems.Addressables
             return await LoadAssetViaResourcesAsync<T>(address);
 #endif
         }
-        
+
         private async Task<T> LoadAssetViaResourcesAsync<T>(string address) where T : UnityEngine.Object
         {
             try
             {
                 await Task.Yield(); // Make it async for consistency
-                
+
                 var resourcePath = ConvertAddressToResourcePath(address);
                 var asset = Resources.Load<T>(resourcePath);
-                
+
                 if (asset != null)
                 {
                     CacheAsset(address, asset);
                     _totalAssetsLoaded++;
                     OnAssetLoaded?.Invoke(address, asset);
                 }
-                
+
                 return asset;
             }
             catch (Exception ex)
@@ -322,11 +323,11 @@ namespace ProjectChimera.Systems.Addressables
                 throw;
             }
         }
-        
+
         #endregion
-        
+
         #region Asset Management
-        
+
 #if UNITY_ADDRESSABLES
         private void CacheAsset<T>(string address, T asset, AsyncOperationHandle handle = default) where T : UnityEngine.Object
 #else
@@ -334,13 +335,13 @@ namespace ProjectChimera.Systems.Addressables
 #endif
         {
             if (!_enableCaching) return;
-            
+
             // Manage cache size
             if (_assetCache.Count >= _maxCacheSize)
             {
                 EvictOldestAsset();
             }
-            
+
             var cachedAsset = new CachedAsset
             {
                 Asset = asset,
@@ -350,23 +351,23 @@ namespace ProjectChimera.Systems.Addressables
                 Handle = handle
 #endif
             };
-            
+
             _assetCache[address] = cachedAsset;
             _totalAssetsCached++;
-            
+
             IncrementReferenceCount(address);
-            
+
             if (_logCacheOperations)
             {
                 LoggingInfrastructure.LogTrace("AddressablesInfrastructure", $"Cached asset: {address}");
             }
         }
-        
+
         private void EvictOldestAsset()
         {
             string oldestAddress = null;
             float oldestTime = float.MaxValue;
-            
+
             foreach (var kvp in _assetCache)
             {
                 if (kvp.Value.CacheTime < oldestTime)
@@ -375,17 +376,17 @@ namespace ProjectChimera.Systems.Addressables
                     oldestAddress = kvp.Key;
                 }
             }
-            
+
             if (oldestAddress != null)
             {
                 ReleaseAsset(oldestAddress);
             }
         }
-        
+
         #endregion
-        
+
         #region Progress Tracking
-        
+
 #if UNITY_ADDRESSABLES
         private async Task TrackLoadingProgressAsync(string address, AsyncOperationHandle handle)
 #else
@@ -401,13 +402,13 @@ namespace ProjectChimera.Systems.Addressables
                     {
                         progress.Progress = handle.PercentComplete;
                         OnLoadingProgress?.Invoke(address, progress.Progress);
-                        
+
                         if (_logLoadingProgress)
                         {
                             LoggingInfrastructure.LogTrace("AddressablesInfrastructure", $"Loading {address}: {progress.Progress * 100:F1}%");
                         }
                     }
-                    
+
                     await Task.Delay(50);
                 }
 #else
@@ -418,17 +419,17 @@ namespace ProjectChimera.Systems.Addressables
                         // For Tasks, we can't get specific progress, so just show 50% while loading
                         progress.Progress = 0.5f;
                         OnLoadingProgress?.Invoke(address, 0.5f);
-                        
+
                         if (_logLoadingProgress)
                         {
                             LoggingInfrastructure.LogTrace("AddressablesInfrastructure", $"Loading {address}: In Progress");
                         }
                     }
-                    
+
                     await Task.Delay(50);
                 }
 #endif
-                
+
                 // Final progress update
                 if (_loadingProgress.TryGetValue(address, out var finalProgress))
                 {
@@ -442,23 +443,23 @@ namespace ProjectChimera.Systems.Addressables
                 LoggingInfrastructure.LogError("AddressablesInfrastructure", $"Error tracking progress for {address}", ex);
             }
         }
-        
+
         #endregion
-        
+
         #region Instantiation
-        
+
         public async Task<GameObject> InstantiateAsync(string address, Transform parent = null, bool instantiateInWorldSpace = false)
         {
             try
             {
                 GameObject prefab = null;
-                
+
                 if (_enableAddressables && _isInitialized)
                 {
 #if UNITY_ADDRESSABLES
                     var handle = Addressables.InstantiateAsync(address, parent, instantiateInWorldSpace);
                     prefab = await handle.Task;
-                    
+
                     if (handle.Status == AsyncOperationStatus.Succeeded)
                     {
                         _instanceToAddress[prefab] = address;
@@ -477,7 +478,7 @@ namespace ProjectChimera.Systems.Addressables
                     }
 #endif
                 }
-                
+
                 // Fallback to manual instantiation
                 if (_enableResourcesFallback)
                 {
@@ -490,7 +491,7 @@ namespace ProjectChimera.Systems.Addressables
                         return prefab;
                     }
                 }
-                
+
                 LoggingInfrastructure.LogWarning("AddressablesInfrastructure", $"Failed to instantiate prefab: {address}");
                 return null;
             }
@@ -500,17 +501,17 @@ namespace ProjectChimera.Systems.Addressables
                 return null;
             }
         }
-        
+
         public void ReleaseInstance(GameObject instance)
         {
             if (instance == null) return;
-            
+
             try
             {
                 if (_instanceToAddress.TryGetValue(instance, out var address))
                 {
                     _instanceToAddress.Remove(instance);
-                    
+
                     if (_enableAddressables && _isInitialized)
                     {
 #if UNITY_ADDRESSABLES
@@ -524,7 +525,7 @@ namespace ProjectChimera.Systems.Addressables
                     {
                         UnityEngine.Object.Destroy(instance);
                     }
-                    
+
                     DecrementReferenceCount(address);
                 }
                 else
@@ -543,11 +544,11 @@ namespace ProjectChimera.Systems.Addressables
                 }
             }
         }
-        
+
         #endregion
-        
+
         #region Asset Release
-        
+
         public void ReleaseAsset(string address)
         {
             try
@@ -561,13 +562,13 @@ namespace ProjectChimera.Systems.Addressables
                     }
 #endif
                     _assetCache.Remove(address);
-                    
+
                     if (_logCacheOperations)
                     {
                         LoggingInfrastructure.LogTrace("AddressablesInfrastructure", $"Released asset: {address}");
                     }
                 }
-                
+
                 DecrementReferenceCount(address);
             }
             catch (Exception ex)
@@ -575,7 +576,7 @@ namespace ProjectChimera.Systems.Addressables
                 LoggingInfrastructure.LogError("AddressablesInfrastructure", $"Error releasing asset {address}", ex);
             }
         }
-        
+
         public void ReleaseAllAssets()
         {
             var addressesToRelease = new List<string>(_assetCache.Keys);
@@ -584,27 +585,27 @@ namespace ProjectChimera.Systems.Addressables
                 ReleaseAsset(address);
             }
         }
-        
+
         #endregion
-        
+
         #region Utility Methods
-        
+
         private string ConvertAddressToResourcePath(string address)
         {
             // Convert Addressables address to Resources path
             // Remove file extensions and convert to Resources-compatible path
             var resourcePath = address.Replace(".prefab", "").Replace(".asset", "");
-            
+
             // If it starts with "Assets/Resources/", remove that prefix
             if (resourcePath.StartsWith("Assets/Resources/"))
             {
                 resourcePath = resourcePath.Substring("Assets/Resources/".Length);
             }
-            
+
             // If not in Resources folder, try using the address directly
             return resourcePath;
         }
-        
+
         private void IncrementReferenceCount(string address)
         {
             if (_referenceCounters.ContainsKey(address))
@@ -616,7 +617,7 @@ namespace ProjectChimera.Systems.Addressables
                 _referenceCounters[address] = 1;
             }
         }
-        
+
         private void DecrementReferenceCount(string address)
         {
             if (_referenceCounters.ContainsKey(address))
@@ -628,15 +629,15 @@ namespace ProjectChimera.Systems.Addressables
                 }
             }
         }
-        
+
         #endregion
-        
+
         #region Preloading
-        
+
         private async Task PreloadCriticalAssets()
         {
             var preloadTasks = new List<Task>();
-            
+
             // Preload critical prefabs
             if (_criticalPrefabAddresses != null)
             {
@@ -645,7 +646,7 @@ namespace ProjectChimera.Systems.Addressables
                     preloadTasks.Add(LoadAssetAsync<GameObject>(address));
                 }
             }
-            
+
             // Preload critical UI assets
             if (_criticalUIAddresses != null)
             {
@@ -654,7 +655,7 @@ namespace ProjectChimera.Systems.Addressables
                     preloadTasks.Add(LoadAssetAsync<UnityEngine.Object>(address));
                 }
             }
-            
+
             // Preload critical audio
             if (_criticalAudioAddresses != null)
             {
@@ -663,15 +664,15 @@ namespace ProjectChimera.Systems.Addressables
                     preloadTasks.Add(LoadAssetAsync<AudioClip>(address));
                 }
             }
-            
+
             await Task.WhenAll(preloadTasks);
             LoggingInfrastructure.LogInfo("AddressablesInfrastructure", "Critical assets preloaded");
         }
-        
+
         #endregion
-        
+
         #region Data Structures
-        
+
         [System.Serializable]
         public class CachedAsset
         {
@@ -681,13 +682,13 @@ namespace ProjectChimera.Systems.Addressables
 #if UNITY_ADDRESSABLES
             public AsyncOperationHandle Handle;
 #endif
-            
+
             public bool IsValid()
             {
                 return Asset != null && Time.time - CacheTime < 300f; // 5 minute expiration
             }
         }
-        
+
         [System.Serializable]
         public class LoadingProgress
         {
@@ -696,7 +697,29 @@ namespace ProjectChimera.Systems.Addressables
             public float Progress;
             public float CompletionTime;
         }
-        
+
         #endregion
+        /// <summary>
+        /// Synchronous asset loading (convenience method)
+        /// </summary>
+        public static T[] LoadAssetsSync<T>(string label) where T : UnityEngine.Object
+        {
+            try
+            {
+                #if UNITY_ADDRESSABLES
+                var handle = Addressables.LoadAssetsAsync<T>(label, null);
+                var result = handle.WaitForCompletion();
+                return result?.ToArray() ?? new T[0];
+                #else
+                LoggingInfrastructure.LogWarning("AddressablesInfrastructure", $"Addressables not available, returning empty array for label: {label}");
+                return new T[0];
+                #endif
+            }
+            catch (System.Exception ex)
+            {
+                LoggingInfrastructure.LogError("AddressablesInfrastructure", $"Failed to load assets synchronously for label: {label}", ex);
+                return new T[0];
+            }
+        }
     }
 }

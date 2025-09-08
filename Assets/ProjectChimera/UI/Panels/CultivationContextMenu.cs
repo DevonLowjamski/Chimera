@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -75,7 +76,7 @@ namespace ProjectChimera.UI.Panels
         private void LogDebug(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[CultivationContextMenu] {message}");
+                ChimeraLogger.Log($"[CultivationContextMenu] {message}");
         }
     }
 }

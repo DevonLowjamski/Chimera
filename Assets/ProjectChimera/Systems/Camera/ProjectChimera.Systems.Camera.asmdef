@@ -12,7 +12,8 @@
         "ProjectChimera.Data.Camera",
         "ProjectChimera.Data.Events",
         "ProjectChimera.Systems.Gameplay",
-        "Cinemachine"
+        "Cinemachine",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,7 +1,9 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Construction
 {
@@ -10,7 +12,7 @@ namespace ProjectChimera.Systems.Construction
     /// Provides grid-based spatial organization, snap-to-grid functionality, and visual grid rendering.
     /// Designed to replace the complex legacy construction system with a simple, robust grid-based approach.
     /// </summary>
-    public class GridSystem : MonoBehaviour
+    public class GridSystem : MonoBehaviour, ITickable
     {
         [Header("Grid Configuration")]
         [SerializeField] private GridSnapSettings _gridSettings = new GridSnapSettings
@@ -82,9 +84,17 @@ namespace ProjectChimera.Systems.Construction
         {
             CreateGridVisualization();
             UpdateGridVisibility();
+            
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
         
-        private void Update()
+        #region ITickable Implementation
+        
+        public int Priority => TickPriority.ConstructionSystem;
+        public bool Enabled => enabled && _gridCells.Count > 0;
+        
+        public void Tick(float deltaTime)
         {
             if (_gridNeedsUpdate)
             {
@@ -92,6 +102,8 @@ namespace ProjectChimera.Systems.Construction
                 _gridNeedsUpdate = false;
             }
         }
+        
+        #endregion
         
         #region Initialization
         
@@ -743,12 +755,12 @@ namespace ProjectChimera.Systems.Construction
         
         private void LogInfo(string message)
         {
-            Debug.Log($"[GridSystem] {message}");
+            ChimeraLogger.Log($"[GridSystem] {message}");
         }
         
         private void LogWarning(string message)
         {
-            Debug.LogWarning($"[GridSystem] {message}");
+            ChimeraLogger.LogWarning($"[GridSystem] {message}");
         }
         
         #endregion
@@ -836,6 +848,14 @@ namespace ProjectChimera.Systems.Construction
     }
         
         #endregion
+        
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+        }
     }
 
     [System.Serializable]

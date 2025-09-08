@@ -5,6 +5,7 @@ using System.Linq;
 using ProjectChimera.Core;
 using ProjectChimera.Core.Events;
 using ProjectChimera.Data.Events;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Navigation
 {
@@ -84,12 +85,12 @@ namespace ProjectChimera.UI.Navigation
                 
                 if (_enableDebugLogging)
                 {
-                    Debug.Log("[SideNavigationController] Initialized successfully");
+                    ChimeraLogger.Log("[SideNavigationController] Initialized successfully");
                 }
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[SideNavigationController] Error during initialization: {ex.Message}");
+                ChimeraLogger.LogError($"[SideNavigationController] Error during initialization: {ex.Message}");
             }
         }
         
@@ -459,7 +460,7 @@ namespace ProjectChimera.UI.Navigation
             
             if (_enableDebugLogging)
             {
-                Debug.Log($"[SideNavigationController] Navigation {(collapsed ? "collapsed" : "expanded")}");
+                ChimeraLogger.Log($"[SideNavigationController] Navigation {(collapsed ? "collapsed" : "expanded")}");
             }
         }
         
@@ -503,7 +504,7 @@ namespace ProjectChimera.UI.Navigation
             
             if (_enableDebugLogging)
             {
-                Debug.Log($"[SideNavigationController] Mode changed to {_currentMode}");
+                ChimeraLogger.Log($"[SideNavigationController] Mode changed to {_currentMode}");
             }
         }
         
@@ -517,7 +518,7 @@ namespace ProjectChimera.UI.Navigation
             
             if (_enableDebugLogging)
             {
-                Debug.Log($"[SideNavigationController] Camera level changed to {_currentLevel}");
+                ChimeraLogger.Log($"[SideNavigationController] Camera level changed to {_currentLevel}");
             }
         }
         
@@ -525,7 +526,7 @@ namespace ProjectChimera.UI.Navigation
         {
             if (_enableDebugLogging)
             {
-                Debug.Log($"[SideNavigationController] Navigation item clicked: {action}");
+                ChimeraLogger.Log($"[SideNavigationController] Navigation item clicked: {action}");
             }
             
             // Raise event for other systems to respond to

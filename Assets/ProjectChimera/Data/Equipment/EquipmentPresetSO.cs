@@ -216,16 +216,16 @@ namespace ProjectChimera.Data.Equipment
             bool isValid = true;
             
             if (string.IsNullOrEmpty(_presetName))
-                Debug.LogError($"Equipment Preset {name}: Preset name cannot be empty", this);
+                SharedLogger.LogError($"Equipment Preset {name}: Preset name cannot be empty");
                 
             if (_equipmentItems.Count == 0)
-                Debug.LogWarning($"Equipment Preset {name}: No equipment items defined", this);
+                SharedLogger.LogWarning($"Equipment Preset {name}: No equipment items defined");
                 
             if (_initialInvestment <= 0f)
-                Debug.LogError($"Equipment Preset {name}: Initial investment must be positive", this);
+                SharedLogger.LogError($"Equipment Preset {name}: Initial investment must be positive");
                 
             if (_targetPlantCount <= 0)
-                Debug.LogError($"Equipment Preset {name}: Target plant count must be positive", this);
+                SharedLogger.LogError($"Equipment Preset {name}: Target plant count must be positive");
                 
             return isValid;
         }

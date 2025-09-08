@@ -1,7 +1,9 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Data.Economy;
 using ProjectChimera.Data.Economy.Market;
 using ProjectChimera.Data.Economy.Configuration;
@@ -17,7 +19,7 @@ namespace ProjectChimera.Systems.Economy
     /// Handles simple buying/selling of Schematics and Genetics at fixed prices.
     /// Simplified for v4.0 scope.
     /// </summary>
-    public class MarketManager : DIChimeraManager
+    public class MarketManager : DIChimeraManager, ITickable
     {
         [Header("Marketplace Configuration")]
         [SerializeField] private SimpleMarketplaceConfig _marketplaceConfig;
@@ -52,7 +54,7 @@ namespace ProjectChimera.Systems.Economy
             InitializeTransactionLogger();
             InitializeProductCatalog();
             
-            Debug.Log("SimplifiedMarketManager initialized successfully");
+            ChimeraLogger.Log("SimplifiedMarketManager initialized successfully");
         }
         
         protected override void OnManagerShutdown()
@@ -60,13 +62,30 @@ namespace ProjectChimera.Systems.Economy
             // Cleanup resources
         }
         
-        private void Update()
+        #region ITickable Implementation
+        
+        public int Priority => TickPriority.EconomyManager;
+        public bool Enabled => IsInitialized;
+        
+        public void Tick(float deltaTime)
         {
-            if (!IsInitialized) return;
+            if (!Enabled) return;
             
             // No complex market dynamics - marketplace is stable with fixed prices
             // Only basic maintenance operations if needed
         }
+        
+        public void OnRegistered()
+        {
+            ChimeraLogger.LogVerbose("[MarketManager] Registered with UpdateOrchestrator");
+        }
+        
+        public void OnUnregistered()
+        {
+            ChimeraLogger.LogVerbose("[MarketManager] Unregistered from UpdateOrchestrator");
+        }
+        
+        #endregion
         
         #region Initialization Methods
         
@@ -150,14 +169,14 @@ namespace ProjectChimera.Systems.Economy
         {
             if (!_productCatalog.ContainsKey(productId))
             {
-                Debug.LogWarning($"Product {productId} not found in catalog");
+                ChimeraLogger.LogWarning($"Product {productId} not found in catalog");
                 return null;
             }
             
             var product = _productCatalog[productId];
             if (!product.IsAvailable)
             {
-                Debug.LogWarning($"Product {productId} is not available");
+                ChimeraLogger.LogWarning($"Product {productId} is not available");
                 return null;
             }
             
@@ -212,7 +231,7 @@ namespace ProjectChimera.Systems.Economy
         {
             if (!_productCatalog.ContainsKey(productId))
             {
-                Debug.LogWarning($"Product {productId} not found in catalog");
+                ChimeraLogger.LogWarning($"Product {productId} not found in catalog");
                 return null;
             }
             
@@ -283,7 +302,7 @@ namespace ProjectChimera.Systems.Economy
                 }
                 
                 OnProductAdded?.Invoke(product.ProductId);
-                Debug.Log($"Added product {product.ProductName} to marketplace");
+                ChimeraLogger.Log($"Added product {product.ProductName} to marketplace");
             }
         }
         
@@ -296,7 +315,7 @@ namespace ProjectChimera.Systems.Economy
             {
                 _priceManager.SetPrice(productId, newPrice);
                 OnPriceUpdated?.Invoke(productId, newPrice);
-                Debug.Log($"Updated price for {productId} to {newPrice}");
+                ChimeraLogger.Log($"Updated price for {productId} to {newPrice}");
             }
         }
         

@@ -1,3 +1,6 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,104 +17,104 @@ namespace ProjectChimera.Systems.Services.Economy
     /// Handles player finances, credit, loans, and financial record keeping
     /// Decomposed from TradingManager (500 lines target)
     /// </summary>
-    public class FinancialManagementService : MonoBehaviour, IFinancialManagementService
+    public class FinancialManagementService : MonoBehaviour, ITickable, IFinancialManagementService
     {
         #region Properties
-        
+
         public bool IsInitialized { get; private set; }
-        
+
         #endregion
 
         #region Private Fields
-        
+
         [Header("Financial Configuration")]
         [SerializeField] private bool _enableFinancialSystem = true;
         [SerializeField] private float _startingCashBalance = 10000f;
         [SerializeField] private float _baseCreditLimit = 5000f;
         [SerializeField] private float _interestRate = 0.05f; // 5% annually
         [SerializeField] private int _creditHistoryDays = 365;
-        
+
         [Header("Player Finances")]
         [SerializeField] private ProjectChimera.Data.Economy.PlayerFinances _playerFinances;
         [SerializeField] private List<ProjectChimera.Data.Economy.FinancialTransaction> _transactionHistory = new List<ProjectChimera.Data.Economy.FinancialTransaction>();
         [SerializeField] private List<ProjectChimera.Data.Economy.LoanContract> _activeLoans = new List<ProjectChimera.Data.Economy.LoanContract>();
-        [SerializeField] private ProjectChimera.Data.Economy.CreditProfile _playerCreditProfile;
-        
+        [SerializeField] private CreditProfile _playerCreditProfile;
+
         [Header("Financial Analytics")]
-        [SerializeField] private FinancialAnalysis _financialAnalysis;
+        [SerializeField] private string _financialAnalysis = "";
         [SerializeField] private Dictionary<string, float> _monthlyExpenses = new Dictionary<string, float>();
         [SerializeField] private Dictionary<string, float> _monthlyIncome = new Dictionary<string, float>();
-        
+
         [Header("Events")]
         [SerializeField] private GameEventSO<ProjectChimera.Data.Economy.PlayerFinances> _financialStatusChangedEvent;
         [SerializeField] private GameEventSO<ProjectChimera.Data.Economy.CreditProfile> _creditScoreChangedEvent;
         [SerializeField] private GameEventSO<ProjectChimera.Data.Economy.LoanContract> _loanStatusChangedEvent;
-        
+
         private float _lastInterestCalculation;
-        
+
         #endregion
 
         #region Events
-        
+
         public event Action<ProjectChimera.Data.Economy.PlayerFinances> OnFinancialStatusChanged;
         public event Action<ProjectChimera.Data.Economy.FinancialTransaction> OnTransactionRecorded;
         public event Action<ProjectChimera.Data.Economy.CreditProfile> OnCreditScoreChanged;
         public event Action<ProjectChimera.Data.Economy.LoanContract> OnLoanStatusChanged;
-        
+
         // IFinancialManagementService events
         public event Action<string, float, float> OnCashChanged;
         public event Action<string, ProjectChimera.Data.Economy.InventoryItem, float> OnInventoryChanged;
         public event Action<string, ProjectChimera.Data.Economy.FinancialMetrics> OnFinancialMetricsUpdated;
-        
+
         #endregion
 
         #region IService Implementation
-        
+
         public void Initialize()
         {
             if (IsInitialized) return;
-            
-            Debug.Log("Initializing FinancialManagementService...");
-            
+
+            ChimeraLogger.Log("Initializing FinancialManagementService...");
+
             // Initialize financial system
             InitializeFinancialSystem();
-            
+
             // Load player finances
             LoadPlayerFinances();
-            
+
             // Initialize credit scoring
             InitializeCreditScoring();
-            
+
             // Register with central ServiceRegistry
-            ServiceRegistry.Instance.RegisterService<IFinancialManagementService>(this, ServiceDomain.Economy);
-            
+            ServiceContainerFactory.Instance.RegisterSingleton<IFinancialManagementService>(this);
+
             IsInitialized = true;
-            Debug.Log("FinancialManagementService initialized successfully");
+            ChimeraLogger.Log("FinancialManagementService initialized successfully");
         }
 
         public void Shutdown()
         {
             if (!IsInitialized) return;
-            
-            Debug.Log("Shutting down FinancialManagementService...");
-            
+
+            ChimeraLogger.Log("Shutting down FinancialManagementService...");
+
             // Save financial data
             SaveFinancialData();
-            
+
             // Clear collections
             _transactionHistory.Clear();
             _activeLoans.Clear();
             _monthlyExpenses.Clear();
             _monthlyIncome.Clear();
-            
+
             IsInitialized = false;
-            Debug.Log("FinancialManagementService shutdown complete");
+            ChimeraLogger.Log("FinancialManagementService shutdown complete");
         }
-        
+
         #endregion
 
         #region Financial Operations
-        
+
         public bool ProcessPayment(float amount, ProjectChimera.Data.Economy.PaymentMethodType paymentMethod, string description = "")
         {
             if (!_enableFinancialSystem || amount <= 0)
@@ -121,15 +124,15 @@ namespace ProjectChimera.Systems.Services.Economy
             {
                 case ProjectChimera.Data.Economy.PaymentMethodType.Cash:
                     return ProcessCashPayment(amount, description);
-                
+
                 case ProjectChimera.Data.Economy.PaymentMethodType.Credit:
                     return ProcessCreditPayment(amount, description);
-                
+
                 case ProjectChimera.Data.Economy.PaymentMethodType.Barter:
                     return ProcessLoanPayment(amount, description);
-                
+
                 default:
-                    Debug.LogError($"Unknown payment method: {paymentMethod}");
+                    ChimeraLogger.LogError($"Unknown payment method: {paymentMethod}");
                     return false;
             }
         }
@@ -140,7 +143,7 @@ namespace ProjectChimera.Systems.Services.Economy
                 return false;
 
             _playerFinances.CashBalance += amount;
-            
+
             RecordTransaction(new ProjectChimera.Data.Economy.FinancialTransaction
             {
                 TransactionId = Guid.NewGuid().ToString(),
@@ -153,8 +156,8 @@ namespace ProjectChimera.Systems.Services.Economy
 
             UpdateFinancialAnalytics(amount, true);
             OnFinancialStatusChanged?.Invoke(_playerFinances);
-            
-            Debug.Log($"Received payment: ${amount:F2} via {method}");
+
+            ChimeraLogger.Log($"Received payment: ${amount:F2} via {method}");
             return true;
         }
 
@@ -180,23 +183,23 @@ namespace ProjectChimera.Systems.Services.Economy
                 .Take(maxRecords)
                 .ToList();
         }
-        
+
         #endregion
 
         #region Credit Management
-        
+
         public bool ApplyForCredit(float requestedAmount)
         {
             if (!_enableFinancialSystem)
                 return false;
 
             float maxEligibleCredit = CalculateMaxEligibleCredit();
-            
+
             if (requestedAmount <= maxEligibleCredit)
             {
                 _playerFinances.CreditLimit += requestedAmount;
                 UpdateCreditScore(5); // Small positive impact for successful application
-                
+
                 RecordTransaction(new ProjectChimera.Data.Economy.FinancialTransaction
                 {
                     TransactionId = Guid.NewGuid().ToString(),
@@ -208,12 +211,12 @@ namespace ProjectChimera.Systems.Services.Economy
                 });
 
                 OnFinancialStatusChanged?.Invoke(_playerFinances);
-                Debug.Log($"Credit approved: ${requestedAmount:F2}. New limit: ${_playerFinances.CreditLimit:F2}");
+                ChimeraLogger.Log($"Credit approved: ${requestedAmount:F2}. New limit: ${_playerFinances.CreditLimit:F2}");
                 return true;
             }
 
             UpdateCreditScore(-2); // Small negative impact for declined application
-            Debug.Log($"Credit application declined. Requested: ${requestedAmount:F2}, Max eligible: ${maxEligibleCredit:F2}");
+            ChimeraLogger.Log($"Credit application declined. Requested: ${requestedAmount:F2}, Max eligible: ${maxEligibleCredit:F2}");
             return false;
         }
 
@@ -222,19 +225,19 @@ namespace ProjectChimera.Systems.Services.Economy
             return _playerCreditProfile;
         }
 
-        public void UpdateCreditScore(int change)
+        public void UpdateCreditScore(float change)
         {
-            int oldScore = _playerCreditProfile.CreditScore;
-            _playerCreditProfile.CreditScore = Mathf.Clamp(_playerCreditProfile.CreditScore + change, 300, 850);
+            float oldScore = _playerCreditProfile.CreditScore;
+            _playerCreditProfile.CreditScore = Mathf.Clamp(_playerCreditProfile.CreditScore + (int)change, 300, 850);
             _playerCreditProfile.LastUpdated = DateTime.Now;
-            
+
             if (oldScore != _playerCreditProfile.CreditScore)
             {
-                _playerCreditProfile.CreditRating = CalculateCreditRating(_playerCreditProfile.CreditScore);
+                _playerCreditProfile.CreditRating = CalculateCreditRating(_playerCreditProfile.CreditScore).ToString();
                 OnCreditScoreChanged?.Invoke(_playerCreditProfile);
                 _creditScoreChangedEvent?.Raise(_playerCreditProfile);
-                
-                Debug.Log($"Credit score updated: {oldScore} → {_playerCreditProfile.CreditScore} ({_playerCreditProfile.CreditRating})");
+
+                ChimeraLogger.Log($"Credit score updated: {oldScore} → {_playerCreditProfile.CreditScore} ({_playerCreditProfile.CreditRating})");
             }
         }
 
@@ -244,10 +247,10 @@ namespace ProjectChimera.Systems.Services.Economy
                 return false;
 
             float paymentAmount = Mathf.Min(amount, _playerFinances.UsedCredit);
-            
+
             _playerFinances.CashBalance -= paymentAmount;
             _playerFinances.UsedCredit -= paymentAmount;
-            
+
             RecordTransaction(new ProjectChimera.Data.Economy.FinancialTransaction
             {
                 TransactionId = Guid.NewGuid().ToString(),
@@ -260,25 +263,25 @@ namespace ProjectChimera.Systems.Services.Economy
 
             UpdateCreditScore(2); // Positive impact for paying down credit
             OnFinancialStatusChanged?.Invoke(_playerFinances);
-            
-            Debug.Log($"Paid ${paymentAmount:F2} toward credit balance");
+
+            ChimeraLogger.Log($"Paid ${paymentAmount:F2} toward credit balance");
             return true;
         }
-        
+
         #endregion
 
         #region Loan Management
-        
+
         public bool ApplyForLoan(float amount, LoanType loanType, int termMonths)
         {
             if (!_enableFinancialSystem || amount <= 0)
                 return false;
 
             float maxLoanAmount = CalculateMaxLoanAmount();
-            
+
             if (amount > maxLoanAmount)
             {
-                Debug.Log($"Loan application declined. Requested: ${amount:F2}, Max eligible: ${maxLoanAmount:F2}");
+                ChimeraLogger.Log($"Loan application declined. Requested: ${amount:F2}, Max eligible: ${maxLoanAmount:F2}");
                 return false;
             }
 
@@ -311,8 +314,8 @@ namespace ProjectChimera.Systems.Services.Economy
             OnLoanStatusChanged?.Invoke(loanContract);
             OnFinancialStatusChanged?.Invoke(_playerFinances);
             _loanStatusChangedEvent?.Raise(loanContract);
-            
-            Debug.Log($"Loan approved: ${amount:F2} at {loanContract.InterestRate:P2} for {termMonths} months");
+
+            ChimeraLogger.Log($"Loan approved: ${amount:F2} at {loanContract.InterestRate:P2} for {termMonths} months");
             return true;
         }
 
@@ -333,7 +336,7 @@ namespace ProjectChimera.Systems.Services.Economy
 
             if (loan.CurrentBalance <= 0)
             {
-                loan.Status = LoanStatus.Paid_Off;
+                loan.Status = LoanStatus.PaidOff;
                 UpdateCreditScore(10); // Significant positive impact for paying off loan
             }
             else
@@ -353,16 +356,16 @@ namespace ProjectChimera.Systems.Services.Economy
 
             OnLoanStatusChanged?.Invoke(loan);
             OnFinancialStatusChanged?.Invoke(_playerFinances);
-            
-            Debug.Log($"Loan payment: ${amount:F2}. Remaining balance: ${loan.CurrentBalance:F2}");
+
+            ChimeraLogger.Log($"Loan payment: ${amount:F2}. Remaining balance: ${loan.CurrentBalance:F2}");
             return true;
         }
-        
+
         #endregion
 
         #region Financial Analytics
-        
-        public FinancialAnalysis GetFinancialAnalytics()
+
+        public object GetFinancialAnalytics()
         {
             UpdateFinancialAnalyticsData();
             return _financialAnalysis;
@@ -382,7 +385,7 @@ namespace ProjectChimera.Systems.Services.Economy
         {
             float assets = _playerFinances.CashBalance;
             float liabilities = _playerFinances.UsedCredit + GetTotalLoanBalance();
-            
+
             return assets - liabilities;
         }
 
@@ -390,14 +393,14 @@ namespace ProjectChimera.Systems.Services.Economy
         {
             float monthlyDebt = CalculateMonthlyDebtPayments();
             float monthlyIncome = _monthlyIncome.Values.Sum();
-            
+
             return monthlyIncome > 0 ? monthlyDebt / monthlyIncome : 0f;
         }
-        
+
         #endregion
 
         #region IFinancialManagementService Implementation
-        
+
         public float GetCashBalance(string playerId)
         {
             return _playerFinances.CashBalance;
@@ -408,12 +411,12 @@ namespace ProjectChimera.Systems.Services.Economy
             return CalculateNetWorth();
         }
 
-        public bool TransferCash(string playerId, float amount, CashTransferType transferType)
+        public bool TransferCash(string playerId, float amount, CashTransferType transferType, string description = "")
         {
             if (amount <= 0) return false;
 
             float oldBalance = _playerFinances.CashBalance;
-            
+
             switch (transferType)
             {
             case ProjectChimera.Data.Economy.CashTransferType.Income:
@@ -510,11 +513,11 @@ namespace ProjectChimera.Systems.Services.Economy
         {
             return (sellPrice - buyPrice) * quantity;
         }
-        
+
         #endregion
 
         #region Private Helper Methods
-        
+
         private void InitializeFinancialSystem()
         {
             if (_playerFinances == null)
@@ -535,13 +538,13 @@ namespace ProjectChimera.Systems.Services.Economy
             if (_activeLoans == null)
                 _activeLoans = new List<ProjectChimera.Data.Economy.LoanContract>();
 
-            Debug.Log("Financial system initialized");
+            ChimeraLogger.Log("Financial system initialized");
         }
 
         private void LoadPlayerFinances()
         {
             // TODO: Load from persistent storage
-            Debug.Log("Loading player finances...");
+            ChimeraLogger.Log("Loading player finances...");
         }
 
         private void InitializeCreditScoring()
@@ -551,7 +554,7 @@ namespace ProjectChimera.Systems.Services.Economy
                 _playerCreditProfile = new ProjectChimera.Data.Economy.CreditProfile
                 {
                     CreditScore = 650, // Start with fair credit
-                    CreditRating = ProjectChimera.Data.Economy.CreditRating.Good_670_739,
+                    CreditRating = "Good",
                     LastUpdated = DateTime.Now
                 };
             }
@@ -560,7 +563,7 @@ namespace ProjectChimera.Systems.Services.Economy
         private void SaveFinancialData()
         {
             // TODO: Save to persistent storage
-            Debug.Log("Saving financial data...");
+            ChimeraLogger.Log("Saving financial data...");
         }
 
         private bool ProcessCashPayment(float amount, string description)
@@ -569,7 +572,7 @@ namespace ProjectChimera.Systems.Services.Economy
                 return false;
 
             _playerFinances.CashBalance -= amount;
-            
+
             RecordTransaction(new ProjectChimera.Data.Economy.FinancialTransaction
             {
                 TransactionId = Guid.NewGuid().ToString(),
@@ -592,7 +595,7 @@ namespace ProjectChimera.Systems.Services.Economy
                 return false;
 
             _playerFinances.UsedCredit += amount;
-            
+
             RecordTransaction(new ProjectChimera.Data.Economy.FinancialTransaction
             {
                 TransactionId = Guid.NewGuid().ToString(),
@@ -612,7 +615,7 @@ namespace ProjectChimera.Systems.Services.Economy
         {
             // For loan-based purchases, would typically require pre-approved loan
             // For now, treat as cash payment with potential loan origination
-            Debug.LogWarning("Loan payment processing not fully implemented");
+            ChimeraLogger.LogWarning("Loan payment processing not fully implemented");
             return ProcessCashPayment(amount, description);
         }
 
@@ -631,7 +634,7 @@ namespace ProjectChimera.Systems.Services.Economy
         private void UpdateFinancialAnalytics(float amount, bool isIncome)
         {
             string currentMonth = DateTime.Now.ToString("yyyy-MM");
-            
+
             if (isIncome)
             {
                 _monthlyIncome[currentMonth] = _monthlyIncome.GetValueOrDefault(currentMonth, 0f) + amount;
@@ -644,12 +647,11 @@ namespace ProjectChimera.Systems.Services.Economy
 
         private void UpdateFinancialAnalyticsData()
         {
-            if (_financialAnalysis == null)
-                _financialAnalysis = new FinancialAnalysis();
+            if (string.IsNullOrEmpty(_financialAnalysis))
+                _financialAnalysis = "Initial financial analysis";
 
-            _financialAnalysis.AnalysisDate = DateTime.Now;
-            // The FinancialAnalysis has different structure, so we'll update what we can
-            _financialAnalysis.OverallFinancialHealth = (CalculateNetWorth() > 0) ? 0.75f : 0.25f;
+            // Update analysis timestamp
+            ChimeraLogger.Log($"[Financial] Analysis updated at {DateTime.Now}");
         }
 
         private float CalculateMaxEligibleCredit()
@@ -664,7 +666,7 @@ namespace ProjectChimera.Systems.Services.Economy
             float monthlyIncome = _monthlyIncome.Values.Sum();
             float existingDebt = CalculateMonthlyDebtPayments();
             float availableIncome = monthlyIncome - existingDebt;
-            
+
             // Conservative 28% debt-to-income ratio
             return (availableIncome * 0.28f) * 12f; // Annual capacity
         }
@@ -673,11 +675,11 @@ namespace ProjectChimera.Systems.Services.Economy
         {
             float baseRate = _interestRate;
             float creditAdjustment = (850f - _playerCreditProfile.CreditScore) / 850f * 0.05f; // Up to 5% penalty
-            
+
             float typeMultiplier = loanType switch
             {
-                LoanType.Equipment_Financing => 1.0f,
-                LoanType.Real_Estate => 0.8f, // Lower rate for secured facility loans
+                LoanType.EquipmentFinancing => 1.0f,
+                LoanType.RealEstate => 0.8f, // Lower rate for secured facility loans
                 LoanType.Working_Capital => 1.2f, // Higher rate for unsecured working capital
                 _ => 1.0f
             };
@@ -688,19 +690,19 @@ namespace ProjectChimera.Systems.Services.Economy
         private float CalculateMonthlyPayment(float principal, float annualRate, int months)
         {
             float monthlyRate = annualRate / 12f;
-            return principal * (monthlyRate * Mathf.Pow(1 + monthlyRate, months)) / 
+            return principal * (monthlyRate * Mathf.Pow(1 + monthlyRate, months)) /
                    (Mathf.Pow(1 + monthlyRate, months) - 1);
         }
 
-        private ProjectChimera.Data.Economy.CreditRating CalculateCreditRating(int score)
+        private object CalculateCreditRating(int score)
         {
             return score switch
             {
-                >= 800 => ProjectChimera.Data.Economy.CreditRating.Excellent_800_Plus,
-                >= 740 => ProjectChimera.Data.Economy.CreditRating.Very_Good_740_799,
-                >= 670 => ProjectChimera.Data.Economy.CreditRating.Good_670_739,
-                >= 580 => ProjectChimera.Data.Economy.CreditRating.Fair_580_669,
-                _ => ProjectChimera.Data.Economy.CreditRating.Poor_Below_580
+                >= 800 => "Excellent",
+                >= 740 => "VeryGood",
+                >= 670 => "Good",
+                >= 580 => "Fair",
+                _ => "Poor"
             };
         }
 
@@ -713,25 +715,29 @@ namespace ProjectChimera.Systems.Services.Economy
         {
             float loanPayments = _activeLoans.Where(l => l.Status == LoanStatus.Active).Sum(l => l.MonthlyPayment);
             float creditPayments = _playerFinances.UsedCredit * 0.03f; // Assume 3% minimum payment
-            
+
             return loanPayments + creditPayments;
         }
-        
+
         #endregion
 
         #region Unity Lifecycle
-        
+
         private void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             Initialize();
         }
 
         private void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             Shutdown();
         }
 
-        private void Update()
+        public void Tick(float deltaTime)
         {
             if (!IsInitialized || !_enableFinancialSystem) return;
 
@@ -750,7 +756,7 @@ namespace ProjectChimera.Systems.Services.Economy
             {
                 float monthlyInterest = _playerFinances.UsedCredit * (_interestRate / 12f);
                 _playerFinances.UsedCredit += monthlyInterest;
-                
+
                 RecordTransaction(new FinancialTransaction
                 {
                     TransactionId = Guid.NewGuid().ToString(),
@@ -764,7 +770,24 @@ namespace ProjectChimera.Systems.Services.Economy
 
             OnFinancialStatusChanged?.Invoke(_playerFinances);
         }
-        
+
+        #endregion
+
+        #region ITickable Implementation
+
+        public int Priority => 0;
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+        public virtual void OnRegistered()
+        {
+            // Override in derived classes if needed
+        }
+
+        public virtual void OnUnregistered()
+        {
+            // Override in derived classes if needed
+        }
+
         #endregion
     }
 }

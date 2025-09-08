@@ -1,6 +1,8 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ProjectChimera.Core;
 using ProjectChimera.Systems.Save;
 using ProjectChimera.Data.Save;
 
@@ -90,7 +92,7 @@ namespace ProjectChimera.Testing.Systems.Save
         {
             LogDebug("Setting up test environment...");
             
-            _saveManager = FindObjectOfType<SaveManager>();
+            _saveManager = ServiceContainerFactory.Instance?.TryResolve<SaveManager>();
             
             if (_saveManager == null)
             {
@@ -478,7 +480,7 @@ namespace ProjectChimera.Testing.Systems.Save
         {
             if (_enableDebugOutput)
             {
-                Debug.Log($"[SaveManagerTest] {message}");
+                ChimeraLogger.Log($"[SaveManagerTest] {message}");
             }
         }
     }

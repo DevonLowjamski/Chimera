@@ -102,7 +102,7 @@ namespace ProjectChimera.Data.Genetics
         public float GetModifiedTHCContent()
         {
             if (_parentStrain == null) return 0f;
-            return _parentStrain.THCContent() * _thcVariation;
+            return _parentStrain.THCContent * _thcVariation;
         }
 
         /// <summary>
@@ -111,7 +111,7 @@ namespace ProjectChimera.Data.Genetics
         public float GetModifiedCBDContent()
         {
             if (_parentStrain == null) return 0f;
-            return _parentStrain.CBDContent() * _cbdVariation;
+            return _parentStrain.CBDContent * _cbdVariation;
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace ProjectChimera.Data.Genetics
         public float GetModifiedYield()
         {
             if (_parentStrain == null) return 0f;
-            return _parentStrain.BaseYield() * _yieldVariation;
+            return _parentStrain.BaseYield * _yieldVariation;
         }
 
         /// <summary>
@@ -142,32 +142,32 @@ namespace ProjectChimera.Data.Genetics
             rarityScore += (_hasUniqueTerpeneProfile ? 0.2f : 0f);
             rarityScore += (_hasUniqueColorExpression ? 0.15f : 0f);
             rarityScore += (_hasUniqueMorphology ? 0.15f : 0f);
-            
+
             return Mathf.Clamp01(rarityScore);
         }
 
         public override bool ValidateData()
         {
             bool isValid = base.ValidateData();
-            
+
             if (_parentStrain == null)
             {
-                Debug.LogError($"PlantPhenotypeSO {name}: Parent strain is required.");
+                SharedLogger.LogError($"PlantPhenotypeSO {name}: Parent strain is required.");
                 isValid = false;
             }
-            
+
             if (string.IsNullOrEmpty(_phenotypeId))
             {
-                Debug.LogError($"PlantPhenotypeSO {name}: Phenotype ID is required.");
+                SharedLogger.LogError($"PlantPhenotypeSO {name}: Phenotype ID is required.");
                 isValid = false;
             }
-            
+
             if (string.IsNullOrEmpty(_phenotypeName))
             {
-                Debug.LogError($"PlantPhenotypeSO {name}: Phenotype name is required.");
+                SharedLogger.LogError($"PlantPhenotypeSO {name}: Phenotype name is required.");
                 isValid = false;
             }
-            
+
             return isValid;
         }
     }
@@ -213,4 +213,4 @@ namespace ProjectChimera.Data.Genetics
         Resistance,
         Quality
     }
-} 
+}

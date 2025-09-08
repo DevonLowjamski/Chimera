@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Core
 {
@@ -46,7 +47,7 @@ namespace ProjectChimera.UI.Core
             
             _isInitialized = true;
             
-            Debug.Log("Keyboard navigator initialized successfully");
+            ChimeraLogger.Log("Keyboard navigator initialized successfully");
         }
         
         /// <summary>
@@ -140,7 +141,7 @@ namespace ProjectChimera.UI.Core
                 // Sort elements by tab index and position
                 SortGroupElements(group);
                 
-                Debug.Log($"Added element {element.name} to navigation group {groupId}");
+                ChimeraLogger.Log($"Added element {element.name} to navigation group {groupId}");
             }
         }
         
@@ -154,7 +155,7 @@ namespace ProjectChimera.UI.Core
             
             group.Elements.Remove(element);
             
-            Debug.Log($"Removed element {element.name} from navigation group {groupId}");
+            ChimeraLogger.Log($"Removed element {element.name} from navigation group {groupId}");
         }
         
         /// <summary>
@@ -175,7 +176,7 @@ namespace ProjectChimera.UI.Core
             OnNavigationGroupChanged?.Invoke(_currentGroup);
             OnNavigationModeChanged?.Invoke(_currentMode);
             
-            Debug.Log($"Switched to navigation group: {groupId} (mode: {_currentMode})");
+            ChimeraLogger.Log($"Switched to navigation group: {groupId} (mode: {_currentMode})");
         }
         
         /// <summary>
@@ -366,7 +367,7 @@ namespace ProjectChimera.UI.Core
             
             OnNavigationModeChanged?.Invoke(_currentMode);
             
-            Debug.Log($"Navigation mode changed to: {_currentMode}");
+            ChimeraLogger.Log($"Navigation mode changed to: {_currentMode}");
         }
         
         /// <summary>
@@ -597,7 +598,7 @@ namespace ProjectChimera.UI.Core
             _currentGroup = null;
             _isInitialized = false;
             
-            Debug.Log("Keyboard navigator cleaned up");
+            ChimeraLogger.Log("Keyboard navigator cleaned up");
         }
         
         /// <summary>

@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -82,7 +83,7 @@ namespace ProjectChimera.Core.DependencyInjection
             {
                 if (IsInitialized)
                 {
-                    Debug.LogWarning($"[ManagerRegistry] Cannot register {managerType.Name} after initialization. Use late registration methods.");
+                    ChimeraLogger.LogWarning($"[ManagerRegistry] Cannot register {managerType.Name} after initialization. Use late registration methods.");
                     return;
                 }
                 
@@ -101,7 +102,7 @@ namespace ProjectChimera.Core.DependencyInjection
                     _dependencies[managerType] = dependencies.ToList();
                 }
                 
-                Debug.Log($"[ManagerRegistry] Registered manager: {managerType.Name} (Priority: {priority})");
+                ChimeraLogger.Log($"[ManagerRegistry] Registered manager: {managerType.Name} (Priority: {priority})");
             }
         }
         
@@ -129,7 +130,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 _registrations[managerType] = registration;
                 _instances[managerType] = instance;
                 
-                Debug.Log($"[ManagerRegistry] Registered manager instance: {managerType.Name}");
+                ChimeraLogger.Log($"[ManagerRegistry] Registered manager instance: {managerType.Name}");
             }
         }
         
@@ -179,7 +180,7 @@ namespace ProjectChimera.Core.DependencyInjection
                     }
                 }
                 
-                Debug.LogWarning($"[ManagerRegistry] Manager not found: {managerType.Name}");
+                ChimeraLogger.LogWarning($"[ManagerRegistry] Manager not found: {managerType.Name}");
                 return null;
             }
         }
@@ -328,7 +329,7 @@ namespace ProjectChimera.Core.DependencyInjection
                         }
                         catch (Exception ex)
                         {
-                            Debug.LogError($"[ManagerRegistry] Error disposing {managerType.Name}: {ex.Message}");
+                            ChimeraLogger.LogError($"[ManagerRegistry] Error disposing {managerType.Name}: {ex.Message}");
                         }
                     }
                 }
@@ -343,7 +344,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 
                 _isDisposed = true;
                 
-                Debug.Log("[ManagerRegistry] All managers disposed and registry cleared");
+                ChimeraLogger.Log("[ManagerRegistry] All managers disposed and registry cleared");
             }
         }
         

@@ -1,3 +1,5 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,39 +14,39 @@ namespace ProjectChimera.Systems.Environment
     /// Extracted from AdvancedGrowLightSystem for modular architecture.
     /// Monitors plant health and adjusts lighting for optimal growth.
     /// </summary>
-    public class GrowLightPlantOptimizer : MonoBehaviour
+    public class GrowLightPlantOptimizer : MonoBehaviour, ITickable
     {
         [Header("Plant Optimization Configuration")]
         [SerializeField] private bool _enableOptimizationLogging = true;
         [SerializeField] private float _optimizationUpdateInterval = 30f; // Check every 30 seconds
         [SerializeField] private float _adaptationSensitivity = 0.1f;
         [SerializeField] private int _maxMonitoredPlants = 50;
-        
+
         // Dependencies
         private GrowLightController _lightController;
         private GrowLightSpectrumController _spectrumController;
-        
+
         // Plant monitoring data
         private List<PlantMonitoringData> _monitoredPlants = new List<PlantMonitoringData>();
         private float _lastOptimizationUpdate = 0f;
-        private Dictionary<PlantGrowthStage, OptimizationProfile> _optimizationProfiles = new Dictionary<PlantGrowthStage, OptimizationProfile>();
-        
+        private Dictionary<ProjectChimera.Data.Shared.PlantGrowthStage, OptimizationProfile> _optimizationProfiles = new Dictionary<ProjectChimera.Data.Shared.PlantGrowthStage, OptimizationProfile>();
+
         // Optimization state
         private bool _isOptimizationActive = true;
         private bool _isAdaptiveModeEnabled = true;
         private float _currentOptimizationScore = 0f;
-        
+
         // Events
         public System.Action<float> OnOptimizationScoreChanged;
         public System.Action<PlantMonitoringData> OnPlantHealthChanged;
         public System.Action<OptimizationRecommendation> OnOptimizationRecommendation;
-        
+
         // Properties
         public bool IsOptimizationActive => _isOptimizationActive;
         public bool IsAdaptiveModeEnabled => _isAdaptiveModeEnabled;
         public float CurrentOptimizationScore => _currentOptimizationScore;
         public int MonitoredPlantsCount => _monitoredPlants.Count;
-        
+
         /// <summary>
         /// Initialize plant optimizer with dependencies
         /// </summary>
@@ -52,18 +54,18 @@ namespace ProjectChimera.Systems.Environment
         {
             _lightController = lightController;
             _spectrumController = spectrumController;
-            
+
             InitializeOptimizationProfiles();
-            
+
             LogDebug("Grow light plant optimizer initialized");
         }
-        
-        private void Update()
+
+        public void Tick(float deltaTime)
         {
             if (!_isOptimizationActive) return;
-            
-            _lastOptimizationUpdate += Time.deltaTime;
-            
+
+            _lastOptimizationUpdate += deltaTime;
+
             if (_lastOptimizationUpdate >= _optimizationUpdateInterval)
             {
                 UpdatePlantMonitoring();
@@ -71,16 +73,16 @@ namespace ProjectChimera.Systems.Environment
                 _lastOptimizationUpdate = 0f;
             }
         }
-        
+
         #region Optimization Profiles
-        
+
         /// <summary>
         /// Initialize optimization profiles for different growth stages
         /// </summary>
         private void InitializeOptimizationProfiles()
         {
             // Seedling stage - gentle lighting
-            _optimizationProfiles[PlantGrowthStage.Seedling] = new OptimizationProfile
+            _optimizationProfiles[ProjectChimera.Data.Shared.PlantGrowthStage.Seedling] = new OptimizationProfile
             {
                 OptimalIntensity = 200f,
                 MinIntensity = 100f,
@@ -89,9 +91,9 @@ namespace ProjectChimera.Systems.Environment
                 PhotoperiodHours = 16f,
                 Priority = OptimizationPriority.Health
             };
-            
+
             // Vegetative stage - high blue light
-            _optimizationProfiles[PlantGrowthStage.Vegetative] = new OptimizationProfile
+            _optimizationProfiles[ProjectChimera.Data.Shared.PlantGrowthStage.Vegetative] = new OptimizationProfile
             {
                 OptimalIntensity = 600f,
                 MinIntensity = 400f,
@@ -100,9 +102,9 @@ namespace ProjectChimera.Systems.Environment
                 PhotoperiodHours = 18f,
                 Priority = OptimizationPriority.Growth
             };
-            
+
             // Flowering stage - high red light
-            _optimizationProfiles[PlantGrowthStage.Flowering] = new OptimizationProfile
+            _optimizationProfiles[ProjectChimera.Data.Shared.PlantGrowthStage.Flowering] = new OptimizationProfile
             {
                 OptimalIntensity = 800f,
                 MinIntensity = 600f,
@@ -112,11 +114,11 @@ namespace ProjectChimera.Systems.Environment
                 Priority = OptimizationPriority.Yield
             };
         }
-        
+
         #endregion
-        
+
         #region Plant Monitoring
-        
+
         /// <summary>
         /// Register a plant for monitoring and optimization
         /// </summary>
@@ -127,7 +129,7 @@ namespace ProjectChimera.Systems.Environment
                 LogError($"Cannot register plant - maximum monitoring limit reached ({_maxMonitoredPlants})");
                 return;
             }
-            
+
             // Try to get any plant component that might exist
             var plantComponent = plantObject.GetComponent<MonoBehaviour>();
             if (plantComponent == null)
@@ -135,7 +137,7 @@ namespace ProjectChimera.Systems.Environment
                 LogError("Cannot register plant - no plant component found");
                 return;
             }
-            
+
             var monitoringData = new PlantMonitoringData
             {
                 PlantId = plantObject.GetInstanceID().ToString(),
@@ -146,11 +148,11 @@ namespace ProjectChimera.Systems.Environment
                 Distance = CalculateDistanceFromLight(plantObject),
                 IsActive = true
             };
-            
+
             _monitoredPlants.Add(monitoringData);
             LogDebug($"Registered plant for monitoring: {monitoringData.PlantId}");
         }
-        
+
         /// <summary>
         /// Unregister a plant from monitoring
         /// </summary>
@@ -158,14 +160,14 @@ namespace ProjectChimera.Systems.Environment
         {
             var plantId = plantObject.GetInstanceID().ToString();
             var monitoring = _monitoredPlants.FirstOrDefault(p => p.PlantId == plantId);
-            
+
             if (monitoring != null)
             {
                 _monitoredPlants.Remove(monitoring);
                 LogDebug($"Unregistered plant from monitoring: {plantId}");
             }
         }
-        
+
         /// <summary>
         /// Update monitoring data for all registered plants
         /// </summary>
@@ -178,11 +180,11 @@ namespace ProjectChimera.Systems.Environment
                     _monitoredPlants.Remove(monitoring);
                     continue;
                 }
-                
+
                 UpdatePlantMonitoringData(monitoring);
             }
         }
-        
+
         /// <summary>
         /// Update monitoring data for a specific plant
         /// </summary>
@@ -190,7 +192,7 @@ namespace ProjectChimera.Systems.Environment
         {
             var plantComponent = monitoring.PlantComponent;
             if (plantComponent == null) return;
-            
+
             // Update plant health metrics
             float previousHealth = monitoring.HealthScore;
             monitoring.HealthScore = CalculateHealthScore(plantComponent);
@@ -199,42 +201,42 @@ namespace ProjectChimera.Systems.Environment
             monitoring.Distance = CalculateDistanceFromLight(monitoring.PlantObject);
             monitoring.LightIntensityReceived = CalculateReceivedIntensity(monitoring.Distance);
             monitoring.LastHealthCheck = System.DateTime.Now;
-            
+
             // Check for significant health changes
             if (Mathf.Abs(monitoring.HealthScore - previousHealth) > _adaptationSensitivity)
             {
                 OnPlantHealthChanged?.Invoke(monitoring);
             }
         }
-        
+
         #endregion
-        
+
         #region Optimization Logic
-        
+
         /// <summary>
         /// Perform lighting optimization based on plant monitoring data
         /// </summary>
         private void PerformOptimization()
         {
             if (_monitoredPlants.Count == 0) return;
-            
+
             var activePlants = _monitoredPlants.Where(p => p.IsActive).ToList();
             if (activePlants.Count == 0) return;
-            
+
             // Calculate overall optimization metrics
             float avgHealthScore = activePlants.Average(p => p.HealthScore);
             float avgGrowthRate = activePlants.Average(p => p.GrowthRate);
             float avgStressLevel = activePlants.Average(p => p.StressLevel);
-            
+
             // Update optimization score
             float previousScore = _currentOptimizationScore;
             _currentOptimizationScore = CalculateOptimizationScore(avgHealthScore, avgGrowthRate, avgStressLevel);
-            
+
             if (Mathf.Abs(_currentOptimizationScore - previousScore) > 0.05f)
             {
                 OnOptimizationScoreChanged?.Invoke(_currentOptimizationScore);
             }
-            
+
             // Generate optimization recommendations
             if (_isAdaptiveModeEnabled)
             {
@@ -245,10 +247,10 @@ namespace ProjectChimera.Systems.Environment
                     OnOptimizationRecommendation?.Invoke(recommendation);
                 }
             }
-            
+
             LogDebug($"Optimization update - Score: {_currentOptimizationScore:F2}, Plants: {activePlants.Count}");
         }
-        
+
         /// <summary>
         /// Generate optimization recommendation based on plant data
         /// </summary>
@@ -257,9 +259,9 @@ namespace ProjectChimera.Systems.Environment
             // Analyze plant needs by growth stage
             var stageGroups = plants.GroupBy(p => GetPlantGrowthStage(p.PlantComponent)).ToList();
             var dominantStage = stageGroups.OrderByDescending(g => g.Count()).FirstOrDefault()?.Key;
-            
+
             if (!dominantStage.HasValue) return null;
-            
+
             var profile = _optimizationProfiles[dominantStage.Value];
             var recommendation = new OptimizationRecommendation
             {
@@ -268,11 +270,11 @@ namespace ProjectChimera.Systems.Environment
                 DominantGrowthStage = dominantStage.Value,
                 RecommendationType = OptimizationRecommendationType.Adaptive
             };
-            
+
             // Analyze current vs optimal conditions
             float currentIntensity = _lightController.CurrentIntensity;
             var currentSpectrum = _spectrumController.CurrentSpectrum;
-            
+
             // Intensity recommendations
             if (currentIntensity < profile.MinIntensity)
             {
@@ -288,17 +290,17 @@ namespace ProjectChimera.Systems.Environment
             {
                 recommendation.RecommendedIntensity = currentIntensity; // No change needed
             }
-            
+
             // Spectrum recommendations
             recommendation.RecommendedSpectrum = profile.PreferredSpectrum;
-            
+
             // Confidence calculation
             float healthVariance = CalculateVariance(plants.Select(p => p.HealthScore));
             recommendation.Confidence = Mathf.Clamp01(1f - (healthVariance * 2f));
-            
+
             return recommendation.Confidence > 0.3f ? recommendation : null; // Only return if confident enough
         }
-        
+
         /// <summary>
         /// Apply optimization recommendation
         /// </summary>
@@ -308,16 +310,16 @@ namespace ProjectChimera.Systems.Environment
             {
                 _lightController.SetIntensity(recommendation.RecommendedIntensity);
             }
-            
+
             _spectrumController.ActivatePreset(recommendation.RecommendedSpectrum);
-            
+
             LogDebug($"Applied optimization: {recommendation.Reasoning}");
         }
-        
+
         #endregion
-        
+
         #region Calculation Methods
-        
+
         /// <summary>
         /// Calculate health score for a plant
         /// </summary>
@@ -325,17 +327,17 @@ namespace ProjectChimera.Systems.Environment
         {
             // This would integrate with actual plant health metrics
             float baseHealth = 0.8f; // Placeholder
-            
+
             // Factors that could affect health score:
             // - Nutrient levels
-            // - Water status  
+            // - Water status
             // - Disease presence
             // - Pest damage
             // - Light stress indicators
-            
+
             return Mathf.Clamp01(baseHealth + Random.Range(-0.1f, 0.1f));
         }
-        
+
         /// <summary>
         /// Calculate growth rate for a plant
         /// </summary>
@@ -344,7 +346,7 @@ namespace ProjectChimera.Systems.Environment
             // This would calculate actual growth rate based on plant data
             return Random.Range(0.5f, 1.2f); // Placeholder
         }
-        
+
         /// <summary>
         /// Calculate stress level for a plant
         /// </summary>
@@ -353,47 +355,47 @@ namespace ProjectChimera.Systems.Environment
             // This would analyze stress indicators
             return Random.Range(0f, 0.3f); // Placeholder - low stress
         }
-        
+
         /// <summary>
         /// Get plant growth stage from component using reflection if needed
         /// </summary>
         private ProjectChimera.Data.Shared.PlantGrowthStage GetPlantGrowthStage(MonoBehaviour plantComponent)
         {
             if (plantComponent == null) return ProjectChimera.Data.Shared.PlantGrowthStage.Seed;
-            
+
             // Try to get CurrentGrowthStage property using reflection
             var property = plantComponent.GetType().GetProperty("CurrentGrowthStage");
             if (property != null && property.PropertyType == typeof(ProjectChimera.Data.Shared.PlantGrowthStage))
             {
                 return (ProjectChimera.Data.Shared.PlantGrowthStage)property.GetValue(plantComponent);
             }
-            
+
             return ProjectChimera.Data.Shared.PlantGrowthStage.Seed; // Default
         }
-        
+
         /// <summary>
         /// Calculate distance from light to plant
         /// </summary>
         private float CalculateDistanceFromLight(GameObject plantObject)
         {
             if (_lightController == null) return 2f;
-            
+
             return Vector3.Distance(transform.position, plantObject.transform.position);
         }
-        
+
         /// <summary>
         /// Calculate received light intensity based on distance
         /// </summary>
         private float CalculateReceivedIntensity(float distance)
         {
             float currentIntensity = _lightController.CurrentIntensity;
-            
+
             // Inverse square law approximation
             float falloff = 1f / (1f + distance * distance * 0.1f);
-            
+
             return currentIntensity * falloff;
         }
-        
+
         /// <summary>
         /// Calculate overall optimization score
         /// </summary>
@@ -403,14 +405,14 @@ namespace ProjectChimera.Systems.Environment
             float healthWeight = 0.4f;
             float growthWeight = 0.4f;
             float stressWeight = 0.2f;
-            
-            float score = (avgHealth * healthWeight) + 
-                         (Mathf.Clamp01(avgGrowthRate) * growthWeight) + 
+
+            float score = (avgHealth * healthWeight) +
+                         (Mathf.Clamp01(avgGrowthRate) * growthWeight) +
                          ((1f - avgStressLevel) * stressWeight);
-            
+
             return Mathf.Clamp01(score);
         }
-        
+
         /// <summary>
         /// Calculate variance in a set of values
         /// </summary>
@@ -418,17 +420,17 @@ namespace ProjectChimera.Systems.Environment
         {
             var valueList = values.ToList();
             if (valueList.Count == 0) return 0f;
-            
+
             float mean = valueList.Average();
             float variance = valueList.Average(v => Mathf.Pow(v - mean, 2));
-            
+
             return variance;
         }
-        
+
         #endregion
-        
+
         #region Control Methods
-        
+
         /// <summary>
         /// Enable or disable optimization
         /// </summary>
@@ -437,7 +439,7 @@ namespace ProjectChimera.Systems.Environment
             _isOptimizationActive = active;
             LogDebug($"Optimization {(active ? "enabled" : "disabled")}");
         }
-        
+
         /// <summary>
         /// Enable or disable adaptive mode
         /// </summary>
@@ -446,7 +448,7 @@ namespace ProjectChimera.Systems.Environment
             _isAdaptiveModeEnabled = enabled;
             LogDebug($"Adaptive mode {(enabled ? "enabled" : "disabled")}");
         }
-        
+
         /// <summary>
         /// Get monitoring data for a specific plant
         /// </summary>
@@ -454,7 +456,7 @@ namespace ProjectChimera.Systems.Environment
         {
             return _monitoredPlants.FirstOrDefault(p => p.PlantId == plantId);
         }
-        
+
         /// <summary>
         /// Get all monitoring data
         /// </summary>
@@ -462,7 +464,7 @@ namespace ProjectChimera.Systems.Environment
         {
             return _monitoredPlants.ToList();
         }
-        
+
         /// <summary>
         /// Clear all monitoring data
         /// </summary>
@@ -471,21 +473,47 @@ namespace ProjectChimera.Systems.Environment
             _monitoredPlants.Clear();
             LogDebug("Cleared all plant monitoring data");
         }
-        
+
         #endregion
-        
+
         private void LogDebug(string message)
         {
             if (_enableOptimizationLogging)
-                Debug.Log($"[GrowLightPlantOptimizer] {message}");
+                ChimeraLogger.Log($"[GrowLightPlantOptimizer] {message}");
         }
-        
+
         private void LogError(string message)
         {
-            Debug.LogError($"[GrowLightPlantOptimizer] {message}");
+            ChimeraLogger.LogError($"[GrowLightPlantOptimizer] {message}");
+        }
+
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+    public virtual void OnRegistered()
+    {
+        // Override in derived classes if needed
+    }
+
+    public virtual void OnUnregistered()
+    {
+        // Override in derived classes if needed
+    }
+
+    protected virtual void Start()
+    {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
+    }
+
+        protected virtual void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
         }
     }
-    
+
     /// <summary>
     /// Plant monitoring data structure
     /// </summary>
@@ -504,7 +532,7 @@ namespace ProjectChimera.Systems.Environment
         public float LightIntensityReceived = 500f;
         public bool IsActive = true;
     }
-    
+
     /// <summary>
     /// Optimization profile for different growth stages
     /// </summary>
@@ -518,7 +546,7 @@ namespace ProjectChimera.Systems.Environment
         public float PhotoperiodHours = 16f;
         public OptimizationPriority Priority = OptimizationPriority.Health;
     }
-    
+
     /// <summary>
     /// Optimization recommendation
     /// </summary>
@@ -527,14 +555,14 @@ namespace ProjectChimera.Systems.Environment
     {
         public string RecommendationId;
         public System.DateTime Timestamp;
-        public PlantGrowthStage DominantGrowthStage;
+        public ProjectChimera.Data.Shared.PlantGrowthStage DominantGrowthStage;
         public OptimizationRecommendationType RecommendationType;
         public float RecommendedIntensity;
         public SpectrumPreset RecommendedSpectrum;
         public string Reasoning;
         public float Confidence = 0.5f;
     }
-    
+
     public enum OptimizationPriority
     {
         Health,
@@ -542,7 +570,7 @@ namespace ProjectChimera.Systems.Environment
         Yield,
         Efficiency
     }
-    
+
     public enum OptimizationRecommendationType
     {
         Adaptive,

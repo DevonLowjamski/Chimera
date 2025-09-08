@@ -8,10 +8,7 @@
         "ProjectChimera.Data.Shared",
         "ProjectChimera.Data.Cultivation",
         "ProjectChimera.Data.Genetics",
-        "ProjectChimera.Data.Economy",
-        "ProjectChimera.Data.Economy.Market",
-        "ProjectChimera.Data.Economy.Trading",
-        "ProjectChimera.Data.Economy.Configuration"
+        "ProjectChimera.Data.Economy"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

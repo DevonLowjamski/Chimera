@@ -1,0 +1,385 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+using ProjectChimera.Data.Save;
+
+namespace ProjectChimera.Data.Save
+{
+    /// <summary>
+    /// Data Transfer Objects for Player Economy Save/Load Operations
+    /// </summary>
+
+    /// <summary>
+    /// DTO for player economy state
+    /// </summary>
+    [System.Serializable]
+    public class PlayerEconomyStateDTO
+    {
+        [Header("Player Financial State")]
+        public PlayerFinancesDTO PlayerFinances;
+        public InvestmentPortfolioDTO InvestmentPortfolio;
+        public List<PlayerAssetDTO> PlayerAssets = new List<PlayerAssetDTO>();
+
+        // Legacy properties for compatibility
+        public float CurrentCash { get; set; }
+        public float TotalNetWorth { get; set; }
+        public float MonthlyExpenses { get; set; }
+        public float MonthlyRevenue { get; set; }
+        public bool EnablePlayerEconomySystem { get; set; }
+        public List<ProjectChimera.Data.Save.InvestmentDTO> Investments { get; set; } = new List<ProjectChimera.Data.Save.InvestmentDTO>();
+        public List<object> UnpaidLoans { get; set; } = new List<object>();
+
+        [Header("Player Inventory")]
+        public PlayerInventoryDTO PlayerInventory;
+
+        [Header("Player Reputation")]
+        public PlayerReputationDTO PlayerReputation;
+
+        [Header("Business Performance")]
+        public BusinessPerformanceDTO BusinessPerformance;
+
+        [Header("Financial Planning")]
+        public List<FinancialGoalDTO> FinancialGoals = new List<FinancialGoalDTO>();
+        public FinancialPlanDTO CurrentFinancialPlan;
+        public FinancialStrategyDTO CurrentStrategy;
+
+        [Header("Credit and Loans")]
+        public CreditProfileDTO CreditProfile;
+        public List<LoanDTO> ActiveLoans = new List<LoanDTO>();
+        public List<LoanPaymentDTO> LoanPayments = new List<LoanPaymentDTO>();
+
+        [Header("Tax Information")]
+        public TaxInformationDTO TaxInfo;
+
+        [Header("Player Status")]
+        public bool IsEconomyActive = true;
+        public DateTime LastEconomyUpdate;
+    }
+
+    /// <summary>
+    /// DTO for player financial information
+    /// </summary>
+    [System.Serializable]
+    public class PlayerFinancesDTO
+    {
+        [Header("Current Financial Position")]
+        public float TotalCash;
+        public float TotalAssetValue;
+        public float NetWorth;
+        public float LiquidityRatio;
+
+        [Header("Income Streams")]
+        public List<IncomeSourceDTO> IncomeSources = new List<IncomeSourceDTO>();
+        public float TotalMonthlyIncome;
+        public float PassiveIncome;
+
+        [Header("Expenses")]
+        public List<ExpenseCategoryDTO> ExpenseCategories = new List<ExpenseCategoryDTO>();
+        public float TotalMonthlyExpenses;
+        public float FixedExpenses;
+        public float VariableExpenses;
+
+        [Header("Cash Flow")]
+        public float MonthlyCashFlow;
+        public float AnnualCashFlow;
+        public List<FinancialTransactionDTO> RecentTransactions = new List<FinancialTransactionDTO>();
+
+        [Header("Financial Health")]
+        public float DebtToIncomeRatio;
+        public float SavingsRate;
+        public float EmergencyFundMonths;
+
+        [Header("Banking")]
+        public List<string> BankAccounts = new List<string>();
+        public Dictionary<string, float> AccountBalances = new Dictionary<string, float>();
+    }
+
+    /// <summary>
+    /// DTO for player inventory management
+    /// </summary>
+    [System.Serializable]
+    public class PlayerInventoryDTO
+    {
+        [Header("Inventory Overview")]
+        public int MaxCapacity;
+        public int CurrentCapacity;
+        public float TotalWeight;
+        public float MaxWeight;
+
+        [Header("Inventory Items")]
+        public List<InventoryItemDTO> Items = new List<InventoryItemDTO>();
+        public Dictionary<string, int> ItemQuantities = new Dictionary<string, int>();
+        public Dictionary<string, float> ItemValues = new Dictionary<string, float>();
+
+        [Header("Inventory Categories")]
+        public Dictionary<string, List<string>> ItemsByCategory = new Dictionary<string, List<string>>();
+
+        [Header("Storage Locations")]
+        public List<StorageLocationDTO> StorageLocations = new List<StorageLocationDTO>();
+
+        [Header("Inventory Performance")]
+        public float TotalInventoryValue;
+        public float InventoryTurnoverRate;
+        public DateTime LastInventoryUpdate;
+    }
+
+    /// <summary>
+    /// DTO for individual inventory items
+    /// </summary>
+    [System.Serializable]
+    public class InventoryItemDTO
+    {
+        [Header("Item Identity")]
+        public string ItemId;
+        public string ItemName;
+        public string Category;
+        public string Description;
+
+        [Header("Quantity and Pricing")]
+        public int Quantity;
+        public float UnitCost;
+        public float CurrentMarketValue;
+        public float TotalValue;
+
+        [Header("Item Properties")]
+        public float Quality;
+        public float Weight;
+        public bool IsPerishable;
+        public DateTime ExpirationDate;
+        public DateTime AcquiredDate;
+
+        [Header("Storage Information")]
+        public string StorageLocation;
+        public string StorageConditions;
+
+        [Header("Item Status")]
+        public bool IsActive;
+        public bool IsReserved;
+        public string ReservationReason;
+    }
+
+    /// <summary>
+    /// DTO for player reputation system
+    /// </summary>
+    [System.Serializable]
+    public class PlayerReputationDTO
+    {
+        [Header("Overall Reputation")]
+        public float OverallReputation; // 0.0 to 100.0
+        public string ReputationTier; // "Novice", "Trusted", "Expert", "Master"
+
+        [Header("Category-Specific Reputation")]
+        public Dictionary<string, float> CategoryReputations = new Dictionary<string, float>();
+
+        [Header("Trading Reputation")]
+        public float TradingReliability;
+        public float ProductQualityRating;
+        public float CustomerServiceRating;
+        public float DeliveryRating;
+
+        [Header("Business Reputation")]
+        public float BusinessEthicsRating;
+        public float FinancialStabilityRating;
+        public float InnovationRating;
+
+        [Header("Reputation History")]
+        public List<ReputationEventDTO> ReputationHistory = new List<ReputationEventDTO>();
+        public DateTime LastReputationUpdate;
+
+        [Header("Reputation Benefits")]
+        public List<string> UnlockedBenefits = new List<string>();
+        public Dictionary<string, float> ReputationBonuses = new Dictionary<string, float>();
+    }
+
+    /// <summary>
+    /// DTO for investment portfolio
+    /// </summary>
+    [System.Serializable]
+    public class InvestmentPortfolioDTO
+    {
+        [Header("Portfolio Overview")]
+        public float TotalPortfolioValue;
+        public float TotalInvested;
+        public float TotalReturns;
+        public float PortfolioReturn; // Percentage
+
+        [Header("Investments")]
+        public List<InvestmentDTO> Investments = new List<InvestmentDTO>();
+        public List<InvestmentTransactionDTO> InvestmentHistory = new List<InvestmentTransactionDTO>();
+
+        [Header("Asset Allocation")]
+        public Dictionary<string, float> AssetAllocation = new Dictionary<string, float>();
+
+        [Header("Performance Metrics")]
+        public PerformanceMetricsDTO PerformanceMetrics;
+
+        [Header("Investment Strategy")]
+        public string InvestmentStrategy;
+        public float RiskTolerance; // 0.0 to 1.0
+        public List<string> InvestmentGoals = new List<string>();
+
+        [Header("Portfolio Status")]
+        public DateTime LastPortfolioUpdate;
+        public bool AutoRebalancing;
+    }
+
+    /// <summary>
+    /// DTO for business performance tracking
+    /// </summary>
+    [System.Serializable]
+    public class BusinessPerformanceDTO
+    {
+        [Header("Revenue Metrics")]
+        public float TotalRevenue;
+        public float MonthlyRevenue;
+        public float RevenueGrowthRate;
+        public List<IncomeSourceDTO> RevenueStreams = new List<IncomeSourceDTO>();
+
+        [Header("Profitability")]
+        public float GrossProfit;
+        public float NetProfit;
+        public float ProfitMargin;
+        public float EBITDA;
+
+        [Header("Operational Metrics")]
+        public float OperatingExpenses;
+        public int TotalTransactions;
+        public float AverageTransactionValue;
+        public float CustomerAcquisitionCost;
+
+        [Header("Market Performance")]
+        public float MarketShare;
+        public int CustomerCount;
+        public float CustomerRetentionRate;
+        public float CustomerSatisfactionScore;
+
+        [Header("Efficiency Metrics")]
+        public float OperationalEfficiency;
+        public float ResourceUtilization;
+        public float ProductivityScore;
+
+        [Header("Performance Trends")]
+        public DateTime PerformancePeriodStart;
+        public DateTime PerformancePeriodEnd;
+        public Dictionary<string, float> MonthlyMetrics = new Dictionary<string, float>();
+    }
+
+    /// <summary>
+    /// DTO for player assets
+    /// </summary>
+    [System.Serializable]
+    public class PlayerAssetDTO
+    {
+        [Header("Asset Identity")]
+        public string AssetId;
+        public string AssetName;
+        public string AssetType; // "Equipment", "Property", "Vehicle", "Intellectual", etc.
+        public string Category;
+
+        [Header("Financial Information")]
+        public float PurchasePrice;
+        public float CurrentValue;
+        public float DepreciationRate;
+        public DateTime PurchaseDate;
+
+        [Header("Asset Properties")]
+        public string Description;
+        public string Condition; // "New", "Good", "Fair", "Poor"
+        public float UtilizationRate; // How much it's being used
+
+        [Header("Performance")]
+        public float ROI; // Return on Investment
+        public float MaintenanceCosts;
+        public DateTime LastMaintenanceDate;
+
+        [Header("Asset Status")]
+        public bool IsActive;
+        public bool IsInsured;
+        public string InsuranceProvider;
+    }
+
+    /// <summary>
+    /// Supporting DTOs for player economy
+    /// </summary>
+
+    [System.Serializable]
+    public class IncomeSourceDTO
+    {
+        public string SourceId;
+        public string SourceName;
+        public string IncomeType; // "Salary", "Business", "Investment", "Passive"
+        public float MonthlyAmount;
+        public float Reliability; // 0.0 to 1.0
+        public bool IsActive;
+        public DateTime LastIncome;
+    }
+
+    [System.Serializable]
+    public class ExpenseCategoryDTO
+    {
+        public string CategoryId;
+        public string CategoryName;
+        public float MonthlyBudget;
+        public float ActualSpent;
+        public bool IsFixed;
+        public List<FinancialTransactionDTO> Transactions = new List<FinancialTransactionDTO>();
+    }
+
+    [System.Serializable]
+    public class FinancialTransactionDTO
+    {
+        public string TransactionId;
+        public DateTime TransactionDate;
+        public string TransactionType; // "Income", "Expense", "Transfer"
+        public float Amount;
+        public string Category;
+        public string Description;
+        public string Account;
+    }
+
+    [System.Serializable]
+    public class FinancialGoalDTO
+    {
+        public string GoalId;
+        public string GoalName;
+        public string GoalType; // "Savings", "Investment", "Debt Reduction", etc.
+        public float TargetAmount;
+        public float CurrentAmount;
+        public DateTime TargetDate;
+        public bool IsActive;
+        public float Priority; // 0.0 to 1.0
+    }
+
+    [System.Serializable]
+    public class CreditProfileDTO
+    {
+        public float CreditScore;
+        public string CreditRating; // "Excellent", "Good", "Fair", "Poor"
+        public float DebtToIncomeRatio;
+        public float CreditUtilization;
+        public int PaymentHistory; // Months of on-time payments
+        public float AvailableCredit;
+        public DateTime LastCreditCheck;
+    }
+
+    [System.Serializable]
+    public class TaxInformationDTO
+    {
+        public string TaxYear;
+        public float TotalIncome;
+        public float TaxableIncome;
+        public float TotalTaxesPaid;
+        public float EffectiveTaxRate;
+        public List<TaxDocumentDTO> TaxDocuments = new List<TaxDocumentDTO>();
+    }
+
+    [System.Serializable]
+    public class TaxDocumentDTO
+    {
+        public string DocumentType; // "W2", "1099", "Receipt", etc.
+        public string DocumentId;
+        public float Amount;
+        public DateTime DocumentDate;
+        public string Issuer;
+    }
+}

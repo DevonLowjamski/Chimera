@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -33,7 +34,7 @@ namespace ProjectChimera.UI.Panels
         {
             if (selectedStrains.Count != 2)
             {
-                Debug.LogWarning("[GeneticsBreedingManager] Exactly 2 strains must be selected for breeding");
+                ChimeraLogger.LogWarning("[GeneticsBreedingManager] Exactly 2 strains must be selected for breeding");
                 return false;
             }
             
@@ -45,7 +46,7 @@ namespace ProjectChimera.UI.Panels
             OnBreedingStarted?.Invoke(_selectedParentA, _selectedParentB);
             OnGeneticsActionTriggered?.Invoke("breeding-started", $"{_selectedParentA}x{_selectedParentB}");
             
-            Debug.Log($"[GeneticsBreedingManager] Started breeding: {_selectedParentA} x {_selectedParentB}");
+            ChimeraLogger.Log($"[GeneticsBreedingManager] Started breeding: {_selectedParentA} x {_selectedParentB}");
             return true;
         }
         
@@ -68,7 +69,7 @@ namespace ProjectChimera.UI.Panels
             _selectedParentA = string.Empty;
             _selectedParentB = string.Empty;
             
-            Debug.Log($"[GeneticsBreedingManager] Executed breeding: {crossName}");
+            ChimeraLogger.Log($"[GeneticsBreedingManager] Executed breeding: {crossName}");
             return true;
         }
         
@@ -83,7 +84,7 @@ namespace ProjectChimera.UI.Panels
             
             OnGeneticsActionTriggered?.Invoke("cancel-breeding", "");
             
-            Debug.Log("[GeneticsBreedingManager] Canceled breeding");
+            ChimeraLogger.Log("[GeneticsBreedingManager] Canceled breeding");
             return true;
         }
         

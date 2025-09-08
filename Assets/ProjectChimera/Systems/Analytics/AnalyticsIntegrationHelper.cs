@@ -1,3 +1,5 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -55,7 +57,7 @@ namespace ProjectChimera.Systems.Analytics
             if (_isInitialized)
             {
                 if (_enableDebugLogging)
-                    Debug.LogWarning("[AnalyticsIntegrationHelper] Already initialized");
+                    ChimeraLogger.LogWarning("[AnalyticsIntegrationHelper] Already initialized");
                 return;
             }
 
@@ -65,15 +67,15 @@ namespace ProjectChimera.Systems.Analytics
                 _analyticsService = AnalyticsManager.GetService();
                 if (_analyticsService == null)
                 {
-                    Debug.LogWarning("[AnalyticsIntegrationHelper] AnalyticsService not available");
+                    ChimeraLogger.LogWarning("[AnalyticsIntegrationHelper] AnalyticsService not available");
                     return;
                 }
 
                 // Get provider registry
-                _providerRegistry = UnityEngine.Object.FindObjectOfType<AnalyticsProviderRegistry>();
+                _providerRegistry = ServiceContainerFactory.Instance?.TryResolve<AnalyticsProviderRegistry>();
                 if (_providerRegistry == null && _enableDebugLogging)
                 {
-                    Debug.LogWarning("[AnalyticsIntegrationHelper] AnalyticsProviderRegistry not found");
+                    ChimeraLogger.LogWarning("[AnalyticsIntegrationHelper] AnalyticsProviderRegistry not found");
                 }
 
                 // Discover existing providers on this GameObject
@@ -92,11 +94,11 @@ namespace ProjectChimera.Systems.Analytics
                 OnIntegrationComplete?.Invoke();
 
                 if (_enableDebugLogging)
-                    Debug.Log($"[AnalyticsIntegrationHelper] Integration initialized with {_providers.Count} providers");
+                    ChimeraLogger.Log($"[AnalyticsIntegrationHelper] Integration initialized with {_providers.Count} providers");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[AnalyticsIntegrationHelper] Failed to initialize integration: {ex.Message}");
+                ChimeraLogger.LogError($"[AnalyticsIntegrationHelper] Failed to initialize integration: {ex.Message}");
             }
         }
 
@@ -109,7 +111,7 @@ namespace ProjectChimera.Systems.Analytics
                 OnProviderAdded?.Invoke(provider);
 
                 if (_enableDebugLogging)
-                    Debug.Log($"[AnalyticsIntegrationHelper] Discovered provider: {provider.GetType().Name}");
+                    ChimeraLogger.Log($"[AnalyticsIntegrationHelper] Discovered provider: {provider.GetType().Name}");
             }
         }
 
@@ -158,11 +160,11 @@ namespace ProjectChimera.Systems.Analytics
                     RegisterProviderMetrics(provider);
 
                     if (_enableDebugLogging)
-                        Debug.Log($"[AnalyticsIntegrationHelper] Registered provider: {provider.GetType().Name}");
+                        ChimeraLogger.Log($"[AnalyticsIntegrationHelper] Registered provider: {provider.GetType().Name}");
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[AnalyticsIntegrationHelper] Failed to register provider {provider.GetType().Name}: {ex.Message}");
+                    ChimeraLogger.LogError($"[AnalyticsIntegrationHelper] Failed to register provider {provider.GetType().Name}: {ex.Message}");
                 }
             }
         }
@@ -180,7 +182,7 @@ namespace ProjectChimera.Systems.Analytics
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[AnalyticsIntegrationHelper] Failed to register metric {metricName}: {ex.Message}");
+                    ChimeraLogger.LogError($"[AnalyticsIntegrationHelper] Failed to register metric {metricName}: {ex.Message}");
                 }
             }
         }
@@ -205,11 +207,11 @@ namespace ProjectChimera.Systems.Analytics
                 _isInitialized = false;
 
                 if (_enableDebugLogging)
-                    Debug.Log("[AnalyticsIntegrationHelper] Integration cleaned up");
+                    ChimeraLogger.Log("[AnalyticsIntegrationHelper] Integration cleaned up");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[AnalyticsIntegrationHelper] Error during cleanup: {ex.Message}");
+                ChimeraLogger.LogError($"[AnalyticsIntegrationHelper] Error during cleanup: {ex.Message}");
             }
         }
 
@@ -219,7 +221,7 @@ namespace ProjectChimera.Systems.Analytics
 
         private void CreateCultivationProvider()
         {
-            var cultivationManager = GetComponent<ProjectChimera.Systems.Cultivation.CultivationManager>();
+            var cultivationManager = ServiceContainerFactory.Instance?.TryResolve<ICultivationManager>();
             if (cultivationManager != null)
             {
                 var provider = gameObject.AddComponent<ProjectChimera.Systems.Analytics.Providers.CultivationAnalyticsProvider>();
@@ -227,13 +229,13 @@ namespace ProjectChimera.Systems.Analytics
                 _providers.Add(provider);
 
                 if (_enableDebugLogging)
-                    Debug.Log("[AnalyticsIntegrationHelper] Created CultivationAnalyticsProvider");
+                    ChimeraLogger.Log("[AnalyticsIntegrationHelper] Created CultivationAnalyticsProvider");
             }
         }
 
         private void CreateEconomicProvider()
         {
-            var currencyManager = UnityEngine.Object.FindObjectOfType<ProjectChimera.Systems.Economy.CurrencyManager>();
+            var currencyManager = ServiceContainerFactory.Instance?.TryResolve<ICurrencyManager>();
             if (currencyManager != null)
             {
                 var provider = gameObject.AddComponent<ProjectChimera.Systems.Analytics.Providers.EconomicAnalyticsProvider>();
@@ -241,39 +243,34 @@ namespace ProjectChimera.Systems.Analytics
                 _providers.Add(provider);
 
                 if (_enableDebugLogging)
-                    Debug.Log("[AnalyticsIntegrationHelper] Created EconomicAnalyticsProvider");
+                    ChimeraLogger.Log("[AnalyticsIntegrationHelper] Created EconomicAnalyticsProvider");
             }
         }
 
         private void CreateEnvironmentalProvider()
         {
             // Create environmental provider if environment manager exists
-            var environmentManager = GetComponent<ProjectChimera.Systems.Environment.EnvironmentManager>();
+            var environmentManager = ServiceContainerFactory.Instance?.TryResolve<IEnvironmentalManager>();
             if (environmentManager != null)
             {
                 // Would create EnvironmentalAnalyticsProvider here
                 if (_enableDebugLogging)
-                    Debug.Log("[AnalyticsIntegrationHelper] Environmental provider creation not yet implemented");
+                    ChimeraLogger.Log("[AnalyticsIntegrationHelper] Environmental provider creation not yet implemented");
             }
         }
 
         private void CreateFacilityProvider()
         {
-            // Create facility provider if facility manager exists
-            var facilityManager = GetComponent<ProjectChimera.Systems.Facilities.FacilityManager>();
-            if (facilityManager != null)
-            {
-                // Would create FacilityAnalyticsProvider here
-                if (_enableDebugLogging)
-                    Debug.Log("[AnalyticsIntegrationHelper] Facility provider creation not yet implemented");
-            }
+            // Create facility provider if facility manager exists - placeholder for now
+            if (_enableDebugLogging)
+                ChimeraLogger.Log("[AnalyticsIntegrationHelper] Facility provider creation not yet implemented");
         }
 
         private void CreateOperationalProvider()
         {
             // Create operational provider for general operational metrics
             if (_enableDebugLogging)
-                Debug.Log("[AnalyticsIntegrationHelper] Operational provider creation not yet implemented");
+                ChimeraLogger.Log("[AnalyticsIntegrationHelper] Operational provider creation not yet implemented");
         }
 
         #endregion
@@ -293,7 +290,7 @@ namespace ProjectChimera.Systems.Analytics
             }
 
             if (_enableDebugLogging)
-                Debug.Log($"[AnalyticsIntegrationHelper] Added provider: {provider.GetType().Name}");
+                ChimeraLogger.Log($"[AnalyticsIntegrationHelper] Added provider: {provider.GetType().Name}");
         }
 
         public void RemoveProvider(IAnalyticsProvider provider)
@@ -303,7 +300,7 @@ namespace ProjectChimera.Systems.Analytics
             _providers.Remove(provider);
 
             if (_enableDebugLogging)
-                Debug.Log($"[AnalyticsIntegrationHelper] Removed provider: {provider.GetType().Name}");
+                ChimeraLogger.Log($"[AnalyticsIntegrationHelper] Removed provider: {provider.GetType().Name}");
         }
 
         public IEnumerable<IAnalyticsProvider> GetProviders()
@@ -356,7 +353,7 @@ namespace ProjectChimera.Systems.Analytics
             {
                 summary += $"  Provider: {provider.GetType().Name}\n";
                 summary += $"    Metrics: {provider.GetAvailableMetrics().Count()}\n";
-                
+
                 if (provider is AnalyticsProviderBase baseProvider)
                 {
                     summary += $"    Status: {(baseProvider.ValidateMetrics() ? "Valid" : "Invalid")}\n";

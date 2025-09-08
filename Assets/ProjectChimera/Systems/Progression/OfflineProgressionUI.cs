@@ -1,9 +1,11 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UIElements;
+using ProjectChimera.Core;
 using ProjectChimera.Systems.UI.Advanced;
 
 namespace ProjectChimera.Systems.Progression
@@ -84,12 +86,12 @@ namespace ProjectChimera.Systems.Progression
         
         private void FindSystemReferences()
         {
-            _progressionArchitecture = UnityEngine.Object.FindObjectOfType<OfflineProgressionArchitecture>();
-            _menuSystem = UnityEngine.Object.FindObjectOfType<AdvancedMenuSystem>();
+            _progressionArchitecture = ServiceContainerFactory.Instance?.TryResolve<OfflineProgressionArchitecture>();
+            _menuSystem = ServiceContainerFactory.Instance?.TryResolve<AdvancedMenuSystem>();
             
             if (_progressionArchitecture == null)
             {
-                Debug.LogWarning("[OfflineProgressionUI] OfflineProgressionArchitecture not found");
+                ChimeraLogger.LogWarning("[OfflineProgressionUI] OfflineProgressionArchitecture not found");
                 return;
             }
         }
@@ -147,7 +149,7 @@ namespace ProjectChimera.Systems.Progression
             var buttonContainer = CreateButtonContainer();
             _progressionScreen.Add(buttonContainer);
             
-            Debug.Log("[OfflineProgressionUI] UI structure created");
+            ChimeraLogger.Log("[OfflineProgressionUI] UI structure created");
         }
         
         private VisualElement CreateHeader()
@@ -197,7 +199,7 @@ namespace ProjectChimera.Systems.Progression
         {
             if (session == null || !session.Success)
             {
-                Debug.LogWarning("[OfflineProgressionUI] Cannot show results for null or failed session");
+                ChimeraLogger.LogWarning("[OfflineProgressionUI] Cannot show results for null or failed session");
                 return;
             }
             
@@ -239,11 +241,11 @@ namespace ProjectChimera.Systems.Progression
                 
                 OnProgressionScreenShown?.Invoke();
                 
-                Debug.Log($"[OfflineProgressionUI] Showing progression results for session {_currentSession.SessionId}");
+                ChimeraLogger.Log($"[OfflineProgressionUI] Showing progression results for session {_currentSession.SessionId}");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[OfflineProgressionUI] Error showing progression screen: {ex.Message}");
+                ChimeraLogger.LogError($"[OfflineProgressionUI] Error showing progression screen: {ex.Message}");
                 _isShowingProgression = false;
             }
         }
@@ -654,7 +656,7 @@ namespace ProjectChimera.Systems.Progression
             
             OnProgressionScreenClosed?.Invoke();
             
-            Debug.Log("[OfflineProgressionUI] Progression screen closed");
+            ChimeraLogger.Log("[OfflineProgressionUI] Progression screen closed");
         }
         
         private void ToggleDetails()

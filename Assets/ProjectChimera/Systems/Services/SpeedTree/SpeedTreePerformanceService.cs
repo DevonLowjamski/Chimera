@@ -1,3 +1,5 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,108 +20,108 @@ namespace ProjectChimera.Systems.Services.SpeedTree
     /// Manages LOD, batching, culling, performance metrics, and memory optimization
     /// Decomposed from AdvancedSpeedTreeManager (360 lines target)
     /// </summary>
-    public class SpeedTreePerformanceService : MonoBehaviour, ISpeedTreePerformanceService
+    public class SpeedTreePerformanceService : MonoBehaviour, ITickable, ISpeedTreePerformanceService
     {
         #region Properties
-        
+
         public bool IsInitialized { get; private set; }
-        
+
         #endregion
 
         #region Private Fields
-        
+
         [Header("Performance Configuration")]
         [SerializeField] private int _maxVisiblePlants = 500;
         [SerializeField] private float _cullingDistance = 100f;
         [SerializeField] private bool _enableGPUInstancing = true;
         [SerializeField] private bool _enableDynamicBatching = true;
         [SerializeField] private int _defaultQuality = 2; // Quality level 0-4
-        
+
         [Header("LOD Settings")]
         [SerializeField] private ScriptableObject _lodConfig;
         [SerializeField] private float[] _lodDistances = { 25f, 50f, 100f, 200f };
         [SerializeField] private float[] _lodQualityMultipliers = { 1.0f, 0.8f, 0.6f, 0.3f };
-        
+
         [Header("Performance Monitoring")]
         [SerializeField] private bool _enablePerformanceMonitoring = true;
         [SerializeField] private float _performanceUpdateInterval = 1.0f;
         [SerializeField] private int _targetFrameRate = 60;
         [SerializeField] private float _memoryWarningThreshold = 512f; // MB
-        
+
         // Performance Systems
         private object _lodManager;
         private object _batchingManager;
         private object _cullingManager;
         private object _memoryManager;
-        
+
         // Performance Monitoring
         private object _performanceMetrics;
         private float _lastPerformanceUpdate = 0f;
         private Queue<float> _frameTimeHistory = new Queue<float>();
         private Queue<float> _memoryUsageHistory = new Queue<float>();
-        
+
         // Renderer Management
         private Dictionary<GameObject, object> _rendererData = new Dictionary<GameObject, object>();
         private List<GameObject> _visibleRenderers = new List<GameObject>();
         private List<GameObject> _culledRenderers = new List<GameObject>();
-        
+
         // Quality Management
         private int _currentQuality = 2; // Quality level 0-4
         private Dictionary<int, int> _qualityLevels = new Dictionary<int, int>();
         private bool _autoQualityAdjustment = true;
-        
+
         // Camera Reference
         private UnityEngine.Camera _mainCamera;
-        
+
         #endregion
 
         #region Events
-        
+
         public event Action<object> OnPerformanceMetricsUpdated;
         public event Action<object> OnQualityLevelChanged;
         public event Action<float> OnMemoryUsageChanged;
-        
+
         #endregion
 
         #region IService Implementation
-        
+
         public void Initialize()
         {
             if (IsInitialized) return;
-            
-            Debug.Log("Initializing SpeedTreePerformanceService...");
-            
+
+            ChimeraLogger.Log("Initializing SpeedTreePerformanceService...");
+
             // Initialize performance systems
             InitializePerformanceSystems();
-            
+
             // Initialize quality management
             InitializeQualityManagement();
-            
+
             // Initialize performance monitoring
             InitializePerformanceMonitoring();
-            
-            // Get main camera reference
-            _mainCamera = Camera.main ?? FindObjectOfType<Camera>();
-            
+
+            // Get main camera reference - try ServiceContainer first, then Camera.main, finally scene search
+            _mainCamera = ServiceContainerFactory.Instance?.TryResolve<Camera>() ?? Camera.main ?? ServiceContainerFactory.Instance?.TryResolve<Camera>();
+
             // Register with ServiceRegistry
-            ServiceRegistry.Instance.RegisterService<ISpeedTreePerformanceService>(this, ServiceDomain.SpeedTree);
-            
+            ServiceContainerFactory.Instance.RegisterSingleton<ISpeedTreePerformanceService>(this);
+
             IsInitialized = true;
-            Debug.Log("SpeedTreePerformanceService initialized successfully");
+            ChimeraLogger.Log("SpeedTreePerformanceService initialized successfully");
         }
 
         public void Shutdown()
         {
             if (!IsInitialized) return;
-            
-            Debug.Log("Shutting down SpeedTreePerformanceService...");
-            
+
+            ChimeraLogger.Log("Shutting down SpeedTreePerformanceService...");
+
             // Stop performance monitoring
             StopPerformanceMonitoring();
-            
+
             // Cleanup performance systems
             CleanupPerformanceSystems();
-            
+
             // Clear collections
             _rendererData.Clear();
             _visibleRenderers.Clear();
@@ -127,15 +129,15 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             _qualityLevels.Clear();
             _frameTimeHistory.Clear();
             _memoryUsageHistory.Clear();
-            
+
             IsInitialized = false;
-            Debug.Log("SpeedTreePerformanceService shutdown complete");
+            ChimeraLogger.Log("SpeedTreePerformanceService shutdown complete");
         }
-        
+
         #endregion
 
         #region Performance Monitoring
-        
+
         public object GetCurrentMetrics()
         {
             return _performanceMetrics;
@@ -147,56 +149,56 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 
             // Update frame time metrics
             UpdateFrameTimeMetrics();
-            
+
             // Update memory metrics
             UpdateMemoryMetrics();
-            
+
             // Update renderer metrics
             UpdateRendererMetrics();
-            
+
             // Update quality metrics
             UpdateQualityMetrics();
-            
+
             // Check for performance warnings
             CheckPerformanceWarnings();
-            
+
             OnPerformanceMetricsUpdated?.Invoke(_performanceMetrics);
         }
 
         public void StartPerformanceMonitoring()
         {
             _enablePerformanceMonitoring = true;
-            Debug.Log("Performance monitoring started");
+            ChimeraLogger.Log("Performance monitoring started");
         }
 
         public void StopPerformanceMonitoring()
         {
             _enablePerformanceMonitoring = false;
-            Debug.Log("Performance monitoring stopped");
+            ChimeraLogger.Log("Performance monitoring stopped");
         }
-        
+
         #endregion
 
         #region LOD Management
-        
+
         public void UpdateLODSystem(IEnumerable<int> plantIds)
         {
             if (_mainCamera == null) return;
 
             var cameraPosition = _mainCamera.transform.position;
-            
+
             foreach (var plantId in plantIds)
             {
                 var renderer = FindRendererForInstance(plantId);
                 if (renderer == null) continue;
-                
+
                 var distance = Vector3.Distance(cameraPosition, renderer.transform.position);
                 var lodLevel = CalculateLODLevel(distance);
-                
+
                 ApplyLODLevel(renderer, lodLevel, distance);
             }
-            
-            Debug.Log("LOD system updated for all plants");
+
+            ChimeraLogger.Log("LOD system updated for all plants");
         }
 
         public void SetQualityLevel(object quality)
@@ -205,9 +207,9 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 
             _currentQuality = 2; // Default quality level
             ApplyQualitySettings(quality);
-            
+
             OnQualityLevelChanged?.Invoke(quality);
-            Debug.Log($"Quality level set to: {quality}");
+            ChimeraLogger.Log($"Quality level set to: {quality}");
         }
 
         public void ApplyQualitySettings(object quality)
@@ -219,27 +221,27 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             {
                 ApplyQualityToRenderer(renderer, quality);
             }
-            
+
             // Update LOD distances based on quality
             UpdateLODDistancesForQuality(quality);
-            
+
             // Update batching settings
             UpdateBatchingForQuality(quality);
         }
-        
+
         #endregion
 
         #region Batching & Instancing
-        
+
         public void ProcessBatching()
         {
             if (!_enableDynamicBatching) return;
 
-            Debug.Log("Batching processing completed");
-            
+            ChimeraLogger.Log("Batching processing completed");
+
             // Group renderers by material and mesh for batching
             var batchGroups = GroupRenderersForBatching();
-            
+
             foreach (var group in batchGroups)
             {
                 ProcessBatchGroup(group);
@@ -253,13 +255,13 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             if (!_rendererData.ContainsKey(renderer))
             {
                 var data = new object(); // Placeholder performance data
-                
+
                 _rendererData[renderer] = data;
-                
+
                 // Apply current quality settings
                 ApplyQualityToRenderer(renderer, _currentQuality);
-                
-                Debug.Log($"Registered SpeedTree renderer: {renderer.name}");
+
+                ChimeraLogger.Log($"Registered SpeedTree renderer: {renderer.name}");
             }
         }
 
@@ -270,14 +272,14 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             _rendererData.Remove(renderer);
             _visibleRenderers.Remove(renderer);
             _culledRenderers.Remove(renderer);
-            
-            Debug.Log($"Unregistered SpeedTree renderer: {renderer.name}");
+
+            ChimeraLogger.Log($"Unregistered SpeedTree renderer: {renderer.name}");
         }
 
         public void SetGPUInstancingEnabled(bool enabled)
         {
             _enableGPUInstancing = enabled;
-            
+
             if (_enableGPUInstancing)
             {
                 EnableGPUInstancing();
@@ -287,28 +289,28 @@ namespace ProjectChimera.Systems.Services.SpeedTree
                 DisableGPUInstancing();
             }
         }
-        
+
         #endregion
 
         #region Culling System
-        
+
         public void UpdateCullingSystem(IEnumerable<int> plantIds)
         {
             if (_mainCamera == null) return;
 
             _visibleRenderers.Clear();
             _culledRenderers.Clear();
-            
+
             var cameraPosition = _mainCamera.transform.position;
             var frustumPlanes = GeometryUtility.CalculateFrustumPlanes(_mainCamera);
-            
+
             foreach (var plantId in plantIds)
             {
                 var renderer = FindRendererForInstance(plantId);
                 if (renderer == null) continue;
-                
+
                 var shouldCull = ShouldCullRenderer(renderer, cameraPosition, frustumPlanes);
-                
+
                 if (shouldCull)
                 {
                     CullRenderer(renderer);
@@ -318,25 +320,25 @@ namespace ProjectChimera.Systems.Services.SpeedTree
                     ShowRenderer(renderer);
                 }
             }
-            
-            Debug.Log("Culling system updated");
+
+            ChimeraLogger.Log("Culling system updated");
         }
 
         public void SetCullingDistance(float distance)
         {
             _cullingDistance = distance;
-            Debug.Log($"Culling distance set to: {distance}");
+            ChimeraLogger.Log($"Culling distance set to: {distance}");
         }
 
         public int GetVisiblePlantCount()
         {
             return _visibleRenderers.Count;
         }
-        
+
         #endregion
 
         #region Memory Management
-        
+
         public float GetMemoryUsage()
         {
             return 256f; // Placeholder memory usage in MB
@@ -344,11 +346,11 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 
         public void OptimizeMemoryUsage()
         {
-            Debug.Log("Memory optimization completed");
-            
+            ChimeraLogger.Log("Memory optimization completed");
+
             // Cleanup unused assets
             CleanupUnusedAssets();
-            
+
             // Reduce quality if memory usage is high
             if (GetMemoryUsage() > _memoryWarningThreshold)
             {
@@ -360,17 +362,17 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         {
             // Remove unused materials and meshes
             Resources.UnloadUnusedAssets();
-            
+
             // Garbage collection
             System.GC.Collect();
-            
-            Debug.Log("Cleaned up unused assets");
+
+            ChimeraLogger.Log("Cleaned up unused assets");
         }
-        
+
         #endregion
 
         #region Private Helper Methods
-        
+
         private void InitializePerformanceSystems()
         {
             // Initialize performance managers
@@ -378,11 +380,11 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             _batchingManager = new SpeedTreeBatchingManager();
             _cullingManager = new SpeedTreeCullingManager();
             _memoryManager = new SpeedTreeMemoryManager();
-            
+
             // Initialize performance metrics
             _performanceMetrics = new object();
-            
-            Debug.Log("Performance systems initialized");
+
+            ChimeraLogger.Log("Performance systems initialized");
         }
 
         private void InitializeQualityManagement()
@@ -391,10 +393,10 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             {
                 _defaultQuality = 2; // Quality level 0-4
             }
-            
+
             _currentQuality = _defaultQuality;
-            
-            Debug.Log($"Quality management initialized with quality level: {_currentQuality}");
+
+            ChimeraLogger.Log($"Quality management initialized with quality level: {_currentQuality}");
         }
 
         private void InitializePerformanceMonitoring()
@@ -402,58 +404,58 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             _frameTimeHistory.Clear();
             _memoryUsageHistory.Clear();
             _lastPerformanceUpdate = Time.time;
-            
-            Debug.Log("Performance monitoring initialized");
+
+            ChimeraLogger.Log("Performance monitoring initialized");
         }
 
         private void CleanupPerformanceSystems()
         {
             // Cleanup performance systems - using placeholder implementations
-            Debug.Log("Performance systems cleanup completed");
+            ChimeraLogger.Log("Performance systems cleanup completed");
         }
 
         private void UpdateFrameTimeMetrics()
         {
             var frameTime = Time.unscaledDeltaTime;
             _frameTimeHistory.Enqueue(frameTime);
-            
+
             // Keep only last 60 frames
             while (_frameTimeHistory.Count > 60)
             {
                 _frameTimeHistory.Dequeue();
             }
-            
+
             // Performance metrics updated - using placeholder implementation
-            Debug.Log($"Frame time: {frameTime * 1000f:F1}ms, FPS: {1f / frameTime:F1}");
+            ChimeraLogger.Log($"Frame time: {frameTime * 1000f:F1}ms, FPS: {1f / frameTime:F1}");
         }
 
         private void UpdateMemoryMetrics()
         {
             var memoryUsage = 256f; // Placeholder memory usage in MB
             _memoryUsageHistory.Enqueue(memoryUsage);
-            
+
             // Keep only last 60 samples
             while (_memoryUsageHistory.Count > 60)
             {
                 _memoryUsageHistory.Dequeue();
             }
-            
+
             // Memory metrics updated - using placeholder implementation
-            Debug.Log($"Memory usage: {memoryUsage:F1}MB");
-            
+            ChimeraLogger.Log($"Memory usage: {memoryUsage:F1}MB");
+
             OnMemoryUsageChanged?.Invoke(memoryUsage);
         }
 
         private void UpdateRendererMetrics()
         {
             // Renderer metrics updated - using placeholder implementation
-            Debug.Log($"Total: {_rendererData.Count}, Visible: {_visibleRenderers.Count}, Culled: {_culledRenderers.Count}");
+            ChimeraLogger.Log($"Total: {_rendererData.Count}, Visible: {_visibleRenderers.Count}, Culled: {_culledRenderers.Count}");
         }
 
         private void UpdateQualityMetrics()
         {
             // Quality metrics updated - using placeholder implementation
-            Debug.Log($"Current quality level: {_currentQuality}");
+            ChimeraLogger.Log($"Current quality level: {_currentQuality}");
         }
 
         private void CheckPerformanceWarnings()
@@ -464,12 +466,12 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             {
                 ReduceQualityForPerformance();
             }
-            
+
             // Check memory usage
             var currentMemoryUsage = GetMemoryUsage();
             if (currentMemoryUsage > _memoryWarningThreshold)
             {
-                Debug.LogWarning($"High memory usage: {currentMemoryUsage:F1} MB");
+                ChimeraLogger.LogWarning($"High memory usage: {currentMemoryUsage:F1} MB");
                 OptimizeMemoryUsage();
             }
         }
@@ -489,15 +491,15 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         private void ApplyLODLevel(GameObject renderer, int lodLevel, float distance)
         {
             if (!_rendererData.TryGetValue(renderer, out var data)) return;
-            
+
             // LOD level and distance updated - using placeholder implementation
-            Debug.Log($"Applied LOD level {lodLevel} at distance {distance}");
-            
+            ChimeraLogger.Log($"Applied LOD level {lodLevel} at distance {distance}");
+
 #if UNITY_SPEEDTREE
             // Apply LOD to SpeedTree renderer
-            var qualityMultiplier = lodLevel < _lodQualityMultipliers.Length ? 
+            var qualityMultiplier = lodLevel < _lodQualityMultipliers.Length ?
                 _lodQualityMultipliers[lodLevel] : 0.1f;
-            
+
             ApplyLODQuality(renderer, qualityMultiplier);
 #endif
         }
@@ -506,11 +508,11 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         {
 #if UNITY_SPEEDTREE
             if (renderer == null || quality == null) return;
-            
+
             // Apply quality settings to the renderer
             var rendererComponent = renderer.GetComponent<Renderer>();
             if (rendererComponent != null) rendererComponent.enabled = true;
-            
+
             // Update LOD bias
             if (renderer.GetComponent<LODGroup>() is LODGroup lodGroup)
             {
@@ -522,7 +524,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         private void UpdateLODDistancesForQuality(object quality)
         {
             var multiplier = 0.8f; // Default quality multiplier
-            
+
             for (int i = 0; i < _lodDistances.Length; i++)
             {
                 _lodDistances[i] = _lodDistances[i] * multiplier;
@@ -538,19 +540,19 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         private Dictionary<string, List<GameObject>> GroupRenderersForBatching()
         {
             var groups = new Dictionary<string, List<GameObject>>();
-            
+
             foreach (var renderer in _visibleRenderers)
             {
                 var key = GetBatchingKey(renderer);
-                
+
                 if (!groups.ContainsKey(key))
                 {
                     groups[key] = new List<GameObject>();
                 }
-                
+
                 groups[key].Add(renderer);
             }
-            
+
             return groups;
         }
 
@@ -559,37 +561,37 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             // Create a key based on material and mesh for batching
             var meshRenderer = renderer.GetComponent<Renderer>();
             if (meshRenderer == null) return "unknown";
-            
+
             var material = meshRenderer.material;
             var meshFilter = renderer.GetComponent<MeshFilter>();
             var mesh = meshFilter?.mesh;
-            
+
             return $"{material?.name ?? "null"}_{mesh?.name ?? "null"}";
         }
 
         private void ProcessBatchGroup(KeyValuePair<string, List<GameObject>> group)
         {
             if (group.Value.Count < 2) return; // Need at least 2 for batching
-            
+
             // Process batching for this group
-            Debug.Log($"Processing batch group with {group.Value.Count} renderers");
+            ChimeraLogger.Log($"Processing batch group with {group.Value.Count} renderers");
         }
 
         private bool ShouldCullRenderer(GameObject renderer, Vector3 cameraPosition, Plane[] frustumPlanes)
         {
             var rendererBounds = renderer.GetComponent<Renderer>()?.bounds;
             if (!rendererBounds.HasValue) return true;
-            
+
             // Distance culling
             var distance = Vector3.Distance(cameraPosition, renderer.transform.position);
             if (distance > _cullingDistance) return true;
-            
+
             // Frustum culling
             if (!GeometryUtility.TestPlanesAABB(frustumPlanes, rendererBounds.Value)) return true;
-            
+
             // Occlusion culling (simplified)
             if (IsOccluded(renderer, cameraPosition)) return true;
-            
+
             return false;
         }
 
@@ -606,15 +608,15 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             {
                 _visibleRenderers.Remove(renderer);
             }
-            
+
             if (!_culledRenderers.Contains(renderer))
             {
                 _culledRenderers.Add(renderer);
             }
-            
+
             var rendererComponent = renderer.GetComponent<Renderer>();
             if (rendererComponent != null) rendererComponent.enabled = false;
-            
+
             if (_rendererData.TryGetValue(renderer, out var data))
             {
                 // Renderer marked as not visible - using placeholder implementation
@@ -627,15 +629,15 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             {
                 _culledRenderers.Remove(renderer);
             }
-            
+
             if (!_visibleRenderers.Contains(renderer))
             {
                 _visibleRenderers.Add(renderer);
             }
-            
+
             var rendererComponent = renderer.GetComponent<Renderer>();
             if (rendererComponent != null) rendererComponent.enabled = true;
-            
+
             if (_rendererData.TryGetValue(renderer, out var data))
             {
                 // Renderer marked as visible - using placeholder implementation
@@ -678,7 +680,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             {
                 var newQuality = CreateReducedQuality(_currentQuality);
                 SetQualityLevel(newQuality);
-                Debug.Log("Reduced quality for performance");
+                ChimeraLogger.Log("Reduced quality for performance");
             }
         }
 
@@ -688,7 +690,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             {
                 var newQuality = CreateReducedQuality(_currentQuality);
                 SetQualityLevel(newQuality);
-                Debug.Log("Reduced quality for memory optimization");
+                ChimeraLogger.Log("Reduced quality for memory optimization");
             }
         }
 
@@ -700,7 +702,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         private GameObject FindRendererForInstance(int plantId)
         {
             // Find the SpeedTree renderer associated with this plant instance
-            return _rendererData.Keys.FirstOrDefault(r => 
+            return _rendererData.Keys.FirstOrDefault(r =>
                 r.name.Contains($"SpeedTree_Plant_{plantId}"));
         }
 
@@ -709,23 +711,23 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             // Estimate memory usage for a renderer (in MB)
             var meshRenderer = renderer.GetComponent<Renderer>();
             if (meshRenderer == null) return 0f;
-            
+
             var meshFilter = renderer.GetComponent<MeshFilter>();
             var mesh = meshFilter?.mesh;
-            
+
             if (mesh == null) return 0f;
-            
+
             // Rough estimate based on vertex count and texture size
             var vertexMemory = mesh.vertexCount * 32; // Approximate bytes per vertex
             var textureMemory = EstimateTextureMemory(meshRenderer.materials);
-            
+
             return (vertexMemory + textureMemory) / (1024f * 1024f); // Convert to MB
         }
 
         private float EstimateTextureMemory(Material[] materials)
         {
             float totalMemory = 0f;
-            
+
             foreach (var material in materials)
             {
                 if (material?.mainTexture is Texture2D texture)
@@ -734,7 +736,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
                     totalMemory += texture.width * texture.height * 4;
                 }
             }
-            
+
             return totalMemory;
         }
 
@@ -747,7 +749,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         private float CalculateAverageLODLevel()
         {
             if (_rendererData.Count == 0) return 0f;
-            
+
             var totalLOD = _rendererData.Count * 2.0f; // Placeholder LOD calculation
             return (float)totalLOD / _rendererData.Count;
         }
@@ -763,52 +765,75 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             }
         }
 #endif
-        
+
         #endregion
 
         #region Unity Lifecycle
-        
+
         private void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             Initialize();
         }
 
         private void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             Shutdown();
         }
 
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             if (!IsInitialized) return;
 
             var currentTime = Time.time;
-            
+
             // Update performance metrics
             if (currentTime - _lastPerformanceUpdate >= _performanceUpdateInterval)
             {
                 UpdatePerformanceMetrics();
                 _lastPerformanceUpdate = currentTime;
-            }
-            
+
+    }
+
             // Process batching if enabled
             if (_enableDynamicBatching)
             {
                 ProcessBatching();
             }
         }
-        
+
+        #endregion
+
+        #region ITickable Implementation
+
+        // ITickable implementation properties
+        public int Priority => TickPriority.SpeedTreeServices;
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+        public void OnRegistered()
+        {
+            ChimeraLogger.LogVerbose("[SpeedTreePerformanceService] Registered with UpdateOrchestrator");
+        }
+
+        public void OnUnregistered()
+        {
+            ChimeraLogger.LogVerbose("[SpeedTreePerformanceService] Unregistered from UpdateOrchestrator");
+        }
+
         #endregion
     }
-    
+
     #region Supporting Classes
-    
+
     public class SpeedTreeLODManager
     {
         public void UpdateLOD() { /* LOD management implementation */ }
         public void Cleanup() { /* Cleanup LOD resources */ }
     }
-    
+
     public class SpeedTreeBatchingManager
     {
         public void ProcessBatching() { /* Batching implementation */ }
@@ -816,25 +841,19 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         public int GetBatchedCount() { return 0; /* Return batched count */ }
         public void Cleanup() { /* Cleanup batching resources */ }
     }
-    
+
     public class SpeedTreeCullingManager
     {
         public void UpdateCulling() { /* Culling implementation */ }
         public void Cleanup() { /* Cleanup culling resources */ }
     }
-    
+
     public class SpeedTreeMemoryManager
     {
         public float GetCurrentMemoryUsage() { return 0f; /* Return memory usage */ }
         public void OptimizeMemory() { /* Memory optimization */ }
         public void Cleanup() { /* Cleanup memory resources */ }
     }
-    
-    // Performance metrics data structure removed - using object placeholders
-    
-    // Quality level data structure removed - using int quality levels (0-4)
-    
-    // Renderer performance data structure removed - using object placeholders
-    
+
     #endregion
 }

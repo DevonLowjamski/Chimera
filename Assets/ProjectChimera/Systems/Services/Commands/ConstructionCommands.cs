@@ -1,6 +1,7 @@
 using UnityEngine;
 using ProjectChimera.Systems.Services.Core;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Services.Commands
 {
@@ -88,7 +89,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[PlaceStructureCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.LogError($"[PlaceStructureCommand] Error executing command: {ex.Message}");
                 return CommandResult.Failure($"Error placing structure: {ex.Message}");
             }
         }
@@ -162,7 +163,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[PlaceEquipmentCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.LogError($"[PlaceEquipmentCommand] Error executing command: {ex.Message}");
                 return CommandResult.Failure($"Error placing equipment: {ex.Message}");
             }
         }
@@ -232,7 +233,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[ApplySchematicCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.LogError($"[ApplySchematicCommand] Error executing command: {ex.Message}");
                 return CommandResult.Failure($"Error applying schematic: {ex.Message}");
             }
         }
@@ -300,7 +301,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[InstallUtilityCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.LogError($"[InstallUtilityCommand] Error executing command: {ex.Message}");
                 return CommandResult.Failure($"Error installing utility: {ex.Message}");
             }
         }

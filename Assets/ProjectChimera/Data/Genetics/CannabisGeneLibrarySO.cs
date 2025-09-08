@@ -59,7 +59,7 @@ namespace ProjectChimera.Data.Genetics
             }
 
             _isInitialized = true;
-            Debug.Log($"Cannabis Gene Library initialized with {TotalGenes} genes and {TotalAlleles} alleles");
+            SharedLogger.Log($"Cannabis Gene Library initialized with {TotalGenes} genes and {TotalAlleles} alleles");
         }
 
         /// <summary>
@@ -267,7 +267,7 @@ namespace ProjectChimera.Data.Genetics
                 _geneDefinitions.Add(gene);
             }
 
-            Debug.Log($"Generated {defaultGenes.Length} default cannabis genes");
+            SharedLogger.Log($"Generated {defaultGenes.Length} default cannabis genes");
         }
 
         /// <summary>
@@ -343,7 +343,7 @@ namespace ProjectChimera.Data.Genetics
                 }
             }
 
-            Debug.Log($"Gene Library Validation: {validGenes}/{_geneDefinitions.Count} genes valid, {validAlleles}/{_alleleLibrary.Count} alleles valid");
+            SharedLogger.Log($"Gene Library Validation: {validGenes}/{_geneDefinitions.Count} genes valid, {validAlleles}/{_alleleLibrary.Count} alleles valid");
         }
 
         /// <summary>
@@ -386,14 +386,14 @@ namespace ProjectChimera.Data.Genetics
 
             if (_geneDefinitions.Count == 0 && _autoGenerateGenes)
             {
-                Debug.LogWarning("Gene library is empty but auto-generation is enabled - will generate default genes");
+                SharedLogger.LogWarning("Gene library is empty but auto-generation is enabled - will generate default genes");
             }
 
             // Check for duplicate gene codes
             var geneCodes = _geneDefinitions.Where(g => g != null).Select(g => g.GeneCode).ToList();
             if (geneCodes.Count != geneCodes.Distinct().Count())
             {
-                Debug.LogError("Gene library contains duplicate gene codes");
+                SharedLogger.LogError("Gene library contains duplicate gene codes");
                 isValid = false;
             }
 

@@ -1,207 +1,151 @@
-using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 using UnityEngine;
-using ProjectChimera.Data.Cultivation;
-using ProjectChimera.Data.Genetics;
-using ProjectChimera.Data.Environment;
-// using ProjectChimera.Systems.Genetics; // Invalid namespace - genetics in ProjectChimera.Data.Genetics
-using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
-using EnvironmentalStressSO = ProjectChimera.Data.Simulation.EnvironmentalStressSO;
 
 namespace ProjectChimera.Systems.Cultivation
 {
     /// <summary>
-    /// PC-013-3: Base interface for all plant management services
-    /// Defines common contracts for plant service components
-    /// </summary>
-    public interface IPlantService
-    {
-        bool IsInitialized { get; }
-        void Initialize();
-        void Shutdown();
-    }
-    
-    /// <summary>
-    /// PC013-4a: Interface for plant growth management service
-    /// Handles growth calculations, stage transitions, and growth-related operations
-    /// </summary>
-    public interface IPlantGrowthService : IPlantService
-    {
-        float GlobalGrowthModifier { get; set; }
-        float BaseGrowthRate { get; set; }
-        
-        void UpdatePlantGrowth(PlantInstance plant, float deltaTime);
-        void UpdatePlantGrowthBatch(List<PlantInstance> plants, float deltaTime);
-        float CalculateGrowthRate(PlantInstance plant, float deltaTime);
-        bool ForceStageProgression(PlantInstance plant);
-        GrowthStageRequirements GetStageRequirements(PlantGrowthStage stage);
-        GrowthServiceStatistics GetGrowthStatistics();
-    }
-    
-    /// <summary>
-    /// PC013-4b: Interface for plant environmental processing service
-    /// Handles environmental adaptation, stress application, and environmental fitness calculations
-    /// </summary>
-    public interface IPlantEnvironmentalProcessingService : IPlantService
-    {
-        bool EnableStressSystem { get; set; }
-        bool EnableGxEInteractions { get; set; }
-        float StressRecoveryRate { get; set; }
-        
-        void UpdatePlantEnvironmentalProcessing(PlantInstance plant, float deltaTime);
-        void UpdatePlantEnvironmentalProcessingBatch(List<PlantInstance> plants, float deltaTime);
-        float CalculateEnvironmentalFitness(PlantInstance plant, EnvironmentalConditions conditions);
-        void ApplyEnvironmentalStress(PlantInstance plant, EnvironmentalStressSO stressSource, float intensity);
-        void RemoveEnvironmentalStress(PlantInstance plant, EnvironmentalStressSO stressSource);
-        float GetPlantEnvironmentalFitness(string plantId);
-        List<ActiveStressor> GetPlantActiveStressors(string plantId);
-        EnvironmentalProcessingStatistics GetEnvironmentalStatistics();
-    }
-
-    /// <summary>
     /// Interface for plant lifecycle management service
     /// </summary>
-    public interface IPlantLifecycleService : IPlantService
+    public interface IPlantLifecycleService : ICultivationService
     {
-        PlantInstance CreatePlant(PlantStrainSO strain, Vector3 position, Transform parent = null);
-        List<PlantInstance> CreatePlants(PlantStrainSO strain, List<Vector3> positions, Transform parent = null);
-        void RegisterPlant(PlantInstance plant);
-        void UnregisterPlant(string plantID, PlantRemovalReason reason = PlantRemovalReason.Other);
-        PlantInstanceSO GetPlant(string plantID);
-        IEnumerable<PlantInstanceSO> GetAllPlants();
-        IEnumerable<PlantInstanceSO> GetPlantsInStage(PlantGrowthStage stage);
-        IEnumerable<PlantInstanceSO> GetHarvestablePlants();
-        IEnumerable<PlantInstanceSO> GetPlantsNeedingAttention();
-        
-        // New methods needed by environmental service
-        IEnumerable<PlantInstance> GetTrackedPlants();
-        PlantInstance GetTrackedPlant(string plantID);
-        
-        // Event handlers
-        System.Action<PlantInstance> OnPlantAdded { get; set; }
-        System.Action<PlantInstance> OnPlantStageChanged { get; set; }
-        System.Action<PlantInstance> OnPlantHealthUpdated { get; set; }
+        bool CreatePlant(object strain, Vector3 position, string customName = null);
+        bool RemovePlant(string plantId, PlantRemovalReason reason = PlantRemovalReason.Other);
+        PlantInstance GetPlant(string plantId);
+        List<PlantInstance> GetAllPlants();
+        List<PlantInstance> GetPlantsByStage(PlantGrowthStage stage);
+        List<PlantInstance> GetHealthyPlants(float minimumHealth = 0.7f);
+        List<PlantInstance> GetUnhealthyPlants(float maximumHealth = 0.5f);
+        void ProcessPlantGrowth(float deltaTime);
+        void ForceGrowthUpdate();
+        int PlantCount { get; }
+        float AveragePlantHealth { get; }
+
+        // Tracking methods for compatibility
+        List<PlantInstance> GetTrackedPlants();
+        PlantInstance GetTrackedPlant(string plantId);
+        List<PlantInstance> GetHarvestablePlants();
+        bool EnableAutoGrowth { get; set; }
+        float TimeAcceleration { get; set; }
     }
 
     /// <summary>
-    /// Interface for plant processing and update service
+    /// Interface for plant statistics and achievement tracking
     /// </summary>
-    public interface IPlantProcessingService : IPlantService
+    public interface IPlantStatisticsService : ICultivationService
     {
-        void UpdatePlants();
-        void SetGlobalGrowthModifier(float modifier);
-        float GlobalGrowthModifier { get; set; }
-        void PerformCacheCleanup();
-        void PerformPerformanceOptimization();
-        int CalculateOptimalBatchSize();
-        List<PlantInstance> GetNextPlantsToProcess(int count);
-    }
-
-    /// <summary>
-    /// Interface for plant achievement and event tracking service
-    /// </summary>
-    public interface IPlantAchievementService : IPlantService
-    {
-        void TrackPlantCreation(PlantInstance plant);
-        void TrackPlantHarvest(PlantInstance plant, SystemsHarvestResults results);
-        void TrackPlantDeath(PlantInstance plant);
-        void TrackPlantHealthChange(PlantInstance plant);
-        void TrackPlantGrowthStageChange(PlantInstance plant);
-        bool EnableAchievementTracking { get; set; }
-        
-        // Achievement statistics
+        // Core achievement statistics
         int TotalPlantsCreated { get; }
         int TotalPlantsHarvested { get; }
         float TotalYieldHarvested { get; }
         float HighestQualityAchieved { get; }
         int HealthyPlantsCount { get; }
         int StrainDiversity { get; }
-        
+
         // Achievement statistics method
-        PlantAchievementStats GetAchievementStats();
+        object GetAchievementStats();
     }
 
     /// <summary>
     /// Interface for plant genetics and genetic performance service
     /// </summary>
-    public interface IPlantGeneticsService : IPlantService
+    public interface IPlantGeneticsService : ICultivationService
     {
-        GeneticPerformanceStats GetGeneticPerformanceStats();
-        void SetAdvancedGeneticsEnabled(bool enabled);
-        GeneticDiversityStats CalculateGeneticDiversityStats();
+        // Genetic performance tracking
+        object GetGeneticPerformanceStats();
+        object GetGeneticDiversityStats();
+
+        void ProcessGeneticCalculations(float deltaTime);
+        void ProcessBatchGeneticCalculations(List<PlantInstance> plants);
+
+        // Advanced genetics features
         bool AdvancedGeneticsEnabled { get; set; }
-        
-        // Genetic monitoring
-        void RecordGeneticCalculation(float calculationTime);
-        void RecordBatchUpdate(int plantCount, GeneticPerformanceStats stats);
+        float GeneticCalculationFrequency { get; set; }
     }
 
     /// <summary>
-    /// Interface for plant harvest management service
+    /// Interface for cultivation plant management service
     /// </summary>
-    public interface IPlantHarvestService : IPlantService
+    public interface IPlantService : ICultivationService, IPlantLifecycleService, IPlantStatisticsService, IPlantGeneticsService
     {
-        SystemsHarvestResults HarvestPlant(string plantID);
-        float CalculateExpectedYield(PlantInstance plantInstance);
-        float GetStageYieldModifier(PlantGrowthStage stage);
-        bool EnableYieldVariability { get; set; }
-        bool EnablePostHarvestProcessing { get; set; }
-        float HarvestQualityMultiplier { get; set; }
-        
-        // Harvest events
-        System.Action<PlantInstance> OnPlantHarvested { get; set; }
-    }
-    
-    /// <summary>
-    /// PC013-4c: Interface for plant yield calculation service
-    /// Handles harvest yield computations, quality assessments, and yield predictions
-    /// </summary>
-    public interface IPlantYieldCalculationService : IPlantService
-    {
-        bool EnableYieldVariability { get; set; }
-        bool EnablePostHarvestProcessing { get; set; }
-        float HarvestQualityMultiplier { get; set; }
-        
-        SystemsHarvestResults HarvestPlant(string plantID);
-        float CalculateExpectedYield(PlantInstance plantInstance);
-        float GetStageYieldModifier(PlantGrowthStage stage);
-        YieldCalculationStatistics GetYieldStatistics();
-    }
+        // Plant care operations
+        bool WaterPlant(string plantId, float waterAmount = 0.5f);
+        bool FeedPlant(string plantId, float nutrientAmount = 0.4f);
+        bool TrainPlant(string plantId, string trainingType);
+        void WaterAllPlants(float waterAmount = 0.5f);
+        void FeedAllPlants(float nutrientAmount = 0.4f);
 
-    /// <summary>
-    /// Interface for plant statistics and reporting service
-    /// </summary>
-    public interface IPlantStatisticsService : IPlantService
-    {
+        // Plant lifecycle events
+        void OnPlantCreated(PlantInstance plant);
+        void OnPlantRemoved(string plantId, PlantInstance plant, PlantRemovalReason reason);
+        void OnPlantGrowthStageChanged(PlantInstance plant, PlantGrowthStage previousStage);
+        void OnPlantHealthChanged(PlantInstance plant, float previousHealth);
+        void OnPlantHarvested(PlantInstance plant, HarvestResults harvestResults);
+
+        // Statistics and performance
         PlantManagerStatistics GetStatistics();
         EnhancedPlantManagerStatistics GetEnhancedStatistics();
-        void UpdateStatistics();
-        
-        // Statistics properties
-        int ActivePlantCount { get; }
-        float AverageHealth { get; }
-        float AverageStress { get; }
-        int UnhealthyPlants { get; }
-        int HighStressPlants { get; }
+
+        // Plant validation and search
+        bool IsPlantValid(string plantId);
+        List<PlantInstance> FindPlantsByName(string name);
+        List<PlantInstance> FindPlantsByStrain(string strainName);
+        PlantInstance FindNearestPlant(Vector3 position, float maxDistance = 10f);
+
+        // Bulk operations
+        void ProcessAllPlants(System.Action<PlantInstance> action);
+        List<PlantInstance> GetPlantsInRadius(Vector3 center, float radius);
+        void RemoveAllDeadPlants();
+        void WaterPlantsInRadius(Vector3 center, float radius, float waterAmount = 0.5f);
+
+        // Events
+        System.Action<PlantInstance> OnPlantCreatedEvent { get; set; }
+        System.Action<string, PlantInstance, PlantRemovalReason> OnPlantRemovedEvent { get; set; }
+        System.Action<PlantInstance, PlantGrowthStage, PlantGrowthStage> OnPlantGrowthStageChangedEvent { get; set; }
+        System.Action<PlantInstance, float, float> OnPlantHealthChangedEvent { get; set; }
+        System.Action<PlantInstance, HarvestResults> OnPlantHarvestedEvent { get; set; }
+        System.Action<PlantManagerStatistics> OnStatisticsUpdatedEvent { get; set; }
     }
 
+        // PlantAchievementStats defined in CultivationSystemTypes.cs
+
     /// <summary>
-    /// Interface for plant environmental adaptation service
+    /// Interface for cultivation zone management
     /// </summary>
-    public interface IPlantEnvironmentalService : IPlantService
+    public interface ICultivationZoneService : ICultivationService
     {
-        void UpdateEnvironmentalAdaptation(EnvironmentalConditions conditions);
-        void UpdateEnvironmentalAdaptation(string plantID, EnvironmentalConditions conditions);
-        void ApplyEnvironmentalStress(EnvironmentalStressSO stressSource, float intensity);
-        void UpdateEnvironmentalConditions(EnvironmentalConditions newConditions);
-        
-        // Environmental settings
-        bool EnableEnvironmentalStress { get; set; }
-        float StressRecoveryRate { get; set; }
+        bool CreateZone(string zoneId, Vector3 center, Vector3 size);
+        bool RemoveZone(string zoneId);
+        CultivationZone GetZone(string zoneId);
+        List<CultivationZone> GetAllZones();
+        List<PlantInstance> GetPlantsInZone(string zoneId);
+        string GetPlantZone(string plantId);
+        bool MovePlantToZone(string plantId, string targetZoneId);
+        int ZoneCount { get; }
+        bool ZoneExists(string zoneId);
     }
 
     /// <summary>
-    /// Plant removal reason enumeration
+    /// Zone data structure
+    /// </summary>
+    [System.Serializable]
+    public class CultivationZone
+    {
+        public string ZoneId;
+        public string Name;
+        public Vector3 Center;
+        public Vector3 Size;
+        public List<string> PlantIds = new List<string>();
+        public float AverageHealth;
+        public int PlantCount => PlantIds.Count;
+        public bool IsActive = true;
+    }
+
+    /// <summary>
+    /// Enumeration for plant removal reasons
     /// </summary>
     public enum PlantRemovalReason
     {
@@ -211,133 +155,11 @@ namespace ProjectChimera.Systems.Cultivation
         Other
     }
 
-    /// <summary>
-    /// Cultivation event tracker for achievement and progression systems.
-    /// </summary>
-    public class CultivationEventTracker
-    {
-        private Dictionary<string, int> _plantCounts = new Dictionary<string, int>();
-        private Dictionary<string, float> _harvestTotals = new Dictionary<string, float>();
-        private List<PlantInstance> _healthyPlants = new List<PlantInstance>();
-        private int _totalPlantsCreated = 0;
-        private int _totalPlantsHarvested = 0;
-        private int _totalPlantDeaths = 0;
-        private float _totalYieldHarvested = 0f;
-        private float _highestQualityAchieved = 0f;
+    // CultivationEventTracker moved to CultivationSystemTypes.cs to avoid duplication
 
-        public void OnPlantCreated(PlantInstance plant)
-        {
-            _totalPlantsCreated++;
-            
-            if (plant.Strain != null)
-            {
-                string strainName = plant.Strain.StrainName;
-                if (_plantCounts.ContainsKey(strainName))
-                    _plantCounts[strainName]++;
-                else
-                    _plantCounts[strainName] = 1;
-            }
-        }
+        // HarvestResults defined in CultivationSystemTypes.cs
 
-        public void OnPlantHarvested(PlantInstance plant, SystemsHarvestResults harvestResults)
-        {
-            _totalPlantsHarvested++;
-            _totalYieldHarvested += harvestResults.TotalYieldGrams;
-            
-            if (harvestResults.QualityScore > _highestQualityAchieved)
-                _highestQualityAchieved = harvestResults.QualityScore;
-            
-            if (plant.Strain != null)
-            {
-                string strainName = plant.Strain.StrainName;
-                if (_harvestTotals.ContainsKey(strainName))
-                    _harvestTotals[strainName] += harvestResults.TotalYieldGrams;
-                else
-                    _harvestTotals[strainName] = harvestResults.TotalYieldGrams;
-            }
-        }
-
-        public void OnPlantDied(PlantInstance plant)
-        {
-            _totalPlantDeaths++;
-            _healthyPlants.Remove(plant);
-        }
-
-        public void OnPlantHealthChanged(PlantInstance plant)
-        {
-            if (plant.CurrentHealth > 0.8f && !_healthyPlants.Contains(plant))
-            {
-                _healthyPlants.Add(plant);
-            }
-            else if (plant.CurrentHealth <= 0.8f && _healthyPlants.Contains(plant))
-            {
-                _healthyPlants.Remove(plant);
-            }
-        }
-
-        public void OnPlantGrowthStageChanged(PlantInstance plant)
-        {
-            // Track growth milestones for achievements
-            if (plant.CurrentGrowthStage == PlantGrowthStage.Flowering && plant.CurrentHealth > 0.9f)
-            {
-                // High-health flowering achievement
-            }
-        }
-        
-        public void ProcessPlantAchievements(PlantInstance plant)
-        {
-            // Process any pending achievement checks for this plant
-            OnPlantHealthChanged(plant);
-            OnPlantGrowthStageChanged(plant);
-        }
-
-        // Properties for accessing tracked data
-        public int TotalPlantsCreated => _totalPlantsCreated;
-        public int TotalPlantsHarvested => _totalPlantsHarvested;
-        public float TotalYieldHarvested => _totalYieldHarvested;
-        public float HighestQualityAchieved => _highestQualityAchieved;
-        public int HealthyPlantsCount => _healthyPlants.Count;
-        public int StrainDiversity => _plantCounts.Count;
-    }
-
-    /// <summary>
-    /// Harvest results structure for Systems layer
-    /// </summary>
-    [System.Serializable]
-    public class SystemsHarvestResults
-    {
-        public string PlantID;
-        public float TotalYieldGrams;
-        public float QualityScore;
-        public CannabinoidProfile Cannabinoids;
-        public TerpeneProfile Terpenes;
-        public int FloweringDays;
-        public float FinalHealth;
-        public System.DateTime HarvestDate;
-    }
-
-    /// <summary>
-    /// Harvest results structure for achievement tracking
-    /// </summary>
-    [System.Serializable]
-    public class HarvestResults
-    {
-        public string PlantID;
-        public float TotalYield;
-        public float TotalYieldGrams; // Alias for compatibility
-        public float QualityScore;
-        public CannabinoidProfile Cannabinoids;
-        public TerpeneProfile Terpenes;
-        public int FloweringDays;
-        public float FinalHealth;
-        public System.DateTime HarvestDate;
-        
-        // Constructor to sync the two yield fields
-        public HarvestResults()
-        {
-            // Ensure both fields stay in sync
-        }
-    }
+    // CannabinoidProfile and TerpeneProfile classes moved to SystemsHarvestResults.cs to avoid duplication
 
     /// <summary>
     /// Genetic performance statistics structure
@@ -351,7 +173,7 @@ namespace ProjectChimera.Systems.Cultivation
         public long BatchCalculations;
         public double AverageBatchTimeMs;
         public double AverageUpdateTimeMs;
-        
+
         public override string ToString()
         {
             return $"Calcs: {TotalCalculations}, Avg: {AverageCalculationTimeMs:F2}ms, Cache: {CacheHitRatio:F2}, Batch: {BatchCalculations}, BatchAvg: {AverageBatchTimeMs:F2}ms";
@@ -369,7 +191,7 @@ namespace ProjectChimera.Systems.Cultivation
         public string MostCommonStrain;
         public float AverageGeneticFitness;
         public float TraitExpressionVariance;
-        
+
         public override string ToString()
         {
             return $"Diversity: {StrainDiversity}, Common: {MostCommonStrain}, Fitness: {AverageGeneticFitness:F2}, Variance: {TraitExpressionVariance:F3}";
@@ -382,12 +204,30 @@ namespace ProjectChimera.Systems.Cultivation
     [System.Serializable]
     public class PlantManagerStatistics
     {
-        public int TotalPlants;
-        public int[] PlantsByStage = new int[System.Enum.GetValues(typeof(PlantGrowthStage)).Length];
+        public int PlantCount;
         public float AverageHealth;
+        public float AverageGrowthRate;
+        public int HarvestedThisWeek;
+        public float TotalYieldThisWeek;
+        public float AverageYieldPerPlant;
+        public int DiedThisWeek;
+        public Dictionary<string, int> StrainCounts = new Dictionary<string, int>();
+        public Dictionary<PlantGrowthStage, int> StageDistribution = new Dictionary<PlantGrowthStage, int>();
+
+        // Additional properties for PlantStatisticsService compatibility
+        public int TotalPlants => PlantCount;
         public float AverageStress;
         public int UnhealthyPlants;
         public int HighStressPlants;
+        public Dictionary<PlantGrowthStage, int> PlantsByStage => StageDistribution;
+
+        public float SurvivalRate => PlantCount > 0 ? (float)(PlantCount - DiedThisWeek) / PlantCount : 0f;
+        public string MostCommonStrain => StrainCounts.Count > 0 ? StrainCounts.OrderByDescending(kv => kv.Value).First().Key : "None";
+
+        public override string ToString()
+        {
+            return $"Plants: {PlantCount}, Avg Health: {AverageHealth:F1}, Harvested: {HarvestedThisWeek}, Survival: {SurvivalRate:P1}";
+        }
     }
 
     /// <summary>
@@ -399,34 +239,5 @@ namespace ProjectChimera.Systems.Cultivation
         public bool AdvancedGeneticsEnabled;
         public GeneticPerformanceStats GeneticStats;
         public GeneticDiversityStats GeneticDiversityStats;
-    }
-    
-    /// <summary>
-    /// Plant achievement statistics structure
-    /// </summary>
-    [System.Serializable]
-    public class PlantAchievementStats
-    {
-        public int TotalPlantsCreated;
-        public int TotalPlantsHarvested;
-        public int TotalPlantDeaths;
-        public float TotalYieldHarvested;
-        public float HighestQualityAchieved;
-        public int HealthyPlantsCount;
-        public int StrainDiversity;
-        public float SurvivalRate;
-        public float AverageYieldPerPlant;
-        public float AverageQuality;
-        public float AverageYield;
-        public int PerfectQualityCount;
-        public int HighYieldCount;
-        public System.DateTime LastHarvestDate;
-        
-        public override string ToString()
-        {
-            return $"Created: {TotalPlantsCreated}, Harvested: {TotalPlantsHarvested}, Deaths: {TotalPlantDeaths}, " +
-                   $"Yield: {TotalYieldHarvested:F0}g, Quality: {HighestQualityAchieved:F2}, " +
-                   $"Healthy: {HealthyPlantsCount}, Strains: {StrainDiversity}, Survival: {SurvivalRate:F2}";
-        }
     }
 }

@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System;
 using System.Collections;
@@ -511,19 +512,19 @@ namespace ProjectChimera.Systems.Save.Components
         private void LogInfo(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[StorageOptimizer] {message}");
+                ChimeraLogger.Log($"[StorageOptimizer] {message}");
         }
         
         private void LogWarning(string message)
         {
             if (_enableDebugLogging)
-                Debug.LogWarning($"[StorageOptimizer] {message}");
+                ChimeraLogger.LogWarning($"[StorageOptimizer] {message}");
         }
         
         private void LogError(string message)
         {
             if (_enableDebugLogging)
-                Debug.LogError($"[StorageOptimizer] {message}");
+                ChimeraLogger.LogError($"[StorageOptimizer] {message}");
         }
     }
     

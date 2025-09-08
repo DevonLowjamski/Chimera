@@ -124,7 +124,7 @@ namespace ProjectChimera.Data.UI
         {
             // In a real implementation, this would apply the theme settings
             // to the UI accessibility system
-            Debug.Log($"Applied accessibility theme: {name}");
+            SharedLogger.Log($"Applied accessibility theme: {name}");
         }
         
         /// <summary>

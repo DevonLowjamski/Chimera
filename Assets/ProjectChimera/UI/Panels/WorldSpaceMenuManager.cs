@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -108,7 +109,7 @@ namespace ProjectChimera.UI.Panels
             var template = GetTemplateForMenuType(menuType);
             if (template == null)
             {
-                Debug.LogWarning($"[WorldSpaceMenuManager] No template found for menu type: {menuType}");
+                ChimeraLogger.LogWarning($"[WorldSpaceMenuManager] No template found for menu type: {menuType}");
                 return false;
             }
             
@@ -152,7 +153,7 @@ namespace ProjectChimera.UI.Panels
             
             button.clicked += () => {
                 OnMenuItemSelected?.Invoke(target, itemText);
-                Debug.Log($"[WorldSpaceMenuManager] Menu item selected: {itemText} for {target.name}");
+                ChimeraLogger.Log($"[WorldSpaceMenuManager] Menu item selected: {itemText} for {target.name}");
             };
             
             return button;

@@ -46,7 +46,7 @@ namespace ProjectChimera.Data.Events
         {
             if (_logEvents)
             {
-                Debug.Log($"Plant Stage Event: Plant {data.PlantId} transitioned from {data.PreviousStage} to {data.NewStage}", this);
+                SharedLogger.Log($"Plant Stage Event: Plant {data.PlantId} transitioned from {data.PreviousStage} to {data.NewStage}", this);
             }
             
             base.Invoke(data);
@@ -108,7 +108,7 @@ namespace ProjectChimera.Data.Events
             // Log progress at threshold intervals
             if (_logProgressEvents && (progress - _lastLoggedProgress) >= _progressLogThreshold)
             {
-                Debug.Log($"Plant Progress: {plantId} in {currentStage} is {progress:P1} complete", this);
+                SharedLogger.Log($"Plant Progress: {plantId} in {currentStage} is {progress:P1} complete", this);
                 _lastLoggedProgress = progress;
             }
             

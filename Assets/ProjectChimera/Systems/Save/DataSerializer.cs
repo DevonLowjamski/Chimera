@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System;
 using System.IO;
@@ -79,7 +80,7 @@ namespace ProjectChimera.Systems.Save
             catch (Exception ex)
             {
                 _metrics.SerializationErrors++;
-                Debug.LogError($"Serialization failed: {ex.Message}");
+                ChimeraLogger.LogError($"Serialization failed: {ex.Message}");
                 throw;
             }
         }
@@ -131,7 +132,7 @@ namespace ProjectChimera.Systems.Save
             catch (Exception ex)
             {
                 _metrics.DeserializationErrors++;
-                Debug.LogError($"Deserialization failed: {ex.Message}");
+                ChimeraLogger.LogError($"Deserialization failed: {ex.Message}");
                 throw;
             }
         }
@@ -462,14 +463,14 @@ namespace ProjectChimera.Systems.Save
                     {
                         // Invalid high surrogate, replace with Unicode replacement character
                         stringBuilder.Append('\uFFFD');
-                        Debug.LogWarning($"Invalid Unicode high surrogate at position {i}, replaced with Unicode replacement character");
+                        ChimeraLogger.LogWarning($"Invalid Unicode high surrogate at position {i}, replaced with Unicode replacement character");
                     }
                 }
                 else if (char.IsLowSurrogate(c))
                 {
                     // Orphaned low surrogate, replace with Unicode replacement character
                     stringBuilder.Append('\uFFFD');
-                    Debug.LogWarning($"Orphaned Unicode low surrogate at position {i}, replaced with Unicode replacement character");
+                    ChimeraLogger.LogWarning($"Orphaned Unicode low surrogate at position {i}, replaced with Unicode replacement character");
                 }
                 else
                 {

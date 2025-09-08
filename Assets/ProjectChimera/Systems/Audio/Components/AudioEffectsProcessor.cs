@@ -1,3 +1,5 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using UnityEngine;
 using UnityEngine.Audio;
 using System.Collections;
@@ -11,7 +13,7 @@ namespace ProjectChimera.Systems.Audio.Components
     /// Handles audio effects processing, spatial audio, and adaptive mixing for Project Chimera's cannabis cultivation game.
     /// Manages 3D audio positioning, environmental audio effects, and dynamic sound processing.
     /// </summary>
-    public class AudioEffectsProcessor : MonoBehaviour
+    public class AudioEffectsProcessor : MonoBehaviour, ITickable
     {
         [Header("Effects Configuration")]
         [SerializeField] private bool _enableSpatialAudio = true;
@@ -41,7 +43,7 @@ namespace ProjectChimera.Systems.Audio.Components
         private List<ProceduralAudioGenerator> _proceduralGenerators = new List<ProceduralAudioGenerator>();
 
         // Spatial audio
-        private Camera _listenerCamera;
+        private UnityEngine.Camera _listenerCamera;
         private Vector3 _lastListenerPosition;
         private float _listenerVelocity;
 
@@ -75,12 +77,13 @@ namespace ProjectChimera.Systems.Audio.Components
             LogInfo("Audio effects processor initialized for cannabis cultivation game");
         }
 
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             if (_enableSpatialAudio)
             {
                 UpdateSpatialAudio();
-            }
+
+    }
 
             UpdateAudioSourcePool();
             ProcessProceduralAudio();
@@ -180,7 +183,7 @@ namespace ProjectChimera.Systems.Audio.Components
 
         private void SetupAudioListener()
         {
-            _listenerCamera = FindObjectOfType<Camera>();
+            _listenerCamera = ServiceContainerFactory.Instance?.TryResolve<UnityEngine.Camera>() ?? UnityEngine.Camera.main ?? ServiceContainerFactory.Instance?.TryResolve<UnityEngine.Camera>();
 
             if (_listenerCamera != null)
             {
@@ -198,7 +201,7 @@ namespace ProjectChimera.Systems.Audio.Components
             if (_listenerCamera == null) return;
 
             Vector3 currentPosition = _listenerCamera.transform.position;
-            
+
             // Calculate listener velocity for Doppler effects
             _listenerVelocity = Vector3.Distance(currentPosition, _lastListenerPosition) / Time.deltaTime;
             _lastListenerPosition = currentPosition;
@@ -379,7 +382,7 @@ namespace ProjectChimera.Systems.Audio.Components
             if (_currentAudioState == newState) return;
 
             _currentAudioState = newState;
-            
+
             if (_enableAdaptiveMixing)
             {
                 ApplyStateBasedMixing(newState);
@@ -562,7 +565,7 @@ namespace ProjectChimera.Systems.Audio.Components
         public void SetAudioMuted(bool muted)
         {
             _isAudioMuted = muted;
-            
+
             if (_masterMixer != null)
             {
                 _masterMixer.SetFloat("MasterVolume", muted ? -80f : Mathf.Log10(_masterVolume) * 20f);
@@ -654,9 +657,24 @@ namespace ProjectChimera.Systems.Audio.Components
         private void LogInfo(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[AudioEffectsProcessor] {message}");
+                ChimeraLogger.Log($"[AudioEffectsProcessor] {message}");
         }
+
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+    public virtual void OnRegistered()
+    {
+        // Override in derived classes if needed
     }
+
+    public virtual void OnUnregistered()
+    {
+        // Override in derived classes if needed
+    }
+
+}
 
     // Supporting classes for environmental audio and procedural generation
     public class EnvironmentalAudioSource

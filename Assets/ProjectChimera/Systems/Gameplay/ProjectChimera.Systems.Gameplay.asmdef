@@ -5,7 +5,6 @@
         "ProjectChimera.Core",
         "ProjectChimera.Shared",
         "ProjectChimera.Data.Events",
-        "Unity.ugui",
         "UnityEngine.UI",
         "Unity.TextMeshPro"
     ],

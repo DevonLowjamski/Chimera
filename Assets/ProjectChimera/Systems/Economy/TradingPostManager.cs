@@ -1,9 +1,11 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Data.Economy;
 using ProjectChimera.Data.Economy.Trading;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Economy
 {
@@ -12,7 +14,7 @@ namespace ProjectChimera.Systems.Economy
     /// Extracted from TradingManager for modular architecture.
     /// Handles trading post operations, restocking, and player reputation.
     /// </summary>
-    public class TradingPostManager : MonoBehaviour
+    public class TradingPostManager : MonoBehaviour, ITickable
     {
         [Header("Trading Post Configuration")]
         [SerializeField] private bool _enableTradingPostLogging = true;
@@ -40,6 +42,11 @@ namespace ProjectChimera.Systems.Economy
         /// <summary>
         /// Initialize trading post manager with available posts
         /// </summary>
+        private void Start()
+        {
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+        }
+        
         public void Initialize(List<TradingPost> tradingPosts)
         {
             _availableTradingPosts.Clear();
@@ -54,10 +61,15 @@ namespace ProjectChimera.Systems.Economy
             LogDebug($"Trading post manager initialized with {_availableTradingPosts.Count} posts");
         }
         
-        private void Update()
+        #region ITickable Implementation
+
+        public int Priority => TickPriority.EconomyManager;
+        public bool Enabled => enabled && _availableTradingPosts.Count > 0;
+
+        public void Tick(float deltaTime)
         {
             var timeManager = GameManager.Instance?.GetManager<TimeManager>();
-            float gameTimeDelta = timeManager?.GetScaledDeltaTime() ?? Time.deltaTime;
+            float gameTimeDelta = timeManager?.GetScaledDeltaTime() ?? deltaTime;
             
             _lastRestockCheck += gameTimeDelta;
             _lastPriceUpdate += gameTimeDelta;
@@ -74,6 +86,8 @@ namespace ProjectChimera.Systems.Economy
                 _lastPriceUpdate = 0f;
             }
         }
+
+        #endregion
         
         #region Trading Post State Management
         
@@ -462,10 +476,18 @@ namespace ProjectChimera.Systems.Economy
         
         #endregion
         
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+        }
+        
         private void LogDebug(string message)
         {
             if (_enableTradingPostLogging)
-                Debug.Log($"[TradingPostManager] {message}");
+                ChimeraLogger.Log($"[TradingPostManager] {message}");
         }
     }
 }

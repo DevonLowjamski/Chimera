@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core.Logging
 {
@@ -11,7 +12,7 @@ namespace ProjectChimera.Core.Logging
         private static bool _debugEnabled = true;
         private static bool _warningsEnabled = true;
         private static bool _errorsEnabled = true;
-        
+
         /// <summary>
         /// Enable or disable debug logging
         /// </summary>
@@ -20,7 +21,7 @@ namespace ProjectChimera.Core.Logging
             get => _debugEnabled;
             set => _debugEnabled = value;
         }
-        
+
         /// <summary>
         /// Enable or disable warning logging
         /// </summary>
@@ -29,7 +30,7 @@ namespace ProjectChimera.Core.Logging
             get => _warningsEnabled;
             set => _warningsEnabled = value;
         }
-        
+
         /// <summary>
         /// Enable or disable error logging
         /// </summary>
@@ -38,73 +39,82 @@ namespace ProjectChimera.Core.Logging
             get => _errorsEnabled;
             set => _errorsEnabled = value;
         }
-        
+
+        /// <summary>
+        /// Enable or disable debug logging
+        /// </summary>
+        public static bool EnableDebugLogging
+        {
+            get => _debugEnabled;
+            set => _debugEnabled = value;
+        }
+
         /// <summary>
         /// Log a debug message
         /// </summary>
         public static void Log(string message, Object context = null)
         {
             if (!_debugEnabled) return;
-            
+
             var formattedMessage = FormatMessage("DEBUG", message);
             Debug.Log(formattedMessage, context);
         }
-        
+
         /// <summary>
         /// Log a warning message
         /// </summary>
         public static void LogWarning(string message, Object context = null)
         {
             if (!_warningsEnabled) return;
-            
+
             var formattedMessage = FormatMessage("WARNING", message);
             Debug.LogWarning(formattedMessage, context);
         }
-        
+
         /// <summary>
         /// Log an error message
         /// </summary>
         public static void LogError(string message, Object context = null)
         {
             if (!_errorsEnabled) return;
-            
+
             var formattedMessage = FormatMessage("ERROR", message);
             Debug.LogError(formattedMessage, context);
         }
-        
+
         /// <summary>
         /// Log a debug message with category
         /// </summary>
         public static void Log(string category, string message, Object context = null)
         {
             if (!_debugEnabled) return;
-            
+
             var formattedMessage = FormatMessage($"DEBUG/{category}", message);
             Debug.Log(formattedMessage, context);
         }
-        
+
         /// <summary>
         /// Log a warning message with category
         /// </summary>
         public static void LogWarning(string category, string message, Object context = null)
         {
             if (!_warningsEnabled) return;
-            
+
             var formattedMessage = FormatMessage($"WARNING/{category}", message);
             Debug.LogWarning(formattedMessage, context);
         }
-        
+
         /// <summary>
         /// Log an error message with category
         /// </summary>
         public static void LogError(string category, string message, Object context = null)
         {
             if (!_errorsEnabled) return;
-            
+
             var formattedMessage = FormatMessage($"ERROR/{category}", message);
             Debug.LogError(formattedMessage, context);
         }
-        
+
         /// <summary>
         /// Format log message with timestamp and category
         /// </summary>
@@ -113,18 +123,18 @@ namespace ProjectChimera.Core.Logging
             var timestamp = System.DateTime.Now.ToString("HH:mm:ss.fff");
             return $"[{timestamp}][Chimera][{level}] {message}";
         }
-        
+
         /// <summary>
         /// Log system performance metrics
         /// </summary>
         public static void LogPerformance(string systemName, float deltaTime, Object context = null)
         {
             if (!_debugEnabled) return;
-            
+
             var message = $"{systemName} update time: {deltaTime * 1000:F2}ms";
             Log("PERFORMANCE", message, context);
         }
-        
+
         /// <summary>
         /// Log system initialization
         /// </summary>
@@ -132,13 +142,21 @@ namespace ProjectChimera.Core.Logging
         {
             var status = success ? "SUCCESS" : "FAILED";
             var message = $"{systemName} initialization {status}";
-            
+
             if (success)
                 Log("INIT", message, context);
             else
                 LogError("INIT", message, context);
         }
-        
+
+        /// <summary>
+        /// Log system initialization with custom message
+        /// </summary>
+        public static void LogInitialization(string systemName, string message, Object context = null)
+        {
+            Log("INIT", $"[{systemName}] {message}", context);
+        }
+
         /// <summary>
         /// Log system shutdown
         /// </summary>
@@ -146,7 +164,7 @@ namespace ProjectChimera.Core.Logging
         {
             Log("SHUTDOWN", $"{systemName} shutdown completed", context);
         }
-        
+
         /// <summary>
         /// Log gameplay events
         /// </summary>
@@ -154,7 +172,7 @@ namespace ProjectChimera.Core.Logging
         {
             Log($"GAMEPLAY/{eventType}", description, context);
         }
-        
+
         /// <summary>
         /// Log data operations
         /// </summary>
@@ -162,7 +180,7 @@ namespace ProjectChimera.Core.Logging
         {
             Log($"DATA/{operation}", details, context);
         }
-        
+
         /// <summary>
         /// Log network operations
         /// </summary>
@@ -170,7 +188,7 @@ namespace ProjectChimera.Core.Logging
         {
             Log($"NETWORK/{operation}", details, context);
         }
-        
+
         /// <summary>
         /// Log UI interactions
         /// </summary>
@@ -178,7 +196,7 @@ namespace ProjectChimera.Core.Logging
         {
             Log($"UI/{interaction}", details, context);
         }
-        
+
         /// <summary>
         /// Enable all logging categories
         /// </summary>
@@ -188,7 +206,7 @@ namespace ProjectChimera.Core.Logging
             _warningsEnabled = true;
             _errorsEnabled = true;
         }
-        
+
         /// <summary>
         /// Disable all logging categories
         /// </summary>
@@ -198,7 +216,7 @@ namespace ProjectChimera.Core.Logging
             _warningsEnabled = false;
             _errorsEnabled = false;
         }
-        
+
         /// <summary>
         /// Set logging levels based on build configuration
         /// </summary>
@@ -209,7 +227,7 @@ namespace ProjectChimera.Core.Logging
             _warningsEnabled = true;
             _errorsEnabled = true;
         }
-        
+
         /// <summary>
         /// Set logging levels for production builds
         /// </summary>
@@ -220,5 +238,58 @@ namespace ProjectChimera.Core.Logging
             _warningsEnabled = true;
             _errorsEnabled = true;
         }
+
+        /// <summary>
+        /// Log verbose debug information
+        /// </summary>
+        public static void LogVerbose(string message, Object context = null)
+        {
+            if (!_debugEnabled) return;
+            Log("VERBOSE", message, context);
+        }
+
+        /// <summary>
+        /// Log testing information
+        /// </summary>
+        public static void LogTesting(string message, Object context = null)
+        {
+            if (!_debugEnabled) return;
+            Log("TESTING", message, context);
+        }
+
+        /// <summary>
+        /// Log performance information
+        /// </summary>
+        public static void LogPerformance(string message, Object context = null)
+        {
+            if (!_debugEnabled) return;
+            Log("PERFORMANCE", message, context);
+        }
+
+        /// <summary>
+        /// Log validation information
+        /// </summary>
+        public static void LogValidation(string message, Object context = null)
+        {
+            if (!_debugEnabled) return;
+            Log("VALIDATION", message, context);
+        }
+
+        /// <summary>
+        /// Log debug UI information
+        /// </summary>
+        public static void LogDebugUI(string message, Object context = null)
+        {
+            if (!_debugEnabled) return;
+            Log("DEBUG_UI", message, context);
+        }
+
+        /// <summary>
+        /// Log critical errors
+        /// </summary>
+        public static void LogCritical(string message, Object context = null)
+        {
+            LogError($"CRITICAL: {message}", context);
+        }
     }
-} 
+}

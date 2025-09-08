@@ -2,6 +2,30 @@ using UnityEngine;
 
 namespace ProjectChimera.Shared
 {
+    /// <summary>
+    /// Simple logging abstraction for Foundation layer - avoids Core dependencies
+    /// </summary>
+    public static class SharedLogger
+    {
+        public static void Log(string message, Object context = null)
+        {
+            Debug.Log($"[Chimera] {message}", context);
+        }
+        
+        public static void LogWarning(string message, Object context = null)
+        {
+            Debug.LogWarning($"[Chimera] {message}", context);
+        }
+        
+        public static void LogError(string message, Object context = null)
+        {
+            Debug.LogError($"[Chimera] {message}", context);
+        }
+    }
+
+    /// <summary>
+    /// Base class for all Project Chimera ScriptableObjects with logging support
+    /// </summary>
     public abstract class ChimeraScriptableObject : ScriptableObject
     {
         public string UniqueID => name;
@@ -24,17 +48,17 @@ namespace ProjectChimera.Shared
 
         protected void LogInfo(string message)
         {
-            Debug.Log($"[Chimera] {DisplayName}: {message}", this);
+            SharedLogger.Log($"[Chimera] {DisplayName}: {message}", this);
         }
 
         protected void LogWarning(string message)
         {
-            Debug.LogWarning($"[Chimera] {DisplayName}: {message}", this);
+            SharedLogger.LogWarning($"[Chimera] {DisplayName}: {message}", this);
         }
 
         protected void LogError(string message)
         {
-            Debug.LogError($"[Chimera] {DisplayName}: {message}", this);
+            SharedLogger.LogError($"[Chimera] {DisplayName}: {message}", this);
         }
     }
 }

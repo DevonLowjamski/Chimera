@@ -1,0 +1,82 @@
+name: Quality Gate - Anti-Pattern Detection
+
+on:
+  push:
+    branches: [ main, develop, 'feature/*', 'hotfix/*' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    name: Code Quality Gate
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Check for FindObjectOfType violations
+      run: |
+        echo "🔍 Scanning for FindObjectOfType anti-pattern..."
+        VIOLATIONS=$(grep -r "FindObjectOfType" Assets/ProjectChimera --include="*.cs" | grep -v "Test" | grep -v "\.backup" || true)
+        if [ ! -z "$VIOLATIONS" ]; then
+          echo "❌ FAIL: FindObjectOfType calls detected in runtime assemblies:"
+          echo "$VIOLATIONS"
+          echo ""
+          echo "Replace with ServiceContainer.Resolve<T>() pattern"
+          exit 1
+        else
+          echo "✅ PASS: No FindObjectOfType violations found"
+        fi
+        
+    - name: Check for Resources.Load violations  
+      run: |
+        echo "🔍 Scanning for Resources.Load anti-pattern..."
+        VIOLATIONS=$(grep -r "Resources\.Load" Assets/ProjectChimera --include="*.cs" | grep -v "Test" | grep -v "\.backup" || true)
+        if [ ! -z "$VIOLATIONS" ]; then
+          echo "❌ FAIL: Resources.Load calls detected:"
+          echo "$VIOLATIONS"
+          echo ""
+          echo "Replace with Addressables or direct asset references"
+          exit 1
+        else
+          echo "✅ PASS: No Resources.Load violations found"
+        fi
+        
+    - name: Check for raw Debug.Log violations
+      run: |
+        echo "🔍 Scanning for raw Debug.Log calls..."
+        # Allow Debug.Log in Systems/Diagnostics namespace
+        VIOLATIONS=$(grep -r "Debug\.Log" Assets/ProjectChimera --include="*.cs" | grep -v "Systems/Diagnostics" | grep -v "ChimeraLogger" | grep -v "Test" | grep -v "\.backup" || true)
+        if [ ! -z "$VIOLATIONS" ]; then
+          echo "❌ FAIL: Raw Debug.Log calls detected outside Systems/Diagnostics:"
+          echo "$VIOLATIONS"
+          echo ""
+          echo "Replace with ChimeraLogger.Log() for conditional compilation"
+          exit 1
+        else
+          echo "✅ PASS: No raw Debug.Log violations found"
+        fi
+        
+    - name: Check for GetComponent in lifecycle methods (Warning)
+      run: |
+        echo "🔍 Scanning for GetComponent in Awake/Start/Update methods..."
+        VIOLATIONS=$(grep -A5 -B5 -r "void \(Awake\|Start\|Update\)" Assets/ProjectChimera --include="*.cs" | grep "GetComponent" | grep -v "Test" | grep -v "\.backup" || true)
+        if [ ! -z "$VIOLATIONS" ]; then
+          echo "⚠️ WARNING: GetComponent calls in lifecycle methods detected:"
+          echo "$VIOLATIONS"
+          echo ""
+          echo "Consider caching references or using dependency injection"
+          # Don't exit with error for warnings
+        else
+          echo "✅ PASS: No GetComponent lifecycle violations found"
+        fi
+        
+    - name: Quality Gate Summary
+      if: success()
+      run: |
+        echo "🎉 All quality gates passed!"
+        echo "✅ No FindObjectOfType anti-patterns"
+        echo "✅ No Resources.Load anti-patterns" 
+        echo "✅ No raw Debug.Log calls outside diagnostics"
+        echo "✅ Ready for Phase 1 development"

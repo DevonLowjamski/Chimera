@@ -1,6 +1,8 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Environment;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Environment
 {
@@ -8,7 +10,7 @@ namespace ProjectChimera.Systems.Environment
     /// Controls HVAC (Heating, Ventilation, Air Conditioning) systems for environmental management.
     /// Manages temperature and humidity control with automation capabilities.
     /// </summary>
-    public class HVACController : MonoBehaviour
+    public class HVACController : MonoBehaviour, ITickable
     {
         [Header("HVAC Configuration")]
         [SerializeField] private string _systemId;
@@ -81,6 +83,10 @@ namespace ProjectChimera.Systems.Environment
         private bool IsHumidityInRange => 
             Mathf.Abs(_currentHumidity - _targetHumidity) <= _humidityTolerance;
         
+        // ITickable implementation
+        public int Priority => TickPriority.EnvironmentalManager;
+        public bool Enabled => _isOperational;
+        
         private void Awake()
         {
             if (string.IsNullOrEmpty(_systemId))
@@ -93,9 +99,12 @@ namespace ProjectChimera.Systems.Environment
             
             if (_enableAutomation)
                 SetAutomationMode(true);
+            
+            // Register with UpdateOrchestrator for centralized update management
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
         
-        private void Update()
+        public void Tick(float deltaTime)
         {
             if (!_isOperational) return;
             
@@ -106,7 +115,7 @@ namespace ProjectChimera.Systems.Environment
             }
             
             // Update operating hours
-            _operatingHours += Time.deltaTime / 3600f; // Convert to hours
+            _operatingHours += deltaTime / 3600f; // Convert to hours
         }
         
         private void InitializeSystem()
@@ -122,7 +131,7 @@ namespace ProjectChimera.Systems.Environment
                 _systemAudio.volume = 0.3f;
             }
             
-            Debug.Log($"HVAC System {SystemId} initialized - Type: {_hvacType}");
+            ChimeraLogger.Log($"HVAC System {SystemId} initialized - Type: {_hvacType}");
         }
         
         #region Public Control Methods
@@ -137,7 +146,7 @@ namespace ProjectChimera.Systems.Environment
             if (_isAutomated)
                 UpdateControlLogic();
             
-            Debug.Log($"HVAC {SystemId} target temperature set to {_targetTemperature}°C");
+            ChimeraLogger.Log($"HVAC {SystemId} target temperature set to {_targetTemperature}°C");
         }
         
         /// <summary>
@@ -150,7 +159,7 @@ namespace ProjectChimera.Systems.Environment
             if (_isAutomated)
                 UpdateControlLogic();
             
-            Debug.Log($"HVAC {SystemId} target humidity set to {_targetHumidity}%");
+            ChimeraLogger.Log($"HVAC {SystemId} target humidity set to {_targetHumidity}%");
         }
         
         /// <summary>
@@ -171,7 +180,7 @@ namespace ProjectChimera.Systems.Environment
             }
             
             OnSystemStateChanged?.Invoke(this);
-            Debug.Log($"HVAC {SystemId} automation {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.Log($"HVAC {SystemId} automation {(enabled ? "enabled" : "disabled")}");
         }
         
         /// <summary>
@@ -235,7 +244,7 @@ namespace ProjectChimera.Systems.Environment
             if (_isAutomated)
                 UpdateControlLogic();
             
-            Debug.Log($"HVAC {SystemId} started up");
+            ChimeraLogger.Log($"HVAC {SystemId} started up");
         }
         
         /// <summary>
@@ -247,7 +256,7 @@ namespace ProjectChimera.Systems.Environment
             StopAllSystems();
             OnSystemStateChanged?.Invoke(this);
             
-            Debug.Log($"HVAC {SystemId} shut down");
+            ChimeraLogger.Log($"HVAC {SystemId} shut down");
         }
         
         /// <summary>
@@ -329,13 +338,13 @@ namespace ProjectChimera.Systems.Environment
             {
                 _responseTime = 0.5f; // Immediate response
                 _energyEfficiency = 1.0f; // Maximum efficiency
-                Debug.Log("[HVAC] Emergency mode activated - immediate response enabled");
+                ChimeraLogger.Log("[HVAC] Emergency mode activated - immediate response enabled");
             }
             else
             {
                 _responseTime = 5f; // Normal response time
                 _energyEfficiency = 0.85f; // Normal efficiency
-                Debug.Log("[HVAC] Emergency mode deactivated - normal operation resumed");
+                ChimeraLogger.Log("[HVAC] Emergency mode deactivated - normal operation resumed");
             }
         }
         
@@ -433,14 +442,14 @@ namespace ProjectChimera.Systems.Environment
                 _heatingActive = true;
                 _coolingActive = false;
                 _cycleCount++;
-                Debug.Log($"HVAC {SystemId} starting heating cycle");
+                ChimeraLogger.Log($"HVAC {SystemId} starting heating cycle");
             }
             else if (needsCooling && !_coolingActive)
             {
                 _coolingActive = true;
                 _heatingActive = false;
                 _cycleCount++;
-                Debug.Log($"HVAC {SystemId} starting cooling cycle");
+                ChimeraLogger.Log($"HVAC {SystemId} starting cooling cycle");
             }
             else if (IsTemperatureInRange)
             {
@@ -453,13 +462,13 @@ namespace ProjectChimera.Systems.Environment
             {
                 _humidifyingActive = true;
                 _dehumidifyingActive = false;
-                Debug.Log($"HVAC {SystemId} starting humidification");
+                ChimeraLogger.Log($"HVAC {SystemId} starting humidification");
             }
             else if (needsDehumidification && !_dehumidifyingActive)
             {
                 _dehumidifyingActive = true;
                 _humidifyingActive = false;
-                Debug.Log($"HVAC {SystemId} starting dehumidification");
+                ChimeraLogger.Log($"HVAC {SystemId} starting dehumidification");
             }
             else if (IsHumidityInRange)
             {
@@ -606,6 +615,15 @@ namespace ProjectChimera.Systems.Environment
         }
         
         #endregion
+        
+        private void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+        }
     }
     
     // Supporting data structures

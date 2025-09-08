@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
@@ -348,9 +349,9 @@ namespace ProjectChimera.Core
         /// <summary>
         /// Validate the service container integrity
         /// </summary>
-        public ContainerValidationResult ValidateServiceContainer()
+        public HealthValidationResult ValidateServiceContainer()
         {
-            var result = new ContainerValidationResult
+            var result = new HealthValidationResult
             {
                 IsValid = true,
                 Errors = new List<string>(),
@@ -531,12 +532,12 @@ namespace ProjectChimera.Core
         
         private void LogDebug(string message)
         {
-            Debug.Log($"[ServiceHealthMonitor] {message}");
+            ChimeraLogger.Log($"[ServiceHealthMonitor] {message}");
         }
         
         private void LogError(string message)
         {
-            Debug.LogError($"[ServiceHealthMonitor] {message}");
+            ChimeraLogger.LogError($"[ServiceHealthMonitor] {message}");
         }
         
         private void OnDestroy()
@@ -548,6 +549,7 @@ namespace ProjectChimera.Core
     
     /// <summary>
     /// Enhanced service health report with additional monitoring data
+    /// Consolidated from multiple definitions to avoid duplication
     /// </summary>
     public class ServiceHealthReport
     {
@@ -559,6 +561,27 @@ namespace ProjectChimera.Core
         public DateTime GeneratedAt { get; set; }
         public Dictionary<Type, PerformanceMetrics> PerformanceData { get; set; }
         public float MemoryUsageMB { get; set; }
+        
+        // Properties from ServiceContainerValidator
+        public DateTime CheckTimestamp { get; set; }
+        public Dictionary<Type, ServiceHealthStatus> ServiceHealth { get; set; } = new Dictionary<Type, ServiceHealthStatus>();
+        public List<string> HealthIssues { get; set; } = new List<string>();
+        public int TotalServices { get; set; }
+        public int HealthyServices { get; set; }
+        public int UnhealthyServices { get; set; }
+        public int CriticalServices { get; set; }
+        
+        public float HealthPercentage => TotalServices > 0 ? (float)HealthyServices / TotalServices * 100 : 0;
+    }
+    
+    /// <summary>
+    /// Health status for individual services.
+    /// </summary>
+    public enum ServiceHealthStatus
+    {
+        Healthy,
+        Unhealthy,
+        Critical
     }
     
     /// <summary>
@@ -595,9 +618,9 @@ namespace ProjectChimera.Core
     }
     
     /// <summary>
-    /// Container validation result
+    /// Health monitor validation result
     /// </summary>
-    public class ContainerValidationResult
+    public class HealthValidationResult
     {
         public bool IsValid { get; set; }
         public List<string> Errors { get; set; } = new List<string>();

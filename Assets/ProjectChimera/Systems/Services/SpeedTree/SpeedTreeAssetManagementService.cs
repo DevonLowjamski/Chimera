@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,98 +21,98 @@ namespace ProjectChimera.Systems.Services.SpeedTree
     public class SpeedTreeAssetManagementService : MonoBehaviour, ISpeedTreeAssetService
     {
         #region Properties
-        
+
         public bool IsInitialized { get; private set; }
-        
+
         #endregion
 
         #region Private Fields
-        
+
         [Header("SpeedTree Asset Configuration")]
         [SerializeField] private ScriptableObject _speedTreeLibrary;
         [SerializeField] private ScriptableObject _shaderConfig;
         [SerializeField] private List<ScriptableObject> _cannabisStrains = new List<ScriptableObject>();
-        
+
         [Header("Physics Integration")]
         [SerializeField] private bool _enablePhysicsInteraction = true;
         [SerializeField] private LayerMask _physicsLayers = -1;
-        
+
         // Asset Management
         private Dictionary<string, UnityEngine.Object> _loadedAssets = new Dictionary<string, UnityEngine.Object>();
         private Dictionary<string, ScriptableObject> _strainDatabase = new Dictionary<string, ScriptableObject>();
         private List<GameObject> _activeRenderers = new List<GameObject>();
-        
+
         // Shader Property IDs (cached for performance)
         private int _colorPropertyId;
         private int _healthPropertyId;
         private int _growthPropertyId;
         private int _geneticVariationPropertyId;
-        
+
         #endregion
 
         #region Events
-        
+
         public event Action<GameObject> OnRendererCreated;
         public event Action<GameObject> OnRendererDestroyed;
         public event Action<UnityEngine.Object> OnAssetLoaded;
-        
+
         #endregion
 
         #region IService Implementation
-        
+
         public void Initialize()
         {
             if (IsInitialized) return;
-            
-            Debug.Log("Initializing SpeedTreeAssetManagementService...");
-            
+
+            ChimeraLogger.Log("Initializing SpeedTreeAssetManagementService...");
+
             // Cache shader property IDs
             CacheShaderProperties();
-            
+
             // Initialize strain database
             InitializeStrainDatabase();
-            
+
             // Load initial SpeedTree assets
             LoadSpeedTreeAssets();
-            
+
             // Register with ServiceRegistry
-            ServiceRegistry.Instance.RegisterService<ISpeedTreeAssetService>(this, ServiceDomain.SpeedTree);
-            
+            ServiceContainerFactory.Instance.RegisterSingleton<ISpeedTreeAssetService>(this);
+
             IsInitialized = true;
-            Debug.Log("SpeedTreeAssetManagementService initialized successfully");
+            ChimeraLogger.Log("SpeedTreeAssetManagementService initialized successfully");
         }
 
         public void Shutdown()
         {
             if (!IsInitialized) return;
-            
-            Debug.Log("Shutting down SpeedTreeAssetManagementService...");
-            
+
+            ChimeraLogger.Log("Shutting down SpeedTreeAssetManagementService...");
+
             // Cleanup all renderers
             foreach (var renderer in _activeRenderers.ToArray())
             {
                 DestroySpeedTreeRenderer(renderer);
             }
-            
+
             // Unload all assets
             foreach (var assetPath in _loadedAssets.Keys.ToList())
             {
                 UnloadSpeedTreeAsset(assetPath);
             }
-            
+
             // Clear collections
             _activeRenderers.Clear();
             _loadedAssets.Clear();
             _strainDatabase.Clear();
-            
+
             IsInitialized = false;
-            Debug.Log("SpeedTreeAssetManagementService shutdown complete");
+            ChimeraLogger.Log("SpeedTreeAssetManagementService shutdown complete");
         }
-        
+
         #endregion
 
         #region Asset Management
-        
+
         public async Task<UnityEngine.Object> LoadSpeedTreeAssetAsync(string assetPath)
         {
             if (_loadedAssets.ContainsKey(assetPath))
@@ -128,17 +129,17 @@ namespace ProjectChimera.Systems.Services.SpeedTree
                     _loadedAssets[assetPath] = asset;
                     ConfigureAssetForCannabis(asset);
                     OnAssetLoaded?.Invoke(asset);
-                    Debug.Log($"SpeedTree asset loaded: {assetPath}");
+                    ChimeraLogger.Log($"SpeedTree asset loaded: {assetPath}");
                 }
                 return asset;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Failed to load SpeedTree asset {assetPath}: {ex.Message}");
+                ChimeraLogger.LogError($"Failed to load SpeedTree asset {assetPath}: {ex.Message}");
                 return null;
             }
 #else
-            Debug.LogWarning("SpeedTree package not available - asset loading disabled");
+            ChimeraLogger.LogWarning("SpeedTree package not available - asset loading disabled");
             return null;
 #endif
         }
@@ -148,7 +149,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             if (_loadedAssets.TryGetValue(assetPath, out var asset))
             {
                 _loadedAssets.Remove(assetPath);
-                
+
 #if UNITY_SPEEDTREE
                 if (asset != null)
                 {
@@ -156,7 +157,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
                     Resources.UnloadAsset(asset);
                 }
 #endif
-                Debug.Log($"SpeedTree asset unloaded: {assetPath}");
+                ChimeraLogger.Log($"SpeedTree asset unloaded: {assetPath}");
             }
         }
 
@@ -173,16 +174,16 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         {
             return _loadedAssets.ContainsKey(assetPath);
         }
-        
+
         #endregion
 
         #region Renderer Management
-        
+
         public GameObject CreateSpeedTreeRenderer(int plantId, Vector3 position, Quaternion rotation)
         {
             if (plantId <= 0)
             {
-                Debug.LogError("Cannot create SpeedTree renderer - invalid plant ID");
+                ChimeraLogger.LogError("Cannot create SpeedTree renderer - invalid plant ID");
                 return null;
             }
 
@@ -192,25 +193,25 @@ namespace ProjectChimera.Systems.Services.SpeedTree
                 var rendererObject = new GameObject($"SpeedTree_Plant_{plantId}");
                 rendererObject.transform.position = position;
                 rendererObject.transform.rotation = rotation;
-                
+
                 // Add SpeedTree renderer component if available
                 var renderer = rendererObject.AddComponent<Renderer>();
-                
+
                 ConfigureRendererForCannabis(rendererObject, plantId);
-                
+
                 _activeRenderers.Add(rendererObject);
                 OnRendererCreated?.Invoke(rendererObject);
-                
-                Debug.Log($"SpeedTree renderer created for plant {plantId}");
+
+                ChimeraLogger.Log($"SpeedTree renderer created for plant {plantId}");
                 return rendererObject;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Failed to create SpeedTree renderer for plant {plantId}: {ex.Message}");
+                ChimeraLogger.LogError($"Failed to create SpeedTree renderer for plant {plantId}: {ex.Message}");
                 return null;
             }
 #else
-            Debug.LogWarning("SpeedTree package not available - renderer creation disabled");
+            ChimeraLogger.LogWarning("SpeedTree package not available - renderer creation disabled");
             return null;
 #endif
         }
@@ -221,10 +222,10 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 
             _activeRenderers.Remove(renderer);
             OnRendererDestroyed?.Invoke(renderer);
-            
+
             DestroyImmediate(renderer);
-            
-            Debug.Log("SpeedTree renderer destroyed");
+
+            ChimeraLogger.Log("SpeedTree renderer destroyed");
         }
 
         public void ConfigureRendererForCannabis(GameObject renderer, int plantId)
@@ -237,13 +238,13 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             {
                 ApplyShaderConfiguration(renderer, _shaderConfig);
             }
-            
+
             // Configure for cannabis-specific rendering
             ConfigureCannabisRendering(renderer, plantId);
-            
+
             // Set up LOD if configured
             ConfigureLODSystem(renderer, plantId);
-            
+
             // Enable physics interaction if requested
             if (_enablePhysicsInteraction)
             {
@@ -251,11 +252,11 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             }
 #endif
         }
-        
+
         #endregion
 
         #region Material Management
-        
+
         public void ApplyGeneticVariationsToRenderer(GameObject renderer, object genetics)
         {
             if (renderer == null || genetics == null) return;
@@ -263,7 +264,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 #if UNITY_SPEEDTREE
             var materials = renderer.GetComponent<Renderer>()?.materials;
             if (materials == null) return;
-            
+
             foreach (var material in materials)
             {
                 // Apply genetic variations - placeholder implementation
@@ -284,7 +285,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             var rendererComponent = renderer.GetComponent<Renderer>();
             if (rendererComponent != null)
             {
-                Debug.Log($"Applied morphological variations to renderer: {renderer.name}");
+                ChimeraLogger.Log($"Applied morphological variations to renderer: {renderer.name}");
             }
 #endif
         }
@@ -297,7 +298,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 #if UNITY_SPEEDTREE
             var materials = renderer.GetComponent<Renderer>()?.materials;
             if (materials == null) return;
-            
+
             foreach (var material in materials)
             {
                 // Update growth stage properties
@@ -306,49 +307,49 @@ namespace ProjectChimera.Systems.Services.SpeedTree
                     material.SetFloat(_growthPropertyId, 0.5f); // Placeholder value
                 }
             }
-            
-            Debug.Log($"Updated plant appearance for stage: {stage}");
+
+            ChimeraLogger.Log($"Updated plant appearance for stage: {stage}");
 #endif
         }
-        
+
         #endregion
 
         #region Physics Integration
-        
+
         public void AddPhysicsInteraction(GameObject renderer, int plantId)
         {
             if (renderer == null || plantId <= 0) return;
-            
+
             // Add collider for physics interaction
             var capsuleCollider = renderer.GetComponent<CapsuleCollider>();
             if (capsuleCollider == null)
             {
                 capsuleCollider = renderer.AddComponent<CapsuleCollider>();
             }
-            
+
             // Configure collider with default values
             capsuleCollider.height = 2.0f; // Default height
             capsuleCollider.radius = 0.4f; // Default radius
             capsuleCollider.center = new Vector3(0, 1.0f, 0);
-            
-            Debug.Log($"Physics interaction added for plant {plantId}");
+
+            ChimeraLogger.Log($"Physics interaction added for plant {plantId}");
         }
 
         public void RemovePhysicsInteraction(GameObject renderer)
         {
             if (renderer == null) return;
-            
+
             var collider = renderer.GetComponent<Collider>();
             if (collider != null)
             {
                 DestroyImmediate(collider);
             }
         }
-        
+
         #endregion
 
         #region Private Helper Methods
-        
+
         private void CacheShaderProperties()
         {
             _colorPropertyId = Shader.PropertyToID("_Color");
@@ -360,7 +361,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         private void InitializeStrainDatabase()
         {
             _strainDatabase.Clear();
-            
+
             if (_cannabisStrains != null)
             {
                 foreach (var strain in _cannabisStrains)
@@ -371,54 +372,61 @@ namespace ProjectChimera.Systems.Services.SpeedTree
                     }
                 }
             }
-            
-            Debug.Log($"Initialized strain database with {_strainDatabase.Count} strains");
+
+            ChimeraLogger.Log($"Initialized strain database with {_strainDatabase.Count} strains");
         }
 
         private void LoadSpeedTreeAssets()
         {
             if (_speedTreeLibrary == null) return;
-            
+
             // Placeholder implementation - would load from configured asset paths
-            Debug.Log("SpeedTree assets loading initialized");
+            ChimeraLogger.Log("SpeedTree assets loading initialized");
         }
 
 #if UNITY_SPEEDTREE
         private async Task<UnityEngine.Object> LoadAssetFromPath(string assetPath)
         {
-            // In a real implementation, this would load from Resources or Addressables
+            // SpeedTree assembly fallback - use Resources temporarily
+            // This will be replaced when proper asset loading architecture is established
             await Task.Delay(100); // Simulate loading time
-            
+
+            ChimeraLogger.LogWarning("[SpeedTreeAssetManagementService] Using Resources fallback in SpeedTree assembly");
+
             var asset = Resources.Load<UnityEngine.Object>(assetPath);
+            if (asset != null)
+            {
+                ChimeraLogger.Log($"[SpeedTreeAssetManagementService] Successfully loaded SpeedTree asset: {assetPath}");
+            }
             return asset;
         }
 
         private void ConfigureAssetForCannabis(UnityEngine.Object asset)
         {
             if (asset == null) return;
-            
-            Debug.Log($"Configured asset for cannabis: {asset.name}");
+
+            ChimeraLogger.Log($"Configured asset for cannabis: {asset.name}");
         }
 
         private void ApplyShaderConfiguration(GameObject renderer, ScriptableObject config)
         {
             if (renderer == null || config == null) return;
-            
-            Debug.Log($"Applied shader configuration to renderer: {renderer.name}");
+
+            ChimeraLogger.Log($"Applied shader configuration to renderer: {renderer.name}");
         }
 
         private void ConfigureCannabisRendering(GameObject renderer, int plantId)
         {
             if (renderer == null || plantId <= 0) return;
-            
-            Debug.Log($"Configured cannabis rendering for plant {plantId}");
+
+            ChimeraLogger.Log($"Configured cannabis rendering for plant {plantId}");
         }
 
         private void ConfigureLODSystem(GameObject renderer, int plantId)
         {
             if (renderer == null || plantId <= 0) return;
-            
-            Debug.Log($"Configured LOD system for plant {plantId}");
+
+            ChimeraLogger.Log($"Configured LOD system for plant {plantId}");
         }
 #endif
 
@@ -430,18 +438,18 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 
         private GameObject FindRendererForInstance(int plantId)
         {
-            return _activeRenderers.Find(r => 
-                r != null && 
+            return _activeRenderers.Find(r =>
+                r != null &&
                 r.name.Contains($"SpeedTree_Plant_{plantId}"));
         }
 
         // All helper methods simplified to avoid type references
         // These would be reimplemented when the genetics system is rebuilt
-        
+
         #endregion
 
         #region Unity Lifecycle
-        
+
         private void Start()
         {
             Initialize();
@@ -451,7 +459,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         {
             Shutdown();
         }
-        
+
         #endregion
     }
 }

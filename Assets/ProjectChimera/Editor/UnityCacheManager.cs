@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using System.IO;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Editor
 {
@@ -13,29 +14,29 @@ namespace ProjectChimera.Editor
         [MenuItem("Project Chimera/Cache Management/Clear Asset Database")]
         public static void ClearAssetDatabase()
         {
-            Debug.Log("[Chimera] Clearing Asset Database cache...");
+            ChimeraLogger.Log("[Chimera] Clearing Asset Database cache...");
             
             // Force reimport of all assets
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
             
-            Debug.Log("[Chimera] Asset Database cache cleared");
+            ChimeraLogger.Log("[Chimera] Asset Database cache cleared");
         }
         
         [MenuItem("Project Chimera/Cache Management/Clear Script Cache")]
         public static void ClearScriptCache()
         {
-            Debug.Log("[Chimera] Clearing script compilation cache...");
+            ChimeraLogger.Log("[Chimera] Clearing script compilation cache...");
             
             // Request script compilation
             EditorUtility.RequestScriptReload();
             
-            Debug.Log("[Chimera] Script cache cleared - Unity will recompile scripts");
+            ChimeraLogger.Log("[Chimera] Script cache cleared - Unity will recompile scripts");
         }
         
         [MenuItem("Project Chimera/Cache Management/Clear All Unity Caches")]
         public static void ClearAllUnityCaches()
         {
-            Debug.Log("[Chimera] Clearing all Unity caches...");
+            ChimeraLogger.Log("[Chimera] Clearing all Unity caches...");
             
             // Clear Asset Database
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
@@ -49,13 +50,13 @@ namespace ProjectChimera.Editor
             var method = type.GetMethod("Clear");
             method?.Invoke(new object(), null);
             
-            Debug.Log("[Chimera] All Unity caches cleared");
+            ChimeraLogger.Log("[Chimera] All Unity caches cleared");
         }
         
         [MenuItem("Project Chimera/Cache Management/Force Reimport ProjectChimera Assets")]
         public static void ForceReimportProjectChimeraAssets()
         {
-            Debug.Log("[Chimera] Force reimporting all ProjectChimera assets...");
+            ChimeraLogger.Log("[Chimera] Force reimporting all ProjectChimera assets...");
             
             // Find all assets in ProjectChimera folders
             string[] assetPaths = AssetDatabase.GetAllAssetPaths();
@@ -70,13 +71,13 @@ namespace ProjectChimera.Editor
                 }
             }
             
-            Debug.Log($"[Chimera] Force reimported {reimportedCount} ProjectChimera assets");
+            ChimeraLogger.Log($"[Chimera] Force reimported {reimportedCount} ProjectChimera assets");
         }
         
         [MenuItem("Project Chimera/Cache Management/Validate Asset References")]
         public static void ValidateAssetReferences()
         {
-            Debug.Log("[Chimera] Validating asset references...");
+            ChimeraLogger.Log("[Chimera] Validating asset references...");
             
             // Find all ScriptableObject assets
             string[] guids = AssetDatabase.FindAssets("t:ScriptableObject");
@@ -99,24 +100,24 @@ namespace ProjectChimera.Editor
                     else
                     {
                         invalidAssets++;
-                        Debug.LogWarning($"[Chimera] Invalid asset reference: {path}");
+                        ChimeraLogger.LogWarning($"[Chimera] Invalid asset reference: {path}");
                     }
                 }
             }
             
-            Debug.Log($"[Chimera] Asset reference validation complete: {validAssets} valid, {invalidAssets} invalid");
+            ChimeraLogger.Log($"[Chimera] Asset reference validation complete: {validAssets} valid, {invalidAssets} invalid");
         }
         
         [MenuItem("Project Chimera/Cache Management/Fix Asset GUID References")]
         public static void FixAssetGUIDReferences()
         {
-            Debug.Log("[Chimera] Fixing asset GUID references...");
+            ChimeraLogger.Log("[Chimera] Fixing asset GUID references...");
             
             // This is a more advanced operation that would require careful handling
             // For now, we'll just refresh the asset database
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
             
-            Debug.Log("[Chimera] Asset GUID references refreshed");
+            ChimeraLogger.Log("[Chimera] Asset GUID references refreshed");
         }
         
         [MenuItem("Project Chimera/Cache Management/Emergency Asset Recovery")]
@@ -129,7 +130,7 @@ namespace ProjectChimera.Editor
                 return;
             }
             
-            Debug.Log("[Chimera] Starting emergency asset recovery...");
+            ChimeraLogger.Log("[Chimera] Starting emergency asset recovery...");
             
             try
             {
@@ -145,7 +146,7 @@ namespace ProjectChimera.Editor
                 // Step 4: Request script reload
                 EditorUtility.RequestScriptReload();
                 
-                Debug.Log("[Chimera] Emergency asset recovery completed");
+                ChimeraLogger.Log("[Chimera] Emergency asset recovery completed");
                 
                 EditorUtility.DisplayDialog("Recovery Complete", 
                     "Emergency asset recovery completed successfully. Unity will recompile scripts.", 
@@ -153,7 +154,7 @@ namespace ProjectChimera.Editor
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"[Chimera] Emergency asset recovery failed: {e.Message}");
+                ChimeraLogger.LogError($"[Chimera] Emergency asset recovery failed: {e.Message}");
                 
                 EditorUtility.DisplayDialog("Recovery Failed", 
                     $"Emergency asset recovery failed: {e.Message}", 
@@ -164,7 +165,7 @@ namespace ProjectChimera.Editor
         [MenuItem("Project Chimera/Cache Management/Optimize Asset Database")]
         public static void OptimizeAssetDatabase()
         {
-            Debug.Log("[Chimera] Optimizing Asset Database...");
+            ChimeraLogger.Log("[Chimera] Optimizing Asset Database...");
             
             // Remove unused assets from the database
             AssetDatabase.Refresh();
@@ -173,7 +174,7 @@ namespace ProjectChimera.Editor
             System.GC.Collect();
             System.GC.WaitForPendingFinalizers();
             
-            Debug.Log("[Chimera] Asset Database optimized");
+            ChimeraLogger.Log("[Chimera] Asset Database optimized");
         }
     }
 }

@@ -42,9 +42,11 @@ namespace ProjectChimera.Data.Economy
         Utilities,
         Investment,
         Loan,
+        LoanPayment,
         Tax,
         Transfer,
         System,
+        SkillProgression,
         Other
     }
 
@@ -85,12 +87,12 @@ namespace ProjectChimera.Data.Economy
         public string Reference;
         public bool IsSuccessful = true;
         public string ErrorMessage;
-        
+
         // Compatibility properties
         public TransactionType Type => TransactionType;
         public float Income => TransactionType == TransactionType.Income ? Amount : 0f;
         public float Expense => TransactionType == TransactionType.Expense ? Amount : 0f;
-        
+
         public Transaction()
         {
             TransactionId = System.Guid.NewGuid().ToString();
@@ -112,11 +114,13 @@ namespace ProjectChimera.Data.Economy
         public DateTime LastUpdated;
         public DateTime LastMilestone;
         public float LastMilestoneAmount;
-        
+
         [Header("Category Breakdowns")]
         public Dictionary<TransactionCategory, float> IncomeByCategory = new Dictionary<TransactionCategory, float>();
         public Dictionary<TransactionCategory, float> ExpensesByCategory = new Dictionary<TransactionCategory, float>();
         public Dictionary<CurrencyType, float> BalancesByCurrency = new Dictionary<CurrencyType, float>();
+
+        // Note: MilestonesReached property not yet implemented
     }
 
     [System.Serializable]
@@ -130,11 +134,13 @@ namespace ProjectChimera.Data.Economy
         public DateTime PeriodEnd;
         public BudgetPeriod Period;
         public List<Transaction> Transactions = new List<Transaction>();
-        
+
         // Missing properties that CurrencyManager expects
         public float ProjectedIncome;
         public float ProjectedExpenses;
         public float ProjectedBalance;
+        public float ProjectedNetFlow;
+        public DateTime LastUpdated;
     }
 
     [System.Serializable]
@@ -146,38 +152,38 @@ namespace ProjectChimera.Data.Economy
         public bool RequireDescription = true;
         public bool AllowNegativeBalance = false;
         public List<TransactionCategory> RestrictedCategories = new List<TransactionCategory>();
-        
+
         public bool ValidateTransaction(float amount, TransactionCategory category, string description)
         {
             // Check amount limits
             if (amount > MaxTransactionAmount) return false;
-            
+
             // Check description requirement
             if (RequireDescription && string.IsNullOrEmpty(description)) return false;
-            
+
             // Check restricted categories
             if (RestrictedCategories.Contains(category)) return false;
-            
+
             return true;
         }
-        
+
         public bool ValidateTransaction(Transaction transaction, float currentBalance)
         {
             // Check amount limits
             if (transaction.Amount > MaxTransactionAmount) return false;
-            
+
             // Check balance requirements
             if (!AllowNegativeBalance && currentBalance - transaction.Amount < MinimumBalance) return false;
-            
+
             // Check description requirement
             if (RequireDescription && string.IsNullOrEmpty(transaction.Description)) return false;
-            
+
             // Check restricted categories
             if (RestrictedCategories.Contains(transaction.Category)) return false;
-            
+
             return true;
         }
-        
+
         public bool ValidateTransaction(Transaction transaction, float currentBalance, string additionalContext)
         {
             // Use base validation and add any additional context-specific checks
@@ -211,7 +217,7 @@ namespace ProjectChimera.Data.Economy
         public string Icon;
         public Color Color;
         public bool IsPositive;
-        
+
         // Additional properties for compatibility
         public float ChangeAmount;
         public float ChangePercentage;
@@ -226,10 +232,10 @@ namespace ProjectChimera.Data.Economy
         public ReportPeriod Period;
         public DateTime PeriodStart;
         public DateTime PeriodEnd;
-        
+
         // Compatibility property
         public DateTime ReportDate => GeneratedDate;
-        
+
         [Header("Financial Summary")]
         public float TotalRevenue;
         public float TotalExpenses;
@@ -243,9 +249,13 @@ namespace ProjectChimera.Data.Economy
         public float BurnRate;
         public float RunwayDays;
         public float ProfitMargin;
-        
+
         [Header("Detailed Breakdowns")]
         public Dictionary<string, float> IncomeByCategory = new Dictionary<string, float>();
+        public DateTime GeneratedAt;
+        public BudgetPeriod ReportPeriod;
+        public Dictionary<string, float> CategoryBreakdown = new Dictionary<string, float>();
+        public Dictionary<string, float> CashFlowProjection = new Dictionary<string, float>();
         public Dictionary<string, float> ExpensesByCategory = new Dictionary<string, float>();
         public FinancialStatistics Statistics;
         public Dictionary<string, BudgetStatusReport> BudgetMonitoring = new Dictionary<string, BudgetStatusReport>();
@@ -272,12 +282,14 @@ namespace ProjectChimera.Data.Economy
         public string BudgetId;
         public string CategoryName;
         public float Limit;
+        public float MonthlyLimit;
         public float CurrentSpent;
         public BudgetPeriod Period;
         public DateTime StartDate;
         public DateTime EndDate;
         public bool IsActive = true;
-        
+        public bool HasExceededAlert;
+
         public float Remaining => Limit - CurrentSpent;
         public float PercentageUsed => Limit > 0 ? (CurrentSpent / Limit) * 100f : 0f;
         public bool IsOverBudget => CurrentSpent > Limit;
@@ -296,7 +308,7 @@ namespace ProjectChimera.Data.Economy
         public float RemainingBalance;
         public string Purpose;
         public bool IsActive = true;
-        
+
         public DateTime EndDate => StartDate.AddDays(TermDays);
         public bool IsOverdue => DateTime.Now > EndDate && RemainingBalance > 0;
         public float TotalInterest => PrincipalAmount * InterestRate * (TermDays / 365f);
@@ -327,24 +339,24 @@ namespace ProjectChimera.Data.Economy
         public float TotalAmount;
         public string CustomerId;
         public string CustomerName;
-        
+
         [Header("Sale Details")]
         public float QualityRating;
         public string SaleChannel;
         public string PaymentMethod;
         public bool IsSuccessful = true;
         public string Notes;
-        
+
         [Header("Business Metrics")]
         public float ProfitMargin;
         public float CostOfGoods;
         public float NetProfit;
         public TransactionCategory Category = TransactionCategory.Operations;
-        
+
         public SaleTransaction()
         {
             TransactionId = System.Guid.NewGuid().ToString();
             SaleDate = DateTime.UtcNow;
         }
     }
-} 
+}

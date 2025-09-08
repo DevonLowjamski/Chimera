@@ -1,7 +1,9 @@
 using UnityEngine;
+using ProjectChimera.Core.Updates;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Construction;
 
 namespace ProjectChimera.Systems.Construction
@@ -10,7 +12,7 @@ namespace ProjectChimera.Systems.Construction
     /// Handles cascading removal logic when foundations or supporting structures are destroyed.
     /// Manages dependency tracking, removal ordering, and structural stability validation.
     /// </summary>
-    public class CascadingRemovalHandler : MonoBehaviour
+    public class CascadingRemovalHandler : MonoBehaviour, ITickable
     {
         [Header("Cascading Removal Settings")]
         [SerializeField] private bool _enableCascadingRemoval = true;
@@ -89,19 +91,20 @@ namespace ProjectChimera.Systems.Construction
             InitializeComponents();
         }
 
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             ProcessRemovalQueue();
-        }
+
+    }
 
         private void InitializeComponents()
         {
-            _gridSystem = FindObjectOfType<GridSystem>();
+            _gridSystem = ServiceContainerFactory.Instance?.TryResolve<IGridSystem>() as GridSystem;
             _verticalManager = GetComponent<VerticalPlacementManager>();
             _foundationSystem = GetComponent<MultiLevelFoundationSystem>();
 
             if (_gridSystem == null)
-                Debug.LogError("[CascadingRemovalHandler] GridSystem not found!");
+                ChimeraLogger.LogError("[CascadingRemovalHandler] GridSystem not found!");
         }
 
         #region Public API
@@ -113,7 +116,7 @@ namespace ProjectChimera.Systems.Construction
         {
             var result = new CascadeAnalysisResult();
             var affectedPositions = new HashSet<Vector3Int>();
-            
+
             if (!_enableCascadingRemoval)
             {
                 result.AffectedPositions = new List<Vector3Int>();
@@ -124,7 +127,7 @@ namespace ProjectChimera.Systems.Construction
 
             // Build dependency tree for analysis
             UpdateDependencyRegistry();
-            
+
             // Find all objects that would be affected
             AnalyzeCascadeImpact(position, affectedPositions, 0, RemovalReason.Direct);
 
@@ -145,7 +148,7 @@ namespace ProjectChimera.Systems.Construction
             if (!_enableCascadingRemoval) return;
 
             var analysisResult = AnalyzeCascadingRemoval(originPosition);
-            
+
             // Check safety constraints
             if (_preventMassRemoval && analysisResult.TotalAffected > _maxCascadeCount)
             {
@@ -156,7 +159,7 @@ namespace ProjectChimera.Systems.Construction
             if (analysisResult.RequiresConfirmation && !skipConfirmation)
             {
                 // In a real implementation, this would show confirmation UI
-                Debug.LogWarning($"[CascadingRemovalHandler] Cascading removal affects {analysisResult.TotalAffected} objects. Proceeding...");
+                ChimeraLogger.LogWarning($"[CascadingRemovalHandler] Cascading removal affects {analysisResult.TotalAffected} objects. Proceeding...");
             }
 
             // Start the removal process
@@ -187,7 +190,7 @@ namespace ProjectChimera.Systems.Construction
             if (!_considerStructuralIntegrity) return false;
 
             var analysisResult = AnalyzeCascadingRemoval(position);
-            return analysisResult.IsSignificant && 
+            return analysisResult.IsSignificant &&
                    analysisResult.PreventionReasons.Contains("Critical structural support");
         }
 
@@ -225,14 +228,14 @@ namespace ProjectChimera.Systems.Construction
             {
                 if (!_supportDependencies.ContainsKey(supportPos))
                     _supportDependencies[supportPos] = new List<Vector3Int>();
-                
+
                 if (!_supportDependencies[supportPos].Contains(position))
                     _supportDependencies[supportPos].Add(position);
 
                 // Update reverse dependencies
                 if (!_reverseDependencies.ContainsKey(position))
                     _reverseDependencies[position] = new List<Vector3Int>();
-                
+
                 if (!_reverseDependencies[position].Contains(supportPos))
                     _reverseDependencies[position].Add(supportPos);
             }
@@ -311,7 +314,7 @@ namespace ProjectChimera.Systems.Construction
         private bool IsStructurallyConnected(Vector3Int pos1, Vector3Int pos2, GridPlaceable obj1, GridPlaceable obj2)
         {
             // For now, consider objects structurally connected if they're adjacent and have compatible types
-            return Vector3Int.Distance(pos1, pos2) <= 1.5f && 
+            return Vector3Int.Distance(pos1, pos2) <= 1.5f &&
                    (obj1.Type == PlaceableType.Structure || obj1.Type == PlaceableType.Equipment) &&
                    (obj2.Type == PlaceableType.Structure || obj2.Type == PlaceableType.Equipment);
         }
@@ -357,12 +360,12 @@ namespace ProjectChimera.Systems.Construction
                 return false;
 
             var dependencies = _dependencyRegistry[position];
-            
+
             // If the removed position was the only support, the object loses support
             if (dependencies.SupportedBy.Contains(removedSupport))
             {
                 var remainingSupports = dependencies.SupportedBy.Where(pos => pos != removedSupport).ToList();
-                
+
                 // Check if remaining supports are adequate
                 return !HasAdequateRemainingSupport(position, remainingSupports);
             }
@@ -377,7 +380,7 @@ namespace ProjectChimera.Systems.Construction
 
             // Must have at least one foundation support for objects above ground
             bool hasFoundationSupport = remainingSupports.Any(pos => pos.z == position.z - 1);
-            
+
             if (!hasFoundationSupport && position.z > 0)
                 return false;
 
@@ -411,10 +414,10 @@ namespace ProjectChimera.Systems.Construction
         private List<Vector3Int> GetStructurallyAffectedPositions(Vector3Int position)
         {
             var affected = new List<Vector3Int>();
-            
+
             // Check positions within structural analysis radius
             var nearbyPositions = GetPositionsWithinRadius(position, _structuralAnalysisRadius);
-            
+
             foreach (var pos in nearbyPositions)
             {
                 if (IsStructurallyDependent(pos, position))
@@ -474,7 +477,7 @@ namespace ProjectChimera.Systems.Construction
             while (_removalQueue.Count > 0)
             {
                 var task = _removalQueue.Peek();
-                
+
                 if (currentTime >= task.RemovalTime)
                 {
                     _removalQueue.Dequeue();
@@ -509,7 +512,7 @@ namespace ProjectChimera.Systems.Construction
 
                 // Remove from grid - pass the GridPlaceable object, not position
                 _gridSystem.RemoveObject(cell.OccupyingObject);
-                
+
                 // Clean up dependencies
                 CleanupObjectDependencies(task.Position);
 
@@ -544,14 +547,14 @@ namespace ProjectChimera.Systems.Construction
                     for (int z = -gridRadius; z <= gridRadius; z++)
                     {
                         Vector3Int pos = center + new Vector3Int(x, y, z);
-                        
+
                         if (_gridSystem.IsValidGridPosition(pos))
                         {
                             float distance = Vector3.Distance(
                                 _gridSystem.GridToWorldPosition(center),
                                 _gridSystem.GridToWorldPosition(pos)
                             );
-                            
+
                             if (distance <= radius)
                                 positions.Add(pos);
                         }
@@ -628,11 +631,32 @@ namespace ProjectChimera.Systems.Construction
 
         private void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             _removalQueue.Clear();
             _pendingRemoval.Clear();
             _dependencyRegistry.Clear();
             _supportDependencies.Clear();
             _reverseDependencies.Clear();
         }
+
+        #region ITickable Implementation
+
+        int ITickable.Priority => 0;
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+        public virtual void OnRegistered()
+        {
+            // Override in derived classes if needed
+        }
+
+        public virtual void OnUnregistered()
+        {
+            // Override in derived classes if needed
+        }
+
+        // NOTE: ITickable Tick method implementation - original Tick method exists above
+
+        #endregion
     }
 }

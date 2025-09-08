@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Data.UI;
 
 namespace ProjectChimera.UI.Core
@@ -12,7 +13,7 @@ namespace ProjectChimera.UI.Core
     /// Central manager for coordinating UI-to-Manager communication and data binding.
     /// Handles event routing, data synchronization, and integration between UI systems and core managers.
     /// </summary>
-    public class UIIntegrationManager : ChimeraManager
+    public class UIIntegrationManager : ChimeraManager, ITickable
     {
         [Header("Integration Configuration")]
         [SerializeField] private UIEventChannelSO _globalEventChannel;
@@ -39,6 +40,7 @@ namespace ProjectChimera.UI.Core
         private Dictionary<string, object> _managerDataCache = new Dictionary<string, object>();
         private Dictionary<string, DateTime> _lastDataUpdate = new Dictionary<string, DateTime>();
         private bool _isProcessingTasks = false;
+        private float _lastDataRefreshTime = 0f;
         
         public override ManagerPriority Priority => ManagerPriority.High;
         
@@ -63,14 +65,20 @@ namespace ProjectChimera.UI.Core
             
             // Start integration processing
             IsIntegrationActive = true;
-            InvokeRepeating(nameof(ProcessIntegrationTasks), 0.1f, 0.05f);
-            InvokeRepeating(nameof(RefreshManagerData), 1f, _dataRefreshInterval);
+            
+            // Register with UpdateOrchestrator (replaces InvokeRepeating)
+            UpdateOrchestrator.Instance.RegisterTickable(this);
             
             OnIntegrationInitialized?.Invoke();
             // LogInfo("UI Integration Manager initialized with comprehensive manager communication");
         }
         
-        private void Update()
+        #region ITickable Implementation
+        
+        int ITickable.Priority => TickPriority.UIManager;
+        public bool Enabled => IsInitialized;
+        
+        public void Tick(float deltaTime)
         {
             if (!IsInitialized) return;
             
@@ -79,7 +87,16 @@ namespace ProjectChimera.UI.Core
             {
                 ProcessIntegrationTasks();
             }
+            
+            // Handle periodic data refresh (replaces InvokeRepeating)
+            if (Time.time - _lastDataRefreshTime >= _dataRefreshInterval)
+            {
+                RefreshManagerData();
+                _lastDataRefreshTime = Time.time;
+            }
         }
+        
+        #endregion
         
         private void InitializeSystemReferences()
         {
@@ -347,6 +364,14 @@ namespace ProjectChimera.UI.Core
             _integrationTasks.Clear();
             
             // LogInfo("UI Integration Manager shutdown complete");
+        }
+        
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
         }
     }    
     /// <summary>

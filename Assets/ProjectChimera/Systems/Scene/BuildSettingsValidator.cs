@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -15,7 +16,7 @@ namespace ProjectChimera.Systems.Scene
         /// </summary>
         public static bool ValidateRuntimeBuildSettings()
         {
-            Debug.Log("[BuildSettingsValidator] Validating runtime Build Settings...");
+            ChimeraLogger.Log("[BuildSettingsValidator] Validating runtime Build Settings...");
 
             bool isValid = true;
             int sceneCount = SceneManager.sceneCountInBuildSettings;
@@ -23,7 +24,7 @@ namespace ProjectChimera.Systems.Scene
             // Check total scene count
             if (sceneCount != SceneConstants.ALL_SCENES.Length)
             {
-                Debug.LogError($"[BuildSettingsValidator] Expected {SceneConstants.ALL_SCENES.Length} scenes in build, found {sceneCount}");
+                ChimeraLogger.LogError($"[BuildSettingsValidator] Expected {SceneConstants.ALL_SCENES.Length} scenes in build, found {sceneCount}");
                 isValid = false;
             }
 
@@ -35,7 +36,7 @@ namespace ProjectChimera.Systems.Scene
                 
                 if (scenePath == null || scenePath.Length == 0)
                 {
-                    Debug.LogError($"[BuildSettingsValidator] Build index {i}: No scene path found");
+                    ChimeraLogger.LogError($"[BuildSettingsValidator] Build index {i}: No scene path found");
                     isValid = false;
                     continue;
                 }
@@ -44,24 +45,24 @@ namespace ProjectChimera.Systems.Scene
                 
                 if (actualSceneName != expectedSceneName)
                 {
-                    Debug.LogError($"[BuildSettingsValidator] Build index {i}: Expected '{expectedSceneName}', found '{actualSceneName}'");
+                    ChimeraLogger.LogError($"[BuildSettingsValidator] Build index {i}: Expected '{expectedSceneName}', found '{actualSceneName}'");
                     isValid = false;
                 }
                 else
                 {
-                    Debug.Log($"[BuildSettingsValidator] Build index {i}: {actualSceneName} ✓");
+                    ChimeraLogger.Log($"[BuildSettingsValidator] Build index {i}: {actualSceneName} ✓");
                 }
             }
 
             // Test scene loading capabilities
             if (isValid)
             {
-                Debug.Log("[BuildSettingsValidator] Testing scene name resolution...");
+                ChimeraLogger.Log("[BuildSettingsValidator] Testing scene name resolution...");
                 TestSceneNameResolution();
             }
 
             string result = isValid ? "PASSED" : "FAILED";
-            Debug.Log($"[BuildSettingsValidator] Runtime Build Settings validation: {result}");
+            ChimeraLogger.Log($"[BuildSettingsValidator] Runtime Build Settings validation: {result}");
             
             return isValid;
         }
@@ -85,11 +86,11 @@ namespace ProjectChimera.Systems.Scene
                 
                 if (resolvedName == sceneName)
                 {
-                    Debug.Log($"[BuildSettingsValidator] Scene resolution test: '{sceneName}' <-> {buildIndex} ✓");
+                    ChimeraLogger.Log($"[BuildSettingsValidator] Scene resolution test: '{sceneName}' <-> {buildIndex} ✓");
                 }
                 else
                 {
-                    Debug.LogError($"[BuildSettingsValidator] Scene resolution test FAILED: '{sceneName}' -> {buildIndex} -> '{resolvedName}'");
+                    ChimeraLogger.LogError($"[BuildSettingsValidator] Scene resolution test FAILED: '{sceneName}' -> {buildIndex} -> '{resolvedName}'");
                 }
             }
         }
@@ -103,14 +104,14 @@ namespace ProjectChimera.Systems.Scene
         {
             if (Debug.isDebugBuild)
             {
-                Debug.Log("[BuildSettingsValidator] Runtime Build Settings Summary:");
+                ChimeraLogger.Log("[BuildSettingsValidator] Runtime Build Settings Summary:");
                 
                 int sceneCount = SceneManager.sceneCountInBuildSettings;
                 for (int i = 0; i < sceneCount; i++)
                 {
                     string scenePath = SceneUtility.GetScenePathByBuildIndex(i);
                     string sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
-                    Debug.Log($"[BuildSettingsValidator] Index {i}: {sceneName} ({scenePath})");
+                    ChimeraLogger.Log($"[BuildSettingsValidator] Index {i}: {sceneName} ({scenePath})");
                 }
             }
         }
@@ -123,18 +124,18 @@ namespace ProjectChimera.Systems.Scene
             int buildIndex = SceneConstants.GetBuildIndex(sceneName);
             if (buildIndex < 0)
             {
-                Debug.LogError($"[BuildSettingsValidator] Scene '{sceneName}' not found in constants");
+                ChimeraLogger.LogError($"[BuildSettingsValidator] Scene '{sceneName}' not found in constants");
                 return false;
             }
 
             string scenePath = SceneUtility.GetScenePathByBuildIndex(buildIndex);
             if (string.IsNullOrEmpty(scenePath))
             {
-                Debug.LogError($"[BuildSettingsValidator] No build path found for scene '{sceneName}' at index {buildIndex}");
+                ChimeraLogger.LogError($"[BuildSettingsValidator] No build path found for scene '{sceneName}' at index {buildIndex}");
                 return false;
             }
 
-            Debug.Log($"[BuildSettingsValidator] Scene '{sceneName}' can be loaded (index {buildIndex})");
+            ChimeraLogger.Log($"[BuildSettingsValidator] Scene '{sceneName}' can be loaded (index {buildIndex})");
             return true;
         }
 

@@ -1,9 +1,12 @@
 using UnityEngine;
+// using ProjectChimera.Systems.Addressables; // Removed to avoid circular dependency
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Threading.Tasks;
 using ProjectChimera.Shared;
 using ProjectChimera.Core.Events;
+using ProjectChimera.Core.Logging;
 
 
 namespace ProjectChimera.Core
@@ -72,7 +75,7 @@ namespace ProjectChimera.Core
             }
 
             // Load all data assets
-            LoadAllDataAssets();
+            _ = LoadAllDataAssetsAsync(); // Fire and forget - don't block initialization
 
             // Validate data if enabled
             if (_validateDataOnStartup)
@@ -100,27 +103,40 @@ namespace ProjectChimera.Core
         }
 
         /// <summary>
-        /// Loads all data assets from Resources folders.
+        /// Loads all data assets from Resources (Core assembly fallback).
         /// </summary>
-        private void LoadAllDataAssets()
+        private async Task LoadAllDataAssetsAsync()
         {
             LogDebug("Loading all data assets");
+            
+            await Task.Yield(); // Make it async for consistency
 
-            // Load all ChimeraDataSO assets
-            var dataAssets = Resources.LoadAll<ChimeraDataSO>("");
-            foreach (var dataAsset in dataAssets)
+            try
             {
-                RegisterDataAsset(dataAsset);
-            }
+                // Core assembly fallback - use Resources temporarily
+                // This will be replaced when Addressables integration is moved to higher-level assemblies
+                ChimeraLogger.Log("[DataManager] Using Resources fallback in Core assembly");
+                
+                // Load all ChimeraDataSO assets
+                var dataAssets = Resources.LoadAll<ChimeraDataSO>("Data");
+                foreach (var dataAsset in dataAssets)
+                {
+                    RegisterDataAsset(dataAsset);
+                }
 
-            // Load all ChimeraConfigSO assets
-            var configAssets = Resources.LoadAll<ChimeraConfigSO>("");
-            foreach (var configAsset in configAssets)
+                // Load all ChimeraConfigSO assets
+                var configAssets = Resources.LoadAll<ChimeraConfigSO>("Config");
+                foreach (var configAsset in configAssets)
+                {
+                    RegisterConfigAsset(configAsset);
+                }
+
+                ChimeraLogger.Log($"Loaded {_totalDataAssets} data assets and {_totalConfigAssets} config assets via Resources fallback");
+            }
+            catch (System.Exception ex)
             {
-                RegisterConfigAsset(configAsset);
+                ChimeraLogger.LogError($"[DataManager] Failed to load data assets: {ex.Message}");
             }
-
-            LogDebug($"Loaded {_totalDataAssets} data assets and {_totalConfigAssets} config assets");
         }
 
         /// <summary>
@@ -415,7 +431,7 @@ namespace ProjectChimera.Core
             _totalConfigAssets = 0;
 
             // Reload all data
-            LoadAllDataAssets();
+            _ = LoadAllDataAssetsAsync(); // Fire and forget - don't block synchronous method
 
             // Validate if enabled
             if (_validateDataOnStartup)
@@ -487,6 +503,8 @@ namespace ProjectChimera.Core
                     break;
             }
         }
+
+
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Economy;
 using ProjectChimera.Data.Shared;
@@ -13,7 +14,7 @@ namespace ProjectChimera.Systems.Economy
     /// Lightweight orchestrator for contract tracking functionality in Project Chimera's game economy.
     /// Coordinates specialized services for validation, analytics, delivery, and production tracking.
     /// </summary>
-    public class ContractTrackingService : ChimeraManager
+    public class ContractTrackingService : ChimeraManager, ITickable
     {
         [Header("Tracking Configuration")]
         [SerializeField] private bool _enableAutoTracking = true;
@@ -56,11 +57,13 @@ namespace ProjectChimera.Systems.Economy
             LogInfo("Contract tracking service shut down");
         }
 
-        private void Update()
+        public void Tick(float deltaTime)
+
+
         {
             if (!IsInitialized || !_enableAutoTracking) return;
 
-            if (Time.time % _trackingUpdateInterval < Time.deltaTime)
+            if (Time.time % _trackingUpdateInterval < deltaTime)
             {
                 UpdateAllContractProgress();
                 CheckContractDeadlines();
@@ -185,11 +188,11 @@ namespace ProjectChimera.Systems.Economy
         public void RegisterHarvestedPlant(string plantId, StrainType strainType, float quantity, float quality)
         {
             _productionTracker?.RegisterHarvestedPlant(plantId, strainType, quantity, quality);
-            _analyticsService?.TrackPlantProduction(new PlantProductionRecord 
-            { 
-                PlantId = plantId, 
-                StrainType = strainType, 
-                Quantity = (int)quantity, 
+            _analyticsService?.TrackPlantProduction(new PlantProductionRecord
+            {
+                PlantId = plantId,
+                StrainType = strainType,
+                Quantity = (int)quantity,
                 Quality = QualityGradeExtensions.FromFloat(quality),
                 HarvestDate = DateTime.Now,
                 IsAllocated = false
@@ -300,7 +303,7 @@ namespace ProjectChimera.Systems.Economy
         public bool ProcessDelivery(string deliveryId)
         {
             bool success = _deliveryService?.ProcessDelivery(deliveryId) ?? false;
-            
+
             if (success)
             {
                 var delivery = _deliveryService?.GetDelivery(deliveryId);
@@ -433,7 +436,7 @@ namespace ProjectChimera.Systems.Economy
         public void OnQualityGradeAssigned(string contractId, QualityGrade grade)
         {
             LogInfo($"Quality grade assigned for contract {contractId}: {grade}");
-            
+
             // Delegate to notification service if available
             var notificationService = GetComponent<ContractNotificationService>();
             if (notificationService != null)
@@ -448,7 +451,7 @@ namespace ProjectChimera.Systems.Economy
         public void OnQualityConsistencyAlert(string contractId, float variance)
         {
             LogWarning($"Quality consistency alert for contract {contractId}: Variance {variance:F3}");
-            
+
             // Delegate to notification service if available
             var notificationService = GetComponent<ContractNotificationService>();
             if (notificationService != null)
@@ -472,6 +475,44 @@ namespace ProjectChimera.Systems.Economy
                 component = gameObject.AddComponent<T>();
             }
             return component;
+        }
+
+        #endregion
+
+        #region Unity Lifecycle
+
+        protected virtual void Start()
+        {
+            base.Start();
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
+        }
+
+        protected virtual void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
+            base.OnDestroy();
+        }
+
+        #endregion
+
+        #region ITickable Implementation
+
+        // ITickable implementation
+        int ITickable.Priority => 0;
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+
+
+        public virtual void OnRegistered()
+        {
+            // Override in derived classes if needed
+        }
+
+        public virtual void OnUnregistered()
+        {
+            // Override in derived classes if needed
         }
 
         #endregion

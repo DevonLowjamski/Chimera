@@ -1,9 +1,12 @@
 using UnityEngine;
+// using ProjectChimera.Systems.Addressables; // Removed to avoid circular dependency
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using ProjectChimera.Core.Events;
 using ProjectChimera.Shared;
+using ProjectChimera.Core.Logging;
 
 
 namespace ProjectChimera.Core
@@ -79,7 +82,7 @@ namespace ProjectChimera.Core
             }
 
             // Auto-discover and register event channels
-            AutoDiscoverEventChannels();
+            _ = AutoDiscoverEventChannelsAsync(); // Fire and forget - don't block initialization
 
             _lastMetricsReset = Time.time;
             LogDebug($"Event Manager initialized - {RegisteredChannelCount} channels registered");
@@ -125,18 +128,31 @@ namespace ProjectChimera.Core
         /// <summary>
         /// Auto-discovers and registers all event channels in the project.
         /// </summary>
-        private void AutoDiscoverEventChannels()
+        private async Task AutoDiscoverEventChannelsAsync()
         {
             LogDebug("Auto-discovering event channels");
+            
+            await Task.Yield(); // Make it async for consistency
 
-            // Find all event channel assets
-            var eventChannels = Resources.LoadAll<ChimeraEventSO>("");
-            foreach (var channel in eventChannels)
+            try
             {
-                RegisterEventChannel(channel);
-            }
+                // Core assembly fallback - use Resources temporarily
+                // This will be replaced when Addressables integration is moved to higher-level assemblies
+                ChimeraLogger.Log("[EventManager] Using Resources fallback in Core assembly");
+                
+                // Find all event channel assets
+                var eventChannels = Resources.LoadAll<ChimeraEventSO>("Events");
+                foreach (var channel in eventChannels)
+                {
+                    RegisterEventChannel(channel);
+                }
 
-            LogDebug($"Auto-discovered {eventChannels.Length} event channels");
+                ChimeraLogger.Log($"Auto-discovered {eventChannels.Length} event channels via Resources fallback");
+            }
+            catch (System.Exception ex)
+            {
+                ChimeraLogger.LogError($"[EventManager] Failed to auto-discover event channels: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -526,6 +542,8 @@ namespace ProjectChimera.Core
             _enableEventDebugging = enabled;
             LogDebug($"Event debugging {(enabled ? "enabled" : "disabled")}");
         }
+
+
     }
 
     /// <summary>

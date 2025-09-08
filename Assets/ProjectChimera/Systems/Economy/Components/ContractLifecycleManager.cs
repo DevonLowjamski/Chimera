@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Economy;
@@ -364,19 +365,19 @@ namespace ProjectChimera.Systems.Economy.Components
         private void LogInfo(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[ContractLifecycleManager] {message}");
+                ChimeraLogger.Log($"[ContractLifecycleManager] {message}");
         }
         
         private void LogWarning(string message)
         {
             if (_enableDebugLogging)
-                Debug.LogWarning($"[ContractLifecycleManager] {message}");
+                ChimeraLogger.LogWarning($"[ContractLifecycleManager] {message}");
         }
         
         private void LogError(string message)
         {
             if (_enableDebugLogging)
-                Debug.LogError($"[ContractLifecycleManager] {message}");
+                ChimeraLogger.LogError($"[ContractLifecycleManager] {message}");
         }
     }
     

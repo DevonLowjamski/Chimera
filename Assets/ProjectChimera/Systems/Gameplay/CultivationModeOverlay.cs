@@ -1,5 +1,8 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using UnityEngine;
 using UnityEngine.UI;
+using ProjectChimera.Core;
 using ProjectChimera.Core.DependencyInjection;
 using ProjectChimera.Systems.Gameplay;
 using ProjectChimera.Data.Events;
@@ -12,7 +15,7 @@ namespace ProjectChimera.Systems.Gameplay
     /// Responds to gameplay mode changes and shows cultivation-specific UI elements
     /// Phase 2 implementation following roadmap requirements
     /// </summary>
-    public class CultivationModeOverlay : MonoBehaviour
+    public class CultivationModeOverlay : MonoBehaviour, ITickable
     {
         [Header("Overlay Configuration")]
         [SerializeField] private bool _enablePlantMonitoring = true;
@@ -22,42 +25,42 @@ namespace ProjectChimera.Systems.Gameplay
         
         [Header("Plant Monitoring Panel")]
         [SerializeField] private GameObject _plantMonitoringPanel;
-        [SerializeField] private Toggle _healthIndicatorsToggle;
-        [SerializeField] private Toggle _growthStageToggle;
-        [SerializeField] private Toggle _environmentalNeedsToggle;
-        [SerializeField] private Toggle _harvestReadinessToggle;
+        [SerializeField] private UnityEngine.UI.Toggle _healthIndicatorsToggle;
+        [SerializeField] private UnityEngine.UI.Toggle _growthStageToggle;
+        [SerializeField] private UnityEngine.UI.Toggle _environmentalNeedsToggle;
+        [SerializeField] private UnityEngine.UI.Toggle _harvestReadinessToggle;
         
         [Header("Plant Care Tools")]
         [SerializeField] private GameObject _careToolsPanel;
-        [SerializeField] private Button _wateringToolButton;
-        [SerializeField] private Button _nutrientToolButton;
-        [SerializeField] private Button _pruningToolButton;
-        [SerializeField] private Button _harvestToolButton;
-        [SerializeField] private Button _inspectionToolButton;
+        [SerializeField] private UnityEngine.UI.Button _wateringToolButton;
+        [SerializeField] private UnityEngine.UI.Button _nutrientToolButton;
+        [SerializeField] private UnityEngine.UI.Button _pruningToolButton;
+        [SerializeField] private UnityEngine.UI.Button _harvestToolButton;
+        [SerializeField] private UnityEngine.UI.Button _inspectionToolButton;
         
         [Header("Plant Details Panel")]
         [SerializeField] private GameObject _plantDetailsPanel;
-        [SerializeField] private Text _selectedPlantName;
-        [SerializeField] private Text _plantHealthStatus;
-        [SerializeField] private Text _growthStageInfo;
-        [SerializeField] private Text _environmentalStatus;
-        [SerializeField] private Image _plantPreviewImage;
-        [SerializeField] private Button _detailedViewButton;
+        [SerializeField] private UnityEngine.UI.Text _selectedPlantName;
+        [SerializeField] private UnityEngine.UI.Text _plantHealthStatus;
+        [SerializeField] private UnityEngine.UI.Text _growthStageInfo;
+        [SerializeField] private UnityEngine.UI.Text _environmentalStatus;
+        [SerializeField] private UnityEngine.UI.Image _plantPreviewImage;
+        [SerializeField] private UnityEngine.UI.Button _detailedViewButton;
         
         [Header("Environmental Controls")]
         [SerializeField] private GameObject _environmentPanel;
-        [SerializeField] private Slider _temperatureControl;
-        [SerializeField] private Slider _humidityControl;
-        [SerializeField] private Slider _lightIntensityControl;
-        [SerializeField] private Toggle _ventilationToggle;
-        [SerializeField] private Text _environmentalReadings;
+        [SerializeField] private UnityEngine.UI.Slider _temperatureControl;
+        [SerializeField] private UnityEngine.UI.Slider _humidityControl;
+        [SerializeField] private UnityEngine.UI.Slider _lightIntensityControl;
+        [SerializeField] private UnityEngine.UI.Toggle _ventilationToggle;
+        [SerializeField] private UnityEngine.UI.Text _environmentalReadings;
         
         [Header("Cultivation Overview")]
         [SerializeField] private GameObject _overviewPanel;
-        [SerializeField] private Text _totalPlantsCount;
-        [SerializeField] private Text _healthyPlantsCount;
-        [SerializeField] private Text _plantsNeedingCare;
-        [SerializeField] private Text _readyToHarvestCount;
+        [SerializeField] private UnityEngine.UI.Text _totalPlantsCount;
+        [SerializeField] private UnityEngine.UI.Text _healthyPlantsCount;
+        [SerializeField] private UnityEngine.UI.Text _plantsNeedingCare;
+        [SerializeField] private UnityEngine.UI.Text _readyToHarvestCount;
         [SerializeField] private ProgressBar _overallHealthBar;
         
         [Header("Visual Indicators")]
@@ -119,20 +122,25 @@ namespace ProjectChimera.Systems.Gameplay
         
         private void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             InitializeOverlay();
         }
         
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             if (_isCultivationModeActive)
             {
                 UpdatePlantMonitoring();
                 UpdateEnvironmentalReadings();
-            }
+            
+    }
         }
         
         private void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             UnsubscribeFromEvents();
             CleanupIndicators();
         }
@@ -142,11 +150,11 @@ namespace ProjectChimera.Systems.Gameplay
             try
             {
                 // Get the gameplay mode controller service
-                _modeController = ProjectChimera.Core.DependencyInjection.ServiceLocator.Instance.GetService<IGameplayModeController>();
+                _modeController = ServiceContainerFactory.Instance?.TryResolve<IGameplayModeController>();
                 
                 if (_modeController == null)
                 {
-                    Debug.LogError("[CultivationModeOverlay] GameplayModeController service not found!");
+                    ChimeraLogger.LogError("[CultivationModeOverlay] GameplayModeController service not found!");
                     return;
                 }
                 
@@ -169,12 +177,12 @@ namespace ProjectChimera.Systems.Gameplay
                 
                 if (_debugMode)
                 {
-                    Debug.Log($"[CultivationModeOverlay] Initialized with current mode: {_modeController.CurrentMode}");
+                    ChimeraLogger.Log($"[CultivationModeOverlay] Initialized with current mode: {_modeController.CurrentMode}");
                 }
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[CultivationModeOverlay] Error during initialization: {ex.Message}");
+                ChimeraLogger.LogError($"[CultivationModeOverlay] Error during initialization: {ex.Message}");
             }
         }
         
@@ -186,7 +194,7 @@ namespace ProjectChimera.Systems.Gameplay
             }
             else
             {
-                Debug.LogWarning("[CultivationModeOverlay] ModeChangedEvent not assigned");
+                ChimeraLogger.LogWarning("[CultivationModeOverlay] ModeChangedEvent not assigned");
             }
         }
         
@@ -297,7 +305,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[CultivationModeOverlay] Mode changed: {eventData.PreviousMode} → {eventData.NewMode}");
+                ChimeraLogger.Log($"[CultivationModeOverlay] Mode changed: {eventData.PreviousMode} → {eventData.NewMode}");
             }
             
             UpdateOverlayVisibility(eventData.NewMode);
@@ -350,7 +358,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[CultivationModeOverlay] Cultivation mode overlay {(shouldShowOverlay ? "shown" : "hidden")}");
+                ChimeraLogger.Log($"[CultivationModeOverlay] Cultivation mode overlay {(shouldShowOverlay ? "shown" : "hidden")}");
             }
         }
         
@@ -359,7 +367,7 @@ namespace ProjectChimera.Systems.Gameplay
             _monitoredPlants.Clear();
             
             // Find all plant objects in the scene
-            var plantObjects = GameObject.FindGameObjectsWithTag("Plant");
+            GameObject[] plantObjects = /* TODO: Replace GameObject.Find */ new GameObject[0];
             foreach (var plantObj in plantObjects)
             {
                 _monitoredPlants.Add(new PlantInfo(plantObj.transform));
@@ -367,7 +375,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[CultivationModeOverlay] Refreshed plant list: {_monitoredPlants.Count} plants found");
+                ChimeraLogger.Log($"[CultivationModeOverlay] Refreshed plant list: {_monitoredPlants.Count} plants found");
             }
         }
         
@@ -556,7 +564,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[CultivationModeOverlay] Selected plant: {plant.name}");
+                ChimeraLogger.Log($"[CultivationModeOverlay] Selected plant: {plant.name}");
             }
         }
         
@@ -592,7 +600,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[CultivationModeOverlay] Health indicators toggled: {enabled}");
+                ChimeraLogger.Log($"[CultivationModeOverlay] Health indicators toggled: {enabled}");
             }
             
             UpdatePlantIndicators();
@@ -602,7 +610,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[CultivationModeOverlay] Growth stage indicators toggled: {enabled}");
+                ChimeraLogger.Log($"[CultivationModeOverlay] Growth stage indicators toggled: {enabled}");
             }
         }
         
@@ -610,7 +618,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[CultivationModeOverlay] Environmental needs indicators toggled: {enabled}");
+                ChimeraLogger.Log($"[CultivationModeOverlay] Environmental needs indicators toggled: {enabled}");
             }
         }
         
@@ -618,7 +626,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[CultivationModeOverlay] Harvest readiness indicators toggled: {enabled}");
+                ChimeraLogger.Log($"[CultivationModeOverlay] Harvest readiness indicators toggled: {enabled}");
             }
             
             UpdatePlantIndicators();
@@ -628,7 +636,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[CultivationModeOverlay] Care tool selected: {toolName}");
+                ChimeraLogger.Log($"[CultivationModeOverlay] Care tool selected: {toolName}");
             }
             
             // Placeholder for tool activation logic
@@ -638,7 +646,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[CultivationModeOverlay] Temperature set to: {temperature:F0}°F");
+                ChimeraLogger.Log($"[CultivationModeOverlay] Temperature set to: {temperature:F0}°F");
             }
         }
         
@@ -646,7 +654,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[CultivationModeOverlay] Humidity set to: {humidity:F0}%");
+                ChimeraLogger.Log($"[CultivationModeOverlay] Humidity set to: {humidity:F0}%");
             }
         }
         
@@ -654,7 +662,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[CultivationModeOverlay] Light intensity set to: {intensity:F0}%");
+                ChimeraLogger.Log($"[CultivationModeOverlay] Light intensity set to: {intensity:F0}%");
             }
         }
         
@@ -662,7 +670,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[CultivationModeOverlay] Ventilation: {(enabled ? "ON" : "OFF")}");
+                ChimeraLogger.Log($"[CultivationModeOverlay] Ventilation: {(enabled ? "ON" : "OFF")}");
             }
         }
         
@@ -670,7 +678,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_selectedPlant != null && _debugMode)
             {
-                Debug.Log($"[CultivationModeOverlay] Detailed view requested for: {_selectedPlant.name}");
+                ChimeraLogger.Log($"[CultivationModeOverlay] Detailed view requested for: {_selectedPlant.name}");
             }
         }
         
@@ -690,7 +698,7 @@ namespace ProjectChimera.Systems.Gameplay
                 
                 if (_debugMode)
                 {
-                    Debug.Log("[CultivationModeOverlay] Overlay refreshed manually");
+                    ChimeraLogger.Log("[CultivationModeOverlay] Overlay refreshed manually");
                 }
             }
         }
@@ -701,7 +709,7 @@ namespace ProjectChimera.Systems.Gameplay
         public void SetDebugMode(bool enabled)
         {
             _debugMode = enabled;
-            Debug.Log($"[CultivationModeOverlay] Debug mode {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.Log($"[CultivationModeOverlay] Debug mode {(enabled ? "enabled" : "disabled")}");
         }
         
         /// <summary>
@@ -729,12 +737,27 @@ namespace ProjectChimera.Systems.Gameplay
             }
             else
             {
-                Debug.Log("[CultivationModeOverlay] Test only works during play mode with initialized controller");
+                ChimeraLogger.Log("[CultivationModeOverlay] Test only works during play mode with initialized controller");
             }
         }
         
         #endif
+    
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+    
+    public virtual void OnRegistered() 
+    { 
+        // Override in derived classes if needed
     }
+    
+    public virtual void OnUnregistered() 
+    { 
+        // Override in derived classes if needed
+    }
+
+}
     
     /// <summary>
     /// Simple progress bar component for cultivation overview

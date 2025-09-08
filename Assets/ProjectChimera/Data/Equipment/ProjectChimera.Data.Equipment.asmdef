@@ -2,7 +2,6 @@
     "name": "ProjectChimera.Data.Equipment",
     "rootNamespace": "ProjectChimera.Data.Equipment",
     "references": [
-        "ProjectChimera.Core",
         "ProjectChimera.Shared",
         "ProjectChimera.Data.Shared"
     ],

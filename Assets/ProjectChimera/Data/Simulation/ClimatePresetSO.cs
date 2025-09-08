@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using ProjectChimera.Core;
 using ProjectChimera.Shared;
 using ProjectChimera.Data.Shared;
 
@@ -182,25 +181,25 @@ namespace ProjectChimera.Data.Simulation
             
             if (string.IsNullOrEmpty(_climateName))
             {
-                Debug.LogError($"Climate Preset {name}: Climate name cannot be empty", this);
+                SharedLogger.LogError($"Climate Preset {name}: Climate name cannot be empty", this);
                 isValid = false;
             }
                 
             if (_baseParameters == null)
             {
-                Debug.LogError($"Climate Preset {name}: Base parameters must be assigned", this);
+                SharedLogger.LogError($"Climate Preset {name}: Base parameters must be assigned", this);
                 isValid = false;
             }
                 
             if (_hasSeasonalVariations && _seasonalProfiles.Count == 0)
             {
-                Debug.LogWarning($"Climate Preset {name}: Seasonal variations enabled but no profiles defined", this);
+                SharedLogger.LogWarning($"Climate Preset {name}: Seasonal variations enabled but no profiles defined", this);
                 isValid = false;
             }
                 
             if (_hasWeatherVariability && _weatherPatterns.Count == 0)
             {
-                Debug.LogWarning($"Climate Preset {name}: Weather variability enabled but no patterns defined", this);
+                SharedLogger.LogWarning($"Climate Preset {name}: Weather variability enabled but no patterns defined", this);
                 isValid = false;
             }
             

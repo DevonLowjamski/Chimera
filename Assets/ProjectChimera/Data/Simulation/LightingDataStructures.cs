@@ -4,6 +4,8 @@ using System.Linq;
 using System;
 using ProjectChimera.Data.Equipment;
 using ProjectChimera.Data.Shared;
+using EnergyDataPoint = ProjectChimera.Data.Simulation.HVAC.EnergyDataPoint;
+using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 
 namespace ProjectChimera.Data.Simulation
 {

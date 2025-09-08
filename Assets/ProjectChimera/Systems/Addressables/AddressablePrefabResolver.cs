@@ -1,7 +1,9 @@
 using System;
+using ProjectChimera.Core.Updates;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+using ProjectChimera.Core;
 using ProjectChimera.Systems.Diagnostics;
 
 namespace ProjectChimera.Systems.Addressables
@@ -25,7 +27,7 @@ namespace ProjectChimera.Systems.Addressables
     /// Handles prefab loading, instantiation, and lifecycle management
     /// Integrates with AddressablesInfrastructure for centralized asset management
     /// </summary>
-    public class AddressablePrefabResolver : MonoBehaviour, IPrefabResolver
+    public class AddressablePrefabResolver : MonoBehaviour, ITickable, IPrefabResolver
     {
         [Header("Prefab Resolver Configuration")]
         [SerializeField] private bool _enablePrefabPooling = true;
@@ -65,23 +67,26 @@ namespace ProjectChimera.Systems.Addressables
         
         private void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             FindSystemReferences();
             InitializePrefabResolver();
         }
         
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             // Periodic pool cleanup
             if (Time.time - _lastPoolCleanup >= _poolCleanupInterval)
             {
                 CleanupPrefabPools();
                 _lastPoolCleanup = Time.time;
-            }
+            
+    }
         }
         
         private void FindSystemReferences()
         {
-            _addressablesInfrastructure = FindObjectOfType<AddressablesInfrastructure>();
+            _addressablesInfrastructure = ServiceContainerFactory.Instance?.TryResolve<AddressablesInfrastructure>();
             
             if (_addressablesInfrastructure == null)
             {
@@ -522,9 +527,26 @@ namespace ProjectChimera.Systems.Addressables
         
         private void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             ClearAllPools();
         }
+    
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+    
+    public virtual void OnRegistered() 
+    { 
+        // Override in derived classes if needed
     }
+    
+    public virtual void OnUnregistered() 
+    { 
+        // Override in derived classes if needed
+    }
+
+}
     
     // Supporting Data Structures
     

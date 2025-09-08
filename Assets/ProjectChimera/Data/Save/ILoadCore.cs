@@ -1,0 +1,21 @@
+using System.Threading.Tasks;
+
+namespace ProjectChimera.Data.Save
+{
+    /// <summary>
+    /// Core load operations interface
+    /// </summary>
+    public interface ILoadCore
+    {
+        StorageMetrics Metrics { get; }
+
+        void Initialize(string saveDirectory, string backupDirectory, string archiveDirectory = null);
+        void Shutdown();
+
+        Task<StorageDataResult> ReadFileAsync(string slotName);
+        Task<StorageDataResult> ReadFileAsync(string fileName, string directory = null);
+
+        Task<StorageInfo> GetStorageInfoAsync(string slotName);
+        Task<StorageDataResult> ReadBackupAsync(string slotName, string backupFileName = null);
+    }
+}

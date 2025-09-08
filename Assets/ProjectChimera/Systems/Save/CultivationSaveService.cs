@@ -1,9 +1,12 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Save;
-using ProjectChimera.Systems.Cultivation;
+using ProjectChimera.Data.Cultivation;
 using PlantInstanceSO = ProjectChimera.Data.Cultivation.PlantInstanceSO;
 using DataEnvironmental = ProjectChimera.Data.Shared.EnvironmentalConditions;
+using ProjectChimera.Data.Environment;
+using ProjectChimera.Systems.Environment;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
@@ -20,7 +23,7 @@ namespace ProjectChimera.Systems.Save
         [SerializeField] private bool _isEnabled = true;
         [SerializeField] private bool _supportsOfflineProgression = true;
 
-        private CultivationManager _cultivationManager;
+        private ICultivationSaveManager _cultivationManager;
         private bool _isInitialized = false;
 
         public string SystemName => "Cultivation Save Service";
@@ -46,18 +49,18 @@ namespace ProjectChimera.Systems.Save
 
         private void InitializeService()
         {
-            // Find CultivationManager
-            _cultivationManager = GameManager.Instance?.GetManager<CultivationManager>();
-            
+            // Find CultivationManager - placeholder implementation
+            _cultivationManager = new CultivationSaveManagerPlaceholder();
+
             if (_cultivationManager == null)
             {
-                Debug.LogWarning("[CultivationSaveService] CultivationManager not found - service will be disabled");
+                ChimeraLogger.LogWarning("[CultivationSaveService] CultivationManager placeholder - service temporarily disabled");
                 _isEnabled = false;
                 return;
             }
 
             _isInitialized = true;
-            Debug.Log("[CultivationSaveService] Service initialized successfully");
+            ChimeraLogger.Log("[CultivationSaveService] Service initialized successfully");
         }
 
         private void RegisterWithSaveManager()
@@ -66,11 +69,11 @@ namespace ProjectChimera.Systems.Save
             if (saveManager != null)
             {
                 saveManager.RegisterSaveService(this);
-                Debug.Log("[CultivationSaveService] Registered with SaveManager");
+                ChimeraLogger.Log("[CultivationSaveService] Registered with SaveManager");
             }
             else
             {
-                Debug.LogWarning("[CultivationSaveService] SaveManager not found - integration disabled");
+                ChimeraLogger.LogWarning("[CultivationSaveService] SaveManager not found - integration disabled");
             }
         }
 
@@ -82,7 +85,7 @@ namespace ProjectChimera.Systems.Save
         {
             if (!IsAvailable)
             {
-                Debug.LogWarning("[CultivationSaveService] Service not available for state gathering");
+                ChimeraLogger.LogWarning("[CultivationSaveService] Service not available for state gathering");
                 return new CultivationStateDTO
                 {
                     SaveTimestamp = DateTime.Now,
@@ -93,11 +96,11 @@ namespace ProjectChimera.Systems.Save
 
             try
             {
-                Debug.Log("[CultivationSaveService] Gathering cultivation state...");
+                ChimeraLogger.Log("[CultivationSaveService] Gathering cultivation state...");
 
                 // Gather plant data from cultivation manager
                 var activePlants = _cultivationManager.GetAllPlants();
-                var plantDTOs = activePlants?.Select(ConvertPlantToDTO).Where(p => p != null).ToList() 
+                var plantDTOs = activePlants?.Select(plant => ConvertPlantToDTO(plant as ProjectChimera.Data.Cultivation.PlantInstanceSO)).Where(p => p != null).ToList()
                     ?? new System.Collections.Generic.List<PlantInstanceDTO>();
 
                 // Get cultivation statistics
@@ -111,10 +114,10 @@ namespace ProjectChimera.Systems.Save
                     MaxPlantsPerGrow = 50, // Default value
                     EnableAutoGrowth = _cultivationManager.EnableAutoGrowth,
                     TimeAcceleration = _cultivationManager.TimeAcceleration,
-                    
+
                     // Plant data
                     ActivePlants = plantDTOs,
-                    
+
                     // Cultivation metrics
                     Metrics = new CultivationMetricsDTO
                     {
@@ -131,12 +134,12 @@ namespace ProjectChimera.Systems.Save
                     CultivationZones = GatherCultivationZones()
                 };
 
-                Debug.Log($"[CultivationSaveService] Gathered state: {plantDTOs.Count} plants, {active} active");
+                ChimeraLogger.Log($"[CultivationSaveService] Gathered state: {plantDTOs.Count} plants, {active} active");
                 return cultivationState;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[CultivationSaveService] Error gathering cultivation state: {ex.Message}");
+                ChimeraLogger.LogError($"[CultivationSaveService] Error gathering cultivation state: {ex.Message}");
                 return new CultivationStateDTO
                 {
                     SaveTimestamp = DateTime.Now,
@@ -150,19 +153,19 @@ namespace ProjectChimera.Systems.Save
         {
             if (!IsAvailable)
             {
-                Debug.LogWarning("[CultivationSaveService] Service not available for state application");
+                ChimeraLogger.LogWarning("[CultivationSaveService] Service not available for state application");
                 return;
             }
 
             if (cultivationData == null)
             {
-                Debug.LogWarning("[CultivationSaveService] No cultivation data to apply");
+                ChimeraLogger.LogWarning("[CultivationSaveService] No cultivation data to apply");
                 return;
             }
 
             try
             {
-                Debug.Log($"[CultivationSaveService] Applying cultivation state with {cultivationData.ActivePlants?.Count ?? 0} plants");
+                ChimeraLogger.Log($"[CultivationSaveService] Applying cultivation state with {cultivationData.ActivePlants?.Count ?? 0} plants");
 
                 // Apply system settings
                 if (cultivationData.EnableAutoGrowth != _cultivationManager.EnableAutoGrowth)
@@ -187,11 +190,11 @@ namespace ProjectChimera.Systems.Save
                     ApplyEnvironmentalState(cultivationData.EnvironmentalState);
                 }
 
-                Debug.Log("[CultivationSaveService] Cultivation state applied successfully");
+                ChimeraLogger.Log("[CultivationSaveService] Cultivation state applied successfully");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[CultivationSaveService] Error applying cultivation state: {ex.Message}");
+                ChimeraLogger.LogError($"[CultivationSaveService] Error applying cultivation state: {ex.Message}");
             }
         }
 
@@ -210,16 +213,15 @@ namespace ProjectChimera.Systems.Save
 
             try
             {
-                Debug.Log($"[CultivationSaveService] Processing {offlineHours:F2} hours of offline progression");
+                ChimeraLogger.Log($"[CultivationSaveService] Processing {offlineHours:F2} hours of offline progression");
 
-                // The CultivationManager already implements IOfflineProgressionListener
-                // So offline progression is handled automatically by the OfflineProgressionCoordinator
-                // This method provides additional integration and reporting
+                // Placeholder for CultivationManager integration
+                // Will be implemented when CultivationManager is available
 
                 var activePlantsBefore = _cultivationManager.ActivePlantCount;
-                
+
                 // Additional offline progression logic could go here
-                // For now, we'll rely on the CultivationManager's implementation
+                // Placeholder implementation
 
                 return new OfflineProgressionResult
                 {
@@ -237,7 +239,7 @@ namespace ProjectChimera.Systems.Save
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[CultivationSaveService] Error processing offline progression: {ex.Message}");
+                ChimeraLogger.LogError($"[CultivationSaveService] Error processing offline progression: {ex.Message}");
                 return new OfflineProgressionResult
                 {
                     SystemName = SystemName,
@@ -279,20 +281,20 @@ namespace ProjectChimera.Systems.Save
             try
             {
                 var environmentalManager = _cultivationManager.GetEnvironmentalManager();
-                if (environmentalManager != null)
+                if (environmentalManager != null && environmentalManager is IEnvironmentalManager envManager)
                 {
-                    var defaultEnvironment = environmentalManager.GetZoneEnvironment("default");
+                    var defaultEnvironment = envManager.GetZoneEnvironment("default");
                     return new CultivationEnvironmentalStateDTO
                     {
                         IsInitialized = true,
                         LastEnvironmentalUpdate = DateTime.Now,
-                        DefaultEnvironment = ConvertEnvironmentalConditions(defaultEnvironment)
+                        DefaultEnvironment = ConvertZoneEnvironmentToConditions(defaultEnvironment)
                     };
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[CultivationSaveService] Error gathering environmental state: {ex.Message}");
+                ChimeraLogger.LogWarning($"[CultivationSaveService] Error gathering environmental state: {ex.Message}");
             }
 
             return new CultivationEnvironmentalStateDTO
@@ -320,6 +322,24 @@ namespace ProjectChimera.Systems.Save
             };
         }
 
+        private CultivationEnvironmentalDataDTO ConvertZoneEnvironmentToConditions(ZoneEnvironmentDTO zoneEnvironment)
+        {
+            return new CultivationEnvironmentalDataDTO
+            {
+                Temperature = zoneEnvironment.Temperature,
+                Humidity = zoneEnvironment.Humidity,
+                CO2Level = zoneEnvironment.CO2Level,
+                LightIntensity = zoneEnvironment.LightIntensity,
+                AirFlow = 0.5f, // Default values for properties not in ZoneEnvironmentDTO
+                AirVelocity = 0.3f,
+                pH = 6.5f,
+                PhotoperiodHours = 18f,
+                WaterAvailability = 1.0f,
+                ElectricalConductivity = 1.2f,
+                DailyLightIntegral = 35f
+            };
+        }
+
         private System.Collections.Generic.List<CultivationZoneDTO> GatherCultivationZones()
         {
             // Default zone for now - could be expanded to gather actual zone data
@@ -341,21 +361,21 @@ namespace ProjectChimera.Systems.Save
         {
             // This would involve recreating plant instances from saved data
             // For now, we'll log the operation as it requires complex plant instantiation logic
-            Debug.Log($"[CultivationSaveService] Would restore {plantData.Count} plants from save data");
-            
+            ChimeraLogger.Log($"[CultivationSaveService] Would restore {plantData.Count} plants from save data");
+
             // In a full implementation, this would:
             // 1. Clear existing plants
             // 2. Recreate PlantInstanceSO objects from DTOs
             // 3. Register plants with the cultivation manager
             // 4. Apply growth stages and states
-            
+
             await Task.CompletedTask; // Placeholder for async operations
         }
 
         private void ApplyEnvironmentalState(CultivationEnvironmentalStateDTO environmentalState)
         {
-            Debug.Log("[CultivationSaveService] Applying environmental state from save data");
-            
+            ChimeraLogger.Log("[CultivationSaveService] Applying environmental state from save data");
+
             // This would apply environmental conditions to the cultivation zones
             // For now, we'll log the operation as it requires environmental manager integration
         }

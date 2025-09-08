@@ -1,5 +1,7 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Environment
 {
@@ -7,7 +9,7 @@ namespace ProjectChimera.Systems.Environment
     /// Controls ventilation and air circulation systems.
     /// Manages CO2 levels, air exchange, and circulation for optimal plant growth.
     /// </summary>
-    public class VentilationController : MonoBehaviour
+    public class VentilationController : MonoBehaviour, ITickable
     {
         [Header("Ventilation Configuration")]
         [SerializeField] private string _systemId;
@@ -58,6 +60,10 @@ namespace ProjectChimera.Systems.Environment
         // Compatibility property for AdvancedGrowRoomController
         public float AirFlowRate => _currentAirflow;
         
+        // ITickable implementation
+        public int Priority => TickPriority.EnvironmentalManager;
+        public bool Enabled => _isOperational;
+        
         private void Awake()
         {
             if (string.IsNullOrEmpty(_systemId))
@@ -70,9 +76,12 @@ namespace ProjectChimera.Systems.Environment
             
             if (_enableAutomation)
                 SetAutomationMode(true);
+            
+            // Register with UpdateOrchestrator for centralized update management
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
         
-        private void Update()
+        public void Tick(float deltaTime)
         {
             if (!_isOperational) return;
             
@@ -81,7 +90,7 @@ namespace ProjectChimera.Systems.Environment
             
             // Track operating hours
             if (_isRunning)
-                _operatingHours += Time.deltaTime / 3600f;
+                _operatingHours += deltaTime / 3600f;
         }
         
         private void InitializeSystem()
@@ -93,7 +102,7 @@ namespace ProjectChimera.Systems.Environment
                 _fanAudio.volume = 0.3f;
             }
             
-            Debug.Log($"Ventilation System {SystemId} initialized - Type: {_systemType}");
+            ChimeraLogger.Log($"Ventilation System {SystemId} initialized - Type: {_systemType}");
         }
         
         #region Public Control Methods
@@ -108,7 +117,7 @@ namespace ProjectChimera.Systems.Environment
             if (_isAutomated)
                 UpdateAutomationLogic();
             
-            Debug.Log($"Ventilation {SystemId} target CO2 set to {_targetCO2} ppm");
+            ChimeraLogger.Log($"Ventilation {SystemId} target CO2 set to {_targetCO2} ppm");
         }
         
         /// <summary>
@@ -129,7 +138,7 @@ namespace ProjectChimera.Systems.Environment
             OnSystemStateChanged?.Invoke(this);
             OnAirflowChanged?.Invoke(_currentAirflow);
             
-            Debug.Log($"Ventilation {SystemId} started - Airflow: {_currentAirflow:F0} CFM");
+            ChimeraLogger.Log($"Ventilation {SystemId} started - Airflow: {_currentAirflow:F0} CFM");
         }
         
         /// <summary>
@@ -144,7 +153,7 @@ namespace ProjectChimera.Systems.Environment
             OnSystemStateChanged?.Invoke(this);
             OnAirflowChanged?.Invoke(_currentAirflow);
             
-            Debug.Log($"Ventilation {SystemId} stopped");
+            ChimeraLogger.Log($"Ventilation {SystemId} stopped");
         }
         
         /// <summary>
@@ -180,7 +189,7 @@ namespace ProjectChimera.Systems.Environment
                 UpdateAutomationLogic();
             
             OnSystemStateChanged?.Invoke(this);
-            Debug.Log($"Ventilation {SystemId} automation {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.Log($"Ventilation {SystemId} automation {(enabled ? "enabled" : "disabled")}");
         }
         
         /// <summary>
@@ -194,7 +203,7 @@ namespace ProjectChimera.Systems.Environment
                 UpdateAutomationLogic();
             
             OnSystemStateChanged?.Invoke(this);
-            Debug.Log($"Ventilation {SystemId} started up");
+            ChimeraLogger.Log($"Ventilation {SystemId} started up");
         }
         
         /// <summary>
@@ -206,7 +215,7 @@ namespace ProjectChimera.Systems.Environment
             StopVentilation();
             
             OnSystemStateChanged?.Invoke(this);
-            Debug.Log($"Ventilation {SystemId} shut down");
+            ChimeraLogger.Log($"Ventilation {SystemId} shut down");
         }
         
         #endregion
@@ -226,24 +235,22 @@ namespace ProjectChimera.Systems.Environment
             UpdatePowerConsumption();
             
             // Track energy usage
-            float deltaTime = Time.deltaTime / 3600f; // Convert to hours
-            _totalEnergyUsed += _currentPowerConsumption * deltaTime / 1000f; // Convert to kWh
+            float deltaTimeHours = Time.deltaTime / 3600f; // Convert to hours
+            _totalEnergyUsed += _currentPowerConsumption * deltaTimeHours / 1000f; // Convert to kWh
         }
         
         private void UpdateCO2Levels()
         {
-            float deltaTime = Time.deltaTime;
-            
             if (_isRunning && _currentAirflow > 0f)
             {
                 // Ventilation reduces CO2 levels
-                float ventilationEffect = (_currentAirflow / _maxAirflow) * 50f * deltaTime; // Simplified model
+                float ventilationEffect = (_currentAirflow / _maxAirflow) * 50f * Time.deltaTime; // Simplified model
                 _currentCO2 = Mathf.Max(_currentCO2 - ventilationEffect, 350f); // Minimum outdoor CO2
             }
             else
             {
                 // CO2 naturally accumulates
-                float accumulation = 20f * deltaTime; // Simplified accumulation
+                float accumulation = 20f * Time.deltaTime; // Simplified accumulation
                 _currentCO2 = Mathf.Min(_currentCO2 + accumulation, 2000f); // Maximum realistic level
             }
             
@@ -391,6 +398,15 @@ namespace ProjectChimera.Systems.Environment
         }
         
         #endregion
+        
+        private void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+        }
     }
     
     // Supporting data structures

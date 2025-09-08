@@ -5,6 +5,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
+using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 using ProjectChimera.Systems.Audio.Components;
 using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
 using DataPlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
@@ -20,7 +22,7 @@ namespace ProjectChimera.Systems.Audio
     /// Coordinates specialized audio components for loading, effects processing, soundscape management,
     /// and environmental audio integration while maintaining 60 FPS performance.
     /// </summary>
-    public class AdvancedAudioManager : DIChimeraManager
+    public class AdvancedAudioManager : DIChimeraManager, ITickable
     {
         [Header("Audio Configuration")]
         [SerializeField] private AudioMixer _masterMixer;
@@ -65,7 +67,7 @@ namespace ProjectChimera.Systems.Audio
         private object _environmentManager;
         private ChimeraManager _plantManager;
         private ChimeraManager _facilityConstructor;
-        private Camera _listenerCamera;
+        private UnityEngine.Camera _listenerCamera;
         
         // Audio State
         private AudioState _currentAudioState = AudioState.Facility;
@@ -94,9 +96,17 @@ namespace ProjectChimera.Systems.Audio
             SetupSoundscapes();
             ConnectToGameSystems();
             StartAudioUpdateLoop();
+            
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
         
-        private void Update()
+        #region ITickable Implementation
+        
+        public int Priority => TickPriority.AudioManager;
+        public bool Enabled => IsInitialized;
+        
+        public void Tick(float deltaTime)
         {
             float currentTime = Time.time;
             
@@ -107,6 +117,8 @@ namespace ProjectChimera.Systems.Audio
                 _lastAudioUpdate = currentTime;
             }
         }
+        
+        #endregion
         
         #region Initialization
 
@@ -174,7 +186,7 @@ namespace ProjectChimera.Systems.Audio
         
         private void SetupAudioListener()
         {
-            _listenerCamera = FindObjectOfType<Camera>();
+            _listenerCamera = ServiceContainerFactory.Instance?.TryResolve<UnityEngine.Camera>() ?? UnityEngine.Camera.main ?? ServiceContainerFactory.Instance?.TryResolve<UnityEngine.Camera>();
             
             if (_listenerCamera != null)
             {
@@ -668,6 +680,14 @@ namespace ProjectChimera.Systems.Audio
         private void DisconnectSystemEvents()
         {
             // Event unsubscription handled through component cleanup
+        }
+        
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
         }
     }
 }

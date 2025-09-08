@@ -1,7 +1,9 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections;
 using ProjectChimera.Data.Shared;
-using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Shared;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Environment
 {
@@ -10,7 +12,7 @@ namespace ProjectChimera.Systems.Environment
     /// Extracted from AdvancedGrowLightSystem for modular architecture.
     /// Manages light on/off, intensity ramping, and power consumption.
     /// </summary>
-    public class GrowLightController : MonoBehaviour
+    public class GrowLightController : MonoBehaviour, ITickable
     {
         [Header("Light Control Configuration")]
         [SerializeField] private bool _enableLightLogging = true;
@@ -47,6 +49,10 @@ namespace ProjectChimera.Systems.Environment
         public float MaxIntensity => _maxIntensity;
         public float MaxPowerConsumption => _maxPowerConsumption;
         
+        // ITickable implementation
+        public int Priority => TickPriority.EnvironmentalManager;
+        public bool Enabled => _primaryLight != null;
+        
         /// <summary>
         /// Initialize light controller with configuration
         /// </summary>
@@ -61,7 +67,7 @@ namespace ProjectChimera.Systems.Environment
             LogDebug("Grow light controller initialized");
         }
         
-        private void Update()
+        public void Tick(float deltaTime)
         {
             // Update light intensity smoothly when not in coroutine transition
             if (_transitionCoroutine == null)
@@ -336,8 +342,18 @@ namespace ProjectChimera.Systems.Environment
         
         #endregion
         
+        private void Start()
+        {
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+        }
+        
         private void OnDestroy()
         {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+            
             if (_transitionCoroutine != null)
             {
                 StopCoroutine(_transitionCoroutine);
@@ -347,7 +363,7 @@ namespace ProjectChimera.Systems.Environment
         private void LogDebug(string message)
         {
             if (_enableLightLogging)
-                Debug.Log($"[GrowLightController] {message}");
+                ChimeraLogger.Log($"[GrowLightController] {message}");
         }
     }
     

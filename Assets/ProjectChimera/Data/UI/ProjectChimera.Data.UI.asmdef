@@ -3,7 +3,8 @@
     "rootNamespace": "ProjectChimera.Data.UI",
     "references": [
         "ProjectChimera.Shared",
-        "ProjectChimera.Data.Shared"
+        "ProjectChimera.Data.Shared",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

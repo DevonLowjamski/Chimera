@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -184,7 +185,7 @@ namespace ProjectChimera.Core.DependencyInjection
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ServiceCollection] Error registering service {descriptor.ServiceType?.Name}: {ex.Message}");
+                ChimeraLogger.LogError($"[ServiceCollection] Error registering service {descriptor.ServiceType?.Name}: {ex.Message}");
                 throw;
             }
         }
@@ -214,12 +215,12 @@ namespace ProjectChimera.Core.DependencyInjection
             if (_disposed) throw new ObjectDisposedException(nameof(ServiceProviderAdapter));
             try
             {
-                if (_options.EnableLogging) Debug.Log($"[ServiceProviderAdapter] Resolving service: {serviceType.Name}");
+                if (_options.EnableLogging) ChimeraLogger.Log($"[ServiceProviderAdapter] Resolving service: {serviceType.Name}");
                 return _container.TryResolve<object>();
             }
             catch (Exception ex)
             {
-                if (_options.EnableLogging) Debug.LogError($"[ServiceProviderAdapter] Error resolving {serviceType.Name}: {ex.Message}");
+                if (_options.EnableLogging) ChimeraLogger.LogError($"[ServiceProviderAdapter] Error resolving {serviceType.Name}: {ex.Message}");
                 return null;
             }
         }
@@ -235,7 +236,7 @@ namespace ProjectChimera.Core.DependencyInjection
             if (_disposed) throw new ObjectDisposedException(nameof(ServiceProviderAdapter));
             try
             {
-                if (_options.EnableLogging) Debug.Log($"[ServiceProviderAdapter] Resolving required service: {serviceType.Name}");
+                if (_options.EnableLogging) ChimeraLogger.Log($"[ServiceProviderAdapter] Resolving required service: {serviceType.Name}");
                 return _container.Resolve(serviceType);
             }
             catch (Exception ex)
@@ -257,7 +258,7 @@ namespace ProjectChimera.Core.DependencyInjection
             }
             catch (Exception ex)
             {
-                if (_options.EnableLogging) Debug.LogError($"[ServiceProviderAdapter] Error resolving multiple services of type {serviceType.Name}: {ex.Message}");
+                if (_options.EnableLogging) ChimeraLogger.LogError($"[ServiceProviderAdapter] Error resolving multiple services of type {serviceType.Name}: {ex.Message}");
                 return Array.Empty<object>();
             }
         }
@@ -309,7 +310,7 @@ namespace ProjectChimera.Core.DependencyInjection
                         }
                         catch (Exception ex)
                         {
-                            Debug.LogError($"[ServiceProviderAdapter] Error disposing scope: {ex.Message}");
+                            ChimeraLogger.LogError($"[ServiceProviderAdapter] Error disposing scope: {ex.Message}");
                         }
                     }
                     _activeScopes.Clear();
@@ -319,7 +320,7 @@ namespace ProjectChimera.Core.DependencyInjection
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ServiceProviderAdapter] Error during disposal: {ex.Message}");
+                ChimeraLogger.LogError($"[ServiceProviderAdapter] Error during disposal: {ex.Message}");
             }
         }
     }
@@ -349,7 +350,7 @@ namespace ProjectChimera.Core.DependencyInjection
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ServiceScopeAdapter] Error during disposal: {ex.Message}");
+                ChimeraLogger.LogError($"[ServiceScopeAdapter] Error during disposal: {ex.Message}");
             }
         }
     }

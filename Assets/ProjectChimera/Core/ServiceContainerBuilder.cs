@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -214,7 +215,7 @@ namespace ProjectChimera.Core.DependencyInjection
             return Configure(container =>
             {
                 // Add Unity-specific service registrations
-                Debug.Log("[ServiceContainerBuilder] Configured for Unity environment");
+                ChimeraLogger.Log("[ServiceContainerBuilder] Configured for Unity environment");
             });
         }
 
@@ -225,7 +226,7 @@ namespace ProjectChimera.Core.DependencyInjection
         {
             return ConfigureIf(Application.isEditor, builder =>
             {
-                Debug.Log("[ServiceContainerBuilder] Adding development services");
+                ChimeraLogger.Log("[ServiceContainerBuilder] Adding development services");
                 // Add development-specific services here
             });
         }
@@ -237,7 +238,7 @@ namespace ProjectChimera.Core.DependencyInjection
         {
             return ConfigureIf(!Application.isEditor, builder =>
             {
-                Debug.Log("[ServiceContainerBuilder] Adding production services");
+                ChimeraLogger.Log("[ServiceContainerBuilder] Adding production services");
                 // Add production-specific services here
             });
         }
@@ -260,12 +261,12 @@ namespace ProjectChimera.Core.DependencyInjection
                     var errorMessage = $"Container validation failed with {result.Errors.Count} errors:\n" +
                                      string.Join("\n", result.Errors);
                     
-                    Debug.LogError($"[ServiceContainerBuilder] {errorMessage}");
+                    ChimeraLogger.LogError($"[ServiceContainerBuilder] {errorMessage}");
                     throw new InvalidOperationException(errorMessage);
                 }
                 else
                 {
-                    Debug.Log($"[ServiceContainerBuilder] Container validation passed: {result.VerifiedServices}/{result.TotalServices} services verified in {result.VerificationTime.TotalMilliseconds:F2}ms");
+                    ChimeraLogger.Log($"[ServiceContainerBuilder] Container validation passed: {result.VerifiedServices}/{result.TotalServices} services verified in {result.VerificationTime.TotalMilliseconds:F2}ms");
                 }
             });
             
@@ -279,7 +280,7 @@ namespace ProjectChimera.Core.DependencyInjection
         {
             try
             {
-                Debug.Log("[ServiceContainerBuilder] Building service container");
+                ChimeraLogger.Log("[ServiceContainerBuilder] Building service container");
 
                 // Apply all registration actions
                 foreach (var action in _registrationActions)
@@ -292,12 +293,12 @@ namespace ProjectChimera.Core.DependencyInjection
                 {
                     try
                     {
-                        module.ConfigureServices(new ServiceLocatorAdapter(_container));
-                        Debug.Log($"[ServiceContainerBuilder] Module '{module.ModuleName}' configured");
+                        module.ConfigureServices(_container);
+                        ChimeraLogger.Log($"[ServiceContainerBuilder] Module '{module.ModuleName}' configured");
                     }
                     catch (Exception ex)
                     {
-                        Debug.LogError($"[ServiceContainerBuilder] Error configuring module '{module.ModuleName}': {ex.Message}");
+                        ChimeraLogger.LogError($"[ServiceContainerBuilder] Error configuring module '{module.ModuleName}': {ex.Message}");
                         throw;
                     }
                 }
@@ -307,22 +308,22 @@ namespace ProjectChimera.Core.DependencyInjection
                 {
                     try
                     {
-                        module.Initialize(new ServiceLocatorAdapter(_container));
-                        Debug.Log($"[ServiceContainerBuilder] Module '{module.ModuleName}' initialized");
+                        module.Initialize(_container);
+                        ChimeraLogger.Log($"[ServiceContainerBuilder] Module '{module.ModuleName}' initialized");
                     }
                     catch (Exception ex)
                     {
-                        Debug.LogError($"[ServiceContainerBuilder] Error initializing module '{module.ModuleName}': {ex.Message}");
+                        ChimeraLogger.LogError($"[ServiceContainerBuilder] Error initializing module '{module.ModuleName}': {ex.Message}");
                         throw;
                     }
                 }
 
-                Debug.Log($"[ServiceContainerBuilder] Container built successfully with {_registrationActions.Count} registrations and {_modules.Count} modules");
+                ChimeraLogger.Log($"[ServiceContainerBuilder] Container built successfully with {_registrationActions.Count} registrations and {_modules.Count} modules");
                 return _container;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ServiceContainerBuilder] Container build failed: {ex.Message}");
+                ChimeraLogger.LogError($"[ServiceContainerBuilder] Container build failed: {ex.Message}");
                 throw;
             }
         }
@@ -365,7 +366,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 .AddModule<ChimeraServiceModule>()
                 .Configure(container =>
                 {
-                    Debug.Log("[ServiceContainerBuilder] Configured for Project Chimera");
+                    ChimeraLogger.Log("[ServiceContainerBuilder] Configured for Project Chimera");
                 });
         }
 
@@ -385,7 +386,7 @@ namespace ProjectChimera.Core.DependencyInjection
         {
             // This would use reflection to find all implementations
             // For now, we'll just log the intent
-            Debug.Log($"[ServiceContainerBuilder] Would register all implementations of {typeof(TInterface).Name}");
+            ChimeraLogger.Log($"[ServiceContainerBuilder] Would register all implementations of {typeof(TInterface).Name}");
             return builder;
         }
 
@@ -395,7 +396,7 @@ namespace ProjectChimera.Core.DependencyInjection
         public static ServiceContainerBuilder AddByConvention(this ServiceContainerBuilder builder, Func<Type, bool> serviceFilter = null)
         {
             // This would use reflection and naming conventions
-            Debug.Log("[ServiceContainerBuilder] Would register services by convention");
+            ChimeraLogger.Log("[ServiceContainerBuilder] Would register services by convention");
             return builder;
         }
 
@@ -406,7 +407,7 @@ namespace ProjectChimera.Core.DependencyInjection
         {
             return builder.Configure(container =>
             {
-                Debug.Log("[ServiceContainerBuilder] Would register all Chimera managers");
+                ChimeraLogger.Log("[ServiceContainerBuilder] Would register all Chimera managers");
                 // This would register all the manager interfaces
             });
         }

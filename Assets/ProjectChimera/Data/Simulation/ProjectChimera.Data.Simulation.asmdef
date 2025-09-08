@@ -2,7 +2,6 @@
     "name": "ProjectChimera.Data.Simulation",
     "rootNamespace": "ProjectChimera.Data.Simulation",
     "references": [
-        "ProjectChimera.Core",
         "ProjectChimera.Shared",
         "ProjectChimera.Data.Shared",
         "ProjectChimera.Data.Genetics",

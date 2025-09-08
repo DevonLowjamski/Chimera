@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
@@ -77,21 +78,33 @@ namespace ProjectChimera.Core.DependencyInjection
     }
     
     /// <summary>
-    /// Result of container validation operation
+    /// Result of container verification operation
     /// </summary>
-    public class ContainerValidationResult
+    public class ContainerVerificationResult
     {
         public bool IsValid { get; set; }
         public List<string> Errors { get; set; }
         public List<string> Warnings { get; set; }
+        public List<string> ValidationMessages { get; set; }
         public float ValidationTime { get; set; }
         public int ServicesValidated { get; set; }
+        public int VerifiedServices { get; set; }
+        public int TotalServices { get; set; }
+        public int ValidServiceCount { get; set; }
+        public int InvalidServiceCount { get; set; }
+        public List<Type> ValidServices { get; set; }
+        public List<Type> InvalidServices { get; set; }
         public TimeSpan ValidationDuration { get; set; }
+        public TimeSpan VerificationTime { get; set; }
+        public DateTime ValidationTimestamp { get; set; }
         
-        public ContainerValidationResult()
+        public ContainerVerificationResult()
         {
             Errors = new List<string>();
             Warnings = new List<string>();
+            ValidationMessages = new List<string>();
+            ValidServices = new List<Type>();
+            InvalidServices = new List<Type>();
         }
         
         /// <summary>
@@ -150,45 +163,7 @@ namespace ProjectChimera.Core.DependencyInjection
         Disposed
     }
     
-    /// <summary>
-    /// Health report for all services in the container
-    /// </summary>
-    public class ServiceHealthReport
-    {
-        public Dictionary<Type, ServiceStatus> ServiceStatuses { get; set; }
-        public List<string> CriticalErrors { get; set; }
-        public List<string> Warnings { get; set; }
-        public bool IsHealthy { get; set; }
-        public TimeSpan InitializationTime { get; set; }
-        public float ReportTime { get; set; }
-        
-        public ServiceHealthReport()
-        {
-            ServiceStatuses = new Dictionary<Type, ServiceStatus>();
-            CriticalErrors = new List<string>();
-            Warnings = new List<string>();
-            ReportTime = Time.time;
-        }
-        
-        /// <summary>
-        /// Gets count of services by status
-        /// </summary>
-        public Dictionary<ServiceStatus, int> GetStatusCounts()
-        {
-            var counts = new Dictionary<ServiceStatus, int>();
-            foreach (ServiceStatus status in Enum.GetValues(typeof(ServiceStatus)))
-            {
-                counts[status] = 0;
-            }
-            
-            foreach (var status in ServiceStatuses.Values)
-            {
-                counts[status]++;
-            }
-            
-            return counts;
-        }
-    }
+    // ServiceHealthReport moved to ServiceHealthMonitor.cs to avoid duplication
     
     /// <summary>
     /// Interface for Chimera dependency injection container
@@ -215,7 +190,7 @@ namespace ProjectChimera.Core.DependencyInjection
         IEnumerable<T> ResolveAll<T>() where T : class;
         
         // Validation and diagnostics
-        ContainerValidationResult Verify();
+        ContainerVerificationResult Verify();
         bool IsRegistered<T>();
         bool IsRegistered(Type serviceType);
         
@@ -256,7 +231,7 @@ namespace ProjectChimera.Core.DependencyInjection
             
             UnityEngine.Object.DontDestroyOnLoad(containerObject);
             
-            Debug.Log("[ChimeraDIContainerFactory] Development container created with full debugging");
+            ChimeraLogger.Log("[ChimeraDIContainerFactory] Development container created with full debugging");
             return container;
         }
         
@@ -280,7 +255,7 @@ namespace ProjectChimera.Core.DependencyInjection
             
             UnityEngine.Object.DontDestroyOnLoad(containerObject);
             
-            Debug.Log("[ChimeraDIContainerFactory] Production container created with optimized performance");
+            ChimeraLogger.Log("[ChimeraDIContainerFactory] Production container created with optimized performance");
             return container;
         }
         
@@ -302,7 +277,7 @@ namespace ProjectChimera.Core.DependencyInjection
             validationField?.SetValue(container, true);
             metricsField?.SetValue(container, false);
             
-            Debug.Log("[ChimeraDIContainerFactory] Testing container created with validation enabled");
+            ChimeraLogger.Log("[ChimeraDIContainerFactory] Testing container created with validation enabled");
             return container;
         }
     }
@@ -320,9 +295,9 @@ namespace ProjectChimera.Core.DependencyInjection
     }
 
     /// <summary>
-    /// Container verification result for validation
+    /// Service verification result for comprehensive service-level verification operations
     /// </summary>
-    public class ContainerVerificationResult
+    public class ServiceVerificationResult
     {
         public bool IsValid { get; set; }
         public List<string> Errors { get; set; } = new List<string>();
@@ -334,9 +309,9 @@ namespace ProjectChimera.Core.DependencyInjection
     }
 
     /// <summary>
-    /// Service validation result for compatibility
+    /// Service compatibility result for legacy compatibility operations
     /// </summary>
-    public class ServiceValidationResult
+    public class ServiceCompatibilityResult
     {
         public bool IsValid { get; set; }
         public string Message { get; set; }
@@ -348,8 +323,8 @@ namespace ProjectChimera.Core.DependencyInjection
         public List<string> Errors { get; set; } = new List<string>();
         public List<string> ValidationMessages { get; set; } = new List<string>();
         
-        public static ServiceValidationResult Success() => new ServiceValidationResult { IsValid = true };
-        public static ServiceValidationResult Failure(string message) => new ServiceValidationResult { IsValid = false, Message = message };
+        public static ServiceCompatibilityResult Success() => new ServiceCompatibilityResult { IsValid = true };
+        public static ServiceCompatibilityResult Failure(string message) => new ServiceCompatibilityResult { IsValid = false, Message = message };
     }
     
     /// <summary>

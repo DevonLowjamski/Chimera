@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Simulation;
 using LSchedule = ProjectChimera.Data.Simulation.LightingSchedule;
@@ -15,7 +16,7 @@ namespace ProjectChimera.Systems.Environment
     /// Manages spectrum control, DLI calculations, photoperiod automation, and energy-efficient
     /// lighting strategies optimized for cannabis growth phases and cannabinoid production.
     /// </summary>
-    public class LightingManager : DIChimeraManager
+    public class LightingManager : DIChimeraManager, ITickable
     {
         [Header("Lighting System Configuration")]
         [SerializeField] private LightingSystemSettings _lightingSettings;
@@ -23,35 +24,35 @@ namespace ProjectChimera.Systems.Environment
         [SerializeField] private bool _enableAdvancedSpectrum = true;
         [SerializeField] private bool _enableDLIOptimization = true;
         [SerializeField] private bool _enableEnergyOptimization = true;
-        
+
         [Header("Spectrum Control")]
         [SerializeField] private SpectrumControlSettings _spectrumSettings;
         [SerializeField] private List<LightSpectrumData> _availableSpectrums = new List<LightSpectrumData>();
         [SerializeField] private bool _enableUVSupplementation = true;
         [SerializeField] private bool _enableFarRedControl = true;
-        
+
         [Header("DLI Management")]
         [SerializeField] private DLISettings _dliSettings;
         [SerializeField] private bool _enableAdaptiveDLI = true;
         [SerializeField] private bool _enableGrowthStageOptimization = true;
-        
+
         [Header("Photoperiod Control")]
         [SerializeField] private PhotoperiodSettings _photoperiodSettings;
         [SerializeField] private bool _enableAutomaticPhotoperiod = true;
         [SerializeField] private bool _enableSunriseSimulation = true;
         [SerializeField] private bool _enableSunsetSimulation = true;
-        
+
         [Header("Energy Management")]
         [SerializeField] private LightingEnergySettings _energySettings;
         [SerializeField] private bool _enableDimmingOptimization = true;
         [SerializeField] private bool _enableScheduleOptimization = true;
-        
+
         [Header("Events")]
         [SerializeField] private SimpleGameEventSO _lightingScheduleEvent;
         [SerializeField] private SimpleGameEventSO _spectrumChangeEvent;
         [SerializeField] private SimpleGameEventSO _dliOptimizationEvent;
         [SerializeField] private SimpleGameEventSO _lightingAlarmEvent;
-        
+
         // Runtime Data
         private Dictionary<string, LightingZone> _lightingZones;
         private Dictionary<string, ActiveLightingFixture> _activeLights;
@@ -63,14 +64,14 @@ namespace ProjectChimera.Systems.Environment
         private EnvironmentManager _environmentalManager;
         private float _lastLightingUpdate;
         private float _currentDLI;
-        
+
         // Properties
         public Dictionary<string, LightingZone> LightingZones => _lightingZones;
         public PhotoperiodController PhotoperiodController => _photoperiodController;
         public SpectrumController SpectrumController => _spectrumController;
         public float CurrentDLI => _currentDLI;
         public LightingEnergyTracker EnergyTracker => _energyTracker;
-        
+
         // Events
         public System.Action<string, LSchedule> OnScheduleChanged;
         public System.Action<string, LightSpectrumData> OnSpectrumChanged;
@@ -88,24 +89,32 @@ namespace ProjectChimera.Systems.Environment
             _energyTracker = new LightingEnergyTracker();
             _photoperiodController = new PhotoperiodController(_photoperiodSettings);
             _spectrumController = new SpectrumController(_spectrumSettings);
-            
+
             InitializeLightingSettings();
             InitializeDefaultSchedules();
-            
+
             // Get reference to EnvironmentManager
             _environmentalManager = GameManager.Instance.GetManager<EnvironmentManager>();
-            
+
             _lastLightingUpdate = Time.time;
-            
+
+            // Register with UpdateOrchestrator for centralized update management
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+
             LogInfo("LightingManager initialized with advanced spectrum and DLI control");
         }
 
-        private void Update()
+        #region ITickable Implementation
+
+        int ITickable.Priority => TickPriority.EnvironmentalManager;
+        public bool Enabled => IsInitialized;
+
+        public void Tick(float deltaTime)
         {
-            if (!IsInitialized) return;
-            
+            if (!Enabled) return;
+
             float currentTime = Time.time;
-            
+
             // Main lighting update
             if (currentTime - _lastLightingUpdate >= 1f / _lightingUpdateFrequency)
             {
@@ -115,14 +124,16 @@ namespace ProjectChimera.Systems.Environment
                 UpdateEnergyOptimization();
                 ProcessLightingAlarms();
                 UpdatePhotoperiodControl();
-                
+
                 _lastLightingUpdate = currentTime;
             }
-            
+
             // Continuous monitoring
             MonitorLightingPerformance();
             ProcessAdaptiveLighting();
         }
+
+        #endregion
 
         /// <summary>
         /// Creates a new lighting zone with comprehensive lighting control.
@@ -130,7 +141,7 @@ namespace ProjectChimera.Systems.Environment
         public string CreateLightingZone(string zoneName, LightingZoneSettings zoneSettings)
         {
             string zoneId = System.Guid.NewGuid().ToString();
-            
+
             var lightingZone = new LightingZone
             {
                 ZoneId = zoneId,
@@ -148,15 +159,15 @@ namespace ProjectChimera.Systems.Environment
                 CreatedAt = System.DateTime.Now,
                 LastUpdated = System.DateTime.Now
             };
-            
+
             // Initialize default spectrum and schedule
             InitializeZoneDefaults(lightingZone);
-            
+
             // Create DLI tracker for this zone
             _dliTrackers[zoneId] = new DLITracker();
-            
+
             _lightingZones[zoneId] = lightingZone;
-            
+
             LogInfo($"Created lighting zone '{zoneName}' with ID {zoneId}");
             return zoneId;
         }
@@ -171,7 +182,7 @@ namespace ProjectChimera.Systems.Environment
                 LogWarning($"Lighting zone {zoneId} not found");
                 return false;
             }
-            
+
             var activeFixture = new ActiveLightingFixture
             {
                 FixtureId = System.Guid.NewGuid().ToString(),
@@ -188,10 +199,10 @@ namespace ProjectChimera.Systems.Environment
                 InstallationDate = System.DateTime.Now,
                 LastMaintenanceDate = System.DateTime.Now
             };
-            
+
             zone.LightingFixtures.Add(activeFixture);
             _activeLights[activeFixture.FixtureId] = activeFixture;
-            
+
             LogInfo($"Installed {fixture.EquipmentName} in zone {zone.ZoneName}");
             return true;
         }
@@ -199,27 +210,27 @@ namespace ProjectChimera.Systems.Environment
         /// <summary>
         /// Sets target DLI for a specific zone with growth stage optimization.
         /// </summary>
-        public bool SetZoneTargetDLI(string zoneId, float targetDLI, PlantGrowthStage growthStage = PlantGrowthStage.Vegetative)
+        public bool SetZoneTargetDLI(string zoneId, float targetDLI, ProjectChimera.Data.Shared.PlantGrowthStage growthStage = ProjectChimera.Data.Shared.PlantGrowthStage.Vegetative)
         {
             if (!_lightingZones.TryGetValue(zoneId, out var zone))
                 return false;
-            
+
             // Validate DLI range based on growth stage
             float minDLI = GetMinDLIForGrowthStage(growthStage);
             float maxDLI = GetMaxDLIForGrowthStage(growthStage);
-            
+
             targetDLI = Mathf.Clamp(targetDLI, minDLI, maxDLI);
-            
+
             zone.TargetDLI = targetDLI;
             zone.GrowthStage = growthStage;
             zone.LastUpdated = System.DateTime.Now;
-            
+
             // Update lighting schedule to achieve target DLI
             UpdateZoneLightingSchedule(zone);
-            
+
             OnDLIOptimized?.Invoke(zoneId, targetDLI);
             _dliOptimizationEvent?.Raise();
-            
+
             LogInfo($"Set target DLI to {targetDLI:F1} mol/m²/day for zone {zone.ZoneName}");
             return true;
         }
@@ -231,17 +242,17 @@ namespace ProjectChimera.Systems.Environment
         {
             if (!_lightingZones.TryGetValue(zoneId, out var zone))
                 return false;
-            
+
             zone.TargetSpectrum = targetSpectrum;
             zone.SpectrumTarget = target;
             zone.LastUpdated = System.DateTime.Now;
-            
+
             // Apply spectrum to all fixtures in zone
             ApplySpectrumToZone(zone, targetSpectrum);
-            
+
             OnSpectrumChanged?.Invoke(zoneId, targetSpectrum);
             _spectrumChangeEvent?.Raise();
-            
+
             LogInfo($"Applied target spectrum for {target} in zone {zone.ZoneName}");
             return true;
         }
@@ -253,17 +264,17 @@ namespace ProjectChimera.Systems.Environment
         {
             if (!_lightingZones.TryGetValue(zoneId, out var zone))
                 return false;
-            
+
             schedule.ZoneId = zoneId;
             schedule.ScheduleId = System.Guid.NewGuid().ToString();
             schedule.CreatedAt = System.DateTime.Now;
-            
+
             _lightingSchedules[schedule.ScheduleId] = schedule;
             zone.ActiveScheduleId = schedule.ScheduleId;
-            
+
             OnScheduleChanged?.Invoke(zoneId, schedule);
             _lightingScheduleEvent?.Raise();
-            
+
             LogInfo($"Created lighting schedule for zone {zone.ZoneName}");
             return true;
         }
@@ -275,12 +286,12 @@ namespace ProjectChimera.Systems.Environment
         {
             if (!_lightingZones.TryGetValue(zoneId, out var zone))
                 return null;
-            
+
             var optimization = CalculateOptimalLightingConfiguration(zone);
-            
+
             // Apply optimization
             ApplyLightingOptimization(zone, optimization);
-            
+
             LogInfo($"Applied lighting optimization to zone {zone.ZoneName}");
             return optimization;
         }
@@ -292,12 +303,12 @@ namespace ProjectChimera.Systems.Environment
         {
             if (!_lightingZones.TryGetValue(zoneId, out var zone))
                 return false;
-            
+
             zone.PhotoperiodProgression = progression;
             zone.AutomaticPhotoperiod = true;
-            
+
             _photoperiodController.StartProgression(zoneId, progression);
-            
+
             LogInfo($"Enabled automatic photoperiod progression for zone {zone.ZoneName}");
             return true;
         }
@@ -309,7 +320,7 @@ namespace ProjectChimera.Systems.Environment
         {
             if (!_lightingZones.TryGetValue(zoneId, out var zone))
                 return null;
-            
+
             var fixtureStatus = zone.LightingFixtures.Select(fixture => new LightingFixtureSnapshot
             {
                 FixtureId = fixture.FixtureId,
@@ -322,7 +333,7 @@ namespace ProjectChimera.Systems.Environment
                 PPFD = CalculateFixturePPFD(fixture),
                 MaintenanceStatus = fixture.MaintenanceStatus
             }).ToList();
-            
+
             return new LightingZoneSnapshot
             {
                 ZoneId = zoneId,
@@ -348,24 +359,24 @@ namespace ProjectChimera.Systems.Environment
         {
             if (!_lightingZones.TryGetValue(zoneId, out var zone))
                 return 0f;
-            
+
             if (!_dliTrackers.TryGetValue(zoneId, out var tracker))
                 return 0f;
-            
+
             float totalPPFD = 0f;
-            
+
             foreach (var fixture in zone.LightingFixtures.Where(f => f.Status == LightingFixtureStatus.On))
             {
                 totalPPFD += CalculateFixturePPFD(fixture);
             }
-            
+
             // Convert PPFD to DLI (μmol/m²/s to mol/m²/day)
             float photoperiodHours = GetCurrentPhotoperiodHours(zone);
             float dli = (totalPPFD * photoperiodHours * 3600f) / 1000000f;
-            
+
             tracker.RecordDLI(dli, System.DateTime.Now);
             zone.CurrentDLI = dli;
-            
+
             return dli;
         }
 
@@ -380,11 +391,11 @@ namespace ProjectChimera.Systems.Environment
                 ReportingPeriod = TimeSpan.FromDays(1),
                 ZoneReports = new List<ZoneLightingEnergyReport>()
             };
-            
-            var zonesToReport = string.IsNullOrEmpty(zoneId) ? 
-                _lightingZones.Values : 
+
+            var zonesToReport = string.IsNullOrEmpty(zoneId) ?
+                _lightingZones.Values :
                 _lightingZones.Values.Where(z => z.ZoneId == zoneId);
-            
+
             foreach (var zone in zonesToReport)
             {
                 var zoneReport = new ZoneLightingEnergyReport
@@ -400,13 +411,13 @@ namespace ProjectChimera.Systems.Environment
                     DLIEfficiency = zone.CurrentDLI / CalculateZoneTotalEnergyConsumption(zone),
                     OptimizationOpportunities = IdentifyLightingOptimizationOpportunities(zone)
                 };
-                
+
                 report.ZoneReports.Add(zoneReport);
             }
-            
+
             report.TotalEnergyConsumption = report.ZoneReports.Sum(zr => zr.TotalEnergyConsumption);
             report.AverageEfficiency = report.ZoneReports.Average(zr => zr.EnergyEfficiency);
-            
+
             return report;
         }
 
@@ -431,7 +442,7 @@ namespace ProjectChimera.Systems.Environment
         {
             // Create default vegetative schedule
             var vegetativeSchedule = CreateDefaultVegetativeSchedule();
-            
+
             // Create default flowering schedule
             var floweringSchedule = CreateDefaultFloweringSchedule();
         }
@@ -441,7 +452,7 @@ namespace ProjectChimera.Systems.Environment
             // Set default spectrum based on zone settings
             zone.CurrentSpectrum = GetDefaultSpectrumForGrowthStage(zone.GrowthStage);
             zone.TargetSpectrum = zone.CurrentSpectrum;
-            
+
             // Create default schedule
             var defaultSchedule = CreateDefaultScheduleForZone(zone);
             // Ensure ZoneId is set for schedule, and use its ScheduleId if provided
@@ -476,7 +487,7 @@ namespace ProjectChimera.Systems.Environment
             foreach (var zone in _lightingZones.Values.Where(z => z.ZoneStatus == LightingZoneStatus.Active))
             {
                 CalculateZoneDLI(zone.ZoneId);
-                
+
                 if (_enableAdaptiveDLI)
                 {
                     ProcessAdaptiveDLIControl(zone);
@@ -487,7 +498,7 @@ namespace ProjectChimera.Systems.Environment
         private void UpdateEnergyOptimization()
         {
             if (!_enableEnergyOptimization) return;
-            
+
             foreach (var zone in _lightingZones.Values.Where(z => z.ZoneStatus == LightingZoneStatus.Active))
             {
                 ProcessEnergyOptimization(zone);
@@ -505,7 +516,7 @@ namespace ProjectChimera.Systems.Environment
         private void UpdatePhotoperiodControl()
         {
             if (!_enableAutomaticPhotoperiod) return;
-            
+
             foreach (var zone in _lightingZones.Values.Where(z => z.AutomaticPhotoperiod))
             {
                 _photoperiodController.UpdateProgression(zone.ZoneId, zone);
@@ -519,16 +530,16 @@ namespace ProjectChimera.Systems.Environment
             {
                 var fixture = _activeLights[fixtureId];
                 if (fixture.Status != LightingFixtureStatus.On) continue;
-                
+
                 // Update operating hours
                 fixture.OperatingHours += Time.deltaTime / 3600f;
-                
+
                 // Update the struct in the dictionary
                 _activeLights[fixtureId] = fixture;
-                
+
                 // Monitor efficiency degradation
                 UpdateFixtureEfficiency(fixture);
-                
+
                 // Check for maintenance needs
                 CheckFixtureMaintenanceNeeds(fixture);
             }
@@ -543,24 +554,24 @@ namespace ProjectChimera.Systems.Environment
         }
 
         // Helper methods for lighting calculations
-        private float GetMinDLIForGrowthStage(PlantGrowthStage growthStage)
+        private float GetMinDLIForGrowthStage(ProjectChimera.Data.Shared.PlantGrowthStage growthStage)
         {
             return growthStage switch
             {
-                PlantGrowthStage.Seedling => 15f,
-                PlantGrowthStage.Vegetative => 25f,
-                PlantGrowthStage.Flowering => 35f,
+                ProjectChimera.Data.Shared.PlantGrowthStage.Seedling => 15f,
+                ProjectChimera.Data.Shared.PlantGrowthStage.Vegetative => 25f,
+                ProjectChimera.Data.Shared.PlantGrowthStage.Flowering => 35f,
                 _ => 20f
             };
         }
 
-        private float GetMaxDLIForGrowthStage(PlantGrowthStage growthStage)
+        private float GetMaxDLIForGrowthStage(ProjectChimera.Data.Shared.PlantGrowthStage growthStage)
         {
             return growthStage switch
             {
-                PlantGrowthStage.Seedling => 25f,
-                PlantGrowthStage.Vegetative => 45f,
-                PlantGrowthStage.Flowering => 65f,
+                ProjectChimera.Data.Shared.PlantGrowthStage.Seedling => 25f,
+                ProjectChimera.Data.Shared.PlantGrowthStage.Vegetative => 45f,
+                ProjectChimera.Data.Shared.PlantGrowthStage.Flowering => 65f,
                 _ => 40f
             };
         }
@@ -569,11 +580,11 @@ namespace ProjectChimera.Systems.Environment
         {
             if (fixture.Status != LightingFixtureStatus.On)
                 return 0f;
-            
+
             // Default PPFD value since FixtureData is a string, not an object
             float basePPFD = 800f; // Default PPFD
             float actualPPFD = basePPFD * fixture.Intensity * fixture.EfficiencyRating;
-            
+
             return actualPPFD;
         }
 
@@ -581,11 +592,11 @@ namespace ProjectChimera.Systems.Environment
         {
             if (fixture.Status != LightingFixtureStatus.On)
                 return 0f;
-            
+
             // Default power consumption since FixtureData is a string, not an object
             float basePower = 400f; // Default power consumption in watts
             float actualPower = basePower * fixture.Intensity;
-            
+
             return actualPower * Time.deltaTime / 3600f; // Convert to kWh
         }
 
@@ -600,7 +611,7 @@ namespace ProjectChimera.Systems.Environment
         private float CalculateSpectralQuality(LightingZone zone) { return 0.8f; }
         private float CalculateZoneTotalEnergyConsumption(LightingZone zone) { return zone.LightingFixtures.Sum(f => CalculateFixtureEnergyConsumption(f)); }
         private List<string> IdentifyLightingOptimizationOpportunities(LightingZone zone) { return new List<string>(); }
-        private LightSpectrumData GetDefaultSpectrumForGrowthStage(PlantGrowthStage growthStage) { return new LightSpectrumData(); }
+        private LightSpectrumData GetDefaultSpectrumForGrowthStage(ProjectChimera.Data.Shared.PlantGrowthStage growthStage) { return new LightSpectrumData(); }
         private LSchedule CreateDefaultScheduleForZone(LightingZone zone) { return new LSchedule { ScheduleId = System.Guid.NewGuid().ToString(), ZoneId = zone.ZoneId }; }
         private LSchedule CreateDefaultVegetativeSchedule() { return new LSchedule(); }
         private LSchedule CreateDefaultFloweringSchedule() { return new LSchedule(); }
@@ -615,15 +626,18 @@ namespace ProjectChimera.Systems.Environment
 
         protected override void OnManagerShutdown()
         {
+            // Unregister from UpdateOrchestrator
+            UpdateOrchestrator.Instance.UnregisterTickable(this);
+
             _lightingZones.Clear();
             _activeLights.Clear();
             _lightingSchedules.Clear();
             _dliTrackers.Clear();
-            
+
             LogInfo("LightingManager shutdown complete");
         }
     }
-    
-    
-    
+
+
+
 }

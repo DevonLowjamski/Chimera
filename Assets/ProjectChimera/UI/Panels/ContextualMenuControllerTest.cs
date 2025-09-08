@@ -1,5 +1,7 @@
 using UnityEngine;
+using ProjectChimera.Core;
 using ProjectChimera.UI.Components;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -27,7 +29,7 @@ namespace ProjectChimera.UI.Panels
         {
             if (_menuController == null)
             {
-                _menuController = FindObjectOfType<ContextualMenuController>();
+                _menuController = ServiceContainerFactory.Instance?.TryResolve<ContextualMenuController>();
             }
             
             if (_menuController == null)
@@ -105,7 +107,7 @@ namespace ProjectChimera.UI.Panels
         {
             if (_enableTestLogging)
             {
-                Debug.Log($"[ContextualMenuTest] {message}");
+                ChimeraLogger.Log($"[ContextualMenuTest] {message}");
             }
         }
     }

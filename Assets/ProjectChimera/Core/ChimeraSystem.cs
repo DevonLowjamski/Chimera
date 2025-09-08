@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Core
 {
@@ -6,8 +7,7 @@ namespace ProjectChimera.Core
     /// Base class for all Project Chimera system components.
     /// Systems handle specific gameplay functionality and can be enabled/disabled dynamically.
     /// </summary>
-    public abstract class ChimeraSystem : ChimeraMonoBehaviour
-    {
+    public abstract class ChimeraSystem : ChimeraMonoBehaviour, ITickable{
         [Header("System Properties")]
         [SerializeField] private bool _autoStart = true;
         [SerializeField] private int _systemPriority = 100;
@@ -32,6 +32,8 @@ namespace ProjectChimera.Core
 
         protected override void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             base.Start();
 
             if (_autoStart)
@@ -139,7 +141,7 @@ namespace ProjectChimera.Core
         /// <summary>
         /// Main system update logic. Respects update interval settings.
         /// </summary>
-        protected virtual void Update()
+        public virtual void Tick(float deltaTime)
         {
             if (!IsSystemRunning) return;
 
@@ -166,6 +168,8 @@ namespace ProjectChimera.Core
 
         protected override void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             if (IsSystemRunning)
             {
                 StopSystem();
@@ -189,6 +193,20 @@ namespace ProjectChimera.Core
             {
                 ResumeSystem();
             }
+        }
+
+        // ITickable implementation
+        public int Priority => _systemPriority;
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+        
+        public virtual void OnRegistered() 
+        { 
+            // Override in derived classes if needed
+        }
+        
+        public virtual void OnUnregistered() 
+        { 
+            // Override in derived classes if needed
         }
     }
 }

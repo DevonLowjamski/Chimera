@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Save;
@@ -41,7 +42,7 @@ namespace ProjectChimera.Systems.Save
         private void InitializeService()
         {
             _isInitialized = true;
-            Debug.Log("[ConstructionSaveService] Service initialized successfully");
+            ChimeraLogger.Log("[ConstructionSaveService] Service initialized successfully");
         }
 
         private void RegisterWithSaveManager()
@@ -50,11 +51,11 @@ namespace ProjectChimera.Systems.Save
             if (saveManager != null)
             {
                 saveManager.RegisterSaveService(this);
-                Debug.Log("[ConstructionSaveService] Registered with SaveManager");
+                ChimeraLogger.Log("[ConstructionSaveService] Registered with SaveManager");
             }
             else
             {
-                Debug.LogWarning("[ConstructionSaveService] SaveManager not found - integration disabled");
+                ChimeraLogger.LogWarning("[ConstructionSaveService] SaveManager not found - integration disabled");
             }
         }
 
@@ -66,7 +67,7 @@ namespace ProjectChimera.Systems.Save
         {
             if (!IsAvailable)
             {
-                Debug.LogWarning("[ConstructionSaveService] Service not available for state gathering");
+                ChimeraLogger.LogWarning("[ConstructionSaveService] Service not available for state gathering");
                 return new ConstructionStateDTO
                 {
                     SaveTimestamp = DateTime.Now,
@@ -76,7 +77,7 @@ namespace ProjectChimera.Systems.Save
 
             try
             {
-                Debug.Log("[ConstructionSaveService] Gathering construction state...");
+                ChimeraLogger.Log("[ConstructionSaveService] Gathering construction state...");
 
                 var constructionState = new ConstructionStateDTO
                 {
@@ -150,12 +151,12 @@ namespace ProjectChimera.Systems.Save
                     }
                 };
 
-                Debug.Log($"[ConstructionSaveService] Construction state gathered: {constructionState.PlacedObjects.Count} objects, {constructionState.Rooms.Count} rooms");
+                ChimeraLogger.Log($"[ConstructionSaveService] Construction state gathered: {constructionState.PlacedObjects.Count} objects, {constructionState.Rooms.Count} rooms");
                 return constructionState;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ConstructionSaveService] Error gathering construction state: {ex.Message}");
+                ChimeraLogger.LogError($"[ConstructionSaveService] Error gathering construction state: {ex.Message}");
                 return new ConstructionStateDTO
                 {
                     SaveTimestamp = DateTime.Now,
@@ -169,19 +170,19 @@ namespace ProjectChimera.Systems.Save
         {
             if (!IsAvailable)
             {
-                Debug.LogWarning("[ConstructionSaveService] Service not available for state application");
+                ChimeraLogger.LogWarning("[ConstructionSaveService] Service not available for state application");
                 return;
             }
 
             if (constructionData == null)
             {
-                Debug.LogWarning("[ConstructionSaveService] No construction data to apply");
+                ChimeraLogger.LogWarning("[ConstructionSaveService] No construction data to apply");
                 return;
             }
 
             try
             {
-                Debug.Log($"[ConstructionSaveService] Applying construction state with {constructionData.PlacedObjects?.Count ?? 0} objects");
+                ChimeraLogger.Log($"[ConstructionSaveService] Applying construction state with {constructionData.PlacedObjects?.Count ?? 0} objects");
 
                 // Apply grid system settings
                 if (constructionData.GridSystem != null)
@@ -201,11 +202,11 @@ namespace ProjectChimera.Systems.Save
                     await ApplyRoomDefinitions(constructionData.Rooms);
                 }
 
-                Debug.Log("[ConstructionSaveService] Construction state applied successfully");
+                ChimeraLogger.Log("[ConstructionSaveService] Construction state applied successfully");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ConstructionSaveService] Error applying construction state: {ex.Message}");
+                ChimeraLogger.LogError($"[ConstructionSaveService] Error applying construction state: {ex.Message}");
             }
         }
 
@@ -224,7 +225,7 @@ namespace ProjectChimera.Systems.Save
 
             try
             {
-                Debug.Log($"[ConstructionSaveService] Processing {offlineHours:F2} hours of offline construction progression");
+                ChimeraLogger.Log($"[ConstructionSaveService] Processing {offlineHours:F2} hours of offline construction progression");
 
                 // Process construction wear and maintenance
                 float maintenanceCosts = CalculateBuildingMaintenance(offlineHours);
@@ -248,7 +249,7 @@ namespace ProjectChimera.Systems.Save
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ConstructionSaveService] Error processing offline progression: {ex.Message}");
+                ChimeraLogger.LogError($"[ConstructionSaveService] Error processing offline progression: {ex.Message}");
                 return new OfflineProgressionResult
                 {
                     SystemName = SystemName,
@@ -265,7 +266,7 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplyGridSystemState(GridSystemStateDTO gridSystem)
         {
-            Debug.Log($"[ConstructionSaveService] Applying grid system ({gridSystem.GridSizeX}x{gridSystem.GridSizeY})");
+            ChimeraLogger.Log($"[ConstructionSaveService] Applying grid system ({gridSystem.GridSizeX}x{gridSystem.GridSizeY})");
             
             // Grid system state application would integrate with actual grid management systems
             await Task.CompletedTask;
@@ -273,12 +274,12 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplyPlacedObjects(System.Collections.Generic.List<PlacedObjectDTO> placedObjects)
         {
-            Debug.Log($"[ConstructionSaveService] Applying {placedObjects.Count} placed objects");
+            ChimeraLogger.Log($"[ConstructionSaveService] Applying {placedObjects.Count} placed objects");
             
             // Placed objects application would integrate with actual construction systems
             foreach (var obj in placedObjects)
             {
-                Debug.Log($"[ConstructionSaveService] Restoring object: {obj.ObjectName} (Type: {obj.ObjectType})");
+                ChimeraLogger.Log($"[ConstructionSaveService] Restoring object: {obj.ObjectName} (Type: {obj.ObjectType})");
             }
             
             await Task.CompletedTask;
@@ -286,12 +287,12 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplyRoomDefinitions(System.Collections.Generic.List<RoomDTO> rooms)
         {
-            Debug.Log($"[ConstructionSaveService] Applying {rooms.Count} room definitions");
+            ChimeraLogger.Log($"[ConstructionSaveService] Applying {rooms.Count} room definitions");
             
             // Room definitions application would integrate with actual room management systems
             foreach (var room in rooms)
             {
-                Debug.Log($"[ConstructionSaveService] Restoring room: {room.RoomName} (Type: {room.RoomType})");
+                ChimeraLogger.Log($"[ConstructionSaveService] Restoring room: {room.RoomName} (Type: {room.RoomType})");
             }
             
             await Task.CompletedTask;

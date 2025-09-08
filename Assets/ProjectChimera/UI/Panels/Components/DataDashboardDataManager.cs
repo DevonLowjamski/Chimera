@@ -2,7 +2,10 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Systems.Analytics;
+// using ProjectChimera.Data.Analytics; // Removed - using Systems.Analytics instead
 using ProjectChimera.Core.DependencyInjection;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels.Components
 {
@@ -10,7 +13,7 @@ namespace ProjectChimera.UI.Panels.Components
     /// Handles data fetching, caching, and refresh operations for the analytics dashboard in Project Chimera's game.
     /// Manages analytics service integration and provides cannabis cultivation metrics for the dashboard.
     /// </summary>
-    public class DataDashboardDataManager : MonoBehaviour
+    public class DataDashboardDataManager : MonoBehaviour, ITickable
     {
         [Header("Data Management Configuration")]
         [SerializeField] private bool _enableAutoRefresh = true;
@@ -56,15 +59,25 @@ namespace ProjectChimera.UI.Panels.Components
         private void Start()
         {
             InitializeAnalyticsService();
+
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
 
-        private void Update()
+        #region ITickable Implementation
+
+        public int Priority => TickPriority.UIManager;
+        public bool Enabled => _enableAutoRefresh && _isServiceAvailable;
+
+        public void Tick(float deltaTime)
         {
             if (_enableAutoRefresh && Time.time >= _lastRefreshTime + _refreshInterval)
             {
                 RefreshData();
             }
         }
+
+        #endregion
 
         #region Initialization
 
@@ -82,7 +95,7 @@ namespace ProjectChimera.UI.Panels.Components
             _cachedMetrics = new Dictionary<string, float>();
             _cachedHistoryData = new Dictionary<string, List<MetricDataPoint>>();
             _cacheTimestamps = new Dictionary<string, float>();
-            
+
             _currentTimeRange = TimeRange.Last24Hours;
             _currentFacility = "All Facilities";
             _isRefreshing = false;
@@ -97,7 +110,7 @@ namespace ProjectChimera.UI.Panels.Components
             {
                 _analyticsService = GetAnalyticsServiceFromDI();
                 _isServiceAvailable = _analyticsService != null;
-                
+
                 OnServiceAvailabilityChanged?.Invoke(_isServiceAvailable);
 
                 if (_isServiceAvailable)
@@ -169,7 +182,7 @@ namespace ProjectChimera.UI.Panels.Components
         private void RefreshCurrentMetrics()
         {
             var metrics = GetCurrentMetricsForFacility(_currentFacility);
-            
+
             if (metrics != null && metrics.Count > 0)
             {
                 UpdateCachedMetrics(metrics);
@@ -184,11 +197,11 @@ namespace ProjectChimera.UI.Panels.Components
         private void RefreshHistoryData()
         {
             var metricKeys = GetKnownMetricKeys();
-            
+
             foreach (var metricKey in metricKeys)
             {
                 var historyData = GetMetricHistoryForFacility(metricKey, _currentTimeRange, _currentFacility);
-                
+
                 if (historyData != null && historyData.Count > 0)
                 {
                     UpdateCachedHistoryData(metricKey, historyData);
@@ -201,30 +214,82 @@ namespace ProjectChimera.UI.Panels.Components
 
         #region Data Fetching
 
-        private Dictionary<string, float> GetCurrentMetricsForFacility(string facilityName)
+        public Dictionary<string, float> GetCurrentMetricsForFacility(string facilityName)
         {
-            if (!_isServiceAvailable) 
+            if (!_isServiceAvailable)
             {
-                return GetPlaceholderMetrics();
+                var objectMetrics = GetPlaceholderMetrics();
+                var floatMetrics = new Dictionary<string, float>();
+                foreach (var kvp in objectMetrics)
+                {
+                    if (kvp.Value is float floatValue)
+                        floatMetrics[kvp.Key] = floatValue;
+                    else if (kvp.Value != null && float.TryParse(kvp.Value.ToString(), out float parsedValue))
+                        floatMetrics[kvp.Key] = parsedValue;
+                    else
+                        floatMetrics[kvp.Key] = 0f;
+                }
+                return floatMetrics;
             }
 
             try
             {
+                Dictionary<string, float> objectMetrics = null;
                 if (_analyticsService is AnalyticsManager analyticsManager)
                 {
-                    return analyticsManager.GetCurrentMetrics(facilityName);
+                    objectMetrics = analyticsManager.GetCurrentMetrics();
                 }
-                
-                return _analyticsService.GetCurrentMetrics();
+                else
+                {
+                    var rawMetrics = _analyticsService.GetCurrentMetrics();
+                    objectMetrics = ConvertToFloatMetrics(rawMetrics);
+                }
+
+                return objectMetrics;
             }
             catch (System.Exception ex)
             {
                 LogWarning($"Failed to get current metrics: {ex.Message}");
-                return GetPlaceholderMetrics();
+                var objectMetrics = GetPlaceholderMetrics();
+                var floatMetrics = new Dictionary<string, float>();
+                foreach (var kvp in objectMetrics)
+                {
+                    if (kvp.Value is float floatValue)
+                        floatMetrics[kvp.Key] = floatValue;
+                    else if (kvp.Value != null && float.TryParse(kvp.Value.ToString(), out float parsedValue))
+                        floatMetrics[kvp.Key] = parsedValue;
+                    else
+                        floatMetrics[kvp.Key] = 0f;
+                }
+                return floatMetrics;
             }
         }
 
-        private List<MetricDataPoint> GetMetricHistoryForFacility(string metricKey, TimeRange timeRange, string facilityName)
+        public Dictionary<string, float> GetCurrentMetrics(string category = null)
+        {
+            if (_analyticsService == null) return new Dictionary<string, float>();
+
+            try
+            {
+                if (category == null)
+                {
+                    var rawMetrics = _analyticsService.GetCurrentMetrics();
+                    return ConvertToFloatMetrics(rawMetrics);
+                }
+                else
+                {
+                    var rawMetrics = _analyticsService.GetCurrentMetrics();
+                    return ConvertToFloatMetrics(rawMetrics);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                LogWarning($"Failed to get current metrics for category {category}: {ex.Message}");
+                return new Dictionary<string, float>();
+            }
+        }
+
+        private List<MetricDataPoint> GetMetricHistoryForFacility(string metricKey, ProjectChimera.Systems.Analytics.TimeRange timeRange, string facilityName)
         {
             if (!_isServiceAvailable)
             {
@@ -235,9 +300,9 @@ namespace ProjectChimera.UI.Panels.Components
             {
                 if (_analyticsService is AnalyticsManager analyticsManager)
                 {
-                    return analyticsManager.GetMetricHistory(metricKey, timeRange, facilityName);
+                    return analyticsManager.GetMetricHistory(metricKey, timeRange);
                 }
-                
+
                 return _analyticsService.GetMetricHistory(metricKey, timeRange);
             }
             catch (System.Exception ex)
@@ -245,6 +310,32 @@ namespace ProjectChimera.UI.Panels.Components
                 LogWarning($"Failed to get metric history for {metricKey}: {ex.Message}");
                 return GetPlaceholderHistoryData(metricKey);
             }
+        }
+
+        public List<Dictionary<string, float>> GetMetricHistory(string metricKey, int count)
+        {
+            // Convert count to appropriate TimeRange - placeholder implementation
+            var timeRange = ProjectChimera.Systems.Analytics.TimeRange.LastHour;
+            // Call the overloaded method that returns List<MetricDataPoint>
+            var metricPoints = GetMetricHistoryForFacility(metricKey, timeRange, null);
+            return metricPoints.Select(m => new Dictionary<string, float>
+            {
+                ["timestamp"] = (float)m.Timestamp.Ticks,
+                ["value"] = m.Value,
+                ["metric"] = m.MetricName?.Length ?? 0
+            }).ToList();
+        }
+
+        public List<Dictionary<string, float>> GetMetricHistory(string metricKey, int count, string category = null)
+        {
+            var history = GetMetricHistory(metricKey, count);
+            if (string.IsNullOrEmpty(category))
+                return history;
+
+            // Filter by category if needed
+            return history.Where(entry => entry.ContainsKey("category") &&
+                                         entry["category"].ToString() == category)
+                         .ToList();
         }
 
         public List<string> GetAvailableFacilities()
@@ -260,7 +351,7 @@ namespace ProjectChimera.UI.Panels.Components
                 {
                     return analyticsManager.GetAvailableFacilities();
                 }
-                
+
                 return GetPlaceholderFacilities();
             }
             catch (System.Exception ex)
@@ -296,8 +387,8 @@ namespace ProjectChimera.UI.Panels.Components
         private bool IsCacheValid(string cacheKey)
         {
             if (!_enableDataCaching) return false;
-            
-            return _cacheTimestamps.ContainsKey(cacheKey) && 
+
+            return _cacheTimestamps.ContainsKey(cacheKey) &&
                    (Time.time - _cacheTimestamps[cacheKey]) < _cacheExpirationTime;
         }
 
@@ -306,7 +397,7 @@ namespace ProjectChimera.UI.Panels.Components
             _cachedMetrics.Clear();
             _cachedHistoryData.Clear();
             _cacheTimestamps.Clear();
-            
+
             LogInfo("Data cache cleared");
         }
 
@@ -319,7 +410,7 @@ namespace ProjectChimera.UI.Panels.Components
             var placeholderMetrics = GetPlaceholderMetrics();
             UpdateCachedMetrics(placeholderMetrics);
             OnMetricsUpdated?.Invoke(placeholderMetrics);
-            
+
             LogInfo("Loaded placeholder data for cannabis cultivation metrics");
         }
 
@@ -327,7 +418,7 @@ namespace ProjectChimera.UI.Panels.Components
         {
             // Generate realistic placeholder data for cannabis cultivation game
             var random = new System.Random(System.DateTime.Now.Millisecond);
-            
+
             return new Dictionary<string, float>
             {
                 ["YieldPerHour"] = 2.5f + (float)(random.NextDouble() * 1.5f), // 2.5-4.0 g/hr
@@ -345,13 +436,13 @@ namespace ProjectChimera.UI.Panels.Components
         {
             var dataPoints = new List<MetricDataPoint>();
             var random = new System.Random(metricKey.GetHashCode());
-            
+
             // Generate 24 hours of data points for cannabis cultivation
             for (int i = 24; i >= 0; i--)
             {
                 var timestamp = System.DateTime.Now.AddHours(-i);
                 float value = GeneratePlaceholderValue(metricKey, random);
-                
+
                 dataPoints.Add(new MetricDataPoint
                 {
                     Timestamp = timestamp,
@@ -359,7 +450,7 @@ namespace ProjectChimera.UI.Panels.Components
                     MetricName = metricKey
                 });
             }
-            
+
             return dataPoints;
         }
 
@@ -402,7 +493,7 @@ namespace ProjectChimera.UI.Panels.Components
             {
                 _currentTimeRange = timeRange;
                 LogInfo($"Time range changed to: {timeRange}");
-                
+
                 // Refresh history data for new time range
                 RefreshHistoryData();
             }
@@ -414,7 +505,7 @@ namespace ProjectChimera.UI.Panels.Components
             {
                 _currentFacility = facilityName;
                 LogInfo($"Facility changed to: {facilityName}");
-                
+
                 // Refresh all data for new facility
                 RefreshData();
             }
@@ -440,9 +531,9 @@ namespace ProjectChimera.UI.Panels.Components
         {
             _analyticsService = newService;
             _isServiceAvailable = newService != null;
-            
+
             OnServiceAvailabilityChanged?.Invoke(_isServiceAvailable);
-            
+
             if (_isServiceAvailable)
             {
                 RefreshData();
@@ -452,13 +543,20 @@ namespace ProjectChimera.UI.Panels.Components
 
         public float GetMetricValue(string metricKey)
         {
-            return _cachedMetrics.TryGetValue(metricKey, out var value) ? value : 0f;
+            if (_cachedMetrics.TryGetValue(metricKey, out var value))
+            {
+                if (value is float floatValue)
+                    return floatValue;
+                else if (value != null && float.TryParse(value.ToString(), out float parsedValue))
+                    return parsedValue;
+            }
+            return 0f;
         }
 
         public List<MetricDataPoint> GetMetricHistory(string metricKey)
         {
-            return _cachedHistoryData.TryGetValue(metricKey, out var history) 
-                ? new List<MetricDataPoint>(history) 
+            return _cachedHistoryData.TryGetValue(metricKey, out var history)
+                ? new List<MetricDataPoint>(history)
                 : new List<MetricDataPoint>();
         }
 
@@ -469,23 +567,23 @@ namespace ProjectChimera.UI.Panels.Components
 
         public bool HasHistoryData(string metricKey)
         {
-            return _cachedHistoryData.ContainsKey(metricKey) && 
+            return _cachedHistoryData.ContainsKey(metricKey) &&
                    _cachedHistoryData[metricKey].Count > 0;
         }
 
-        public Dictionary<string, object> GetDataStatus()
+        public Dictionary<string, float> GetDataStatus()
         {
-            return new Dictionary<string, object>
+            return new Dictionary<string, float>
             {
-                ["IsServiceAvailable"] = _isServiceAvailable,
-                ["IsRefreshing"] = _isRefreshing,
+                ["IsServiceAvailable"] = _isServiceAvailable ? 1.0f : 0.0f,
+                ["IsRefreshing"] = _isRefreshing ? 1.0f : 0.0f,
                 ["LastRefreshTime"] = _lastRefreshTime,
                 ["CachedMetricsCount"] = _cachedMetrics.Count,
                 ["CachedHistoryCount"] = _cachedHistoryData.Count,
-                ["CurrentTimeRange"] = _currentTimeRange,
-                ["CurrentFacility"] = _currentFacility,
+                ["CurrentTimeRange"] = (float)_currentTimeRange,
+                ["CurrentFacility"] = _currentFacility.Length,
                 ["RefreshInterval"] = _refreshInterval,
-                ["AutoRefreshEnabled"] = _enableAutoRefresh
+                ["AutoRefreshEnabled"] = _enableAutoRefresh ? 1.0f : 0.0f
             };
         }
 
@@ -513,13 +611,38 @@ namespace ProjectChimera.UI.Panels.Components
         private void LogInfo(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[DataDashboardData] {message}");
+                ChimeraLogger.Log($"[DataDashboardData] {message}");
         }
 
         private void LogWarning(string message)
         {
             if (_enableDebugLogging)
-                Debug.LogWarning($"[DataDashboardData] {message}");
+                ChimeraLogger.LogWarning($"[DataDashboardData] {message}");
+        }
+
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+        }
+        private Dictionary<string, float> ConvertToFloatMetrics(Dictionary<string, object> objectMetrics)
+        {
+            var floatMetrics = new Dictionary<string, float>();
+            if (objectMetrics != null)
+            {
+                foreach (var kvp in objectMetrics)
+                {
+                    if (kvp.Value is float floatValue)
+                        floatMetrics[kvp.Key] = floatValue;
+                    else if (kvp.Value != null && float.TryParse(kvp.Value.ToString(), out float parsedValue))
+                        floatMetrics[kvp.Key] = parsedValue;
+                    else
+                        floatMetrics[kvp.Key] = 0f;
+                }
+            }
+            return floatMetrics;
         }
     }
 }

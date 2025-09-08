@@ -1,5 +1,7 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
+using ProjectChimera.Core;
 using ProjectChimera.Systems.Camera;
 using ProjectChimera.Data.Camera;
 
@@ -85,8 +87,8 @@ namespace ProjectChimera.Testing.Systems.Camera
         {
             LogDebug("Setting up test environment...");
             
-            _controller = FindObjectOfType<AdvancedCameraController>();
-            _testCamera = FindObjectOfType<UnityEngine.Camera>();
+            _controller = ServiceContainerFactory.Instance?.TryResolve<AdvancedCameraController>();
+            _testCamera = ServiceContainerFactory.Instance?.TryResolve<UnityEngine.Camera>() ?? UnityEngine.Camera.main ?? ServiceContainerFactory.Instance?.TryResolve<UnityEngine.Camera>();
             
             if (_controller == null)
             {
@@ -578,7 +580,7 @@ namespace ProjectChimera.Testing.Systems.Camera
         {
             if (_enableDebugOutput)
             {
-                Debug.Log($"[AdvancedCameraControllerTest] {message}");
+                ChimeraLogger.Log($"[AdvancedCameraControllerTest] {message}");
             }
         }
     }

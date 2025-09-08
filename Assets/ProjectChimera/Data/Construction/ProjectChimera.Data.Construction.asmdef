@@ -2,7 +2,6 @@
     "name": "ProjectChimera.Data.Construction",
     "rootNamespace": "ProjectChimera.Data.Construction",
     "references": [
-        "ProjectChimera.Core",
         "ProjectChimera.Shared"
     ],
     "includePlatforms": [],

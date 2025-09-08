@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Editor
 {
@@ -180,7 +181,7 @@ namespace ProjectChimera.Editor
                 var asmdefPaths = Directory.GetFiles("Assets/ProjectChimera", "*.asmdef", SearchOption.AllDirectories);
                 _totalAssemblies = asmdefPaths.Length;
                 
-                Debug.Log($"[Assembly Validator] Starting validation of {_totalAssemblies} assemblies");
+                ChimeraLogger.Log($"[Assembly Validator] Starting validation of {_totalAssemblies} assemblies");
                 
                 // Create dependency graph
                 var dependencyGraph = BuildDependencyGraph(asmdefPaths);
@@ -208,11 +209,11 @@ namespace ProjectChimera.Editor
                 _validationResults = _validationResults.OrderBy(r => r.IsValid ? 1 : 0)
                     .ThenByDescending(r => r.Issues.Count).ToList();
                 
-                Debug.Log($"[Assembly Validator] Validation complete: {_issuesFound} issues found across {_totalAssemblies} assemblies");
+                ChimeraLogger.Log($"[Assembly Validator] Validation complete: {_issuesFound} issues found across {_totalAssemblies} assemblies");
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"[Assembly Validator] Validation failed: {e.Message}");
+                ChimeraLogger.LogError($"[Assembly Validator] Validation failed: {e.Message}");
             }
             finally
             {
@@ -251,7 +252,7 @@ namespace ProjectChimera.Editor
                     _validatedAssemblies++;
                 }
                 
-                Debug.Log($"[Assembly Validator] Quick validation complete");
+                ChimeraLogger.Log($"[Assembly Validator] Quick validation complete");
             }
             finally
             {
@@ -277,7 +278,7 @@ namespace ProjectChimera.Editor
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogWarning($"[Assembly Validator] Failed to parse {path}: {e.Message}");
+                    ChimeraLogger.LogWarning($"[Assembly Validator] Failed to parse {path}: {e.Message}");
                 }
             }
             
@@ -477,7 +478,7 @@ namespace ProjectChimera.Editor
             }
             
             AssetDatabase.Refresh();
-            Debug.Log($"[Assembly Validator] Fixed {_issuesFixed} issues");
+            ChimeraLogger.Log($"[Assembly Validator] Fixed {_issuesFixed} issues");
             
             // Re-validate after fixes
             ValidateAllAssemblies();
@@ -485,8 +486,8 @@ namespace ProjectChimera.Editor
         
         private void FixAssemblyIssues(AssemblyValidationResult result)
         {
-            Debug.Log($"[Assembly Validator] Manual fixes required for {result.AssemblyName}");
-            Debug.Log("Please use Unity Inspector to fix assembly definition issues manually.");
+            ChimeraLogger.Log($"[Assembly Validator] Manual fixes required for {result.AssemblyName}");
+            ChimeraLogger.Log("Please use Unity Inspector to fix assembly definition issues manually.");
         }
         
         private AssemblyDefinition ParseAssemblyDefinition(string jsonContent)
@@ -565,7 +566,7 @@ namespace ProjectChimera.Editor
             File.WriteAllText(reportPath, report.ToString());
             AssetDatabase.Refresh();
             
-            Debug.Log($"[Assembly Validator] Report generated: {reportPath}");
+            ChimeraLogger.Log($"[Assembly Validator] Report generated: {reportPath}");
             EditorUtility.RevealInFinder(reportPath);
         }
     }

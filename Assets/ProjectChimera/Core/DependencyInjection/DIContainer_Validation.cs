@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
@@ -14,9 +15,9 @@ namespace ProjectChimera.Core.DependencyInjection
         /// <summary>
         /// Validates the container configuration and dependencies
         /// </summary>
-        public ContainerValidationResult Verify()
+        public ContainerVerificationResult Verify()
         {
-            var result = new ContainerValidationResult
+            var result = new ContainerVerificationResult
             {
                 IsValid = true,
                 Errors = new List<string>(),
@@ -43,9 +44,9 @@ namespace ProjectChimera.Core.DependencyInjection
                 if (_enableDebugLogging)
                 {
                     if (result.IsValid)
-                        Debug.Log("[ChimeraDIContainer] Container validation passed");
+                        ChimeraLogger.Log("[ChimeraDIContainer] Container validation passed");
                     else
-                        Debug.LogError($"[ChimeraDIContainer] Container validation failed with {result.Errors.Count} errors");
+                        ChimeraLogger.LogError($"[ChimeraDIContainer] Container validation failed with {result.Errors.Count} errors");
                 }
             }
             catch (Exception ex)
@@ -60,7 +61,7 @@ namespace ProjectChimera.Core.DependencyInjection
         /// <summary>
         /// Validates for circular dependencies in the dependency graph
         /// </summary>
-        private void ValidateCircularDependencies(ContainerValidationResult result)
+        private void ValidateCircularDependencies(ContainerVerificationResult result)
         {
             var visited = new HashSet<Type>();
             var recursionStack = new HashSet<Type>();
@@ -109,7 +110,7 @@ namespace ProjectChimera.Core.DependencyInjection
         /// <summary>
         /// Validates that all dependencies can be resolved
         /// </summary>
-        private void ValidateMissingDependencies(ContainerValidationResult result)
+        private void ValidateMissingDependencies(ContainerVerificationResult result)
         {
             foreach (var registration in _services.Values)
             {
@@ -152,7 +153,7 @@ namespace ProjectChimera.Core.DependencyInjection
         /// <summary>
         /// Validates for duplicate service registrations
         /// </summary>
-        private void ValidateDuplicateRegistrations(ContainerValidationResult result)
+        private void ValidateDuplicateRegistrations(ContainerVerificationResult result)
         {
             var duplicateTypes = _services.Keys
                 .GroupBy(type => type)
@@ -168,7 +169,7 @@ namespace ProjectChimera.Core.DependencyInjection
         /// <summary>
         /// Validates singleton lifetime consistency
         /// </summary>
-        private void ValidateSingletonConsistency(ContainerValidationResult result)
+        private void ValidateSingletonConsistency(ContainerVerificationResult result)
         {
             foreach (var registration in _services.Values)
             {
@@ -245,7 +246,7 @@ namespace ProjectChimera.Core.DependencyInjection
             IsValidated = false;
             
             if (_enableDebugLogging)
-                Debug.Log("[ChimeraDIContainer] Container cleared");
+                ChimeraLogger.Log("[ChimeraDIContainer] Container cleared");
         }
         
         /// <summary>
@@ -278,7 +279,7 @@ namespace ProjectChimera.Core.DependencyInjection
             }
             
             if (_enableDebugLogging)
-                Debug.Log("[ChimeraDIContainer] Child container created");
+                ChimeraLogger.Log("[ChimeraDIContainer] Child container created");
             
             return childContainer;
         }
@@ -302,11 +303,11 @@ namespace ProjectChimera.Core.DependencyInjection
                 Clear();
                 
                 if (_enableDebugLogging)
-                    Debug.Log("[ChimeraDIContainer] Container disposed");
+                    ChimeraLogger.Log("[ChimeraDIContainer] Container disposed");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ChimeraDIContainer] Error during disposal: {ex.Message}");
+                ChimeraLogger.LogError($"[ChimeraDIContainer] Error during disposal: {ex.Message}");
             }
         }
     }

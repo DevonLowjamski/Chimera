@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System;
 using System.Text;
@@ -22,7 +23,7 @@ namespace ProjectChimera.Core
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Failed to serialize object to JSON: {ex.Message}");
+                ChimeraLogger.LogError($"Failed to serialize object to JSON: {ex.Message}");
                 return string.Empty;
             }
         }
@@ -45,7 +46,7 @@ namespace ProjectChimera.Core
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Failed to deserialize JSON to {typeof(T).Name}: {ex.Message}");
+                ChimeraLogger.LogError($"Failed to deserialize JSON to {typeof(T).Name}: {ex.Message}");
                 return default(T);
             }
         }
@@ -68,7 +69,7 @@ namespace ProjectChimera.Core
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Failed to overwrite {typeof(T).Name} from JSON: {ex.Message}");
+                ChimeraLogger.LogError($"Failed to overwrite {typeof(T).Name} from JSON: {ex.Message}");
             }
         }
 
@@ -205,14 +206,14 @@ namespace ProjectChimera.Core
                     {
                         // Invalid high surrogate, replace with Unicode replacement character
                         stringBuilder.Append('\uFFFD');
-                        Debug.LogWarning($"Invalid Unicode high surrogate at position {i}, replaced with Unicode replacement character");
+                        ChimeraLogger.LogWarning($"Invalid Unicode high surrogate at position {i}, replaced with Unicode replacement character");
                     }
                 }
                 else if (char.IsLowSurrogate(c))
                 {
                     // Orphaned low surrogate, replace with Unicode replacement character
                     stringBuilder.Append('\uFFFD');
-                    Debug.LogWarning($"Orphaned Unicode low surrogate at position {i}, replaced with Unicode replacement character");
+                    ChimeraLogger.LogWarning($"Orphaned Unicode low surrogate at position {i}, replaced with Unicode replacement character");
                 }
                 else
                 {

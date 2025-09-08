@@ -1,3 +1,5 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Economy;
@@ -12,7 +14,7 @@ namespace ProjectChimera.Systems.Economy.Components
     /// Handles plant production registration, allocation, and availability tracking
     /// for Project Chimera's game economy system.
     /// </summary>
-    public class ContractProductionTracker : MonoBehaviour
+    public class ContractProductionTracker : MonoBehaviour, ITickable
     {
         [Header("Production Tracking Configuration")]
         [SerializeField] private bool _enableProductionTracking = true;
@@ -46,13 +48,14 @@ namespace ProjectChimera.Systems.Economy.Components
         public bool ProductionTrackingEnabled => _enableProductionTracking;
         public bool AutoAllocationEnabled => _enableAutoAllocation;
 
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             if (_enableProductionTracking && Time.time - _lastTrackingUpdate >= _trackingUpdateInterval)
             {
                 PerformMaintenanceTasks();
                 _lastTrackingUpdate = Time.time;
-            }
+
+    }
         }
 
         public void Initialize()
@@ -256,8 +259,8 @@ namespace ProjectChimera.Systems.Economy.Components
         /// </summary>
         public List<PlantProductionRecord> GetContractProduction(string contractId)
         {
-            return _contractProduction.TryGetValue(contractId, out var production) 
-                ? new List<PlantProductionRecord>(production) 
+            return _contractProduction.TryGetValue(contractId, out var production)
+                ? new List<PlantProductionRecord>(production)
                 : new List<PlantProductionRecord>();
         }
 
@@ -269,7 +272,7 @@ namespace ProjectChimera.Systems.Economy.Components
             if (_contractProduction.ContainsKey(contractId))
             {
                 var plantIds = _contractAllocations[contractId].ToList();
-                
+
                 // Remove mapping entries
                 foreach (var plantId in plantIds)
                 {
@@ -479,12 +482,27 @@ namespace ProjectChimera.Systems.Economy.Components
 
         private void LogInfo(string message)
         {
-            Debug.Log($"[ContractProductionTracker] {message}");
+            ChimeraLogger.Log($"[ContractProductionTracker] {message}");
         }
 
         private void LogWarning(string message)
         {
-            Debug.LogWarning($"[ContractProductionTracker] {message}");
+            ChimeraLogger.LogWarning($"[ContractProductionTracker] {message}");
         }
+
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+    public virtual void OnRegistered()
+    {
+        // Override in derived classes if needed
     }
+
+    public virtual void OnUnregistered()
+    {
+        // Override in derived classes if needed
+    }
+
+}
 }

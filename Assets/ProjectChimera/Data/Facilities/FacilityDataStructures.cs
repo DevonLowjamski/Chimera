@@ -135,7 +135,7 @@ namespace ProjectChimera.Data.Facilities
         public float quality;
         public DateTime harvestDate;
         public List<string> harvestedParts;
-        
+
         // Additional fields for UI compatibility
         public float TotalYield;
         public string PlantStrain;
@@ -150,10 +150,10 @@ namespace ProjectChimera.Data.Facilities
         public float targetCO2Level;
         public float currentCO2Level;
         public float maxOutputRate;
-        
+
         // Compatibility property for AdvancedGrowRoomController
         public float CurrentCO2Level => currentCO2Level;
-        
+
         // Additional properties for advanced control
         public float PowerConsumption => isActive ? maxOutputRate * 0.1f : 0f; // Estimated power consumption
         public float InjectionRate => isActive ? maxOutputRate : 0f;
@@ -162,7 +162,7 @@ namespace ProjectChimera.Data.Facilities
         {
             targetCO2Level = co2Level;
         }
-        
+
         public void StopInjection()
         {
             isActive = false;
@@ -178,28 +178,28 @@ namespace ProjectChimera.Data.Facilities
         public Vector3 size;
         public List<Vector3> plantPositions;
         public RoomEnvironmentalSettings environmentalSettings;
-        
+
         // Compatibility properties for ProceduralSceneGenerator
         public string RoomId { get; set; } = System.Guid.NewGuid().ToString();
-        public string RoomName 
-        { 
-            get => roomName; 
-            set => roomName = value; 
+        public string RoomName
+        {
+            get => roomName;
+            set => roomName = value;
         }
-        public string RoomType 
-        { 
-            get => roomType.ToString(); 
-            set => System.Enum.TryParse(value, out roomType); 
+        public string RoomType
+        {
+            get => roomType.ToString();
+            set => System.Enum.TryParse(value, out roomType);
         }
-        public Vector3 Position 
-        { 
-            get => position; 
-            set => position = value; 
+        public Vector3 Position
+        {
+            get => position;
+            set => position = value;
         }
-        public Vector3 Dimensions 
-        { 
-            get => size; 
-            set => size = value; 
+        public Vector3 Dimensions
+        {
+            get => size;
+            set => size = value;
         }
         public float Area => size.x * size.z;
     }
@@ -263,21 +263,21 @@ namespace ProjectChimera.Data.Facilities
         public string UpgradeReason;
         public string FailureReason;
         public float UpgradeCost;
-        
+
         public void AddFailure(string failure) => Failures.Add(failure);
         public void AddError(string error) => Errors.Add(error);
         public void AddWarning(string warning) => Warnings.Add(warning);
         public void AddFailureReason(string reason) => FailureReasons.Add(reason);
-        
+
         public string GetFailureSummary()
         {
             if (FailureReasons.Count == 0 && Failures.Count == 0)
                 return "No failures";
-            
+
             var reasons = new List<string>();
             reasons.AddRange(FailureReasons);
             reasons.AddRange(Failures);
-            
+
             return string.Join(", ", reasons);
         }
     }
@@ -314,7 +314,7 @@ namespace ProjectChimera.Data.Facilities
         public string PreviousFacilityId;
         public string TargetFacilityId;
         public List<string> Errors = new List<string>();
-        
+
         public void AddError(string error) => Errors.Add(error);
     }
 
@@ -375,6 +375,7 @@ namespace ProjectChimera.Data.Facilities
         public int TotalPlantsGrown;
         public float TotalRevenue;
         public float TotalValue;
+        public float TotalInvestment;
         public float AverageQuality;
         public bool CanUpgrade;
         public string NextTier;

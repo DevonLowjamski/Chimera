@@ -1,3 +1,5 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +16,7 @@ namespace ProjectChimera.Systems.Economy
     /// Extracted from TradingManager for modular architecture.
     /// Handles opportunity discovery, profitability analysis, and market intelligence.
     /// </summary>
-    public class TradingOpportunityGenerator : MonoBehaviour
+    public class TradingOpportunityGenerator : MonoBehaviour, ITickable
     {
         [Header("Opportunity Generation Configuration")]
         [SerializeField] private bool _enableOpportunityLogging = true;
@@ -53,10 +55,10 @@ namespace ProjectChimera.Systems.Economy
             LogDebug("Trading opportunity generator initialized");
         }
         
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             var timeManager = GameManager.Instance?.GetManager<TimeManager>();
-            float gameTimeDelta = timeManager?.GetScaledDeltaTime() ?? Time.deltaTime;
+            float gameTimeDelta = timeManager?.GetScaledDeltaTime() ?? deltaTime;
             
             _lastOpportunityCheck += gameTimeDelta;
             
@@ -64,7 +66,8 @@ namespace ProjectChimera.Systems.Economy
             {
                 UpdateTradingOpportunities();
                 _lastOpportunityCheck = 0f;
-            }
+            
+    }
         }
         
         #region Opportunity Management
@@ -570,7 +573,33 @@ namespace ProjectChimera.Systems.Economy
         private void LogDebug(string message)
         {
             if (_enableOpportunityLogging)
-                Debug.Log($"[TradingOpportunityGenerator] {message}");
+                ChimeraLogger.Log($"[TradingOpportunityGenerator] {message}");
+        }
+        
+        protected virtual void Start()
+        {
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
+        }
+
+        protected virtual void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
+        }
+    
+        // ITickable implementation
+        public int Priority => 0;
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+        
+        public virtual void OnRegistered() 
+        { 
+            // Override in derived classes if needed
+        }
+        
+        public virtual void OnUnregistered() 
+        { 
+            // Override in derived classes if needed
         }
     }
 }

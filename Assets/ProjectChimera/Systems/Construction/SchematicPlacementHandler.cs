@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Data.Construction;
@@ -160,7 +161,7 @@ namespace ProjectChimera.Systems.Construction
         private void LogDebug(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[SchematicPlacementHandler] {message}");
+                ChimeraLogger.Log($"[SchematicPlacementHandler] {message}");
         }
     }
 }

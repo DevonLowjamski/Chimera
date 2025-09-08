@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using UnityEngine.Audio;
 using System.Collections;
@@ -547,13 +548,13 @@ namespace ProjectChimera.Systems.Audio.Components
         private void LogInfo(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[AudioLoadingService] {message}");
+                ChimeraLogger.Log($"[AudioLoadingService] {message}");
         }
 
         private void LogWarning(string message)
         {
             if (_enableDebugLogging)
-                Debug.LogWarning($"[AudioLoadingService] {message}");
+                ChimeraLogger.LogWarning($"[AudioLoadingService] {message}");
         }
 
         private enum AudioLoadType

@@ -1,3 +1,6 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,97 +16,97 @@ namespace ProjectChimera.Systems.Services.Economy
     /// Handles trading post operations, availability, and state management
     /// Decomposed from TradingManager (500 lines target)
     /// </summary>
-    public class TradingPostManagementService : MonoBehaviour, ITradingPostManagementService
+    public class TradingPostManagementService : MonoBehaviour, ITickable, ITradingPostManagementService
     {
         #region Properties
-        
+
         public bool IsInitialized { get; private set; }
-        
+
         #endregion
 
         #region Private Fields
-        
+
         [Header("Trading Post Configuration")]
         [SerializeField] private bool _enableTradingPosts = true;
         [SerializeField] private float _restockInterval = 24f; // Hours
         [SerializeField] private float _priceUpdateInterval = 6f; // Hours
         [SerializeField] private int _maxTradingPosts = 20;
-        
+
         [Header("Trading Post Data")]
         [SerializeField] private List<TradingPost> _availableTradingPosts = new List<TradingPost>();
         [SerializeField] private Dictionary<TradingPost, TradingPostState> _tradingPostStates = new Dictionary<TradingPost, TradingPostState>();
         [SerializeField] private List<TradingOpportunity> _currentOpportunities = new List<TradingOpportunity>();
-        
+
         [Header("Market Settings")]
         [SerializeField] private float _basePriceMarkup = 1.1f;
         [SerializeField] private float _maxPriceMarkup = 1.5f;
         [SerializeField] private float _reputationPriceModifier = 0.1f;
-        
+
         private float _lastRestockUpdate;
         private float _lastPriceUpdate;
-        
+
         #endregion
 
         #region Events
-        
+
         // Interface events
         public event Action<TradingPost> OnTradingPostStatusChanged;
         public event Action<TradingOpportunity> OnTradingOpportunityAdded;
         public event Action<string> OnTradingOpportunityExpired;
-        
+
         // Additional events
         public event Action<TradingPost, TradingPostState> OnTradingPostStateChanged;
         public event Action<TradingPost> OnTradingPostRestocked;
         public event Action<TradingPost, float> OnTradingPostPricesUpdated;
-        
+
         #endregion
 
         #region IService Implementation
-        
+
         public void Initialize()
         {
             if (IsInitialized) return;
-            
-            Debug.Log("Initializing TradingPostManagementService...");
-            
+
+            ChimeraLogger.Log("Initializing TradingPostManagementService...");
+
             // Initialize collections
             InitializeTradingPostSystem();
-            
+
             // Load trading posts
             InitializeTradingPosts();
-            
+
             // Generate initial opportunities
             GenerateNewOpportunities();
-            
+
             // Register with central ServiceRegistry
-            ServiceRegistry.Instance.RegisterService<ITradingPostManagementService>(this, ServiceDomain.Economy);
-            
+            ServiceContainerFactory.Instance.RegisterSingleton<ITradingPostManagementService>(this);
+
             IsInitialized = true;
-            Debug.Log("TradingPostManagementService initialized successfully");
+            ChimeraLogger.Log("TradingPostManagementService initialized successfully");
         }
 
         public void Shutdown()
         {
             if (!IsInitialized) return;
-            
-            Debug.Log("Shutting down TradingPostManagementService...");
-            
+
+            ChimeraLogger.Log("Shutting down TradingPostManagementService...");
+
             // Save trading post states
             SaveTradingPostStates();
-            
+
             // Clear collections
             _availableTradingPosts.Clear();
             _tradingPostStates.Clear();
             _currentOpportunities.Clear();
-            
+
             IsInitialized = false;
-            Debug.Log("TradingPostManagementService shutdown complete");
+            ChimeraLogger.Log("TradingPostManagementService shutdown complete");
         }
-        
+
         #endregion
 
         #region Trading Post Management
-        
+
         public List<TradingPost> GetAvailableTradingPosts()
         {
             return _availableTradingPosts.Where(tp => tp.Status == TradingPostStatus.Open).ToList();
@@ -153,7 +156,7 @@ namespace ProjectChimera.Systems.Services.Economy
         {
             if (opportunityType == OpportunityType.All)
                 return GetCurrentTradingOpportunities();
-            
+
             return _currentOpportunities.Where(o => o.Type == opportunityType && o.ExpirationTime > DateTime.Now).ToList();
         }
 
@@ -248,7 +251,7 @@ namespace ProjectChimera.Systems.Services.Economy
 
             float basePrice = product.BaseWholesalePrice;
             float markup = isBuying ? state.PriceMarkup : (1f / state.PriceMarkup);
-            
+
             return basePrice * markup * quantity;
         }
 
@@ -262,7 +265,7 @@ namespace ProjectChimera.Systems.Services.Economy
             {
                 state.CurrentInventory[product.name] -= quantity;
                 OnTradingPostStateChanged?.Invoke(tradingPost, state);
-                Debug.Log($"Reserved {quantity} of {product.ProductName} at {tradingPost.Name}");
+                ChimeraLogger.Log($"Reserved {quantity} of {product.ProductName} at {tradingPost.Name}");
                 return true;
             }
 
@@ -280,20 +283,20 @@ namespace ProjectChimera.Systems.Services.Economy
                 {
                     currentReputation = (float)state.DynamicData["PlayerReputation"];
                 }
-                
+
                 currentReputation = Mathf.Clamp01(currentReputation + reputationChange);
                 state.DynamicData["PlayerReputation"] = currentReputation;
-                
+
                 UpdateTradingPostPrices(state);
                 OnTradingPostStateChanged?.Invoke(tradingPost, state);
-                Debug.Log($"Updated reputation with {tradingPost.Name}: {currentReputation:F2}");
+                ChimeraLogger.Log($"Updated reputation with {tradingPost.Name}: {currentReputation:F2}");
             }
         }
-        
+
         #endregion
 
         #region Trading Opportunities
-        
+
         public List<TradingOpportunity> GetCurrentTradingOpportunities()
         {
             return _currentOpportunities.Where(o => o.ExpirationTime > DateTime.Now).ToList();
@@ -315,17 +318,17 @@ namespace ProjectChimera.Systems.Services.Economy
             opportunity.OpportunityData["ClaimedBy"] = playerId;
             opportunity.OpportunityData["ClaimedDate"] = DateTime.Now;
 
-            Debug.Log($"Player {playerId} claimed trading opportunity: {opportunity.Type}");
+            ChimeraLogger.Log($"Player {playerId} claimed trading opportunity: {opportunity.Type}");
             return true;
         }
 
         public void GenerateTradingOpportunity()
         {
-            var opportunityTypes = new[] { 
-                OpportunityType.Buy, 
-                OpportunityType.Sell, 
-                OpportunityType.Arbitrage, 
-                OpportunityType.Special 
+            var opportunityTypes = new[] {
+                OpportunityType.Buy,
+                OpportunityType.Sell,
+                OpportunityType.Arbitrage,
+                OpportunityType.Special
             };
 
             var selectedType = opportunityTypes[UnityEngine.Random.Range(0, opportunityTypes.Length)];
@@ -348,22 +351,22 @@ namespace ProjectChimera.Systems.Services.Economy
 
             _currentOpportunities.Add(opportunity);
             OnTradingOpportunityAdded?.Invoke(opportunity);
-            Debug.Log($"Generated trading opportunity: {opportunity.Type} at {tradingPost.Name}");
+            ChimeraLogger.Log($"Generated trading opportunity: {opportunity.Type} at {tradingPost.Name}");
         }
-        
+
         #endregion
 
         #region Private Helper Methods
-        
+
         private void InitializeTradingPostSystem()
         {
             if (_tradingPostStates == null)
                 _tradingPostStates = new Dictionary<TradingPost, TradingPostState>();
-            
+
             if (_currentOpportunities == null)
                 _currentOpportunities = new List<TradingOpportunity>();
-            
-            Debug.Log("Trading post system initialized");
+
+            ChimeraLogger.Log("Trading post system initialized");
         }
 
         private void InitializeTradingPosts()
@@ -382,7 +385,7 @@ namespace ProjectChimera.Systems.Services.Economy
                 }
             }
 
-            Debug.Log($"Initialized {_availableTradingPosts.Count} trading posts");
+            ChimeraLogger.Log($"Initialized {_availableTradingPosts.Count} trading posts");
         }
 
         private void CreateDefaultTradingPosts()
@@ -448,7 +451,7 @@ namespace ProjectChimera.Systems.Services.Economy
         private void SaveTradingPostStates()
         {
             // TODO: Implement persistent storage
-            Debug.Log("Saving trading post states...");
+            ChimeraLogger.Log("Saving trading post states...");
         }
 
         private void RestockTradingPost(TradingPostState state)
@@ -470,7 +473,7 @@ namespace ProjectChimera.Systems.Services.Economy
 
             state.LastUpdate = DateTime.Now;
             OnTradingPostRestocked?.Invoke(tradingPost);
-            Debug.Log($"Restocked trading post: {tradingPost.Name}");
+            ChimeraLogger.Log($"Restocked trading post: {tradingPost.Name}");
         }
 
         private void UpdateTradingPostPrices(TradingPostState state)
@@ -489,7 +492,7 @@ namespace ProjectChimera.Systems.Services.Economy
             float reputationBonus = (reputation - 0.5f) * _reputationPriceModifier;
             float oldMarkup = state.PriceMarkup;
             state.PriceMarkup = Mathf.Clamp(oldMarkup - reputationBonus, 1.0f, _maxPriceMarkup);
-            
+
             OnTradingPostPricesUpdated?.Invoke(tradingPost, state.PriceMarkup);
         }
 
@@ -514,23 +517,27 @@ namespace ProjectChimera.Systems.Services.Economy
                 _ => 0.5f
             };
         }
-        
+
         #endregion
 
         #region Unity Lifecycle
-        
+
         private void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             Initialize();
         }
 
         private void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             Shutdown();
         }
 
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             if (!IsInitialized || !_enableTradingPosts) return;
 
             float currentTime = UnityEngine.Time.time;
@@ -540,7 +547,8 @@ namespace ProjectChimera.Systems.Services.Economy
             {
                 UpdateTradingPostRestocking();
                 _lastRestockUpdate = currentTime;
-            }
+
+    }
 
             // Update trading post prices
             if (currentTime - _lastPriceUpdate >= _priceUpdateInterval * 3600f)
@@ -577,7 +585,22 @@ namespace ProjectChimera.Systems.Services.Economy
         {
             _currentOpportunities.RemoveAll(o => o.ExpirationTime < DateTime.Now);
         }
-        
+
         #endregion
+
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+    public virtual void OnRegistered()
+    {
+        // Override in derived classes if needed
+    }
+
+    public virtual void OnUnregistered()
+    {
+        // Override in derived classes if needed
+    }
+
     }
 }

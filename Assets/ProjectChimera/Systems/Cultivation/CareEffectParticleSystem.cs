@@ -1,6 +1,6 @@
 using UnityEngine;
 using ProjectChimera.Core;
-using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Shared;
 using CultivationTaskType = ProjectChimera.Data.Cultivation.CultivationTaskType;
 
 namespace ProjectChimera.Systems.Cultivation

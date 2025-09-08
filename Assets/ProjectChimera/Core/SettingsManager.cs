@@ -293,7 +293,7 @@ namespace ProjectChimera.Core
                         break;
                     
                     case "gameplay.time_scale_default":
-                        var timeManager = ProjectChimera.Core.DependencyInjection.ServiceLocator.Instance.GetService<TimeManager>();
+                        var timeManager = ServiceContainerFactory.Instance?.TryResolve<TimeManager>();
                         if (timeManager != null)
                         {
                             timeManager.ResetSpeedLevel();

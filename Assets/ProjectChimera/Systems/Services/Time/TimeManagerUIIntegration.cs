@@ -1,3 +1,5 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using UnityEngine;
 using UnityEngine.UIElements;
 using System;
@@ -10,7 +12,7 @@ namespace ProjectChimera.Systems.Services.Time
     /// Connects TimeManager to all UI displays and implements time-based event scheduling
     /// Handles the time display requirements from the gameplay document
     /// </summary>
-    public class TimeManagerUIIntegration : MonoBehaviour
+    public class TimeManagerUIIntegration : MonoBehaviour, ITickable
     {
         [Header("Time Display Configuration")]
         [SerializeField] private bool _showCombinedTimeDisplay = true;
@@ -59,13 +61,15 @@ namespace ProjectChimera.Systems.Services.Time
             _rootElement = GetComponent<UIDocument>()?.rootVisualElement;
             if (_rootElement == null)
             {
-                Debug.LogError("[TimeManagerUIIntegration] UIDocument not found or root element is null");
+                ChimeraLogger.LogError("[TimeManagerUIIntegration] UIDocument not found or root element is null");
                 return;
             }
         }
         
         private void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             InitializeTimeIntegration();
         }
         
@@ -88,11 +92,11 @@ namespace ProjectChimera.Systems.Services.Time
                 // Start time-based updates
                 StartTimeUpdates();
                 
-                Debug.Log("[TimeManagerUIIntegration] Time UI integration initialized successfully");
+                ChimeraLogger.Log("[TimeManagerUIIntegration] Time UI integration initialized successfully");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[TimeManagerUIIntegration] Failed to initialize: {ex.Message}");
+                ChimeraLogger.LogError($"[TimeManagerUIIntegration] Failed to initialize: {ex.Message}");
             }
         }
         
@@ -101,7 +105,7 @@ namespace ProjectChimera.Systems.Services.Time
         /// </summary>
         private void ResolveDependencies()
         {
-            var gameManager = FindObjectOfType<DIGameManager>();
+            var gameManager = ServiceContainerFactory.Instance?.TryResolve<DIGameManager>();
             if (gameManager == null)
             {
                 throw new InvalidOperationException("DIGameManager not found - required for TimeManager resolution");
@@ -179,8 +183,8 @@ namespace ProjectChimera.Systems.Services.Time
             _lastUIUpdate = 0f;
         }
         
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             if (_timeManager == null) return;
             
             // Update UI elements at specified interval
@@ -192,7 +196,8 @@ namespace ProjectChimera.Systems.Services.Time
                 if (_showTimeEfficiencyRatio)
                 {
                     UpdateEfficiencyDisplay();
-                }
+                
+    }
                 
                 // Trigger time event for other systems
                 if (_enableTimeEventScheduling)
@@ -409,6 +414,8 @@ namespace ProjectChimera.Systems.Services.Time
         
         private void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             // Cleanup event registrations
             if (_timeDisplayLabel != null)
             {
@@ -431,7 +438,7 @@ namespace ProjectChimera.Systems.Services.Time
         /// </summary>
         private ITimeManager FindTimeManagerComponent()
         {
-            var allManagers = FindObjectsOfType<MonoBehaviour>();
+            var allManagers = /* TODO: ServiceContainer.GetAll<MonoBehaviour>() */ new MonoBehaviour[0];
             foreach (var manager in allManagers)
             {
                 if (manager is ITimeManager timeManager)
@@ -441,7 +448,22 @@ namespace ProjectChimera.Systems.Services.Time
             }
             return null;
         }
+    
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+    
+    public virtual void OnRegistered() 
+    { 
+        // Override in derived classes if needed
     }
+    
+    public virtual void OnUnregistered() 
+    { 
+        // Override in derived classes if needed
+    }
+
+}
     
     /// <summary>
     /// Time display settings structure

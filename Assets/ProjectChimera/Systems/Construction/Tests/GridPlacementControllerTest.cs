@@ -1,5 +1,7 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
+using ProjectChimera.Core;
 using ProjectChimera.Systems.Construction;
 using ProjectChimera.Data.Construction;
 
@@ -82,8 +84,8 @@ namespace ProjectChimera.Testing.Systems.Construction
         {
             LogDebug("Setting up test environment...");
             
-            _controller = FindObjectOfType<GridPlacementController>();
-            _gridSystem = FindObjectOfType<GridSystem>();
+            _controller = ServiceContainerFactory.Instance?.TryResolve<IGridPlacementController>() as GridPlacementController;
+            _gridSystem = ServiceContainerFactory.Instance?.TryResolve<IGridSystem>() as GridSystem;
             
             if (_controller == null)
             {
@@ -424,7 +426,7 @@ namespace ProjectChimera.Testing.Systems.Construction
         {
             if (_enableDebugOutput)
             {
-                Debug.Log($"[GridPlacementControllerTest] {message}");
+                ChimeraLogger.Log($"[GridPlacementControllerTest] {message}");
             }
         }
     }

@@ -129,29 +129,29 @@ namespace ProjectChimera.Data.UI
             
             if (_menuSize.x <= 0 || _menuSize.y <= 0)
             {
-                Debug.LogError($"Advanced Menu Config {name}: Menu size must be positive", this);
+                SharedLogger.LogError($"Advanced Menu Config {name}: Menu size must be positive");
                 isValid = false;
             }
             
             if (_animationDuration < 0)
             {
-                Debug.LogError($"Advanced Menu Config {name}: Animation duration cannot be negative", this);
+                SharedLogger.LogError($"Advanced Menu Config {name}: Animation duration cannot be negative");
                 isValid = false;
             }
             
             if (_maxCategoriesPerMenu <= 0)
             {
-                Debug.LogWarning($"Advanced Menu Config {name}: Max categories per menu should be positive", this);
+                SharedLogger.LogWarning($"Advanced Menu Config {name}: Max categories per menu should be positive");
             }
             
             if (_maxActionsPerCategory <= 0)
             {
-                Debug.LogWarning($"Advanced Menu Config {name}: Max actions per category should be positive", this);
+                SharedLogger.LogWarning($"Advanced Menu Config {name}: Max actions per category should be positive");
             }
             
             if (_updateInterval <= 0)
             {
-                Debug.LogError($"Advanced Menu Config {name}: Update interval must be positive", this);
+                SharedLogger.LogError($"Advanced Menu Config {name}: Update interval must be positive");
                 isValid = false;
             }
             

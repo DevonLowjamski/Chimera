@@ -1,4 +1,5 @@
 using System;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core.DependencyInjection
 {
@@ -26,22 +27,22 @@ namespace ProjectChimera.Core.DependencyInjection
         /// <summary>
         /// Configure services for this module
         /// </summary>
-        void ConfigureServices(IServiceLocator serviceLocator);
+        void ConfigureServices(IServiceContainer serviceContainer);
 
         /// <summary>
         /// Initialize the module after all services are registered
         /// </summary>
-        void Initialize(IServiceLocator serviceLocator);
+        void Initialize(IServiceContainer serviceContainer);
 
         /// <summary>
         /// Shutdown the module during cleanup
         /// </summary>
-        void Shutdown(IServiceLocator serviceLocator);
+        void Shutdown(IServiceContainer serviceContainer);
 
         /// <summary>
         /// Validate that all required services are available
         /// </summary>
-        bool ValidateServices(IServiceLocator serviceLocator);
+        bool ValidateServices(IServiceContainer serviceContainer);
     }
 
     /// <summary>
@@ -53,19 +54,19 @@ namespace ProjectChimera.Core.DependencyInjection
         public virtual Version ModuleVersion => new Version(1, 0, 0);
         public virtual string[] Dependencies => new string[0];
 
-        public abstract void ConfigureServices(IServiceLocator serviceLocator);
+        public abstract void ConfigureServices(IServiceContainer serviceContainer);
 
-        public virtual void Initialize(IServiceLocator serviceLocator)
+        public virtual void Initialize(IServiceContainer serviceContainer)
         {
             // Override in derived classes if initialization is needed
         }
 
-        public virtual void Shutdown(IServiceLocator serviceLocator)
+        public virtual void Shutdown(IServiceContainer serviceContainer)
         {
             // Override in derived classes if cleanup is needed
         }
 
-        public virtual bool ValidateServices(IServiceLocator serviceLocator)
+        public virtual bool ValidateServices(IServiceContainer serviceContainer)
         {
             // Override in derived classes for custom validation
             return true;
@@ -73,7 +74,7 @@ namespace ProjectChimera.Core.DependencyInjection
 
         protected void LogModuleAction(string action)
         {
-            UnityEngine.Debug.Log($"[ServiceModule:{ModuleName}] {action}");
+            ChimeraLogger.Log($"[ServiceModule:{ModuleName}] {action}");
         }
     }
 

@@ -1,7 +1,11 @@
+using ProjectChimera.Core.Logging;
+// using UnityEngine.AddressableAssets; // Addressables not available
+// using ProjectChimera.Systems.Addressables; // Addressables assembly not available
 using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Collections;
+using System.Threading.Tasks;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Shared;
 // Adjusted: use EnvironmentalConditions from Data.Shared. No EnvironmentalZone type exists in Data.Shared.
@@ -11,10 +15,10 @@ namespace ProjectChimera.Systems.Environment
 {
     /// <summary>
     /// Advanced Atmospheric Physics Simulation Engine for Enhanced Environmental Control Gaming System v2.0
-    /// 
+    ///
     /// Provides sophisticated atmospheric modeling including computational fluid dynamics (CFD),
     /// heat transfer analysis, moisture transport, and turbulence modeling for cannabis cultivation
-    /// environments. Supports both high-accuracy simulation for design optimization and 
+    /// environments. Supports both high-accuracy simulation for design optimization and
     /// performance-optimized approximation for real-time gameplay.
     /// </summary>
     public class AtmosphericPhysicsSimulator : MonoBehaviour
@@ -26,7 +30,7 @@ namespace ProjectChimera.Systems.Environment
         [SerializeField] private float _simulationAccuracy = 1.0f;
         [SerializeField] private int _maxSimulationIterations = 1000;
         [SerializeField] private float _convergenceTolerance = 0.001f;
-        
+
         [Header("Performance Optimization")]
         [SerializeField] private int _maxConcurrentSimulations = 4;
         [SerializeField] private float _simulationTimeStep = 0.01f;
@@ -35,21 +39,21 @@ namespace ProjectChimera.Systems.Environment
         [SerializeField] private int _meshResolutionLOD0 = 64;
         [SerializeField] private int _meshResolutionLOD1 = 32;
         [SerializeField] private int _meshResolutionLOD2 = 16;
-        
+
         [Header("Physics Models")]
         [SerializeField] private TurbulenceModelType _turbulenceModel = TurbulenceModelType.ReynoldsAveragedNavierStokes;
         [SerializeField] private HeatTransferModelType _heatTransferModel = HeatTransferModelType.AdvancedConvectionDiffusion;
         [SerializeField] private MoistureTransportModelType _moistureModel = MoistureTransportModelType.AdvancedMassTransfer;
         [SerializeField] private bool _enableBuoyancyEffects = true;
         [SerializeField] private bool _enableCoriolisEffects = false;
-        
+
         [Header("Atmospheric Properties")]
         [SerializeField] private float _airDensity = 1.225f; // kg/m³ at sea level
         [SerializeField] private float _dynamicViscosity = 1.81e-5f; // kg/(m·s) at 15°C
         [SerializeField] private float _thermalConductivity = 0.0262f; // W/(m·K)
         [SerializeField] private float _specificHeatCapacity = 1005f; // J/(kg·K)
         [SerializeField] private float _gravitationalAcceleration = 9.81f; // m/s²
-        
+
         // Core Physics Systems
         private FluidDynamicsEngine _fluidDynamics;
         private HeatTransferEngine _heatTransfer;
@@ -57,13 +61,13 @@ namespace ProjectChimera.Systems.Environment
         private TurbulenceEngine _turbulenceEngine;
         private ComputationalMeshGenerator _meshGenerator;
         private BoundaryConditionManager _boundaryManager;
-        
+
         // Simulation Management
         private Dictionary<string, PhysicsSimulationState> _activeSimulations = new Dictionary<string, PhysicsSimulationState>();
         private Queue<SimulationRequest> _simulationQueue = new Queue<SimulationRequest>();
         private List<PhysicsSimulationResult> _simulationCache = new List<PhysicsSimulationResult>();
         private SimulationPerformanceMetrics _performanceMetrics = new SimulationPerformanceMetrics();
-        
+
         // GPU Acceleration
         private ComputeShader _fluidDynamicsCompute;
         private ComputeShader _heatTransferCompute;
@@ -72,100 +76,118 @@ namespace ProjectChimera.Systems.Environment
         private ComputeBuffer _pressureBuffer;
         private ComputeBuffer _temperatureBuffer;
         private ComputeBuffer _humidityBuffer;
-        
+
         // Performance Optimization
         private float _lastUpdateTime;
         private int _currentSimulationCount = 0;
         private bool _isInitialized = false;
-        
+
         public bool IsInitialized => _isInitialized;
         public int ActiveSimulationsCount => _activeSimulations.Count;
         public SimulationPerformanceMetrics PerformanceMetrics => _performanceMetrics;
-        
+
         #region Initialization and Setup
-        
+
         /// <summary>
         /// Initialize the atmospheric physics simulation engine with default parameters
         /// </summary>
         public void Initialize()
         {
-            Initialize(true, 1.0f);
+            InitializeAsync(true, 1.0f);
         }
-        
+
         /// <summary>
         /// Initialize the atmospheric physics simulation engine
         /// </summary>
         /// <param name="enableCFD">Enable computational fluid dynamics</param>
         /// <param name="accuracy">Simulation accuracy level (0.1 to 2.0)</param>
-        public void Initialize(bool enableCFD = true, float accuracy = 1.0f)
+        public async Task InitializeAsync(bool enableCFD = true, float accuracy = 1.0f)
         {
             _enableCFDSimulation = enableCFD;
             _simulationAccuracy = Mathf.Clamp(accuracy, 0.1f, 2.0f);
-            
+
             InitializePhysicsEngines();
-            InitializeGPUResources();
+            await InitializeGPUResourcesAsync();
             InitializeSimulationCache();
-            
+
             _isInitialized = true;
-            
-            Debug.Log($"Atmospheric Physics Simulator initialized - CFD: {_enableCFDSimulation}, Accuracy: {_simulationAccuracy:F2}");
+
+            ChimeraLogger.Log($"Atmospheric Physics Simulator initialized - CFD: {_enableCFDSimulation}, Accuracy: {_simulationAccuracy:F2}");
         }
-        
+
         private void InitializePhysicsEngines()
         {
             // Initialize core physics simulation engines
             _fluidDynamics = new FluidDynamicsEngine();
             _fluidDynamics.Initialize(_turbulenceModel, _airDensity, _dynamicViscosity);
-            
+
             _heatTransfer = new HeatTransferEngine();
             _heatTransfer.Initialize(_heatTransferModel, _thermalConductivity, _specificHeatCapacity);
-            
+
             _moistureTransport = new MoistureTransportEngine();
             _moistureTransport.Initialize(_moistureModel);
-            
+
             _turbulenceEngine = new TurbulenceEngine();
             _turbulenceEngine.Initialize(_turbulenceModel);
-            
+
             _meshGenerator = new ComputationalMeshGenerator();
             _boundaryManager = new BoundaryConditionManager();
         }
-        
-        private void InitializeGPUResources()
+
+        private async Task InitializeGPUResourcesAsync()
         {
             if (!_useGPUAcceleration) return;
-            
-            // Load compute shaders for GPU acceleration
-            _fluidDynamicsCompute = Resources.Load<ComputeShader>("Shaders/FluidDynamicsCS");
-            _heatTransferCompute = Resources.Load<ComputeShader>("Shaders/HeatTransferCS");
-            _turbulenceCompute = Resources.Load<ComputeShader>("Shaders/TurbulenceCS");
-            
+
+            await Task.Yield(); // Make it async for consistency
+
+            try
+            {
+                // Environment assembly fallback - use Resources temporarily
+                // This will be replaced when proper asset loading architecture is established
+                ChimeraLogger.LogWarning("[AtmosphericPhysicsSimulator] Using Resources fallback in Environment assembly");
+
+                // Load compute shaders for GPU acceleration
+                // Addressables not available - using Resources fallback
+                _fluidDynamicsCompute = Resources.Load<ComputeShader>("Shaders/FluidDynamicsCS");
+                _heatTransferCompute = Resources.Load<ComputeShader>("Shaders/HeatTransferCS");
+                _turbulenceCompute = Resources.Load<ComputeShader>("Shaders/TurbulenceCS");
+
+                ChimeraLogger.Log("[AtmosphericPhysicsSimulator] GPU compute shaders loaded via Resources fallback");
+            }
+            catch (Exception ex)
+            {
+                ChimeraLogger.LogError($"[AtmosphericPhysicsSimulator] Failed to load GPU compute shaders: {ex.Message}");
+                _useGPUAcceleration = false;
+                return;
+            }
+
             // Initialize compute buffers (will be resized based on mesh resolution)
             CreateComputeBuffers(_meshResolutionLOD0);
         }
-        
+
         private void CreateComputeBuffers(int resolution)
         {
             int bufferSize = resolution * resolution * resolution;
-            
+
             ReleaseComputeBuffers();
-            
+
             _velocityBuffer = new ComputeBuffer(bufferSize, sizeof(float) * 3);
             _pressureBuffer = new ComputeBuffer(bufferSize, sizeof(float));
             _temperatureBuffer = new ComputeBuffer(bufferSize, sizeof(float));
             _humidityBuffer = new ComputeBuffer(bufferSize, sizeof(float));
         }
-        
+
         private void InitializeSimulationCache()
         {
             _simulationCache.Clear();
             _performanceMetrics = new SimulationPerformanceMetrics();
             _lastUpdateTime = Time.time;
         }
-        
+
         #endregion
-        
+
         #region Zone Simulation Management
-        
+
         /// <summary>
         /// Initialize physics simulation for an environmental zone
         /// </summary>
@@ -175,10 +197,10 @@ namespace ProjectChimera.Systems.Environment
         {
             if (!_isInitialized)
             {
-                Debug.LogWarning("Atmospheric Physics Simulator not initialized");
+                ChimeraLogger.LogWarning("Atmospheric Physics Simulator not initialized");
                 return null;
             }
-            
+
             var profile = new PhysicsSimulationProfile
             {
                 IsEnabled = _enableAdvancedPhysics,
@@ -190,19 +212,19 @@ namespace ProjectChimera.Systems.Environment
                 ThermalModel = CreateThermalModel(specification),
                 TransportModel = CreateTransportModel(specification)
             };
-            
+
             // Generate computational mesh for the zone
             var mesh = _meshGenerator.GenerateMesh(
-                specification.Geometry, 
+                specification.Geometry,
                 GetMeshResolution(profile.Quality)
             );
-            
+
             // Setup boundary conditions
             var boundaryConditions = _boundaryManager.SetupBoundaryConditions(
                 specification.Geometry,
                 specification.Requirements
             );
-            
+
             // Create simulation state
             var simulationState = new PhysicsSimulationState
             {
@@ -213,13 +235,13 @@ namespace ProjectChimera.Systems.Environment
                 LastUpdate = DateTime.Now,
                 IsActive = true
             };
-            
+
             _activeSimulations[simulationState.ZoneId] = simulationState;
-            
-            Debug.Log($"Initialized zone simulation - Quality: {profile.Quality}, Particles: {profile.ParticleCount}");
+
+            ChimeraLogger.Log($"Initialized zone simulation - Quality: {profile.Quality}, Particles: {profile.ParticleCount}");
             return profile;
         }
-        
+
         /// <summary>
         /// Update physics simulation for a specific zone
         /// </summary>
@@ -227,21 +249,21 @@ namespace ProjectChimera.Systems.Environment
         public void UpdatePhysicsSimulation(EnvironmentalZone zone)
         {
             if (!_isInitialized || zone?.PhysicsSimulation == null) return;
-            
+
             var zoneId = zone.ZoneId;
             if (!_activeSimulations.TryGetValue(zoneId, out var simulationState)) return;
-            
+
             // Update simulation state based on current environmental conditions
             UpdateSimulationBoundaryConditions(simulationState, zone);
-            
+
             // Run simulation update (real-time approximation for performance)
             var deltaTime = Time.time - _lastUpdateTime;
             UpdateSimulationState(simulationState, deltaTime);
-            
+
             // Apply results back to zone
             ApplySimulationResults(zone, simulationState);
         }
-        
+
         /// <summary>
         /// Run advanced atmospheric simulation with full CFD analysis
         /// </summary>
@@ -252,12 +274,12 @@ namespace ProjectChimera.Systems.Environment
         {
             if (!_enableCFDSimulation || !_isInitialized)
             {
-                Debug.LogWarning("Advanced CFD simulation not available");
+                ChimeraLogger.LogWarning("Advanced CFD simulation not available");
                 return CreateFallbackResult(zone);
             }
-            
+
             var startTime = Time.realtimeSinceStartup;
-            
+
             // Setup high-accuracy simulation
             var request = new SimulationRequest
             {
@@ -266,38 +288,38 @@ namespace ProjectChimera.Systems.Environment
                 RequestTime = DateTime.Now,
                 Priority = SimulationPriority.High
             };
-            
+
             // Run comprehensive simulation
             var result = ExecuteAdvancedSimulation(zone, request);
-            
+
             // Update performance metrics
             var computationTime = Time.realtimeSinceStartup - startTime;
             _performanceMetrics.UpdateMetrics(computationTime, result.PerformanceMetrics);
-            
+
             // Cache result for future use
             CacheSimulationResult(result);
-            
-            Debug.Log($"Advanced simulation completed in {computationTime:F3}s for zone {zone.ZoneName}");
+
+            ChimeraLogger.Log($"Advanced simulation completed in {computationTime:F3}s for zone {zone.ZoneName}");
             return result;
         }
-        
+
         #endregion
-        
+
         #region Simulation Execution
-        
+
         private AtmosphericSimulationResult ExecuteAdvancedSimulation(EnvironmentalZone zone, SimulationRequest request)
         {
             var parameters = request.Parameters;
             var mesh = GenerateHighResolutionMesh(zone.Geometry, parameters);
-            
+
             // Initialize flow field
             var initialConditions = SetupInitialConditions(zone, mesh);
-            
+
             // Solve governing equations
             var flowSolution = SolveFluidDynamics(mesh, initialConditions, parameters);
             var temperatureField = SolveHeatTransfer(mesh, flowSolution, zone);
             var humidityField = SolveMoistureTransport(mesh, flowSolution, zone);
-            
+
             // Post-process results
             return new AtmosphericSimulationResult
             {
@@ -311,7 +333,7 @@ namespace ProjectChimera.Systems.Environment
                 ComputationTime = Time.realtimeSinceStartup
             };
         }
-        
+
         private FlowSolution SolveFluidDynamics(ComputationalMesh mesh, InitialConditions initial, SimulationParameters parameters)
         {
             if (_useGPUAcceleration && _fluidDynamicsCompute != null)
@@ -323,7 +345,7 @@ namespace ProjectChimera.Systems.Environment
                 return _fluidDynamics.SolveNavierStokes(mesh, initial, parameters);
             }
         }
-        
+
         private FlowSolution SolveFluidDynamicsGPU(ComputationalMesh mesh, InitialConditions initial, SimulationParameters parameters)
         {
             // Setup compute shader parameters
@@ -333,28 +355,28 @@ namespace ProjectChimera.Systems.Environment
             _fluidDynamicsCompute.SetFloat("_TimeStep", parameters.TimeStep);
             _fluidDynamicsCompute.SetFloat("_Viscosity", _dynamicViscosity);
             _fluidDynamicsCompute.SetFloat("_Density", _airDensity);
-            
+
             // Initialize buffers with initial conditions
             InitializeComputeBuffers(initial);
-            
+
             // Execute simulation iterations
             int iterations = Mathf.Min(parameters.MaxIterations, _maxSimulationIterations);
             for (int i = 0; i < iterations; i++)
             {
                 _fluidDynamicsCompute.Dispatch(kernelHandle, mesh.Resolution / 8, mesh.Resolution / 8, mesh.Resolution / 8);
-                
+
                 // Check convergence periodically
                 if (i % 10 == 0 && CheckConvergence(parameters.ConvergenceTolerance))
                 {
-                    Debug.Log($"CFD simulation converged after {i} iterations");
+                    ChimeraLogger.Log($"CFD simulation converged after {i} iterations");
                     break;
                 }
             }
-            
+
             // Extract results from GPU buffers
             return ExtractFlowSolutionFromGPU(mesh);
         }
-        
+
         private TemperatureField SolveHeatTransfer(ComputationalMesh mesh, FlowSolution flow, EnvironmentalZone zone)
         {
             if (_useGPUAcceleration && _heatTransferCompute != null)
@@ -366,16 +388,16 @@ namespace ProjectChimera.Systems.Environment
                 return _heatTransfer.SolveHeatEquation(mesh, flow, zone);
             }
         }
-        
+
         private HumidityField SolveMoistureTransport(ComputationalMesh mesh, FlowSolution flow, EnvironmentalZone zone)
         {
             return _moistureTransport.SolveMassTransfer(mesh, flow, zone);
         }
-        
+
         #endregion
-        
+
         #region Real-Time Approximation
-        
+
         /// <summary>
         /// Fast approximation for real-time environmental physics
         /// </summary>
@@ -384,15 +406,15 @@ namespace ProjectChimera.Systems.Environment
         /// <param name="external">External environmental conditions</param>
         /// <returns>Simplified environmental state</returns>
         public SimplifiedEnvironmentalState ApproximateEnvironmentalPhysics(
-            EnvironmentalZone zone, 
-            object equipment, 
+            EnvironmentalZone zone,
+            object equipment,
             object external)
         {
             // Use pre-computed response surfaces for real-time performance
             var temperatureResponse = InterpolateTemperatureResponse(zone, equipment, external);
             var humidityResponse = InterpolateHumidityResponse(zone, equipment, external);
             var airflowResponse = InterpolateAirflowResponse(zone, equipment);
-            
+
             return new SimplifiedEnvironmentalState
             {
                 Temperature = temperatureResponse,
@@ -402,14 +424,14 @@ namespace ProjectChimera.Systems.Environment
                 Uniformity = EstimateEnvironmentalUniformity(zone, equipment)
             };
         }
-        
+
         private TemperatureResponse InterpolateTemperatureResponse(EnvironmentalZone zone, object equipment, object external)
         {
             // Simplified temperature modeling using response surfaces
             float baseTemperature = 24f;
             float equipmentEffect = CalculateEquipmentTemperatureEffect(equipment);
             float externalEffect = CalculateExternalTemperatureEffect(external);
-            
+
             return new TemperatureResponse
             {
                 Value = baseTemperature + equipmentEffect + externalEffect,
@@ -417,14 +439,14 @@ namespace ProjectChimera.Systems.Environment
                 ResponseTime = EstimateTemperatureResponseTime(zone)
             };
         }
-        
+
         private HumidityResponse InterpolateHumidityResponse(EnvironmentalZone zone, object equipment, object external)
         {
             // Simplified humidity modeling
             float baseHumidity = 55f;
             float equipmentEffect = CalculateEquipmentHumidityEffect(equipment);
             float externalEffect = CalculateExternalHumidityEffect(external);
-            
+
             return new HumidityResponse
             {
                 Value = baseHumidity + equipmentEffect + externalEffect,
@@ -432,13 +454,13 @@ namespace ProjectChimera.Systems.Environment
                 ResponseTime = EstimateHumidityResponseTime(zone)
             };
         }
-        
+
         private AirflowResponse InterpolateAirflowResponse(EnvironmentalZone zone, object equipment)
         {
             // Simplified airflow modeling
             float baseAirflow = 0.5f;
             float equipmentEffect = CalculateEquipmentAirflowEffect(equipment);
-            
+
             return new AirflowResponse
             {
                 Value = baseAirflow + equipmentEffect,
@@ -446,32 +468,32 @@ namespace ProjectChimera.Systems.Environment
                 Turbulence = EstimateTurbulenceLevel(zone, equipment)
             };
         }
-        
+
         #endregion
-        
+
         #region Performance Optimization
-        
+
         private SimulationQuality DetermineSimulationQuality(EnvironmentalZoneSpecification specification)
         {
             if (!specification.EnableAdvancedPhysics) return SimulationQuality.Low;
-            
+
             float complexity = CalculateZoneComplexity(specification);
-            
+
             if (complexity > 0.8f) return SimulationQuality.Ultra;
             if (complexity > 0.6f) return SimulationQuality.High;
             if (complexity > 0.4f) return SimulationQuality.Medium;
             return SimulationQuality.Low;
         }
-        
+
         private float CalculateZoneComplexity(EnvironmentalZoneSpecification specification)
         {
             float geometryComplexity = specification.Geometry.Volume / 1000f; // Normalize by 1000 m³
             float equipmentComplexity = specification.Requirements != null && specification.Requirements.RequiresHVACIntegration ? 0.5f : 0.0f;
             float accuracyRequirement = specification.Requirements != null ? specification.Requirements.MinEfficiencyRating : 0.5f;
-            
+
             return Mathf.Clamp01((geometryComplexity + equipmentComplexity + accuracyRequirement) / 3f);
         }
-        
+
         private int GetMeshResolution(SimulationQuality quality)
         {
             switch (quality)
@@ -483,7 +505,7 @@ namespace ProjectChimera.Systems.Environment
                 default: return _meshResolutionLOD2;
             }
         }
-        
+
         private void UpdateSimulationState(PhysicsSimulationState state, float deltaTime)
         {
             // Simplified real-time update for performance
@@ -497,14 +519,14 @@ namespace ProjectChimera.Systems.Environment
                 // Approximated update for real-time performance
                 PerformApproximatedUpdate(state, deltaTime);
             }
-            
+
             state.LastUpdate = DateTime.Now;
         }
-        
+
         #endregion
-        
+
         #region Cleanup and Resource Management
-        
+
         /// <summary>
         /// Shutdown the atmospheric physics simulator
         /// </summary>
@@ -513,21 +535,21 @@ namespace ProjectChimera.Systems.Environment
             // Clean up active simulations
             _activeSimulations.Clear();
             _simulationQueue.Clear();
-            
+
             // Release GPU resources
             ReleaseComputeBuffers();
-            
+
             // Shutdown physics engines
             _fluidDynamics?.Shutdown();
             _heatTransfer?.Shutdown();
             _moistureTransport?.Shutdown();
             _turbulenceEngine?.Shutdown();
-            
+
             _isInitialized = false;
-            
-            Debug.Log("Atmospheric Physics Simulator shutdown complete");
+
+            ChimeraLogger.Log("Atmospheric Physics Simulator shutdown complete");
         }
-        
+
         private void ReleaseComputeBuffers()
         {
             _velocityBuffer?.Release();
@@ -535,33 +557,33 @@ namespace ProjectChimera.Systems.Environment
             _temperatureBuffer?.Release();
             _humidityBuffer?.Release();
         }
-        
+
         void OnDestroy()
         {
             Shutdown();
         }
-        
+
         #endregion
-        
+
         #region Helper Methods and Placeholder Implementations
-        
+
         // The following methods would be fully implemented based on specific physics requirements
-        
-        private ComputationalMesh GenerateHighResolutionMesh(FacilityGeometry geometry, SimulationParameters parameters) 
+
+        private ComputationalMesh GenerateHighResolutionMesh(FacilityGeometry geometry, SimulationParameters parameters)
         {
             return _meshGenerator.GenerateMesh(geometry, GetMeshResolution(SimulationQuality.Ultra));
         }
-        
-        private InitialConditions SetupInitialConditions(EnvironmentalZone zone, ComputationalMesh mesh) 
+
+        private InitialConditions SetupInitialConditions(EnvironmentalZone zone, ComputationalMesh mesh)
         {
             return new InitialConditions(); // Placeholder
         }
-        
-        private TemperatureField SolveHeatTransferGPU(ComputationalMesh mesh, FlowSolution flow, EnvironmentalZone zone) 
+
+        private TemperatureField SolveHeatTransferGPU(ComputationalMesh mesh, FlowSolution flow, EnvironmentalZone zone)
         {
             return new TemperatureField(); // Placeholder
         }
-        
+
         private bool CheckConvergence(float tolerance) { return false; } // Placeholder
         private void InitializeComputeBuffers(InitialConditions initial) { } // Placeholder
         private FlowSolution ExtractFlowSolutionFromGPU(ComputationalMesh mesh) { return new FlowSolution(); } // Placeholder
@@ -595,12 +617,12 @@ namespace ProjectChimera.Systems.Environment
         private float EstimateEnvironmentalUniformity(EnvironmentalZone zone, object equipment) { return 0.9f; } // Placeholder
         private void PerformFullPhysicsUpdate(PhysicsSimulationState state, float deltaTime) { } // Placeholder
         private void PerformApproximatedUpdate(PhysicsSimulationState state, float deltaTime) { } // Placeholder
-        
+
         #endregion
     }
-    
+
     #region Supporting Enums and Classes
-    
+
     public enum TurbulenceModelType
     {
         ReynoldsAveragedNavierStokes,
@@ -610,7 +632,7 @@ namespace ProjectChimera.Systems.Environment
         KEpsilon,
         KOmega
     }
-    
+
     public enum HeatTransferModelType
     {
         BasicConduction,
@@ -618,7 +640,7 @@ namespace ProjectChimera.Systems.Environment
         RadiationCoupled,
         ConjugateHeatTransfer
     }
-    
+
     public enum MoistureTransportModelType
     {
         BasicDiffusion,
@@ -626,7 +648,7 @@ namespace ProjectChimera.Systems.Environment
         PhaseChangeIncluded,
         CoupledHeatMass
     }
-    
+
     public enum SimulationPriority
     {
         Low,
@@ -634,25 +656,25 @@ namespace ProjectChimera.Systems.Environment
         High,
         Critical
     }
-    
+
     // Supporting data structures that would be fully implemented
-    [Serializable] public class PhysicsSimulationState { 
-        public string ZoneId; 
-        public PhysicsSimulationProfile Profile; 
-        public ComputationalMesh Mesh; 
-        public List<BoundaryCondition> BoundaryConditions; 
-        public DateTime LastUpdate; 
-        public bool IsActive; 
+    [Serializable] public class PhysicsSimulationState {
+        public string ZoneId;
+        public PhysicsSimulationProfile Profile;
+        public ComputationalMesh Mesh;
+        public List<BoundaryCondition> BoundaryConditions;
+        public DateTime LastUpdate;
+        public bool IsActive;
     }
-    
-    [Serializable] public class SimulationRequest { 
-        public string ZoneId; 
-        public SimulationParameters Parameters; 
-        public DateTime RequestTime; 
-        public SimulationPriority Priority; 
+
+    [Serializable] public class SimulationRequest {
+        public string ZoneId;
+        public SimulationParameters Parameters;
+        public DateTime RequestTime;
+        public SimulationPriority Priority;
     }
-    
-    [Serializable] public class SimulationPerformanceMetrics { 
+
+    [Serializable] public class SimulationPerformanceMetrics {
         public float AverageComputationTime;
         public int CompletedSimulations;
         public float MemoryUsage;
@@ -660,38 +682,38 @@ namespace ProjectChimera.Systems.Environment
     }
 
     [Serializable] public class PhysicsSimulationResult { }
-    
-    [Serializable] public class FluidDynamicsEngine { 
+
+    [Serializable] public class FluidDynamicsEngine {
         public void Initialize(TurbulenceModelType model, float density, float viscosity) { }
         public FlowSolution SolveNavierStokes(ComputationalMesh mesh, InitialConditions initial, SimulationParameters parameters) { return new FlowSolution(); }
         public void Shutdown() { }
     }
-    
-    [Serializable] public class HeatTransferEngine { 
+
+    [Serializable] public class HeatTransferEngine {
         public void Initialize(HeatTransferModelType model, float conductivity, float capacity) { }
         public TemperatureField SolveHeatEquation(ComputationalMesh mesh, FlowSolution flow, EnvironmentalZone zone) { return new TemperatureField(); }
         public void Shutdown() { }
     }
-    
-    [Serializable] public class MoistureTransportEngine { 
+
+    [Serializable] public class MoistureTransportEngine {
         public void Initialize(MoistureTransportModelType model) { }
         public HumidityField SolveMassTransfer(ComputationalMesh mesh, FlowSolution flow, EnvironmentalZone zone) { return new HumidityField(); }
         public void Shutdown() { }
     }
-    
-    [Serializable] public class TurbulenceEngine { 
+
+    [Serializable] public class TurbulenceEngine {
         public void Initialize(TurbulenceModelType model) { }
         public void Shutdown() { }
     }
-    
-    [Serializable] public class ComputationalMeshGenerator { 
+
+    [Serializable] public class ComputationalMeshGenerator {
         public ComputationalMesh GenerateMesh(FacilityGeometry geometry, int resolution) { return new ComputationalMesh { Resolution = resolution }; }
     }
-    
-    [Serializable] public class BoundaryConditionManager { 
+
+    [Serializable] public class BoundaryConditionManager {
         public List<BoundaryCondition> SetupBoundaryConditions(FacilityGeometry geometry, EnvironmentalDesignRequirements requirements) { return new List<BoundaryCondition>(); }
     }
-    
+
     // Placeholder data structures and forward declarations to satisfy compilation
     [Serializable] public class ComputationalMesh { public int Resolution; }
     [Serializable] public class InitialConditions { }
@@ -716,18 +738,18 @@ namespace ProjectChimera.Systems.Environment
     [Serializable] public class ScalarField { }
     [Serializable] public class SimulatorTurbulenceData { }
     public enum SimulationQuality { Low, Medium, High, Ultra }
-    [Serializable] public class SimplifiedEnvironmentalState { 
-        public TemperatureResponse Temperature; 
-        public HumidityResponse Humidity; 
-        public AirflowResponse Airflow; 
-        public float VPD; 
-        public float Uniformity; 
+    [Serializable] public class SimplifiedEnvironmentalState {
+        public TemperatureResponse Temperature;
+        public HumidityResponse Humidity;
+        public AirflowResponse Airflow;
+        public float VPD;
+        public float Uniformity;
     }
-    
+
     [Serializable] public class TemperatureResponse { public float Value; public float Gradient; public float ResponseTime; }
     [Serializable] public class HumidityResponse { public float Value; public float Gradient; public float ResponseTime; }
     [Serializable] public class AirflowResponse { public float Value; public AirflowDistribution Distribution; public float Turbulence; }
     [Serializable] public class AirflowDistribution { }
-    
+
     #endregion
 }

@@ -1,7 +1,9 @@
+using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
 using UnityEngine;
+using ProjectChimera.Core;
 using ProjectChimera.Core.DependencyInjection;
-using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Environment;
 
 namespace ProjectChimera.Systems.Cultivation
@@ -26,18 +28,18 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (IsInitialized) return;
             
-            Debug.Log("[PlantCareManager] Initializing plant care management...");
+            ChimeraLogger.Log("[PlantCareManager] Initializing plant care management...");
             
-            // Register with ServiceLocator for dependency injection
+            // Register with ServiceContainer for dependency injection
             try
             {
-                var serviceLocator = ServiceLocator.Instance;
-                serviceLocator.RegisterSingleton<IPlantCareManager>(this);
-                Debug.Log("[PlantCareManager] Registered with ServiceLocator");
+                var serviceContainer = ServiceContainerFactory.Instance;
+                serviceContainer?.RegisterSingleton<IPlantCareManager>(this);
+                ChimeraLogger.Log("[PlantCareManager] Registered with ServiceContainer");
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[PlantCareManager] Failed to register with ServiceLocator: {ex.Message}");
+                ChimeraLogger.LogError($"[PlantCareManager] Failed to register with ServiceContainer: {ex.Message}");
             }
             
             IsInitialized = true;
@@ -47,7 +49,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized) return;
             
-            Debug.Log("[PlantCareManager] Shutting down plant care management...");
+            ChimeraLogger.Log("[PlantCareManager] Shutting down plant care management...");
             IsInitialized = false;
         }
         
@@ -58,14 +60,14 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                Debug.LogError("[PlantCareManager] Cannot water plant: Manager not initialized.");
+                ChimeraLogger.LogError("[PlantCareManager] Cannot water plant: Manager not initialized.");
                 return false;
             }
             
             var plant = _plantLifecycleManager.GetPlant(plantId);
             if (plant == null)
             {
-                Debug.LogWarning($"[PlantCareManager] Cannot water plant: Plant ID '{plantId}' not found.");
+                ChimeraLogger.LogWarning($"[PlantCareManager] Cannot water plant: Plant ID '{plantId}' not found.");
                 return false;
             }
             
@@ -73,7 +75,7 @@ namespace ProjectChimera.Systems.Cultivation
             waterAmount = Mathf.Clamp01(waterAmount);
             
             plant.Water(waterAmount, System.DateTime.Now);
-            Debug.Log($"[PlantCareManager] Watered plant '{plantId}' with {waterAmount * 100f}% water.");
+            ChimeraLogger.Log($"[PlantCareManager] Watered plant '{plantId}' with {waterAmount * 100f}% water.");
             
             return true;
         }
@@ -85,14 +87,14 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                Debug.LogError("[PlantCareManager] Cannot feed plant: Manager not initialized.");
+                ChimeraLogger.LogError("[PlantCareManager] Cannot feed plant: Manager not initialized.");
                 return false;
             }
             
             var plant = _plantLifecycleManager.GetPlant(plantId);
             if (plant == null)
             {
-                Debug.LogWarning($"[PlantCareManager] Cannot feed plant: Plant ID '{plantId}' not found.");
+                ChimeraLogger.LogWarning($"[PlantCareManager] Cannot feed plant: Plant ID '{plantId}' not found.");
                 return false;
             }
             
@@ -100,7 +102,7 @@ namespace ProjectChimera.Systems.Cultivation
             nutrientAmount = Mathf.Clamp01(nutrientAmount);
             
             plant.Feed(nutrientAmount, System.DateTime.Now);
-            Debug.Log($"[PlantCareManager] Fed plant '{plantId}' with {nutrientAmount * 100f}% nutrients.");
+            ChimeraLogger.Log($"[PlantCareManager] Fed plant '{plantId}' with {nutrientAmount * 100f}% nutrients.");
             
             return true;
         }
@@ -112,25 +114,25 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                Debug.LogError("[PlantCareManager] Cannot train plant: Manager not initialized.");
+                ChimeraLogger.LogError("[PlantCareManager] Cannot train plant: Manager not initialized.");
                 return false;
             }
             
             var plant = _plantLifecycleManager.GetPlant(plantId);
             if (plant == null)
             {
-                Debug.LogWarning($"[PlantCareManager] Cannot train plant: Plant ID '{plantId}' not found.");
+                ChimeraLogger.LogWarning($"[PlantCareManager] Cannot train plant: Plant ID '{plantId}' not found.");
                 return false;
             }
             
             if (string.IsNullOrEmpty(trainingType))
             {
-                Debug.LogWarning($"[PlantCareManager] Cannot train plant '{plantId}': Training type not specified.");
+                ChimeraLogger.LogWarning($"[PlantCareManager] Cannot train plant '{plantId}': Training type not specified.");
                 return false;
             }
             
             plant.ApplyTraining(trainingType, System.DateTime.Now);
-            Debug.Log($"[PlantCareManager] Applied '{trainingType}' training to plant '{plantId}'.");
+            ChimeraLogger.Log($"[PlantCareManager] Applied '{trainingType}' training to plant '{plantId}'.");
             
             return true;
         }
@@ -142,7 +144,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                Debug.LogError("[PlantCareManager] Cannot water all plants: Manager not initialized.");
+                ChimeraLogger.LogError("[PlantCareManager] Cannot water all plants: Manager not initialized.");
                 return;
             }
             
@@ -161,7 +163,7 @@ namespace ProjectChimera.Systems.Cultivation
                 }
             }
             
-            Debug.Log($"[PlantCareManager] Auto-watered {wateredCount}/{_plantLifecycleManager.ActivePlantCount} plants.");
+            ChimeraLogger.Log($"[PlantCareManager] Auto-watered {wateredCount}/{_plantLifecycleManager.ActivePlantCount} plants.");
         }
         
         /// <summary>
@@ -171,7 +173,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                Debug.LogError("[PlantCareManager] Cannot feed all plants: Manager not initialized.");
+                ChimeraLogger.LogError("[PlantCareManager] Cannot feed all plants: Manager not initialized.");
                 return;
             }
             
@@ -190,7 +192,7 @@ namespace ProjectChimera.Systems.Cultivation
                 }
             }
             
-            Debug.Log($"[PlantCareManager] Auto-fed {fedCount}/{_plantLifecycleManager.ActivePlantCount} plants.");
+            ChimeraLogger.Log($"[PlantCareManager] Auto-fed {fedCount}/{_plantLifecycleManager.ActivePlantCount} plants.");
         }
         
         /// <summary>
@@ -200,7 +202,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                Debug.LogError("[PlantCareManager] Cannot care for plants: Manager not initialized.");
+                ChimeraLogger.LogError("[PlantCareManager] Cannot care for plants: Manager not initialized.");
                 return;
             }
             
@@ -231,7 +233,7 @@ namespace ProjectChimera.Systems.Cultivation
                 }
             }
             
-            Debug.Log($"[PlantCareManager] Provided care for {caredForCount} plants needing attention.");
+            ChimeraLogger.Log($"[PlantCareManager] Provided care for {caredForCount} plants needing attention.");
         }
         
         /// <summary>

@@ -1,0 +1,460 @@
+using ProjectChimera.Core.Logging;
+using UnityEngine;
+using UnityEditor;
+using System.IO;
+using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace ProjectChimera.Editor
+{
+    /// <summary>
+    /// Migration tool for replacing Debug.Log calls with ChimeraLogger
+    /// Provides automated and semi-automated migration of logging statements
+    /// </summary>
+    public class ChimeraLoggerMigration : EditorWindow
+    {
+        private Vector2 _scrollPosition;
+        private bool _previewMode = true;
+        private bool _backupFiles = true;
+        private bool _includeCommentedLogs = false;
+        private string _searchPath = "Assets/ProjectChimera";
+        private List<LogMigrationResult> _migrationResults = new List<LogMigrationResult>();
+        private Dictionary<string, string> _migrationPatterns;
+
+        [MenuItem("Project Chimera/Tools/Logger Migration Tool")]
+        public static void ShowWindow()
+        {
+            var window = GetWindow<ChimeraLoggerMigration>("Chimera Logger Migration");
+            window.minSize = new Vector2(600, 400);
+            window.Show();
+        }
+
+        private void OnEnable()
+        {
+            InitializeMigrationPatterns();
+        }
+
+        private void OnGUI()
+        {
+            GUILayout.Label("ChimeraLogger Migration Tool", EditorStyles.largeLabel);
+            EditorGUILayout.Space();
+
+            DrawSettings();
+            EditorGUILayout.Space();
+
+            DrawActions();
+            EditorGUILayout.Space();
+
+            DrawResults();
+        }
+
+        private void DrawSettings()
+        {
+            EditorGUILayout.BeginVertical("box");
+            GUILayout.Label("Migration Settings", EditorStyles.boldLabel);
+
+            _searchPath = EditorGUILayout.TextField("Search Path:", _searchPath);
+            _previewMode = EditorGUILayout.Toggle("Preview Mode (No Changes):", _previewMode);
+            _backupFiles = EditorGUILayout.Toggle("Backup Files Before Migration:", _backupFiles);
+            _includeCommentedLogs = EditorGUILayout.Toggle("Include Commented Debug.Log:", _includeCommentedLogs);
+
+            EditorGUILayout.HelpBox(
+                "Preview Mode: Shows what would be changed without actually modifying files.\n" +
+                "Backup Files: Creates .bak copies of modified files for safety.\n" +
+                "Search Path: Directory to scan for C# files (relative to project root).",
+                MessageType.Info
+            );
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawActions()
+        {
+            EditorGUILayout.BeginVertical("box");
+            GUILayout.Label("Actions", EditorStyles.boldLabel);
+
+            EditorGUILayout.BeginHorizontal();
+
+            if (GUILayout.Button("Scan for Debug.Log Usage"))
+            {
+                ScanForDebugLogs();
+            }
+
+            if (GUILayout.Button("Migrate All"))
+            {
+                if (_migrationResults.Count == 0)
+                {
+                    EditorUtility.DisplayDialog("No Results", "Please scan for Debug.Log usage first.", "OK");
+                    return;
+                }
+
+                if (_previewMode)
+                {
+                    EditorUtility.DisplayDialog("Preview Mode", "Currently in preview mode. Disable preview mode to perform actual migration.", "OK");
+                    return;
+                }
+
+                if (EditorUtility.DisplayDialog("Confirm Migration",
+                    $"This will modify {_migrationResults.Count} files. " +
+                    (_backupFiles ? "Backup files will be created." : "No backups will be created.") +
+                    "\n\nProceed?", "Yes", "Cancel"))
+                {
+                    PerformMigration();
+                }
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+
+            if (GUILayout.Button("Clear Results"))
+            {
+                _migrationResults.Clear();
+            }
+
+            if (GUILayout.Button("Export Results to CSV"))
+            {
+                ExportResultsToCSV();
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            if (_migrationResults.Count > 0)
+            {
+                EditorGUILayout.HelpBox($"Found {_migrationResults.Sum(r => r.Matches.Count)} Debug.Log calls in {_migrationResults.Count} files.", MessageType.Info);
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawResults()
+        {
+            if (_migrationResults.Count == 0)
+                return;
+
+            EditorGUILayout.BeginVertical("box");
+            GUILayout.Label("Migration Results", EditorStyles.boldLabel);
+
+            _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition, GUILayout.Height(300));
+
+            foreach (var result in _migrationResults)
+            {
+                EditorGUILayout.BeginVertical("helpbox");
+
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"{result.FilePath} ({result.Matches.Count} matches)", EditorStyles.boldLabel);
+
+                if (GUILayout.Button("Open", GUILayout.Width(50)))
+                {
+                    var asset = AssetDatabase.LoadAssetAtPath<TextAsset>(result.FilePath);
+                    AssetDatabase.OpenAsset(asset);
+                }
+
+                EditorGUILayout.EndHorizontal();
+
+                EditorGUI.indentLevel++;
+                foreach (var match in result.Matches.Take(10)) // Show first 10 matches
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField($"Line {match.LineNumber}:", GUILayout.Width(60));
+                    EditorGUILayout.LabelField($"{match.OriginalText} → {match.ReplacementText}", EditorStyles.miniLabel);
+                    EditorGUILayout.EndHorizontal();
+                }
+
+                if (result.Matches.Count > 10)
+                {
+                    EditorGUILayout.LabelField($"... and {result.Matches.Count - 10} more matches", EditorStyles.miniLabel);
+                }
+                EditorGUI.indentLevel--;
+
+                EditorGUILayout.EndVertical();
+                EditorGUILayout.Space(2);
+            }
+
+            EditorGUILayout.EndScrollView();
+            EditorGUILayout.EndVertical();
+        }
+
+        private void InitializeMigrationPatterns()
+        {
+            _migrationPatterns = new Dictionary<string, string>
+            {
+                // Basic Debug.Log patterns
+                [@"Debug\.Log\s*\(\s*""([^""]*)""\s*\)"] = @"ChimeraLogger.Log(""$1"")",
+                [@"Debug\.Log\s*\(\s*([^,)]+)\s*\)"] = @"ChimeraLogger.Log($1)",
+                [@"Debug\.Log\s*\(\s*([^,)]+)\s*,\s*([^)]+)\s*\)"] = @"ChimeraLogger.Log($1, $2)",
+
+                // Debug.LogWarning patterns
+                [@"Debug\.LogWarning\s*\(\s*""([^""]*)""\s*\)"] = @"ChimeraLogger.LogWarning(""$1"")",
+                [@"Debug\.LogWarning\s*\(\s*([^,)]+)\s*\)"] = @"ChimeraLogger.LogWarning($1)",
+                [@"Debug\.LogWarning\s*\(\s*([^,)]+)\s*,\s*([^)]+)\s*\)"] = @"ChimeraLogger.LogWarning($1, $2)",
+
+                // Debug.LogError patterns
+                [@"Debug\.LogError\s*\(\s*""([^""]*)""\s*\)"] = @"ChimeraLogger.LogError(""$1"")",
+                [@"Debug\.LogError\s*\(\s*([^,)]+)\s*\)"] = @"ChimeraLogger.LogError($1)",
+                [@"Debug\.LogError\s*\(\s*([^,)]+)\s*,\s*([^)]+)\s*\)"] = @"ChimeraLogger.LogError($1, $2)",
+
+                // Debug.LogException patterns
+                [@"Debug\.LogException\s*\(\s*([^,)]+)\s*\)"] = @"ChimeraLogger.LogException($1)",
+                [@"Debug\.LogException\s*\(\s*([^,)]+)\s*,\s*([^)]+)\s*\)"] = @"ChimeraLogger.LogException($1, $2)",
+            };
+        }
+
+        private void ScanForDebugLogs()
+        {
+            _migrationResults.Clear();
+
+            var searchDirectory = Path.Combine(Application.dataPath, _searchPath.Replace("Assets/", ""));
+            if (!Directory.Exists(searchDirectory))
+            {
+                EditorUtility.DisplayDialog("Error", $"Search directory does not exist: {searchDirectory}", "OK");
+                return;
+            }
+
+            var csFiles = Directory.GetFiles(searchDirectory, "*.cs", SearchOption.AllDirectories);
+            var processedFiles = 0;
+            var totalFiles = csFiles.Length;
+
+            foreach (var filePath in csFiles)
+            {
+                processedFiles++;
+                EditorUtility.DisplayProgressBar("Scanning Files",
+                    $"Processing {Path.GetFileName(filePath)} ({processedFiles}/{totalFiles})",
+                    (float)processedFiles / totalFiles);
+
+                var relativePath = "Assets" + filePath.Substring(Application.dataPath.Length);
+                ScanFile(relativePath);
+            }
+
+            EditorUtility.ClearProgressBar();
+
+            ChimeraLogger.Log("SYSTEM", $"[ChimeraLoggerMigration] Scan completed. Found {_migrationResults.Sum(r => r.Matches.Count)} Debug.Log calls in {_migrationResults.Count} files.");
+        }
+
+        private void ScanFile(string filePath)
+        {
+            try
+            {
+                var content = File.ReadAllText(filePath);
+                var lines = content.Split('\n');
+                var matches = new List<LogMatch>();
+
+                for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+                {
+                    var line = lines[lineIndex];
+                    var lineNumber = lineIndex + 1;
+
+                    // Skip commented lines unless includeCommentedLogs is true
+                    if (!_includeCommentedLogs && line.TrimStart().StartsWith("//"))
+                        continue;
+
+                    foreach (var pattern in _migrationPatterns)
+                    {
+                        var regex = new Regex(pattern.Key);
+                        var regexMatches = regex.Matches(line);
+
+                        foreach (Match match in regexMatches)
+                        {
+                            var replacement = regex.Replace(match.Value, pattern.Value);
+                            matches.Add(new LogMatch
+                            {
+                                LineNumber = lineNumber,
+                                OriginalText = match.Value,
+                                ReplacementText = replacement,
+                                Pattern = pattern.Key
+                            });
+                        }
+                    }
+                }
+
+                if (matches.Count > 0)
+                {
+                    _migrationResults.Add(new LogMigrationResult
+                    {
+                        FilePath = filePath,
+                        Matches = matches
+                    });
+                }
+            }
+            catch (System.Exception ex)
+            {
+                ChimeraLogger.LogError($"[ChimeraLoggerMigration] Error scanning file {filePath}: {ex.Message}");
+            }
+        }
+
+        private void PerformMigration()
+        {
+            var migratedFiles = 0;
+            var totalMatches = 0;
+
+            foreach (var result in _migrationResults)
+            {
+                try
+                {
+                    var content = File.ReadAllText(result.FilePath);
+                    var originalContent = content;
+
+                    // Create backup if requested
+                    if (_backupFiles)
+                    {
+                        File.WriteAllText(result.FilePath + ".bak", originalContent);
+                    }
+
+                    // Apply replacements
+                    foreach (var pattern in _migrationPatterns)
+                    {
+                        var regex = new Regex(pattern.Key);
+                        content = regex.Replace(content, pattern.Value);
+                    }
+
+                    // Add using statement if not present
+                    if (!content.Contains("using ProjectChimera.Core;"))
+                    {
+                        var usingIndex = content.IndexOf("using UnityEngine;");
+                        if (usingIndex >= 0)
+                        {
+                            var insertIndex = content.IndexOf('\n', usingIndex) + 1;
+                            content = content.Insert(insertIndex, "using ProjectChimera.Core;\n");
+                        }
+                    }
+
+                    // Write the modified content
+                    File.WriteAllText(result.FilePath, content);
+
+                    migratedFiles++;
+                    totalMatches += result.Matches.Count;
+                }
+                catch (System.Exception ex)
+                {
+                    ChimeraLogger.LogError($"[ChimeraLoggerMigration] Error migrating file {result.FilePath}: {ex.Message}");
+                }
+            }
+
+            AssetDatabase.Refresh();
+
+            EditorUtility.DisplayDialog("Migration Complete",
+                $"Successfully migrated {totalMatches} Debug.Log calls in {migratedFiles} files.\n\n" +
+                (_backupFiles ? "Backup files (.bak) have been created." : "No backup files were created."),
+                "OK");
+
+            ChimeraLogger.Log($"[ChimeraLoggerMigration] Migration completed. {totalMatches} calls migrated in {migratedFiles} files.");
+        }
+
+        private void ExportResultsToCSV()
+        {
+            var csvPath = EditorUtility.SaveFilePanel("Export Migration Results", "", "ChimeraLoggerMigration", "csv");
+            if (string.IsNullOrEmpty(csvPath))
+                return;
+
+            using (var writer = new StreamWriter(csvPath))
+            {
+                writer.WriteLine("File,Line,Original,Replacement,Pattern");
+
+                foreach (var result in _migrationResults)
+                {
+                    foreach (var match in result.Matches)
+                    {
+                        writer.WriteLine($"\"{result.FilePath}\",{match.LineNumber},\"{match.OriginalText}\",\"{match.ReplacementText}\",\"{match.Pattern}\"");
+                    }
+                }
+            }
+
+            EditorUtility.DisplayDialog("Export Complete", $"Results exported to: {csvPath}", "OK");
+        }
+
+        private class LogMigrationResult
+        {
+            public string FilePath;
+            public List<LogMatch> Matches = new List<LogMatch>();
+        }
+
+        private class LogMatch
+        {
+            public int LineNumber;
+            public string OriginalText;
+            public string ReplacementText;
+            public string Pattern;
+        }
+    }
+
+    /// <summary>
+    /// Menu items for quick logger migration tasks
+    /// </summary>
+    public static class ChimeraLoggerMigrationMenu
+    {
+        [MenuItem("Project Chimera/Tools/Quick Actions/Add ChimeraLogger Using Statements")]
+        public static void AddChimeraLoggerUsings()
+        {
+            var selection = Selection.GetFiltered<TextAsset>(SelectionMode.DeepAssets);
+            var modifiedFiles = 0;
+
+            foreach (var asset in selection)
+            {
+                var path = AssetDatabase.GetAssetPath(asset);
+                if (path.EndsWith(".cs"))
+                {
+                    var content = File.ReadAllText(path);
+                    if (!content.Contains("using ProjectChimera.Core;"))
+                    {
+                        var usingIndex = content.IndexOf("using UnityEngine;");
+                        if (usingIndex >= 0)
+                        {
+                            var insertIndex = content.IndexOf('\n', usingIndex) + 1;
+                            content = content.Insert(insertIndex, "using ProjectChimera.Core;\n");
+                            File.WriteAllText(path, content);
+                            modifiedFiles++;
+                        }
+                    }
+                }
+            }
+
+            AssetDatabase.Refresh();
+            ChimeraLogger.Log($"[ChimeraLoggerMigration] Added using statements to {modifiedFiles} files.");
+        }
+
+        [MenuItem("Project Chimera/Tools/Quick Actions/Validate ChimeraLogger Usage")]
+        public static void ValidateChimeraLoggerUsage()
+        {
+            var searchPath = Path.Combine(Application.dataPath, "ProjectChimera");
+            var csFiles = Directory.GetFiles(searchPath, "*.cs", SearchOption.AllDirectories);
+
+            var debugLogCount = 0;
+            var chimeraLoggerCount = 0;
+            var filesWithDebugLog = new List<string>();
+
+            foreach (var filePath in csFiles)
+            {
+                var content = File.ReadAllText(filePath);
+                var debugMatches = Regex.Matches(content, @"Debug\.Log[A-Za-z]*\s*\(");
+                var chimeraMatches = Regex.Matches(content, @"ChimeraLogger\.Log[A-Za-z]*\s*\(");
+
+                debugLogCount += debugMatches.Count;
+                chimeraLoggerCount += chimeraMatches.Count;
+
+                if (debugMatches.Count > 0)
+                {
+                    var relativePath = "Assets" + filePath.Substring(Application.dataPath.Length);
+                    filesWithDebugLog.Add($"{relativePath} ({debugMatches.Count} calls)");
+                }
+            }
+
+            var report = $"ChimeraLogger Usage Report:\n" +
+                        $"  Debug.Log calls: {debugLogCount}\n" +
+                        $"  ChimeraLogger calls: {chimeraLoggerCount}\n" +
+                        $"  Files with Debug.Log: {filesWithDebugLog.Count}\n\n";
+
+            if (filesWithDebugLog.Count > 0)
+            {
+                report += "Files still using Debug.Log:\n" + string.Join("\n", filesWithDebugLog.Take(20));
+                if (filesWithDebugLog.Count > 20)
+                {
+                    report += $"\n... and {filesWithDebugLog.Count - 20} more files";
+                }
+            }
+
+            ChimeraLogger.Log($"[ChimeraLoggerMigration] {report}");
+            EditorUtility.DisplayDialog("ChimeraLogger Usage Report", report, "OK");
+        }
+    }
+}

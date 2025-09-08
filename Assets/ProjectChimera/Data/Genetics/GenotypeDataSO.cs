@@ -109,7 +109,10 @@ namespace ProjectChimera.Data.Genetics
         public void InitializeFromStrain(PlantStrainSO strain, List<GeneDefinitionSO> geneSet = null)
         {
             _parentStrain = strain;
-            _species = strain.BaseSpecies;
+            // Note: BaseSpecies is a string, but _species expects PlantSpeciesSO
+            // For now, we'll set _species to null and log a warning
+            _species = null;
+            SharedLogger.LogWarning($"[Chimera] Cannot assign BaseSpecies '{strain.BaseSpecies}' to PlantSpeciesSO. Manual assignment required.");
             _genePairs.Clear();
 
             // Use provided gene set or get default set for species
@@ -138,7 +141,7 @@ namespace ProjectChimera.Data.Genetics
         {
             if (partner == null)
             {
-                Debug.LogError("[Chimera] Cannot create offspring with null partner genotype.");
+                SharedLogger.LogError("[Chimera] Cannot create offspring with null partner genotype.");
                 return null;
             }
 
@@ -152,13 +155,13 @@ namespace ProjectChimera.Data.Genetics
 
             // Perform genetic recombination
             offspring._genePairs = PerformRecombination(partner);
-            
+
             // Check for mutations
             offspring.ApplyMutations();
-            
+
             // Calculate fitness and viability
             offspring.CalculateFitness();
-            
+
             offspring.RecalculateGeneticStats();
             offspring._phenotypeCalculated = false;
 
@@ -280,7 +283,7 @@ namespace ProjectChimera.Data.Genetics
             foreach (var trait in allTraits)
             {
                 float traitValue = CalculateTraitValue(trait, environment);
-                
+
                 _predictedTraits.Add(new PredictedTrait
                 {
                     Trait = trait,
@@ -344,7 +347,7 @@ namespace ProjectChimera.Data.Genetics
                 var envConditions = environment.Temperature == 0f ? new EnvironmentalConditions() : environment;
                 float allele1Fitness = genePair.Allele1.CalculateFitness(envConditions);
                 float allele2Fitness = genePair.Allele2.CalculateFitness(envConditions);
-                
+
                 viability *= (allele1Fitness + allele2Fitness) * 0.5f;
             }
 
@@ -363,7 +366,7 @@ namespace ProjectChimera.Data.Genetics
             _totalGeneCount = _genePairs.Count;
             _homozygousCount = _genePairs.Count(gp => gp.Allele1.UniqueID == gp.Allele2.UniqueID);
             _heterozygousCount = _totalGeneCount - _homozygousCount;
-            
+
             _geneticDiversity = _totalGeneCount > 0 ? (float)_heterozygousCount / _totalGeneCount : 0f;
             _isInbred = _geneticDiversity < 0.3f;
             _inbreedingCoefficient = 1f - _geneticDiversity;
@@ -372,7 +375,7 @@ namespace ProjectChimera.Data.Genetics
         private AlleleSO GetRandomAlleleForGene(GeneDefinitionSO gene)
         {
             if (gene.KnownAlleles.Count == 0) return gene.WildTypeAllele();
-            
+
             // Weighted selection based on frequency
             float totalFreq = gene.KnownAlleles.Sum(a => a.PopulationFrequency);
             float randomValue = Random.value * totalFreq;
@@ -398,18 +401,18 @@ namespace ProjectChimera.Data.Genetics
         {
             // Higher confidence for traits with more genetic support and less environmental sensitivity
             var supportingGenes = _genePairs.Count(gp => gp.Gene.InfluencedTraits.Any(ti => ti.TraitType == trait));
-            var envSensitiveGenes = _genePairs.Count(gp => gp.Gene.EnvironmentallyRegulated && 
+            var envSensitiveGenes = _genePairs.Count(gp => gp.Gene.EnvironmentallyRegulated &&
                                                           gp.Gene.InfluencedTraits.Any(ti => ti.TraitType == trait));
-            
+
             float baseConfidence = Mathf.Min(1f, supportingGenes / 5f); // Normalize to 5 genes = full confidence
             float envPenalty = envSensitiveGenes > 0 ? 0.8f : 1f;
-            
+
             return baseConfidence * envPenalty;
         }
 
         private bool IsEnvironmentDependent(TraitType trait)
         {
-            return _genePairs.Any(gp => gp.Gene.EnvironmentallyRegulated && 
+            return _genePairs.Any(gp => gp.Gene.EnvironmentallyRegulated &&
                                       gp.Gene.InfluencedTraits.Any(ti => ti.TraitType == trait));
         }
 
@@ -421,7 +424,7 @@ namespace ProjectChimera.Data.Genetics
                         return CalculateTraitValue(TraitType.PlantHeight) * 0.6f +
                    CalculateTraitValue(TraitType.FlowerYield) * 0.4f;
         }
-        
+
         /// <summary>
         /// Gets the yield potential based on genetic factors.
         /// </summary>
@@ -429,7 +432,7 @@ namespace ProjectChimera.Data.Genetics
         {
             return CalculateTraitValue(TraitType.FlowerYield);
         }
-        
+
         /// <summary>
         /// Gets the potency potential (THC/CBD) based on genetic factors.
         /// </summary>
@@ -439,7 +442,7 @@ namespace ProjectChimera.Data.Genetics
             float cbdPotential = CalculateTraitValue(TraitType.CBDContent);
             return Mathf.Max(thcPotential, cbdPotential); // Return the higher potential
         }
-        
+
         /// <summary>
         /// Gets the width to height ratio for plant structure.
         /// </summary>
@@ -448,7 +451,7 @@ namespace ProjectChimera.Data.Genetics
             // Calculate based on plant structure traits, default to indica vs sativa tendency
             float branchDensity = CalculateTraitValue(TraitType.BranchingDensity);
             float nodeSpacing = CalculateTraitValue(TraitType.InternodalSpacing);
-            
+
             // Bushier plants (higher branch density, tighter nodes) have higher width ratio
             float ratio = 0.4f + (branchDensity * 0.3f) + ((1f - nodeSpacing) * 0.2f);
             return Mathf.Clamp(ratio, 0.3f, 0.9f);
@@ -460,13 +463,13 @@ namespace ProjectChimera.Data.Genetics
 
             if (_species == null)
             {
-                Debug.LogWarning($"[Chimera] GenotypeDataSO '{DisplayName}' has no species assigned.", this);
+                SharedLogger.LogWarning($"[Chimera] GenotypeDataSO '{DisplayName}' has no species assigned.");
                 isValid = false;
             }
 
             if (_genePairs.Count == 0)
             {
-                Debug.LogWarning($"[Chimera] GenotypeDataSO '{DisplayName}' has no gene pairs defined.", this);
+                SharedLogger.LogWarning($"[Chimera] GenotypeDataSO '{DisplayName}' has no gene pairs defined.");
                 isValid = false;
             }
 
@@ -475,7 +478,7 @@ namespace ProjectChimera.Data.Genetics
             {
                 if (genePair.Gene == null || genePair.Allele1 == null || genePair.Allele2 == null)
                 {
-                    Debug.LogWarning($"[Chimera] GenotypeDataSO '{DisplayName}' has invalid gene pair.", this);
+                    SharedLogger.LogWarning($"[Chimera] GenotypeDataSO '{DisplayName}' has invalid gene pair.");
                     isValid = false;
                 }
             }

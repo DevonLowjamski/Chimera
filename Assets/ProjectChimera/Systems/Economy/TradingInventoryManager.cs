@@ -1,3 +1,5 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +14,7 @@ namespace ProjectChimera.Systems.Economy
     /// Extracted from TradingManager for modular architecture.
     /// Handles inventory operations, decay processing, and stock queries.
     /// </summary>
-    public class TradingInventoryManager : MonoBehaviour
+    public class TradingInventoryManager : MonoBehaviour, ITickable
     {
         [Header("Inventory Configuration")]
         [SerializeField] private bool _enableInventoryLogging = false;
@@ -56,20 +58,21 @@ namespace ProjectChimera.Systems.Economy
             LogDebug($"Trading inventory manager initialized - Capacity: {MaxCapacity:F1}");
         }
         
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             if (_playerInventory == null) return;
             
-            _lastDecayUpdate += Time.deltaTime;
+            _lastDecayUpdate += deltaTime;
             
             var timeManager = GameManager.Instance?.GetManager<TimeManager>();
-            float gameTimeDelta = timeManager?.GetScaledDeltaTime() ?? Time.deltaTime;
+            float gameTimeDelta = timeManager?.GetScaledDeltaTime() ?? deltaTime;
             
             if (_lastDecayUpdate >= _inventoryDecayInterval * gameTimeDelta)
             {
                 ProcessInventoryDecay();
                 _lastDecayUpdate = 0f;
-            }
+            
+    }
         }
         
         #region Inventory Operations
@@ -432,12 +435,38 @@ namespace ProjectChimera.Systems.Economy
         private void LogDebug(string message)
         {
             if (_enableInventoryLogging)
-                Debug.Log($"[TradingInventoryManager] {message}");
+                ChimeraLogger.Log($"[TradingInventoryManager] {message}");
         }
         
         private void LogError(string message)
         {
-            Debug.LogError($"[TradingInventoryManager] {message}");
+            ChimeraLogger.LogError($"[TradingInventoryManager] {message}");
+        }
+    
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+    
+    public virtual void OnRegistered() 
+    { 
+        // Override in derived classes if needed
+    }
+    
+    public virtual void OnUnregistered() 
+    { 
+        // Override in derived classes if needed
+    }
+
+        protected virtual void Start()
+        {
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
+        }
+
+        protected virtual void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
         }
     }
     

@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core.Events;
 using System.Collections.Generic;
@@ -640,12 +641,12 @@ namespace ProjectChimera.Core
         private void LogDebug(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[DIGameManager] {message}");
+                ChimeraLogger.Log($"[DIGameManager] {message}");
         }
 
         private void LogError(string message)
         {
-            Debug.LogError($"[DIGameManager] {message}");
+            ChimeraLogger.LogError($"[DIGameManager] {message}");
         }
     }
 }

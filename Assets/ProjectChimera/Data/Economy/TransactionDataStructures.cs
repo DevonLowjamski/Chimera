@@ -9,7 +9,7 @@ namespace ProjectChimera.Data.Economy.Transactions
     /// Contains transaction processing, payment methods, financial transfers, and settlement systems
     /// Part of Phase 1 Foundation Data Structures refactoring
     /// </summary>
-    
+
     // Type aliases to resolve conversion issues
     using TradingTransactionType = ProjectChimera.Data.Economy.TradingTransactionType;
 
@@ -32,12 +32,12 @@ namespace ProjectChimera.Data.Economy.Transactions
         public string ProcessedBy;
         public PaymentMethod PaymentMethod;
         public Dictionary<string, string> Metadata = new Dictionary<string, string>();
-        
+
         public bool IsValid()
         {
-            return !string.IsNullOrEmpty(TransactionId) && 
-                   Amount > 0 && 
-                   !string.IsNullOrEmpty(FromAccount) && 
+            return !string.IsNullOrEmpty(TransactionId) &&
+                   Amount > 0 &&
+                   !string.IsNullOrEmpty(FromAccount) &&
                    !string.IsNullOrEmpty(ToAccount);
         }
     }
@@ -97,23 +97,23 @@ namespace ProjectChimera.Data.Economy.Transactions
         public float MaxTransactionAmount = 1000000f;
         public List<string> BlockedAccounts = new List<string>();
         public DateTime LastValidationRun;
-        
+
         public ValidationResult ValidateTransaction(Transaction transaction)
         {
             var result = new ValidationResult { IsValid = true };
-            
+
             if (transaction.Amount < (decimal)MinTransactionAmount)
             {
                 result.IsValid = false;
                 result.Errors.Add("Amount below minimum threshold");
             }
-            
+
             if (transaction.Amount > (decimal)MaxTransactionAmount)
             {
                 result.IsValid = false;
                 result.Errors.Add("Amount exceeds maximum threshold");
             }
-            
+
             return result;
         }
     }
@@ -182,7 +182,7 @@ namespace ProjectChimera.Data.Economy.Transactions
         public ProcessorCapabilities Capabilities;
         public ProcessingStatistics Statistics;
         public DateTime LastHealthCheck;
-        
+
         public ProcessingResult ProcessPayment(Transaction transaction)
         {
             return new ProcessingResult
@@ -306,19 +306,7 @@ namespace ProjectChimera.Data.Economy.Transactions
         public DateTime LastUpdated;
     }
 
-    [System.Serializable]
-    public class FinancialMetrics
-    {
-        public decimal TotalAssets = 0m;
-        public decimal TotalLiabilities = 0m;
-        public decimal NetWorth = 0m;
-        public decimal MonthlyIncome = 0m;
-        public decimal MonthlyExpenses = 0m;
-        public decimal MonthlyCashFlow = 0m;
-        public float LiquidityRatio = 1f;
-        public float DebtRatio = 0f;
-        public DateTime CalculationDate;
-    }
+
 
     #endregion
 
@@ -367,16 +355,7 @@ namespace ProjectChimera.Data.Economy.Transactions
         public List<CashFlowScenario> Scenarios = new List<CashFlowScenario>();
     }
 
-    [System.Serializable]
-    public class CashFlowScenario
-    {
-        public string ScenarioName;
-        public ScenarioType Type = ScenarioType.Base;
-        public decimal ProjectedCashFlow = 0m;
-        public float Probability = 0.5f;
-        public List<string> Assumptions = new List<string>();
-        public string Description;
-    }
+
 
     [System.Serializable]
     public class SettlementInstruction
@@ -558,7 +537,9 @@ namespace ProjectChimera.Data.Economy.Transactions
         Emergency,
         Maintenance,
         Equipment,
-        Supplies
+        Supplies,
+        Payment,
+        LoanPayment
     }
 
     public enum AccountType
@@ -603,13 +584,7 @@ namespace ProjectChimera.Data.Economy.Transactions
         Outflow
     }
 
-    public enum CashFlowCategory
-    {
-        Operating,
-        Investing,
-        Financing,
-        Extraordinary
-    }
+
 
     public enum ProjectionMethod
     {
@@ -620,14 +595,7 @@ namespace ProjectChimera.Data.Economy.Transactions
         MachineLearning
     }
 
-    public enum ScenarioType
-    {
-        Optimistic,
-        Base,
-        Pessimistic,
-        Stress,
-        Custom
-    }
+
 
     public enum SettlementType
     {
@@ -725,16 +693,7 @@ namespace ProjectChimera.Data.Economy.Transactions
         AML
     }
 
-    public enum ProviderType
-    {
-        Internal,
-        External,
-        Bank,
-        CreditCard,
-        Digital,
-        Cryptocurrency,
-        Alternative
-    }
+
 
     public enum CashTransferType
     {

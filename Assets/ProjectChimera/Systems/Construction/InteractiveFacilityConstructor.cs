@@ -2,6 +2,7 @@ using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Construction;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Construction
 {
@@ -129,7 +130,7 @@ namespace ProjectChimera.Systems.Construction
 
         private void HandleError(string message)
         {
-            Debug.LogError($"[InteractiveFacilityConstructor] {message}");
+            ChimeraLogger.LogError($"[InteractiveFacilityConstructor] {message}");
             OnError?.Invoke(message);
         }
         

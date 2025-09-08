@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -216,7 +217,7 @@ namespace ProjectChimera.UI.Panels
                 _statusRenderer.ShowStatusDisplay(gameObject, StatusDisplayType.PlantHealth, statusData);
             }
             
-            Debug.Log($"[PlantInteractable] Hover enter on plant: {gameObject.name}");
+            ChimeraLogger.Log($"[PlantInteractable] Hover enter on plant: {gameObject.name}");
         }
         
         public void OnHoverExit(InteractionEventArgs args)
@@ -227,13 +228,13 @@ namespace ProjectChimera.UI.Panels
                 _statusRenderer.HideStatusDisplay(gameObject);
             }
             
-            Debug.Log($"[PlantInteractable] Hover exit on plant: {gameObject.name}");
+            ChimeraLogger.Log($"[PlantInteractable] Hover exit on plant: {gameObject.name}");
         }
         
         public void OnClick(InteractionEventArgs args)
         {
             // Open plant details menu
-            Debug.Log($"[PlantInteractable] Clicked on plant: {gameObject.name}");
+            ChimeraLogger.Log($"[PlantInteractable] Clicked on plant: {gameObject.name}");
             
             // Could trigger detailed plant inspection UI
             // GetComponent<PlantInspectionUI>()?.ShowInspectionPanel();
@@ -241,12 +242,12 @@ namespace ProjectChimera.UI.Panels
         
         public void OnPress(InteractionEventArgs args)
         {
-            Debug.Log($"[PlantInteractable] Press on plant: {gameObject.name}");
+            ChimeraLogger.Log($"[PlantInteractable] Press on plant: {gameObject.name}");
         }
         
         public void OnRelease(InteractionEventArgs args)
         {
-            Debug.Log($"[PlantInteractable] Release on plant: {gameObject.name}");
+            ChimeraLogger.Log($"[PlantInteractable] Release on plant: {gameObject.name}");
         }
         
         public void OnGesture(GestureData gestureData)
@@ -255,15 +256,15 @@ namespace ProjectChimera.UI.Panels
             {
                 case GestureType.SwipeUp:
                     // Quick harvest gesture
-                    Debug.Log($"[PlantInteractable] Swipe up gesture - Quick harvest attempt");
+                    ChimeraLogger.Log($"[PlantInteractable] Swipe up gesture - Quick harvest attempt");
                     break;
                 case GestureType.SwipeDown:
                     // Water plant gesture
-                    Debug.Log($"[PlantInteractable] Swipe down gesture - Water plant");
+                    ChimeraLogger.Log($"[PlantInteractable] Swipe down gesture - Water plant");
                     break;
                 case GestureType.Drag:
                     // Move plant (if in pot)
-                    Debug.Log($"[PlantInteractable] Drag gesture - Move plant");
+                    ChimeraLogger.Log($"[PlantInteractable] Drag gesture - Move plant");
                     break;
             }
         }
@@ -291,7 +292,7 @@ namespace ProjectChimera.UI.Panels
                 _statusRenderer.ShowStatusDisplay(gameObject, StatusDisplayType.FacilityStatus, statusData);
             }
             
-            Debug.Log($"[FacilityInteractable] Hover enter on facility: {gameObject.name}");
+            ChimeraLogger.Log($"[FacilityInteractable] Hover enter on facility: {gameObject.name}");
         }
         
         public void OnHoverExit(InteractionEventArgs args)
@@ -302,7 +303,7 @@ namespace ProjectChimera.UI.Panels
                 _statusRenderer.HideStatusDisplay(gameObject);
             }
             
-            Debug.Log($"[FacilityInteractable] Hover exit on facility: {gameObject.name}");
+            ChimeraLogger.Log($"[FacilityInteractable] Hover exit on facility: {gameObject.name}");
         }
         
         public void OnClick(InteractionEventArgs args)
@@ -314,17 +315,17 @@ namespace ProjectChimera.UI.Panels
                 _menuRenderer.ShowWorldSpaceMenu(gameObject, WorldSpaceMenuType.Facility, menuItems);
             }
             
-            Debug.Log($"[FacilityInteractable] Clicked on facility: {gameObject.name}");
+            ChimeraLogger.Log($"[FacilityInteractable] Clicked on facility: {gameObject.name}");
         }
         
         public void OnPress(InteractionEventArgs args)
         {
-            Debug.Log($"[FacilityInteractable] Press on facility: {gameObject.name}");
+            ChimeraLogger.Log($"[FacilityInteractable] Press on facility: {gameObject.name}");
         }
         
         public void OnRelease(InteractionEventArgs args)
         {
-            Debug.Log($"[FacilityInteractable] Release on facility: {gameObject.name}");
+            ChimeraLogger.Log($"[FacilityInteractable] Release on facility: {gameObject.name}");
         }
         
         public void OnGesture(GestureData gestureData)
@@ -333,15 +334,15 @@ namespace ProjectChimera.UI.Panels
             {
                 case GestureType.SwipeLeft:
                     // Previous facility view
-                    Debug.Log($"[FacilityInteractable] Swipe left - Previous view");
+                    ChimeraLogger.Log($"[FacilityInteractable] Swipe left - Previous view");
                     break;
                 case GestureType.SwipeRight:
                     // Next facility view
-                    Debug.Log($"[FacilityInteractable] Swipe right - Next view");
+                    ChimeraLogger.Log($"[FacilityInteractable] Swipe right - Next view");
                     break;
                 case GestureType.LongPress:
                     // Advanced facility controls
-                    Debug.Log($"[FacilityInteractable] Long press - Advanced controls");
+                    ChimeraLogger.Log($"[FacilityInteractable] Long press - Advanced controls");
                     break;
             }
         }

@@ -12,5 +12,6 @@ namespace ProjectChimera.Systems.Services.Economy
 
     public interface ITransactionProcessingService : IService
     {
+        string GetTransactionStatus(string transactionId);
     }
 }

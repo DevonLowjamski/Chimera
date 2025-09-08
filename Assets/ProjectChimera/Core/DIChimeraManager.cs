@@ -1,7 +1,9 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Linq;
 using UnityEngine;
 using ProjectChimera.Core.DependencyInjection;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Core
 {
@@ -52,7 +54,7 @@ namespace ProjectChimera.Core
                 ServiceContainer = GetOrCreateServiceContainer();
                 ServiceProvider = (global::System.IServiceProvider)ProjectChimera.Core.DependencyInjection.ServiceContainerIntegration.ToServiceProvider(ServiceContainer);
                 
-                Debug.Log($"[DIChimeraManager] Using ServiceContainer as sole DI provider for {ManagerName}");
+                ChimeraLogger.Log($"[DIChimeraManager] Using ServiceContainer as sole DI provider for {ManagerName}");
 
                 // Auto-register this manager with ServiceContainer
                 if (_autoRegisterWithContainer)
@@ -62,12 +64,15 @@ namespace ProjectChimera.Core
 
                 // Resolve dependencies
                 ResolveDependencies();
+                
+                // Auto-register with UpdateOrchestrator if this is an ITickable
+                RegisterWithUpdateOrchestrator();
 
-                Debug.Log($"[DIChimeraManager] Dependency injection initialized for {ManagerName} via ServiceContainer");
+                ChimeraLogger.Log($"[DIChimeraManager] Dependency injection initialized for {ManagerName} via ServiceContainer");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[DIChimeraManager] Failed to initialize DI for {ManagerName}: {ex.Message}");
+                ChimeraLogger.LogError($"[DIChimeraManager] Failed to initialize DI for {ManagerName}: {ex.Message}");
             }
         }
 
@@ -103,16 +108,16 @@ namespace ProjectChimera.Core
                     ServiceContainer.RegisterSingleton(this);
                     break;
                 case ServiceLifetime.Transient:
-                    Debug.LogWarning($"[DIChimeraManager] Transient lifetime not recommended for managers: {ManagerName}");
+                    ChimeraLogger.LogWarning($"[DIChimeraManager] Transient lifetime not recommended for managers: {ManagerName}");
                     break;
                 case ServiceLifetime.Scoped:
-                    Debug.LogWarning($"[DIChimeraManager] Scoped lifetime not recommended for managers: {ManagerName}");
+                    ChimeraLogger.LogWarning($"[DIChimeraManager] Scoped lifetime not recommended for managers: {ManagerName}");
                     break;
             }
 
             // Register by interfaces - skip automatic interface registration for now
             // TODO: Implement reflection-based interface registration if needed
-            Debug.Log($"[DIChimeraManager] Registered {ManagerName} as concrete type");
+            ChimeraLogger.Log($"[DIChimeraManager] Registered {ManagerName} as concrete type");
         }
 
 
@@ -142,7 +147,7 @@ namespace ProjectChimera.Core
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[DIChimeraManager] Failed to resolve required service {typeof(T).Name} in {ManagerName}: {ex.Message}");
+                ChimeraLogger.LogError($"[DIChimeraManager] Failed to resolve required service {typeof(T).Name} in {ManagerName}: {ex.Message}");
                 throw;
             }
         }
@@ -158,7 +163,7 @@ namespace ProjectChimera.Core
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[DIChimeraManager] Failed to resolve optional service {typeof(T).Name} in {ManagerName}: {ex.Message}");
+                ChimeraLogger.LogWarning($"[DIChimeraManager] Failed to resolve optional service {typeof(T).Name} in {ManagerName}: {ex.Message}");
                 return null;
             }
         }
@@ -174,7 +179,7 @@ namespace ProjectChimera.Core
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[DIChimeraManager] Failed to resolve all services {typeof(T).Name} in {ManagerName}: {ex.Message}");
+                ChimeraLogger.LogWarning($"[DIChimeraManager] Failed to resolve all services {typeof(T).Name} in {ManagerName}: {ex.Message}");
                 return new T[0];
             }
         }
@@ -189,11 +194,11 @@ namespace ProjectChimera.Core
             try
             {
                 ServiceContainer.RegisterSingleton<TInterface, TImplementation>();
-                Debug.Log($"[DIChimeraManager] Registered service {typeof(TInterface).Name} -> {typeof(TImplementation).Name}");
+                ChimeraLogger.Log($"[DIChimeraManager] Registered service {typeof(TInterface).Name} -> {typeof(TImplementation).Name}");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[DIChimeraManager] Failed to register service {typeof(TInterface).Name} in {ManagerName}: {ex.Message}");
+                ChimeraLogger.LogError($"[DIChimeraManager] Failed to register service {typeof(TInterface).Name} in {ManagerName}: {ex.Message}");
             }
         }
 
@@ -205,11 +210,11 @@ namespace ProjectChimera.Core
             try
             {
                 ServiceContainer.RegisterSingleton(instance);
-                Debug.Log($"[DIChimeraManager] Registered service instance {typeof(TInterface).Name}");
+                ChimeraLogger.Log($"[DIChimeraManager] Registered service instance {typeof(TInterface).Name}");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[DIChimeraManager] Failed to register service instance {typeof(TInterface).Name} in {ManagerName}: {ex.Message}");
+                ChimeraLogger.LogError($"[DIChimeraManager] Failed to register service instance {typeof(TInterface).Name} in {ManagerName}: {ex.Message}");
             }
         }
 
@@ -231,11 +236,11 @@ namespace ProjectChimera.Core
                 ServiceContainer = null;
 
                 _isDisposed = true;
-                Debug.Log($"[DIChimeraManager] Disposed {ManagerName}");
+                ChimeraLogger.Log($"[DIChimeraManager] Disposed {ManagerName}");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[DIChimeraManager] Error disposing {ManagerName}: {ex.Message}");
+                ChimeraLogger.LogError($"[DIChimeraManager] Error disposing {ManagerName}: {ex.Message}");
             }
         }
 
@@ -245,6 +250,26 @@ namespace ProjectChimera.Core
         protected virtual void OnDispose()
         {
             // Override in derived classes for cleanup logic
+        }
+
+        /// <summary>
+        /// Auto-register with UpdateOrchestrator if this manager implements ITickable
+        /// </summary>
+        private void RegisterWithUpdateOrchestrator()
+        {
+            if (this is ProjectChimera.Core.Updates.ITickable tickable)
+            {
+                try
+                {
+                    var orchestrator = ProjectChimera.Core.Updates.UpdateOrchestrator.Instance;
+                    orchestrator?.RegisterTickable(tickable);
+                    ChimeraLogger.Log($"[DIChimeraManager] {ManagerName} registered with UpdateOrchestrator as ITickable");
+                }
+                catch (Exception ex)
+                {
+                    ChimeraLogger.LogError($"[DIChimeraManager] Failed to register {ManagerName} with UpdateOrchestrator: {ex.Message}");
+                }
+            }
         }
 
         #endregion
@@ -260,7 +285,7 @@ namespace ProjectChimera.Core
         public void Initialize(ProjectChimera.Core.IServiceContainer container)
         {
             Container = container ?? throw new ArgumentNullException(nameof(container));
-            Debug.Log("[ServiceContainerComponent] Service container attached to GameObject");
+            ChimeraLogger.Log("[ServiceContainerComponent] Service container attached to GameObject");
         }
 
         private void OnDestroy()
@@ -270,11 +295,11 @@ namespace ProjectChimera.Core
                 try
                 {
                     disposable.Dispose();
-                    Debug.Log("[ServiceContainerComponent] Service container disposed with GameObject");
+                    ChimeraLogger.Log("[ServiceContainerComponent] Service container disposed with GameObject");
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[ServiceContainerComponent] Error disposing service container: {ex.Message}");
+                    ChimeraLogger.LogError($"[ServiceContainerComponent] Error disposing service container: {ex.Message}");
                 }
             }
         }

@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,12 @@ using IServiceProvider = ProjectChimera.Core.DependencyInjection.IServiceProvide
 
 namespace ProjectChimera.Core.DependencyInjection
 {
+    /// <summary>
+    /// DEPRECATED: ServiceLocator is obsolete and should not be used.
+    /// Use ServiceContainerFactory.Instance instead for dependency injection.
+    /// This will be removed in a future version.
+    /// </summary>
+    [System.Obsolete("ServiceLocator is deprecated. Use ServiceContainerFactory.Instance instead for dependency injection. This will cause compile errors in future releases.", true)]
     public class ServiceLocator : IServiceLocator
     {
         private static ServiceLocator _instance;
@@ -53,7 +60,7 @@ namespace ProjectChimera.Core.DependencyInjection
             {
                 var registration = new ServiceRegistration(typeof(TInterface), typeof(TImplementation), ServiceLifetime.Singleton, null, (object locator) => new TImplementation());
                 _services[typeof(TInterface)] = registration;
-                Debug.Log($"[ServiceLocator] Registered Singleton: {typeof(TInterface).Name} -> {typeof(TImplementation).Name}");
+                ChimeraLogger.Log($"[ServiceLocator] Registered Singleton: {typeof(TInterface).Name} -> {typeof(TImplementation).Name}");
             }
         }
 
@@ -64,7 +71,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 var registration = new ServiceRegistration(typeof(TInterface), instance.GetType(), ServiceLifetime.Singleton, instance, null);
                 _services[typeof(TInterface)] = registration;
                 _singletonInstances[typeof(TInterface)] = instance;
-                Debug.Log($"[ServiceLocator] Registered Singleton Instance: {typeof(TInterface).Name}");
+                ChimeraLogger.Log($"[ServiceLocator] Registered Singleton Instance: {typeof(TInterface).Name}");
             }
         }
 
@@ -80,7 +87,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 var registration = new ServiceRegistration(serviceType, instance.GetType(), ServiceLifetime.Singleton, instance, null);
                 _services[serviceType] = registration;
                 _singletonInstances[serviceType] = instance;
-                Debug.Log($"[ServiceLocator] Registered Singleton Instance: {serviceType.Name}");
+                ChimeraLogger.Log($"[ServiceLocator] Registered Singleton Instance: {serviceType.Name}");
             }
         }
 
@@ -91,7 +98,7 @@ namespace ProjectChimera.Core.DependencyInjection
             {
                 var registration = new ServiceRegistration(typeof(TInterface), typeof(TImplementation), ServiceLifetime.Transient, null, (object locator) => new TImplementation());
                 _services[typeof(TInterface)] = registration;
-                Debug.Log($"[ServiceLocator] Registered Transient: {typeof(TInterface).Name} -> {typeof(TImplementation).Name}");
+                ChimeraLogger.Log($"[ServiceLocator] Registered Transient: {typeof(TInterface).Name} -> {typeof(TImplementation).Name}");
             }
         }
 
@@ -102,7 +109,7 @@ namespace ProjectChimera.Core.DependencyInjection
             {
                 var registration = new ServiceRegistration(typeof(TInterface), typeof(TImplementation), ServiceLifetime.Scoped, null, (object locator) => new TImplementation());
                 _services[typeof(TInterface)] = registration;
-                Debug.Log($"[ServiceLocator] Registered Scoped: {typeof(TInterface).Name} -> {typeof(TImplementation).Name}");
+                ChimeraLogger.Log($"[ServiceLocator] Registered Scoped: {typeof(TInterface).Name} -> {typeof(TImplementation).Name}");
             }
         }
 
@@ -113,7 +120,7 @@ namespace ProjectChimera.Core.DependencyInjection
             {
                 var registration = new ServiceRegistration(typeof(TInterface), typeof(TInterface), ServiceLifetime.Transient, null, (object locator) => factory((IServiceLocator)locator));
                 _services[typeof(TInterface)] = registration;
-                Debug.Log($"[ServiceLocator] Registered Factory: {typeof(TInterface).Name}");
+                ChimeraLogger.Log($"[ServiceLocator] Registered Factory: {typeof(TInterface).Name}");
             }
         }
 
@@ -132,7 +139,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 {
                     _services.Remove(serviceType);
                     _singletonInstances.Remove(serviceType);
-                    Debug.Log($"[ServiceLocator] Unregistered service: {serviceType.Name}");
+                    ChimeraLogger.Log($"[ServiceLocator] Unregistered service: {serviceType.Name}");
                 }
             }
         }
@@ -298,7 +305,9 @@ namespace ProjectChimera.Core.DependencyInjection
 
         public ProjectChimera.Core.IServiceScope CreateScope()
         {
-            var scope = new ServiceScope(this);
+            // Delegate to ServiceContainerFactory since ServiceLocator is deprecated
+            var serviceContainer = ServiceContainerFactory.Instance;
+            var scope = new ServiceScope(serviceContainer);
             lock (_lock)
             {
                 _activeScopes.Add(scope);
@@ -326,7 +335,7 @@ namespace ProjectChimera.Core.DependencyInjection
                     }
                     catch (Exception ex)
                     {
-                        Debug.LogError($"[ServiceLocator] Error disposing service: {ex.Message}");
+                        ChimeraLogger.LogError($"[ServiceLocator] Error disposing service: {ex.Message}");
                     }
                 }
 
@@ -338,7 +347,7 @@ namespace ProjectChimera.Core.DependencyInjection
                     }
                     catch (Exception ex)
                     {
-                        Debug.LogError($"[ServiceLocator] Error disposing scope: {ex.Message}");
+                        ChimeraLogger.LogError($"[ServiceLocator] Error disposing scope: {ex.Message}");
                     }
                 }
 
@@ -353,7 +362,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 
                 _totalResolutions = 0;
 
-                Debug.Log("[ServiceLocator] All services and caches cleared");
+                ChimeraLogger.Log("[ServiceLocator] All services and caches cleared");
             }
         }
 
@@ -418,7 +427,7 @@ namespace ProjectChimera.Core.DependencyInjection
         private void RegisterCoreServices()
         {
             RegisterSingleton<IServiceLocator>(this);
-            Debug.Log("[ServiceLocator] Core services registered");
+            ChimeraLogger.Log("[ServiceLocator] Core services registered");
         }
 
         private void UpdateResolutionCount(Type serviceType)
@@ -443,7 +452,7 @@ namespace ProjectChimera.Core.DependencyInjection
             lock (_lock)
             {
                 _autoDiscoveryEnabled = enabled;
-                Debug.Log($"[ServiceLocator] Auto-discovery {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.Log($"[ServiceLocator] Auto-discovery {(enabled ? "enabled" : "disabled")}");
             }
         }
         
@@ -455,7 +464,7 @@ namespace ProjectChimera.Core.DependencyInjection
             lock (_lock)
             {
                 _serviceCache.CachingEnabled = enabled;
-                Debug.Log($"[ServiceLocator] Caching {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.Log($"[ServiceLocator] Caching {(enabled ? "enabled" : "disabled")}");
             }
         }
         
@@ -468,7 +477,7 @@ namespace ProjectChimera.Core.DependencyInjection
             {
                 _serviceCache.ClearCache();
                 _serviceDiscovery.ClearCache();
-                Debug.Log("[ServiceLocator] All caches cleared");
+                ChimeraLogger.Log("[ServiceLocator] All caches cleared");
             }
         }
         

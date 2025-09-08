@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -10,7 +12,7 @@ namespace ProjectChimera.UI.Panels
     /// Leverages Unity 6.2's enhanced World Space UI capabilities for immersive cannabis cultivation management.
     /// Refactored to use composition with specialized components for better maintainability.
     /// </summary>
-    public class WorldSpaceMenuRenderer : MonoBehaviour
+    public class WorldSpaceMenuRenderer : MonoBehaviour, ITickable
     {
         [Header("Components")]
         [SerializeField] private WorldSpaceUIPool _uiPool;
@@ -27,10 +29,23 @@ namespace ProjectChimera.UI.Panels
             InitializeComponents();
         }
         
-        private void Update()
+        private void Start()
+        {
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+        }
+        
+        #region ITickable Implementation
+        
+        public int Priority => TickPriority.UIManager;
+        public bool Enabled => enabled;
+        
+        public void Tick(float deltaTime)
         {
             UpdateActiveMenus();
         }
+        
+        #endregion
         
         /// <summary>
         /// Initializes required components
@@ -67,7 +82,7 @@ namespace ProjectChimera.UI.Panels
         {
             if (target == null || menuItems == null || menuItems.Count == 0)
             {
-                Debug.LogWarning("[WorldSpaceMenuRenderer] Invalid parameters for world space menu");
+                ChimeraLogger.LogWarning("[WorldSpaceMenuRenderer] Invalid parameters for world space menu");
                 return false;
             }
             
@@ -81,7 +96,7 @@ namespace ProjectChimera.UI.Panels
             var menuDocument = _uiPool.Get();
             if (menuDocument == null)
             {
-                Debug.LogError("[WorldSpaceMenuRenderer] Failed to get menu document from pool");
+                ChimeraLogger.LogError("[WorldSpaceMenuRenderer] Failed to get menu document from pool");
                 return false;
             }
             
@@ -109,7 +124,7 @@ namespace ProjectChimera.UI.Panels
             _animator.AnimateMenuAppearance(menuDocument, true, _menuManager.Config.fadeInDuration);
             
             OnWorldMenuOpened?.Invoke(target);
-            Debug.Log($"[WorldSpaceMenuRenderer] Opened world space menu for {target.name}");
+            ChimeraLogger.Log($"[WorldSpaceMenuRenderer] Opened world space menu for {target.name}");
             
             return true;
         }
@@ -132,7 +147,7 @@ namespace ProjectChimera.UI.Panels
                 OnWorldMenuClosed?.Invoke(target);
             });
             
-            Debug.Log($"[WorldSpaceMenuRenderer] Hiding world space menu for {target.name}");
+            ChimeraLogger.Log($"[WorldSpaceMenuRenderer] Hiding world space menu for {target.name}");
             return true;
         }
         
@@ -204,7 +219,7 @@ namespace ProjectChimera.UI.Panels
             if (_menuManager != null && config != null)
             {
                 // Configuration is handled by the manager component
-                Debug.Log("[WorldSpaceMenuRenderer] Configuration updated via WorldSpaceMenuManager");
+                ChimeraLogger.Log("[WorldSpaceMenuRenderer] Configuration updated via WorldSpaceMenuManager");
             }
         }
         
@@ -247,6 +262,14 @@ namespace ProjectChimera.UI.Panels
                 {
                     _menuManager.UpdateMenuVisibility(target, menuData.UIDocument);
                 }
+            }
+        }
+        
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
             }
         }
     }

@@ -1,9 +1,11 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 using ProjectChimera.Systems.Camera;
 using ProjectChimera.Data.Camera;
 using ProjectChimera.Data.Events;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Camera
 {
@@ -13,7 +15,7 @@ namespace ProjectChimera.Systems.Camera
     /// Refactored from 2,681-line monolith to modular architecture.
     /// Maintains full API compatibility for existing camera interactions.
     /// </summary>
-    public class AdvancedCameraController : MonoBehaviour
+    public class AdvancedCameraController : MonoBehaviour, ITickable
     {
         [Header("Component References")]
         [SerializeField] private CameraInputHandler _inputHandler;
@@ -64,13 +66,21 @@ namespace ProjectChimera.Systems.Camera
         {
             WireComponentEvents();
             ValidateSystemIntegrity();
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
         
-        private void Update()
+        #region ITickable Implementation
+
+        public int Priority => TickPriority.CameraEffects;
+        public bool Enabled => enabled && _mainCamera != null && _stateManager != null;
+
+        public void Tick(float deltaTime)
         {
             // Let components handle their own updates
             UpdateCameraState();
         }
+
+        #endregion
         
         private void InitializeComponents()
         {
@@ -407,19 +417,19 @@ namespace ProjectChimera.Systems.Camera
             
             if (_mainCamera == null)
             {
-                Debug.LogError("[AdvancedCameraController] Main camera not found!");
+                ChimeraLogger.LogError("[AdvancedCameraController] Main camera not found!");
                 isValid = false;
             }
             
             if (_stateManager == null)
             {
-                Debug.LogError("[AdvancedCameraController] CameraStateManager not found!");
+                ChimeraLogger.LogError("[AdvancedCameraController] CameraStateManager not found!");
                 isValid = false;
             }
             
             if (_transitionManager == null)
             {
-                Debug.LogError("[AdvancedCameraController] CameraTransitionManager not found!");
+                ChimeraLogger.LogError("[AdvancedCameraController] CameraTransitionManager not found!");
                 isValid = false;
             }
             
@@ -436,12 +446,17 @@ namespace ProjectChimera.Systems.Camera
         private void LogDebug(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[AdvancedCameraController] {message}");
+                ChimeraLogger.Log($"[AdvancedCameraController] {message}");
         }
         
         // Cleanup
         private void OnDestroy()
         {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+            
             if (_stateManager != null)
             {
                 _stateManager.OnFocusTargetChanged -= HandleFocusTargetChanged;

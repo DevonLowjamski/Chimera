@@ -3,6 +3,7 @@ using UnityEditor;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Editor
 {
@@ -36,7 +37,7 @@ namespace ProjectChimera.Editor
         [MenuItem("Tools/Project Chimera/Configure Build Settings")]
         public static void ConfigureBuildSettings()
         {
-            Debug.Log("[BuildSettingsConfigurator] Starting Build Settings configuration...");
+            ChimeraLogger.Log("[BuildSettingsConfigurator] Starting Build Settings configuration...");
 
             var buildScenes = new List<EditorBuildSettingsScene>();
             int processedScenes = 0;
@@ -53,12 +54,12 @@ namespace ProjectChimera.Editor
                     var buildSettingsScene = new EditorBuildSettingsScene(scenePath, true);
                     buildScenes.Add(buildSettingsScene);
                     processedScenes++;
-                    
-                    Debug.Log($"[BuildSettingsConfigurator] Added scene {buildIndex}: {Path.GetFileNameWithoutExtension(scenePath)}");
+
+                    ChimeraLogger.Log("SYSTEM", $"[BuildSettingsConfigurator] Added scene {buildIndex}: {Path.GetFileNameWithoutExtension(scenePath)}");
                 }
                 else
                 {
-                    Debug.LogError($"[BuildSettingsConfigurator] Missing scene file: {scenePath}");
+                    ChimeraLogger.LogError($"[BuildSettingsConfigurator] Missing scene file: {scenePath}");
                     missingScenes++;
                 }
             }
@@ -68,20 +69,20 @@ namespace ProjectChimera.Editor
 
             // Validation and reporting
             ValidateBuildSettings();
-            
+
             string summary = $"Build Settings configured successfully!\n" +
                            $"• Processed scenes: {processedScenes}\n" +
                            $"• Missing scenes: {missingScenes}\n" +
                            $"• Total build scenes: {EditorBuildSettings.scenes.Length}";
-            
+
             if (missingScenes == 0)
             {
-                Debug.Log($"[BuildSettingsConfigurator] {summary}");
+                ChimeraLogger.Log($"[BuildSettingsConfigurator] {summary}");
                 EditorUtility.DisplayDialog("Build Settings Configuration", summary, "OK");
             }
             else
             {
-                Debug.LogWarning($"[BuildSettingsConfigurator] {summary}");
+                ChimeraLogger.LogWarning($"[BuildSettingsConfigurator] {summary}");
                 EditorUtility.DisplayDialog("Build Settings Configuration", summary + "\n\nCheck console for missing scene details.", "OK");
             }
 
@@ -95,7 +96,7 @@ namespace ProjectChimera.Editor
         [MenuItem("Tools/Project Chimera/Validate Build Settings")]
         public static void ValidateBuildSettings()
         {
-            Debug.Log("[BuildSettingsConfigurator] Validating Build Settings...");
+            ChimeraLogger.Log("[BuildSettingsConfigurator] Validating Build Settings...");
 
             var currentScenes = EditorBuildSettings.scenes;
             bool isValid = true;
@@ -136,14 +137,14 @@ namespace ProjectChimera.Editor
             // Report results
             if (isValid)
             {
-                Debug.Log("[BuildSettingsConfigurator] Build Settings validation: PASSED");
+                ChimeraLogger.Log("[BuildSettingsConfigurator] Build Settings validation: PASSED");
             }
             else
             {
-                Debug.LogError("[BuildSettingsConfigurator] Build Settings validation: FAILED");
+                ChimeraLogger.LogError("[BuildSettingsConfigurator] Build Settings validation: FAILED");
                 foreach (var result in validationResults)
                 {
-                    Debug.LogError($"[BuildSettingsConfigurator] • {result}");
+                    ChimeraLogger.LogError($"[BuildSettingsConfigurator] • {result}");
                 }
             }
         }
@@ -158,8 +159,8 @@ namespace ProjectChimera.Editor
                 string scenePath = SceneDefinitions[buildIndex];
                 return Path.GetFileNameWithoutExtension(scenePath);
             }
-            
-            Debug.LogError($"[BuildSettingsConfigurator] No scene defined for build index {buildIndex}");
+
+            ChimeraLogger.LogError($"[BuildSettingsConfigurator] No scene defined for build index {buildIndex}");
             return null;
         }
 
@@ -177,7 +178,7 @@ namespace ProjectChimera.Editor
                 }
             }
 
-            Debug.LogError($"[BuildSettingsConfigurator] No build index found for scene '{sceneName}'");
+            ChimeraLogger.LogError($"[BuildSettingsConfigurator] No build index found for scene '{sceneName}'");
             return -1;
         }
 
@@ -187,19 +188,19 @@ namespace ProjectChimera.Editor
         [MenuItem("Tools/Project Chimera/Print Build Settings")]
         public static void PrintBuildSettings()
         {
-            Debug.Log("[BuildSettingsConfigurator] Current Build Settings:");
-            
+            ChimeraLogger.Log("[BuildSettingsConfigurator] Current Build Settings:");
+
             var scenes = EditorBuildSettings.scenes;
             for (int i = 0; i < scenes.Length; i++)
             {
                 var scene = scenes[i];
                 string status = scene.enabled ? "ENABLED" : "DISABLED";
                 string fileName = Path.GetFileNameWithoutExtension(scene.path);
-                
-                Debug.Log($"[BuildSettingsConfigurator] Index {i}: {fileName} ({status}) - {scene.path}");
+
+                ChimeraLogger.Log("SYSTEM", $"[BuildSettingsConfigurator] Index {i}: {fileName} ({status}) - {scene.path}");
             }
-            
-            Debug.Log($"[BuildSettingsConfigurator] Total scenes in build: {scenes.Length}");
+
+            ChimeraLogger.Log($"[BuildSettingsConfigurator] Total scenes in build: {scenes.Length}");
         }
 
         /// <summary>

@@ -1,20 +1,34 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Simulation;
 using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
-using HVACOperationMode = ProjectChimera.Data.Simulation.HVACOperationMode;
-using HVACZone = ProjectChimera.Data.Simulation.HVACZone;
+// using HVACOperationMode = ProjectChimera.Data.Simulation.HVACOperationMode; // Type not available
+// using HVACZone = ProjectChimera.Data.Simulation.HVACZone; // Type not available
 
 namespace ProjectChimera.Systems.Environment
 {
+    /// <summary>
+    /// HVAC operation mode enum - local definition until Data.Simulation is available
+    /// </summary>
+    public enum HVACOperationMode
+    {
+        Auto,
+        Manual,
+        Off,
+        Cooling,
+        Heating,
+        Ventilation
+    }
     /// <summary>
     /// PC013-6b: Specialized service for HVAC system management
     /// Extracted from monolithic EnvironmentalManager.cs to handle heating,
     /// ventilation, and air conditioning systems with equipment management.
     /// </summary>
-    public class HVACSystemManager : ChimeraManager, IEnvironmentalService
+    public class HVACSystemManager : ChimeraManager, ITickable, IEnvironmentalService
     {
         [Header("HVAC Configuration")]
         [SerializeField] private float _hvacUpdateInterval = 10f; // 10 seconds
@@ -73,17 +87,17 @@ namespace ProjectChimera.Systems.Environment
         {
             if (IsInitialized) return;
             
-            Debug.Log("[HVACSystemManager] Initializing HVAC systems...");
+            ChimeraLogger.Log("[HVACSystemManager] Initializing HVAC systems...");
             
             _lastHVACUpdate = Time.time;
             
             IsInitialized = true;
-            Debug.Log($"[HVACSystemManager] Initialized. Auto-HVAC: {_enableAutomaticHVAC}, Max zones: {_maxHVACZones}");
+            ChimeraLogger.Log($"[HVACSystemManager] Initialized. Auto-HVAC: {_enableAutomaticHVAC}, Max zones: {_maxHVACZones}");
         }
         
         public void Shutdown()
         {
-            Debug.Log("[HVACSystemManager] Shutting down HVAC systems...");
+            ChimeraLogger.Log("[HVACSystemManager] Shutting down HVAC systems...");
             
             // Turn off all equipment before shutdown
             foreach (var kvp in _zoneEquipment)
@@ -105,7 +119,7 @@ namespace ProjectChimera.Systems.Environment
             IsInitialized = false;
         }
         
-        private void Update()
+        public void Tick(float deltaTime)
         {
             if (!IsInitialized || !_enableAutomaticHVAC) return;
             
@@ -123,19 +137,19 @@ namespace ProjectChimera.Systems.Environment
         {
             if (string.IsNullOrEmpty(zoneId))
             {
-                Debug.LogWarning("[HVACSystemManager] Cannot create zone with null or empty ID");
+                ChimeraLogger.LogWarning("[HVACSystemManager] Cannot create zone with null or empty ID");
                 return false;
             }
             
             if (_hvacZones.ContainsKey(zoneId))
             {
-                Debug.LogWarning($"[HVACSystemManager] HVAC zone '{zoneId}' already exists");
+                ChimeraLogger.LogWarning($"[HVACSystemManager] HVAC zone '{zoneId}' already exists");
                 return false;
             }
             
             if (_hvacZones.Count >= _maxHVACZones)
             {
-                Debug.LogWarning($"[HVACSystemManager] Maximum HVAC zone limit ({_maxHVACZones}) reached");
+                ChimeraLogger.LogWarning($"[HVACSystemManager] Maximum HVAC zone limit ({_maxHVACZones}) reached");
                 return false;
             }
             
@@ -163,7 +177,7 @@ namespace ProjectChimera.Systems.Environment
             // Install default equipment based on zone area
             InstallDefaultEquipment(zoneId, zoneArea);
             
-            Debug.Log($"[HVACSystemManager] Created HVAC zone '{zoneId}' with area {zoneArea}m²");
+            ChimeraLogger.Log($"[HVACSystemManager] Created HVAC zone '{zoneId}' with area {zoneArea}m²");
             return true;
         }
         
@@ -174,7 +188,7 @@ namespace ProjectChimera.Systems.Environment
         {
             if (!_hvacZones.ContainsKey(zoneId))
             {
-                Debug.LogWarning($"[HVACSystemManager] Zone '{zoneId}' not found for equipment installation");
+                ChimeraLogger.LogWarning($"[HVACSystemManager] Zone '{zoneId}' not found for equipment installation");
                 return false;
             }
             
@@ -191,7 +205,7 @@ namespace ProjectChimera.Systems.Environment
             
             _zoneEquipment[zoneId].Add(equipment);
             
-            Debug.Log($"[HVACSystemManager] Installed {equipmentType} equipment in zone '{zoneId}' (Capacity: {capacity})");
+            ChimeraLogger.Log($"[HVACSystemManager] Installed {equipmentType} equipment in zone '{zoneId}' (Capacity: {capacity})");
             return true;
         }
         
@@ -202,7 +216,7 @@ namespace ProjectChimera.Systems.Environment
         {
             if (!_hvacZones.TryGetValue(zoneId, out HVACZoneData zone))
             {
-                Debug.LogWarning($"[HVACSystemManager] Zone '{zoneId}' not found for environmental control");
+                ChimeraLogger.LogWarning($"[HVACSystemManager] Zone '{zoneId}' not found for environmental control");
                 return;
             }
             
@@ -222,7 +236,7 @@ namespace ProjectChimera.Systems.Environment
             
             OnEnvironmentControlled?.Invoke(zoneId, newConditions);
             
-            Debug.Log($"[HVACSystemManager] Controlled environment for zone '{zoneId}'");
+            ChimeraLogger.Log($"[HVACSystemManager] Controlled environment for zone '{zoneId}'");
         }
         
         /// <summary>
@@ -585,6 +599,34 @@ namespace ProjectChimera.Systems.Environment
         protected override void OnManagerShutdown()
         {
             // Manager-specific shutdown logic (already implemented in Shutdown method)
+        }
+        
+        protected override void Start()
+        {
+            base.Start();
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
+        }
+
+        protected override void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
+            base.OnDestroy();
+        }
+
+        // ITickable implementation
+        public int Priority => 0;
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+        
+        public virtual void OnRegistered() 
+        { 
+            // Override in derived classes if needed
+        }
+        
+        public virtual void OnUnregistered() 
+        { 
+            // Override in derived classes if needed
         }
         
         #endregion

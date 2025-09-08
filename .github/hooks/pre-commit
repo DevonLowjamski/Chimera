@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# Project Chimera Quality Gate Pre-Commit Hook
+# Prevents commits with anti-patterns defined in Phase 0.5
+
+echo "🔒 Running Project Chimera quality gate checks..."
+
+# Get list of staged C# files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep "\.cs$" | grep "Assets/ProjectChimera" || true)
+
+if [ -z "$STAGED_FILES" ]; then
+    echo "✅ No C# files to check"
+    exit 0
+fi
+
+# Check each staged file for violations
+VIOLATIONS_FOUND=false
+
+echo "📁 Checking staged files:"
+for file in $STAGED_FILES; do
+    echo "   - $file"
+done
+echo ""
+
+# Check for FindObjectOfType
+echo "🔍 Checking for FindObjectOfType violations..."
+for file in $STAGED_FILES; do
+    if [ -f "$file" ]; then
+        VIOLATIONS=$(grep -n "FindObjectOfType" "$file" || true)
+        if [ ! -z "$VIOLATIONS" ]; then
+            echo "❌ FindObjectOfType found in $file:"
+            echo "$VIOLATIONS"
+            echo ""
+            VIOLATIONS_FOUND=true
+        fi
+    fi
+done
+
+# Check for Resources.Load
+echo "🔍 Checking for Resources.Load violations..."
+for file in $STAGED_FILES; do
+    if [ -f "$file" ]; then
+        VIOLATIONS=$(grep -n "Resources\.Load" "$file" || true)
+        if [ ! -z "$VIOLATIONS" ]; then
+            echo "❌ Resources.Load found in $file:"
+            echo "$VIOLATIONS"
+            echo ""
+            VIOLATIONS_FOUND=true
+        fi
+    fi
+done
+
+# Check for raw Debug.Log (exclude Systems/Diagnostics)
+echo "🔍 Checking for raw Debug.Log violations..."
+for file in $STAGED_FILES; do
+    if [ -f "$file" ] && [[ "$file" != *"Systems/Diagnostics"* ]] && [[ "$file" != *"ChimeraLogger"* ]]; then
+        VIOLATIONS=$(grep -n "Debug\.Log" "$file" || true)
+        if [ ! -z "$VIOLATIONS" ]; then
+            echo "❌ Raw Debug.Log found in $file:"
+            echo "$VIOLATIONS"
+            echo ""
+            VIOLATIONS_FOUND=true
+        fi
+    fi
+done
+
+# Report results
+if [ "$VIOLATIONS_FOUND" = true ]; then
+    echo ""
+    echo "💥 Commit blocked by quality gate violations!"
+    echo ""
+    echo "📋 Fix these issues:"
+    echo "  • Replace FindObjectOfType with ServiceContainer.Resolve<T>()"
+    echo "  • Replace Resources.Load with Addressables or direct references"
+    echo "  • Replace Debug.Log with ChimeraLogger.Log()"
+    echo ""
+    echo "Then retry your commit."
+    exit 1
+else
+    echo "✅ All quality gate checks passed!"
+    echo "🚀 Commit approved"
+    exit 0
+fi

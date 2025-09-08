@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -346,11 +347,11 @@ namespace ProjectChimera.Systems.Save
                 // Auto-detect systems if enabled
                 if (_autoDetectSystems)
                 {
-                    _cultivationSystem = FindObjectOfType<MonoBehaviour>() as ICultivationSystem;
+                    _cultivationSystem = ServiceContainerFactory.Instance?.TryResolve<ICultivationSystem>();
                     
-                    _geneticsSystem = FindObjectOfType<MonoBehaviour>() as IGeneticsSystem;
+                    _geneticsSystem = ServiceContainerFactory.Instance?.TryResolve<IGeneticsSystem>();
                     
-                    _plantManager = FindObjectOfType<MonoBehaviour>() as IPlantManager;
+                    _plantManager = ServiceContainerFactory.Instance?.TryResolve<IPlantManager>();
                 }
 
                 _systemsInitialized = true;
@@ -569,9 +570,9 @@ namespace ProjectChimera.Systems.Save
 
         private ICultivationMigrator GetVersionMigrator(string fromVersion, string toVersion) => null; // Placeholder
 
-        private void LogInfo(string message) => Debug.Log($"[CultivationSaveProvider] {message}");
-        private void LogWarning(string message) => Debug.LogWarning($"[CultivationSaveProvider] {message}");
-        private void LogError(string message) => Debug.LogError($"[CultivationSaveProvider] {message}");
+        private void LogInfo(string message) => ChimeraLogger.Log($"[CultivationSaveProvider] {message}");
+        private void LogWarning(string message) => ChimeraLogger.LogWarning($"[CultivationSaveProvider] {message}");
+        private void LogError(string message) => ChimeraLogger.LogError($"[CultivationSaveProvider] {message}");
 
         #endregion
     }

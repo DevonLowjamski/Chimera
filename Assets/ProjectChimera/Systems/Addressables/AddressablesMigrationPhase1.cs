@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+using ProjectChimera.Core;
 using ProjectChimera.Systems.Diagnostics;
 
 namespace ProjectChimera.Systems.Addressables
@@ -68,8 +69,8 @@ namespace ProjectChimera.Systems.Addressables
         
         private void FindSystemReferences()
         {
-            _addressablesInfrastructure = FindObjectOfType<AddressablesInfrastructure>();
-            _prefabResolver = UnityEngine.Object.FindObjectOfType<AddressablePrefabResolver>();
+            _addressablesInfrastructure = ServiceContainerFactory.Instance?.TryResolve<AddressablesInfrastructure>();
+            _prefabResolver = ServiceContainerFactory.Instance?.TryResolve<AddressablePrefabResolver>();
             
             if (_addressablesInfrastructure == null)
             {

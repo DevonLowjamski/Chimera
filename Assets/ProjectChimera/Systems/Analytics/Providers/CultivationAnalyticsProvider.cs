@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -10,8 +11,8 @@ namespace ProjectChimera.Systems.Analytics.Providers
     /// </summary>
     public class CultivationAnalyticsProvider : AnalyticsProviderBase, ICultivationAnalyticsProvider
     {
-        private ProjectChimera.Systems.Cultivation.CultivationManager _cultivationManager;
-        
+        private ICultivationManager _cultivationManager;
+
         // Cached values for performance
         private int _totalPlantsCount;
         private float _averageHealth;
@@ -27,12 +28,12 @@ namespace ProjectChimera.Systems.Analytics.Providers
 
         #region Initialization
 
-        public void Initialize(ProjectChimera.Systems.Cultivation.CultivationManager cultivationManager)
+        public void Initialize(ICultivationManager cultivationManager)
         {
             _cultivationManager = cultivationManager;
-            
+
             if (_enableDebugLogging)
-                Debug.Log("[CultivationAnalyticsProvider] Initialized with CultivationManager");
+                ChimeraLogger.Log("[CultivationAnalyticsProvider] Initialized with CultivationManager");
         }
 
         #endregion
@@ -101,7 +102,7 @@ namespace ProjectChimera.Systems.Analytics.Providers
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"[CultivationAnalyticsProvider] Error getting average plant health: {ex.Message}");
+                ChimeraLogger.LogWarning($"[CultivationAnalyticsProvider] Error getting average plant health: {ex.Message}");
                 return _averageHealth;
             }
         }
@@ -119,7 +120,7 @@ namespace ProjectChimera.Systems.Analytics.Providers
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"[CultivationAnalyticsProvider] Error getting total yield: {ex.Message}");
+                ChimeraLogger.LogWarning($"[CultivationAnalyticsProvider] Error getting total yield: {ex.Message}");
                 return _totalYield;
             }
         }
@@ -135,12 +136,12 @@ namespace ProjectChimera.Systems.Analytics.Providers
                 var readyPlants = GetPlantCountByStage("HarvestReady");
                 var averageYield = GetAverageYieldPerPlant();
                 var harvestFreq = GetHarvestFrequency();
-                
+
                 return RoundForDisplay(readyPlants * averageYield * harvestFreq);
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"[CultivationAnalyticsProvider] Error calculating yield rate: {ex.Message}");
+                ChimeraLogger.LogWarning($"[CultivationAnalyticsProvider] Error calculating yield rate: {ex.Message}");
                 return 0f;
             }
         }
@@ -171,7 +172,7 @@ namespace ProjectChimera.Systems.Analytics.Providers
         private int GetPlantCountByStage(string stage)
         {
             var totalPlants = GetActivePlantCount();
-            
+
             // Simulate distribution across growth stages
             return stage switch
             {
@@ -246,7 +247,7 @@ namespace ProjectChimera.Systems.Analytics.Providers
             var healthScore = GetAveragePlantHealth();
             var utilizationScore = GetFacilityUtilization();
             var yieldScore = GetYieldEfficiency();
-            
+
             return RoundForDisplay((healthScore + utilizationScore + yieldScore) / 3f);
         }
 
@@ -257,9 +258,9 @@ namespace ProjectChimera.Systems.Analytics.Providers
         public void SetFacilityCapacity(float capacity)
         {
             _facilityCapacity = capacity;
-            
+
             if (_enableDebugLogging)
-                Debug.Log($"[CultivationAnalyticsProvider] Facility capacity set to {capacity}");
+                ChimeraLogger.Log($"[CultivationAnalyticsProvider] Facility capacity set to {capacity}");
         }
 
         public void SetDebugMode(bool enabled)

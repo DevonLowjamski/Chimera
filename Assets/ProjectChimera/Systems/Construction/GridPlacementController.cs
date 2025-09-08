@@ -1,7 +1,10 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Systems.Construction;
 using ProjectChimera.Data.Construction;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Construction
 {
@@ -10,7 +13,7 @@ namespace ProjectChimera.Systems.Construction
     /// Delegates all functionality to specialized 3D-aware components.
     /// Refactored from 2,692-line monolith to modular architecture.
     /// </summary>
-    public class GridPlacementController : MonoBehaviour
+    public class GridPlacementController : MonoBehaviour, ITickable
     {
         [Header("Component References")]
         [SerializeField] private GridInputHandler _inputHandler;
@@ -53,9 +56,18 @@ namespace ProjectChimera.Systems.Construction
         {
             WireComponentEvents();
             ValidateSystemIntegrity();
+            
+            // Register with UpdateOrchestrator for centralized ticking
+            var orchestrator = UpdateOrchestrator.Instance;
+            orchestrator?.RegisterTickable(this);
         }
         
-        private void Update()
+        #region ITickable Implementation
+        
+        public int Priority => TickPriority.GridPlacement;
+        public bool Enabled => gameObject.activeInHierarchy;
+        
+        public void Tick(float deltaTime)
         {
             if (IsInPlacementMode)
             {
@@ -66,10 +78,34 @@ namespace ProjectChimera.Systems.Construction
             // Let individual components handle their own updates
         }
         
+        public void OnRegistered()
+        {
+            ChimeraLogger.Log("[GridPlacementController] Registered with UpdateOrchestrator");
+        }
+        
+        public void OnUnregistered()
+        {
+            ChimeraLogger.Log("[GridPlacementController] Unregistered from UpdateOrchestrator");
+        }
+        
+        #endregion
+        
         private void InitializeComponents()
         {
             // Find or create required components
-            if (_gridSystem == null) _gridSystem = FindObjectOfType<GridSystem>();
+            if (_gridSystem == null) 
+            {
+                // Resolve from DI container instead of FindObjectOfType
+                var gridSystemInterface = ServiceContainerFactory.Instance?.TryResolve<IGridSystem>();
+                if (gridSystemInterface != null && gridSystemInterface is GridSystem gridSystemImpl)
+                {
+                    _gridSystem = gridSystemImpl;
+                }
+                else
+                {
+                    ChimeraLogger.LogError("[GridPlacementController] IGridSystem not registered in DI container or not of expected type GridSystem");
+                }
+            }
             if (_inputHandler == null) _inputHandler = GetComponent<GridInputHandler>();
             if (_validator == null) _validator = GetComponent<GridPlacementValidator>();
             if (_previewRenderer == null) _previewRenderer = GetComponent<GridPlacementPreviewRenderer>();
@@ -362,13 +398,13 @@ namespace ProjectChimera.Systems.Construction
             
             if (_gridSystem == null)
             {
-                Debug.LogError("[GridPlacementController] GridSystem not found!");
+                ChimeraLogger.LogError("[GridPlacementController] GridSystem not found!");
                 isValid = false;
             }
             
             if (_inputHandler == null)
             {
-                Debug.LogError("[GridPlacementController] GridInputHandler not found!");
+                ChimeraLogger.LogError("[GridPlacementController] GridInputHandler not found!");
                 isValid = false;
             }
             
@@ -381,12 +417,16 @@ namespace ProjectChimera.Systems.Construction
         private void LogDebug(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[GridPlacementController] {message}");
+                ChimeraLogger.Log($"[GridPlacementController] {message}");
         }
         
         // Cleanup
         private void OnDestroy()
         {
+            // Unregister from UpdateOrchestrator
+            var orchestrator = UpdateOrchestrator.Instance;
+            orchestrator?.UnregisterTickable(this);
+            
             if (_inputHandler != null)
             {
                 _inputHandler.OnPlacementRequested -= () => HandlePlacementRequest();

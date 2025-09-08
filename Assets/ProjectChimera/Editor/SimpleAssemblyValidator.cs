@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using System.IO;
 using System.Text;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Editor
 {
@@ -19,19 +20,19 @@ namespace ProjectChimera.Editor
             report.AppendLine($"Generated: {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             report.AppendLine("=".PadRight(60, '='));
             report.AppendLine();
-            
+
             var asmdefFiles = Directory.GetFiles("Assets/ProjectChimera", "*.asmdef", SearchOption.AllDirectories);
             int validAssemblies = 0;
             int totalAssemblies = asmdefFiles.Length;
-            
+
             report.AppendLine($"Found {totalAssemblies} assembly definition files:");
             report.AppendLine();
-            
+
             foreach (var path in asmdefFiles)
             {
                 var fileName = Path.GetFileNameWithoutExtension(path);
                 var isValid = ValidateAssemblyFile(path, report);
-                
+
                 if (isValid)
                 {
                     validAssemblies++;
@@ -42,10 +43,10 @@ namespace ProjectChimera.Editor
                     report.AppendLine($"❌ {fileName}");
                 }
             }
-            
+
             report.AppendLine();
             report.AppendLine($"SUMMARY: {validAssemblies}/{totalAssemblies} assemblies are valid");
-            
+
             if (validAssemblies == totalAssemblies)
             {
                 report.AppendLine("✅ All assemblies passed validation!");
@@ -54,47 +55,47 @@ namespace ProjectChimera.Editor
             {
                 report.AppendLine("❌ Some assemblies have issues that need attention.");
             }
-            
+
             // Save report
             var reportPath = "Assets/ProjectChimera/Editor/SimpleAssemblyValidationReport.txt";
             File.WriteAllText(reportPath, report.ToString());
             AssetDatabase.Refresh();
-            
+
             // Display results
-            Debug.Log($"[Simple Assembly Validator] {report.ToString()}");
-            
-            var statusMessage = validAssemblies == totalAssemblies ? 
-                "✅ All assemblies are valid" : 
+            ChimeraLogger.Log("SYSTEM", $"[Simple Assembly Validator] {report.ToString()}");
+
+            var statusMessage = validAssemblies == totalAssemblies ?
+                "✅ All assemblies are valid" :
                 $"❌ {totalAssemblies - validAssemblies} assemblies have issues";
-            
-            EditorUtility.DisplayDialog("Assembly Validation", 
+
+            EditorUtility.DisplayDialog("Assembly Validation",
                 $"{statusMessage}\n\nReport saved to: {reportPath}", "OK");
         }
-        
+
         private static bool ValidateAssemblyFile(string path, StringBuilder report)
         {
             try
             {
                 var content = File.ReadAllText(path);
-                
+
                 // Basic validation checks
                 bool hasName = content.Contains("\"name\":");
                 bool hasRootNamespace = content.Contains("\"rootNamespace\":");
                 bool hasReferences = content.Contains("\"references\":");
                 bool isValidJson = content.Contains("{") && content.Contains("}");
-                
+
                 if (!isValidJson)
                 {
                     report.AppendLine($"  - Invalid JSON structure");
                     return false;
                 }
-                
+
                 if (!hasName)
                 {
                     report.AppendLine($"  - Missing 'name' field");
                     return false;
                 }
-                
+
                 // Additional checks can be added here
                 return true;
             }
@@ -104,7 +105,7 @@ namespace ProjectChimera.Editor
                 return false;
             }
         }
-        
+
         [MenuItem("Project Chimera/Quick Assembly Check")]
         public static void QuickAssemblyCheck()
         {
@@ -115,11 +116,11 @@ namespace ProjectChimera.Editor
                 "ProjectChimera.Systems.IPM",
                 "ProjectChimera.Gaming"
             };
-            
+
             bool allFound = true;
             var message = new StringBuilder();
             message.AppendLine("Critical Assembly Check:");
-            
+
             foreach (var assemblyName in criticalAssemblies)
             {
                 bool found = FindAssemblyDefinition(assemblyName) != null;
@@ -133,19 +134,19 @@ namespace ProjectChimera.Editor
                     allFound = false;
                 }
             }
-            
+
             var status = allFound ? "All critical assemblies found!" : "Some critical assemblies are missing!";
             message.AppendLine();
             message.AppendLine(status);
-            
-            Debug.Log($"[Quick Assembly Check] {message.ToString()}");
+
+            ChimeraLogger.Log("SYSTEM", $"[Quick Assembly Check] {message.ToString()}");
             EditorUtility.DisplayDialog("Quick Assembly Check", message.ToString(), "OK");
         }
-        
+
         private static string FindAssemblyDefinition(string assemblyName)
         {
             var asmdefFiles = Directory.GetFiles("Assets/ProjectChimera", "*.asmdef", SearchOption.AllDirectories);
-            
+
             foreach (var path in asmdefFiles)
             {
                 try
@@ -161,7 +162,7 @@ namespace ProjectChimera.Editor
                     // Continue searching
                 }
             }
-            
+
             return null;
         }
     }

@@ -1,3 +1,5 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,7 +26,7 @@ namespace ProjectChimera.Systems.Economy
     /// Extracted from TradingManager for modular architecture.
     /// Manages buy/sell transaction lifecycle and validation.
     /// </summary>
-    public class TradingTransactionProcessor : MonoBehaviour
+    public class TradingTransactionProcessor : MonoBehaviour, ITickable
     {
         [Header("Transaction Processing Configuration")]
         [SerializeField] private bool _enableTransactionLogging = true;
@@ -63,15 +65,16 @@ namespace ProjectChimera.Systems.Economy
             LogDebug("Trading transaction processor initialized");
         }
         
-        private void Update()
-        {
-            _timeSinceLastProcess += Time.deltaTime;
+            public void Tick(float deltaTime)
+    {
+            _timeSinceLastProcess += deltaTime;
             
             if (_timeSinceLastProcess >= _transactionProcessingInterval)
             {
                 ProcessPendingTransactions();
                 _timeSinceLastProcess = 0f;
-            }
+            
+    }
         }
         
         #region Transaction Initiation
@@ -448,12 +451,38 @@ namespace ProjectChimera.Systems.Economy
         private void LogDebug(string message)
         {
             if (_enableTransactionLogging)
-                Debug.Log($"[TradingTransactionProcessor] {message}");
+                ChimeraLogger.Log($"[TradingTransactionProcessor] {message}");
         }
         
         private void LogError(string message)
         {
-            Debug.LogError($"[TradingTransactionProcessor] {message}");
+            ChimeraLogger.LogError($"[TradingTransactionProcessor] {message}");
+        }
+        
+        protected virtual void Start()
+        {
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
+        }
+
+        protected virtual void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
+        }
+    
+        // ITickable implementation
+        public int Priority => 0;
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+        
+        public virtual void OnRegistered() 
+        { 
+            // Override in derived classes if needed
+        }
+        
+        public virtual void OnUnregistered() 
+        { 
+            // Override in derived classes if needed
         }
     }
 }

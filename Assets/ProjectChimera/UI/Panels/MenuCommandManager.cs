@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -63,7 +64,7 @@ namespace ProjectChimera.UI.Panels
             };
             _modeCommands["genetics"] = geneticsCommands;
             
-            Debug.Log($"[MenuCommandManager] Initialized {_modeCommands.Count} command modes");
+            ChimeraLogger.Log($"[MenuCommandManager] Initialized {_modeCommands.Count} command modes");
         }
         
         /// <summary>
@@ -73,12 +74,12 @@ namespace ProjectChimera.UI.Panels
         {
             if (string.IsNullOrEmpty(commandId) || command == null)
             {
-                Debug.LogWarning("[MenuCommandManager] Invalid command registration parameters");
+                ChimeraLogger.LogWarning("[MenuCommandManager] Invalid command registration parameters");
                 return;
             }
             
             _registeredCommands[commandId] = command;
-            Debug.Log($"[MenuCommandManager] Registered command: {commandId}");
+            ChimeraLogger.Log($"[MenuCommandManager] Registered command: {commandId}");
         }
         
         /// <summary>
@@ -88,7 +89,7 @@ namespace ProjectChimera.UI.Panels
         {
             if (_registeredCommands.Remove(commandId))
             {
-                Debug.Log($"[MenuCommandManager] Unregistered command: {commandId}");
+                ChimeraLogger.Log($"[MenuCommandManager] Unregistered command: {commandId}");
             }
         }
         
@@ -128,7 +129,7 @@ namespace ProjectChimera.UI.Panels
             {
                 var errorResult = CommandResult.Failure($"Command execution failed: {ex.Message}");
                 OnCommandExecuted?.Invoke(command, errorResult);
-                Debug.LogError($"[MenuCommandManager] Command execution error: {ex}");
+                ChimeraLogger.LogError($"[MenuCommandManager] Command execution error: {ex}");
                 return errorResult;
             }
         }
@@ -193,7 +194,7 @@ namespace ProjectChimera.UI.Panels
             if (!_modeCommands[mode].Contains(commandId))
             {
                 _modeCommands[mode].Add(commandId);
-                Debug.Log($"[MenuCommandManager] Added command '{commandId}' to mode '{mode}'");
+                ChimeraLogger.Log($"[MenuCommandManager] Added command '{commandId}' to mode '{mode}'");
             }
         }
         
@@ -204,7 +205,7 @@ namespace ProjectChimera.UI.Panels
         {
             if (_modeCommands.ContainsKey(mode) && _modeCommands[mode].Remove(commandId))
             {
-                Debug.Log($"[MenuCommandManager] Removed command '{commandId}' from mode '{mode}'");
+                ChimeraLogger.Log($"[MenuCommandManager] Removed command '{commandId}' from mode '{mode}'");
             }
         }
         
@@ -245,7 +246,7 @@ namespace ProjectChimera.UI.Panels
         public void ClearHistory()
         {
             _commandHistory.Clear();
-            Debug.Log("[MenuCommandManager] Command history cleared");
+            ChimeraLogger.Log("[MenuCommandManager] Command history cleared");
         }
         
         /// <summary>
@@ -271,7 +272,7 @@ namespace ProjectChimera.UI.Panels
             _commandHistory.Clear();
             // Keep mode commands as they are configuration
             
-            Debug.Log("[MenuCommandManager] Cleared all registered commands and history");
+            ChimeraLogger.Log("[MenuCommandManager] Cleared all registered commands and history");
         }
     }
     

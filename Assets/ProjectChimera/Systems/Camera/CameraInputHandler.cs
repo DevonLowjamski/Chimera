@@ -2,6 +2,8 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Data.Camera;
 
 namespace ProjectChimera.Systems.Camera
@@ -11,7 +13,7 @@ namespace ProjectChimera.Systems.Camera
     /// gesture recognition, click-to-focus, and input validation. Extracted from
     /// AdvancedCameraController to improve maintainability and separation of concerns.
     /// </summary>
-    public class CameraInputHandler : MonoBehaviour
+    public class CameraInputHandler : MonoBehaviour, ITickable
     {
         [Header("Input Settings")]
         [SerializeField] private float _mouseSensitivity = 2f;
@@ -120,29 +122,37 @@ namespace ProjectChimera.Systems.Camera
         private void Start()
         {
             ValidateConfiguration();
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
 
-        private void Update()
+        #region ITickable Implementation
+
+        public int Priority => TickPriority.InputSystem;
+        public bool Enabled => enabled && _mainCamera != null && _cameraController != null;
+
+        public void Tick(float deltaTime)
         {
             ProcessInput();
         }
+
+        #endregion
 
         #region Initialization
 
         private void InitializeComponents()
         {
-            _mainCamera = FindObjectOfType<UnityEngine.Camera>();
+            _mainCamera = ServiceContainerFactory.Instance?.TryResolve<UnityEngine.Camera>() ?? UnityEngine.Camera.main ?? ServiceContainerFactory.Instance?.TryResolve<UnityEngine.Camera>();
             _cameraController = GetComponent<AdvancedCameraController>();
 
             if (_mainCamera == null)
             {
-                Debug.LogError("[CameraInputHandler] No camera found in scene!");
+                ChimeraLogger.LogError("[CameraInputHandler] No camera found in scene!");
                 enabled = false;
             }
 
             if (_cameraController == null)
             {
-                Debug.LogError("[CameraInputHandler] AdvancedCameraController component required!");
+                ChimeraLogger.LogError("[CameraInputHandler] AdvancedCameraController component required!");
                 enabled = false;
             }
         }
@@ -152,19 +162,19 @@ namespace ProjectChimera.Systems.Camera
             // Validate input settings
             if (_mouseSensitivity <= 0f)
             {
-                Debug.LogWarning("[CameraInputHandler] Mouse sensitivity should be greater than 0");
+                ChimeraLogger.LogWarning("[CameraInputHandler] Mouse sensitivity should be greater than 0");
                 _mouseSensitivity = 1f;
             }
 
             if (_maxFocusDistance <= 0f)
             {
-                Debug.LogWarning("[CameraInputHandler] Max focus distance should be greater than 0");
+                ChimeraLogger.LogWarning("[CameraInputHandler] Max focus distance should be greater than 0");
                 _maxFocusDistance = 100f;
             }
 
             if (_doubleClickTime <= 0f)
             {
-                Debug.LogWarning("[CameraInputHandler] Double click time should be greater than 0");
+                ChimeraLogger.LogWarning("[CameraInputHandler] Double click time should be greater than 0");
                 _doubleClickTime = 0.3f;
             }
         }
@@ -363,7 +373,7 @@ namespace ProjectChimera.Systems.Camera
         private void EmitCameraLevelShortcut(int levelIndex)
         {
             // This would be handled by the camera controller
-            Debug.Log($"[CameraInputHandler] Camera level shortcut: {levelIndex}");
+            ChimeraLogger.Log($"[CameraInputHandler] Camera level shortcut: {levelIndex}");
         }
 
         #endregion
@@ -724,6 +734,14 @@ namespace ProjectChimera.Systems.Camera
         
         #endregion
 
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+        }
+        
         private void OnDisable()
         {
             // Cleanup when disabled

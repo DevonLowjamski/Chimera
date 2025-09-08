@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
@@ -405,7 +406,7 @@ namespace ProjectChimera.Systems.Facilities
         private void LogDebug(string message)
         {
             if (_enableValidationLogging)
-                Debug.Log($"[FacilityValidationService] {message}");
+                ChimeraLogger.Log($"[FacilityValidationService] {message}");
         }
         
         private void OnDestroy()

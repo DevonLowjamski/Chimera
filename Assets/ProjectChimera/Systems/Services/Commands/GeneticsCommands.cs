@@ -2,6 +2,7 @@ using UnityEngine;
 using ProjectChimera.Systems.Services.Core;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Genetics;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Services.Commands
 {
@@ -68,7 +69,7 @@ namespace ProjectChimera.Systems.Services.Commands
                 }
 
                 // Use integrated breeding system for enhanced genetics
-                var breedingSystem = UnityEngine.Object.FindObjectOfType<ProjectChimera.Systems.Genetics.BreedingSystemIntegration>();
+                var breedingSystem = ServiceContainerFactory.Instance?.TryResolve<ProjectChimera.Systems.Genetics.BreedingSystemIntegration>();
                 if (breedingSystem != null)
                 {
                     var breedingResult = breedingSystem.BreedPlants(_parentId1, _parentId2);
@@ -107,7 +108,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[BreedPlantsCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.LogError($"[BreedPlantsCommand] Error executing command: {ex.Message}");
                 return CommandResult.Failure($"Error breeding plants: {ex.Message}");
             }
         }
@@ -155,7 +156,7 @@ namespace ProjectChimera.Systems.Services.Commands
                 }
 
                 // Use integrated breeding system for enhanced tissue culture
-                var breedingSystem = UnityEngine.Object.FindObjectOfType<ProjectChimera.Systems.Genetics.BreedingSystemIntegration>();
+                var breedingSystem = ServiceContainerFactory.Instance?.TryResolve<ProjectChimera.Systems.Genetics.BreedingSystemIntegration>();
                 if (breedingSystem != null)
                 {
                     _wasCreated = breedingSystem.CreateTissueCulture(_plantId, _cultureName);
@@ -186,7 +187,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[CreateTissueCultureCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.LogError($"[CreateTissueCultureCommand] Error executing command: {ex.Message}");
                 return CommandResult.Failure($"Error creating tissue culture: {ex.Message}");
             }
         }
@@ -234,7 +235,7 @@ namespace ProjectChimera.Systems.Services.Commands
                 }
 
                 // Use integrated breeding system for enhanced micropropagation
-                var breedingSystem = UnityEngine.Object.FindObjectOfType<ProjectChimera.Systems.Genetics.BreedingSystemIntegration>();
+                var breedingSystem = ServiceContainerFactory.Instance?.TryResolve<ProjectChimera.Systems.Genetics.BreedingSystemIntegration>();
                 if (breedingSystem != null)
                 {
                     var success = breedingSystem.Micropropagate(_cultureId, _quantity, out _seedIds);
@@ -265,7 +266,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[MicropropagateCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.LogError($"[MicropropagateCommand] Error executing command: {ex.Message}");
                 return CommandResult.Failure($"Error micropropagating: {ex.Message}");
             }
         }
@@ -324,7 +325,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[PurchaseSeedsCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.LogError($"[PurchaseSeedsCommand] Error executing command: {ex.Message}");
                 return CommandResult.Failure($"Error purchasing seeds: {ex.Message}");
             }
         }
@@ -387,7 +388,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[ResearchTraitCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.LogError($"[ResearchTraitCommand] Error executing command: {ex.Message}");
                 return CommandResult.Failure($"Error researching trait: {ex.Message}");
             }
         }
@@ -436,7 +437,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[SelectStrainCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.LogError($"[SelectStrainCommand] Error executing command: {ex.Message}");
                 return CommandResult.Failure($"Error selecting strain: {ex.Message}");
             }
         }

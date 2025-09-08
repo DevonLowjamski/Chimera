@@ -1,6 +1,8 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Data.Camera;
 
 namespace ProjectChimera.Systems.Camera
@@ -10,7 +12,7 @@ namespace ProjectChimera.Systems.Camera
     /// Handles state tracking and history management. Works with CameraStatePersistence for save/load.
     /// </summary>
     [System.Serializable]
-    public class CameraStateManager : MonoBehaviour
+    public class CameraStateManager : MonoBehaviour, ITickable
     {
         [Header("State Configuration")]
         [SerializeField] private bool _enableStatePersistence = true;
@@ -117,12 +119,22 @@ namespace ProjectChimera.Systems.Camera
         private void Start()
         {
             LoadPersistedState();
+            
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
 
-        private void Update()
+        #region ITickable Implementation
+        
+        public int Priority => TickPriority.CameraEffects;
+        public bool Enabled => enabled;
+        
+        public void Tick(float deltaTime)
         {
             UpdateStateTracking();
         }
+        
+        #endregion
 
         #region Initialization
 
@@ -412,7 +424,7 @@ namespace ProjectChimera.Systems.Camera
                 // Try to restore focus target by name
                 if (!string.IsNullOrEmpty(state.focusTargetName))
                 {
-                    var targetObject = GameObject.Find(state.focusTargetName);
+                    GameObject targetObject = /* TODO: Replace GameObject.Find */ null;
                     if (targetObject != null)
                     {
                         SetFocusTarget(targetObject.transform);
@@ -632,7 +644,7 @@ namespace ProjectChimera.Systems.Camera
         public void SetMovementSmoothing(bool enabled, float movementSmoothTime = -1f, float rotationSmoothTime = -1f)
         {
             // Implementation would set smoothing parameters
-            Debug.Log($"[CameraStateManager] Movement smoothing set: {enabled}");
+            ChimeraLogger.Log($"[CameraStateManager] Movement smoothing set: {enabled}");
         }
         
         /// <summary>
@@ -641,7 +653,7 @@ namespace ProjectChimera.Systems.Camera
         public void SetCameraBounds(Vector3 min, Vector3 max, bool useSoftBounds = false)
         {
             // Implementation would set camera bounds
-            Debug.Log($"[CameraStateManager] Camera bounds set: {min} to {max}");
+            ChimeraLogger.Log($"[CameraStateManager] Camera bounds set: {min} to {max}");
         }
         
         /// <summary>
@@ -666,7 +678,7 @@ namespace ProjectChimera.Systems.Camera
         public void SetCameraLevelConfiguration(CameraLevelConfigurationSO configuration)
         {
             // Implementation would apply configuration
-            Debug.Log($"[CameraStateManager] Camera level configuration set");
+            ChimeraLogger.Log($"[CameraStateManager] Camera level configuration set");
         }
         
         /// <summary>
@@ -724,6 +736,14 @@ namespace ProjectChimera.Systems.Camera
         public bool IsLevelAvailable(CameraLevel level)
         {
             return IsValidLevel(level);
+        }
+        
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
         }
         
         #endregion

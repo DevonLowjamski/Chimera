@@ -1,5 +1,8 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using UnityEngine;
 using UnityEngine.UI;
+using ProjectChimera.Core;
 using ProjectChimera.Core.DependencyInjection;
 using ProjectChimera.Systems.Gameplay;
 using ProjectChimera.Data.Events;
@@ -12,7 +15,7 @@ namespace ProjectChimera.Systems.Gameplay
     /// Responds to gameplay mode changes and provides genetics-specific visualizations
     /// Phase 2 implementation following roadmap requirements
     /// </summary>
-    public class GeneticsModeOverlay : MonoBehaviour
+    public class GeneticsModeOverlay : MonoBehaviour, ITickable
     {
         [Header("Overlay Configuration")]
         [SerializeField] private bool _enableHeatmapOverlay = true;
@@ -21,31 +24,31 @@ namespace ProjectChimera.Systems.Gameplay
         
         [Header("Heatmap Overlays")]
         [SerializeField] private GameObject _heatmapPanel;
-        [SerializeField] private Toggle _potencyHeatmapToggle;
-        [SerializeField] private Toggle _yieldHeatmapToggle;
-        [SerializeField] private Toggle _healthHeatmapToggle;
-        [SerializeField] private Toggle _geneticDiversityToggle;
-        [SerializeField] private Slider _heatmapIntensity;
+        [SerializeField] private UnityEngine.UI.Toggle _potencyHeatmapToggle;
+        [SerializeField] private UnityEngine.UI.Toggle _yieldHeatmapToggle;
+        [SerializeField] private UnityEngine.UI.Toggle _healthHeatmapToggle;
+        [SerializeField] private UnityEngine.UI.Toggle _geneticDiversityToggle;
+        [SerializeField] private UnityEngine.UI.Slider _heatmapIntensity;
         
         [Header("Genetic Analysis Tools")]
         [SerializeField] private GameObject _geneticsToolbar;
-        [SerializeField] private Button _breedingAnalysisButton;
-        [SerializeField] private Button _phenotypeViewButton;
-        [SerializeField] private Button _traitMappingButton;
-        [SerializeField] private Button _crossbreedingButton;
+        [SerializeField] private UnityEngine.UI.Button _breedingAnalysisButton;
+        [SerializeField] private UnityEngine.UI.Button _phenotypeViewButton;
+        [SerializeField] private UnityEngine.UI.Button _traitMappingButton;
+        [SerializeField] private UnityEngine.UI.Button _crossbreedingButton;
         
         [Header("Visualization Controls")]
         [SerializeField] private GameObject _visualizationPanel;
-        [SerializeField] private Dropdown _heatmapTypeDropdown;
-        [SerializeField] private Toggle _showLegendToggle;
-        [SerializeField] private Toggle _animatedHeatmapToggle;
-        [SerializeField] private Slider _updateFrequencySlider;
+        [SerializeField] private UnityEngine.UI.Dropdown _heatmapTypeDropdown;
+        [SerializeField] private UnityEngine.UI.Toggle _showLegendToggle;
+        [SerializeField] private UnityEngine.UI.Toggle _animatedHeatmapToggle;
+        [SerializeField] private UnityEngine.UI.Slider _updateFrequencySlider;
         
         [Header("Genetic Data Display")]
         [SerializeField] private GameObject _geneticDataPanel;
-        [SerializeField] private Text _selectedPlantGenetics;
-        [SerializeField] private Image _geneticProfileImage;
-        [SerializeField] private Button _detailedAnalysisButton;
+        [SerializeField] private UnityEngine.UI.Text _selectedPlantGenetics;
+        [SerializeField] private UnityEngine.UI.Image _geneticProfileImage;
+        [SerializeField] private UnityEngine.UI.Button _detailedAnalysisButton;
         
         [Header("Visual Overlays")]
         [SerializeField] private GameObject _heatmapOverlayRoot;
@@ -83,19 +86,24 @@ namespace ProjectChimera.Systems.Gameplay
         
         private void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             InitializeOverlay();
         }
         
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             if (_isGeneticsModeActive && _animatedHeatmapToggle != null && _animatedHeatmapToggle.isOn)
             {
                 UpdateAnimatedHeatmaps();
-            }
+            
+    }
         }
         
         private void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             UnsubscribeFromEvents();
             CleanupHeatmapObjects();
         }
@@ -105,11 +113,11 @@ namespace ProjectChimera.Systems.Gameplay
             try
             {
                 // Get the gameplay mode controller service
-                _modeController = ProjectChimera.Core.DependencyInjection.ServiceLocator.Instance.GetService<IGameplayModeController>();
+                _modeController = ServiceContainerFactory.Instance?.TryResolve<IGameplayModeController>();
                 
                 if (_modeController == null)
                 {
-                    Debug.LogError("[GeneticsModeOverlay] GameplayModeController service not found!");
+                    ChimeraLogger.LogError("[GeneticsModeOverlay] GameplayModeController service not found!");
                     return;
                 }
                 
@@ -135,12 +143,12 @@ namespace ProjectChimera.Systems.Gameplay
                 
                 if (_debugMode)
                 {
-                    Debug.Log($"[GeneticsModeOverlay] Initialized with current mode: {_modeController.CurrentMode}");
+                    ChimeraLogger.Log($"[GeneticsModeOverlay] Initialized with current mode: {_modeController.CurrentMode}");
                 }
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[GeneticsModeOverlay] Error during initialization: {ex.Message}");
+                ChimeraLogger.LogError($"[GeneticsModeOverlay] Error during initialization: {ex.Message}");
             }
         }
         
@@ -160,7 +168,7 @@ namespace ProjectChimera.Systems.Gameplay
             }
             else
             {
-                Debug.LogWarning("[GeneticsModeOverlay] ModeChangedEvent not assigned");
+                ChimeraLogger.LogWarning("[GeneticsModeOverlay] ModeChangedEvent not assigned");
             }
         }
         
@@ -288,7 +296,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[GeneticsModeOverlay] Mode changed: {eventData.PreviousMode} → {eventData.NewMode}");
+                ChimeraLogger.Log($"[GeneticsModeOverlay] Mode changed: {eventData.PreviousMode} → {eventData.NewMode}");
             }
             
             UpdateOverlayVisibility(eventData.NewMode);
@@ -336,7 +344,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[GeneticsModeOverlay] Genetics mode overlay {(shouldShowOverlay ? "shown" : "hidden")}");
+                ChimeraLogger.Log($"[GeneticsModeOverlay] Genetics mode overlay {(shouldShowOverlay ? "shown" : "hidden")}");
             }
         }
         
@@ -345,7 +353,7 @@ namespace ProjectChimera.Systems.Gameplay
             _monitoredPlants.Clear();
             
             // Find all plant objects in the scene (placeholder implementation)
-            var plantObjects = GameObject.FindGameObjectsWithTag("Plant");
+            GameObject[] plantObjects = /* TODO: Replace GameObject.Find */ new GameObject[0];
             foreach (var plantObj in plantObjects)
             {
                 _monitoredPlants.Add(plantObj.transform);
@@ -353,7 +361,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[GeneticsModeOverlay] Refreshed monitored plants: {_monitoredPlants.Count} found");
+                ChimeraLogger.Log($"[GeneticsModeOverlay] Refreshed monitored plants: {_monitoredPlants.Count} found");
             }
         }
         
@@ -411,7 +419,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[GeneticsModeOverlay] {heatmapType} heatmap shown");
+                ChimeraLogger.Log($"[GeneticsModeOverlay] {heatmapType} heatmap shown");
             }
         }
         
@@ -429,7 +437,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[GeneticsModeOverlay] {heatmapType} heatmap hidden");
+                ChimeraLogger.Log($"[GeneticsModeOverlay] {heatmapType} heatmap hidden");
             }
         }
         
@@ -455,7 +463,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[GeneticsModeOverlay] Created placeholder {heatmapType} heatmap");
+                ChimeraLogger.Log($"[GeneticsModeOverlay] Created placeholder {heatmapType} heatmap");
             }
         }
         
@@ -495,7 +503,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[GeneticsModeOverlay] Updated {heatmapType} heatmap data for {_monitoredPlants.Count} plants");
+                ChimeraLogger.Log($"[GeneticsModeOverlay] Updated {heatmapType} heatmap data for {_monitoredPlants.Count} plants");
             }
         }
         
@@ -548,7 +556,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[GeneticsModeOverlay] {heatmapType} heatmap toggled: {enabled}");
+                ChimeraLogger.Log($"[GeneticsModeOverlay] {heatmapType} heatmap toggled: {enabled}");
             }
         }
         
@@ -571,7 +579,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[GeneticsModeOverlay] Heatmap intensity changed: {intensity:F2}");
+                ChimeraLogger.Log($"[GeneticsModeOverlay] Heatmap intensity changed: {intensity:F2}");
             }
         }
         
@@ -579,7 +587,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[GeneticsModeOverlay] Genetic tool selected: {toolName}");
+                ChimeraLogger.Log($"[GeneticsModeOverlay] Genetic tool selected: {toolName}");
             }
             
             // Placeholder for genetic tool activation
@@ -601,7 +609,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[GeneticsModeOverlay] Heatmap type changed to: {heatmapType}");
+                ChimeraLogger.Log($"[GeneticsModeOverlay] Heatmap type changed to: {heatmapType}");
             }
         }
         
@@ -610,7 +618,7 @@ namespace ProjectChimera.Systems.Gameplay
             // Toggle heatmap legend visibility (placeholder)
             if (_debugMode)
             {
-                Debug.Log($"[GeneticsModeOverlay] Heatmap legend visibility: {showLegend}");
+                ChimeraLogger.Log($"[GeneticsModeOverlay] Heatmap legend visibility: {showLegend}");
             }
         }
         
@@ -618,7 +626,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[GeneticsModeOverlay] Animated heatmap: {enabled}");
+                ChimeraLogger.Log($"[GeneticsModeOverlay] Animated heatmap: {enabled}");
             }
         }
         
@@ -626,7 +634,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[GeneticsModeOverlay] Update frequency changed: {frequency:F1}s");
+                ChimeraLogger.Log($"[GeneticsModeOverlay] Update frequency changed: {frequency:F1}s");
             }
         }
         
@@ -634,7 +642,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log("[GeneticsModeOverlay] Detailed genetic analysis requested");
+                ChimeraLogger.Log("[GeneticsModeOverlay] Detailed genetic analysis requested");
             }
             
             // Placeholder for detailed analysis window
@@ -669,7 +677,7 @@ namespace ProjectChimera.Systems.Gameplay
                 
                 if (_debugMode)
                 {
-                    Debug.Log("[GeneticsModeOverlay] Overlay refreshed manually");
+                    ChimeraLogger.Log("[GeneticsModeOverlay] Overlay refreshed manually");
                 }
             }
         }
@@ -680,7 +688,7 @@ namespace ProjectChimera.Systems.Gameplay
         public void SetDebugMode(bool enabled)
         {
             _debugMode = enabled;
-            Debug.Log($"[GeneticsModeOverlay] Debug mode {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.Log($"[GeneticsModeOverlay] Debug mode {(enabled ? "enabled" : "disabled")}");
         }
         
         /// <summary>
@@ -708,10 +716,24 @@ namespace ProjectChimera.Systems.Gameplay
             }
             else
             {
-                Debug.Log("[GeneticsModeOverlay] Test only works during play mode with initialized controller");
+                ChimeraLogger.Log("[GeneticsModeOverlay] Test only works during play mode with initialized controller");
             }
         }
         
         #endif
+    
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+    
+    public virtual void OnRegistered() 
+    { 
+        // Override in derived classes if needed
+    }
+    
+    public virtual void OnUnregistered() 
+    { 
+        // Override in derived classes if needed
+    }
     }
 }

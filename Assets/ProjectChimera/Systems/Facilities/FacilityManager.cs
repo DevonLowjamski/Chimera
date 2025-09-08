@@ -1,5 +1,8 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
+using static ProjectChimera.Core.Updates.TickPriority;
 using ProjectChimera.Core.DependencyInjection;
 using ProjectChimera.Systems.Scene;
 using ProjectChimera.Data.Facilities;
@@ -15,17 +18,17 @@ namespace ProjectChimera.Systems.Facilities
     /// Maintains full API compatibility while delegating to modular services.
     /// Refactored from 1,749 lines to orchestrator pattern for maintainability.
     /// </summary>
-    public class FacilityManager : ChimeraManager
+    public class FacilityManager : ChimeraManager, ITickable, IFacilityManager
     {
         [Header("Orchestrator Configuration")]
         [SerializeField] private bool _enableProgressionSystem = true;
         [SerializeField] private bool _enableMultipleFacilities = true;
         [SerializeField] private float _facilityEvaluationInterval = 30f;
-        
+
         [Header("Facility Configuration")]
         [SerializeField] private List<FacilityTierSO> _facilityTiers = new List<FacilityTierSO>();
         [SerializeField] private FacilityProgressionConfigSO _progressionConfig;
-        
+
         // Component References - Dependency Injection
         [Header("Component Dependencies")]
         [SerializeField] private FacilityRegistry _facilityRegistry;
@@ -33,14 +36,14 @@ namespace ProjectChimera.Systems.Facilities
         [SerializeField] private FacilityStateManager _stateManager;
         [SerializeField] private FacilityValidationService _validationService;
         [SerializeField] private FacilityEventHandler _eventHandler;
-        
+
         // External services
         private ISceneLoader _sceneLoader;
-        
+
         // Orchestrator state
         private FacilityProgressionData _progressionData = new FacilityProgressionData();
         private float _lastEvaluationTime = 0f;
-        
+
         // API Compatibility Properties
         public bool IsInitialized { get; private set; }
         public FacilityTierSO CurrentTier => _upgradeService?.GetCurrentTier();
@@ -54,10 +57,15 @@ namespace ProjectChimera.Systems.Facilities
         public override string ManagerName => "FacilityManager";
         public override ManagerPriority Priority => ManagerPriority.High;
 
-        private void Update()
+        #region ITickable Implementation
+
+        int ITickable.Priority => TickPriority.FacilityManager;
+        bool ITickable.Enabled => IsInitialized;
+
+        public void Tick(float deltaTime)
         {
             if (!IsInitialized) return;
-            
+
             float currentTime = Time.time;
             if (_enableProgressionSystem && currentTime - _lastEvaluationTime >= _facilityEvaluationInterval)
             {
@@ -65,6 +73,56 @@ namespace ProjectChimera.Systems.Facilities
                 _lastEvaluationTime = currentTime;
             }
         }
+
+        public void OnRegistered()
+        {
+            ChimeraLogger.LogVerbose("[FacilityManager] Registered with UpdateOrchestrator");
+        }
+
+        public void OnUnregistered()
+        {
+            ChimeraLogger.LogVerbose("[FacilityManager] Unregistered from UpdateOrchestrator");
+        }
+
+        #endregion
+
+        #region IFacilityManager Implementation
+
+        public event System.Action<string> OnFacilityChanged;
+        public event System.Action<FacilityProgressionData> OnProgressionUpdated;
+
+        public bool SwitchToFacility(string facilityId)
+        {
+            // Placeholder implementation
+            ChimeraLogger.Log($"[FacilityManager] SwitchToFacility {facilityId} - placeholder implementation");
+            return false;
+        }
+
+        public bool CanUpgradeCurrentFacility()
+        {
+            // Placeholder implementation
+            return false;
+        }
+
+        public bool UpgradeCurrentFacility()
+        {
+            // Placeholder implementation
+            ChimeraLogger.Log("[FacilityManager] UpgradeCurrentFacility - placeholder implementation");
+            return false;
+        }
+
+        public Dictionary<string, object> GetProgressionStatistics()
+        {
+            // Placeholder implementation
+            return new Dictionary<string, object>
+            {
+                ["currentTier"] = CurrentTierIndex,
+                ["ownedFacilities"] = OwnedFacilitiesCount,
+                ["initialized"] = IsInitialized
+            };
+        }
+
+        #endregion
 
         #region Component Orchestration
 
@@ -75,24 +133,24 @@ namespace ProjectChimera.Systems.Facilities
         {
             // Ensure components exist
             CreateComponentsIfNeeded();
-            
+
             // Initialize progression data
             InitializeProgressionData();
-            
+
             // Get SceneLoader service
             InitializeSceneLoader();
-            
+
             // Initialize components in dependency order
             _facilityRegistry?.Initialize();
             _upgradeService?.Initialize(_facilityRegistry, _progressionData, _facilityTiers);
             _stateManager?.Initialize(_facilityRegistry, _sceneLoader);
             _validationService?.Initialize(_facilityRegistry, _progressionData);
             _eventHandler?.Initialize();
-            
+
             // Wire component events
             WireComponentEvents();
-            
-            Debug.Log("[FacilityManager] Component orchestration initialized");
+
+            ChimeraLogger.Log("[FacilityManager] Component orchestration initialized");
         }
 
         /// <summary>
@@ -102,16 +160,16 @@ namespace ProjectChimera.Systems.Facilities
         {
             if (_facilityRegistry == null)
                 _facilityRegistry = GetComponentInChildren<FacilityRegistry>() ?? gameObject.AddComponent<FacilityRegistry>();
-            
+
             if (_upgradeService == null)
                 _upgradeService = GetComponentInChildren<FacilityUpgradeService>() ?? gameObject.AddComponent<FacilityUpgradeService>();
-            
+
             if (_stateManager == null)
                 _stateManager = GetComponentInChildren<FacilityStateManager>() ?? gameObject.AddComponent<FacilityStateManager>();
-            
+
             if (_validationService == null)
                 _validationService = GetComponentInChildren<FacilityValidationService>() ?? gameObject.AddComponent<FacilityValidationService>();
-            
+
             if (_eventHandler == null)
                 _eventHandler = GetComponentInChildren<FacilityEventHandler>() ?? gameObject.AddComponent<FacilityEventHandler>();
         }
@@ -145,11 +203,11 @@ namespace ProjectChimera.Systems.Facilities
         {
             try
             {
-                _sceneLoader = ServiceLocator.Instance.Resolve<ISceneLoader>();
+                _sceneLoader = ServiceContainerFactory.Instance?.TryResolve<ISceneLoader>();
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"[FacilityManager] Could not connect to SceneLoader service: {ex.Message}");
+                ChimeraLogger.LogWarning($"[FacilityManager] Could not connect to SceneLoader service: {ex.Message}");
             }
         }
 
@@ -190,7 +248,7 @@ namespace ProjectChimera.Systems.Facilities
         public async Task<bool> UpgradeToTierAsync(FacilityTierSO targetTier)
         {
             if (_upgradeService == null) return false;
-            
+
             var result = await _upgradeService.ProcessUpgradeAsync(targetTier);
             if (result.Success)
             {
@@ -217,7 +275,7 @@ namespace ProjectChimera.Systems.Facilities
         public async Task<bool> PurchaseNewFacilityAsync(FacilityTierSO tier, string facilityName = null)
         {
             if (_upgradeService == null) return false;
-            
+
             var result = await _upgradeService.PurchaseNewFacilityAsync(tier, facilityName);
             return result.Success;
         }
@@ -239,7 +297,7 @@ namespace ProjectChimera.Systems.Facilities
             {
                 _eventHandler?.TriggerFacilitySold(facility.Value, facility.Value.CurrentValue);
             }
-            
+
             return success;
         }
 
@@ -274,7 +332,7 @@ namespace ProjectChimera.Systems.Facilities
         /// <summary>
         /// Get facility progression statistics
         /// </summary>
-        public FacilityProgressionStatistics GetProgressionStatistics()
+        public FacilityProgressionStatistics GetProgressionStatisticsTyped()
         {
             return new FacilityProgressionStatistics
             {
@@ -284,6 +342,8 @@ namespace ProjectChimera.Systems.Facilities
                 OwnedFacilities = OwnedFacilitiesCount,
                 TotalPlantsGrown = _progressionData.TotalPlants,
                 TotalRevenue = _progressionData.Capital,
+                TotalValue = GetTotalPortfolioValue(),
+                TotalInvestment = GetTotalInvestment(),
                 AverageQuality = _progressionData.Experience,
                 CanUpgrade = _upgradeService?.CanUpgradeToNextTier() ?? false,
                 NextTier = _upgradeService?.GetNextAvailableTier()?.TierName
@@ -305,9 +365,18 @@ namespace ProjectChimera.Systems.Facilities
         }
 
         /// <summary>
-        /// Get facilities available for switching
+        /// Get facilities available for switching (interface implementation)
         /// </summary>
-        public List<FacilitySwitchInfo> GetAvailableFacilitiesForSwitching()
+        List<string> IFacilityManager.GetAvailableFacilitiesForSwitching()
+        {
+            var switchInfo = GetAvailableFacilitiesForSwitchingDetailed();
+            return switchInfo.Select(f => f.OwnedFacilityData.FacilityId).ToList();
+        }
+
+        /// <summary>
+        /// Get facilities available for switching (detailed implementation)
+        /// </summary>
+        public List<FacilitySwitchInfo> GetAvailableFacilitiesForSwitchingDetailed()
         {
             return _stateManager?.GetAvailableFacilitiesForSwitching() ?? new List<FacilitySwitchInfo>();
         }
@@ -330,7 +399,7 @@ namespace ProjectChimera.Systems.Facilities
             _upgradeService?.UpdateProgressionData(_progressionData);
             _validationService?.Initialize(_facilityRegistry, _progressionData);
 
-            Debug.Log($"[FacilityManager] Progression updated - Plants: {_progressionData.TotalPlants}, Capital: ${_progressionData.Capital:F0}");
+            ChimeraLogger.Log($"[FacilityManager] Progression updated - Plants: {_progressionData.TotalPlants}, Capital: ${_progressionData.Capital:F0}");
         }
 
         /// <summary>
@@ -374,7 +443,7 @@ namespace ProjectChimera.Systems.Facilities
         private void EvaluateFacilityProgression()
         {
             if (!_enableProgressionSystem) return;
-            
+
             _upgradeService?.EvaluateFacilityProgression();
         }
 
@@ -383,22 +452,20 @@ namespace ProjectChimera.Systems.Facilities
         #region Event System Integration
 
         /// <summary>
-        /// Subscribe to facility events for UI integration
+        /// Subscribe to facility events for UI integration (interface implementation)
         /// </summary>
         public void SubscribeToFacilityEvents(
             System.Action onFacilityUpgraded = null,
-            System.Action onFacilityUnlocked = null,
             System.Action onFacilitySwitch = null,
             System.Action onFacilityPurchased = null,
             System.Action onFacilitySold = null,
             System.Action onFacilityUpgradeAvailable = null,
-            System.Action onFacilityRequirementsNotMet = null,
             System.Action onFacilityValueUpdated = null)
         {
             _eventHandler?.SubscribeToFacilityEvents(
-                onFacilityUpgraded, onFacilityUnlocked, onFacilitySwitch,
+                onFacilityUpgraded, null, onFacilitySwitch,
                 onFacilityPurchased, onFacilitySold, onFacilityUpgradeAvailable,
-                onFacilityRequirementsNotMet, onFacilityValueUpdated);
+                null, onFacilityValueUpdated);
         }
 
         /// <summary>
@@ -429,7 +496,7 @@ namespace ProjectChimera.Systems.Facilities
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[FacilityManager] Upgrade to tier {tierLevel} failed: {ex.Message}");
+                ChimeraLogger.LogError($"[FacilityManager] Upgrade to tier {tierLevel} failed: {ex.Message}");
                 return false;
             }
         }
@@ -441,7 +508,7 @@ namespace ProjectChimera.Systems.Facilities
         {
             _facilityRegistry?.ClearAllFacilities();
             _eventHandler?.ClearEventHistory();
-            
+
             _progressionData = new FacilityProgressionData
             {
                 Capital = 50000f,
@@ -458,21 +525,21 @@ namespace ProjectChimera.Systems.Facilities
 
         protected override void OnManagerInitialize()
         {
-            Debug.Log("[FacilityManager] Initializing Facility Manager Orchestrator...");
-            
+            ChimeraLogger.Log("[FacilityManager] Initializing Facility Manager Orchestrator...");
+
             InitializeComponents();
             IsInitialized = true;
             _lastEvaluationTime = Time.time;
-            
-            Debug.Log($"[FacilityManager] Orchestrator initialized with {_facilityTiers.Count} facility tiers");
+
+            ChimeraLogger.Log($"[FacilityManager] Orchestrator initialized with {_facilityTiers.Count} facility tiers");
         }
 
         protected override void OnManagerShutdown()
         {
             if (!IsInitialized) return;
-            
-            Debug.Log("[FacilityManager] Shutting down Facility Manager Orchestrator...");
-            
+
+            ChimeraLogger.Log("[FacilityManager] Shutting down Facility Manager Orchestrator...");
+
             try
             {
                 _facilityRegistry?.ClearAllFacilities();
@@ -482,16 +549,16 @@ namespace ProjectChimera.Systems.Facilities
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"[FacilityManager] Error during shutdown: {ex.Message}");
+                ChimeraLogger.LogWarning($"[FacilityManager] Error during shutdown: {ex.Message}");
             }
 
-            Debug.Log("[FacilityManager] Orchestrator shutdown complete");
+            ChimeraLogger.Log("[FacilityManager] Orchestrator shutdown complete");
         }
 
         #endregion
-        
+
         #region API Compatibility Methods
-        
+
         /// <summary>
         /// Get all available facility scenes
         /// </summary>
@@ -499,7 +566,7 @@ namespace ProjectChimera.Systems.Facilities
         {
             return _facilityRegistry?.GetAvailableFacilityScenes() ?? new List<string>();
         }
-        
+
         /// <summary>
         /// Get facility information for a specific scene
         /// </summary>
@@ -511,34 +578,45 @@ namespace ProjectChimera.Systems.Facilities
         /// <summary>
         /// Quick switch by tier name
         /// </summary>
-        public async System.Threading.Tasks.Task<bool> QuickSwitchByTierName(string tierName)
+        public async Task<bool> QuickSwitchByTierName(string tierName)
         {
             // Find facility with matching tier name
             var facilities = _stateManager?.GetAvailableFacilitiesForSwitching() ?? new List<FacilitySwitchInfo>();
             var targetFacility = facilities.FirstOrDefault(f => f.Facility.TierName == tierName && f.CanSwitch);
-            
+
             if (targetFacility != null)
             {
                 var switchResult = await _stateManager.SwitchToFacilityAsync(targetFacility.OwnedFacilityData.FacilityId);
                 return switchResult.Success;
             }
-            
+
             return false;
         }
 
         /// <summary>
-        /// Unsubscribe from facility events
+        /// Purchase new facility async (interface implementation)
+        /// </summary>
+        public async Task<bool> PurchaseNewFacilityAsync(string tierName)
+        {
+            var tier = _facilityTiers.FirstOrDefault(t => t.TierName == tierName);
+            if (tier == null) return false;
+
+            return await PurchaseNewFacilityAsync(tier);
+        }
+
+        /// <summary>
+        /// Unsubscribe from facility events (interface implementation)
         /// </summary>
         public void UnsubscribeFromFacilityEvents(
-            System.Action<OwnedFacility> onFacilityUpgraded = null,
-            System.Action<string, string> onFacilitySwitch = null,
-            System.Action<OwnedFacility> onFacilityPurchased = null,
-            System.Action<string> onFacilitySold = null,
-            System.Action<string> onFacilityUpgradeAvailable = null,
-            System.Action<OwnedFacility> onFacilityValueUpdated = null)
+            System.Action<object> onFacilityUpgraded = null,
+            System.Action<object, object> onFacilitySwitch = null,
+            System.Action<object> onFacilityPurchased = null,
+            System.Action<object> onFacilitySold = null,
+            System.Action<object> onFacilityUpgradeAvailable = null,
+            System.Action<object> onFacilityValueUpdated = null)
         {
             // Placeholder for event unsubscription
-            LogDebug("UnsubscribeFromFacilityEvents called");
+            ChimeraLogger.LogVerbose("UnsubscribeFromFacilityEvents called");
         }
 
         /// <summary>
@@ -566,7 +644,7 @@ namespace ProjectChimera.Systems.Facilities
         {
             var totalInvestment = GetTotalInvestment();
             if (totalInvestment <= 0) return 0f;
-            
+
             var totalValue = GetTotalPortfolioValue();
             return ((totalValue - totalInvestment) / totalInvestment) * 100f;
         }
@@ -585,40 +663,49 @@ namespace ProjectChimera.Systems.Facilities
         public string FacilityId => _facilityRegistry?.CurrentFacilityId ?? "";
 
         /// <summary>
-        /// Get next available tier for current facility
+        /// Get next available tier for current facility (interface implementation)
         /// </summary>
-        public FacilityTierSO GetNextAvailableTier()
+        string IFacilityManager.GetNextAvailableTier()
+        {
+            var nextTier = GetNextAvailableTierSO();
+            return nextTier?.TierName ?? "";
+        }
+
+        /// <summary>
+        /// Get next available tier for current facility (internal implementation)
+        /// </summary>
+        public FacilityTierSO GetNextAvailableTierSO()
         {
             // Get current facility to determine its tier
             var currentFacilityId = _facilityRegistry?.CurrentFacilityId;
             if (string.IsNullOrEmpty(currentFacilityId))
                 return null;
-                
+
             var currentFacility = _facilityRegistry?.OwnedFacilities?.FirstOrDefault(f => f.FacilityId == currentFacilityId);
             if (currentFacility?.Tier == null)
                 return null;
-                
+
             return _upgradeService?.GetNextTier(currentFacility.Value.Tier) ?? null;
         }
 
         /// <summary>
         /// Switch to facility with full result information
         /// </summary>
-        public async System.Threading.Tasks.Task<FacilitySwitchResult> SwitchToFacilityWithResultAsync(string facilityId)
+        public async Task<FacilitySwitchResult> SwitchToFacilityWithResultAsync(string facilityId)
         {
             if (_stateManager != null)
             {
                 return await _stateManager.SwitchToFacilityAsync(facilityId);
             }
-            
-            return new FacilitySwitchResult 
-            { 
-                Success = false, 
-                ErrorMessage = "Facility state manager not available" 
+
+            return new FacilitySwitchResult
+            {
+                Success = false,
+                ErrorMessage = "Facility state manager not available"
             };
         }
 
-        
+
         #endregion
     }
 }

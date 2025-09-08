@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Text;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
 using UIAnnouncementPriority = ProjectChimera.UI.Core.UIAnnouncementPriority;
 
 namespace ProjectChimera.UI.Core
@@ -211,7 +212,7 @@ namespace ProjectChimera.UI.Core
             SpeakTextWebGL(text);
             #else
             // Fallback - log to console
-            Debug.Log($"[Screen Reader] {text}");
+            ChimeraLogger.LogUI("ScreenReader", $"Speech fallback: {text}");
             OnSpeechComplete(text);
             #endif
         }
@@ -226,7 +227,7 @@ namespace ProjectChimera.UI.Core
             {
                 // In a real implementation, you would use Windows SAPI
                 // This is a placeholder that simulates speech
-                Debug.Log($"[Windows TTS] {text}");
+                ChimeraLogger.LogUI("WindowsTTS", $"Speaking: {text}");
                 
                 // Simulate speech duration
                 var speechDuration = CalculateSpeechDuration(text);
@@ -234,7 +235,7 @@ namespace ProjectChimera.UI.Core
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"Windows TTS error: {ex.Message}");
+                ChimeraLogger.LogError("WindowsTTS", $"TTS error: {ex.Message}");
                 OnSpeechComplete(text);
             }
         }
@@ -249,14 +250,14 @@ namespace ProjectChimera.UI.Core
             try
             {
                 // In a real implementation, you would use macOS AVSpeechSynthesizer
-                Debug.Log($"[macOS TTS] {text}");
+                ChimeraLogger.LogUI("macOSTTS", $"Speaking: {text}");
                 
                 var speechDuration = CalculateSpeechDuration(text);
                 CoroutineRunner.Instance.StartCoroutine(SimulateSpeechCoroutine(text, speechDuration));
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"macOS TTS error: {ex.Message}");
+                ChimeraLogger.LogError("macOSTTS", $"TTS error: {ex.Message}");
                 OnSpeechComplete(text);
             }
         }
@@ -271,14 +272,14 @@ namespace ProjectChimera.UI.Core
             try
             {
                 // In a real implementation, you would use Android TTS API
-                Debug.Log($"[Android TTS] {text}");
+                ChimeraLogger.LogUI("AndroidTTS", $"Speaking: {text}");
                 
                 var speechDuration = CalculateSpeechDuration(text);
                 CoroutineRunner.Instance.StartCoroutine(SimulateSpeechCoroutine(text, speechDuration));
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"Android TTS error: {ex.Message}");
+                ChimeraLogger.LogError("AndroidTTS", $"TTS error: {ex.Message}");
                 OnSpeechComplete(text);
             }
         }
@@ -293,14 +294,14 @@ namespace ProjectChimera.UI.Core
             try
             {
                 // In a real implementation, you would use iOS AVSpeechSynthesizer
-                Debug.Log($"[iOS TTS] {text}");
+                ChimeraLogger.LogUI("iOSTTS", $"Speaking: {text}");
                 
                 var speechDuration = CalculateSpeechDuration(text);
                 CoroutineRunner.Instance.StartCoroutine(SimulateSpeechCoroutine(text, speechDuration));
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"iOS TTS error: {ex.Message}");
+                ChimeraLogger.LogError("iOSTTS", $"TTS error: {ex.Message}");
                 OnSpeechComplete(text);
             }
         }
@@ -315,14 +316,14 @@ namespace ProjectChimera.UI.Core
             try
             {
                 // In a real implementation, you would use Web Speech API
-                Debug.Log($"[WebGL TTS] {text}");
+                ChimeraLogger.LogUI("WebGLTTS", $"Speaking: {text}");
                 
                 var speechDuration = CalculateSpeechDuration(text);
                 CoroutineRunner.Instance.StartCoroutine(SimulateSpeechCoroutine(text, speechDuration));
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"WebGL TTS error: {ex.Message}");
+                ChimeraLogger.LogError("WebGLTTS", $"TTS error: {ex.Message}");
                 OnSpeechComplete(text);
             }
         }
@@ -386,7 +387,7 @@ namespace ProjectChimera.UI.Core
         private void InterruptSpeechWindows()
         {
             // Windows SAPI interrupt implementation
-            Debug.Log("[Windows TTS] Speech interrupted");
+            ChimeraLogger.LogUI("WindowsTTS", "Speech interrupted");
         }
         #endif
         
@@ -394,7 +395,7 @@ namespace ProjectChimera.UI.Core
         private void InterruptSpeechMacOS()
         {
             // macOS speech interrupt implementation
-            Debug.Log("[macOS TTS] Speech interrupted");
+            ChimeraLogger.LogUI("macOSTTS", "Speech interrupted");
         }
         #endif
         
@@ -402,7 +403,7 @@ namespace ProjectChimera.UI.Core
         private void InterruptSpeechAndroid()
         {
             // Android TTS interrupt implementation
-            Debug.Log("[Android TTS] Speech interrupted");
+            ChimeraLogger.LogUI("AndroidTTS", "Speech interrupted");
         }
         #endif
         
@@ -410,7 +411,7 @@ namespace ProjectChimera.UI.Core
         private void InterruptSpeechIOS()
         {
             // iOS speech interrupt implementation
-            Debug.Log("[iOS TTS] Speech interrupted");
+            ChimeraLogger.LogUI("iOSTTS", "Speech interrupted");
         }
         #endif
         
@@ -418,7 +419,7 @@ namespace ProjectChimera.UI.Core
         private void InterruptSpeechWebGL()
         {
             // WebGL speech interrupt implementation
-            Debug.Log("[WebGL TTS] Speech interrupted");
+            ChimeraLogger.LogUI("WebGLTTS", "Speech interrupted");
         }
         #endif
         
@@ -507,7 +508,7 @@ namespace ProjectChimera.UI.Core
             _textBuffer?.Clear();
             _isInitialized = false;
             
-            Debug.Log("Screen reader cleaned up");
+            ChimeraLogger.LogShutdown("UIScreenReader");
         }
         
         /// <summary>

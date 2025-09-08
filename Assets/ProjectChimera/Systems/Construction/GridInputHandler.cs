@@ -1,7 +1,9 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Construction
 {
@@ -10,7 +12,7 @@ namespace ProjectChimera.Systems.Construction
     /// Supports mouse/keyboard input, height level navigation, and 3D coordinate conversion.
     /// Extracted from GridPlacementController for modular architecture.
     /// </summary>
-    public class GridInputHandler : MonoBehaviour
+    public class GridInputHandler : MonoBehaviour, ITickable
     {
         [Header("Input Key Bindings")]
         [SerializeField] private KeyCode _placementKey = KeyCode.Mouse0;
@@ -35,7 +37,7 @@ namespace ProjectChimera.Systems.Construction
         [SerializeField] private KeyCode _cancelSchematicKey = KeyCode.Escape;
         
         [Header("Raycast Settings")]
-        [SerializeField] private Camera _inputCamera;
+        [SerializeField] private UnityEngine.Camera _inputCamera;
         [SerializeField] private LayerMask _groundLayer = 1;
         [SerializeField] private float _raycastDistance = 1000f;
         [SerializeField] private bool _usePhysicsRaycast = true;
@@ -107,9 +109,15 @@ namespace ProjectChimera.Systems.Construction
         private void Start()
         {
             FindRequiredComponents();
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
         
-        private void Update()
+        #region ITickable Implementation
+
+        public int Priority => TickPriority.InputSystem;
+        public bool Enabled => enabled && !(_inputBlocked && _blockInputDuringTransitions);
+
+        public void Tick(float deltaTime)
         {
             if (_inputBlocked && _blockInputDuringTransitions) return;
             
@@ -118,13 +126,15 @@ namespace ProjectChimera.Systems.Construction
             ProcessHeightLevelInput();
             ProcessDragSelectionInput();
         }
+
+        #endregion
         
         #region Initialization
         
         private void InitializeInputHandler()
         {
             if (_inputCamera == null)
-                _inputCamera = Camera.main;
+                _inputCamera = UnityEngine.Camera.main;
                 
             _currentHeightLevel = 0;
             _isDragSelecting = false;
@@ -134,10 +144,10 @@ namespace ProjectChimera.Systems.Construction
         private void FindRequiredComponents()
         {
             if (_gridSystem == null)
-                _gridSystem = FindObjectOfType<GridSystem>();
+                _gridSystem = ServiceContainerFactory.Instance?.TryResolve<IGridSystem>() as GridSystem;
                 
             if (_gridSystem == null)
-                Debug.LogWarning($"[GridInputHandler] GridSystem not found - 3D coordinate conversion may not work properly");
+                ChimeraLogger.LogWarning($"[GridInputHandler] GridSystem not found - 3D coordinate conversion may not work properly");
         }
         
         #endregion
@@ -522,5 +532,13 @@ namespace ProjectChimera.Systems.Construction
         }
         
         #endregion
+        
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+        }
     }
 }

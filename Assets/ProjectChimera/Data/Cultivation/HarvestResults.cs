@@ -1,0 +1,48 @@
+using UnityEngine;
+using System;
+using ProjectChimera.Data.Shared;
+
+namespace ProjectChimera.Data.Cultivation
+{
+    /// <summary>
+    /// Represents the results of harvesting a plant
+    /// </summary>
+    [Serializable]
+    public class HarvestResults
+    {
+        [SerializeField] private float _totalYield;
+        [SerializeField] private float _qualityScore;
+        [SerializeField] private string _plantId;
+        [SerializeField] private DateTime _harvestDate;
+        [SerializeField] private bool _wasSuccessful;
+
+        public float TotalYield => _totalYield;
+        public float QualityScore => _qualityScore;
+        public string PlantId => _plantId;
+        public DateTime HarvestDate => _harvestDate;
+        public bool WasSuccessful => _wasSuccessful;
+
+        public HarvestResults()
+        {
+            _totalYield = 0f;
+            _qualityScore = 0f;
+            _plantId = "";
+            _harvestDate = DateTime.Now;
+            _wasSuccessful = false;
+        }
+
+        public HarvestResults(float totalYield, float qualityScore, string plantId, bool wasSuccessful = true)
+        {
+            _totalYield = totalYield;
+            _qualityScore = qualityScore;
+            _plantId = plantId;
+            _harvestDate = DateTime.Now;
+            _wasSuccessful = wasSuccessful;
+        }
+
+        public static HarvestResults CreateFailure(string plantId, string reason = "Unknown")
+        {
+            return new HarvestResults(0f, 0f, plantId, false);
+        }
+    }
+}

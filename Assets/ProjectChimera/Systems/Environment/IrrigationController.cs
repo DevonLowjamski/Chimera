@@ -1,6 +1,8 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Core.Interfaces;
+using ProjectChimera.Core.Updates;
 using System.Collections.Generic;
 
 namespace ProjectChimera.Systems.Environment
@@ -9,7 +11,7 @@ namespace ProjectChimera.Systems.Environment
     /// Controls irrigation and nutrient delivery systems.
     /// Manages watering schedules, nutrient mixing, and automated feeding.
     /// </summary>
-    public class IrrigationController : MonoBehaviour
+    public class IrrigationController : MonoBehaviour, ITickable
     {
         [Header("Irrigation Configuration")]
         [SerializeField] private string _systemId;
@@ -78,6 +80,10 @@ namespace ProjectChimera.Systems.Environment
         public NutrientProfile CurrentNutrients => _currentNutrients;
         public bool NeedsRefill => _currentWaterLevel < _tankCapacity * 0.2f;
         
+        // ITickable implementation
+        public int Priority => TickPriority.EnvironmentalManager;
+        public bool Enabled => _isOperational;
+        
         private void Awake()
         {
             if (string.IsNullOrEmpty(_systemId))
@@ -92,18 +98,20 @@ namespace ProjectChimera.Systems.Environment
             
             if (_enableAutomation)
                 SetAutomationMode(true);
+                
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
         
-        private void Update()
+        public void Tick(float deltaTime)
         {
             if (!_isOperational) return;
             
-            UpdateSystem();
+            UpdateSystem(deltaTime);
             UpdateVisualEffects();
             
             // Track operating hours
             if (_isIrrigating)
-                _operatingHours += Time.deltaTime / 3600f;
+                _operatingHours += deltaTime / 3600f;
         }
         
         private void InitializeSystem()
@@ -122,7 +130,7 @@ namespace ProjectChimera.Systems.Environment
                 _pumpAudio.volume = 0.2f;
             }
             
-            Debug.Log($"Irrigation System {SystemId} initialized - Type: {_systemType}");
+            ChimeraLogger.Log($"Irrigation System {SystemId} initialized - Type: {_systemType}");
         }
         
         private void InitializeNutrientProfile()
@@ -166,7 +174,7 @@ namespace ProjectChimera.Systems.Environment
             OnSystemStateChanged?.Invoke(this);
             OnFlowRateChanged?.Invoke(_currentFlowRate);
             
-            Debug.Log($"Irrigation {SystemId} started - Flow: {_currentFlowRate:F1} L/min for {duration}s");
+            ChimeraLogger.Log($"Irrigation {SystemId} started - Flow: {_currentFlowRate:F1} L/min for {duration}s");
         }
         
         /// <summary>
@@ -181,7 +189,7 @@ namespace ProjectChimera.Systems.Environment
             OnSystemStateChanged?.Invoke(this);
             OnFlowRateChanged?.Invoke(_currentFlowRate);
             
-            Debug.Log($"Irrigation {SystemId} stopped");
+            ChimeraLogger.Log($"Irrigation {SystemId} stopped");
         }
         
         /// <summary>
@@ -197,7 +205,7 @@ namespace ProjectChimera.Systems.Environment
             
             OnWaterLevelChanged?.Invoke(_currentWaterLevel);
             
-            Debug.Log($"Irrigation {SystemId} refilled: +{_currentWaterLevel - oldLevel:F1}L (Total: {_currentWaterLevel:F1}L)");
+            ChimeraLogger.Log($"Irrigation {SystemId} refilled: +{_currentWaterLevel - oldLevel:F1}L (Total: {_currentWaterLevel:F1}L)");
         }
         
         /// <summary>
@@ -208,7 +216,7 @@ namespace ProjectChimera.Systems.Environment
             _currentNutrients = nutrients;
             OnNutrientsChanged?.Invoke(_currentNutrients);
             
-            Debug.Log($"Irrigation {SystemId} nutrient profile updated");
+            ChimeraLogger.Log($"Irrigation {SystemId} nutrient profile updated");
         }
         
         /// <summary>
@@ -219,7 +227,7 @@ namespace ProjectChimera.Systems.Environment
             targetPH = Mathf.Clamp(targetPH, 4f, 8f);
             _pH = Mathf.Lerp(_pH, targetPH, Time.deltaTime * 0.5f);
             
-            Debug.Log($"Irrigation {SystemId} pH adjusting to {targetPH:F1} (Current: {_pH:F1})");
+            ChimeraLogger.Log($"Irrigation {SystemId} pH adjusting to {targetPH:F1} (Current: {_pH:F1})");
         }
         
         /// <summary>
@@ -229,7 +237,7 @@ namespace ProjectChimera.Systems.Environment
         {
             _irrigationSchedule = schedule;
             
-            Debug.Log($"Irrigation {SystemId} schedule updated");
+            ChimeraLogger.Log($"Irrigation {SystemId} schedule updated");
         }
         
         /// <summary>
@@ -240,7 +248,7 @@ namespace ProjectChimera.Systems.Environment
             _isAutomated = enabled;
             
             OnSystemStateChanged?.Invoke(this);
-            Debug.Log($"Irrigation {SystemId} automation {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.Log($"Irrigation {SystemId} automation {(enabled ? "enabled" : "disabled")}");
         }
         
         /// <summary>
@@ -251,7 +259,7 @@ namespace ProjectChimera.Systems.Environment
             _isOperational = true;
             OnSystemStateChanged?.Invoke(this);
             
-            Debug.Log($"Irrigation {SystemId} started up");
+            ChimeraLogger.Log($"Irrigation {SystemId} started up");
         }
         
         /// <summary>
@@ -263,14 +271,14 @@ namespace ProjectChimera.Systems.Environment
             StopIrrigation();
             
             OnSystemStateChanged?.Invoke(this);
-            Debug.Log($"Irrigation {SystemId} shut down");
+            ChimeraLogger.Log($"Irrigation {SystemId} shut down");
         }
         
         #endregion
         
         #region System Updates
         
-        public void UpdateSystem()
+        public void UpdateSystem(float deltaTime = 0f)
         {
             // Check irrigation schedule
             if (_isAutomated && Time.time - _lastScheduleCheck >= _scheduleInterval)
@@ -281,9 +289,9 @@ namespace ProjectChimera.Systems.Environment
             }
             
             // Update water consumption
-            if (_isIrrigating)
+            if (_isIrrigating && deltaTime > 0f)
             {
-                float consumption = _currentFlowRate * Time.deltaTime / 60f; // L/min to L/s
+                float consumption = _currentFlowRate * deltaTime / 60f; // L/min to L/s
                 _currentWaterLevel = Mathf.Max(_currentWaterLevel - consumption, 0f);
                 _totalWaterUsed += consumption;
                 
@@ -293,16 +301,19 @@ namespace ProjectChimera.Systems.Environment
                 if (_currentWaterLevel <= 0f)
                 {
                     StopIrrigation();
-                    Debug.LogWarning($"Irrigation {SystemId} stopped - out of water");
+                    ChimeraLogger.LogWarning($"Irrigation {SystemId} stopped - out of water");
                 }
             }
             
             // Update power consumption
             UpdatePowerConsumption();
             
-            // Track energy usage
-            float deltaTime = Time.deltaTime / 3600f; // Convert to hours
-            _totalEnergyUsed += _currentPowerConsumption * deltaTime / 1000f; // Convert to kWh
+            // Track energy usage  
+            if (deltaTime > 0f)
+            {
+                float deltaTimeHours = deltaTime / 3600f; // Convert to hours
+                _totalEnergyUsed += _currentPowerConsumption * deltaTimeHours / 1000f; // Convert to kWh
+            }
             
             // Update water level indicator
             UpdateWaterLevelIndicator();
@@ -459,7 +470,7 @@ namespace ProjectChimera.Systems.Environment
                 }
             }
             
-            Debug.Log($"Irrigation System {SystemId} connected to {_connectedPlants.Count} plants");
+            ChimeraLogger.Log($"Irrigation System {SystemId} connected to {_connectedPlants.Count} plants");
         }
         
         /// <summary>
@@ -476,7 +487,7 @@ namespace ProjectChimera.Systems.Environment
                 plant.AddWater(waterPerPlant);
             }
             
-            Debug.Log($"Irrigation {SystemId} watered {_connectedPlants.Count} plants with {waterPerPlant:F1}L each");
+            ChimeraLogger.Log($"Irrigation {SystemId} watered {_connectedPlants.Count} plants with {waterPerPlant:F1}L each");
         }
         
         #endregion
@@ -572,6 +583,14 @@ namespace ProjectChimera.Systems.Environment
         }
         
         #endregion
+        
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+        }
     }
     
     // Supporting data structures

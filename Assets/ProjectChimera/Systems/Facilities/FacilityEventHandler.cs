@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Data.Events;
 using ProjectChimera.Data.Facilities;
@@ -338,7 +339,7 @@ namespace ProjectChimera.Systems.Facilities
         private void LogEvent(string message)
         {
             if (_enableEventLogging)
-                Debug.Log($"[FacilityEventHandler] {message}");
+                ChimeraLogger.Log($"[FacilityEventHandler] {message}");
         }
     }
     

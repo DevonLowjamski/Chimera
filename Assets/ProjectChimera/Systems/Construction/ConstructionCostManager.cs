@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectChimera.Core.Updates;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,8 +19,16 @@ namespace ProjectChimera.Systems.Construction
     /// Adapted for grid-based construction templates with simplified resource tracking.
     /// Handles cost estimation, budget tracking, and resource management for grid construction.
     /// </summary>
-    public class ConstructionCostManager : ChimeraManager
+    public class ConstructionCostManager : ChimeraManager, ITickable
     {
+        #region ITickable Implementation
+        int ITickable.Priority => 50;
+        bool ITickable.Enabled => enabled;
+
+        public void OnRegistered() { }
+        public void OnUnregistered() { }
+        #endregion
+
         [Header("Cost Management Configuration")]
         [SerializeField] private bool _enableDynamicPricing = true;
         [SerializeField] private bool _enableResourceTracking = true;
@@ -28,61 +37,61 @@ namespace ProjectChimera.Systems.Construction
         [SerializeField] private float _costInflationRate = 0.02f; // 2% per year
         [SerializeField] private float _laborCostMultiplier = 1.0f;
         [SerializeField] private float _materialMarkupPercentage = 0.15f; // 15% markup
-        
+
         [Header("Resource Management")]
         [SerializeField] private float _resourceBufferPercentage = 0.10f; // 10% buffer
         [SerializeField] private bool _enableResourceOptimization = true;
         [SerializeField] private float _wasteReductionTarget = 0.95f; // 95% efficiency
         [SerializeField] private int _maxConcurrentProjects = 5;
         [SerializeField] private float _resourceReorderThreshold = 0.20f; // 20% remaining
-        
+
         [Header("Budget Tracking")]
         [SerializeField] private float _budgetWarningThreshold = 0.80f; // 80% budget used
         [SerializeField] private float _budgetCriticalThreshold = 0.95f; // 95% budget used
         [SerializeField] private bool _enableAutomaticBudgetAdjustment = true;
         [SerializeField] private float _contingencyPercentage = 0.10f; // 10% contingency
-        
+
         [Header("Cannabis-Specific Costs")]
         [SerializeField] private float _complianceCostMultiplier = 1.25f;
         [SerializeField] private float _securityCostMultiplier = 1.50f;
         [SerializeField] private float _hvacCostMultiplier = 1.30f;
         [SerializeField] private float _lightingCostMultiplier = 1.40f;
         [SerializeField] private bool _enableComplianceTracking = true;
-        
+
         [Header("Event Channels")]
         [SerializeField] private SimpleGameEventSO _onBudgetAlert;
         [SerializeField] private SimpleGameEventSO _onCostEstimateCompleted;
         [SerializeField] private SimpleGameEventSO _onResourceAllocated;
         [SerializeField] private SimpleGameEventSO _onProjectBudgetExceeded;
         [SerializeField] private SimpleGameEventSO _onResourceShortage;
-        
+
         // Grid-based cost management
         private Dictionary<string, GridProjectBudget> _projectBudgets = new Dictionary<string, GridProjectBudget>();
         private Dictionary<string, GridCostEstimate> _costEstimates = new Dictionary<string, GridCostEstimate>();
         private Dictionary<string, float> _resourceInventory = new Dictionary<string, float>();
         private Dictionary<string, GridResourceAllocation> _resourceAllocations = new Dictionary<string, GridResourceAllocation>();
-        
+
         // Grid system references
         private GridSystem _gridSystem;
         private ConstructionCatalog _constructionCatalog;
-        
+
         // Performance tracking
         private GridCostMetrics _costMetrics;
         private Dictionary<string, GridCostPerformanceData> _projectPerformance = new Dictionary<string, GridCostPerformanceData>();
-        
+
         // Runtime tracking
         private float _totalBudgetAllocated = 0f;
         private float _totalBudgetSpent = 0f;
         private float _totalResourcesAllocated = 0f;
         private DateTime _lastCostUpdate = DateTime.Now;
-        
-        // Events  
+
+        // Events
         public System.Action<string, GridProjectBudget> OnBudgetCreated;
         public System.Action<string, GridCostEstimate> OnCostEstimateCompleted;
         public System.Action<string, GridResourceAllocation> OnResourceAllocated;
         public System.Action<string, GridBudgetAlert> OnBudgetAlert;
         public System.Action<string, float> OnResourceShortage;
-        
+
         // Properties
         public override ManagerPriority Priority => ManagerPriority.High;
         public float TotalBudgetAllocated => _totalBudgetAllocated;
@@ -91,27 +100,29 @@ namespace ProjectChimera.Systems.Construction
         public int ActiveProjects => _projectBudgets.Count;
         public GridCostMetrics CostMetrics => _costMetrics;
         public Dictionary<string, GridProjectBudget> ProjectBudgets => _projectBudgets;
-        
+
         protected override void OnManagerInitialize()
         {
             InitializeGridCostSystems();
             InitializeResourceManagement();
-            
+
             _costMetrics = new GridCostMetrics();
-            
+
             LogInfo("Grid-based ConstructionCostManager initialized successfully");
         }
-        
-        private void Update()
+
+        public void Tick(float deltaTime)
+
+
         {
             if (!IsInitialized) return;
-            
+
             UpdateCostTracking();
             UpdateResourceManagement();
             UpdateBudgetAlerts();
             UpdateMetrics();
         }
-        
+
         protected override void OnManagerShutdown()
         {
             // Cleanup cost management systems
@@ -120,10 +131,10 @@ namespace ProjectChimera.Systems.Construction
             _resourceInventory.Clear();
             _resourceAllocations.Clear();
             _projectPerformance.Clear();
-            
+
             LogInfo("ConstructionCostManager shutdown completed");
         }
-        
+
         /// <summary>
         /// Create cost estimate for grid construction template
         /// </summary>
@@ -137,43 +148,43 @@ namespace ProjectChimera.Systems.Construction
                 EstimateDate = DateTime.Now,
                 EstimateValidUntil = DateTime.Now.AddDays(30)
             };
-            
+
             // Calculate base costs from template
             estimate.BaseCost = template.BaseCost;
-            
+
             // Calculate resource costs
             estimate.ResourceCost = 0f;
             foreach (var resource in template.RequiredResources)
             {
                 estimate.ResourceCost += resource.Cost;
             }
-            
+
             // Calculate labor cost based on construction time
             float laborHours = template.ConstructionTime / 3600f; // Convert seconds to hours
             estimate.LaborCost = laborHours * 25f * _laborCostMultiplier; // $25/hour base rate
-            
+
             // Apply material markup
             estimate.MaterialCost = estimate.ResourceCost * (1f + _materialMarkupPercentage);
-            
+
             // Cannabis-specific multipliers
             float categoryMultiplier = GetCategoryMultiplier(template.Category);
-            
+
             // Calculate totals
             estimate.SubtotalCost = estimate.BaseCost + estimate.LaborCost + estimate.MaterialCost;
             estimate.ContingencyCost = estimate.SubtotalCost * _contingencyPercentage;
             estimate.TotalCost = (estimate.SubtotalCost + estimate.ContingencyCost) * categoryMultiplier;
-            
+
             // Store estimate
             _costEstimates[estimate.EstimateId] = estimate;
-            
+
             // Trigger events
             OnCostEstimateCompleted?.Invoke(projectId, estimate);
             _onCostEstimateCompleted?.Raise();
-            
+
             LogInfo($"Cost estimate completed for {template.TemplateName}: ${estimate.TotalCost:F2}");
             return estimate;
         }
-        
+
         /// <summary>
         /// Create project budget based on grid cost estimate
         /// </summary>
@@ -189,17 +200,17 @@ namespace ProjectChimera.Systems.Construction
                 CreatedDate = DateTime.Now,
                 ContingencyReserve = approvedAmount * _contingencyPercentage
             };
-            
+
             // Initialize budget categories
             budget.LaborBudget = costEstimate.LaborCost;
             budget.MaterialBudget = costEstimate.MaterialCost;
             budget.BaseBudget = costEstimate.BaseCost;
             budget.ContingencyBudget = costEstimate.ContingencyCost;
-            
+
             // Store budget
             _projectBudgets[budget.BudgetId] = budget;
             _totalBudgetAllocated += approvedAmount;
-            
+
             // Initialize performance tracking
             _projectPerformance[projectId] = new GridCostPerformanceData
             {
@@ -209,14 +220,14 @@ namespace ProjectChimera.Systems.Construction
                 ActualCost = 0f,
                 StartDate = DateTime.Now
             };
-            
+
             // Trigger events
             OnBudgetCreated?.Invoke(projectId, budget);
-            
+
             LogInfo($"Grid project budget created for {projectId}: ${approvedAmount:F2}");
             return budget;
         }
-        
+
         /// <summary>
         /// Allocate resources for a grid construction project
         /// </summary>
@@ -229,7 +240,7 @@ namespace ProjectChimera.Systems.Construction
                 AllocationDate = DateTime.Now,
                 Status = AllocationStatus.Pending
             };
-            
+
             // Check resource availability
             var resourceRequirements = template.RequiredResources;
             var availabilityCheck = CheckResourceAvailability(template);
@@ -239,18 +250,18 @@ namespace ProjectChimera.Systems.Construction
                 LogWarning($"Resource allocation failed for project {projectId}: Insufficient resources");
                 return allocation;
             }
-            
+
             // Allocate resources
             foreach (var requirement in resourceRequirements)
             {
                 var resourceType = requirement.ResourceName;
                 var requiredAmount = requirement.Quantity;
-                
+
                 if (_resourceInventory.ContainsKey(resourceType))
                 {
                     var inventoryAmount = _resourceInventory[resourceType];
                     var adjustedAmount = requiredAmount * (1f + _resourceBufferPercentage);
-                    
+
                     if (inventoryAmount >= adjustedAmount)
                     {
                         _resourceInventory[resourceType] -= adjustedAmount;
@@ -275,27 +286,27 @@ namespace ProjectChimera.Systems.Construction
                     }
                 }
             }
-            
+
             // Calculate total allocation cost
             allocation.TotalAllocationCost = allocation.AllocationCosts.Values.Sum();
-            
+
             if (allocation.Status == AllocationStatus.Pending)
             {
                 allocation.Status = AllocationStatus.Allocated;
             }
-            
+
             // Store allocation
             _resourceAllocations[allocation.AllocationId] = allocation;
             _totalResourcesAllocated += allocation.TotalAllocationCost;
-            
+
             // Trigger events
             OnResourceAllocated?.Invoke(projectId, allocation);
             _onResourceAllocated?.Raise();
-            
+
             LogInfo($"Resources allocated for project {projectId}: ${allocation.TotalAllocationCost:F2}");
             return allocation;
         }
-        
+
         /// <summary>
         /// Record actual costs for a grid construction project
         /// </summary>
@@ -308,7 +319,7 @@ namespace ProjectChimera.Systems.Construction
                 LogError($"No budget found for project {projectId}");
                 return;
             }
-            
+
             // Record cost
             var costRecord = new CostRecord
             {
@@ -319,17 +330,17 @@ namespace ProjectChimera.Systems.Construction
                 Description = description,
                 RecordDate = DateTime.Now
             };
-            
+
             budget.ActualCosts.Add(costRecord);
             budget.RemainingAmount -= amount;
             _totalBudgetSpent += amount;
-            
+
             // Update category budget
             if (budget.CategoryBudgets.ContainsKey(costCategory))
             {
                 budget.CategoryBudgets[costCategory] -= amount;
             }
-            
+
             // Update performance tracking
             if (_projectPerformance.ContainsKey(projectId))
             {
@@ -338,13 +349,13 @@ namespace ProjectChimera.Systems.Construction
                 performance.CostPerformanceIndex = performance.EarnedValue / performance.ActualCost;
                 performance.SchedulePerformanceIndex = performance.EarnedValue / performance.PlannedValue;
             }
-            
+
             // Check budget alerts
             CheckGridBudgetAlerts(budget);
-            
+
             LogInfo($"Recorded cost for project {projectId}: ${amount:F2} ({costCategory})");
         }
-        
+
         /// <summary>
         /// Get project cost performance data
         /// </summary>
@@ -352,7 +363,7 @@ namespace ProjectChimera.Systems.Construction
         {
             return _projectPerformance.GetValueOrDefault(projectId);
         }
-        
+
         /// <summary>
         /// Get resource inventory status
         /// </summary>
@@ -368,7 +379,7 @@ namespace ProjectChimera.Systems.Construction
                 CriticalResources = _resourceInventory.Where(kvp => kvp.Value <= 50f).Select(kvp => kvp.Key).ToList()
             };
         }
-        
+
         /// <summary>
         /// Get cost summary for a project
         /// </summary>
@@ -380,7 +391,7 @@ namespace ProjectChimera.Systems.Construction
                 LogError($"No budget found for project {projectId}");
                 return null;
             }
-            
+
             return new GridCostSummary
             {
                 ProjectId = projectId,
@@ -398,18 +409,18 @@ namespace ProjectChimera.Systems.Construction
                 }
             };
         }
-        
+
         #region Private Implementation
-        
+
         private void InitializeGridCostSystems()
         {
-            // Find grid system references
-            _gridSystem = FindObjectOfType<GridSystem>();
-            
+            // Find grid system references via ServiceContainer
+            _gridSystem = ServiceContainerFactory.Instance?.TryResolve<IGridSystem>() as GridSystem;
+
             // Initialize resource inventory with basic construction materials
             InitializeResourceInventory();
         }
-        
+
         private void InitializeResourceInventory()
         {
             // Initialize basic construction resources
@@ -425,12 +436,12 @@ namespace ProjectChimera.Systems.Construction
             _resourceInventory["Lighting"] = 100f;
             _resourceInventory["Security"] = 50f;
         }
-        
+
         private void InitializeResourceManagement()
         {
             // Simplified resource management for grid system
         }
-        
+
         private float GetCategoryMultiplier(ConstructionCategory category)
         {
             return category switch
@@ -441,7 +452,7 @@ namespace ProjectChimera.Systems.Construction
                 _ => 1.0f
             };
         }
-        
+
         private void UpdateCostTracking()
         {
             // Update cost tracking for all active projects
@@ -451,7 +462,7 @@ namespace ProjectChimera.Systems.Construction
                 budget.RemainingAmount = budget.ApprovedAmount - budget.TotalSpent;
             }
         }
-        
+
         private void UpdateResourceManagement()
         {
             // Check for low resource levels and trigger alerts
@@ -463,7 +474,7 @@ namespace ProjectChimera.Systems.Construction
                 }
             }
         }
-        
+
         private void UpdateBudgetAlerts()
         {
             foreach (var budget in _projectBudgets.Values)
@@ -471,11 +482,11 @@ namespace ProjectChimera.Systems.Construction
                 CheckGridBudgetAlerts(budget);
             }
         }
-        
+
         private void CheckGridBudgetAlerts(GridProjectBudget budget)
         {
             float budgetUtilization = budget.BudgetUtilization;
-            
+
             if (budgetUtilization >= _budgetCriticalThreshold)
             {
                 var alert = new GridBudgetAlert
@@ -489,7 +500,7 @@ namespace ProjectChimera.Systems.Construction
                     CurrentUtilization = budgetUtilization,
                     CreatedDate = DateTime.Now
                 };
-                
+
                 OnBudgetAlert?.Invoke(budget.ProjectId, alert);
                 _onBudgetAlert?.Raise();
             }
@@ -506,12 +517,12 @@ namespace ProjectChimera.Systems.Construction
                     CurrentUtilization = budgetUtilization,
                     CreatedDate = DateTime.Now
                 };
-                
+
                 OnBudgetAlert?.Invoke(budget.ProjectId, alert);
                 _onBudgetAlert?.Raise();
             }
         }
-        
+
         private void UpdateMetrics()
         {
             _costMetrics.TotalBudgetAllocated = _totalBudgetAllocated;
@@ -523,7 +534,7 @@ namespace ProjectChimera.Systems.Construction
             _costMetrics.ProjectsOverBudget = _projectBudgets.Values.Count(b => b.IsOverBudget);
             _costMetrics.LastUpdated = DateTime.Now;
         }
-        
+
         /// <summary>
         /// Check if sufficient resources are available for template
         /// </summary>
@@ -545,7 +556,7 @@ namespace ProjectChimera.Systems.Construction
             }
             return true;
         }
-        
+
         /// <summary>
         /// Consume resources for construction
         /// </summary>
@@ -560,7 +571,7 @@ namespace ProjectChimera.Systems.Construction
                 }
             }
         }
-        
+
         /// <summary>
         /// Add resources to inventory
         /// </summary>
@@ -575,24 +586,24 @@ namespace ProjectChimera.Systems.Construction
                 _resourceInventory[resourceName] = quantity;
             }
         }
-        
+
         #endregion
-        
+
         #region Grid-Specific Methods
-        
+
         /// <summary>
         /// Quick cost estimate from template
         /// </summary>
         public float GetQuickCostEstimate(GridConstructionTemplate template)
         {
             if (template == null) return 0f;
-            
+
             float totalCost = template.GetTotalCost();
             float categoryMultiplier = GetCategoryMultiplier(template.Category);
-            
+
             return totalCost * categoryMultiplier * (1f + _contingencyPercentage);
         }
-        
+
         /// <summary>
         /// Check if player can afford template
         /// </summary>
@@ -601,7 +612,7 @@ namespace ProjectChimera.Systems.Construction
             float estimatedCost = GetQuickCostEstimate(template);
             return availableFunds >= estimatedCost;
         }
-        
+
         /// <summary>
         /// Get resource cost for template
         /// </summary>
@@ -614,7 +625,7 @@ namespace ProjectChimera.Systems.Construction
             }
             return totalResourceCost * (1f + _materialMarkupPercentage);
         }
-        
+
                 #endregion
     }
 
@@ -747,5 +758,4 @@ namespace ProjectChimera.Systems.Construction
     }
 
     #endregion
-
 }

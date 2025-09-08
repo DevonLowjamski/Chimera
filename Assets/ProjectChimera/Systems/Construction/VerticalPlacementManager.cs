@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Construction;
 
 namespace ProjectChimera.Systems.Construction
@@ -68,13 +69,13 @@ namespace ProjectChimera.Systems.Construction
 
         private void InitializeComponents()
         {
-            _gridSystem = FindObjectOfType<GridSystem>();
+            _gridSystem = ServiceContainerFactory.Instance?.TryResolve<IGridSystem>() as GridSystem;
             _structuralValidator = GetComponent<StructuralIntegrityValidator>();
             _placementValidator = GetComponent<GridPlacementValidator>();
             _cascadingRemovalHandler = GetComponent<CascadingRemovalHandler>();
 
             if (_gridSystem == null)
-                Debug.LogError("[VerticalPlacementManager] GridSystem not found!");
+                ChimeraLogger.LogError("[VerticalPlacementManager] GridSystem not found!");
         }
 
         #region Public API

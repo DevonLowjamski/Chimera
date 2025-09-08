@@ -1,5 +1,7 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using UnityEngine.UI;
+using ProjectChimera.Core;
 using ProjectChimera.Core.DependencyInjection;
 using ProjectChimera.Systems.Gameplay;
 using ProjectChimera.Data.Events;
@@ -77,11 +79,11 @@ namespace ProjectChimera.Systems.Gameplay
             try
             {
                 // Get the gameplay mode controller service
-                _modeController = ProjectChimera.Core.DependencyInjection.ServiceLocator.Instance.GetService<IGameplayModeController>();
+                _modeController = ServiceContainerFactory.Instance?.TryResolve<IGameplayModeController>();
                 
                 if (_modeController == null)
                 {
-                    Debug.LogError("[ConstructionModeOverlay] GameplayModeController service not found!");
+                    ChimeraLogger.LogError("[ConstructionModeOverlay] GameplayModeController service not found!");
                     return;
                 }
                 
@@ -101,12 +103,12 @@ namespace ProjectChimera.Systems.Gameplay
                 
                 if (_debugMode)
                 {
-                    Debug.Log($"[ConstructionModeOverlay] Initialized with current mode: {_modeController.CurrentMode}");
+                    ChimeraLogger.Log($"[ConstructionModeOverlay] Initialized with current mode: {_modeController.CurrentMode}");
                 }
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[ConstructionModeOverlay] Error during initialization: {ex.Message}");
+                ChimeraLogger.LogError($"[ConstructionModeOverlay] Error during initialization: {ex.Message}");
             }
         }
         
@@ -118,7 +120,7 @@ namespace ProjectChimera.Systems.Gameplay
             }
             else
             {
-                Debug.LogWarning("[ConstructionModeOverlay] ModeChangedEvent not assigned");
+                ChimeraLogger.LogWarning("[ConstructionModeOverlay] ModeChangedEvent not assigned");
             }
         }
         
@@ -216,7 +218,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[ConstructionModeOverlay] Mode changed: {eventData.PreviousMode} → {eventData.NewMode}");
+                ChimeraLogger.Log($"[ConstructionModeOverlay] Mode changed: {eventData.PreviousMode} → {eventData.NewMode}");
             }
             
             UpdateOverlayVisibility(eventData.NewMode);
@@ -258,7 +260,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[ConstructionModeOverlay] Construction mode overlay {(shouldShowOverlay ? "shown" : "hidden")}");
+                ChimeraLogger.Log($"[ConstructionModeOverlay] Construction mode overlay {(shouldShowOverlay ? "shown" : "hidden")}");
             }
         }
         
@@ -295,7 +297,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log("[ConstructionModeOverlay] Blueprint overlay shown");
+                ChimeraLogger.Log("[ConstructionModeOverlay] Blueprint overlay shown");
             }
         }
         
@@ -319,7 +321,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log("[ConstructionModeOverlay] Blueprint overlay hidden");
+                ChimeraLogger.Log("[ConstructionModeOverlay] Blueprint overlay hidden");
             }
         }
         
@@ -390,7 +392,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[ConstructionModeOverlay] {utilityType} utility overlay shown");
+                ChimeraLogger.Log($"[ConstructionModeOverlay] {utilityType} utility overlay shown");
             }
         }
         
@@ -413,7 +415,7 @@ namespace ProjectChimera.Systems.Gameplay
                 
                 if (_debugMode)
                 {
-                    Debug.Log("[ConstructionModeOverlay] Created placeholder blueprint overlay");
+                    ChimeraLogger.Log("[ConstructionModeOverlay] Created placeholder blueprint overlay");
                 }
             }
         }
@@ -435,7 +437,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[ConstructionModeOverlay] Created placeholder {utilityType} utility overlay");
+                ChimeraLogger.Log($"[ConstructionModeOverlay] Created placeholder {utilityType} utility overlay");
             }
         }
         
@@ -479,7 +481,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[ConstructionModeOverlay] Blueprint overlay toggled: {enabled}");
+                ChimeraLogger.Log($"[ConstructionModeOverlay] Blueprint overlay toggled: {enabled}");
             }
         }
         
@@ -504,7 +506,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[ConstructionModeOverlay] Blueprint opacity changed: {opacity:F2}");
+                ChimeraLogger.Log($"[ConstructionModeOverlay] Blueprint opacity changed: {opacity:F2}");
             }
         }
         
@@ -513,7 +515,7 @@ namespace ProjectChimera.Systems.Gameplay
             // Toggle placement mode (placeholder implementation)
             if (_debugMode)
             {
-                Debug.Log("[ConstructionModeOverlay] Placement mode activated");
+                ChimeraLogger.Log("[ConstructionModeOverlay] Placement mode activated");
             }
         }
         
@@ -532,7 +534,7 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_debugMode)
             {
-                Debug.Log($"[ConstructionModeOverlay] {utilityType} utility overlay toggled: {enabled}");
+                ChimeraLogger.Log($"[ConstructionModeOverlay] {utilityType} utility overlay toggled: {enabled}");
             }
         }
         
@@ -540,7 +542,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                Debug.Log($"[ConstructionModeOverlay] Construction tool selected: {toolName}");
+                ChimeraLogger.Log($"[ConstructionModeOverlay] Construction tool selected: {toolName}");
             }
             
             // Placeholder for tool selection logic
@@ -562,7 +564,7 @@ namespace ProjectChimera.Systems.Gameplay
                 
                 if (_debugMode)
                 {
-                    Debug.Log("[ConstructionModeOverlay] Overlay refreshed manually");
+                    ChimeraLogger.Log("[ConstructionModeOverlay] Overlay refreshed manually");
                 }
             }
         }
@@ -573,7 +575,7 @@ namespace ProjectChimera.Systems.Gameplay
         public void SetDebugMode(bool enabled)
         {
             _debugMode = enabled;
-            Debug.Log($"[ConstructionModeOverlay] Debug mode {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.Log($"[ConstructionModeOverlay] Debug mode {(enabled ? "enabled" : "disabled")}");
         }
         
         /// <summary>
@@ -601,7 +603,7 @@ namespace ProjectChimera.Systems.Gameplay
             }
             else
             {
-                Debug.Log("[ConstructionModeOverlay] Test only works during play mode with initialized controller");
+                ChimeraLogger.Log("[ConstructionModeOverlay] Test only works during play mode with initialized controller");
             }
         }
         

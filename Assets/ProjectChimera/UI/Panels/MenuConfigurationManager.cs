@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -67,7 +68,7 @@ namespace ProjectChimera.UI.Panels
             };
             RegisterMode("genetics", geneticsConfig);
             
-            Debug.Log($"[MenuConfigurationManager] Initialized {_menuConfigs.Count} default configurations");
+            ChimeraLogger.Log($"[MenuConfigurationManager] Initialized {_menuConfigs.Count} default configurations");
         }
         
         /// <summary>
@@ -85,14 +86,14 @@ namespace ProjectChimera.UI.Panels
         {
             if (string.IsNullOrEmpty(mode) || config == null)
             {
-                Debug.LogWarning("[MenuConfigurationManager] Invalid mode or config parameters");
+                ChimeraLogger.LogWarning("[MenuConfigurationManager] Invalid mode or config parameters");
                 return;
             }
             
             _menuConfigs[mode] = config;
             _availableModes.Add(mode);
             
-            Debug.Log($"[MenuConfigurationManager] Registered mode: {mode}");
+            ChimeraLogger.Log($"[MenuConfigurationManager] Registered mode: {mode}");
         }
         
         /// <summary>
@@ -109,7 +110,7 @@ namespace ProjectChimera.UI.Panels
             if (removed)
             {
                 _menuHistory.Remove(mode);
-                Debug.Log($"[MenuConfigurationManager] Unregistered mode: {mode}");
+                ChimeraLogger.Log($"[MenuConfigurationManager] Unregistered mode: {mode}");
             }
             
             return removed;
@@ -134,7 +135,7 @@ namespace ProjectChimera.UI.Panels
             }
             
             _menuConfigs[mode] = config;
-            Debug.Log($"[MenuConfigurationManager] Updated config for mode: {mode}");
+            ChimeraLogger.Log($"[MenuConfigurationManager] Updated config for mode: {mode}");
             return true;
         }
         
@@ -193,11 +194,11 @@ namespace ProjectChimera.UI.Panels
             if (string.IsNullOrEmpty(mode))
             {
                 _menuHistory.Clear();
-                Debug.Log("[MenuConfigurationManager] Cleared all menu history");
+                ChimeraLogger.Log("[MenuConfigurationManager] Cleared all menu history");
             }
             else if (_menuHistory.Remove(mode))
             {
-                Debug.Log($"[MenuConfigurationManager] Cleared history for mode: {mode}");
+                ChimeraLogger.Log($"[MenuConfigurationManager] Cleared history for mode: {mode}");
             }
         }
         

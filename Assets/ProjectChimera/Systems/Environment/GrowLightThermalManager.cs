@@ -1,3 +1,5 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,7 +14,7 @@ namespace ProjectChimera.Systems.Environment
     /// Extracted from AdvancedGrowLightSystem for modular architecture.
     /// Handles heat generation, cooling, and thermal safety systems.
     /// </summary>
-    public class GrowLightThermalManager : MonoBehaviour
+    public class GrowLightThermalManager : MonoBehaviour, ITickable
     {
         [Header("Thermal Management Configuration")]
         [SerializeField] private bool _enableThermalLogging = true;
@@ -20,10 +22,10 @@ namespace ProjectChimera.Systems.Environment
         [SerializeField] private float _maxSafeTemperature = 80f; // Celsius
         [SerializeField] private float _criticalTemperature = 90f; // Emergency shutdown temperature
         [SerializeField] private float _targetTemperature = 65f; // Optimal operating temperature
-        
+
         // Dependencies
         private GrowLightController _lightController;
-        
+
         // Thermal state
         private float _currentTemperature = 25f; // Room temperature start
         private float _heatGeneration = 0f;
@@ -31,22 +33,22 @@ namespace ProjectChimera.Systems.Environment
         private bool _thermalThrottlingActive = false;
         private bool _emergencyShutdownTriggered = false;
         private float _lastThermalUpdate = 0f;
-        
+
         // Cooling systems
         private List<CoolingSystem> _coolingSystems = new List<CoolingSystem>();
         private Dictionary<CoolingSystemType, bool> _coolingSystemStates = new Dictionary<CoolingSystemType, bool>();
-        
+
         // Temperature history for trending
         private Queue<TemperatureReading> _temperatureHistory = new Queue<TemperatureReading>();
         private const int MaxHistoryPoints = 100;
-        
+
         // Events
         public System.Action<float> OnTemperatureChanged;
         public System.Action<bool> OnThermalThrottlingChanged;
         public System.Action<CoolingSystem> OnCoolingSystemStateChanged;
         public System.Action OnEmergencyShutdown;
         public System.Action<ThermalAlert> OnThermalAlert;
-        
+
         // Properties
         public float CurrentTemperature => _currentTemperature;
         public float HeatGeneration => _heatGeneration;
@@ -55,40 +57,41 @@ namespace ProjectChimera.Systems.Environment
         public bool EmergencyShutdownTriggered => _emergencyShutdownTriggered;
         public float TargetTemperature => _targetTemperature;
         public int ActiveCoolingSystems => _coolingSystems.FindAll(c => c.IsActive).Count;
-        
+
         /// <summary>
         /// Initialize thermal manager with dependencies
         /// </summary>
         public void Initialize(GrowLightController lightController)
         {
             _lightController = lightController;
-            
+
             InitializeCoolingSystems();
             InitializeTemperatureHistory();
-            
+
             // Subscribe to light controller events
             if (_lightController != null)
             {
                 _lightController.OnIntensityChanged += OnLightIntensityChanged;
                 _lightController.OnPowerConsumptionChanged += OnPowerConsumptionChanged;
             }
-            
+
             LogDebug("Grow light thermal manager initialized");
         }
-        
-        private void Update()
-        {
-            _lastThermalUpdate += Time.deltaTime;
-            
+
+            public void Tick(float deltaTime)
+    {
+            _lastThermalUpdate += deltaTime;
+
             if (_lastThermalUpdate >= _thermalUpdateInterval)
             {
                 UpdateThermalState();
                 _lastThermalUpdate = 0f;
-            }
+
+    }
         }
-        
+
         #region Cooling Systems
-        
+
         /// <summary>
         /// Initialize cooling systems
         /// </summary>
@@ -106,7 +109,7 @@ namespace ProjectChimera.Systems.Environment
                 IsActive = false,
                 IsAvailable = true
             });
-            
+
             // Liquid cooling system
             _coolingSystems.Add(new CoolingSystem
             {
@@ -119,7 +122,7 @@ namespace ProjectChimera.Systems.Environment
                 IsActive = false,
                 IsAvailable = false // Needs to be enabled
             });
-            
+
             // Emergency cooling (heat sink)
             _coolingSystems.Add(new CoolingSystem
             {
@@ -132,14 +135,14 @@ namespace ProjectChimera.Systems.Environment
                 IsActive = true, // Always active (passive)
                 IsAvailable = true
             });
-            
+
             // Initialize cooling system states
             foreach (CoolingSystemType type in System.Enum.GetValues(typeof(CoolingSystemType)))
             {
                 _coolingSystemStates[type] = false;
             }
         }
-        
+
         /// <summary>
         /// Update cooling system states based on temperature
         /// </summary>
@@ -148,10 +151,10 @@ namespace ProjectChimera.Systems.Environment
             foreach (var coolingSystem in _coolingSystems)
             {
                 if (!coolingSystem.IsAvailable) continue;
-                
+
                 bool shouldActivate = _currentTemperature >= coolingSystem.ActivationTemperature && !coolingSystem.IsActive;
                 bool shouldDeactivate = _currentTemperature <= coolingSystem.DeactivationTemperature && coolingSystem.IsActive;
-                
+
                 if (shouldActivate)
                 {
                     ActivateCoolingSystem(coolingSystem);
@@ -162,7 +165,7 @@ namespace ProjectChimera.Systems.Environment
                 }
             }
         }
-        
+
         /// <summary>
         /// Activate a cooling system
         /// </summary>
@@ -171,11 +174,11 @@ namespace ProjectChimera.Systems.Environment
             system.IsActive = true;
             system.LastActivated = System.DateTime.Now;
             _coolingSystemStates[system.SystemType] = true;
-            
+
             OnCoolingSystemStateChanged?.Invoke(system);
             LogDebug($"Activated cooling system: {system.SystemType} ({system.CoolingPowerWatts}W cooling power)");
         }
-        
+
         /// <summary>
         /// Deactivate a cooling system
         /// </summary>
@@ -183,18 +186,18 @@ namespace ProjectChimera.Systems.Environment
         {
             system.IsActive = false;
             _coolingSystemStates[system.SystemType] = false;
-            
+
             OnCoolingSystemStateChanged?.Invoke(system);
             LogDebug($"Deactivated cooling system: {system.SystemType}");
         }
-        
+
         /// <summary>
         /// Calculate total active cooling capacity
         /// </summary>
         private float CalculateTotalCoolingCapacity()
         {
             float totalCooling = 0f;
-            
+
             foreach (var system in _coolingSystems)
             {
                 if (system.IsActive)
@@ -202,14 +205,14 @@ namespace ProjectChimera.Systems.Environment
                     totalCooling += system.CoolingPowerWatts;
                 }
             }
-            
+
             return totalCooling;
         }
-        
+
         #endregion
-        
+
         #region Thermal State Management
-        
+
         /// <summary>
         /// Update overall thermal state
         /// </summary>
@@ -221,23 +224,23 @@ namespace ProjectChimera.Systems.Environment
             CheckThermalThresholds();
             RecordTemperatureReading();
         }
-        
+
         /// <summary>
         /// Update heat generation based on light intensity
         /// </summary>
         private void UpdateHeatGeneration()
         {
             if (_lightController == null) return;
-            
+
             // Heat generation roughly correlates with power consumption
             float powerConsumption = _lightController.PowerConsumption;
             float efficiency = _lightController.CalculateCurrentEfficiency();
-            
+
             // Inefficient lights generate more heat
             float heatFactor = Mathf.Clamp(1f / Mathf.Max(efficiency, 0.5f), 0.5f, 2f);
             _heatGeneration = powerConsumption * heatFactor * 0.7f; // 70% of power becomes heat
         }
-        
+
         /// <summary>
         /// Update temperature based on heat generation and cooling
         /// </summary>
@@ -245,24 +248,24 @@ namespace ProjectChimera.Systems.Environment
         {
             float ambientTemperature = 25f; // Room temperature
             float thermalMass = 500f; // Thermal mass of the light fixture
-            
+
             // Calculate net heat (generation - cooling)
             float totalCooling = CalculateTotalCoolingCapacity();
             float netHeat = _heatGeneration - totalCooling;
-            
+
             // Temperature change rate based on thermal mass
             float temperatureChangeRate = netHeat / thermalMass * Time.deltaTime * _thermalUpdateInterval;
-            
+
             // Apply temperature change with ambient cooling
             float ambientCoolingRate = (_currentTemperature - ambientTemperature) * 0.01f * Time.deltaTime * _thermalUpdateInterval;
             _currentTemperature += temperatureChangeRate - ambientCoolingRate;
-            
+
             // Clamp to reasonable limits
             _currentTemperature = Mathf.Clamp(_currentTemperature, ambientTemperature, _criticalTemperature + 10f);
-            
+
             OnTemperatureChanged?.Invoke(_currentTemperature);
         }
-        
+
         /// <summary>
         /// Check thermal thresholds and trigger alerts
         /// </summary>
@@ -274,7 +277,7 @@ namespace ProjectChimera.Systems.Environment
                 TriggerEmergencyShutdown();
                 return;
             }
-            
+
             // Thermal throttling check
             bool shouldThrottle = _currentTemperature > _maxSafeTemperature;
             if (shouldThrottle != _thermalThrottlingActive)
@@ -282,7 +285,7 @@ namespace ProjectChimera.Systems.Environment
                 _thermalThrottlingActive = shouldThrottle;
                 _lightController?.SetThermalThrottling(_thermalThrottlingActive);
                 OnThermalThrottlingChanged?.Invoke(_thermalThrottlingActive);
-                
+
                 var alert = new ThermalAlert
                 {
                     AlertType = _thermalThrottlingActive ? ThermalAlertType.ThrottlingActivated : ThermalAlertType.ThrottlingDeactivated,
@@ -290,11 +293,11 @@ namespace ProjectChimera.Systems.Environment
                     Timestamp = System.DateTime.Now,
                     Message = _thermalThrottlingActive ? "Thermal throttling activated" : "Thermal throttling deactivated"
                 };
-                
+
                 OnThermalAlert?.Invoke(alert);
                 LogDebug(alert.Message);
             }
-            
+
             // Generate temperature warnings
             if (_currentTemperature > _maxSafeTemperature * 0.9f && _currentTemperature < _maxSafeTemperature)
             {
@@ -306,22 +309,22 @@ namespace ProjectChimera.Systems.Environment
                     Timestamp = System.DateTime.Now,
                     Message = $"Temperature approaching safe limit: {_currentTemperature:F1}°C"
                 };
-                
+
                 OnThermalAlert?.Invoke(alert);
             }
         }
-        
+
         /// <summary>
         /// Trigger emergency shutdown
         /// </summary>
         private void TriggerEmergencyShutdown()
         {
             _emergencyShutdownTriggered = true;
-            
+
             // Immediately shut down lights
             _lightController?.TurnOff();
             _lightController?.SetIntensityImmediate(0f);
-            
+
             // Activate all available cooling systems
             foreach (var system in _coolingSystems)
             {
@@ -330,7 +333,7 @@ namespace ProjectChimera.Systems.Environment
                     ActivateCoolingSystem(system);
                 }
             }
-            
+
             var alert = new ThermalAlert
             {
                 AlertType = ThermalAlertType.EmergencyShutdown,
@@ -338,13 +341,13 @@ namespace ProjectChimera.Systems.Environment
                 Timestamp = System.DateTime.Now,
                 Message = $"EMERGENCY SHUTDOWN: Critical temperature reached ({_currentTemperature:F1}°C)"
             };
-            
+
             OnThermalAlert?.Invoke(alert);
             OnEmergencyShutdown?.Invoke();
-            
+
             LogError($"Emergency thermal shutdown triggered at {_currentTemperature:F1}°C");
         }
-        
+
         /// <summary>
         /// Reset emergency shutdown state
         /// </summary>
@@ -360,22 +363,22 @@ namespace ProjectChimera.Systems.Environment
                 LogError("Cannot reset emergency shutdown - temperature still too high");
             }
         }
-        
+
         #endregion
-        
+
         #region Temperature History
-        
+
         /// <summary>
         /// Initialize temperature history tracking
         /// </summary>
         private void InitializeTemperatureHistory()
         {
             _temperatureHistory.Clear();
-            
+
             // Add initial reading
             RecordTemperatureReading();
         }
-        
+
         /// <summary>
         /// Record a temperature reading
         /// </summary>
@@ -388,16 +391,16 @@ namespace ProjectChimera.Systems.Environment
                 HeatGeneration = _heatGeneration,
                 CoolingCapacity = CalculateTotalCoolingCapacity()
             };
-            
+
             _temperatureHistory.Enqueue(reading);
-            
+
             // Keep history manageable
             while (_temperatureHistory.Count > MaxHistoryPoints)
             {
                 _temperatureHistory.Dequeue();
             }
         }
-        
+
         /// <summary>
         /// Get temperature history
         /// </summary>
@@ -406,15 +409,15 @@ namespace ProjectChimera.Systems.Environment
             var history = _temperatureHistory.ToArray();
             var count = Mathf.Min(maxPoints, history.Length);
             var result = new List<TemperatureReading>();
-            
+
             for (int i = history.Length - count; i < history.Length; i++)
             {
                 result.Add(history[i]);
             }
-            
+
             return result;
         }
-        
+
         /// <summary>
         /// Get temperature trend over time
         /// </summary>
@@ -425,20 +428,20 @@ namespace ProjectChimera.Systems.Environment
                 .Where(r => r.Timestamp >= cutoffTime)
                 .OrderBy(r => r.Timestamp)
                 .ToList();
-            
+
             if (recentReadings.Count < 2) return 0f;
-            
+
             // Simple linear trend calculation
             float firstTemp = recentReadings.First().Temperature;
             float lastTemp = recentReadings.Last().Temperature;
-            
+
             return lastTemp - firstTemp;
         }
-        
+
         #endregion
-        
+
         #region Event Handlers
-        
+
         /// <summary>
         /// Handle light intensity changes
         /// </summary>
@@ -447,7 +450,7 @@ namespace ProjectChimera.Systems.Environment
             // Heat generation will be updated on next thermal update
             LogDebug($"Light intensity changed: {intensity} PPFD");
         }
-        
+
         /// <summary>
         /// Handle power consumption changes
         /// </summary>
@@ -456,11 +459,11 @@ namespace ProjectChimera.Systems.Environment
             // Heat generation will be updated on next thermal update
             LogDebug($"Power consumption changed: {powerConsumption}W");
         }
-        
+
         #endregion
-        
+
         #region Control Methods
-        
+
         /// <summary>
         /// Enable or disable a cooling system
         /// </summary>
@@ -470,16 +473,16 @@ namespace ProjectChimera.Systems.Environment
             if (system != null)
             {
                 system.IsAvailable = available;
-                
+
                 if (!available && system.IsActive)
                 {
                     DeactivateCoolingSystem(system);
                 }
-                
+
                 LogDebug($"Cooling system {systemType} {(available ? "enabled" : "disabled")}");
             }
         }
-        
+
         /// <summary>
         /// Set target temperature
         /// </summary>
@@ -488,7 +491,7 @@ namespace ProjectChimera.Systems.Environment
             _targetTemperature = Mathf.Clamp(targetTemperature, 20f, _maxSafeTemperature - 5f);
             LogDebug($"Target temperature set to: {_targetTemperature:F1}°C");
         }
-        
+
         /// <summary>
         /// Get thermal status summary
         /// </summary>
@@ -506,11 +509,13 @@ namespace ProjectChimera.Systems.Environment
                 TemperatureTrend = GetTemperatureTrend()
             };
         }
-        
+
         #endregion
-        
+
         private void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             // Unsubscribe from events
             if (_lightController != null)
             {
@@ -518,19 +523,40 @@ namespace ProjectChimera.Systems.Environment
                 _lightController.OnPowerConsumptionChanged -= OnPowerConsumptionChanged;
             }
         }
-        
+
         private void LogDebug(string message)
         {
             if (_enableThermalLogging)
-                Debug.Log($"[GrowLightThermalManager] {message}");
+                ChimeraLogger.Log($"[GrowLightThermalManager] {message}");
         }
-        
+
         private void LogError(string message)
         {
-            Debug.LogError($"[GrowLightThermalManager] {message}");
+            ChimeraLogger.LogError($"[GrowLightThermalManager] {message}");
         }
+
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+    public virtual void OnRegistered()
+    {
+        // Override in derived classes if needed
     }
-    
+
+    public virtual void OnUnregistered()
+    {
+        // Override in derived classes if needed
+    }
+
+    protected virtual void Start()
+    {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
+    }
+
+}
+
     /// <summary>
     /// Cooling system configuration
     /// </summary>
@@ -547,7 +573,7 @@ namespace ProjectChimera.Systems.Environment
         public bool IsAvailable = true;
         public System.DateTime LastActivated;
     }
-    
+
     /// <summary>
     /// Temperature reading data point
     /// </summary>
@@ -559,7 +585,7 @@ namespace ProjectChimera.Systems.Environment
         public float HeatGeneration;
         public float CoolingCapacity;
     }
-    
+
     /// <summary>
     /// Thermal alert information
     /// </summary>
@@ -571,7 +597,7 @@ namespace ProjectChimera.Systems.Environment
         public System.DateTime Timestamp;
         public string Message;
     }
-    
+
     /// <summary>
     /// Thermal status summary
     /// </summary>
@@ -587,7 +613,7 @@ namespace ProjectChimera.Systems.Environment
         public int ActiveCoolingSystems;
         public float TemperatureTrend;
     }
-    
+
     public enum CoolingSystemType
     {
         Fan,
@@ -595,7 +621,7 @@ namespace ProjectChimera.Systems.Environment
         HeatSink,
         Thermoelectric
     }
-    
+
     public enum ThermalAlertType
     {
         TemperatureWarning,

@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
 
 
 namespace ProjectChimera.Systems.Scene
@@ -39,7 +40,7 @@ namespace ProjectChimera.Systems.Scene
             
             while (_diGameManager == null && elapsed < timeout)
             {
-                _diGameManager = FindObjectOfType<DIGameManager>();
+                _diGameManager = ServiceContainerFactory.Instance.TryResolve<DIGameManager>();
                 if (_diGameManager == null)
                 {
                     yield return new WaitForSeconds(0.1f);
@@ -49,7 +50,7 @@ namespace ProjectChimera.Systems.Scene
             
             if (_diGameManager == null)
             {
-                Debug.LogError("[BootLoadingUI] DIGameManager not found in scene!");
+                ChimeraLogger.LogError("[BootLoadingUI] DIGameManager not found in scene!");
                 yield break;
             }
 

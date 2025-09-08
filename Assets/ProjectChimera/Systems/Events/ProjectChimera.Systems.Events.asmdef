@@ -4,8 +4,7 @@
     "references": [
         "ProjectChimera.Core",
         "ProjectChimera.Shared",
-        "ProjectChimera.Data.Events",
-        "ProjectChimera.Systems.Gameplay"
+        "ProjectChimera.Data.Events"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

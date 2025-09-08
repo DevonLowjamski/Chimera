@@ -1,4 +1,6 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
+using ProjectChimera.Core;
 using ProjectChimera.Data.Construction;
 
 namespace ProjectChimera.Systems.Construction
@@ -59,14 +61,14 @@ namespace ProjectChimera.Systems.Construction
             _testResults = results.ToString();
             
             results.AppendLine($"\n=== OVERALL RESULT: {(allTestsPassed ? "PASSED" : "FAILED")} ===");
-            Debug.Log(results.ToString());
+            ChimeraLogger.Log(results.ToString());
         }
         
         private bool TestSystemReferences(System.Text.StringBuilder results)
         {
             results.AppendLine("\n1. Testing System References:");
             
-            _unlockManager = FindObjectOfType<SchematicUnlockManager>();
+            _unlockManager = ServiceContainerFactory.Instance?.TryResolve<SchematicUnlockManager>();
             
             bool unlockManagerFound = _unlockManager != null;
             
@@ -195,23 +197,23 @@ namespace ProjectChimera.Systems.Construction
         {
             if (_unlockManager == null || _testSchematic == null)
             {
-                Debug.LogWarning("Cannot test unlock button - missing components");
+                ChimeraLogger.LogWarning("Cannot test unlock button - missing components");
                 return;
             }
             
-            Debug.Log($"Testing unlock for: {_testSchematic.SchematicName}");
+            ChimeraLogger.Log($"Testing unlock for: {_testSchematic.SchematicName}");
             
             var displayData = _unlockManager.GetSchematicDisplayData(_testSchematic);
-            Debug.Log($"Can unlock: {displayData.CanUnlock}, Is unlocked: {displayData.IsUnlocked}");
+            ChimeraLogger.Log($"Can unlock: {displayData.CanUnlock}, Is unlocked: {displayData.IsUnlocked}");
             
             if (displayData.CanUnlock && !displayData.IsUnlocked)
             {
                 bool success = _unlockManager.UnlockSchematic(_testSchematic);
-                Debug.Log($"Unlock result: {(success ? "SUCCESS" : "FAILED")}");
+                ChimeraLogger.Log($"Unlock result: {(success ? "SUCCESS" : "FAILED")}");
             }
             else
             {
-                Debug.Log("Schematic cannot be unlocked or is already unlocked");
+                ChimeraLogger.Log("Schematic cannot be unlocked or is already unlocked");
             }
         }
         
@@ -222,8 +224,8 @@ namespace ProjectChimera.Systems.Construction
         public void AddTestSkillPoints()
         {
             // Note: Economy system integration handled through events to prevent circular dependency
-            Debug.Log($"Test would add {_testSkillPoints} skill points through Economy system events");
-            Debug.Log("Economy integration: Event-based (no direct reference)");
+            ChimeraLogger.Log($"Test would add {_testSkillPoints} skill points through Economy system events");
+            ChimeraLogger.Log("Economy integration: Event-based (no direct reference)");
         }
     }
 }

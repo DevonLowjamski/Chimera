@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -83,7 +84,7 @@ namespace ProjectChimera.UI.Panels
                 }
             }
             
-            Debug.Log($"[MenuCommandValidator] Initialized validators for {_commandValidators.Count} commands");
+            ChimeraLogger.Log($"[MenuCommandValidator] Initialized validators for {_commandValidators.Count} commands");
         }
         
         /// <summary>
@@ -205,12 +206,12 @@ namespace ProjectChimera.UI.Panels
         {
             if (string.IsNullOrEmpty(commandId) || validator == null)
             {
-                Debug.LogWarning("[MenuCommandValidator] Invalid validator parameters");
+                ChimeraLogger.LogWarning("[MenuCommandValidator] Invalid validator parameters");
                 return;
             }
             
             _commandValidators[commandId] = validator;
-            Debug.Log($"[MenuCommandValidator] Added custom validator for command: {commandId}");
+            ChimeraLogger.Log($"[MenuCommandValidator] Added custom validator for command: {commandId}");
         }
         
         /// <summary>
@@ -220,7 +221,7 @@ namespace ProjectChimera.UI.Panels
         {
             if (_commandValidators.Remove(commandId))
             {
-                Debug.Log($"[MenuCommandValidator] Removed validator for command: {commandId}");
+                ChimeraLogger.Log($"[MenuCommandValidator] Removed validator for command: {commandId}");
             }
         }
         
@@ -231,7 +232,7 @@ namespace ProjectChimera.UI.Panels
         {
             if (!string.IsNullOrEmpty(mode) && _validModes.Add(mode))
             {
-                Debug.Log($"[MenuCommandValidator] Added valid mode: {mode}");
+                ChimeraLogger.Log($"[MenuCommandValidator] Added valid mode: {mode}");
             }
         }
         
@@ -242,7 +243,7 @@ namespace ProjectChimera.UI.Panels
         {
             if (_validModes.Remove(mode))
             {
-                Debug.Log($"[MenuCommandValidator] Removed valid mode: {mode}");
+                ChimeraLogger.Log($"[MenuCommandValidator] Removed valid mode: {mode}");
             }
         }
         
@@ -252,7 +253,7 @@ namespace ProjectChimera.UI.Panels
         public void SetEventsEnabled(bool enabled)
         {
             _eventsEnabled = enabled;
-            Debug.Log($"[MenuCommandValidator] Events {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.Log($"[MenuCommandValidator] Events {(enabled ? "enabled" : "disabled")}");
         }
         
         /// <summary>
@@ -284,7 +285,7 @@ namespace ProjectChimera.UI.Panels
             _commandValidators.Clear();
             _eventsEnabled = true;
             InitializeCommandValidators();
-            Debug.Log("[MenuCommandValidator] Reset to default state");
+            ChimeraLogger.Log("[MenuCommandValidator] Reset to default state");
         }
     }
     

@@ -188,13 +188,13 @@ namespace ProjectChimera.Data.Genetics
 
             if (string.IsNullOrEmpty(_stageName))
             {
-                Debug.LogWarning($"[Chimera] GrowthStageSO '{DisplayName}' has no stage name assigned.", this);
+                SharedLogger.LogWarning($"[Chimera] GrowthStageSO '{DisplayName}' has no stage name assigned.");
                 isValid = false;
             }
 
             if (_durationDaysRange.x <= 0 || _durationDaysRange.y < _durationDaysRange.x)
             {
-                Debug.LogWarning($"[Chimera] GrowthStageSO '{DisplayName}' has invalid duration range.", this);
+                SharedLogger.LogWarning($"[Chimera] GrowthStageSO '{DisplayName}' has invalid duration range.");
                 isValid = false;
             }
 

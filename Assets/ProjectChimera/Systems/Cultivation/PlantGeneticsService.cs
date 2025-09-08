@@ -1,9 +1,11 @@
+using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using ProjectChimera.Core;
-using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Genetics;
+using ProjectChimera.Data.Cultivation;
 using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 // Remove invalid namespace references - genetics types are in ProjectChimera.Data.Genetics
@@ -18,17 +20,17 @@ namespace ProjectChimera.Systems.Cultivation
     /// Extracted from monolithic PlantManager for Single Responsibility Principle
     /// Focuses solely on genetic calculations, monitoring, and performance optimization
     /// </summary>
-    public class PlantGeneticsService : IPlantGeneticsService
+    public class PlantGeneticsService
     {
         [Header("Genetics Configuration")]
         [SerializeField] private bool _advancedGeneticsEnabled = true;
         [SerializeField] private bool _enableGeneticPerformanceMonitoring = true;
         [SerializeField] private bool _enableDetailedLogging = false;
-        
+
         // Genetic performance monitoring
         private object _geneticPerformanceMonitor;
         private CultivationManager _cultivationManager;
-        
+
         // Performance tracking
         private long _totalCalculations = 0;
         private double _totalCalculationTime = 0.0;
@@ -36,60 +38,60 @@ namespace ProjectChimera.Systems.Cultivation
         private double _totalBatchTime = 0.0;
         private List<double> _recentCalculationTimes = new List<double>();
         private const int MAX_RECENT_TIMES = 100;
-        
+
         public bool IsInitialized { get; private set; }
-        
+
         public bool AdvancedGeneticsEnabled
         {
             get => _advancedGeneticsEnabled;
             set => _advancedGeneticsEnabled = value;
         }
-        
+
         public PlantGeneticsService() : this(null)
         {
         }
-        
+
         public PlantGeneticsService(CultivationManager cultivationManager)
         {
             _cultivationManager = cultivationManager;
         }
-        
+
         public void Initialize()
         {
             if (IsInitialized) return;
-            
-            Debug.Log("[PlantGeneticsService] Initializing genetics monitoring system...");
-            
+
+            ChimeraLogger.Log("[PlantGeneticsService] Initializing genetics monitoring system...");
+
             // Initialize genetic performance monitoring
             if (_enableGeneticPerformanceMonitoring) { _geneticPerformanceMonitor = new object(); }
-            
+
             // Get reference to CultivationManager
             if (_cultivationManager == null)
             {
                 _cultivationManager = GameManager.Instance?.GetManager<CultivationManager>();
             }
-            
+
             if (_cultivationManager == null)
             {
-                Debug.LogWarning("[PlantGeneticsService] CultivationManager not found - some features may be limited");
+                ChimeraLogger.LogWarning("[PlantGeneticsService] CultivationManager not found - some features may be limited");
             }
-            
+
             IsInitialized = true;
-            Debug.Log($"[PlantGeneticsService] Genetics monitoring initialized (Advanced: {_advancedGeneticsEnabled}, Monitoring: {_enableGeneticPerformanceMonitoring})");
+            ChimeraLogger.Log($"[PlantGeneticsService] Genetics monitoring initialized (Advanced: {_advancedGeneticsEnabled}, Monitoring: {_enableGeneticPerformanceMonitoring})");
         }
-        
+
         public void Shutdown()
         {
             if (!IsInitialized) return;
-            
-            Debug.Log("[PlantGeneticsService] Shutting down genetics monitoring system...");
-            
+
+            ChimeraLogger.Log("[PlantGeneticsService] Shutting down genetics monitoring system...");
+
             _geneticPerformanceMonitor = null;
             _recentCalculationTimes.Clear();
-            
+
             IsInitialized = false;
         }
-        
+
         /// <summary>
         /// Gets genetic performance statistics for monitoring and optimization.
         /// </summary>
@@ -107,7 +109,7 @@ namespace ProjectChimera.Systems.Cultivation
                     AverageUpdateTimeMs = 0.0
                 };
             }
-            
+
             // In stub mode we may not have a real monitor. If present and reflective API exists, try to map; otherwise return fallback.
             // Note: Avoids hard dependency on Systems.Genetics.
             if (_geneticPerformanceMonitor != null)
@@ -128,7 +130,7 @@ namespace ProjectChimera.Systems.Cultivation
                 }
                 catch { /* Fall through to fallback below */ }
             }
-            
+
             // Fallback to internal tracking
             return new GeneticPerformanceStats
             {
@@ -140,7 +142,7 @@ namespace ProjectChimera.Systems.Cultivation
                 AverageUpdateTimeMs = _recentCalculationTimes.Count > 0 ? _recentCalculationTimes.Average() : 0.0
             };
         }
-        
+
         /// <summary>
         /// Enables or disables advanced genetics during runtime.
         /// </summary>
@@ -149,16 +151,16 @@ namespace ProjectChimera.Systems.Cultivation
             if (_advancedGeneticsEnabled != enabled)
             {
                 _advancedGeneticsEnabled = enabled;
-                
-                Debug.Log($"[PlantGeneticsService] Advanced genetics {(enabled ? "enabled" : "disabled")}");
-                
+
+                ChimeraLogger.Log($"[PlantGeneticsService] Advanced genetics {(enabled ? "enabled" : "disabled")}");
+
                 if (_enableDetailedLogging)
                 {
-                    Debug.Log($"[PlantGeneticsService] Genetics system reconfigured for {(enabled ? "advanced" : "basic")} mode");
+                    ChimeraLogger.Log($"[PlantGeneticsService] Genetics system reconfigured for {(enabled ? "advanced" : "basic")} mode");
                 }
             }
         }
-        
+
         /// <summary>
         /// Calculates genetic diversity statistics across all plants.
         /// </summary>
@@ -166,25 +168,25 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                Debug.LogError("[PlantGeneticsService] Cannot calculate genetic diversity: Service not initialized");
+                ChimeraLogger.LogError("[PlantGeneticsService] Cannot calculate genetic diversity: Service not initialized");
                 return new GeneticDiversityStats();
             }
-            
+
             var stats = new GeneticDiversityStats();
-            
+
             if (_cultivationManager == null)
             {
-                Debug.LogWarning("[PlantGeneticsService] Cannot calculate genetic diversity: CultivationManager is null");
+                ChimeraLogger.LogWarning("[PlantGeneticsService] Cannot calculate genetic diversity: CultivationManager is null");
                 return stats;
             }
-            
+
             var startTime = System.DateTime.Now;
-            
+
             try
             {
                 var strainCounts = new Dictionary<string, int>();
                 var allPlants = _cultivationManager.GetAllPlants();
-                
+
                 foreach (var plant in allPlants)
                 {
                     if (plant != null)
@@ -194,33 +196,33 @@ namespace ProjectChimera.Systems.Cultivation
                         strainCounts[strainName] = strainCounts.GetValueOrDefault(strainName, 0) + 1;
                     }
                 }
-                
+
                 stats.StrainDiversity = strainCounts.Count;
                 stats.MostCommonStrain = strainCounts.OrderByDescending(kvp => kvp.Value).FirstOrDefault().Key ?? "None";
-                
+
                 // Calculate genetic fitness (placeholder - would need actual genetic data)
                 stats.AverageGeneticFitness = CalculateAverageGeneticFitness(allPlants);
-                
+
                 // Calculate trait expression variance (placeholder - would need actual trait data)
                 stats.TraitExpressionVariance = CalculateTraitExpressionVariance(allPlants);
-                
+
                 // Record calculation time
                 var calculationTime = (System.DateTime.Now - startTime).TotalMilliseconds;
                 RecordGeneticCalculation((float)calculationTime);
-                
+
                 if (_enableDetailedLogging)
                 {
-                    Debug.Log($"[PlantGeneticsService] Calculated genetic diversity: {stats} (Time: {calculationTime:F2}ms)");
+                    ChimeraLogger.Log($"[PlantGeneticsService] Calculated genetic diversity: {stats} (Time: {calculationTime:F2}ms)");
                 }
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[PlantGeneticsService] Error calculating genetic diversity: {ex.Message}");
+                ChimeraLogger.LogError($"[PlantGeneticsService] Error calculating genetic diversity: {ex.Message}");
             }
-            
+
             return stats;
         }
-        
+
         /// <summary>
         /// Calculates variance in trait expression across plants (private helper method).
         /// </summary>
@@ -228,12 +230,12 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (traitExpressions == null || traitExpressions.Count == 0)
                 return 0f;
-            
+
             var heightVariances = new List<float>();
             var thcVariances = new List<float>();
             var cbdVariances = new List<float>();
             var yieldVariances = new List<float>();
-            
+
             foreach (var expression in traitExpressions)
             {
                 heightVariances.Add(expression.HeightExpression);
@@ -241,68 +243,68 @@ namespace ProjectChimera.Systems.Cultivation
                 cbdVariances.Add(expression.CBDExpression);
                 yieldVariances.Add(expression.YieldExpression);
             }
-            
+
             // Calculate combined variance across all traits
             float heightVar = CalculateVariance(heightVariances);
             float thcVar = CalculateVariance(thcVariances);
             float cbdVar = CalculateVariance(cbdVariances);
             float yieldVar = CalculateVariance(yieldVariances);
-            
+
             return (heightVar + thcVar + cbdVar + yieldVar) / 4f;
         }
-        
+
         /// <summary>
         /// Records a genetic calculation for performance monitoring.
         /// </summary>
         public void RecordGeneticCalculation(float calculationTime)
         {
             if (!IsInitialized || !_enableGeneticPerformanceMonitoring) return;
-            
+
             _totalCalculations++;
             _totalCalculationTime += calculationTime;
-            
+
             // Track recent calculation times
             _recentCalculationTimes.Add(calculationTime);
             if (_recentCalculationTimes.Count > MAX_RECENT_TIMES)
             {
                 _recentCalculationTimes.RemoveAt(0);
             }
-            
+
             // Record with performance monitor
             if (_geneticPerformanceMonitor != null)
             {
                 // Performance monitoring is handled internally by the monitor
                 // Individual calculation times are tracked automatically
-                Debug.Log($"[PlantGeneticsService] Calculation time: {calculationTime}ms");
+                ChimeraLogger.Log($"[PlantGeneticsService] Calculation time: {calculationTime}ms");
             }
         }
-        
+
         /// <summary>
         /// Records a batch update for performance monitoring.
         /// </summary>
         public void RecordBatchUpdate(int plantCount, GeneticPerformanceStats stats)
         {
             if (!IsInitialized || !_enableGeneticPerformanceMonitoring) return;
-            
+
             _totalBatchCalculations++;
             _totalBatchTime += stats.AverageBatchTimeMs;
-            
+
             // Record with performance monitor
             // In stub mode we do nothing; real monitor integration removed during early-phase refactor
-            
+
             if (_enableDetailedLogging)
             {
-                Debug.Log($"[PlantGeneticsService] Recorded batch update: {plantCount} plants, {stats.AverageBatchTimeMs:F2}ms");
+                ChimeraLogger.Log($"[PlantGeneticsService] Recorded batch update: {plantCount} plants, {stats.AverageBatchTimeMs:F2}ms");
             }
         }
-        
+
         /// <summary>
         /// Optimizes genetic calculations by clearing caches and updating algorithms.
         /// </summary>
         public void OptimizeGeneticCalculations()
         {
             if (!IsInitialized) return;
-            
+
             // Clear performance tracking data periodically
             if (_totalCalculations > 10000)
             {
@@ -310,28 +312,28 @@ namespace ProjectChimera.Systems.Cultivation
                 _totalCalculationTime = _totalCalculationTime / 2;
                 _totalBatchCalculations = _totalBatchCalculations / 2;
                 _totalBatchTime = _totalBatchTime / 2;
-                
+
                 if (_enableDetailedLogging)
                 {
-                    Debug.Log("[PlantGeneticsService] Optimized calculation tracking data");
+                    ChimeraLogger.Log("[PlantGeneticsService] Optimized calculation tracking data");
                 }
             }
-            
+
             // Clear recent calculation times if too many
             if (_recentCalculationTimes.Count > MAX_RECENT_TIMES)
             {
                 _recentCalculationTimes.RemoveRange(0, _recentCalculationTimes.Count - MAX_RECENT_TIMES);
             }
-            
+
             // Optimize genetic performance monitor
             if (_geneticPerformanceMonitor != null)
             {
                 // The GeneticPerformanceMonitor doesn't have an OptimizePerformance method
                 // This is handled internally by the monitor
-                Debug.Log("[PlantGeneticsService] Genetic performance monitor optimization handled internally");
+                ChimeraLogger.Log("[PlantGeneticsService] Genetic performance monitor optimization handled internally");
             }
         }
-        
+
         /// <summary>
         /// Gets detailed genetic analysis for a specific plant.
         /// </summary>
@@ -339,17 +341,17 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                Debug.LogError("[PlantGeneticsService] Cannot get genetic analysis: Service not initialized");
+                ChimeraLogger.LogError("[PlantGeneticsService] Cannot get genetic analysis: Service not initialized");
                 return new PlantGeneticAnalysis();
             }
-            
+
             var plant = _cultivationManager?.GetPlant(plantID);
             if (plant == null)
             {
-                Debug.LogWarning($"[PlantGeneticsService] Plant {plantID} not found for genetic analysis");
+                ChimeraLogger.LogWarning($"[PlantGeneticsService] Plant {plantID} not found for genetic analysis");
                 return new PlantGeneticAnalysis();
             }
-            
+
             var analysis = new PlantGeneticAnalysis
             {
                 PlantID = plantID,
@@ -359,15 +361,15 @@ namespace ProjectChimera.Systems.Cultivation
                 GeneticStability = CalculateGeneticStability(plant),
                 AnalysisTimestamp = System.DateTime.Now
             };
-            
+
             if (_enableDetailedLogging)
             {
-                Debug.Log($"[PlantGeneticsService] Generated genetic analysis for {plantID}: {analysis}");
+                ChimeraLogger.Log($"[PlantGeneticsService] Generated genetic analysis for {plantID}: {analysis}");
             }
-            
+
             return analysis;
         }
-        
+
         /// <summary>
         /// Calculate genetic potential for a genotype
         /// </summary>
@@ -377,22 +379,22 @@ namespace ProjectChimera.Systems.Cultivation
             {
                 return new GeneticPotentialData { OverallPotential = 0f };
             }
-            
+
             var startTime = System.DateTime.Now;
-            
+
             // Calculate various genetic potentials
             float yieldPotential = CalculateYieldPotential(genotype);
             float potencyPotential = CalculatePotencyPotential(genotype);
             float resistancePotential = CalculateResistancePotential(genotype);
             float growthPotential = CalculateGrowthPotential(genotype);
-            
+
             // Calculate overall potential (weighted average)
-            float overallPotential = (yieldPotential * 0.3f + potencyPotential * 0.25f + 
+            float overallPotential = (yieldPotential * 0.3f + potencyPotential * 0.25f +
                                      resistancePotential * 0.2f + growthPotential * 0.25f);
-            
+
             var calculationTime = (System.DateTime.Now - startTime).TotalMilliseconds;
             RecordCalculation(calculationTime);
-            
+
             return new GeneticPotentialData
             {
                 OverallPotential = Mathf.Clamp01(overallPotential),
@@ -403,7 +405,7 @@ namespace ProjectChimera.Systems.Cultivation
                 GeneticVariability = genotype.GeneticVariability
             };
         }
-        
+
         /// <summary>
         /// Process gene expression for a plant under specific environmental conditions
         /// </summary>
@@ -413,29 +415,29 @@ namespace ProjectChimera.Systems.Cultivation
             {
                 return new GeneExpressionResult { ExpressionLevel = 0f };
             }
-            
+
             var startTime = System.DateTime.Now;
-            
+
             // Get genetic data from plant
             var genotype = plant.Genotype;
             if (genotype == null)
             {
                 return new GeneExpressionResult { ExpressionLevel = 0.5f }; // Default expression
             }
-            
+
             // Calculate expression based on environmental conditions
             float temperatureExpression = CalculateTemperatureExpression(conditions.Temperature, plant);
             float humidityExpression = CalculateHumidityExpression(conditions.Humidity, plant);
             float lightExpression = CalculateLightExpression(conditions.LightIntensity, plant);
             float stressExpression = CalculateStressExpression(plant.StressLevel);
-            
+
             // Combine expression factors
-            float overallExpression = (temperatureExpression * 0.25f + humidityExpression * 0.25f + 
+            float overallExpression = (temperatureExpression * 0.25f + humidityExpression * 0.25f +
                                      lightExpression * 0.3f + stressExpression * 0.2f);
-            
+
             var calculationTime = (System.DateTime.Now - startTime).TotalMilliseconds;
             RecordCalculation(calculationTime);
-            
+
             return new GeneExpressionResult
             {
                 ExpressionLevel = Mathf.Clamp01(overallExpression),
@@ -446,31 +448,31 @@ namespace ProjectChimera.Systems.Cultivation
                 ProcessingTimeMs = (float)calculationTime
             };
         }
-        
+
         private float CalculateYieldPotential(CannabisGenotype genotype)
         {
             // Base potential from genetic variability
             return Mathf.Clamp01(0.5f + genotype.GeneticVariability * 0.5f);
         }
-        
+
         private float CalculatePotencyPotential(CannabisGenotype genotype)
         {
             // Base potency potential
             return Mathf.Clamp01(0.6f + genotype.GeneticVariability * 0.4f);
         }
-        
+
         private float CalculateResistancePotential(CannabisGenotype genotype)
         {
             // Disease/pest resistance potential
             return Mathf.Clamp01(0.7f + genotype.GeneticVariability * 0.3f);
         }
-        
+
         private float CalculateGrowthPotential(CannabisGenotype genotype)
         {
             // Growth rate potential
             return Mathf.Clamp01(0.5f + genotype.GeneticVariability * 0.5f);
         }
-        
+
         private float CalculateTemperatureExpression(float temperature, PlantInstance plant)
         {
             // Optimal range around 22-26°C
@@ -478,7 +480,7 @@ namespace ProjectChimera.Systems.Cultivation
             float deviation = Mathf.Abs(temperature - optimalTemp);
             return Mathf.Clamp01(1f - (deviation / 10f));
         }
-        
+
         private float CalculateHumidityExpression(float humidity, PlantInstance plant)
         {
             // Optimal range around 50-70%
@@ -486,7 +488,7 @@ namespace ProjectChimera.Systems.Cultivation
             float deviation = Mathf.Abs(humidity - optimalHumidity);
             return Mathf.Clamp01(1f - (deviation / 30f));
         }
-        
+
         private float CalculateLightExpression(float lightIntensity, PlantInstance plant)
         {
             // Optimal range around 600-1000 PPFD
@@ -494,13 +496,13 @@ namespace ProjectChimera.Systems.Cultivation
             float deviation = Mathf.Abs(lightIntensity - optimalLight);
             return Mathf.Clamp01(1f - (deviation / 400f));
         }
-        
+
         private float CalculateStressExpression(float stressLevel)
         {
             // Higher stress reduces expression
             return Mathf.Clamp01(1f - (stressLevel / 100f));
         }
-        
+
         /// <summary>
         /// Calculates statistical variance for a list of values.
         /// </summary>
@@ -508,12 +510,12 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (values.Count == 0)
                 return 0f;
-            
+
             float mean = values.Average();
             float variance = values.Sum(v => Mathf.Pow(v - mean, 2)) / values.Count;
             return variance;
         }
-        
+
         /// <summary>
         /// Records a genetic calculation for performance tracking.
         /// </summary>
@@ -522,13 +524,13 @@ namespace ProjectChimera.Systems.Cultivation
             // Update performance tracking statistics
             _totalCalculations++;
             _totalCalculationTime += calculationTimeMs;
-            
+
             if (_enableDetailedLogging)
             {
-                Debug.Log($"[PlantGeneticsService] Genetic calculation completed in {calculationTimeMs:F2}ms");
+                ChimeraLogger.Log($"[PlantGeneticsService] Genetic calculation completed in {calculationTimeMs:F2}ms");
             }
         }
-        
+
         /// <summary>
         /// Calculates average genetic fitness across all plants.
         /// </summary>
@@ -536,10 +538,10 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (plants == null || !plants.Any())
                 return 0f;
-            
+
             float totalFitness = 0f;
             int plantCount = 0;
-            
+
             foreach (var plant in plants)
             {
                 if (plant != null)
@@ -548,10 +550,10 @@ namespace ProjectChimera.Systems.Cultivation
                     plantCount++;
                 }
             }
-            
+
             return plantCount > 0 ? totalFitness / plantCount : 0f;
         }
-        
+
         /// <summary>
         /// Calculates trait expression variance across all plants.
         /// </summary>
@@ -559,16 +561,16 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (plants == null || !plants.Any())
                 return 0f;
-            
+
             // Placeholder implementation - would need actual trait expression data
             var healthValues = plants.Where(p => p != null).Select(p => p.OverallHealth).ToList();
-            
+
             if (healthValues.Count == 0)
                 return 0f;
-            
+
             return CalculateVariance(healthValues);
         }
-        
+
         /// <summary>
         /// Calculates genetic fitness for a specific plant.
         /// </summary>
@@ -576,15 +578,15 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (plant == null)
                 return 0f;
-            
+
             // Placeholder implementation based on available data
             float healthFactor = plant.OverallHealth;
             float stressFactor = 1f - plant.StressLevel;
             float growthFactor = plant.CurrentGrowthStage == PlantGrowthStage.Harvest ? 1f : 0.5f;
-            
+
             return (healthFactor + stressFactor + growthFactor) / 3f;
         }
-        
+
         /// <summary>
         /// Calculates trait diversity for a specific plant.
         /// </summary>
@@ -592,11 +594,11 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (plant == null)
                 return 0f;
-            
+
             // Placeholder implementation - would need actual genetic trait data
             return UnityEngine.Random.Range(0.5f, 1f);
         }
-        
+
         /// <summary>
         /// Calculates genetic stability for a specific plant.
         /// </summary>
@@ -604,13 +606,13 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (plant == null)
                 return 0f;
-            
+
             // Placeholder implementation based on health consistency
             float healthStability = 1f - (plant.StressLevel / 100f);
             return Mathf.Clamp01(healthStability);
         }
     }
-    
+
     /// <summary>
     /// Genetic potential data structure
     /// </summary>
@@ -624,7 +626,7 @@ namespace ProjectChimera.Systems.Cultivation
         public float GrowthPotential;
         public float GeneticVariability;
     }
-    
+
     /// <summary>
     /// Gene expression result data structure
     /// </summary>
@@ -638,7 +640,7 @@ namespace ProjectChimera.Systems.Cultivation
         public float StressExpression;
         public float ProcessingTimeMs;
     }
-    
+
     /// <summary>
     /// Plant genetic analysis result structure.
     /// </summary>
@@ -651,7 +653,7 @@ namespace ProjectChimera.Systems.Cultivation
         public float TraitDiversity;
         public float GeneticStability;
         public System.DateTime AnalysisTimestamp;
-        
+
         public override string ToString()
         {
             return $"Plant {PlantID} ({StrainName}): Fitness={GeneticFitness:F2}, Diversity={TraitDiversity:F2}, Stability={GeneticStability:F2}";

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Editor
 {
@@ -24,12 +25,12 @@ namespace ProjectChimera.Editor
             // Check if Build Settings need configuration
             if (ShouldConfigureBuildSettings())
             {
-                Debug.Log("[AutoConfigureBuildSettings] Auto-configuring Build Settings for Project Chimera...");
+                ChimeraLogger.Log("[AutoConfigureBuildSettings] Auto-configuring Build Settings for Project Chimera...");
                 BuildSettingsConfigurator.ConfigureBuildSettings();
             }
             else
             {
-                Debug.Log("[AutoConfigureBuildSettings] Build Settings already configured correctly.");
+                ChimeraLogger.Log("[AutoConfigureBuildSettings] Build Settings already configured correctly.");
             }
         }
 
@@ -40,14 +41,14 @@ namespace ProjectChimera.Editor
             // If no scenes configured, definitely need to configure
             if (currentScenes == null || currentScenes.Length == 0)
             {
-                Debug.Log("[AutoConfigureBuildSettings] No scenes in Build Settings - configuration needed.");
+                ChimeraLogger.Log("[AutoConfigureBuildSettings] No scenes in Build Settings - configuration needed.");
                 return true;
             }
 
             // Check if first scene is our Boot scene
             if (currentScenes.Length > 0 && !currentScenes[0].path.Contains("01_Boot"))
             {
-                Debug.Log("[AutoConfigureBuildSettings] Boot scene not at index 0 - configuration needed.");
+                ChimeraLogger.Log("[AutoConfigureBuildSettings] Boot scene not at index 0 - configuration needed.");
                 return true;
             }
 
@@ -57,7 +58,7 @@ namespace ProjectChimera.Editor
                 return false;
             }
 
-            Debug.Log($"[AutoConfigureBuildSettings] Expected 9 scenes, found {currentScenes.Length} - configuration needed.");
+            ChimeraLogger.Log($"[AutoConfigureBuildSettings] Expected 9 scenes, found {currentScenes.Length} - configuration needed.");
             return true;
         }
     }

@@ -1,0 +1,316 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Data.Construction;
+using ProjectChimera.Data.Economy;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace ProjectChimera.Systems.Construction
+{
+    /// <summary>
+    /// Implementation for cost calculation and pricing logic
+    /// </summary>
+    public class CostCalculator : ICostCalculator
+    {
+        private float _heightCostMultiplier = 1.15f;
+        private float _foundationCostMultiplier = 1.25f;
+        private bool _enableBulkDiscounts = true;
+        private float _bulkDiscountThreshold = 5f;
+        private float _bulkDiscountRate = 0.1f;
+
+        private Dictionary<PlaceableType, CostProfile> _baseCosts = new Dictionary<PlaceableType, CostProfile>();
+        private Dictionary<Vector3Int, float> _positionCostModifiers = new Dictionary<Vector3Int, float>();
+        private bool _isInitialized = false;
+
+        public float HeightCostMultiplier
+        {
+            get => _heightCostMultiplier;
+            set => _heightCostMultiplier = value;
+        }
+
+        public float FoundationCostMultiplier
+        {
+            get => _foundationCostMultiplier;
+            set => _foundationCostMultiplier = value;
+        }
+
+        public bool EnableBulkDiscounts
+        {
+            get => _enableBulkDiscounts;
+            set => _enableBulkDiscounts = value;
+        }
+
+        public float BulkDiscountThreshold
+        {
+            get => _bulkDiscountThreshold;
+            set => _bulkDiscountThreshold = value;
+        }
+
+        public float BulkDiscountRate
+        {
+            get => _bulkDiscountRate;
+            set => _bulkDiscountRate = value;
+        }
+
+        public Dictionary<PlaceableType, CostProfile> BaseCosts => new Dictionary<PlaceableType, CostProfile>(_baseCosts);
+        public Dictionary<Vector3Int, float> PositionCostModifiers => new Dictionary<Vector3Int, float>(_positionCostModifiers);
+
+        public void Initialize(float heightCostMultiplier, float foundationCostMultiplier,
+                             bool enableBulkDiscounts, float bulkDiscountThreshold, float bulkDiscountRate)
+        {
+            _heightCostMultiplier = heightCostMultiplier;
+            _foundationCostMultiplier = foundationCostMultiplier;
+            _enableBulkDiscounts = enableBulkDiscounts;
+            _bulkDiscountThreshold = bulkDiscountThreshold;
+            _bulkDiscountRate = bulkDiscountRate;
+
+            InitializeBaseCosts();
+            _isInitialized = true;
+
+            ChimeraLogger.Log("[CostCalculator] Cost calculator initialized");
+        }
+
+        public void Shutdown()
+        {
+            _baseCosts.Clear();
+            _positionCostModifiers.Clear();
+            _isInitialized = false;
+
+            ChimeraLogger.Log("[CostCalculator] Cost calculator shutdown");
+        }
+
+        public CostCalculationResult CalculatePlacementCost(GridPlaceable placeable, Vector3Int gridPosition)
+        {
+            var result = new CostCalculationResult();
+            var breakdown = new Dictionary<string, float>();
+
+            if (!_isInitialized)
+            {
+                ChimeraLogger.LogWarning("[CostCalculator] Cost calculator not initialized");
+                result.TotalCost = 100f; // Default fallback cost
+                result.ResourceCosts = new List<ResourceCost>();
+                result.Breakdown = breakdown;
+                return result;
+            }
+
+            // Get base cost profile
+            if (!_baseCosts.ContainsKey(placeable.Type))
+            {
+                ChimeraLogger.LogWarning($"[CostCalculator] No cost profile found for {placeable.Type}, using default");
+                result.TotalCost = 100f; // Default cost
+                result.ResourceCosts = new List<ResourceCost>();
+                result.Breakdown = breakdown;
+                return result;
+            }
+
+            var costProfile = _baseCosts[placeable.Type];
+            float baseCost = costProfile.baseCost;
+            breakdown["Base Cost"] = baseCost;
+
+            // Apply size scaling
+            if (costProfile.scalableWithSize)
+            {
+                var bounds = placeable.GetObjectBounds();
+                float sizeMultiplier = bounds.size.x * bounds.size.y * bounds.size.z;
+                baseCost *= sizeMultiplier;
+                breakdown["Size Modifier"] = sizeMultiplier;
+            }
+
+            // Apply complexity multiplier
+            baseCost *= costProfile.complexityMultiplier;
+            breakdown["Complexity Modifier"] = costProfile.complexityMultiplier;
+
+            // Apply height-based cost modifier
+            float heightModifier = CalculateHeightModifier(gridPosition.z);
+            baseCost *= heightModifier;
+            breakdown["Height Modifier"] = heightModifier;
+
+            // Apply foundation cost modifier
+            if (RequiresFoundation(gridPosition))
+            {
+                baseCost *= _foundationCostMultiplier;
+                breakdown["Foundation Modifier"] = _foundationCostMultiplier;
+            }
+
+            // Apply position-specific modifiers
+            float positionModifier = CalculatePositionModifier(gridPosition);
+            if (positionModifier != 1f)
+            {
+                baseCost *= positionModifier;
+                breakdown["Position Modifier"] = positionModifier;
+            }
+
+            result.TotalCost = baseCost;
+            result.ResourceCosts = new List<ResourceCost>(costProfile.resourceCosts);
+            result.Breakdown = breakdown;
+
+            ChimeraLogger.Log($"[CostCalculator] Cost calculated for {placeable.name} at {gridPosition}: {result.TotalCost:F2}");
+            return result;
+        }
+
+        public CostEstimate GetCostEstimate(GridPlaceable placeable, Vector3Int gridPosition)
+        {
+            var costBreakdown = CalculatePlacementCost(placeable, gridPosition);
+
+            return new CostEstimate
+            {
+                TotalCost = costBreakdown.TotalCost,
+                ResourceCosts = costBreakdown.ResourceCosts,
+                CostBreakdown = costBreakdown.Breakdown,
+                HeightModifier = CalculateHeightModifier(gridPosition.z),
+                FoundationModifier = RequiresFoundation(gridPosition) ? _foundationCostMultiplier : 1f,
+                BulkDiscount = 1f, // Not applicable for single item estimates
+                PositionModifier = CalculatePositionModifier(gridPosition)
+            };
+        }
+
+        public float CalculateHeightModifier(int height)
+        {
+            if (height <= 0) return 1f;
+            return Mathf.Pow(_heightCostMultiplier, height);
+        }
+
+        public float CalculateBulkDiscount(int quantity)
+        {
+            if (!_enableBulkDiscounts || quantity < _bulkDiscountThreshold)
+            {
+                return 1f; // No discount
+            }
+
+            // Progressive bulk discount
+            float discountFactor = Mathf.Min(quantity / _bulkDiscountThreshold, 10f); // Max 10x threshold
+            float discount = _bulkDiscountRate * discountFactor;
+
+            return Mathf.Max(1f - discount, 0.5f); // Maximum 50% discount
+        }
+
+        public float CalculatePositionModifier(Vector3Int gridPosition)
+        {
+            if (_positionCostModifiers.TryGetValue(gridPosition, out float modifier))
+            {
+                return modifier;
+            }
+
+            return 1f; // No modifier
+        }
+
+        public bool RequiresFoundation(Vector3Int gridPosition)
+        {
+            return gridPosition.z > 0; // Requires foundation if above ground level
+        }
+
+        public void SetPositionCostModifier(Vector3Int position, float modifier)
+        {
+            _positionCostModifiers[position] = modifier;
+            ChimeraLogger.Log($"[CostCalculator] Position cost modifier set for {position}: {modifier:F2}");
+        }
+
+        public void RemovePositionCostModifier(Vector3Int position)
+        {
+            if (_positionCostModifiers.Remove(position))
+            {
+                ChimeraLogger.Log($"[CostCalculator] Position cost modifier removed for {position}");
+            }
+        }
+
+        public void InitializeBaseCosts()
+        {
+            _baseCosts.Clear();
+
+            // Foundation structures
+            _baseCosts[PlaceableType.Structure] = new CostProfile
+            {
+                baseCost = 50f,
+                resourceCosts = new List<ResourceCost>
+                {
+                    new ResourceCost { resourceId = "concrete", quantity = 2, isRequired = true },
+                    new ResourceCost { resourceId = "rebar", quantity = 1, isRequired = true }
+                },
+                scalableWithSize = true,
+                complexityMultiplier = 1f
+            };
+
+            // Wall structures
+            _baseCosts[PlaceableType.Equipment] = new CostProfile
+            {
+                baseCost = 75f,
+                resourceCosts = new List<ResourceCost>
+                {
+                    new ResourceCost { resourceId = "wood", quantity = 3, isRequired = true },
+                    new ResourceCost { resourceId = "nails", quantity = 5, isRequired = true }
+                },
+                scalableWithSize = true,
+                complexityMultiplier = 1.1f
+            };
+
+            // Floor structures
+            _baseCosts[PlaceableType.Utility] = new CostProfile
+            {
+                baseCost = 60f,
+                resourceCosts = new List<ResourceCost>
+                {
+                    new ResourceCost { resourceId = "plywood", quantity = 2, isRequired = true },
+                    new ResourceCost { resourceId = "nails", quantity = 3, isRequired = true }
+                },
+                scalableWithSize = true,
+                complexityMultiplier = 1f
+            };
+
+            // Equipment
+            _baseCosts[PlaceableType.Equipment] = new CostProfile
+            {
+                baseCost = 500f,
+                resourceCosts = new List<ResourceCost>
+                {
+                    new ResourceCost { resourceId = "steel", quantity = 5, isRequired = true },
+                    new ResourceCost { resourceId = "electronics", quantity = 2, isRequired = true }
+                },
+                scalableWithSize = false,
+                complexityMultiplier = 2f
+            };
+
+            // Furniture
+            _baseCosts[PlaceableType.Decoration] = new CostProfile
+            {
+                baseCost = 150f,
+                resourceCosts = new List<ResourceCost>
+                {
+                    new ResourceCost { resourceId = "wood", quantity = 4, isRequired = true },
+                    new ResourceCost { resourceId = "fabric", quantity = 1, isRequired = false }
+                },
+                scalableWithSize = true,
+                complexityMultiplier = 1.2f
+            };
+
+            // Decoration
+            _baseCosts[PlaceableType.Decoration] = new CostProfile
+            {
+                baseCost = 25f,
+                resourceCosts = new List<ResourceCost>
+                {
+                    new ResourceCost { resourceId = "paint", quantity = 1, isRequired = false }
+                },
+                scalableWithSize = false,
+                complexityMultiplier = 0.8f
+            };
+
+            ChimeraLogger.Log($"[CostCalculator] Initialized {_baseCosts.Count} base cost profiles");
+        }
+
+        public void UpdateCostProfile(PlaceableType type, CostProfile profile)
+        {
+            _baseCosts[type] = profile;
+            ChimeraLogger.Log($"[CostCalculator] Updated cost profile for {type}");
+        }
+
+        public CostProfile GetCostProfile(PlaceableType type)
+        {
+            if (_baseCosts.TryGetValue(type, out var profile))
+            {
+                return profile;
+            }
+
+            ChimeraLogger.LogWarning($"[CostCalculator] No cost profile found for {type}");
+            return new CostProfile(); // Return default profile
+        }
+    }
+}

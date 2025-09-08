@@ -1,3 +1,5 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Economy;
@@ -12,7 +14,7 @@ namespace ProjectChimera.Systems.Economy.Components
     /// Handles contract delivery creation, processing, and completion
     /// for Project Chimera's game economy system.
     /// </summary>
-    public class ContractDeliveryService : MonoBehaviour
+    public class ContractDeliveryService : MonoBehaviour, ITickable
     {
         [Header("Delivery Configuration")]
         [SerializeField] private bool _enableAutoDelivery = false;
@@ -43,15 +45,18 @@ namespace ProjectChimera.Systems.Economy.Components
 
         private void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             InitializeServiceReferences();
         }
 
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             if (_enableAutoDelivery)
             {
                 ProcessPendingDeliveries();
-            }
+
+    }
         }
 
         public void Initialize()
@@ -81,7 +86,7 @@ namespace ProjectChimera.Systems.Economy.Components
             }
 
             var allocatedProduction = production.Where(p => p.IsAllocated).ToList();
-            
+
             var delivery = new ContractDelivery
             {
                 DeliveryId = Guid.NewGuid().ToString(),
@@ -190,12 +195,12 @@ namespace ProjectChimera.Systems.Economy.Components
             {
                 // Complete the contract through ContractGenerationService
                 bool success = false;
-                
+
                 if (_contractService != null)
                 {
                     success = _contractService.CompleteContract(
-                        delivery.Contract, 
-                        delivery.DeliveredQuantity, 
+                        delivery.Contract,
+                        delivery.DeliveredQuantity,
                         delivery.AverageQuality.ToFloat()
                     );
                 }
@@ -280,7 +285,7 @@ namespace ProjectChimera.Systems.Economy.Components
         public List<ContractDelivery> GetDeliveriesForContract(string contractId)
         {
             var deliveries = new List<ContractDelivery>();
-            
+
             deliveries.AddRange(_pendingDeliveries.Where(d => d.ContractId == contractId));
             deliveries.AddRange(_completedDeliveries.Where(d => d.ContractId == contractId));
 
@@ -358,7 +363,7 @@ namespace ProjectChimera.Systems.Economy.Components
             if (delivery?.Contract == null) return;
 
             var contract = delivery.Contract;
-            
+
             // Base contract value
             delivery.BaseValue = contract.TotalValue;
 
@@ -468,17 +473,32 @@ namespace ProjectChimera.Systems.Economy.Components
 
         private void LogInfo(string message)
         {
-            Debug.Log($"[ContractDeliveryService] {message}");
+            ChimeraLogger.Log($"[ContractDeliveryService] {message}");
         }
 
         private void LogWarning(string message)
         {
-            Debug.LogWarning($"[ContractDeliveryService] {message}");
+            ChimeraLogger.LogWarning($"[ContractDeliveryService] {message}");
         }
 
         private void LogError(string message)
         {
-            Debug.LogError($"[ContractDeliveryService] {message}");
+            ChimeraLogger.LogError($"[ContractDeliveryService] {message}");
         }
+
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+    public virtual void OnRegistered()
+    {
+        // Override in derived classes if needed
     }
+
+    public virtual void OnUnregistered()
+    {
+        // Override in derived classes if needed
+    }
+
+}
 }

@@ -47,7 +47,7 @@ namespace ProjectChimera.Data.Visuals
 
             // Calculate environmental stress
             float environmentalStress = CalculateEnvironmentalStress(conditions, strain);
-            
+
             // Calculate nutrient effects
             float nutrientHealth = CalculateNutrientHealth(conditions);
 
@@ -74,10 +74,10 @@ namespace ProjectChimera.Data.Visuals
         {
             if (strain?.BaseSpecies == null) return 0f;
 
-            float tempStress = CalculateParameterStress(conditions.Temperature, strain.BaseSpecies.TemperatureRange, _temperatureResponseCurve);
-            float humidityStress = CalculateParameterStress(conditions.Humidity, strain.BaseSpecies.HumidityRange, _humidityResponseCurve);
-            float lightStress = CalculateParameterStress(conditions.LightIntensity, strain.BaseSpecies.LightIntensityRange, _lightResponseCurve);
-            float co2Stress = CalculateParameterStress(conditions.CO2Level, strain.BaseSpecies.Co2Range, _co2ResponseCurve);
+            float tempStress = CalculateParameterStress(conditions.Temperature, new Vector2(18f, 28f), _temperatureResponseCurve);
+            float humidityStress = CalculateParameterStress(conditions.Humidity, new Vector2(40f, 70f), _humidityResponseCurve);
+            float lightStress = CalculateParameterStress(conditions.LightIntensity, new Vector2(200f, 800f), _lightResponseCurve);
+            float co2Stress = CalculateParameterStress(conditions.CO2Level, new Vector2(300f, 1500f), _co2ResponseCurve);
 
             return (tempStress + humidityStress + lightStress + co2Stress) * 0.25f;
         }
@@ -86,10 +86,10 @@ namespace ProjectChimera.Data.Visuals
         {
             // Normalize value to 0-1 based on optimal range
             float normalizedValue = Mathf.InverseLerp(optimalRange.x, optimalRange.y, value);
-            
+
             // Apply response curve
             float response = responseCurve.Evaluate(normalizedValue);
-            
+
             // Convert to stress (inverse of response)
             return 1f - response;
         }
@@ -117,17 +117,17 @@ namespace ProjectChimera.Data.Visuals
         {
             // This would typically be driven by growth stage, but can be influenced by environment
             float baseParameter = conditions.GrowthStageProgress;
-            
+
             // Apply environmental influence
             float environmentalInfluence = CalculateEnvironmentalInfluence(conditions, strain);
-            
+
             return Mathf.Clamp01(baseParameter + environmentalInfluence * 0.1f);
         }
 
         private float CalculateFoliageDensity(CultivationConditions conditions, PlantStrainSO strain)
         {
             float baseDensity = 1f;
-            
+
             if (strain != null)
             {
                 baseDensity *= strain.WidthModifier;
@@ -135,45 +135,45 @@ namespace ProjectChimera.Data.Visuals
 
             // Light affects foliage density
             float lightEffect = _lightResponseCurve.Evaluate(conditions.LightIntensity / 800f); // Normalize to typical max PPFD
-            
+
             return baseDensity * lightEffect;
         }
 
         private float CalculateBranchDensity(CultivationConditions conditions, PlantStrainSO strain)
         {
             float baseDensity = 1f;
-            
+
             if (strain?.BaseSpecies != null)
             {
-                baseDensity = strain.BaseSpecies.MaxBranchingLevels / 5f; // Normalize to typical max levels
+                baseDensity = 4f / 5f; // Default MaxBranchingLevels = 4, normalized to typical max levels
             }
 
             // Nutrients affect branching
             float nutrientEffect = CalculateNutrientHealth(conditions);
-            
+
             return baseDensity * nutrientEffect;
         }
 
         private float CalculateLeafSize(CultivationConditions conditions, PlantStrainSO strain)
         {
             float baseSize = 1f;
-            
+
             if (strain?.BaseSpecies != null)
             {
-                Vector2 leafRange = strain.BaseSpecies.LeafSizeRange;
+                Vector2 leafRange = new Vector2(0.5f, 1.5f); // Default leaf size range
                 baseSize = (leafRange.x + leafRange.y) * 0.5f / 0.2f; // Normalize to typical leaf size
             }
 
             // Environmental conditions affect leaf size
             float environmentalEffect = CalculateEnvironmentalInfluence(conditions, strain);
-            
+
             return baseSize * environmentalEffect;
         }
 
         private float CalculateTrunkThickness(CultivationConditions conditions, PlantStrainSO strain)
         {
             float baseThickness = 1f;
-            
+
             if (strain != null)
             {
                 baseThickness *= strain.HeightModifier * strain.WidthModifier;
@@ -181,7 +181,7 @@ namespace ProjectChimera.Data.Visuals
 
             // Nutrient availability affects trunk development
             float nutrientEffect = CalculateNutrientHealth(conditions);
-            
+
             return baseThickness * nutrientEffect;
         }
 
@@ -189,7 +189,7 @@ namespace ProjectChimera.Data.Visuals
         {
             // Environmental stress can cause color changes
             float stress = CalculateEnvironmentalStress(conditions, strain);
-            
+
             // More stress = more color variation (yellowing, purpling, etc.)
             return stress * _stressResponse.MaxColorVariation;
         }
@@ -197,14 +197,31 @@ namespace ProjectChimera.Data.Visuals
         private float CalculateEnvironmentalInfluence(CultivationConditions conditions, PlantStrainSO strain)
         {
             if (strain?.BaseSpecies == null) return 1f;
-            
-            return strain.BaseSpecies.EvaluateEnvironmentalSuitability(new EnvironmentalConditions
+
+            return EvaluateEnvironmentalSuitability(new EnvironmentalConditions
             {
                 Temperature = conditions.Temperature,
                 Humidity = conditions.Humidity,
                 CO2Level = conditions.CO2Level,
                 LightIntensity = conditions.LightIntensity
-            });
+            }, strain);
+        }
+
+        private float EvaluateEnvironmentalSuitability(EnvironmentalConditions conditions, PlantStrainSO strain)
+        {
+            // Simple environmental suitability calculation based on strain type
+            float suitability = 1.0f;
+
+            if (strain.StrainType == ProjectChimera.Data.Genetics.StrainType.Indica)
+            {
+                suitability *= (conditions.Temperature >= 20f && conditions.Temperature <= 26f) ? 1.0f : 0.8f;
+            }
+            else if (strain.StrainType == ProjectChimera.Data.Genetics.StrainType.Sativa)
+            {
+                suitability *= (conditions.Temperature >= 24f && conditions.Temperature <= 30f) ? 1.0f : 0.8f;
+            }
+
+            return suitability;
         }
 
         private void ApplyStressResponses(ref SpeedTreeParameters parameters, float stress, CultivationConditions conditions)
@@ -212,11 +229,11 @@ namespace ProjectChimera.Data.Visuals
             if (stress > _stressResponse.StressThreshold)
             {
                 float stressMultiplier = 1f - (stress * _stressResponse.StressImpactMultiplier);
-                
+
                 parameters.FoliageDensity *= stressMultiplier;
                 parameters.LeafSize *= stressMultiplier;
                 parameters.GrowthRate *= stressMultiplier;
-                
+
                 // Increase color variation under stress
                 parameters.ColorVariation = Mathf.Max(parameters.ColorVariation, stress * _stressResponse.MaxColorVariation);
             }
@@ -228,7 +245,7 @@ namespace ProjectChimera.Data.Visuals
 
             if (_parameterMappings.Count == 0)
             {
-                Debug.LogWarning($"[Chimera] SpeedTreeParameterMapperSO '{DisplayName}' has no parameter mappings configured.", this);
+                SharedLogger.LogWarning($"[Chimera] SpeedTreeParameterMapperSO '{DisplayName}' has no parameter mappings configured.", this);
                 isValid = false;
             }
 

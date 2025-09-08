@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -9,7 +11,7 @@ namespace ProjectChimera.UI.Panels
     /// Comprehensive interaction system for World Space UI elements in Unity 6.2.
     /// Handles mouse/touch input, hover states, click detection, and gesture recognition for 3D cannabis facility management.
     /// </summary>
-    public class WorldSpaceInteractionSystem : MonoBehaviour
+    public class WorldSpaceInteractionSystem : MonoBehaviour, ITickable
     {
         [Header("Interaction Configuration")]
         [SerializeField] private WorldSpaceInteractionConfig _config = new WorldSpaceInteractionConfig();
@@ -63,6 +65,9 @@ namespace ProjectChimera.UI.Panels
                 _targetCamera = Camera.main;
             
             InitializeInputSystem();
+            
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
         
         private void OnEnable()
@@ -75,11 +80,18 @@ namespace ProjectChimera.UI.Panels
             DisableInputActions();
         }
         
-        private void Update()
+        #region ITickable Implementation
+        
+        public int Priority => TickPriority.UIManager;
+        public bool Enabled => enabled;
+        
+        public void Tick(float deltaTime)
         {
             ProcessInput();
             UpdateInteractionStates();
         }
+        
+        #endregion
         
         /// <summary>
         /// Initializes the input system and action bindings
@@ -88,7 +100,7 @@ namespace ProjectChimera.UI.Panels
         {
             // Use legacy input system for compatibility
             _useInputSystem = false;
-            Debug.Log("[WorldSpaceInteractionSystem] Using legacy input system for compatibility");
+            ChimeraLogger.Log("[WorldSpaceInteractionSystem] Using legacy input system for compatibility");
         }
         
         /// <summary>
@@ -408,6 +420,14 @@ namespace ProjectChimera.UI.Panels
             }
             
             return _interactableElements.Remove(element);
+        }
+        
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
         }
     }
 }

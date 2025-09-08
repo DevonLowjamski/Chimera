@@ -25,24 +25,24 @@ namespace ProjectChimera.Data.Genetics
         public bool IsFounderStrain;
         public bool IsHybrid;
         public List<string> ParentGenotypes = new List<string>();
-        
+
         // UI Compatibility Properties
         public string GenotypeID => GenotypeId; // Alias for UI compatibility
         public List<string> ParentIDs { get; set; } = new List<string>(); // Settable for compatibility
         public string StrainOrigin => Origin.ToString(); // String representation for UI compatibility
-        
+
         [Header("Genetic Traits")]
         public List<GeneticTrait> Traits = new List<GeneticTrait>();
         public List<AlleleExpression> AlleleExpressions = new List<AlleleExpression>();
         public List<ChromosomePair> Chromosomes = new List<ChromosomePair>();
         public Dictionary<string, List<object>> Alleles = new Dictionary<string, List<object>>();
-        
+
         [Header("Phenotypic Expression")]
         public PhenotypicProfile PhenotypicProfile;
         public CannabinoidsProfile CannabinoidsProfile;
         public TerpenesProfile TerpenesProfile;
         public object ExpressedPhenotype;
-        
+
         [Header("Growth Characteristics")]
         public float GrowthRate = 1.0f;
         public float MaxHeight = 2.0f;
@@ -50,46 +50,46 @@ namespace ProjectChimera.Data.Genetics
         public float BranchingTendency = 1.0f;
         public float LeafDensity = 1.0f;
         public int FloweringSiteDensity = 100;
-        
+
         // Missing properties for Error Wave 135
         public float BudDensity = 1.0f;
         public Color BudColor = Color.green;
         public float FloweringSpeed = 1.0f;
-        
+
         // Missing property for Error Wave 136
         [Range(0f, 1f)] public float TrichromeAmount = 0.5f;
-        
+
         // Missing property for Error Wave (test data)
         [Range(0f, 1f)] public float GeneticVariability = 0.5f;
-        
+
         [Header("Resistance Traits")]
         public float DiseaseResistance = 75f;
         public float PestResistance = 70f;
         public float DroughtTolerance = 60f;
         public float ColdTolerance = 50f;
         public float HeatTolerance = 70f;
-        
+
         [Header("Quality Traits")]
         public float PotencyPotential = 80f;
         public float YieldPotential = 75f;
         public float ResinProduction = 70f;
         public float AromaIntensity = 75f;
         public FlavorProfile FlavorProfile;
-        
+
         [Header("Environmental Adaptation")]
         public float EnvironmentalStability = 70f;
         public List<EnvironmentalPreference> EnvironmentalPreferences = new List<EnvironmentalPreference>();
         public GxEInteractionProfile GxEProfile;
-        
+
         // Additional properties for genetics engine compatibility
         public float HybridVigor = 1.0f;
         public Dictionary<string, float> EpigeneticModifications = new Dictionary<string, float>();
-        
+
         // Missing properties for Systems layer
         public List<MutationRecord> Mutations = new List<MutationRecord>();
         public float InbreedingCoefficient = 0f;
         public List<GeneticMarker> GeneticMarkers = new List<GeneticMarker>();
-        
+
         // Conversion methods for backwards compatibility
         public List<GeneticMutation> GetGeneticMutations()
         {
@@ -98,20 +98,20 @@ namespace ProjectChimera.Data.Genetics
                 MutationID = m.MutationId,
                 GeneLocusAffected = m.AffectedGene,
                 MutationType = MutationType.Substitution, // Default value
-                PhenotypicEffect = m.PhenotypicEffect,
-                Description = m.MutationType,
-                OccurrenceDate = m.OccurrenceDate,
+                PhenotypicEffect = m.PhenotypicEffect.ToString(),
+                Description = m.MutationType.ToString(),
+                OccurrenceDate = m.OccurrenceDate.ToString(),
                 IsBeneficial = m.IsBeneficial,
                 IsHarmful = m.IsHarmful
             }).ToList() ?? new List<GeneticMutation>();
         }
-        
+
         // Calculated properties
         public float OverallFitness => CalculateOverallFitness();
         public float GeneticDiversity => CalculateGeneticDiversity();
         public float HeterozygosityIndex => CalculateHeterozygosity();
         public bool IsStable => CheckGeneticStability();
-        
+
         public CannabisGenotype()
         {
             GenotypeId = Guid.NewGuid().ToString();
@@ -119,7 +119,7 @@ namespace ProjectChimera.Data.Genetics
             Origin = GenotypeOrigin.Natural;
             InitializeDefaultTraits();
         }
-        
+
         public CannabisGenotype(string parentStrain, int generation)
         {
             GenotypeId = Guid.NewGuid().ToString();
@@ -128,7 +128,7 @@ namespace ProjectChimera.Data.Genetics
             Origin = generation > 1 ? GenotypeOrigin.Bred : GenotypeOrigin.Natural;
             InitializeDefaultTraits();
         }
-        
+
         /// <summary>
         /// Initialize default genetic traits
         /// </summary>
@@ -145,11 +145,11 @@ namespace ProjectChimera.Data.Genetics
             AddTrait("cbd_production", UnityEngine.Random.Range(0.5f, 1.2f), TraitDominance.Recessive);
             AddTrait("disease_resistance", UnityEngine.Random.Range(0.6f, 1.2f), TraitDominance.Dominant);
             AddTrait("stress_tolerance", UnityEngine.Random.Range(0.7f, 1.1f), TraitDominance.Codominant);
-            
+
             // Initialize profiles
             InitializeProfiles();
         }
-        
+
         /// <summary>
         /// Initialize genetic profiles
         /// </summary>
@@ -161,7 +161,7 @@ namespace ProjectChimera.Data.Genetics
             FlavorProfile = new FlavorProfile();
             GxEProfile = new GxEInteractionProfile();
         }
-        
+
         /// <summary>
         /// Add genetic trait
         /// </summary>
@@ -175,10 +175,10 @@ namespace ProjectChimera.Data.Genetics
                 HeritabilityIndex = UnityEngine.Random.Range(0.6f, 0.9f),
                 EnvironmentalSensitivity = UnityEngine.Random.Range(0.3f, 0.8f)
             };
-            
+
             Traits.Add(trait);
         }
-        
+
         /// <summary>
         /// Get trait by name
         /// </summary>
@@ -186,7 +186,7 @@ namespace ProjectChimera.Data.Genetics
         {
             return Traits.FirstOrDefault(t => t.TraitName.Equals(traitName, StringComparison.OrdinalIgnoreCase));
         }
-        
+
         /// <summary>
         /// Update trait expression
         /// </summary>
@@ -198,27 +198,27 @@ namespace ProjectChimera.Data.Genetics
                 trait.ExpressedValue = Mathf.Clamp(newValue, 0f, 2f); // Typical range for trait expression
             }
         }
-        
+
         /// <summary>
         /// Calculate overall genetic fitness
         /// </summary>
         public float CalculateOverallFitness()
         {
             if (Traits.Count == 0) return 0f;
-            
+
             float fitnessSum = 0f;
             float totalWeight = 0f;
-            
+
             foreach (var trait in Traits)
             {
                 float weight = GetTraitFitnessWeight(trait.TraitName);
                 fitnessSum += trait.ExpressedValue * weight;
                 totalWeight += weight;
             }
-            
+
             return totalWeight > 0f ? fitnessSum / totalWeight : 0f;
         }
-        
+
         /// <summary>
         /// Get fitness weight for trait
         /// </summary>
@@ -235,14 +235,14 @@ namespace ProjectChimera.Data.Genetics
                 _ => 0.7f
             };
         }
-        
+
         /// <summary>
         /// Calculate genetic diversity
         /// </summary>
         private float CalculateGeneticDiversity()
         {
             if (AlleleExpressions.Count == 0) return 0f;
-            
+
             float diversitySum = 0f;
             foreach (var allele in AlleleExpressions)
             {
@@ -253,29 +253,29 @@ namespace ProjectChimera.Data.Genetics
                     diversitySum -= p * Mathf.Log(p);
                 }
             }
-            
+
             return diversitySum;
         }
-        
+
         /// <summary>
         /// Calculate heterozygosity index
         /// </summary>
         private float CalculateHeterozygosity()
         {
             if (Chromosomes.Count == 0) return 0f;
-            
+
             int heterozygousLoci = 0;
             int totalLoci = 0;
-            
+
             foreach (var chromosome in Chromosomes)
             {
                 totalLoci += chromosome.GeneCount;
                 heterozygousLoci += chromosome.HeterozygousGenes;
             }
-            
+
             return totalLoci > 0 ? (float)heterozygousLoci / totalLoci : 0f;
         }
-        
+
         /// <summary>
         /// Check genetic stability
         /// </summary>
@@ -284,26 +284,26 @@ namespace ProjectChimera.Data.Genetics
             float stabilityThreshold = 0.7f;
             return EnvironmentalStability >= stabilityThreshold && GeneticDiversity > 0.3f;
         }
-        
+
         /// <summary>
         /// Cross with another genotype to create offspring
         /// </summary>
         public CannabisGenotype CrossWith(CannabisGenotype partner, float mutationRate = 0.02f)
         {
-            var offspring = new CannabisGenotype(ParentStrain + " x " + partner.ParentStrain, 
+            var offspring = new CannabisGenotype(ParentStrain + " x " + partner.ParentStrain,
                                                Mathf.Max(GenerationNumber, partner.GenerationNumber) + 1);
-            
+
             offspring.Origin = GenotypeOrigin.Bred;
-            
+
             // Combine traits using Mendelian inheritance
             CombineTraits(offspring, partner, mutationRate);
-            
+
             // Calculate new phenotypic profile
             offspring.CalculatePhenotypicExpression();
-            
+
             return offspring;
         }
-        
+
         /// <summary>
         /// Combine traits from two parents
         /// </summary>
@@ -312,25 +312,25 @@ namespace ProjectChimera.Data.Genetics
             var allTraitNames = Traits.Select(t => t.TraitName)
                                     .Union(partner.Traits.Select(t => t.TraitName))
                                     .Distinct();
-            
+
             foreach (var traitName in allTraitNames)
             {
                 var parentTrait1 = GetTrait(traitName);
                 var parentTrait2 = partner.GetTrait(traitName);
-                
+
                 float inheritedValue = CalculateInheritedValue(parentTrait1, parentTrait2);
-                
+
                 // Apply mutation
                 if (UnityEngine.Random.value < mutationRate)
                 {
                     inheritedValue *= UnityEngine.Random.Range(0.9f, 1.1f);
                 }
-                
+
                 var dominance = DetermineDominance(parentTrait1, parentTrait2);
                 offspring.AddTrait(traitName, inheritedValue, dominance);
             }
         }
-        
+
         /// <summary>
         /// Calculate inherited trait value
         /// </summary>
@@ -339,58 +339,58 @@ namespace ProjectChimera.Data.Genetics
             if (trait1 == null && trait2 == null) return 1.0f;
             if (trait1 == null) return trait2.ExpressedValue;
             if (trait2 == null) return trait1.ExpressedValue;
-            
+
             // Mendelian inheritance with dominance effects
             return trait1.Dominance switch
             {
                 TraitDominance.Dominant => trait1.ExpressedValue,
-                TraitDominance.Recessive => trait2.Dominance == TraitDominance.Recessive ? 
+                TraitDominance.Recessive => trait2.Dominance == TraitDominance.Recessive ?
                                           (trait1.ExpressedValue + trait2.ExpressedValue) / 2f : trait2.ExpressedValue,
                 TraitDominance.Codominant => (trait1.ExpressedValue + trait2.ExpressedValue) / 2f,
                 _ => (trait1.ExpressedValue + trait2.ExpressedValue) / 2f
             };
         }
-        
+
         /// <summary>
         /// Determine dominance relationship
         /// </summary>
         private TraitDominance DetermineDominance(GeneticTrait trait1, GeneticTrait trait2)
         {
             if (trait1 == null || trait2 == null) return TraitDominance.Codominant;
-            
+
             // Simple dominance determination
             if (trait1.Dominance == TraitDominance.Dominant || trait2.Dominance == TraitDominance.Dominant)
                 return TraitDominance.Dominant;
-            
+
             if (trait1.Dominance == TraitDominance.Recessive && trait2.Dominance == TraitDominance.Recessive)
                 return TraitDominance.Recessive;
-            
+
             return TraitDominance.Codominant;
         }
-        
+
         /// <summary>
         /// Calculate phenotypic expression from genotype
         /// </summary>
         public void CalculatePhenotypicExpression()
         {
             if (PhenotypicProfile == null) PhenotypicProfile = new PhenotypicProfile();
-            
+
             // Calculate visual traits
             PhenotypicProfile.PlantHeight = GetTrait("plant_height")?.ExpressedValue ?? 1.0f;
             PhenotypicProfile.LeafSize = GetTrait("leaf_size")?.ExpressedValue ?? 1.0f;
             PhenotypicProfile.BranchDensity = GetTrait("branch_density")?.ExpressedValue ?? 1.0f;
-            
+
             // Calculate cannabinoid production
             if (CannabinoidsProfile == null) CannabinoidsProfile = new CannabinoidsProfile();
             CannabinoidsProfile.THCContent = (GetTrait("thc_production")?.ExpressedValue ?? 0.8f) * 25f; // Max ~25%
             CannabinoidsProfile.CBDContent = (GetTrait("cbd_production")?.ExpressedValue ?? 0.6f) * 20f; // Max ~20%
-            
+
             // Update derived properties
             GrowthRate = GetTrait("growth_rate")?.ExpressedValue ?? 1.0f;
             YieldPotential = (GetTrait("yield_potential")?.ExpressedValue ?? 1.0f) * 100f;
             DiseaseResistance = (GetTrait("disease_resistance")?.ExpressedValue ?? 0.8f) * 100f;
         }
-        
+
         /// <summary>
         /// Get genotype summary information
         /// </summary>
@@ -408,17 +408,17 @@ namespace ProjectChimera.Data.Genetics
                 PrimaryTraits = GetPrimaryTraits()
             };
         }
-        
+
         /// <summary>
         /// Get primary traits for display
         /// </summary>
         private Dictionary<string, float> GetPrimaryTraits()
         {
             var primaryTraits = new Dictionary<string, float>();
-            
-            var importantTraits = new[] { "growth_rate", "yield_potential", "thc_production", 
+
+            var importantTraits = new[] { "growth_rate", "yield_potential", "thc_production",
                                         "disease_resistance", "stress_tolerance" };
-            
+
             foreach (var traitName in importantTraits)
             {
                 var trait = GetTrait(traitName);
@@ -427,10 +427,10 @@ namespace ProjectChimera.Data.Genetics
                     primaryTraits[traitName] = trait.ExpressedValue;
                 }
             }
-            
+
             return primaryTraits;
         }
-        
+
         /// <summary>
         /// Apply environmental pressure to modify trait expression
         /// </summary>
@@ -442,10 +442,10 @@ namespace ProjectChimera.Data.Genetics
                 trait.ExpressedValue *= environmentalEffect;
                 trait.ExpressedValue = Mathf.Clamp(trait.ExpressedValue, 0.1f, 2.0f);
             }
-            
+
             CalculatePhenotypicExpression();
         }
-        
+
         /// <summary>
         /// Calculate environmental effect on trait
         /// </summary>
@@ -453,7 +453,7 @@ namespace ProjectChimera.Data.Genetics
         {
             float baseEffect = 1.0f;
             float sensitivity = trait.EnvironmentalSensitivity;
-            
+
             // Different environments affect different traits
             float traitSusceptibility = environmentType.ToLower() switch
             {
@@ -462,11 +462,11 @@ namespace ProjectChimera.Data.Genetics
                 "disease" when trait.TraitName.Contains("resistance") => 1.1f,
                 _ => 1.0f
             };
-            
+
             return baseEffect + (intensity * sensitivity * (traitSusceptibility - 1.0f));
         }
     }
-    
+
     /// <summary>
     /// Genetic trait definition
     /// </summary>
@@ -481,7 +481,7 @@ namespace ProjectChimera.Data.Genetics
         public string Description;
         public List<string> AffectedSystems = new List<string>();
     }
-    
+
     /// <summary>
     /// Allele expression data
     /// </summary>
@@ -494,7 +494,7 @@ namespace ProjectChimera.Data.Genetics
         public bool IsActive;
         public GeneticEnvironmentalModifier[] Modifiers;
     }
-    
+
     /// <summary>
     /// Chromosome pair representation
     /// </summary>
@@ -507,7 +507,7 @@ namespace ProjectChimera.Data.Genetics
         public List<string> ActiveGenes = new List<string>();
         public float RecombinationRate = 0.5f;
     }
-    
+
     /// <summary>
     /// Phenotypic profile
     /// </summary>
@@ -521,7 +521,7 @@ namespace ProjectChimera.Data.Genetics
         public Color FlowerColor = Color.white;
         public PlantStructure StructureType = PlantStructure.Balanced;
     }
-    
+
     /// <summary>
     /// Cannabinoids profile
     /// </summary>
@@ -535,7 +535,7 @@ namespace ProjectChimera.Data.Genetics
         public float THCVContent = 0.3f; // Percentage
         public CannabinoidRatio DominantRatio = CannabinoidRatio.THC_Dominant;
     }
-    
+
     /// <summary>
     /// Terpenes profile
     /// </summary>
@@ -546,7 +546,7 @@ namespace ProjectChimera.Data.Genetics
         public TerpeneProfileType DominantProfile = TerpeneProfileType.Myrcene;
         public float OverallTerpeneContent = 2.5f; // Percentage
     }
-    
+
     /// <summary>
     /// Individual terpene content
     /// </summary>
@@ -558,7 +558,7 @@ namespace ProjectChimera.Data.Genetics
         public string AromaDescriptor;
         public string EffectProfile;
     }
-    
+
     /// <summary>
     /// Flavor profile
     /// </summary>
@@ -573,7 +573,7 @@ namespace ProjectChimera.Data.Genetics
         public float CitrusNotes = 30f;
         public float FloralNotes = 40f;
     }
-    
+
     /// <summary>
     /// Environmental preference
     /// </summary>
@@ -585,7 +585,7 @@ namespace ProjectChimera.Data.Genetics
         public float ToleranceRange;
         public float AdaptationRate;
     }
-    
+
     /// <summary>
     /// GxE interaction profile
     /// </summary>
@@ -596,7 +596,7 @@ namespace ProjectChimera.Data.Genetics
         public float PlasticityIndex = 0.6f;
         public List<CriticalPeriod> CriticalPeriods = new List<CriticalPeriod>();
     }
-    
+
     /// <summary>
     /// Critical development period
     /// </summary>
@@ -608,7 +608,7 @@ namespace ProjectChimera.Data.Genetics
         public List<string> SensitiveTraits = new List<string>();
         public float SensitivityMultiplier = 1.5f;
     }
-    
+
     /// <summary>
     /// Genetic environmental modifier
     /// </summary>
@@ -620,7 +620,7 @@ namespace ProjectChimera.Data.Genetics
         public float Duration;
         public bool IsActive;
     }
-    
+
     /// <summary>
     /// Genotype information for display
     /// </summary>
@@ -636,9 +636,9 @@ namespace ProjectChimera.Data.Genetics
         public bool IsStable;
         public Dictionary<string, float> PrimaryTraits;
     }
-    
+
     // Enums
-    
+
     public enum GenotypeOrigin
     {
         Natural,
@@ -647,7 +647,7 @@ namespace ProjectChimera.Data.Genetics
         Mutant,
         Engineered
     }
-    
+
     public enum TraitDominance
     {
         Dominant,
@@ -655,7 +655,7 @@ namespace ProjectChimera.Data.Genetics
         Codominant,
         Overdominant
     }
-    
+
     /// <summary>
     /// Genetic dominance type for allele pairs
     /// </summary>
@@ -665,7 +665,7 @@ namespace ProjectChimera.Data.Genetics
         Heterozygous,
         Codominant
     }
-    
+
     public enum PlantStructure
     {
         Compact,
@@ -674,7 +674,7 @@ namespace ProjectChimera.Data.Genetics
         Balanced,
         Spindly
     }
-    
+
     public enum CannabinoidRatio
     {
         THC_Dominant,
@@ -683,7 +683,7 @@ namespace ProjectChimera.Data.Genetics
         CBG_Enhanced,
         Low_Cannabinoid
     }
-    
+
     public enum TerpeneProfileType
     {
         Myrcene,
@@ -694,7 +694,7 @@ namespace ProjectChimera.Data.Genetics
         Terpinolene,
         Mixed
     }
-    
+
     /// <summary>
     /// Mutation record for tracking genetic changes
     /// </summary>
@@ -707,17 +707,17 @@ namespace ProjectChimera.Data.Genetics
         public float EffectMagnitude;
         public System.DateTime OccurrenceDate;
         public bool IsBeneficial;
-        
+
         // Missing properties for Systems layer
         public float PhenotypicEffect { get; set; }
         public bool IsNeutral = false;
         public bool IsHarmful { get; set; }
-        
+
         // Additional properties for GeneticAnalysisEngine
         public float FitnessEffect { get; set; } = 0f;
         public Dictionary<string, float> TraitEffects { get; set; } = new Dictionary<string, float>();
     }
-    
+
     /// <summary>
     /// Genetic marker for breeding analysis
     /// </summary>
@@ -729,7 +729,7 @@ namespace ProjectChimera.Data.Genetics
         public string LinkedTrait;
         public float MarkerDistance;
         public bool IsPresent;
-        
+
         // Missing property for Systems layer
         public string Key => MarkerId; // Key property for compatibility
         public float MarkerValue = 0f;

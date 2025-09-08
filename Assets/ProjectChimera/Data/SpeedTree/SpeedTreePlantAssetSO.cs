@@ -86,25 +86,25 @@ namespace ProjectChimera.Data.Visuals
 
             if (_targetStrain == null)
             {
-                Debug.LogWarning($"[Chimera] SpeedTreePlantAssetSO '{DisplayName}' has no target strain assigned.", this);
+                SharedLogger.LogWarning($"[Chimera] SpeedTreePlantAssetSO '{DisplayName}' has no target strain assigned.", this);
                 isValid = false;
             }
 
             if (string.IsNullOrEmpty(_speedTreeAssetPath))
             {
-                Debug.LogWarning($"[Chimera] SpeedTreePlantAssetSO '{DisplayName}' has no SpeedTree asset path specified.", this);
+                SharedLogger.LogWarning($"[Chimera] SpeedTreePlantAssetSO '{DisplayName}' has no SpeedTree asset path specified.", this);
                 isValid = false;
             }
 
             if (_speedTreePrefab == null)
             {
-                Debug.LogWarning($"[Chimera] SpeedTreePlantAssetSO '{DisplayName}' has no SpeedTree prefab assigned.", this);
+                SharedLogger.LogWarning($"[Chimera] SpeedTreePlantAssetSO '{DisplayName}' has no SpeedTree prefab assigned.", this);
                 isValid = false;
             }
 
             if (_growthStageAssets.Count == 0)
             {
-                Debug.LogWarning($"[Chimera] SpeedTreePlantAssetSO '{DisplayName}' has no growth stage assets configured.", this);
+                SharedLogger.LogWarning($"[Chimera] SpeedTreePlantAssetSO '{DisplayName}' has no growth stage assets configured.", this);
                 isValid = false;
             }
 

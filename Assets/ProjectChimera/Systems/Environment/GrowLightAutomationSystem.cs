@@ -1,3 +1,5 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
@@ -13,43 +15,43 @@ namespace ProjectChimera.Systems.Environment
     /// Extracted from AdvancedGrowLightSystem for modular architecture.
     /// Manages photoperiod cycles, automated schedules, and smart lighting programs.
     /// </summary>
-    public class GrowLightAutomationSystem : MonoBehaviour
+    public class GrowLightAutomationSystem : MonoBehaviour, ITickable
     {
         [Header("Automation Configuration")]
         [SerializeField] private bool _enableAutomationLogging = true;
         [SerializeField] private bool _automationEnabled = true;
         [SerializeField] private float _scheduleCheckInterval = 60f; // Check every minute
         [SerializeField] private int _maxScheduleHistory = 100;
-        
+
         // Dependencies
         private GrowLightController _lightController;
         private GrowLightSpectrumController _spectrumController;
         private GrowLightPlantOptimizer _plantOptimizer;
-        
+
         // Automation data
         private List<LightingSchedule> _activeSchedules = new List<LightingSchedule>();
         private List<AutomationEvent> _eventHistory = new List<AutomationEvent>();
         private PhotoperiodProgram _currentPhotoperiod;
         private float _lastScheduleCheck = 0f;
-        
+
         // Automation state
         private bool _isInPhotoperiod = false;
         private System.DateTime _currentCycleStartTime;
         private AutomationMode _currentMode = AutomationMode.Schedule;
-        
+
         // Events
         public System.Action<bool> OnPhotoperiodStateChanged;
         public System.Action<LightingSchedule> OnScheduleExecuted;
         public System.Action<AutomationEvent> OnAutomationEvent;
         public System.Action<PhotoperiodProgram> OnPhotoperiodChanged;
-        
+
         // Properties
         public bool AutomationEnabled => _automationEnabled;
         public bool IsInPhotoperiod => _isInPhotoperiod;
         public PhotoperiodProgram CurrentPhotoperiod => _currentPhotoperiod;
         public AutomationMode CurrentMode => _currentMode;
         public int ActiveSchedulesCount => _activeSchedules.Count;
-        
+
         /// <summary>
         /// Initialize automation system with dependencies
         /// </summary>
@@ -58,18 +60,18 @@ namespace ProjectChimera.Systems.Environment
             _lightController = lightController;
             _spectrumController = spectrumController;
             _plantOptimizer = plantOptimizer;
-            
+
             InitializeDefaultPhotoperiod();
-            
+
             LogDebug("Grow light automation system initialized");
         }
-        
-        private void Update()
+
+        public void Tick(float deltaTime)
         {
             if (!_automationEnabled) return;
-            
-            _lastScheduleCheck += Time.deltaTime;
-            
+
+            _lastScheduleCheck += deltaTime;
+
             if (_lastScheduleCheck >= _scheduleCheckInterval)
             {
                 CheckSchedules();
@@ -77,9 +79,9 @@ namespace ProjectChimera.Systems.Environment
                 _lastScheduleCheck = 0f;
             }
         }
-        
+
         #region Photoperiod Management
-        
+
         /// <summary>
         /// Initialize default photoperiod program
         /// </summary>
@@ -96,14 +98,14 @@ namespace ProjectChimera.Systems.Environment
                 SpectrumPreset = SpectrumPreset.Balanced,
                 IsActive = true
             };
-            
+
             _currentCycleStartTime = System.DateTime.Today.Add(_currentPhotoperiod.StartTime);
             if (_currentCycleStartTime > System.DateTime.Now)
             {
                 _currentCycleStartTime = _currentCycleStartTime.AddDays(-1);
             }
         }
-        
+
         /// <summary>
         /// Set photoperiod program
         /// </summary>
@@ -111,51 +113,51 @@ namespace ProjectChimera.Systems.Environment
         {
             _currentPhotoperiod = photoperiod;
             _currentCycleStartTime = System.DateTime.Today.Add(photoperiod.StartTime);
-            
+
             if (_currentCycleStartTime > System.DateTime.Now)
             {
                 _currentCycleStartTime = _currentCycleStartTime.AddDays(-1);
             }
-            
+
             OnPhotoperiodChanged?.Invoke(_currentPhotoperiod);
             LogDebug($"Photoperiod set: {photoperiod.Name} ({photoperiod.LightHours}h light / {photoperiod.DarkHours}h dark)");
         }
-        
+
         /// <summary>
         /// Update photoperiod state
         /// </summary>
         private void UpdatePhotoperiod()
         {
             if (_currentPhotoperiod == null || !_currentPhotoperiod.IsActive) return;
-            
+
             var currentTime = System.DateTime.Now;
             var cycleElapsed = (currentTime - _currentCycleStartTime).TotalHours;
             var totalCycleHours = _currentPhotoperiod.LightHours + _currentPhotoperiod.DarkHours;
-            
+
             // Check if we need to start a new cycle
             if (cycleElapsed >= totalCycleHours)
             {
                 _currentCycleStartTime = _currentCycleStartTime.AddHours(totalCycleHours);
                 cycleElapsed = (currentTime - _currentCycleStartTime).TotalHours;
-                
+
                 RecordAutomationEvent(AutomationEventType.PhotoperiodCycleStart, "New photoperiod cycle started");
             }
-            
+
             // Determine if we should be in light or dark period
             bool shouldBeInLightPeriod = cycleElapsed < _currentPhotoperiod.LightHours;
-            
+
             if (shouldBeInLightPeriod != _isInPhotoperiod)
             {
                 _isInPhotoperiod = shouldBeInLightPeriod;
                 OnPhotoperiodStateChanged?.Invoke(_isInPhotoperiod);
-                
+
                 if (_isInPhotoperiod)
                 {
                     // Switch to light period
                     _lightController.SetIntensity(_currentPhotoperiod.LightIntensity);
                     _spectrumController.ActivatePreset(_currentPhotoperiod.SpectrumPreset);
                     _lightController.TurnOn();
-                    
+
                     RecordAutomationEvent(AutomationEventType.PhotoperiodLightStart, "Photoperiod light period started");
                 }
                 else
@@ -166,12 +168,12 @@ namespace ProjectChimera.Systems.Environment
                     {
                         _lightController.TurnOff();
                     }
-                    
+
                     RecordAutomationEvent(AutomationEventType.PhotoperiodDarkStart, "Photoperiod dark period started");
                 }
             }
         }
-        
+
         /// <summary>
         /// Get photoperiod status information
         /// </summary>
@@ -179,11 +181,11 @@ namespace ProjectChimera.Systems.Environment
         {
             if (_currentPhotoperiod == null)
                 return null;
-            
+
             var currentTime = System.DateTime.Now;
             var cycleElapsed = (currentTime - _currentCycleStartTime).TotalHours;
             var totalCycleHours = _currentPhotoperiod.LightHours + _currentPhotoperiod.DarkHours;
-            
+
             float hoursRemainingInCurrentPeriod;
             if (_isInPhotoperiod)
             {
@@ -193,7 +195,7 @@ namespace ProjectChimera.Systems.Environment
             {
                 hoursRemainingInCurrentPeriod = (float)(totalCycleHours - cycleElapsed);
             }
-            
+
             return new PhotoperiodStatus
             {
                 IsInLightPeriod = _isInPhotoperiod,
@@ -203,11 +205,11 @@ namespace ProjectChimera.Systems.Environment
                 CurrentProgram = _currentPhotoperiod
             };
         }
-        
+
         #endregion
-        
+
         #region Schedule Management
-        
+
         /// <summary>
         /// Add a lighting schedule
         /// </summary>
@@ -215,12 +217,12 @@ namespace ProjectChimera.Systems.Environment
         {
             schedule.ScheduleId = System.Guid.NewGuid().ToString();
             schedule.IsActive = true;
-            
+
             _activeSchedules.Add(schedule);
-            
+
             LogDebug($"Added lighting schedule: {schedule.Name}");
         }
-        
+
         /// <summary>
         /// Remove a lighting schedule
         /// </summary>
@@ -235,7 +237,7 @@ namespace ProjectChimera.Systems.Environment
             }
             return false;
         }
-        
+
         /// <summary>
         /// Check and execute due schedules
         /// </summary>
@@ -245,13 +247,13 @@ namespace ProjectChimera.Systems.Environment
             var dueSchedules = _activeSchedules
                 .Where(s => s.IsActive && ShouldExecuteSchedule(s, currentTime))
                 .ToList();
-            
+
             foreach (var schedule in dueSchedules)
             {
                 ExecuteSchedule(schedule);
             }
         }
-        
+
         /// <summary>
         /// Check if a schedule should be executed
         /// </summary>
@@ -260,30 +262,30 @@ namespace ProjectChimera.Systems.Environment
             // Check if enough time has passed since last execution
             if ((currentTime - schedule.LastExecuted).TotalMinutes < 1) // Minimum 1 minute between executions
                 return false;
-            
+
             var currentTimeSpan = currentTime.TimeOfDay;
-            
+
             switch (schedule.ScheduleType)
             {
                 case ScheduleType.Daily:
                     return IsTimeClose(currentTimeSpan, schedule.ExecutionTime, System.TimeSpan.FromMinutes(1));
-                    
+
                 case ScheduleType.Weekly:
-                    return currentTime.DayOfWeek == schedule.DayOfWeek && 
+                    return currentTime.DayOfWeek == schedule.DayOfWeek &&
                            IsTimeClose(currentTimeSpan, schedule.ExecutionTime, System.TimeSpan.FromMinutes(1));
-                    
+
                 case ScheduleType.Interval:
                     return (currentTime - schedule.LastExecuted).TotalMinutes >= schedule.IntervalMinutes;
-                    
+
                 case ScheduleType.OneTime:
-                    return schedule.ExecutionDateTime.HasValue && 
+                    return schedule.ExecutionDateTime.HasValue &&
                            Mathf.Abs((float)(currentTime - schedule.ExecutionDateTime.Value).TotalMinutes) < 1f;
-                    
+
                 default:
                     return false;
             }
         }
-        
+
         /// <summary>
         /// Execute a lighting schedule
         /// </summary>
@@ -297,36 +299,36 @@ namespace ProjectChimera.Systems.Environment
                     case ScheduleAction.TurnOn:
                         _lightController.TurnOn();
                         break;
-                        
+
                     case ScheduleAction.TurnOff:
                         _lightController.TurnOff();
                         break;
-                        
+
                     case ScheduleAction.SetIntensity:
                         _lightController.SetIntensity(schedule.TargetIntensity);
                         break;
-                        
+
                     case ScheduleAction.SetSpectrum:
                         _spectrumController.ActivatePreset(schedule.TargetSpectrum);
                         break;
-                        
+
                     case ScheduleAction.Custom:
                         ExecuteCustomScheduleAction(schedule);
                         break;
                 }
-                
+
                 schedule.LastExecuted = System.DateTime.Now;
                 schedule.ExecutionCount++;
-                
+
                 // Handle one-time schedules
                 if (schedule.ScheduleType == ScheduleType.OneTime)
                 {
                     schedule.IsActive = false;
                 }
-                
+
                 OnScheduleExecuted?.Invoke(schedule);
                 RecordAutomationEvent(AutomationEventType.ScheduleExecuted, $"Executed schedule: {schedule.Name}");
-                
+
                 LogDebug($"Executed schedule: {schedule.Name} - {schedule.Action}");
             }
             catch (System.Exception ex)
@@ -335,7 +337,7 @@ namespace ProjectChimera.Systems.Environment
                 RecordAutomationEvent(AutomationEventType.Error, $"Schedule execution failed: {schedule.Name}");
             }
         }
-        
+
         /// <summary>
         /// Execute custom schedule action
         /// </summary>
@@ -345,14 +347,14 @@ namespace ProjectChimera.Systems.Environment
             // - Complex spectrum transitions
             // - Multi-step intensity changes
             // - Coordination with other systems
-            
+
             LogDebug($"Executing custom action for schedule: {schedule.Name}");
         }
-        
+
         #endregion
-        
+
         #region Smart Programs
-        
+
         /// <summary>
         /// Start a smart lighting program
         /// </summary>
@@ -363,52 +365,52 @@ namespace ProjectChimera.Systems.Environment
                 case SmartProgramType.SunriseSunset:
                     StartCoroutine(ExecuteSunriseSunsetProgram(program));
                     break;
-                    
+
                 case SmartProgramType.GrowthStageAdaptive:
                     StartCoroutine(ExecuteGrowthStageProgram(program));
                     break;
-                    
+
                 case SmartProgramType.EnergyOptimized:
                     StartCoroutine(ExecuteEnergyOptimizedProgram(program));
                     break;
             }
-            
+
             RecordAutomationEvent(AutomationEventType.SmartProgramStart, $"Started smart program: {program.Name}");
             LogDebug($"Started smart lighting program: {program.Name}");
         }
-        
+
         /// <summary>
         /// Execute sunrise/sunset simulation program
         /// </summary>
         private IEnumerator ExecuteSunriseSunsetProgram(SmartLightingProgram program)
         {
             float transitionDuration = program.Parameters.GetValueOrDefault("transitionMinutes", 30f) * 60f;
-            
+
             // Sunrise
             _spectrumController.ActivatePreset(SpectrumPreset.Dawn);
             yield return new WaitForSeconds(1f);
-            
+
             float startIntensity = 0f;
             float targetIntensity = program.Parameters.GetValueOrDefault("maxIntensity", 800f);
-            
+
             for (float t = 0; t < transitionDuration; t += Time.deltaTime)
             {
                 float progress = t / transitionDuration;
                 float currentIntensity = Mathf.Lerp(startIntensity, targetIntensity, progress);
                 _lightController.SetIntensityImmediate(currentIntensity);
-                
+
                 // Gradually shift to midday spectrum
                 if (progress > 0.5f)
                 {
                     _spectrumController.ActivatePreset(SpectrumPreset.Midday);
                 }
-                
+
                 yield return null;
             }
-            
+
             RecordAutomationEvent(AutomationEventType.SmartProgramComplete, "Sunrise simulation completed");
         }
-        
+
         /// <summary>
         /// Execute growth stage adaptive program
         /// </summary>
@@ -424,17 +426,17 @@ namespace ProjectChimera.Systems.Environment
                         .GroupBy(p => GetPlantGrowthStage(p.PlantComponent))
                         .OrderByDescending(g => g.Count())
                         .FirstOrDefault()?.Key;
-                    
+
                     if (dominantStage.HasValue)
                     {
                         AdaptToGrowthStage(dominantStage.Value);
                     }
                 }
-                
+
                 yield return new WaitForSeconds(program.Parameters.GetValueOrDefault("checkIntervalMinutes", 30f) * 60f);
             }
         }
-        
+
         /// <summary>
         /// Execute energy optimized program
         /// </summary>
@@ -444,41 +446,41 @@ namespace ProjectChimera.Systems.Environment
             // - Dimming during off-peak hours
             // - Using more efficient spectrums
             // - Coordinating with other environmental systems
-            
+
             yield return new WaitForSeconds(1f);
             RecordAutomationEvent(AutomationEventType.SmartProgramComplete, "Energy optimization cycle completed");
         }
-        
+
         /// <summary>
         /// Adapt lighting to specific growth stage
         /// </summary>
-        private void AdaptToGrowthStage(PlantGrowthStage stage)
+        private void AdaptToGrowthStage(ProjectChimera.Data.Shared.PlantGrowthStage stage)
         {
             switch (stage)
             {
-                case PlantGrowthStage.Seedling:
+                case ProjectChimera.Data.Shared.PlantGrowthStage.Seedling:
                     _lightController.SetIntensity(300f);
                     _spectrumController.ActivatePreset(SpectrumPreset.Dawn);
                     break;
-                    
-                case PlantGrowthStage.Vegetative:
+
+                case ProjectChimera.Data.Shared.PlantGrowthStage.Vegetative:
                     _lightController.SetIntensity(600f);
                     _spectrumController.ActivatePreset(SpectrumPreset.Vegetative);
                     break;
-                    
-                case PlantGrowthStage.Flowering:
+
+                case ProjectChimera.Data.Shared.PlantGrowthStage.Flowering:
                     _lightController.SetIntensity(800f);
                     _spectrumController.ActivatePreset(SpectrumPreset.Flowering);
                     break;
             }
-            
+
             RecordAutomationEvent(AutomationEventType.GrowthStageAdaptation, $"Adapted to growth stage: {stage}");
         }
-        
+
         #endregion
-        
+
         #region Control Methods
-        
+
         /// <summary>
         /// Enable or disable automation
         /// </summary>
@@ -488,7 +490,7 @@ namespace ProjectChimera.Systems.Environment
             RecordAutomationEvent(AutomationEventType.ModeChange, $"Automation {(enabled ? "enabled" : "disabled")}");
             LogDebug($"Automation {(enabled ? "enabled" : "disabled")}");
         }
-        
+
         /// <summary>
         /// Set automation mode
         /// </summary>
@@ -498,7 +500,7 @@ namespace ProjectChimera.Systems.Environment
             RecordAutomationEvent(AutomationEventType.ModeChange, $"Automation mode changed to: {mode}");
             LogDebug($"Automation mode set to: {mode}");
         }
-        
+
         /// <summary>
         /// Get all active schedules
         /// </summary>
@@ -506,7 +508,7 @@ namespace ProjectChimera.Systems.Environment
         {
             return _activeSchedules.Where(s => s.IsActive).ToList();
         }
-        
+
         /// <summary>
         /// Clear all schedules
         /// </summary>
@@ -516,11 +518,11 @@ namespace ProjectChimera.Systems.Environment
             RecordAutomationEvent(AutomationEventType.ScheduleCleared, "All schedules cleared");
             LogDebug("All lighting schedules cleared");
         }
-        
+
         #endregion
-        
+
         #region Event Tracking
-        
+
         /// <summary>
         /// Record automation event
         /// </summary>
@@ -533,17 +535,17 @@ namespace ProjectChimera.Systems.Environment
                 EventType = eventType,
                 Description = description
             };
-            
+
             _eventHistory.Add(automationEvent);
             OnAutomationEvent?.Invoke(automationEvent);
-            
+
             // Keep history manageable
             if (_eventHistory.Count > _maxScheduleHistory)
             {
                 _eventHistory.RemoveAt(0);
             }
         }
-        
+
         /// <summary>
         /// Get recent automation events
         /// </summary>
@@ -551,11 +553,11 @@ namespace ProjectChimera.Systems.Environment
         {
             return _eventHistory.TakeLast(count).ToList();
         }
-        
+
         #endregion
-        
+
         #region Utility Methods
-        
+
         /// <summary>
         /// Check if two times are close to each other
         /// </summary>
@@ -564,38 +566,67 @@ namespace ProjectChimera.Systems.Environment
             var difference = time1 > time2 ? time1 - time2 : time2 - time1;
             return difference <= tolerance;
         }
-        
+
         /// <summary>
         /// Get plant growth stage from component using reflection if needed
         /// </summary>
         private ProjectChimera.Data.Shared.PlantGrowthStage GetPlantGrowthStage(MonoBehaviour plantComponent)
         {
             if (plantComponent == null) return ProjectChimera.Data.Shared.PlantGrowthStage.Seed;
-            
+
             // Try to get CurrentGrowthStage property using reflection
             var property = plantComponent.GetType().GetProperty("CurrentGrowthStage");
             if (property != null && property.PropertyType == typeof(ProjectChimera.Data.Shared.PlantGrowthStage))
             {
                 return (ProjectChimera.Data.Shared.PlantGrowthStage)property.GetValue(plantComponent);
             }
-            
+
             return ProjectChimera.Data.Shared.PlantGrowthStage.Seed; // Default
         }
-        
+
         #endregion
-        
+
         private void LogDebug(string message)
         {
             if (_enableAutomationLogging)
-                Debug.Log($"[GrowLightAutomationSystem] {message}");
+                ChimeraLogger.Log($"[GrowLightAutomationSystem] {message}");
         }
-        
+
         private void LogError(string message)
         {
-            Debug.LogError($"[GrowLightAutomationSystem] {message}");
+            ChimeraLogger.LogError($"[GrowLightAutomationSystem] {message}");
         }
+
+        protected virtual void Start()
+        {
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
+        }
+
+        protected virtual void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
+        }
+
+        #region ITickable Implementation
+
+        public int Priority => TickPriority.EnvironmentalManager;
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+        public void OnRegistered()
+        {
+            ChimeraLogger.LogVerbose("[GrowLightAutomationSystem] Registered with UpdateOrchestrator");
+        }
+
+        public void OnUnregistered()
+        {
+            ChimeraLogger.LogVerbose("[GrowLightAutomationSystem] Unregistered from UpdateOrchestrator");
+        }
+
+        #endregion
     }
-    
+
     /// <summary>
     /// Photoperiod program configuration
     /// </summary>
@@ -611,7 +642,7 @@ namespace ProjectChimera.Systems.Environment
         public SpectrumPreset SpectrumPreset = SpectrumPreset.Balanced;
         public bool IsActive = true;
     }
-    
+
     /// <summary>
     /// Photoperiod status information
     /// </summary>
@@ -624,7 +655,7 @@ namespace ProjectChimera.Systems.Environment
         public System.DateTime NextStateChangeTime;
         public PhotoperiodProgram CurrentProgram;
     }
-    
+
     /// <summary>
     /// Lighting schedule configuration
     /// </summary>
@@ -644,11 +675,11 @@ namespace ProjectChimera.Systems.Environment
         public bool IsActive = true;
         public System.DateTime LastExecuted;
         public int ExecutionCount = 0;
-        
+
         // Additional property for compatibility with LightingController
         public List<LightingScheduleEntry> ScheduleEntries { get; set; } = new List<LightingScheduleEntry>();
     }
-    
+
     /// <summary>
     /// Smart lighting program
     /// </summary>
@@ -660,7 +691,7 @@ namespace ProjectChimera.Systems.Environment
         public Dictionary<string, float> Parameters = new Dictionary<string, float>();
         public bool IsActive = true;
     }
-    
+
     /// <summary>
     /// Automation event record
     /// </summary>
@@ -672,7 +703,7 @@ namespace ProjectChimera.Systems.Environment
         public AutomationEventType EventType;
         public string Description;
     }
-    
+
     public enum AutomationMode
     {
         Manual,
@@ -681,7 +712,7 @@ namespace ProjectChimera.Systems.Environment
         Smart,
         PlantAdaptive
     }
-    
+
     public enum ScheduleType
     {
         Daily,
@@ -689,7 +720,7 @@ namespace ProjectChimera.Systems.Environment
         Interval,
         OneTime
     }
-    
+
     public enum ScheduleAction
     {
         TurnOn,
@@ -698,7 +729,7 @@ namespace ProjectChimera.Systems.Environment
         SetSpectrum,
         Custom
     }
-    
+
     public enum SmartProgramType
     {
         SunriseSunset,
@@ -706,7 +737,7 @@ namespace ProjectChimera.Systems.Environment
         EnergyOptimized,
         WeatherSync
     }
-    
+
     public enum AutomationEventType
     {
         ScheduleExecuted,

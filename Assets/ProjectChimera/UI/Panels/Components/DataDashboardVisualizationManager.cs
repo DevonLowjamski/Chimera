@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.UI.Components;
 using ProjectChimera.Systems.Analytics;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels.Components
 {
@@ -450,13 +451,13 @@ namespace ProjectChimera.UI.Panels.Components
         private void LogInfo(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[DataDashboardVisualization] {message}");
+                ChimeraLogger.Log($"[DataDashboardVisualization] {message}");
         }
 
         private void LogWarning(string message)
         {
             if (_enableDebugLogging)
-                Debug.LogWarning($"[DataDashboardVisualization] {message}");
+                ChimeraLogger.LogWarning($"[DataDashboardVisualization] {message}");
         }
     }
 }

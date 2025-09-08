@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using ProjectChimera.UI.Core;
 using ProjectChimera.UI.Panels.Components;
 using ProjectChimera.Systems.Analytics;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -70,7 +71,7 @@ namespace ProjectChimera.UI.Panels
                 CreateDashboardLayout();
                 InitializeComponents();
                 SetupEventHandlers();
-                
+
                 LogInfo("Cannabis cultivation dashboard initialized successfully");
             }
             catch (System.Exception ex)
@@ -91,12 +92,12 @@ namespace ProjectChimera.UI.Panels
             var titleSection = new VisualElement();
             titleSection.name = "title-section";
             titleSection.AddToClassList("dashboard-title-section");
-            
+
             _titleLabel = new Label("Cannabis Analytics Dashboard");
             _titleLabel.AddToClassList("dashboard-title");
             _titleLabel.name = "dashboard-title-label";
             titleSection.Add(_titleLabel);
-            
+
             _dashboardContainer.Add(titleSection);
 
             // Create filters container
@@ -179,7 +180,7 @@ namespace ProjectChimera.UI.Panels
             // Queue visualization updates through performance manager
             foreach (var metric in metrics)
             {
-                _performanceManager?.QueueUpdate(() => 
+                _performanceManager?.QueueUpdate(() =>
                 {
                     _visualizationManager?.UpdateKPICard(metric.Key, metric.Value);
                 });
@@ -190,7 +191,7 @@ namespace ProjectChimera.UI.Panels
 
         private void HandleHistoryDataUpdated(string metricKey, List<MetricDataPoint> historyData)
         {
-            _performanceManager?.QueueUpdate(() => 
+            _performanceManager?.QueueUpdate(() =>
             {
                 _visualizationManager?.UpdateChartData(metricKey, historyData);
             });
@@ -231,7 +232,7 @@ namespace ProjectChimera.UI.Panels
         private void HandleMetricUpdated(string metricKey, float value)
         {
             // Queue trend indicator update
-            _performanceManager?.QueueUpdate(() => 
+            _performanceManager?.QueueUpdate(() =>
             {
                 _visualizationManager?.UpdateTrendIndicators();
             });
@@ -275,7 +276,7 @@ namespace ProjectChimera.UI.Panels
         {
             _dataManager?.UpdateAnalyticsService(analyticsService);
             _configurationManager?.UpdateAnalyticsService(analyticsService);
-            
+
             LogInfo("Analytics service manually set for cannabis cultivation dashboard");
         }
 
@@ -300,7 +301,20 @@ namespace ProjectChimera.UI.Panels
         /// </summary>
         public Dictionary<string, float> GetCurrentMetrics()
         {
-            return _dataManager?.CurrentMetrics ?? new Dictionary<string, float>();
+            var objectMetrics = _dataManager?.CurrentMetrics ?? new Dictionary<string, float>();
+            var floatMetrics = new Dictionary<string, float>();
+
+            foreach (var kvp in objectMetrics)
+            {
+                if (kvp.Value is float floatValue)
+                    floatMetrics[kvp.Key] = floatValue;
+                else if (kvp.Value != null && float.TryParse(kvp.Value.ToString(), out float parsedValue))
+                    floatMetrics[kvp.Key] = parsedValue;
+                else
+                    floatMetrics[kvp.Key] = 0f;
+            }
+
+            return floatMetrics;
         }
 
         /// <summary>
@@ -366,13 +380,13 @@ namespace ProjectChimera.UI.Panels
         /// <summary>
         /// Get comprehensive dashboard status information
         /// </summary>
-        public Dictionary<string, object> GetDashboardStatus()
+        public Dictionary<string, float> GetDashboardStatus()
         {
-            var status = new Dictionary<string, object>
+            var status = new Dictionary<string, float>
             {
-                ["IsPanelActive"] = _isPanelActive,
-                ["ComponentsInitialized"] = _dataManager != null && _configurationManager != null && 
-                                           _visualizationManager != null && _performanceManager != null
+                ["IsPanelActive"] = _isPanelActive ? 1.0f : 0.0f,
+                ["ComponentsInitialized"] = (_dataManager != null && _configurationManager != null &&
+                                           _visualizationManager != null && _performanceManager != null) ? 1.0f : 0.0f
             };
 
             if (_dataManager != null)
@@ -396,7 +410,12 @@ namespace ProjectChimera.UI.Panels
                 var config = _configurationManager.GetCurrentConfiguration();
                 foreach (var kvp in config)
                 {
-                    status[$"Config_{kvp.Key}"] = kvp.Value;
+                    if (kvp.Value is float floatValue)
+                        status[$"Config_{kvp.Key}"] = floatValue;
+                    else if (kvp.Value != null && float.TryParse(kvp.Value.ToString(), out float parsedValue))
+                        status[$"Config_{kvp.Key}"] = parsedValue;
+                    else
+                        status[$"Config_{kvp.Key}"] = 0f;
                 }
             }
 
@@ -423,19 +442,19 @@ namespace ProjectChimera.UI.Panels
         private void LogInfo(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[DataDashboardPanel] {message}");
+                ChimeraLogger.Log($"[DataDashboardPanel] {message}");
         }
 
         private void LogWarning(string message)
         {
             if (_enableDebugLogging)
-                Debug.LogWarning($"[DataDashboardPanel] {message}");
+                ChimeraLogger.LogWarning($"[DataDashboardPanel] {message}");
         }
 
         private void LogError(string message)
         {
             if (_enableDebugLogging)
-                Debug.LogError($"[DataDashboardPanel] {message}");
+                ChimeraLogger.LogError($"[DataDashboardPanel] {message}");
         }
 
         #endregion

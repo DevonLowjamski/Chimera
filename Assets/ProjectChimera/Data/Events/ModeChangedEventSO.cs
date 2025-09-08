@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectChimera.Shared;
 
 namespace ProjectChimera.Data.Events
 {
@@ -17,12 +18,12 @@ namespace ProjectChimera.Data.Events
         {
             if (_enableDebugLogging)
             {
-                Debug.Log($"[ModeChangedEventSO] Mode change event: {data.PreviousMode} → {data.NewMode} at {data.Timestamp:HH:mm:ss}");
+                SharedLogger.Log($"[ModeChangedEventSO] Mode change event: {data.PreviousMode} → {data.NewMode} at {data.Timestamp:HH:mm:ss}");
             }
 
             if (_validateModeTransitions && !IsValidModeTransition(data.PreviousMode, data.NewMode))
             {
-                Debug.LogWarning($"[ModeChangedEventSO] Potentially invalid mode transition: {data.PreviousMode} → {data.NewMode}");
+                SharedLogger.LogWarning($"[ModeChangedEventSO] Potentially invalid mode transition: {data.PreviousMode} → {data.NewMode}");
             }
 
             base.Invoke(data);
@@ -35,7 +36,7 @@ namespace ProjectChimera.Data.Events
             // Validate configuration
             if (_enableDebugLogging)
             {
-                Debug.Log($"[ModeChangedEventSO] Debug logging enabled for {name}");
+                SharedLogger.Log($"[ModeChangedEventSO] Debug logging enabled for {name}");
             }
         }
 
@@ -112,6 +113,8 @@ namespace ProjectChimera.Data.Events
     {
         Cultivation = 0,    // Default view - plant care and monitoring
         Construction = 1,   // Blueprint and utility visibility toggles
-        Genetics = 2        // Heatmap overlay toggles and genetic tools
+        Genetics = 2,       // Heatmap overlay toggles and genetic tools
+        Business = 3,       // Business management mode
+        Research = 4        // Research and development mode
     }
 }

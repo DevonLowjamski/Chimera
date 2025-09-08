@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -290,13 +291,13 @@ namespace ProjectChimera.Systems.Analytics
         public void StartCollection()
         {
             _isCollecting = true;
-            Debug.Log("[DataCollector] Started data collection");
+            ChimeraLogger.Log("[DataCollector] Started data collection");
         }
         
         public void StopCollection()
         {
             _isCollecting = false;
-            Debug.Log("[DataCollector] Stopped data collection");
+            ChimeraLogger.Log("[DataCollector] Stopped data collection");
         }
         
         public void SetCollectionInterval(float interval)
@@ -337,20 +338,20 @@ namespace ProjectChimera.Systems.Analytics
         public void StartRealTimeProcessing()
         {
             _realTimeProcessing = true;
-            Debug.Log("[DataProcessor] Started real-time processing");
+            ChimeraLogger.Log("[DataProcessor] Started real-time processing");
         }
         
         public void StartBatchProcessing()
         {
             _batchProcessing = true;
-            Debug.Log("[DataProcessor] Started batch processing");
+            ChimeraLogger.Log("[DataProcessor] Started batch processing");
         }
         
         public void StopProcessing()
         {
             _realTimeProcessing = false;
             _batchProcessing = false;
-            Debug.Log("[DataProcessor] Stopped processing");
+            ChimeraLogger.Log("[DataProcessor] Stopped processing");
         }
         
         public void SetTimeout(float timeout)
@@ -464,7 +465,7 @@ namespace ProjectChimera.Systems.Analytics
                 }
             }
             
-            Debug.Log($"[DataStorage] Initialized storage at: {_storagePath}");
+            ChimeraLogger.Log($"[DataStorage] Initialized storage at: {_storagePath}");
         }
         
         public void EnableLocalStorage(bool enable)
@@ -493,11 +494,11 @@ namespace ProjectChimera.Systems.Analytics
                 await Task.Delay(5);
                 
                 // In a real implementation, this would serialize and write the batch to disk
-                Debug.Log($"[DataStorage] Stored batch {batch.BatchId} with {batch.Events.Count} events");
+                ChimeraLogger.Log($"[DataStorage] Stored batch {batch.BatchId} with {batch.Events.Count} events");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[DataStorage] Failed to store batch: {ex.Message}");
+                ChimeraLogger.LogError($"[DataStorage] Failed to store batch: {ex.Message}");
                 throw;
             }
         }
@@ -508,12 +509,12 @@ namespace ProjectChimera.Systems.Analytics
                 return;
             
             // In a real implementation, this would remove files older than retention period
-            Debug.Log($"[DataStorage] Cleaned up data older than {_retentionDays} days");
+            ChimeraLogger.Log($"[DataStorage] Cleaned up data older than {_retentionDays} days");
         }
         
         public void Shutdown()
         {
-            Debug.Log("[DataStorage] Storage shutdown complete");
+            ChimeraLogger.Log("[DataStorage] Storage shutdown complete");
         }
     }
     

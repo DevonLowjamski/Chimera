@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Economy;
 using ProjectChimera.Data.Construction;
@@ -12,69 +13,71 @@ namespace ProjectChimera.Systems.Construction
     /// Integration service bridging Economy system with Construction system for Phase 8 MVP
     /// Manages the flow of unlocked schematics into usable construction templates
     /// </summary>
-    public class SchematicConstructionIntegration : ChimeraManager
+    public class SchematicConstructionIntegration : ChimeraManager, ITickable
     {
         [Header("Integration Configuration")]
         [SerializeField] private bool _enableSchematicIntegration = true;
         [SerializeField] private bool _autoRegisterUnlocks = true;
         [SerializeField] private bool _enableConstructionNotifications = true;
         [SerializeField] private float _integrationCheckInterval = 5f;
-        
+
         [Header("Schematic to Template Mapping")]
         [SerializeField] private List<SchematicTemplateMapping> _schematicMappings = new List<SchematicTemplateMapping>();
         [SerializeField] private bool _enableDynamicMappingGeneration = true;
         [SerializeField] private string _defaultTemplatePrefix = "Schematic_";
-        
+
         [Header("Construction Integration")]
         [SerializeField] private bool _updateConstructionCatalog = true;
         [SerializeField] private bool _notifyConstructionManager = true;
         [SerializeField] private bool _enableProgressiveUnlocks = true;
-        
+
         // Service dependencies
         private ConstructionManager _constructionManager;
-        
+
         // Integration state
         private HashSet<string> _registeredUnlocks = new HashSet<string>();
         private Dictionary<string, string> _schematicToTemplateMap = new Dictionary<string, string>();
         private Dictionary<string, DateTime> _unlockTimestamps = new Dictionary<string, DateTime>();
         private List<string> _pendingNotifications = new List<string>();
-        
+
         // Integration metrics
         private int _totalSchematicsIntegrated = 0;
         private int _activeConstructionTemplates = 0;
         private float _lastIntegrationCheck = 0f;
-        
+
         public override ManagerPriority Priority => ManagerPriority.Normal;
-        
+
         // Public Properties
         public bool IntegrationEnabled { get => _enableSchematicIntegration; set => _enableSchematicIntegration = value; }
         public int IntegratedSchematicsCount => _registeredUnlocks.Count;
         public int TotalSchematicsIntegrated => _totalSchematicsIntegrated;
         public List<string> UnlockedSchematicIds => new List<string>(_registeredUnlocks);
         public Dictionary<string, string> SchematicTemplateMapping => new Dictionary<string, string>(_schematicToTemplateMap);
-        
+
         // Events
         public System.Action<ConstructionSchematicSO, string> OnSchematicIntegrated; // schematic, templateName
         public System.Action<string> OnConstructionTemplateUnlocked; // templateName
         public System.Action<int> OnIntegrationUpdate; // total unlocked count
         public System.Action<string> OnIntegrationError; // error message
-        
+
         protected override void OnManagerInitialize()
         {
             InitializeServiceReferences();
             InitializeSchematicMappings();
             RegisterExistingUnlocks();
             SubscribeToSchematicEvents();
-            
+
             LogInfo($"SchematicConstructionIntegration initialized - {IntegratedSchematicsCount} schematics integrated");
         }
-        
-        private void Update()
+
+        public void Tick(float deltaTime)
+
+
         {
             if (!IsInitialized) return;
-            
+
             float currentTime = Time.time;
-            
+
             // Periodic integration check
             if (_enableSchematicIntegration && currentTime - _lastIntegrationCheck >= _integrationCheckInterval)
             {
@@ -82,14 +85,21 @@ namespace ProjectChimera.Systems.Construction
                 _lastIntegrationCheck = currentTime;
             }
         }
-        
+
+        // ITickable implementation
+        int ITickable.Priority => 0;
+        bool ITickable.Enabled => enabled && gameObject.activeInHierarchy;
+
+        public void OnRegistered() { }
+        public void OnUnregistered() { }
+
         /// <summary>
         /// Get list of unlocked construction templates based on purchased schematics
         /// </summary>
         public List<string> GetUnlockedConstructionTemplates()
         {
             var unlockedTemplates = new List<string>();
-            
+
             foreach (string schematicId in _registeredUnlocks)
             {
                 if (_schematicToTemplateMap.TryGetValue(schematicId, out string templateName))
@@ -97,19 +107,19 @@ namespace ProjectChimera.Systems.Construction
                     unlockedTemplates.Add(templateName);
                 }
             }
-            
+
             return unlockedTemplates;
         }
-        
+
         /// <summary>
         /// Check if a specific construction template is unlocked via schematics
         /// </summary>
         public bool IsConstructionTemplateUnlocked(string templateName)
         {
-            return _schematicToTemplateMap.ContainsValue(templateName) && 
+            return _schematicToTemplateMap.ContainsValue(templateName) &&
                    _schematicToTemplateMap.Any(kvp => kvp.Value == templateName && _registeredUnlocks.Contains(kvp.Key));
         }
-        
+
         /// <summary>
         /// Get the schematic that unlocks a specific construction template
         /// </summary>
@@ -118,7 +128,7 @@ namespace ProjectChimera.Systems.Construction
             var mapping = _schematicToTemplateMap.FirstOrDefault(kvp => kvp.Value == templateName);
             return mapping.Key ?? null;
         }
-        
+
         /// <summary>
         /// Manually register a schematic unlock for construction integration
         /// </summary>
@@ -126,17 +136,17 @@ namespace ProjectChimera.Systems.Construction
         {
             if (string.IsNullOrEmpty(schematicId) || _registeredUnlocks.Contains(schematicId))
                 return false;
-            
+
             _registeredUnlocks.Add(schematicId);
             _unlockTimestamps[schematicId] = DateTime.Now;
             _totalSchematicsIntegrated++;
-            
+
             // Find and register corresponding construction template
             if (_schematicToTemplateMap.TryGetValue(schematicId, out string templateName))
             {
                 NotifyConstructionUnlock(templateName);
                 OnConstructionTemplateUnlocked?.Invoke(templateName);
-                
+
                 LogInfo($"Registered schematic unlock: {schematicId} → {templateName}");
                 return true;
             }
@@ -145,18 +155,18 @@ namespace ProjectChimera.Systems.Construction
                 // Generate dynamic mapping
                 string generatedTemplateName = GenerateTemplateName(schematicId);
                 _schematicToTemplateMap[schematicId] = generatedTemplateName;
-                
+
                 NotifyConstructionUnlock(generatedTemplateName);
                 OnConstructionTemplateUnlocked?.Invoke(generatedTemplateName);
-                
+
                 LogInfo($"Dynamically mapped schematic: {schematicId} → {generatedTemplateName}");
                 return true;
             }
-            
+
             LogWarning($"No template mapping found for schematic: {schematicId}");
             return false;
         }
-        
+
         /// <summary>
         /// Add or update schematic to template mapping
         /// </summary>
@@ -164,19 +174,19 @@ namespace ProjectChimera.Systems.Construction
         {
             if (string.IsNullOrEmpty(schematicId) || string.IsNullOrEmpty(templateName))
                 return;
-            
+
             _schematicToTemplateMap[schematicId] = templateName;
-            
+
             // If schematic is already unlocked, register the template immediately
             if (_registeredUnlocks.Contains(schematicId))
             {
                 NotifyConstructionUnlock(templateName);
                 OnConstructionTemplateUnlocked?.Invoke(templateName);
             }
-            
+
             LogInfo($"Added schematic mapping: {schematicId} → {templateName}");
         }
-        
+
         /// <summary>
         /// Bulk add schematic mappings from configuration
         /// </summary>
@@ -189,10 +199,10 @@ namespace ProjectChimera.Systems.Construction
                     AddSchematicMapping(mapping.SchematicId, mapping.TemplateNames[0]);
                 }
             }
-            
+
             LogInfo($"Configured {mappings.Count} schematic mappings");
         }
-        
+
         /// <summary>
         /// Get integration statistics
         /// </summary>
@@ -207,7 +217,7 @@ namespace ProjectChimera.Systems.Construction
                 LastUpdateTime = DateTime.Now
             };
         }
-        
+
         private void InitializeServiceReferences()
         {
             var gameManager = GameManager.Instance;
@@ -215,11 +225,11 @@ namespace ProjectChimera.Systems.Construction
             {
                 _constructionManager = gameManager.GetManager<ConstructionManager>();
             }
-            
+
             if (_constructionManager == null)
                 LogWarning("ConstructionManager not found - construction notifications disabled");
         }
-        
+
         private void InitializeSchematicMappings()
         {
             // Initialize mappings from configuration
@@ -233,24 +243,24 @@ namespace ProjectChimera.Systems.Construction
                     }
                 }
             }
-            
+
             LogInfo($"Initialized {_schematicToTemplateMap.Count} schematic-to-template mappings");
         }
-        
+
         private void RegisterExistingUnlocks()
         {
             // Note: Economy system integration handled through events to prevent circular dependency
             // In full implementation, would query Economy system for existing unlocks
             LogInfo("RegisterExistingUnlocks: Event-based integration (no direct Economy reference)");
         }
-        
+
         private void SubscribeToSchematicEvents()
         {
             // Note: Economy system integration handled through events to prevent circular dependency
             // In full implementation, would subscribe to Economy system events
             LogInfo("SubscribeToSchematicEvents: Event-based integration (no direct Economy reference)");
         }
-        
+
         private void ProcessPendingIntegrations()
         {
             // Process any pending integration notifications
@@ -260,27 +270,27 @@ namespace ProjectChimera.Systems.Construction
                 _pendingNotifications.Remove(templateName);
             }
         }
-        
+
         private void NotifyConstructionUnlock(string templateName)
         {
             if (!_notifyConstructionManager || _constructionManager == null)
                 return;
-            
+
             // The construction manager can use GetUnlockedConstructionTemplates() to get current unlocks
             // This integration provides the data source for construction system queries
-            
+
             if (_enableConstructionNotifications)
             {
                 LogInfo($"Construction template unlocked: {templateName}");
             }
         }
-        
+
         private string GenerateTemplateName(string schematicId)
         {
             // Generate a template name based on schematic ID
             return $"{_defaultTemplatePrefix}{schematicId}";
         }
-        
+
         private void OnSchematicUnlockedHandler(ConstructionSchematicSO schematic)
         {
             if (_autoRegisterUnlocks)
@@ -290,22 +300,22 @@ namespace ProjectChimera.Systems.Construction
                 OnIntegrationUpdate?.Invoke(_registeredUnlocks.Count);
             }
         }
-        
+
         private void OnSchematicPurchasedHandler(ConstructionSchematicSO schematic, float cost)
         {
             // Schematic purchase automatically unlocks it, so this will trigger the unlock handler
             LogInfo($"Schematic purchased and ready for construction integration: {schematic.SchematicName}");
         }
-        
+
         protected override void OnManagerShutdown()
         {
             // Note: Economy system integration handled through events to prevent circular dependency
             // In full implementation, would unsubscribe from Economy system events
-            
+
             LogInfo($"SchematicConstructionIntegration shutdown - {IntegratedSchematicsCount} schematics were integrated");
         }
     }
-    
+
     /// <summary>
     /// Configuration mapping between schematics and construction templates
     /// </summary>
@@ -317,10 +327,10 @@ namespace ProjectChimera.Systems.Construction
         [SerializeField] public List<string> TemplateNames = new List<string>();
         [SerializeField] public bool IsActive = true;
         [SerializeField] public string Description;
-        
+
         public bool IsValid => !string.IsNullOrEmpty(SchematicId) && TemplateNames.Count > 0 && IsActive;
     }
-    
+
     /// <summary>
     /// Statistics for schematic-construction integration
     /// </summary>
@@ -333,4 +343,13 @@ namespace ProjectChimera.Systems.Construction
         public bool IntegrationEnabled;
         public DateTime LastUpdateTime;
     }
+
+
+    // NOTE: Malformed Start() method cleaned up and removed - contained namespace member issues
+
+
+
+
+
+
 }

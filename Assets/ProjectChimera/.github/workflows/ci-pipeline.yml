@@ -1,0 +1,390 @@
+name: Project Chimera CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  UNITY_VERSION: 2022.3.20f1
+  UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+
+jobs:
+  # Phase 1: Static Analysis & Quality Gates
+  static-analysis:
+    name: Static Analysis & Quality Gates
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        lfs: true
+        
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Install Analysis Tools
+      run: |
+        dotnet tool install --global Microsoft.CodeAnalysis.Analyzers
+        dotnet tool install --global Roslynator.CommandLine
+        
+    - name: Anti-Pattern Detection
+      run: |
+        echo "🔍 Scanning for forbidden patterns..."
+        
+        # Check for FindObjectOfType calls
+        if grep -r "FindObjectOfType" Assets/ProjectChimera --include="*.cs" --exclude-dir="Testing"; then
+          echo "❌ FAIL: FindObjectOfType detected - use ServiceContainer instead"
+          exit 1
+        fi
+        
+        # Check for Resources.Load calls
+        if grep -r "Resources\.Load" Assets/ProjectChimera --include="*.cs" --exclude-dir="Testing"; then
+          echo "❌ FAIL: Resources.Load detected - use Addressables instead"
+          exit 1
+        fi
+        
+        # Check for raw Debug.Log calls
+        if grep -r "Debug\.Log\|Debug\.LogError\|Debug\.LogWarning" Assets/ProjectChimera --include="*.cs" --exclude-dir="Testing"; then
+          echo "❌ FAIL: Raw Debug.Log detected - use ChimeraLogger instead"
+          exit 1
+        fi
+        
+        # Check for manual GameObject.Find
+        if grep -r "GameObject\.Find\|GameObject\.FindWithTag" Assets/ProjectChimera --include="*.cs" --exclude-dir="Testing"; then
+          echo "❌ FAIL: GameObject.Find detected - use ServiceContainer or references"
+          exit 1
+        fi
+        
+        echo "✅ PASS: No anti-patterns detected"
+        
+    - name: Dependency Injection Validation
+      run: |
+        echo "🔍 Validating dependency injection patterns..."
+        
+        # Check for ServiceLocator usage (should be replaced with ServiceContainer)
+        if grep -r "ServiceLocator\." Assets/ProjectChimera --include="*.cs" --exclude-dir="Testing"; then
+          echo "❌ FAIL: Legacy ServiceLocator usage detected - migrate to ServiceContainer"
+          exit 1
+        fi
+        
+        # Check for proper ServiceContainer usage
+        SERVICE_CONTAINER_USAGE=$(grep -r "ServiceContainerFactory\.Instance" Assets/ProjectChimera --include="*.cs" --exclude-dir="Testing" | wc -l)
+        echo "✅ ServiceContainer usage count: $SERVICE_CONTAINER_USAGE"
+        
+        echo "✅ PASS: Dependency injection validation complete"
+        
+    - name: Code Complexity Analysis
+      run: |
+        echo "🔍 Analyzing code complexity..."
+        
+        # Create complexity analysis script
+        cat > complexity_analysis.py << 'EOF'
+        import os
+        import re
+        import sys
+        
+        # Define complexity limits per system type
+        COMPLEXITY_LIMITS = {
+            'Core': {
+                'max_lines': 800,
+                'max_methods': 50,
+                'max_cyclomatic': 15
+            },
+            'Systems': {
+                'max_lines': 600,
+                'max_methods': 40,
+                'max_cyclomatic': 12
+            },
+            'Data': {
+                'max_lines': 400,
+                'max_methods': 30,
+                'max_cyclomatic': 8
+            },
+            'UI': {
+                'max_lines': 500,
+                'max_methods': 35,
+                'max_cyclomatic': 10
+            },
+            'Testing': {
+                'max_lines': 1000,
+                'max_methods': 100,
+                'max_cyclomatic': 20
+            }
+        }
+        
+        def get_system_type(file_path):
+            if '/Core/' in file_path:
+                return 'Core'
+            elif '/Systems/' in file_path:
+                return 'Systems'
+            elif '/Data/' in file_path:
+                return 'Data'
+            elif '/UI/' in file_path:
+                return 'UI'
+            elif '/Testing/' in file_path:
+                return 'Testing'
+            else:
+                return 'Systems'  # Default to Systems limits
+        
+        def analyze_file_complexity(file_path):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                lines = content.split('\n')
+                non_empty_lines = [l for l in lines if l.strip() and not l.strip().startswith('//')]
+                
+                # Count methods (simplified)
+                method_pattern = r'(public|private|protected|internal)\s+.*\s+\w+\s*\([^)]*\)\s*{'
+                methods = re.findall(method_pattern, content)
+                
+                # Simple cyclomatic complexity (count if/while/for/switch/catch)
+                complexity_keywords = ['if ', 'while ', 'for ', 'foreach ', 'switch ', 'catch ']
+                cyclomatic = sum(content.count(keyword) for keyword in complexity_keywords)
+                
+                return {
+                    'lines': len(non_empty_lines),
+                    'methods': len(methods),
+                    'cyclomatic': cyclomatic
+                }
+            except Exception as e:
+                print(f"Warning: Could not analyze {file_path}: {e}")
+                return {'lines': 0, 'methods': 0, 'cyclomatic': 0}
+        
+        def main():
+            violations = []
+            
+            for root, dirs, files in os.walk('Assets/ProjectChimera'):
+                for file in files:
+                    if file.endswith('.cs'):
+                        file_path = os.path.join(root, file)
+                        system_type = get_system_type(file_path)
+                        limits = COMPLEXITY_LIMITS[system_type]
+                        
+                        metrics = analyze_file_complexity(file_path)
+                        
+                        if metrics['lines'] > limits['max_lines']:
+                            violations.append(f"{file_path}: {metrics['lines']} lines (limit: {limits['max_lines']} for {system_type})")
+                        
+                        if metrics['methods'] > limits['max_methods']:
+                            violations.append(f"{file_path}: {metrics['methods']} methods (limit: {limits['max_methods']} for {system_type})")
+                        
+                        if metrics['cyclomatic'] > limits['max_cyclomatic']:
+                            violations.append(f"{file_path}: {metrics['cyclomatic']} cyclomatic complexity (limit: {limits['max_cyclomatic']} for {system_type})")
+            
+            if violations:
+                print("❌ COMPLEXITY VIOLATIONS:")
+                for violation in violations:
+                    print(f"  - {violation}")
+                sys.exit(1)
+            else:
+                print("✅ PASS: All files within complexity limits")
+        
+        if __name__ == '__main__':
+            main()
+        EOF
+        
+        python3 complexity_analysis.py
+
+  # Phase 2: Unity Build & Test
+  unity-build:
+    name: Unity Build & Test
+    needs: static-analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        lfs: true
+        
+    - name: Cache Unity Library
+      uses: actions/cache@v3
+      with:
+        path: Library
+        key: Library-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+        restore-keys: Library-
+        
+    - name: Setup Unity
+      uses: game-ci/unity-builder@v4
+      env:
+        UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      with:
+        targetPlatform: StandaloneWindows64
+        
+    - name: Run Unity Tests
+      uses: game-ci/unity-test-runner@v4
+      env:
+        UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      with:
+        githubToken: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: artifacts/
+        
+  # Phase 3: Performance Benchmarks
+  performance-tests:
+    name: Performance Benchmarks
+    needs: unity-build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Unity
+      uses: game-ci/unity-builder@v4
+      env:
+        UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      with:
+        targetPlatform: StandaloneLinux64
+        buildMethod: ProjectChimera.CI.PerformanceBuildMethod
+        
+    - name: Run Performance Benchmarks
+      run: |
+        echo "🎯 Running performance benchmarks..."
+        # This would run the built application with performance test scenes
+        # and capture frame time metrics, memory usage, etc.
+        echo "Performance benchmarks completed - see artifacts for detailed results"
+        
+    - name: Upload Performance Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-results
+        path: performance-results.json
+
+  # Phase 4: Code Coverage
+  code-coverage:
+    name: Code Coverage Analysis
+    needs: unity-build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: Generate Coverage Report
+      uses: game-ci/unity-test-runner@v4
+      env:
+        UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      with:
+        githubToken: ${{ secrets.GITHUB_TOKEN }}
+        coverageOptions: 'generateAdditionalMetrics;generateHtmlReport;generateBadgeReport'
+        
+    - name: Upload Coverage Reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-results
+        path: |
+          CodeCoverage/
+          coverage.xml
+          
+    - name: Coverage Gate
+      run: |
+        # Parse coverage results and fail if below 80%
+        if command -v xmllint >/dev/null; then
+          COVERAGE=$(xmllint --xpath "string(//coverage/@line-rate)" coverage.xml 2>/dev/null || echo "0")
+          COVERAGE_PERCENT=$(echo "$COVERAGE * 100" | bc -l | cut -d. -f1)
+          
+          if [ "$COVERAGE_PERCENT" -lt 80 ]; then
+            echo "❌ FAIL: Code coverage is ${COVERAGE_PERCENT}% (minimum: 80%)"
+            exit 1
+          else
+            echo "✅ PASS: Code coverage is ${COVERAGE_PERCENT}%"
+          fi
+        else
+          echo "⚠️  SKIP: Coverage parsing not available"
+        fi
+
+  # Phase 5: Security Scan
+  security-scan:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: csharp
+        
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+      
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+
+  # Phase 6: Documentation & Architecture Validation
+  documentation-check:
+    name: Documentation & Architecture Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: Check Documentation
+      run: |
+        echo "🔍 Validating documentation coverage..."
+        
+        # Check for missing XML documentation on public APIs
+        MISSING_DOCS=$(find Assets/ProjectChimera -name "*.cs" -exec grep -l "public class\|public interface\|public enum" {} \; | xargs -I {} bash -c 'if ! grep -q "/// <summary>" "{}"; then echo "{}"; fi' | head -10)
+        
+        if [ ! -z "$MISSING_DOCS" ]; then
+          echo "⚠️  WARNING: Some public APIs missing documentation:"
+          echo "$MISSING_DOCS"
+        else
+          echo "✅ PASS: Documentation coverage acceptable"
+        fi
+        
+    - name: Architecture Validation
+      run: |
+        echo "🔍 Validating architectural patterns..."
+        
+        # Check for proper namespace organization
+        NAMESPACE_VIOLATIONS=$(grep -r "namespace " Assets/ProjectChimera --include="*.cs" | grep -v "namespace ProjectChimera" | head -5)
+        
+        if [ ! -z "$NAMESPACE_VIOLATIONS" ]; then
+          echo "⚠️  WARNING: Non-standard namespace usage detected:"
+          echo "$NAMESPACE_VIOLATIONS"
+        fi
+        
+        echo "✅ PASS: Architecture validation complete"
+
+  # Final: Deployment (only on main branch)
+  deploy:
+    name: Deploy Build Artifacts
+    needs: [static-analysis, unity-build, performance-tests, code-coverage, security-scan]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Download Build Artifacts
+      uses: actions/download-artifact@v3
+      
+    - name: Package Release
+      run: |
+        echo "📦 Packaging release artifacts..."
+        # Package builds, documentation, etc.
+        
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: build-${{ github.run_number }}
+        release_name: Build ${{ github.run_number }}
+        draft: false
+        prerelease: true

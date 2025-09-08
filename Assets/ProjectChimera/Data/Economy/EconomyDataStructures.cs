@@ -16,4 +16,6 @@ namespace ProjectChimera.Data.Economy
         Medium,
         High
     }
+
+
 }

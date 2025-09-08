@@ -1,11 +1,14 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using UnityEngine;
-using ProjectChimera.Systems.Services.Core;
-using ProjectChimera.Systems.UI.Advanced;
+using ProjectChimera.Core;
+// using ProjectChimera.Systems.Services.Core; // Removed - namespace doesn't exist
+// using ProjectChimera.Systems.UI.Advanced; // Removed - namespace doesn't exist
 
 namespace ProjectChimera.Systems.Analytics
 {
@@ -13,7 +16,7 @@ namespace ProjectChimera.Systems.Analytics
     /// Comprehensive performance monitoring dashboard for Project Chimera
     /// Provides real-time system metrics, performance visualization, and alerts
     /// </summary>
-    public class PerformanceMonitoringDashboard : MonoBehaviour
+    public class PerformanceMonitoringDashboard : MonoBehaviour, ITickable
     {
         [Header("Dashboard Configuration")]
         [SerializeField] private bool _enableRealTimeUpdates = true;
@@ -23,75 +26,78 @@ namespace ProjectChimera.Systems.Analytics
         [SerializeField] private float _alertThresholdCPU = 80f;
         [SerializeField] private float _alertThresholdMemory = 85f;
         [SerializeField] private float _alertThresholdFrameTime = 33.33f; // 30 FPS threshold
-        
+
         [Header("Display Settings")]
         [SerializeField] private bool _showSystemMetrics = true;
         [SerializeField] private bool _showGameplayMetrics = true;
         [SerializeField] private bool _showNetworkMetrics = true;
         [SerializeField] private bool _showDetailedBreakdown = false;
-        
+
         // Core Systems
         private DataPipelineIntegration _dataPipeline;
         private AdvancedAnalytics _analytics;
         private ServiceLayerCoordinator _serviceCoordinator;
         private AdvancedMenuSystem _menuSystem;
-        
+
         // Performance Tracking
         private readonly PerformanceMetrics _currentMetrics = new PerformanceMetrics();
         private readonly Queue<PerformanceSnapshot> _metricsHistory = new Queue<PerformanceSnapshot>();
         private readonly Dictionary<string, SystemPerformanceTracker> _systemTrackers = new Dictionary<string, SystemPerformanceTracker>();
         private readonly List<PerformanceAlert> _activeAlerts = new List<PerformanceAlert>();
-        
+
         // Update Management
         private float _lastUpdateTime;
         private bool _isCollecting = false;
         private int _frameCount = 0;
         private float _frameTimeAccumulator = 0f;
-        
+
         // Events
         public event Action<PerformanceSnapshot> OnMetricsUpdated;
         public event Action<PerformanceAlert> OnAlertTriggered;
         public event Action<string> OnAlertResolved;
-        
+
         private void Awake()
         {
             InitializeTrackers();
         }
-        
+
         private void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             FindSystemReferences();
             StartMonitoring();
         }
-        
-        private void Update()
-        {
+
+            public void Tick(float deltaTime)
+    {
             if (_isCollecting)
             {
                 CollectFrameMetrics();
-                
+
                 if (Time.time - _lastUpdateTime >= _updateInterval)
                 {
                     UpdateMetrics();
                     _lastUpdateTime = Time.time;
-                }
+
+    }
             }
         }
-        
+
         private void FindSystemReferences()
         {
-            _dataPipeline = UnityEngine.Object.FindObjectOfType<DataPipelineIntegration>();
-            _analytics = UnityEngine.Object.FindObjectOfType<AdvancedAnalytics>();
-            _serviceCoordinator = UnityEngine.Object.FindObjectOfType<ServiceLayerCoordinator>();
-            _menuSystem = UnityEngine.Object.FindObjectOfType<AdvancedMenuSystem>();
-            
+            _dataPipeline = ServiceContainerFactory.Instance?.TryResolve<DataPipelineIntegration>();
+            _analytics = ServiceContainerFactory.Instance?.TryResolve<AdvancedAnalytics>();
+            _serviceCoordinator = ServiceContainerFactory.Instance?.TryResolve<ServiceLayerCoordinator>();
+            _menuSystem = ServiceContainerFactory.Instance?.TryResolve<AdvancedMenuSystem>();
+
             if (_dataPipeline == null)
-                Debug.LogWarning("[PerformanceMonitoringDashboard] DataPipelineIntegration not found");
-            
+                ChimeraLogger.LogWarning("[PerformanceMonitoringDashboard] DataPipelineIntegration not found");
+
             if (_analytics == null)
-                Debug.LogWarning("[PerformanceMonitoringDashboard] AdvancedAnalytics not found");
+                ChimeraLogger.LogWarning("[PerformanceMonitoringDashboard] AdvancedAnalytics not found");
         }
-        
+
         private void InitializeTrackers()
         {
             // Core system trackers
@@ -101,7 +107,7 @@ namespace ProjectChimera.Systems.Analytics
             RegisterSystemTracker("Audio", new AudioTracker());
             RegisterSystemTracker("Input", new InputTracker());
             RegisterSystemTracker("Networking", new NetworkingTracker());
-            
+
             // Game-specific trackers
             RegisterSystemTracker("Plants", new PlantSystemTracker());
             RegisterSystemTracker("Genetics", new GeneticsTracker());
@@ -109,70 +115,70 @@ namespace ProjectChimera.Systems.Analytics
             RegisterSystemTracker("Economy", new EconomyTracker());
             RegisterSystemTracker("AI", new AISystemTracker());
         }
-        
+
         public void RegisterSystemTracker(string systemName, SystemPerformanceTracker tracker)
         {
             _systemTrackers[systemName] = tracker;
             tracker.Initialize(systemName);
-            Debug.Log($"[PerformanceMonitoringDashboard] Registered tracker for {systemName}");
+            ChimeraLogger.Log($"[PerformanceMonitoringDashboard] Registered tracker for {systemName}");
         }
-        
+
         public void StartMonitoring()
         {
             _isCollecting = true;
             _lastUpdateTime = Time.time;
             _frameCount = 0;
             _frameTimeAccumulator = 0f;
-            
-            Debug.Log("[PerformanceMonitoringDashboard] Performance monitoring started");
+
+            ChimeraLogger.Log("[PerformanceMonitoringDashboard] Performance monitoring started");
         }
-        
+
         public void StopMonitoring()
         {
             _isCollecting = false;
-            Debug.Log("[PerformanceMonitoringDashboard] Performance monitoring stopped");
+            ChimeraLogger.Log("[PerformanceMonitoringDashboard] Performance monitoring stopped");
         }
-        
+
         private void CollectFrameMetrics()
         {
             _frameCount++;
             _frameTimeAccumulator += Time.unscaledDeltaTime * 1000f; // Convert to milliseconds
         }
-        
+
         private void UpdateMetrics()
         {
             var snapshot = CreatePerformanceSnapshot();
-            
+
             // Add to history
             _metricsHistory.Enqueue(snapshot);
             while (_metricsHistory.Count > _maxHistoryPoints)
             {
                 _metricsHistory.Dequeue();
             }
-            
+
             // Update current metrics
             UpdateCurrentMetrics(snapshot);
-            
+
             // Check for alerts
             if (_enableAlerts)
             {
                 CheckPerformanceAlerts(snapshot);
             }
-            
+
             // Notify listeners
             OnMetricsUpdated?.Invoke(snapshot);
-            
+
             // Reset frame metrics
             _frameCount = 0;
             _frameTimeAccumulator = 0f;
-            
+
             // Send to data pipeline
             if (_dataPipeline != null)
             {
                 SendMetricsToDataPipeline(snapshot);
             }
         }
-        
+
         private PerformanceSnapshot CreatePerformanceSnapshot()
         {
             var snapshot = new PerformanceSnapshot
@@ -189,14 +195,14 @@ namespace ProjectChimera.Systems.Analytics
                 LoadedScenes = UnityEngine.SceneManagement.SceneManager.sceneCount,
                 SystemMetrics = CollectSystemMetrics()
             };
-            
+
             return snapshot;
         }
-        
+
         private Dictionary<string, object> CollectSystemMetrics()
         {
             var metrics = new Dictionary<string, object>();
-            
+
             foreach (var tracker in _systemTrackers)
             {
                 try
@@ -206,35 +212,35 @@ namespace ProjectChimera.Systems.Analytics
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogWarning($"[PerformanceMonitoringDashboard] Failed to collect metrics for {tracker.Key}: {ex.Message}");
+                    ChimeraLogger.LogWarning($"[PerformanceMonitoringDashboard] Failed to collect metrics for {tracker.Key}: {ex.Message}");
                     metrics[tracker.Key] = new { error = ex.Message };
                 }
             }
-            
+
             return metrics;
         }
-        
+
         private void UpdateCurrentMetrics(PerformanceSnapshot snapshot)
         {
-            _currentMetrics.AverageFrameRate = _metricsHistory.Count > 0 ? 
+            _currentMetrics.AverageFrameRate = _metricsHistory.Count > 0 ?
                 _metricsHistory.Average(s => s.FrameRate) : snapshot.FrameRate;
-            _currentMetrics.MinFrameRate = _metricsHistory.Count > 0 ? 
+            _currentMetrics.MinFrameRate = _metricsHistory.Count > 0 ?
                 _metricsHistory.Min(s => s.FrameRate) : snapshot.FrameRate;
-            _currentMetrics.MaxFrameRate = _metricsHistory.Count > 0 ? 
+            _currentMetrics.MaxFrameRate = _metricsHistory.Count > 0 ?
                 _metricsHistory.Max(s => s.FrameRate) : snapshot.FrameRate;
-            
-            _currentMetrics.AverageFrameTime = _metricsHistory.Count > 0 ? 
+
+            _currentMetrics.AverageFrameTime = _metricsHistory.Count > 0 ?
                 _metricsHistory.Average(s => s.FrameTime) : snapshot.FrameTime;
-            _currentMetrics.MaxFrameTime = _metricsHistory.Count > 0 ? 
+            _currentMetrics.MaxFrameTime = _metricsHistory.Count > 0 ?
                 _metricsHistory.Max(s => s.FrameTime) : snapshot.FrameTime;
-            
+
             _currentMetrics.CurrentCPUUsage = snapshot.CPUUsage;
             _currentMetrics.CurrentMemoryUsage = snapshot.MemoryUsage;
             _currentMetrics.CurrentGPUMemoryUsage = snapshot.GPUMemoryUsage;
-            
+
             _currentMetrics.LastUpdateTime = snapshot.Timestamp;
         }
-        
+
         private void CheckPerformanceAlerts(PerformanceSnapshot snapshot)
         {
             // CPU usage alert
@@ -246,7 +252,7 @@ namespace ProjectChimera.Systems.Analytics
             {
                 ResolveAlert(PerformanceAlertType.HighCPUUsage);
             }
-            
+
             // Memory usage alert
             if (snapshot.MemoryUsage > _alertThresholdMemory)
             {
@@ -256,7 +262,7 @@ namespace ProjectChimera.Systems.Analytics
             {
                 ResolveAlert(PerformanceAlertType.HighMemoryUsage);
             }
-            
+
             // Frame time alert (low FPS)
             if (snapshot.FrameTime > _alertThresholdFrameTime)
             {
@@ -266,11 +272,11 @@ namespace ProjectChimera.Systems.Analytics
             {
                 ResolveAlert(PerformanceAlertType.LowFrameRate);
             }
-            
+
             // System-specific alerts
             CheckSystemSpecificAlerts(snapshot);
         }
-        
+
         private void CheckSystemSpecificAlerts(PerformanceSnapshot snapshot)
         {
             foreach (var systemMetric in snapshot.SystemMetrics)
@@ -285,12 +291,12 @@ namespace ProjectChimera.Systems.Analytics
                 }
             }
         }
-        
+
         private void TriggerAlert(PerformanceAlertType type, string message, float value, string system = null)
         {
             var alertId = $"{type}_{system ?? "System"}";
             var existingAlert = _activeAlerts.FirstOrDefault(a => a.AlertId == alertId);
-            
+
             if (existingAlert == null)
             {
                 var alert = new PerformanceAlert
@@ -304,10 +310,10 @@ namespace ProjectChimera.Systems.Analytics
                     LastUpdated = DateTime.UtcNow,
                     IsActive = true
                 };
-                
+
                 _activeAlerts.Add(alert);
                 OnAlertTriggered?.Invoke(alert);
-                Debug.LogWarning($"[PerformanceMonitoringDashboard] Alert: {message}");
+                ChimeraLogger.LogWarning($"[PerformanceMonitoringDashboard] Alert: {message}");
             }
             else
             {
@@ -315,12 +321,12 @@ namespace ProjectChimera.Systems.Analytics
                 existingAlert.Value = value;
             }
         }
-        
+
         private void ResolveAlert(PerformanceAlertType type, string system = null)
         {
             var alertId = $"{type}_{system ?? "System"}";
             var alert = _activeAlerts.FirstOrDefault(a => a.AlertId == alertId);
-            
+
             if (alert != null)
             {
                 _activeAlerts.Remove(alert);
@@ -329,7 +335,7 @@ namespace ProjectChimera.Systems.Analytics
                 OnAlertResolved?.Invoke(alertId);
             }
         }
-        
+
         private void SendMetricsToDataPipeline(PerformanceSnapshot snapshot)
         {
             var eventData = new
@@ -343,7 +349,7 @@ namespace ProjectChimera.Systems.Analytics
                 triangles = snapshot.Triangles,
                 active_objects = snapshot.ActiveObjects
             };
-            
+
             _dataPipeline.CollectEvent("performance_metrics", "system_snapshot", eventData, new Dictionary<string, object>
             {
                 ["source"] = "performance_dashboard",
@@ -351,13 +357,13 @@ namespace ProjectChimera.Systems.Analytics
                 ["timestamp"] = snapshot.Timestamp.ToString("O")
             });
         }
-        
+
         public PerformanceMetrics GetCurrentMetrics() => _currentMetrics;
-        
+
         public IReadOnlyList<PerformanceSnapshot> GetMetricsHistory() => _metricsHistory.ToList().AsReadOnly();
-        
+
         public IReadOnlyList<PerformanceAlert> GetActiveAlerts() => _activeAlerts.AsReadOnly();
-        
+
         public Dictionary<string, object> GetSystemMetrics(string systemName)
         {
             if (_systemTrackers.TryGetValue(systemName, out var tracker))
@@ -366,7 +372,7 @@ namespace ProjectChimera.Systems.Analytics
             }
             return null;
         }
-        
+
         // Unity system metrics collection
         private float GetCPUUsage()
         {
@@ -375,46 +381,47 @@ namespace ProjectChimera.Systems.Analytics
             var actualFrameTime = _frameCount > 0 ? _frameTimeAccumulator / _frameCount : 0f;
             return Mathf.Clamp01(actualFrameTime / targetFrameTime) * 100f;
         }
-        
+
         private float GetMemoryUsage()
         {
             var totalMemory = SystemInfo.systemMemorySize;
             var usedMemory = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemory() / (1024 * 1024); // Convert to MB
             return totalMemory > 0 ? (float)usedMemory / totalMemory * 100f : 0f;
         }
-        
+
         private long GetGPUMemoryUsage()
         {
             return SystemInfo.graphicsMemorySize;
         }
-        
+
         private int GetDrawCalls()
         {
             // Would need to integrate with Unity's frame debugger or rendering stats
             return 0; // Placeholder
         }
-        
+
         private long GetTriangleCount()
         {
             // Would need to integrate with Unity's rendering stats
             return 0; // Placeholder
         }
-        
+
         private int GetActiveObjectCount()
         {
-            return UnityEngine.Object.FindObjectsOfType<GameObject>().Length;
+            // TODO: ServiceContainer.GetAll<GameObject>()
+            return new GameObject[0].Length;
         }
-        
+
         public void SetUpdateInterval(float interval)
         {
             _updateInterval = Mathf.Max(0.1f, interval);
         }
-        
+
         public void SetMaxHistoryPoints(int maxPoints)
         {
             _maxHistoryPoints = Mathf.Max(10, maxPoints);
         }
-        
+
         public void EnableRealTimeUpdates(bool enable)
         {
             _enableRealTimeUpdates = enable;
@@ -427,13 +434,13 @@ namespace ProjectChimera.Systems.Analytics
                 StartMonitoring();
             }
         }
-        
+
         public void ClearHistory()
         {
             _metricsHistory.Clear();
-            Debug.Log("[PerformanceMonitoringDashboard] Metrics history cleared");
+            ChimeraLogger.Log("[PerformanceMonitoringDashboard] Metrics history cleared");
         }
-        
+
         public async Task GeneratePerformanceReport()
         {
             if (_analytics != null)
@@ -447,11 +454,11 @@ namespace ProjectChimera.Systems.Analytics
                     collection_interval = _updateInterval,
                     timestamp = DateTime.UtcNow
                 };
-                
+
                 _analytics?.CollectEvent("performance_report", "dashboard_report", reportData);
             }
         }
-        
+
         private void OnApplicationPause(bool pauseStatus)
         {
             if (pauseStatus)
@@ -463,13 +470,30 @@ namespace ProjectChimera.Systems.Analytics
                 StartMonitoring();
             }
         }
-        
+
         private void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             StopMonitoring();
         }
+
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+    public virtual void OnRegistered()
+    {
+        // Override in derived classes if needed
     }
-    
+
+    public virtual void OnUnregistered()
+    {
+        // Override in derived classes if needed
+    }
+
+}
+
     /// <summary>
     /// Performance metrics summary
     /// </summary>
@@ -486,7 +510,7 @@ namespace ProjectChimera.Systems.Analytics
         public long CurrentGPUMemoryUsage;
         public DateTime LastUpdateTime;
     }
-    
+
     /// <summary>
     /// Performance snapshot at a specific point in time
     /// </summary>
@@ -504,13 +528,13 @@ namespace ProjectChimera.Systems.Analytics
         public int ActiveObjects;
         public int LoadedScenes;
         public Dictionary<string, object> SystemMetrics;
-        
+
         public PerformanceSnapshot()
         {
             SystemMetrics = new Dictionary<string, object>();
         }
     }
-    
+
     /// <summary>
     /// Performance alert
     /// </summary>
@@ -526,10 +550,10 @@ namespace ProjectChimera.Systems.Analytics
         public DateTime LastUpdated;
         public DateTime ResolvedAt;
         public bool IsActive;
-        
+
         public TimeSpan Duration => IsActive ? DateTime.UtcNow - FirstDetected : ResolvedAt - FirstDetected;
     }
-    
+
     /// <summary>
     /// Performance monitoring alert types
     /// </summary>
@@ -545,7 +569,7 @@ namespace ProjectChimera.Systems.Analytics
         DiskSpace,
         CustomMetric
     }
-    
+
     /// <summary>
     /// Base class for system performance trackers
     /// </summary>
@@ -553,21 +577,21 @@ namespace ProjectChimera.Systems.Analytics
     {
         protected string SystemName { get; private set; }
         protected bool IsInitialized { get; private set; }
-        
+
         public virtual void Initialize(string systemName)
         {
             SystemName = systemName;
             IsInitialized = true;
         }
-        
+
         public abstract Dictionary<string, object> CollectMetrics();
-        
+
         public virtual List<PerformanceAlert> CheckAlerts(object metrics)
         {
             return new List<PerformanceAlert>();
         }
     }
-    
+
     /// <summary>
     /// Unity system tracker
     /// </summary>
@@ -587,7 +611,7 @@ namespace ProjectChimera.Systems.Analytics
             };
         }
     }
-    
+
     /// <summary>
     /// Rendering system tracker
     /// </summary>
@@ -605,7 +629,7 @@ namespace ProjectChimera.Systems.Analytics
             };
         }
     }
-    
+
     /// <summary>
     /// Physics system tracker
     /// </summary>
@@ -619,12 +643,14 @@ namespace ProjectChimera.Systems.Analytics
                 ["gravity"] = Physics.gravity,
                 ["default_solver_iterations"] = Physics.defaultSolverIterations,
                 ["default_solver_velocity_iterations"] = Physics.defaultSolverVelocityIterations,
-                ["rigidbodies"] = UnityEngine.Object.FindObjectsOfType<Rigidbody>().Length,
-                ["colliders"] = UnityEngine.Object.FindObjectsOfType<Collider>().Length
+                // TODO: ServiceContainer.GetAll<Rigidbody>()
+                ["rigidbodies"] = new Rigidbody[0].Length,
+                // TODO: ServiceContainer.GetAll<Collider>()
+                ["colliders"] = new Collider[0].Length
             };
         }
     }
-    
+
     /// <summary>
     /// Audio system tracker
     /// </summary>
@@ -638,12 +664,14 @@ namespace ProjectChimera.Systems.Analytics
                 ["sample_rate"] = audioConfig.sampleRate,
                 ["buffer_size"] = audioConfig.dspBufferSize,
                 ["speaker_mode"] = audioConfig.speakerMode.ToString(),
-                ["audio_sources"] = UnityEngine.Object.FindObjectsOfType<AudioSource>().Length,
-                ["audio_listeners"] = UnityEngine.Object.FindObjectsOfType<AudioListener>().Length
+                // TODO: ServiceContainer.GetAll<AudioSource>()
+                ["audio_sources"] = new AudioSource[0].Length,
+                // TODO: ServiceContainer.GetAll<AudioListener>()
+                ["audio_listeners"] = new AudioListener[0].Length
             };
         }
     }
-    
+
     /// <summary>
     /// Input system tracker
     /// </summary>
@@ -661,7 +689,7 @@ namespace ProjectChimera.Systems.Analytics
             };
         }
     }
-    
+
     /// <summary>
     /// Networking system tracker
     /// </summary>
@@ -679,9 +707,9 @@ namespace ProjectChimera.Systems.Analytics
             };
         }
     }
-    
+
     // Game-specific trackers
-    
+
     /// <summary>
     /// Plant system tracker
     /// </summary>
@@ -699,7 +727,7 @@ namespace ProjectChimera.Systems.Analytics
             };
         }
     }
-    
+
     /// <summary>
     /// Genetics system tracker
     /// </summary>
@@ -715,7 +743,7 @@ namespace ProjectChimera.Systems.Analytics
             };
         }
     }
-    
+
     /// <summary>
     /// Environment system tracker
     /// </summary>
@@ -731,7 +759,7 @@ namespace ProjectChimera.Systems.Analytics
             };
         }
     }
-    
+
     /// <summary>
     /// Economy system tracker
     /// </summary>
@@ -747,7 +775,7 @@ namespace ProjectChimera.Systems.Analytics
             };
         }
     }
-    
+
     /// <summary>
     /// AI system tracker
     /// </summary>

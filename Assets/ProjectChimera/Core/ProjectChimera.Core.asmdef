@@ -3,10 +3,9 @@
     "rootNamespace": "ProjectChimera.Core",
     "references": [
         "ProjectChimera.Shared",
-        "ProjectChimera.Data",
-        "ProjectChimera.Data.Genetics",
         "ProjectChimera.Data.Shared",
-        "ProjectChimera.Data.Economy"
+        "ProjectChimera.Data.Environment",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

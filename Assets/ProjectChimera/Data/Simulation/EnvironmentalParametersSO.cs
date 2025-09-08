@@ -1,5 +1,4 @@
 using UnityEngine;
-using ProjectChimera.Core;
 using ProjectChimera.Shared;
 using ProjectChimera.Data.Shared;
 using System.Collections.Generic;
@@ -214,25 +213,25 @@ namespace ProjectChimera.Data.Simulation
             
             if (_temperatureRange.x >= _temperatureRange.y)
             {
-                Debug.LogError($"Environmental Parameters {name}: Invalid temperature range");
+                SharedLogger.LogError($"Environmental Parameters {name}: Invalid temperature range");
                 isValid = false;
             }
                 
             if (_humidityRange.x >= _humidityRange.y)
             {
-                Debug.LogError($"Environmental Parameters {name}: Invalid humidity range");
+                SharedLogger.LogError($"Environmental Parameters {name}: Invalid humidity range");
                 isValid = false;
             }
                 
             if (_lightIntensityRange.x >= _lightIntensityRange.y)
             {
-                Debug.LogError($"Environmental Parameters {name}: Invalid light intensity range");
+                SharedLogger.LogError($"Environmental Parameters {name}: Invalid light intensity range");
                 isValid = false;
             }
                 
             if (_co2Range.x >= _co2Range.y)
             {
-                Debug.LogError($"Environmental Parameters {name}: Invalid CO2 range");
+                SharedLogger.LogError($"Environmental Parameters {name}: Invalid CO2 range");
                 isValid = false;
             }
             

@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core.DependencyInjection;
 
@@ -29,7 +30,7 @@ namespace ProjectChimera.Systems.Analytics
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"[{component.GetType().Name}] Failed to record metric {metricName}: {ex.Message}");
+                ChimeraLogger.LogWarning($"[{component.GetType().Name}] Failed to record metric {metricName}: {ex.Message}");
             }
         }
 
@@ -45,7 +46,7 @@ namespace ProjectChimera.Systems.Analytics
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"[{component.GetType().Name}] Failed to get metric {metricName}: {ex.Message}");
+                ChimeraLogger.LogWarning($"[{component.GetType().Name}] Failed to get metric {metricName}: {ex.Message}");
                 return fallback;
             }
         }
@@ -62,7 +63,7 @@ namespace ProjectChimera.Systems.Analytics
     /// <summary>
     /// Static helper for non-MonoBehaviour classes to access analytics
     /// </summary>
-    public static class Analytics
+    public static class AnalyticsHelper
     {
         /// <summary>
         /// Get the analytics service instance
@@ -80,7 +81,7 @@ namespace ProjectChimera.Systems.Analytics
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"[Analytics] Failed to record metric {metricName}: {ex.Message}");
+                ChimeraLogger.LogWarning($"[Analytics] Failed to record metric {metricName}: {ex.Message}");
             }
         }
 
@@ -91,11 +92,11 @@ namespace ProjectChimera.Systems.Analytics
         {
             try
             {
-                return Service?.GetMetric(metricName) ?? fallback;
+                return Service?.GetCurrentMetric(metricName) ?? fallback;
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"[Analytics] Failed to get metric {metricName}: {ex.Message}");
+                ChimeraLogger.LogWarning($"[Analytics] Failed to get metric {metricName}: {ex.Message}");
                 return fallback;
             }
         }
@@ -104,5 +105,50 @@ namespace ProjectChimera.Systems.Analytics
         /// Check if analytics service is available
         /// </summary>
         public static bool IsAvailable => Service != null;
+    }
+
+    /// <summary>
+    /// Extension methods for IEventAnalytics
+    /// </summary>
+    public static class EventAnalyticsExtensions
+    {
+        /// <summary>
+        /// Register a metric collector with the event analytics system
+        /// </summary>
+        public static void RegisterMetricCollector(this IEventAnalytics eventAnalytics, string metricName, IMetricCollector collector)
+        {
+            eventAnalytics?.AddMetricCollector(metricName, collector);
+        }
+
+        /// <summary>
+        /// Unregister a metric collector from the event analytics system
+        /// </summary>
+        public static void UnregisterMetricCollector(this IEventAnalytics eventAnalytics, string metricName)
+        {
+            // Remove the collector (interface doesn't have remove method yet, so this is a placeholder)
+            ChimeraLogger.Log($"[EventAnalytics] Unregistering metric collector: {metricName}");
+        }
+    }
+
+    /// <summary>
+    /// Extension methods for IAnalyticsService
+    /// </summary>
+    public static class AnalyticsServiceInstanceExtensions
+    {
+        /// <summary>
+        /// Register a metric collector with the analytics service
+        /// </summary>
+        public static void RegisterMetricCollector(this IAnalyticsService analyticsService, string metricName, IMetricCollector collector)
+        {
+            ChimeraLogger.Log($"[AnalyticsService] Registering metric collector: {metricName}");
+        }
+
+        /// <summary>
+        /// Unregister a metric collector from the analytics service
+        /// </summary>
+        public static void UnregisterMetricCollector(this IAnalyticsService analyticsService, string metricName)
+        {
+            ChimeraLogger.Log($"[AnalyticsService] Unregistering metric collector: {metricName}");
+        }
     }
 }

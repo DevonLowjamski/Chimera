@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Scene
 {
@@ -108,7 +109,7 @@ namespace ProjectChimera.Systems.Scene
             {
                 return buildIndex;
             }
-            UnityEngine.Debug.LogError($"[SceneConstants] No build index found for scene '{sceneName}'");
+            ChimeraLogger.LogError($"[SceneConstants] No build index found for scene '{sceneName}'");
             return -1;
         }
 
@@ -121,7 +122,7 @@ namespace ProjectChimera.Systems.Scene
             {
                 return sceneName;
             }
-            UnityEngine.Debug.LogError($"[SceneConstants] No scene name found for build index {buildIndex}");
+            ChimeraLogger.LogError($"[SceneConstants] No scene name found for build index {buildIndex}");
             return null;
         }
 

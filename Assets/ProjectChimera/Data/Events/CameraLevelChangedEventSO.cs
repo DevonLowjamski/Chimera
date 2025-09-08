@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectChimera.Data.Camera;
+using ProjectChimera.Shared;
 
 namespace ProjectChimera.Data.Events
 {
@@ -19,17 +20,17 @@ namespace ProjectChimera.Data.Events
         {
             if (_enableDebugLogging)
             {
-                Debug.Log($"[CameraLevelChangedEventSO] Camera level change event: {data.PreviousLevel} → {data.NewLevel} at {data.Timestamp:HH:mm:ss}");
+                SharedLogger.Log($"[CameraLevelChangedEventSO] Camera level change event: {data.PreviousLevel} → {data.NewLevel} at {data.Timestamp:HH:mm:ss}");
                 
                 if (data.TargetObject != null)
                 {
-                    Debug.Log($"[CameraLevelChangedEventSO] Target object: {data.TargetObject.name} at position {data.TargetPosition}");
+                    SharedLogger.Log($"[CameraLevelChangedEventSO] Target object: {data.TargetObject.name} at position {data.TargetPosition}");
                 }
             }
 
             if (_validateLevelTransitions && !IsValidLevelTransition(data.PreviousLevel, data.NewLevel))
             {
-                Debug.LogWarning($"[CameraLevelChangedEventSO] Potentially invalid level transition: {data.PreviousLevel} → {data.NewLevel}");
+                SharedLogger.LogWarning($"[CameraLevelChangedEventSO] Potentially invalid level transition: {data.PreviousLevel} → {data.NewLevel}");
             }
 
             base.Invoke(data);
@@ -42,7 +43,7 @@ namespace ProjectChimera.Data.Events
             // Validate configuration
             if (_enableDebugLogging)
             {
-                Debug.Log($"[CameraLevelChangedEventSO] Debug logging enabled for {name}");
+                SharedLogger.Log($"[CameraLevelChangedEventSO] Debug logging enabled for {name}");
             }
         }
 

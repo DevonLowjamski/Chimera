@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectChimera.Core.Updates;
 using System;
 using System.Collections.Generic;
 
@@ -8,7 +9,7 @@ namespace ProjectChimera.Systems.UI.Advanced
     /// Data structures for advanced menu system
     /// Supports dynamic categories, contextual actions, and intelligent filtering
     /// </summary>
-    
+
     /// <summary>
     /// Represents a menu category with dynamic behavior
     /// </summary>
@@ -26,18 +27,18 @@ namespace ProjectChimera.Systems.UI.Advanced
         public bool IsDynamic = true;
         public bool IsVisible = true;
         public Color CategoryColor = Color.white;
-        
+
         // Dynamic condition checking
         public Func<MenuContext, bool> ConditionCallback;
-        
+
         // Category metadata
         public Dictionary<string, object> Metadata = new Dictionary<string, object>();
-        
+
         public MenuCategory()
         {
             Id = Guid.NewGuid().ToString();
         }
-        
+
         public MenuCategory(string id, string displayName, string pillarType)
         {
             Id = id;
@@ -45,7 +46,7 @@ namespace ProjectChimera.Systems.UI.Advanced
             PillarType = pillarType;
         }
     }
-    
+
     /// <summary>
     /// Represents a contextual menu action
     /// </summary>
@@ -64,22 +65,22 @@ namespace ProjectChimera.Systems.UI.Advanced
         public bool IsEnabled = true;
         public bool IsVisible = true;
         public Color ActionColor = Color.white;
-        
+
         // Resource requirements
         public ResourceRequirement[] ResourceRequirements;
-        
+
         // Condition callbacks
         public Func<MenuContext, bool> ConditionCallback;
         public Func<MenuContext, bool> ExecutionConditionCallback;
-        
+
         // Action metadata
         public Dictionary<string, object> Parameters = new Dictionary<string, object>();
-        
+
         public MenuAction()
         {
             Id = Guid.NewGuid().ToString();
         }
-        
+
         public MenuAction(string id, string categoryId, string displayName, string pillarType)
         {
             Id = id;
@@ -88,7 +89,7 @@ namespace ProjectChimera.Systems.UI.Advanced
             PillarType = pillarType;
         }
     }
-    
+
     /// <summary>
     /// Context information for menu display and action execution
     /// </summary>
@@ -101,28 +102,52 @@ namespace ProjectChimera.Systems.UI.Advanced
         public float Timestamp;
         public Vector3 PlayerPosition;
         public Vector3 CameraForward;
-        
+
         // Environmental context
         public string ZoneId;
         public string RoomId;
         public string FacilityId;
-        
+
         // Game state context
         public int PlayerLevel;
         public string[] UnlockedSkills;
         public Dictionary<string, float> Resources;
-        
+
         // Dynamic properties
         public Dictionary<string, object> Properties = new Dictionary<string, object>();
-        
+
         public MenuContext()
         {
             Timestamp = Time.time;
             Resources = new Dictionary<string, float>();
             UnlockedSkills = new string[0];
         }
+
+        public MenuContext(string contextType) : this()
+        {
+            ContextType = contextType;
+        }
+
+        public MenuContext(MenuContext other) : this()
+        {
+            if (other != null)
+            {
+                WorldPosition = other.WorldPosition;
+                TargetObject = other.TargetObject;
+                ContextType = other.ContextType;
+                PlayerPosition = other.PlayerPosition;
+                CameraForward = other.CameraForward;
+                ZoneId = other.ZoneId;
+                RoomId = other.RoomId;
+                FacilityId = other.FacilityId;
+                PlayerLevel = other.PlayerLevel;
+                UnlockedSkills = other.UnlockedSkills != null ? (string[])other.UnlockedSkills.Clone() : new string[0];
+                Resources = other.Resources != null ? new Dictionary<string, float>(other.Resources) : new Dictionary<string, float>();
+                Properties = other.Properties != null ? new Dictionary<string, object>(other.Properties) : new Dictionary<string, object>();
+            }
+        }
     }
-    
+
     /// <summary>
     /// Represents an active contextual menu instance
     /// </summary>
@@ -138,19 +163,19 @@ namespace ProjectChimera.Systems.UI.Advanced
         public bool IsOpen;
         public float CreationTime;
         public float LastUpdateTime;
-        
+
         // UI state
         public string SelectedCategoryId;
         public Vector2 ScrollPosition;
         public bool IsExpanded;
-        
+
         public ContextualMenu()
         {
             Id = Guid.NewGuid().ToString();
             CreationTime = Time.time;
         }
     }
-    
+
     /// <summary>
     /// Resource requirement for actions
     /// </summary>
@@ -161,7 +186,7 @@ namespace ProjectChimera.Systems.UI.Advanced
         public float Amount;
         public bool IsRequired;
         public string Description;
-        
+
         public ResourceRequirement(string resourceType, float amount, bool isRequired = true, string description = "")
         {
             ResourceType = resourceType;
@@ -170,7 +195,7 @@ namespace ProjectChimera.Systems.UI.Advanced
             Description = description;
         }
     }
-    
+
     /// <summary>
     /// Menu cache for performance optimization
     /// </summary>
@@ -178,7 +203,7 @@ namespace ProjectChimera.Systems.UI.Advanced
     {
         private Dictionary<string, CachedMenuData> _cache = new Dictionary<string, CachedMenuData>();
         private const float CACHE_LIFETIME = 30f;
-        
+
         public void CacheMenuData(string contextKey, List<MenuCategory> categories, List<MenuAction> actions)
         {
             _cache[contextKey] = new CachedMenuData
@@ -188,12 +213,12 @@ namespace ProjectChimera.Systems.UI.Advanced
                 CacheTime = Time.time
             };
         }
-        
+
         public bool TryGetCachedData(string contextKey, out List<MenuCategory> categories, out List<MenuAction> actions)
         {
             categories = null;
             actions = null;
-            
+
             if (_cache.TryGetValue(contextKey, out var cachedData))
             {
                 if (Time.time - cachedData.CacheTime < CACHE_LIFETIME)
@@ -207,19 +232,19 @@ namespace ProjectChimera.Systems.UI.Advanced
                     _cache.Remove(contextKey);
                 }
             }
-            
+
             return false;
         }
-        
+
         public void ClearCache()
         {
             _cache.Clear();
         }
-        
+
         public void ClearExpiredEntries()
         {
             var keysToRemove = new List<string>();
-            
+
             foreach (var kvp in _cache)
             {
                 if (Time.time - kvp.Value.CacheTime >= CACHE_LIFETIME)
@@ -227,13 +252,13 @@ namespace ProjectChimera.Systems.UI.Advanced
                     keysToRemove.Add(kvp.Key);
                 }
             }
-            
+
             foreach (var key in keysToRemove)
             {
                 _cache.Remove(key);
             }
         }
-        
+
         private class CachedMenuData
         {
             public List<MenuCategory> Categories;
@@ -241,51 +266,51 @@ namespace ProjectChimera.Systems.UI.Advanced
             public float CacheTime;
         }
     }
-    
+
     /// <summary>
     /// Input action handler for menu system
     /// </summary>
-    public class InputActionHandler : MonoBehaviour
+    public class InputActionHandler : MonoBehaviour, ITickable
     {
         public event Action<Vector3> OnContextMenuRequested;
         public event Action OnMenuCancelRequested;
         public event Action<Vector2> OnNavigationInput;
         public event Action OnConfirmInput;
-        
+
         [Header("Input Settings")]
         [SerializeField] private bool _enableMouseInput = true;
         [SerializeField] private bool _enableKeyboardInput = true;
         [SerializeField] private bool _enableControllerInput = false;
-        
+
         [Header("Mouse Settings")]
         [SerializeField] private int _contextMenuButton = 1; // Right mouse button
         [SerializeField] private float _clickThreshold = 0.2f;
-        
+
         [Header("Keyboard Settings")]
         [SerializeField] private KeyCode _contextMenuKey = KeyCode.Tab;
         [SerializeField] private KeyCode _cancelKey = KeyCode.Escape;
         [SerializeField] private KeyCode _confirmKey = KeyCode.Return;
-        
+
         private float _mouseDownTime;
         private bool _mouseWasPressed;
-        
-        private void Update()
+
+        public void Tick(float deltaTime)
         {
             HandleMouseInput();
             HandleKeyboardInput();
         }
-        
+
         private void HandleMouseInput()
         {
             if (!_enableMouseInput) return;
-            
+
             // Context menu on right click
             if (Input.GetMouseButtonDown(_contextMenuButton))
             {
                 _mouseDownTime = Time.time;
                 _mouseWasPressed = true;
             }
-            
+
             if (Input.GetMouseButtonUp(_contextMenuButton) && _mouseWasPressed)
             {
                 if (Time.time - _mouseDownTime < _clickThreshold)
@@ -296,18 +321,18 @@ namespace ProjectChimera.Systems.UI.Advanced
                 }
                 _mouseWasPressed = false;
             }
-            
+
             // Cancel on left click or escape
             if (Input.GetMouseButtonDown(0))
             {
                 OnMenuCancelRequested?.Invoke();
             }
         }
-        
+
         private void HandleKeyboardInput()
         {
             if (!_enableKeyboardInput) return;
-            
+
             // Context menu key
             if (Input.GetKeyDown(_contextMenuKey))
             {
@@ -316,30 +341,56 @@ namespace ProjectChimera.Systems.UI.Advanced
                 var worldPosition = cameraPosition + cameraForward * 5f;
                 OnContextMenuRequested?.Invoke(worldPosition);
             }
-            
+
             // Cancel key
             if (Input.GetKeyDown(_cancelKey))
             {
                 OnMenuCancelRequested?.Invoke();
             }
-            
+
             // Confirm key
             if (Input.GetKeyDown(_confirmKey))
             {
                 OnConfirmInput?.Invoke();
             }
-            
+
             // Navigation input
             var horizontal = Input.GetAxis("Horizontal");
             var vertical = Input.GetAxis("Vertical");
-            
+
             if (Mathf.Abs(horizontal) > 0.1f || Mathf.Abs(vertical) > 0.1f)
             {
                 OnNavigationInput?.Invoke(new Vector2(horizontal, vertical));
             }
         }
+
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+    public virtual void OnRegistered()
+    {
+        // Override in derived classes if needed
     }
-    
+
+    public virtual void OnUnregistered()
+    {
+        // Override in derived classes if needed
+    }
+
+    protected virtual void Start()
+    {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
+    }
+
+    protected virtual void OnDestroy()
+    {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
+    }
+}
+
     /// <summary>
     /// Visual feedback types for menu system
     /// </summary>
@@ -351,7 +402,7 @@ namespace ProjectChimera.Systems.UI.Advanced
         Info,
         Progress
     }
-    
+
     /// <summary>
     /// Visual feedback system interface
     /// </summary>

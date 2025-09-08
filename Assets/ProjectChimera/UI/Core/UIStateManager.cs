@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Data.UI;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Core
 {
@@ -11,35 +13,35 @@ namespace ProjectChimera.UI.Core
     /// Manager responsible for saving and loading UI state across sessions.
     /// Handles persistence of UI preferences, layouts, and configurations.
     /// </summary>
-    public class UIStateManager : DIChimeraManager
+    public class UIStateManager : DIChimeraManager, ITickable
     {
         [Header("State Configuration")]
         [SerializeField] private UIStatePersistenceSO _persistenceConfig;
         [SerializeField] private bool _enableDebugLogging = false;
         [SerializeField] private bool _autoInitialize = true;
-        
+
         [Header("Runtime State")]
         [SerializeField] private bool _isInitialized = false;
         [SerializeField] private float _lastSaveTime = 0f;
         [SerializeField] private int _pendingStateChanges = 0;
-        
+
         // State storage
         private Dictionary<string, UIStateData> _currentStates;
         private Dictionary<string, System.DateTime> _stateTimestamps;
         private Dictionary<string, int> _stateVersions;
         private Queue<UIStateOperation> _pendingOperations;
-        
+
         // Autosave
         private float _autosaveTimer = 0f;
         private bool _isDirty = false;
-        
+
         // Events
         public System.Action<string, UIStateData> OnStateLoaded;
         public System.Action<string, UIStateData> OnStateSaved;
         public System.Action<string> OnStateRemoved;
         public System.Action OnAllStatesLoaded;
         public System.Action OnAllStatesSaved;
-        
+
         // Properties
         public UIStatePersistenceSO PersistenceConfig => _persistenceConfig;
         public bool IsInitialized => _isInitialized;
@@ -47,31 +49,39 @@ namespace ProjectChimera.UI.Core
         public int PendingStateChanges => _pendingStateChanges;
         public bool IsDirty => _isDirty;
         public float LastSaveTime => _lastSaveTime;
-        
+
         protected override void OnManagerInitialize()
         {
-            
+
             InitializeStateStorage();
-            
+
             if (_persistenceConfig != null && _autoInitialize)
             {
                 LoadAllStates();
             }
-            
+
             SetupAutosave();
             _isInitialized = true;
-            
+
+            // Register with UpdateOrchestrator for centralized ticking
+            var orchestrator = UpdateOrchestrator.Instance;
+            orchestrator?.RegisterTickable(this);
+
             // LogInfo("UI State Manager initialized successfully");
         }
-        
+
         protected override void OnManagerShutdown()
         {
+            // Unregister from UpdateOrchestrator
+            var orchestrator = UpdateOrchestrator.Instance;
+            orchestrator?.UnregisterTickable(this);
+
             SaveAllStates();
             ClearAllStates();
-            
+
             // LogInfo("UI State Manager shutdown completed");
         }
-        
+
         /// <summary>
         /// Initialize state storage containers
         /// </summary>
@@ -82,7 +92,7 @@ namespace ProjectChimera.UI.Core
             _stateVersions = new Dictionary<string, int>();
             _pendingOperations = new Queue<UIStateOperation>();
         }
-        
+
         /// <summary>
         /// Setup autosave system
         /// </summary>
@@ -91,17 +101,17 @@ namespace ProjectChimera.UI.Core
             if (_persistenceConfig != null && _persistenceConfig.EnableAutosave)
             {
                 _autosaveTimer = 0f;
-                
+
                 // Register for application events
                 Application.focusChanged += OnApplicationFocusChanged;
-                
+
                 if (_persistenceConfig.SaveOnApplicationPause)
                 {
                     // Application.pauseStateChanged += OnApplicationPauseChanged; // pauseStateChanged doesn't exist in Unity
                 }
             }
         }
-        
+
         /// <summary>
         /// Save UI state for specific element
         /// </summary>
@@ -109,10 +119,10 @@ namespace ProjectChimera.UI.Core
         {
             if (!_isInitialized || _persistenceConfig == null)
                 return;
-                
+
             if (!_persistenceConfig.ShouldPersist(elementId, category))
                 return;
-                
+
             var stateKey = _persistenceConfig.GetStorageKey(elementId, category);
             var uiState = new UIStateData
             {
@@ -122,14 +132,14 @@ namespace ProjectChimera.UI.Core
                 Timestamp = System.DateTime.Now,
                 Version = GetNextVersion(stateKey)
             };
-            
+
             _currentStates[stateKey] = uiState;
             _stateTimestamps[stateKey] = uiState.Timestamp;
             _stateVersions[stateKey] = uiState.Version;
-            
+
             _isDirty = true;
             _pendingStateChanges++;
-            
+
             // Immediate save for critical states
             var scope = _persistenceConfig.GetPersistenceScope(elementId);
             if (scope != null && scope.Priority >= 9)
@@ -140,15 +150,15 @@ namespace ProjectChimera.UI.Core
             // {
                 QueueSaveOperation(stateKey, uiState);
             // }
-            
+
             OnStateSaved?.Invoke(elementId, uiState);
-            
+
             if (_enableDebugLogging)
             {
                 LogInfo($"UI State saved: {elementId} ({category})");
             }
         }
-        
+
         /// <summary>
         /// Load UI state for specific element
         /// </summary>
@@ -156,9 +166,9 @@ namespace ProjectChimera.UI.Core
         {
             if (!_isInitialized || _persistenceConfig == null)
                 return defaultValue;
-                
+
             var stateKey = _persistenceConfig.GetStorageKey(elementId, category);
-            
+
             // Check in-memory cache first
             if (_currentStates.TryGetValue(stateKey, out var cachedState))
             {
@@ -172,7 +182,7 @@ namespace ProjectChimera.UI.Core
                     return defaultValue;
                 }
             }
-            
+
             // Load from storage
             var loadedState = LoadStateFromStorage(stateKey);
             if (loadedState != null)
@@ -180,9 +190,9 @@ namespace ProjectChimera.UI.Core
                 _currentStates[stateKey] = loadedState;
                 _stateTimestamps[stateKey] = loadedState.Timestamp;
                 _stateVersions[stateKey] = loadedState.Version;
-                
+
                 OnStateLoaded?.Invoke(elementId, loadedState);
-                
+
                 try
                 {
                     return (T)loadedState.Data;
@@ -193,10 +203,10 @@ namespace ProjectChimera.UI.Core
                     return defaultValue;
                 }
             }
-            
+
             return defaultValue;
         }
-        
+
         /// <summary>
         /// Remove UI state for specific element
         /// </summary>
@@ -204,23 +214,23 @@ namespace ProjectChimera.UI.Core
         {
             if (!_isInitialized || _persistenceConfig == null)
                 return;
-                
+
             var stateKey = _persistenceConfig.GetStorageKey(elementId, category);
-            
+
             _currentStates.Remove(stateKey);
             _stateTimestamps.Remove(stateKey);
             _stateVersions.Remove(stateKey);
-            
+
             RemoveStateFromStorage(stateKey);
-            
+
             OnStateRemoved?.Invoke(elementId);
-            
+
             if (_enableDebugLogging)
             {
                 LogInfo($"UI State removed: {elementId} ({category})");
             }
         }
-        
+
         /// <summary>
         /// Check if state exists for element
         /// </summary>
@@ -228,11 +238,11 @@ namespace ProjectChimera.UI.Core
         {
             if (!_isInitialized || _persistenceConfig == null)
                 return false;
-                
+
             var stateKey = _persistenceConfig.GetStorageKey(elementId, category);
             return _currentStates.ContainsKey(stateKey) || StateExistsInStorage(stateKey);
         }
-        
+
         /// <summary>
         /// Get state timestamp
         /// </summary>
@@ -240,11 +250,11 @@ namespace ProjectChimera.UI.Core
         {
             if (!_isInitialized || _persistenceConfig == null)
                 return System.DateTime.MinValue;
-                
+
             var stateKey = _persistenceConfig.GetStorageKey(elementId, category);
             return _stateTimestamps.TryGetValue(stateKey, out var timestamp) ? timestamp : System.DateTime.MinValue;
         }
-        
+
         /// <summary>
         /// Save all current states
         /// </summary>
@@ -252,23 +262,23 @@ namespace ProjectChimera.UI.Core
         {
             if (!_isInitialized || _persistenceConfig == null)
                 return;
-                
+
             foreach (var kvp in _currentStates)
             {
                 SaveStateImmediate(kvp.Key, kvp.Value);
             }
-            
+
             ProcessPendingOperations();
-            
+
             _isDirty = false;
             _pendingStateChanges = 0;
             _lastSaveTime = Time.time;
-            
+
             OnAllStatesSaved?.Invoke();
-            
+
             LogInfo($"All UI states saved ({_currentStates.Count} states)");
         }
-        
+
         /// <summary>
         /// Load all states from storage
         /// </summary>
@@ -276,9 +286,9 @@ namespace ProjectChimera.UI.Core
         {
             if (!_isInitialized || _persistenceConfig == null)
                 return;
-                
+
             var loadedCount = 0;
-            
+
             try
             {
                 switch (_persistenceConfig.StorageType)
@@ -286,11 +296,11 @@ namespace ProjectChimera.UI.Core
                     case UIStateStorageType.PlayerPrefs:
                         loadedCount = LoadAllStatesFromPlayerPrefs();
                         break;
-                        
+
                     case UIStateStorageType.FileSystem:
                         loadedCount = LoadAllStatesFromFileSystem();
                         break;
-                        
+
                     default:
                         LogWarning($"Storage type {_persistenceConfig.StorageType} not implemented");
                         break;
@@ -300,12 +310,12 @@ namespace ProjectChimera.UI.Core
             {
                 LogError($"Failed to load UI states: {ex.Message}");
             }
-            
+
             OnAllStatesLoaded?.Invoke();
-            
+
             LogInfo($"Loaded {loadedCount} UI states from storage");
         }
-        
+
         /// <summary>
         /// Clear all states
         /// </summary>
@@ -315,15 +325,15 @@ namespace ProjectChimera.UI.Core
             _stateTimestamps.Clear();
             _stateVersions.Clear();
             _pendingOperations.Clear();
-            
+
             ClearAllStatesFromStorage();
-            
+
             _isDirty = false;
             _pendingStateChanges = 0;
-            
+
             LogInfo("All UI states cleared");
         }
-        
+
         /// <summary>
         /// Save state with UIStateData object (compatibility method)
         /// </summary>
@@ -334,16 +344,16 @@ namespace ProjectChimera.UI.Core
                 LogWarning("UI State Manager not initialized");
                 return;
             }
-            
+
             if (string.IsNullOrEmpty(stateKey) || stateData == null)
             {
                 LogWarning("Invalid state key or data");
                 return;
             }
-            
+
             SaveState(stateData.ElementId ?? stateKey, stateData.Category, stateData.Data);
         }
-        
+
         /// <summary>
         /// Load state with UIStateData return (compatibility method)
         /// </summary>
@@ -354,13 +364,13 @@ namespace ProjectChimera.UI.Core
                 LogWarning("UI State Manager not initialized");
                 return null;
             }
-            
+
             if (string.IsNullOrEmpty(stateKey))
             {
                 LogWarning("Invalid state key");
                 return null;
             }
-            
+
             // Try to find the state in current states
             foreach (var kvp in _currentStates)
             {
@@ -369,10 +379,10 @@ namespace ProjectChimera.UI.Core
                     return kvp.Value;
                 }
             }
-            
+
             return null;
         }
-        
+
         /// <summary>
         /// Save state immediately to storage
         /// </summary>
@@ -385,11 +395,11 @@ namespace ProjectChimera.UI.Core
                     case UIStateStorageType.PlayerPrefs:
                         SaveStateToPlayerPrefs(stateKey, stateData);
                         break;
-                        
+
                     case UIStateStorageType.FileSystem:
                         SaveStateToFileSystem(stateKey, stateData);
                         break;
-                        
+
                     default:
                         LogWarning($"Storage type {_persistenceConfig.StorageType} not implemented");
                         break;
@@ -400,7 +410,7 @@ namespace ProjectChimera.UI.Core
                 LogError($"Failed to save state {stateKey}: {ex.Message}");
             }
         }
-        
+
         /// <summary>
         /// Load state from storage
         /// </summary>
@@ -421,32 +431,32 @@ namespace ProjectChimera.UI.Core
                 return null;
             }
         }
-        
+
         /// <summary>
         /// Save state to PlayerPrefs
         /// </summary>
         private void SaveStateToPlayerPrefs(string stateKey, UIStateData stateData)
         {
             var json = JsonUtility.ToJson(stateData);
-            
+
             // Validate and sanitize Unicode before saving
             json = SanitizeUnicodeString(json);
-            
+
             if (_persistenceConfig.CompressData)
             {
                 json = CompressString(json);
             }
-            
+
             if (!_persistenceConfig.IsDataSizeValid(json.Length))
             {
                 LogWarning($"State data too large for {stateKey}: {json.Length} bytes");
                 return;
             }
-            
+
             PlayerPrefs.SetString(stateKey, json);
             PlayerPrefs.Save();
         }
-        
+
         /// <summary>
         /// Load state from PlayerPrefs
         /// </summary>
@@ -454,17 +464,17 @@ namespace ProjectChimera.UI.Core
         {
             if (!PlayerPrefs.HasKey(stateKey))
                 return null;
-                
+
             var json = PlayerPrefs.GetString(stateKey);
-            
+
             if (_persistenceConfig.CompressData)
             {
                 json = DecompressString(json);
             }
-            
+
             return JsonUtility.FromJson<UIStateData>(json);
         }
-        
+
         /// <summary>
         /// Save state to file system
         /// </summary>
@@ -472,51 +482,51 @@ namespace ProjectChimera.UI.Core
         {
             var filePath = GetStateFilePath(stateKey);
             var directory = Path.GetDirectoryName(filePath);
-            
+
             if (!Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
-            
+
             var json = JsonUtility.ToJson(stateData, true);
-            
+
             // Validate and sanitize Unicode before saving
             json = SanitizeUnicodeString(json);
-            
+
             if (_persistenceConfig.CompressData)
             {
                 json = CompressString(json);
             }
-            
+
             if (!_persistenceConfig.IsDataSizeValid(json.Length))
             {
                 LogWarning($"State data too large for {stateKey}: {json.Length} bytes");
                 return;
             }
-            
+
             File.WriteAllText(filePath, json, Encoding.UTF8);
         }
-        
+
         /// <summary>
         /// Load state from file system
         /// </summary>
         private UIStateData LoadStateFromFileSystem(string stateKey)
         {
             var filePath = GetStateFilePath(stateKey);
-            
+
             if (!File.Exists(filePath))
                 return null;
-                
+
             var json = File.ReadAllText(filePath, Encoding.UTF8);
-            
+
             if (_persistenceConfig.CompressData)
             {
                 json = DecompressString(json);
             }
-            
+
             return JsonUtility.FromJson<UIStateData>(json);
         }
-        
+
         /// <summary>
         /// Get file path for state
         /// </summary>
@@ -525,7 +535,7 @@ namespace ProjectChimera.UI.Core
             var fileName = stateKey.Replace(".", "_").Replace("/", "_") + ".json";
             return Path.Combine(Application.persistentDataPath, _persistenceConfig.FileStoragePath, fileName);
         }
-        
+
         /// <summary>
         /// Check if state exists in storage
         /// </summary>
@@ -538,7 +548,7 @@ namespace ProjectChimera.UI.Core
                 _ => false
             };
         }
-        
+
         /// <summary>
         /// Remove state from storage
         /// </summary>
@@ -550,7 +560,7 @@ namespace ProjectChimera.UI.Core
                     PlayerPrefs.DeleteKey(stateKey);
                     PlayerPrefs.Save();
                     break;
-                    
+
                 case UIStateStorageType.FileSystem:
                     var filePath = GetStateFilePath(stateKey);
                     if (File.Exists(filePath))
@@ -560,7 +570,7 @@ namespace ProjectChimera.UI.Core
                     break;
             }
         }
-        
+
         /// <summary>
         /// Clear all states from storage
         /// </summary>
@@ -572,7 +582,7 @@ namespace ProjectChimera.UI.Core
                     // Note: PlayerPrefs doesn't have a direct way to delete by prefix
                     // This would require iterating through all keys
                     break;
-                    
+
                 case UIStateStorageType.FileSystem:
                     var directory = Path.Combine(Application.persistentDataPath, _persistenceConfig.FileStoragePath);
                     if (Directory.Exists(directory))
@@ -582,7 +592,7 @@ namespace ProjectChimera.UI.Core
                     break;
             }
         }
-        
+
         /// <summary>
         /// Load all states from PlayerPrefs
         /// </summary>
@@ -592,7 +602,7 @@ namespace ProjectChimera.UI.Core
             // Would need to maintain a separate index of keys
             return 0;
         }
-        
+
         /// <summary>
         /// Load all states from file system
         /// </summary>
@@ -601,17 +611,17 @@ namespace ProjectChimera.UI.Core
             var directory = Path.Combine(Application.persistentDataPath, _persistenceConfig.FileStoragePath);
             if (!Directory.Exists(directory))
                 return 0;
-                
+
             var files = Directory.GetFiles(directory, "*.json", SearchOption.AllDirectories);
             var loadedCount = 0;
-            
+
             foreach (var file in files)
             {
                 try
                 {
                     var stateKey = Path.GetFileNameWithoutExtension(file).Replace("_", ".");
                     var stateData = LoadStateFromFileSystem(stateKey);
-                    
+
                     if (stateData != null)
                     {
                         _currentStates[stateKey] = stateData;
@@ -625,10 +635,10 @@ namespace ProjectChimera.UI.Core
                     LogWarning($"Failed to load state file {file}: {ex.Message}");
                 }
             }
-            
+
             return loadedCount;
         }
-        
+
         /// <summary>
         /// Get next version number for state
         /// </summary>
@@ -636,7 +646,7 @@ namespace ProjectChimera.UI.Core
         {
             return _stateVersions.TryGetValue(stateKey, out var version) ? version + 1 : 1;
         }
-        
+
         /// <summary>
         /// Queue save operation for batch processing
         /// </summary>
@@ -650,7 +660,7 @@ namespace ProjectChimera.UI.Core
                 Timestamp = System.DateTime.Now
             });
         }
-        
+
         /// <summary>
         /// Process pending operations
         /// </summary>
@@ -659,7 +669,7 @@ namespace ProjectChimera.UI.Core
             while (_pendingOperations.Count > 0)
             {
                 var operation = _pendingOperations.Dequeue();
-                
+
                 if (operation.Type == UIStateOperationType.Save)
                 {
                     SaveStateImmediate(operation.StateKey, operation.StateData);
@@ -667,7 +677,7 @@ namespace ProjectChimera.UI.Core
                 }
             }
         }
-        
+
         /// <summary>
         /// Compress string data
         /// </summary>
@@ -677,7 +687,7 @@ namespace ProjectChimera.UI.Core
             // In a real implementation, you might use GZip or other compression
             return System.Convert.ToBase64String(Encoding.UTF8.GetBytes(input));
         }
-        
+
         /// <summary>
         /// Decompress string data
         /// </summary>
@@ -694,7 +704,7 @@ namespace ProjectChimera.UI.Core
                 return input; // Return as-is if decompression fails
             }
         }
-        
+
         // Event handlers
         private void OnApplicationFocusChanged(bool hasFocus)
         {
@@ -703,7 +713,7 @@ namespace ProjectChimera.UI.Core
                 SaveAllStates();
             }
         }
-        
+
         private void OnApplicationPauseChanged(bool pauseStatus)
         {
             if (pauseStatus && _isDirty)
@@ -711,20 +721,24 @@ namespace ProjectChimera.UI.Core
                 SaveAllStates();
             }
         }
-        
-        private void Update()
+
+        #region ITickable Implementation
+
+        public int Priority => TickPriority.UIManager;
+        public bool Enabled => _isInitialized && _persistenceConfig != null && _persistenceConfig.EnableAutosave;
+
+        public void Tick(float deltaTime)
         {
-            if (!_isInitialized || _persistenceConfig == null || !_persistenceConfig.EnableAutosave)
-                return;
-                
-            _autosaveTimer += Time.deltaTime;
-            
+            if (!Enabled) return;
+
+            _autosaveTimer += deltaTime;
+
             if (_autosaveTimer >= _persistenceConfig.AutosaveInterval && _isDirty)
             {
                 SaveAllStates();
                 _autosaveTimer = 0f;
             }
-            
+
             // Process pending operations in batches
             if (_pendingOperations.Count > 0)
             {
@@ -743,23 +757,35 @@ namespace ProjectChimera.UI.Core
                 }
             }
         }
-        
+
+        public void OnRegistered()
+        {
+            ChimeraLogger.Log("[UIStateManager] Registered with UpdateOrchestrator");
+        }
+
+        public void OnUnregistered()
+        {
+            ChimeraLogger.Log("[UIStateManager] Unregistered from UpdateOrchestrator");
+        }
+
+        #endregion
+
         protected override void OnDestroy()
         {
             if (_isDirty)
             {
                 SaveAllStates();
             }
-            
+
             Application.focusChanged -= OnApplicationFocusChanged;
             // Application.pauseStateChanged -= OnApplicationPauseChanged;
-            
+
             base.OnDestroy();
         }
-        
+
         protected void OnValidate()
         {
-            
+
             if (_persistenceConfig == null)
             {
                 LogWarning("No persistence configuration assigned to UI State Manager");
@@ -775,11 +801,11 @@ namespace ProjectChimera.UI.Core
                 return input;
 
             var stringBuilder = new System.Text.StringBuilder();
-            
+
             for (int i = 0; i < input.Length; i++)
             {
                 char c = input[i];
-                
+
                 // Check for high surrogate
                 if (char.IsHighSurrogate(c))
                 {
@@ -796,7 +822,7 @@ namespace ProjectChimera.UI.Core
                         // Invalid high surrogate, replace with Unicode replacement character
                         stringBuilder.Append('\uFFFD');
                         if (_enableDebugLogging)
-                            UnityEngine.Debug.LogWarning($"Invalid Unicode high surrogate at position {i}, replaced with Unicode replacement character");
+                            ProjectChimera.Core.Logging.ChimeraLogger.LogWarning($"Invalid Unicode high surrogate at position {i}, replaced with Unicode replacement character");
                     }
                 }
                 else if (char.IsLowSurrogate(c))
@@ -804,7 +830,7 @@ namespace ProjectChimera.UI.Core
                     // Orphaned low surrogate, replace with Unicode replacement character
                     stringBuilder.Append('\uFFFD');
                     if (_enableDebugLogging)
-                        UnityEngine.Debug.LogWarning($"Orphaned Unicode low surrogate at position {i}, replaced with Unicode replacement character");
+                        ProjectChimera.Core.Logging.ChimeraLogger.LogWarning($"Orphaned Unicode low surrogate at position {i}, replaced with Unicode replacement character");
                 }
                 else
                 {
@@ -812,11 +838,11 @@ namespace ProjectChimera.UI.Core
                     stringBuilder.Append(c);
                 }
             }
-            
+
             return stringBuilder.ToString();
         }
     }
-    
+
     /// <summary>
     /// UI state data container
     /// </summary>
@@ -828,13 +854,13 @@ namespace ProjectChimera.UI.Core
         public object Data;
         public System.DateTime Timestamp;
         public int Version;
-        
+
         // Compatibility properties for testing
         public string StateId { get => ElementId; set => ElementId = value; }
         public int StateVersion { get => Version; set => Version = value; }
         public object StateData { get => Data; set => Data = value; }
     }
-    
+
     /// <summary>
     /// UI state operation for batch processing
     /// </summary>
@@ -845,7 +871,7 @@ namespace ProjectChimera.UI.Core
         public UIStateData StateData;
         public System.DateTime Timestamp;
     }
-    
+
     /// <summary>
     /// UI state operation types
     /// </summary>

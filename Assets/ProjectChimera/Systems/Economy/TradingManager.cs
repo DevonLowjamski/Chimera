@@ -1,7 +1,9 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Data.Economy;
 using ProjectChimera.Data.Economy.Trading;
 using ProjectChimera.Core.Events;
@@ -26,7 +28,7 @@ namespace ProjectChimera.Systems.Economy
     /// Maintains full API compatibility while delegating to modular services.
     /// Refactored from 1,512 lines to orchestrator pattern for maintainability.
     /// </summary>
-    public class TradingManager : DIChimeraManager
+    public class TradingManager : DIChimeraManager, ITickable
     {
         [Header("Orchestrator Configuration")]
         [SerializeField] private TradingSettings _tradingSettings;
@@ -70,13 +72,16 @@ namespace ProjectChimera.Systems.Economy
         
         protected override void OnManagerInitialize()
         {
-            Debug.Log("[TradingManager] Initializing Trading Manager Orchestrator...");
+            ChimeraLogger.Log("[TradingManager] Initializing Trading Manager Orchestrator...");
             
             InitializeComponents();
             InitializePlayerReputation();
             WireComponentEvents();
             
-            Debug.Log($"[TradingManager] Orchestrator initialized with {_availableTradingPosts.Count} trading posts");
+            ChimeraLogger.Log($"[TradingManager] Orchestrator initialized with {_availableTradingPosts.Count} trading posts");
+            
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
         
         /// <summary>
@@ -93,7 +98,7 @@ namespace ProjectChimera.Systems.Economy
             _transactionProcessor?.Initialize(_inventoryManager, _financialManager, _tradingPostManager);
             _opportunityGenerator?.Initialize(_inventoryManager, _playerReputation);
             
-            Debug.Log("[TradingManager] Component orchestration initialized");
+            ChimeraLogger.Log("[TradingManager] Component orchestration initialized");
         }
         
         /// <summary>
@@ -178,7 +183,13 @@ namespace ProjectChimera.Systems.Economy
         
         protected override void OnManagerShutdown()
         {
-            Debug.Log("[TradingManager] Shutting down Trading Manager Orchestrator...");
+            ChimeraLogger.Log("[TradingManager] Shutting down Trading Manager Orchestrator...");
+            
+            // Unregister from UpdateOrchestrator
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
             
             try
             {
@@ -191,19 +202,26 @@ namespace ProjectChimera.Systems.Economy
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"[TradingManager] Error during shutdown: {ex.Message}");
+                ChimeraLogger.LogWarning($"[TradingManager] Error during shutdown: {ex.Message}");
             }
             
-            Debug.Log("[TradingManager] Orchestrator shutdown complete");
+            ChimeraLogger.Log("[TradingManager] Orchestrator shutdown complete");
         }
         
-        private void Update()
+        #region ITickable Implementation
+        
+        int ITickable.Priority => TickPriority.EconomyManager;
+        public bool Enabled => IsInitialized;
+        
+        public void Tick(float deltaTime)
         {
             if (!IsInitialized) return;
             
             // Components handle their own update cycles
             // Orchestrator just coordinates if needed
         }
+        
+        #endregion
 
         #region Public API - Transaction Operations
         
@@ -246,7 +264,7 @@ namespace ProjectChimera.Systems.Economy
         /// </summary>
         public bool ExecuteTrade(object tradeTransaction)
         {
-            Debug.Log($"ExecuteTrade called with transaction: {tradeTransaction}");
+            ChimeraLogger.Log($"ExecuteTrade called with transaction: {tradeTransaction}");
             return true;
         }
         
@@ -349,7 +367,7 @@ namespace ProjectChimera.Systems.Economy
             InitializeComponents();
             InitializePlayerReputation();
             
-            Debug.Log("[TradingManager] Reset for testing completed");
+            ChimeraLogger.Log("[TradingManager] Reset for testing completed");
         }
         
         #endregion

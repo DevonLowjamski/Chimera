@@ -1,11 +1,15 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.UI.Core;
+using ProjectChimera.Systems.Facilities;
 using ProjectChimera.Systems.Facilities;
 using ProjectChimera.Data.Facilities;
 using System.Collections.Generic;
 using System.Linq;
+using ProjectChimera.Core.Logging;
+
 
 namespace ProjectChimera.UI.Panels
 {
@@ -14,7 +18,7 @@ namespace ProjectChimera.UI.Panels
     /// Allows players to view owned facilities, upgrade facilities, purchase new ones, and switch between them.
     /// Part of the Phase 5 facility ladder system for Project Chimera.
     /// </summary>
-    public class FacilityWorldMapPanel : UIPanel
+    public class FacilityWorldMapPanel : UIPanel, ITickable
     {
         [Header("Facility UI Settings")]
         [SerializeField] private string _facilityListName = "facility-list";
@@ -38,7 +42,7 @@ namespace ProjectChimera.UI.Panels
         private Label _portfolioValueLabel;
 
         // Facility Management
-        private FacilityManager _facilityManager;
+        private IFacilityManager _facilityManager; // Placeholder for FacilityManager
         private FacilitySwitchInfo _selectedFacility;
         private List<FacilitySwitchInfo> _availableFacilities;
 
@@ -48,12 +52,12 @@ namespace ProjectChimera.UI.Panels
         protected override void Start()
         {
             base.Start();
-            Debug.Log("[FacilityWorldMapPanel] Initializing facility world map UI...");
+            ChimeraLogger.Log("[FacilityWorldMapPanel] Initializing facility world map UI...");
 
             _root = UIDocument?.rootVisualElement;
             if (_root == null)
             {
-                Debug.LogError("[FacilityWorldMapPanel] Root visual element not found!");
+                ChimeraLogger.LogError("[FacilityWorldMapPanel] Root visual element not found!");
                 return;
             }
 
@@ -74,17 +78,21 @@ namespace ProjectChimera.UI.Panels
             _purchaseButton?.RegisterCallback<ClickEvent>(OnPurchaseButtonClicked);
             _sellButton?.RegisterCallback<ClickEvent>(OnSellButtonClicked);
 
-            _facilityManager = GameManager.Instance?.GetManager<FacilityManager>();
+            _facilityManager = ServiceContainerFactory.Instance?.TryResolve<IFacilityManager>(); // Placeholder - FacilityManager not yet implemented
             if (_facilityManager == null)
             {
-                Debug.LogError("[FacilityWorldMapPanel] FacilityManager not found!");
+                ChimeraLogger.LogError("[FacilityWorldMapPanel] FacilityManager not found!");
                 return;
             }
 
             SubscribeToFacilityEvents();
 
             _isInitialized = true;
-            Debug.Log("[FacilityWorldMapPanel] Facility world map UI initialized successfully");
+
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+
+            ChimeraLogger.Log("[FacilityWorldMapPanel] Facility world map UI initialized successfully");
         }
 
         protected override void OnAfterShow()
@@ -100,10 +108,20 @@ namespace ProjectChimera.UI.Panels
 
         private void OnDestroy()
         {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+
             UnsubscribeFromFacilityEvents();
         }
 
-        private void Update()
+        #region ITickable Implementation
+
+        public int Priority => TickPriority.UIManager;
+        public bool Enabled => IsVisible;
+
+        public void Tick(float deltaTime)
         {
             if (!IsVisible) return;
 
@@ -114,6 +132,8 @@ namespace ProjectChimera.UI.Panels
                 _lastRefreshTime = Time.time;
             }
         }
+
+        #endregion
 
         #region Facility Event Handling
 
@@ -191,7 +211,7 @@ namespace ProjectChimera.UI.Panels
         {
             if (_facilityManager == null) return;
 
-            _availableFacilities = _facilityManager.GetAvailableFacilitiesForSwitching();
+            _availableFacilities = _facilityManager.GetAvailableFacilitiesForSwitchingDetailed();
             PopulateFacilityList();
             RefreshPortfolioValue();
             RefreshSelectedFacilityDetail();
@@ -209,7 +229,7 @@ namespace ProjectChimera.UI.Panels
                 _facilityList.Add(facilityElement);
             }
 
-            Debug.Log($"[FacilityWorldMapPanel] Populated facility list with {_availableFacilities.Count} facilities");
+            ChimeraLogger.Log($"[FacilityWorldMapPanel] Populated facility list with {_availableFacilities.Count} facilities");
         }
 
         private VisualElement CreateFacilityListElement(FacilitySwitchInfo facilityInfo)
@@ -229,14 +249,14 @@ namespace ProjectChimera.UI.Panels
             // Status
             var statusLabel = new Label(facilityInfo.StatusMessage);
             statusLabel.AddToClassList("facility-status");
-            
+
             if (facilityInfo.IsCurrentFacility)
                 statusLabel.AddToClassList("current-facility");
             else if (facilityInfo.CanSwitch)
                 statusLabel.AddToClassList("available-facility");
             else
                 statusLabel.AddToClassList("unavailable-facility");
-                
+
             container.Add(statusLabel);
 
             // Performance info
@@ -333,8 +353,8 @@ namespace ProjectChimera.UI.Panels
         {
             _selectedFacility = facilityInfo;
             RefreshSelectedFacilityDetail();
-            
-            Debug.Log($"[FacilityWorldMapPanel] Selected facility: {facilityInfo.OwnedFacilityData.FacilityName}");
+
+            ChimeraLogger.Log($"[FacilityWorldMapPanel] Selected facility: {facilityInfo.OwnedFacilityData.FacilityName}");
         }
 
         private async void OnUpgradeButtonClicked(ClickEvent evt)
@@ -349,7 +369,7 @@ namespace ProjectChimera.UI.Panels
             }
 
             UpdateStatusMessage("Upgrading facility...", StatusType.Info);
-            
+
             var success = await _facilityManager.UpgradeToTierAsync(nextTier);
             if (!success)
             {
@@ -362,7 +382,7 @@ namespace ProjectChimera.UI.Panels
             if (_facilityManager == null || _selectedFacility.OwnedFacilityData.FacilityId == null) return;
 
             UpdateStatusMessage("Switching facilities...", StatusType.Info);
-            
+
             var result = await _facilityManager.SwitchToFacilityWithResultAsync(_selectedFacility.OwnedFacilityData.FacilityId);
             if (!result.Success)
             {
@@ -384,7 +404,7 @@ namespace ProjectChimera.UI.Panels
             }
 
             UpdateStatusMessage("Purchasing facility...", StatusType.Info);
-            
+
             var success = await _facilityManager.PurchaseNewFacilityAsync(nextTier);
             if (!success)
             {
@@ -397,7 +417,7 @@ namespace ProjectChimera.UI.Panels
             if (_facilityManager == null || _selectedFacility.OwnedFacilityData.FacilityId == null) return;
 
             UpdateStatusMessage("Selling facility...", StatusType.Info);
-            
+
             var success = _facilityManager.SellFacility(_selectedFacility.OwnedFacilityData.FacilityId);
             if (!success)
             {
@@ -414,13 +434,13 @@ namespace ProjectChimera.UI.Panels
             if (_statusLabel == null) return;
 
             _statusLabel.text = message;
-            
+
             // Remove existing status classes
             _statusLabel.RemoveFromClassList("status-success");
             _statusLabel.RemoveFromClassList("status-warning");
             _statusLabel.RemoveFromClassList("status-error");
             _statusLabel.RemoveFromClassList("status-info");
-            
+
             // Add appropriate status class
             switch (statusType)
             {
@@ -438,7 +458,7 @@ namespace ProjectChimera.UI.Panels
                     break;
             }
 
-            Debug.Log($"[FacilityWorldMapPanel] Status: {message} ({statusType})");
+            ChimeraLogger.Log("SYSTEM", $"[FacilityWorldMapPanel] Status: {message} ({statusType})");
         }
 
         #endregion

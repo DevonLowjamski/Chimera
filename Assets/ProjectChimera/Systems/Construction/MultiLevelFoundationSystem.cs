@@ -1,7 +1,9 @@
 using UnityEngine;
+using ProjectChimera.Core.Updates;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Construction;
 
 namespace ProjectChimera.Systems.Construction
@@ -10,7 +12,7 @@ namespace ProjectChimera.Systems.Construction
     /// Advanced multi-level foundation system with weight validation and structural analysis.
     /// Manages foundation requirements, load distribution, and structural integrity for vertical construction.
     /// </summary>
-    public class MultiLevelFoundationSystem : MonoBehaviour
+    public class MultiLevelFoundationSystem : MonoBehaviour, ITickable
     {
         [Header("Foundation Configuration")]
         [SerializeField] private bool _requireFoundationsAboveGround = true;
@@ -90,27 +92,30 @@ namespace ProjectChimera.Systems.Construction
 
         private void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             RegisterWithVerticalManager();
         }
 
-        private void Update()
-        {
+            public void Tick(float deltaTime)
+    {
             if (Time.time - _lastAnalysisUpdate >= _structuralAnalysisUpdateRate)
             {
                 PerformStructuralAnalysis();
                 _lastAnalysisUpdate = Time.time;
-            }
+
+    }
         }
 
         private void InitializeComponents()
         {
-            _gridSystem = FindObjectOfType<GridSystem>();
+            _gridSystem = ServiceContainerFactory.Instance?.TryResolve<IGridSystem>() as GridSystem;
             _verticalManager = GetComponent<VerticalPlacementManager>();
             _structuralValidator = GetComponent<StructuralIntegrityValidator>();
             _cascadingRemovalHandler = GetComponent<CascadingRemovalHandler>();
 
             if (_gridSystem == null)
-                Debug.LogError("[MultiLevelFoundationSystem] GridSystem not found!");
+                ChimeraLogger.LogError("[MultiLevelFoundationSystem] GridSystem not found!");
         }
 
         private void InitializeDefaultFoundationTypes()
@@ -214,12 +219,12 @@ namespace ProjectChimera.Systems.Construction
                 return affectedPositions;
 
             var foundationInfo = _foundationRegistry[position];
-            
+
             // Use cascading removal handler if available
             if (_cascadingRemovalHandler != null)
             {
                 var analysisResult = _cascadingRemovalHandler.AnalyzeCascadingRemoval(position);
-                
+
                 if (analysisResult.TotalAffected > 1)
                 {
                     _cascadingRemovalHandler.ExecuteCascadingRemoval(position, false);
@@ -232,7 +237,7 @@ namespace ProjectChimera.Systems.Construction
                 // Fallback to original logic
                 // Find all positions that depend on this foundation
                 affectedPositions.AddRange(foundationInfo.SupportedPositions);
-                
+
                 // Analyze impact on load distribution
                 var redistributionImpact = AnalyzeLoadRedistribution(position);
                 affectedPositions.AddRange(redistributionImpact.AffectedFoundations);
@@ -354,7 +359,7 @@ namespace ProjectChimera.Systems.Construction
             for (int depth = 1; depth <= requiredDepth; depth++)
             {
                 Vector3Int foundationPos = new Vector3Int(position.x, position.y, position.z - depth);
-                
+
                 if (!_gridSystem.IsValidGridPosition(foundationPos) || foundationPos.z < 0)
                     break;
 
@@ -379,7 +384,7 @@ namespace ProjectChimera.Systems.Construction
             float baseCapacity = foundationTypeData.baseLoadCapacity;
             int depth = CalculateFoundationDepth(position);
             float depthMultiplier = Mathf.Pow(foundationTypeData.depthMultiplier, depth);
-            
+
             return baseCapacity * depthMultiplier * _foundationLoadCapacityMultiplier;
         }
 
@@ -468,7 +473,7 @@ namespace ProjectChimera.Systems.Construction
             foreach (var nearbyPos in nearbyFoundations)
             {
                 float additionalLoad = redistributedLoad / nearbyFoundations.Count;
-                
+
                 if (!CanSupportAdditionalLoad(nearbyPos, additionalLoad))
                 {
                     affectedFoundations.Add(nearbyPos);
@@ -490,7 +495,7 @@ namespace ProjectChimera.Systems.Construction
 
             // Process analysis queue with limited items per frame
             int analysisCount = Mathf.Min(5, _analysisQueue.Count);
-            
+
             for (int i = 0; i < analysisCount; i++)
             {
                 if (_analysisQueue.Count > 0)
@@ -501,7 +506,7 @@ namespace ProjectChimera.Systems.Construction
             }
 
             // Add foundations that need analysis back to queue
-            foreach (var foundationPos in _foundationRegistry.Keys.Where(pos => 
+            foreach (var foundationPos in _foundationRegistry.Keys.Where(pos =>
                 Time.time - _lastAnalysisUpdate > _structuralAnalysisUpdateRate))
             {
                 _analysisQueue.Enqueue(foundationPos);
@@ -516,7 +521,7 @@ namespace ProjectChimera.Systems.Construction
             bool wasStructurallySound = foundationInfo.IsStructurallySound;
 
             // Check load capacity
-            bool loadWithinLimits = foundationInfo.CurrentLoad <= 
+            bool loadWithinLimits = foundationInfo.CurrentLoad <=
                 foundationInfo.MaxLoadCapacity * (1f + _overloadTolerance);
 
             // Check structural validation (simplified check for foundation integrity)
@@ -561,7 +566,7 @@ namespace ProjectChimera.Systems.Construction
             if (!_foundationRegistry.ContainsKey(failedFoundation)) return cascadingFailures;
 
             var foundationInfo = _foundationRegistry[failedFoundation];
-            
+
             // Check each supported position for cascading failure
             foreach (var supportedPos in foundationInfo.SupportedPositions)
             {
@@ -600,14 +605,14 @@ namespace ProjectChimera.Systems.Construction
                     for (int z = -gridRadius; z <= gridRadius; z++)
                     {
                         Vector3Int pos = center + new Vector3Int(x, y, z);
-                        
+
                         if (_gridSystem.IsValidGridPosition(pos))
                         {
                             float distance = Vector3.Distance(
                                 _gridSystem.GridToWorldPosition(center),
                                 _gridSystem.GridToWorldPosition(pos)
                             );
-                            
+
                             if (distance <= radius)
                                 positions.Add(pos);
                         }
@@ -628,7 +633,7 @@ namespace ProjectChimera.Systems.Construction
         private float CalculateTotalPositionLoad(Vector3Int position)
         {
             float totalLoad = 0f;
-            
+
             if (_loadDistribution.ContainsKey(position))
             {
                 totalLoad += _loadDistribution[position].DistributedLoad;
@@ -646,7 +651,7 @@ namespace ProjectChimera.Systems.Construction
         {
             if (_foundationRegistry.ContainsKey(position))
                 return _foundationRegistry[position].MaxLoadCapacity;
-            
+
             return 1000f; // Default capacity
         }
 
@@ -716,11 +721,30 @@ namespace ProjectChimera.Systems.Construction
 
         private void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             if (_verticalManager != null)
             {
                 _verticalManager.OnStackHeightChanged -= OnStackChanged;
                 _verticalManager.OnWeightCapacityChanged -= OnWeightCapacityChanged;
             }
         }
+
+    #region ITickable Implementation
+
+    public int Priority => TickPriority.ConstructionSystem;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+    public void OnRegistered()
+    {
+        ChimeraLogger.LogVerbose($"[{GetType().Name}] Registered with UpdateOrchestrator");
+    }
+
+    public void OnUnregistered()
+    {
+        ChimeraLogger.LogVerbose($"[{GetType().Name}] Unregistered from UpdateOrchestrator");
+    }
+
+    #endregion
     }
 }

@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Core;
@@ -38,9 +39,9 @@ namespace ProjectChimera.Systems.Construction
         
         private void Awake()
         {
-            _gridSystem = FindObjectOfType<GridSystem>();
+            _gridSystem = ServiceContainerFactory.Instance?.TryResolve<IGridSystem>() as GridSystem;
             if (_gridSystem == null)
-                Debug.LogWarning($"[HeightClearanceValidator] GridSystem not found - clearance validation may not work properly");
+                ChimeraLogger.LogWarning($"[HeightClearanceValidator] GridSystem not found - clearance validation may not work properly");
         }
         
         #region Main Validation API

@@ -1,10 +1,15 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
 using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Facilities;
 using ProjectChimera.Data.Shared;
+using ProjectChimera.Data.Shared;
+
 using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
+using FacilityHarvestResult = ProjectChimera.Data.Facilities.HarvestResult;
+using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 
 namespace ProjectChimera.Systems.Cultivation
 {
@@ -15,28 +20,28 @@ namespace ProjectChimera.Systems.Cultivation
     public class InteractivePlantComponent : MonoBehaviour
     {
         [Header("Plant Configuration")]
-        [SerializeField] private PlantStrainSO _plantStrain;
+        [SerializeField] private object _plantStrain;
         [SerializeField] private CannabisGenotype _genotype;
         [SerializeField] private PlantGrowthStage _currentGrowthStage = PlantGrowthStage.Seedling;
-        
+
         [Header("Interaction Settings")]
         [SerializeField] private bool _canHarvest = false;
         [SerializeField] private bool _canTreat = true;
         [SerializeField] private bool _canInspect = true;
         [SerializeField] private float _interactionRange = 2f;
-        
+
         [Header("Plant Health")]
         [SerializeField, Range(0f, 100f)] private float _health = 100f;
         [SerializeField, Range(0f, 100f)] private float _stress = 0f;
         [SerializeField, Range(0f, 100f)] private float _hydration = 80f;
         [SerializeField, Range(0f, 100f)] private float _nutrition = 75f;
-        
+
         // Component References
         // private Component _speedTreeInstance; // Generic reference to avoid SpeedTree dependency - commented out for compilation
         private ProjectChimera.Systems.Cultivation.PlantInstance _plantInstance;
-        
+
         // Public Properties
-        public PlantStrainSO PlantStrain => _plantStrain;
+        public object PlantStrain => _plantStrain;
         public CannabisGenotype Genotype => _genotype;
         public PlantGrowthStage CurrentGrowthStage => _currentGrowthStage;
         public bool CanHarvest => _canHarvest;
@@ -47,7 +52,7 @@ namespace ProjectChimera.Systems.Cultivation
         public float Stress => _stress;
         public float Hydration => _hydration;
         public float Nutrition => _nutrition;
-        
+
         // Additional properties expected by UI system
         public PlantGrowthStage CurrentStage => _currentGrowthStage;
         public float GrowthProgress => _plantInstance?.GrowthProgress ?? 0f;
@@ -63,7 +68,7 @@ namespace ProjectChimera.Systems.Cultivation
             CO2Level = 400f,
             AirFlow = 1f
         };
-        
+
         // Events - Fixed delegate signatures
         public System.Action<InteractivePlantComponent> OnPlantInteracted;
         public System.Action<InteractivePlantComponent> OnPlantHarvested;
@@ -73,23 +78,23 @@ namespace ProjectChimera.Systems.Cultivation
         public System.Action<InteractivePlantComponent> OnPlantHovered;
         public System.Action<InteractivePlantComponent> OnPlantGrowthStageChanged;
         public System.Action<InteractivePlantComponent> OnPlantHealthChanged;
-        
+
         private void Awake()
         {
             // _speedTreeInstance = GetComponent<SpeedTreePlantInstance>(); // Commented out - SpeedTreePlantInstance not available
             _plantInstance = GetComponent<ProjectChimera.Systems.Cultivation.PlantInstance>();
-            
+
             // if (_speedTreeInstance == null)
             // {
-            //     Debug.LogError($"InteractivePlantComponent requires SpeedTreePlantInstance component on {gameObject.name}");
+            //     ChimeraLogger.LogError($"InteractivePlantComponent requires SpeedTreePlantInstance component on {gameObject.name}");
             // }
         }
-        
+
         private void Start()
         {
             InitializePlantInteraction();
         }
-        
+
         /// <summary>
         /// Initialize plant interaction system
         /// </summary>
@@ -97,7 +102,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             // Set up interaction based on plant strain and growth stage
             UpdateInteractionCapabilities();
-            
+
             // Subscribe to plant events
             if (_plantInstance != null)
             {
@@ -105,7 +110,7 @@ namespace ProjectChimera.Systems.Cultivation
                 _plantInstance.OnHealthChanged += HandleHealthChanged;
             }
         }
-        
+
         /// <summary>
         /// Update interaction capabilities based on current state
         /// </summary>
@@ -113,14 +118,14 @@ namespace ProjectChimera.Systems.Cultivation
         {
             // Update harvest capability based on growth stage
             _canHarvest = (_currentGrowthStage == PlantGrowthStage.Harvest || _currentGrowthStage == PlantGrowthStage.Ripening) && _health > 50f;
-            
+
             // Update treatment capability based on health
             _canTreat = _health < 100f || _stress > 0f || _hydration < 100f || _nutrition < 100f;
-            
+
             // Inspection is always available
             _canInspect = true;
         }
-        
+
         /// <summary>
         /// Handle player interaction with plant
         /// </summary>
@@ -128,42 +133,42 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!CanPlayerInteract())
                 return;
-            
+
             OnPlantInteracted?.Invoke(this);
-            
+
             // Log interaction
-            Debug.Log($"Player interacted with plant: {_plantStrain?.StrainName ?? "Unknown"} (Stage: {_currentGrowthStage})");
+            ChimeraLogger.Log($"Player interacted with plant: {(_plantStrain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown"} (Stage: {_currentGrowthStage})");
         }
-        
+
         /// <summary>
         /// Harvest the plant
         /// </summary>
-        public HarvestResult HarvestPlant()
+        public FacilityHarvestResult HarvestPlant()
         {
             if (!_canHarvest)
             {
-                Debug.LogWarning($"Cannot harvest plant {gameObject.name} - not ready for harvest");
+                ChimeraLogger.LogWarning($"Cannot harvest plant {gameObject.name} - not ready for harvest");
                 return null;
             }
-            
+
             OnPlantHarvested?.Invoke(this);
-            
+
             // Update plant state
             _currentGrowthStage = PlantGrowthStage.Harvest;
             UpdateInteractionCapabilities();
-            
-            var result = new HarvestResult
+
+            var result = new FacilityHarvestResult
             {
                 TotalYield = CalculateEstimatedYield(),
-                PlantStrain = _plantStrain?.StrainName ?? "Unknown",
+                PlantStrain = (_plantStrain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown",
                 HarvestTime = System.DateTime.Now,
                 Quality = _health / 100f
             };
-            
-            Debug.Log($"Harvested plant: {_plantStrain?.StrainName ?? "Unknown"}");
+
+            ChimeraLogger.Log($"Harvested plant: {(_plantStrain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown"}");
             return result;
         }
-        
+
         /// <summary>
         /// Apply treatment to plant
         /// </summary>
@@ -171,10 +176,10 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!_canTreat)
             {
-                Debug.LogWarning($"Cannot treat plant {gameObject.name} - treatment not available");
+                ChimeraLogger.LogWarning($"Cannot treat plant {gameObject.name} - treatment not available");
                 return false;
             }
-            
+
             // Apply treatment effects
             switch (treatmentType.ToLower())
             {
@@ -191,14 +196,14 @@ namespace ProjectChimera.Systems.Cultivation
                     _health = Mathf.Min(100f, _health + (10f * intensity));
                     break;
             }
-            
+
             OnPlantTreated?.Invoke(this);
             UpdateInteractionCapabilities();
-            
-            Debug.Log($"Applied {treatmentType} treatment to plant: {_plantStrain?.StrainName ?? "Unknown"}");
+
+            ChimeraLogger.Log($"Applied {treatmentType} treatment to plant: {(_plantStrain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown"}");
             return true;
         }
-        
+
         /// <summary>
         /// Inspect the plant for detailed information
         /// </summary>
@@ -206,14 +211,14 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!_canInspect)
             {
-                Debug.LogWarning($"Cannot inspect plant {gameObject.name} - inspection not available");
+                ChimeraLogger.LogWarning($"Cannot inspect plant {gameObject.name} - inspection not available");
                 return null;
             }
-            
+
             var inspectionData = new PlantInspectionData
             {
                 PlantId = GetInstanceID().ToString(),
-                StrainName = _plantStrain?.StrainName ?? "Unknown",
+                StrainName = (_plantStrain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown",
                 GrowthStage = _currentGrowthStage,
                 CurrentStage = _currentGrowthStage,
                 Health = _health,
@@ -230,13 +235,13 @@ namespace ProjectChimera.Systems.Cultivation
                 DaysOld = Mathf.FloorToInt(Time.time / 86400f), // Simplified age calculation
                 InspectionTime = System.DateTime.Now
             };
-            
+
             OnPlantInspected?.Invoke(this);
-            
-            Debug.Log($"Inspected plant: {_plantStrain?.StrainName ?? "Unknown"} - Health: {_health:F1}%");
+
+            ChimeraLogger.Log($"Inspected plant: {(_plantStrain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown"} - Health: {_health:F1}%");
             return inspectionData;
         }
-        
+
         /// <summary>
         /// Check if player can interact with this plant
         /// </summary>
@@ -249,23 +254,23 @@ namespace ProjectChimera.Systems.Cultivation
                 float distance = Vector3.Distance(transform.position, player.position);
                 return distance <= _interactionRange;
             }
-            
+
             return true; // Default to true if no player found
         }
-        
+
         /// <summary>
         /// Calculate estimated yield for this plant
         /// </summary>
         private float CalculateEstimatedYield()
         {
-            float baseYield = _plantStrain?.BaseYieldGrams ?? 50f;
+            float baseYield = (_plantStrain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.BaseYieldGrams ?? 50f;
             float healthModifier = _health / 100f;
             float stressModifier = 1f - (_stress / 100f);
             float nutritionModifier = _nutrition / 100f;
-            
+
             return baseYield * healthModifier * stressModifier * nutritionModifier;
         }
-        
+
         /// <summary>
         /// Handle growth stage changes from PlantInstance
         /// </summary>
@@ -279,7 +284,7 @@ namespace ProjectChimera.Systems.Cultivation
                 OnPlantGrowthStageChanged?.Invoke(this);
             }
         }
-        
+
         /// <summary>
         /// Handle health changes from PlantInstance
         /// </summary>
@@ -292,7 +297,7 @@ namespace ProjectChimera.Systems.Cultivation
                 OnPlantHealthChanged?.Invoke(this);
             }
         }
-        
+
         /// <summary>
         /// Update plant statistics
         /// </summary>
@@ -302,10 +307,10 @@ namespace ProjectChimera.Systems.Cultivation
             _stress = Mathf.Clamp(stress, 0f, 100f);
             _hydration = Mathf.Clamp(hydration, 0f, 100f);
             _nutrition = Mathf.Clamp(nutrition, 0f, 100f);
-            
+
             UpdateInteractionCapabilities();
         }
-        
+
         /// <summary>
         /// Get interaction tooltip text
         /// </summary>
@@ -313,21 +318,21 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!CanPlayerInteract())
                 return "Too far away";
-            
-            var tooltip = $"{_plantStrain?.StrainName ?? "Unknown Plant"}\n";
+
+            var tooltip = $"{(_plantStrain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown Plant"}\n";
             tooltip += $"Stage: {_currentGrowthStage}\n";
             tooltip += $"Health: {_health:F0}%\n";
-            
+
             if (_canHarvest)
                 tooltip += "Press E to Harvest\n";
             if (_canTreat)
                 tooltip += "Press T to Treat\n";
             if (_canInspect)
                 tooltip += "Press I to Inspect";
-            
+
             return tooltip;
         }
-        
+
         /// <summary>
         /// Water the plant
         /// </summary>
@@ -335,7 +340,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             TreatPlant("water", amount / 20f); // Convert amount to intensity
         }
-        
+
         /// <summary>
         /// Add nutrients to the plant
         /// </summary>
@@ -343,7 +348,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             TreatPlant("nutrients", amount / 15f); // Convert amount to intensity
         }
-        
+
         /// <summary>
         /// Get status information for UI
         /// </summary>
@@ -351,7 +356,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             return InspectPlant();
         }
-        
+
         /// <summary>
         /// Handle plant clicked event
         /// </summary>
@@ -359,7 +364,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             OnPlantClicked?.Invoke(this);
         }
-        
+
         /// <summary>
         /// Handle plant hovered event
         /// </summary>
@@ -367,7 +372,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             OnPlantHovered?.Invoke(this);
         }
-        
+
         private void OnDestroy()
         {
             // Unsubscribe from events
@@ -378,7 +383,7 @@ namespace ProjectChimera.Systems.Cultivation
             }
         }
     }
-    
+
     /// <summary>
     /// Plant inspection data structure
     /// </summary>

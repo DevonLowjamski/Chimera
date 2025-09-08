@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -43,7 +44,7 @@ namespace ProjectChimera.Systems.Scene
         protected override void OnManagerInitialize()
         {
             if (_enableDetailedLogging)
-                Debug.Log("[SceneLoader] Initializing SceneLoader service");
+                ChimeraLogger.Log("[SceneLoader] Initializing SceneLoader service");
 
             // Track the initial scene
             var activeScene = SceneManager.GetActiveScene();
@@ -53,7 +54,7 @@ namespace ProjectChimera.Systems.Scene
                 _loadedScenes[activeScene.name] = activeScene;
                 
                 if (_enableDetailedLogging)
-                    Debug.Log($"[SceneLoader] Initial scene tracked: {_currentActiveScene}");
+                    ChimeraLogger.Log($"[SceneLoader] Initial scene tracked: {_currentActiveScene}");
             }
 
             // Register SceneManager callbacks
@@ -64,7 +65,7 @@ namespace ProjectChimera.Systems.Scene
         protected override void OnManagerShutdown()
         {
             if (_enableDetailedLogging)
-                Debug.Log("[SceneLoader] Shutting down SceneLoader service");
+                ChimeraLogger.Log("[SceneLoader] Shutting down SceneLoader service");
 
             // Unregister callbacks
             SceneManager.sceneLoaded -= OnSceneLoadedCallback;
@@ -77,7 +78,7 @@ namespace ProjectChimera.Systems.Scene
         {
             if (_loadedScenes.ContainsKey(sceneName))
             {
-                Debug.LogWarning($"[SceneLoader] Scene '{sceneName}' is already loaded");
+                ChimeraLogger.LogWarning($"[SceneLoader] Scene '{sceneName}' is already loaded");
                 return;
             }
 
@@ -88,13 +89,13 @@ namespace ProjectChimera.Systems.Scene
         {
             if (!_loadedScenes.ContainsKey(sceneName))
             {
-                Debug.LogWarning($"[SceneLoader] Cannot unload scene '{sceneName}' - not currently loaded");
+                ChimeraLogger.LogWarning($"[SceneLoader] Cannot unload scene '{sceneName}' - not currently loaded");
                 return;
             }
 
             if (_currentActiveScene == sceneName)
             {
-                Debug.LogError($"[SceneLoader] Cannot unload active scene '{sceneName}' - use TransitionToScene instead");
+                ChimeraLogger.LogError($"[SceneLoader] Cannot unload active scene '{sceneName}' - use TransitionToScene instead");
                 return;
             }
 
@@ -105,13 +106,13 @@ namespace ProjectChimera.Systems.Scene
         {
             if (_isTransitioning)
             {
-                Debug.LogWarning($"[SceneLoader] Cannot transition to '{targetSceneName}' - already transitioning");
+                ChimeraLogger.LogWarning($"[SceneLoader] Cannot transition to '{targetSceneName}' - already transitioning");
                 return;
             }
 
             if (_currentActiveScene == targetSceneName)
             {
-                Debug.LogWarning($"[SceneLoader] Scene '{targetSceneName}' is already the active scene");
+                ChimeraLogger.LogWarning($"[SceneLoader] Scene '{targetSceneName}' is already the active scene");
                 return;
             }
 
@@ -122,7 +123,7 @@ namespace ProjectChimera.Systems.Scene
         {
             if (_isTransitioning)
             {
-                Debug.LogWarning($"[SceneLoader] Cannot transition to '{targetSceneName}' - already transitioning");
+                ChimeraLogger.LogWarning($"[SceneLoader] Cannot transition to '{targetSceneName}' - already transitioning");
                 return;
             }
 
@@ -132,7 +133,7 @@ namespace ProjectChimera.Systems.Scene
         private IEnumerator LoadSceneAdditiveCoroutine(string sceneName)
         {
             if (_enableDetailedLogging)
-                Debug.Log($"[SceneLoader] Loading scene additively: {sceneName}");
+                ChimeraLogger.Log($"[SceneLoader] Loading scene additively: {sceneName}");
 
             OnSceneLoadStarted?.Invoke(sceneName);
             _sceneLoadStartedEvent?.Raise(sceneName);
@@ -151,7 +152,7 @@ namespace ProjectChimera.Systems.Scene
             }
 
             if (_enableDetailedLogging)
-                Debug.Log($"[SceneLoader] Scene loaded additively: {sceneName}");
+                ChimeraLogger.Log($"[SceneLoader] Scene loaded additively: {sceneName}");
 
             OnSceneLoadCompleted?.Invoke(sceneName);
             _sceneLoadCompletedEvent?.Raise(sceneName);
@@ -160,7 +161,7 @@ namespace ProjectChimera.Systems.Scene
         private IEnumerator UnloadSceneCoroutine(string sceneName)
         {
             if (_enableDetailedLogging)
-                Debug.Log($"[SceneLoader] Unloading scene: {sceneName}");
+                ChimeraLogger.Log($"[SceneLoader] Unloading scene: {sceneName}");
 
             OnSceneUnloadStarted?.Invoke(sceneName);
             _sceneUnloadStartedEvent?.Raise(sceneName);
@@ -173,7 +174,7 @@ namespace ProjectChimera.Systems.Scene
             }
 
             if (_enableDetailedLogging)
-                Debug.Log($"[SceneLoader] Scene unloaded: {sceneName}");
+                ChimeraLogger.Log($"[SceneLoader] Scene unloaded: {sceneName}");
 
             OnSceneUnloadCompleted?.Invoke(sceneName);
             _sceneUnloadCompletedEvent?.Raise(sceneName);
@@ -185,7 +186,7 @@ namespace ProjectChimera.Systems.Scene
             string previousScene = _currentActiveScene;
 
             if (_enableDetailedLogging)
-                Debug.Log($"[SceneLoader] Starting transition from '{previousScene}' to '{targetSceneName}'");
+                ChimeraLogger.Log($"[SceneLoader] Starting transition from '{previousScene}' to '{targetSceneName}'");
 
             OnSceneTransitionStarted?.Invoke(previousScene, targetSceneName);
             _sceneTransitionStartedEvent?.Raise(new SceneTransitionData(previousScene, targetSceneName));
@@ -207,7 +208,7 @@ namespace ProjectChimera.Systems.Scene
                 _currentActiveScene = targetSceneName;
 
                 if (_enableDetailedLogging)
-                    Debug.Log($"[SceneLoader] Set active scene to: {targetSceneName}");
+                    ChimeraLogger.Log($"[SceneLoader] Set active scene to: {targetSceneName}");
             }
 
             // Unload the previous scene if it's different and valid
@@ -219,7 +220,7 @@ namespace ProjectChimera.Systems.Scene
             _isTransitioning = false;
 
             if (_enableDetailedLogging)
-                Debug.Log($"[SceneLoader] Transition completed to: {targetSceneName}");
+                ChimeraLogger.Log($"[SceneLoader] Transition completed to: {targetSceneName}");
 
             OnSceneTransitionCompleted?.Invoke(targetSceneName);
             _sceneTransitionCompletedEvent?.Raise(targetSceneName);
@@ -231,7 +232,7 @@ namespace ProjectChimera.Systems.Scene
             string previousScene = _currentActiveScene;
 
             if (_enableDetailedLogging)
-                Debug.Log($"[SceneLoader] Starting transition with preload from '{previousScene}' to '{targetSceneName}'");
+                ChimeraLogger.Log($"[SceneLoader] Starting transition with preload from '{previousScene}' to '{targetSceneName}'");
 
             OnSceneTransitionStarted?.Invoke(previousScene, targetSceneName);
             _sceneTransitionStartedEvent?.Raise(new SceneTransitionData(previousScene, targetSceneName));
@@ -254,7 +255,7 @@ namespace ProjectChimera.Systems.Scene
             _loadedScenes[scene.name] = scene;
 
             if (_enableDetailedLogging)
-                Debug.Log($"[SceneLoader] Scene loaded callback: {scene.name} (mode: {mode})");
+                ChimeraLogger.Log($"[SceneLoader] Scene loaded callback: {scene.name} (mode: {mode})");
         }
 
         private void OnSceneUnloadedCallback(UnityEngine.SceneManagement.Scene scene)
@@ -265,14 +266,14 @@ namespace ProjectChimera.Systems.Scene
             }
 
             if (_enableDetailedLogging)
-                Debug.Log($"[SceneLoader] Scene unloaded callback: {scene.name}");
+                ChimeraLogger.Log($"[SceneLoader] Scene unloaded callback: {scene.name}");
         }
 
         public void SetActiveScene(string sceneName)
         {
             if (!_loadedScenes.ContainsKey(sceneName))
             {
-                Debug.LogError($"[SceneLoader] Cannot set active scene '{sceneName}' - scene not loaded");
+                ChimeraLogger.LogError($"[SceneLoader] Cannot set active scene '{sceneName}' - scene not loaded");
                 return;
             }
 
@@ -283,7 +284,7 @@ namespace ProjectChimera.Systems.Scene
                 _currentActiveScene = sceneName;
 
                 if (_enableDetailedLogging)
-                    Debug.Log($"[SceneLoader] Active scene changed to: {sceneName}");
+                    ChimeraLogger.Log($"[SceneLoader] Active scene changed to: {sceneName}");
             }
         }
 
@@ -295,7 +296,7 @@ namespace ProjectChimera.Systems.Scene
         public void ForceGarbageCollection()
         {
             if (_enableDetailedLogging)
-                Debug.Log("[SceneLoader] Forcing garbage collection after scene operations");
+                ChimeraLogger.Log("[SceneLoader] Forcing garbage collection after scene operations");
 
             Resources.UnloadUnusedAssets();
             System.GC.Collect();

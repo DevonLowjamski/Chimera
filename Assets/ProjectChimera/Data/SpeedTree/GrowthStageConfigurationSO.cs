@@ -58,7 +58,7 @@ namespace ProjectChimera.Data.Visuals
         public float CalculateModifiedSeasonalParameter(PlantGrowthStage stage, PlantStrainSO strain, EnvironmentalConditions environment)
         {
             float baseParameter = GetSeasonalParameterForStage(stage);
-            
+
             // Apply strain modifiers
             if (_enableStrainModifiers && strain != null)
             {
@@ -104,7 +104,7 @@ namespace ProjectChimera.Data.Visuals
         public List<PlantGrowthStage> GetOrderedGrowthStages()
         {
             var orderedStages = new List<PlantGrowthStage>();
-            
+
             foreach (PlantGrowthStage stage in System.Enum.GetValues(typeof(PlantGrowthStage)))
             {
                 if (GetGrowthStageConfig(stage) != null)
@@ -135,7 +135,7 @@ namespace ProjectChimera.Data.Visuals
             {
                 if (GetGrowthStageConfig(stage) == null)
                 {
-                    Debug.LogWarning($"[Chimera] GrowthStageConfigurationSO '{DisplayName}' missing essential stage: {stage}.", this);
+                    SharedLogger.LogWarning($"[Chimera] GrowthStageConfigurationSO '{DisplayName}' missing essential stage: {stage}.", this);
                     isValid = false;
                 }
             }
@@ -195,7 +195,7 @@ namespace ProjectChimera.Data.Visuals
             // Simplified stress calculation - would typically use strain-specific optimal ranges
             float tempStress = Mathf.Abs(environment.Temperature - 24f) / 20f; // Optimal around 24°C
             float humidityStress = Mathf.Abs(environment.Humidity - 55f) / 50f; // Optimal around 55%
-            
+
             return (tempStress + humidityStress) * 0.5f;
         }
 
@@ -213,7 +213,7 @@ namespace ProjectChimera.Data.Visuals
             {
                 if (configs[i].SeasonalParameter < configs[i - 1].SeasonalParameter)
                 {
-                    Debug.LogWarning($"[Chimera] GrowthStageConfigurationSO '{DisplayName}': Seasonal parameter regression detected between {configs[i - 1].Stage} and {configs[i].Stage}.", this);
+                    SharedLogger.LogWarning($"[Chimera] GrowthStageConfigurationSO '{DisplayName}': Seasonal parameter regression detected between {configs[i - 1].Stage} and {configs[i].Stage}.", this);
                 }
             }
         }
@@ -228,7 +228,7 @@ namespace ProjectChimera.Data.Visuals
         [SerializeField] private PlantGrowthStage _stage;
         [SerializeField, Range(0f, 1f)] private float _seasonalParameter = 0f;
         [SerializeField, TextArea(2, 4)] private string _stageDescription;
-        
+
         [Header("Visual Properties")]
         [SerializeField] private Color _primaryColor = Color.green;
         [SerializeField] private Color _secondaryColor = Color.green;
@@ -237,7 +237,7 @@ namespace ProjectChimera.Data.Visuals
 
         [Header("Duration")]
         [SerializeField] private Vector2 _stageDurationDays = new Vector2(7, 14);
-        
+
         [Header("Custom Transitions")]
         [SerializeField] private List<StageTransition> _customTransitions = new List<StageTransition>();
 
@@ -301,7 +301,7 @@ namespace ProjectChimera.Data.Visuals
     {
         [SerializeField] private bool _enableEnvironmentalInfluence = true;
         [SerializeField, Range(0f, 0.5f)] private float _maxEnvironmentalInfluence = 0.2f;
-        
+
         [SerializeField] private EnvironmentalFactor _temperatureInfluence = new EnvironmentalFactor();
         [SerializeField] private EnvironmentalFactor _lightInfluence = new EnvironmentalFactor();
         [SerializeField] private EnvironmentalFactor _stressInfluence = new EnvironmentalFactor();
@@ -331,12 +331,12 @@ namespace ProjectChimera.Data.Visuals
     public class StrainStageModifier
     {
         [SerializeField] private PlantStrainSO _targetStrain;
-        [SerializeField] private StrainType _strainType = StrainType.Hybrid;
+        [SerializeField] private ProjectChimera.Data.Genetics.StrainType _strainType = ProjectChimera.Data.Genetics.StrainType.Hybrid;
         [SerializeField] private bool _useStrainType = false; // If true, applies to all strains of this type
         [SerializeField] private List<StageModifier> _stageModifiers = new List<StageModifier>();
 
         public PlantStrainSO TargetStrain => _targetStrain;
-        public StrainType StrainType => _strainType;
+        public ProjectChimera.Data.Genetics.StrainType StrainType => _strainType;
         public bool UseStrainType => _useStrainType;
         public List<StageModifier> StageModifiers => _stageModifiers;
     }

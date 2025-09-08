@@ -19,17 +19,17 @@ namespace ProjectChimera.Testing.Phase2_1
     {
         private ServiceLayerCoordinator _serviceCoordinator;
         private TestGameManager _testGameManager;
-        
+
         [SetUp]
         public void Setup()
         {
             // Create test game manager
             _testGameManager = new GameObject("TestGameManager").AddComponent<TestGameManager>();
-            
+
             // Create service layer coordinator
             _serviceCoordinator = new GameObject("ServiceCoordinator").AddComponent<ServiceLayerCoordinator>();
         }
-        
+
         [TearDown]
         public void TearDown()
         {
@@ -38,59 +38,59 @@ namespace ProjectChimera.Testing.Phase2_1
             if (_testGameManager != null)
                 Object.DestroyImmediate(_testGameManager.gameObject);
         }
-        
+
         [Test]
         public void ServiceLayerCoordinator_InitializesSuccessfully()
         {
             // Act
             _serviceCoordinator.InitializeServiceLayer();
-            
+
             // Assert
             Assert.IsNotNull(_serviceCoordinator, "ServiceLayerCoordinator should be initialized");
         }
-        
+
         [Test]
         public void ConstructionCommands_CanBeRetrieved()
         {
             // Arrange
             _serviceCoordinator.InitializeServiceLayer();
-            
+
             // Act
             var constructionCommands = _serviceCoordinator.GetCommandsForMode("construction");
-            
+
             // Assert
             Assert.IsNotNull(constructionCommands, "Construction commands should be available");
             Assert.IsTrue(System.Linq.Enumerable.Any(constructionCommands), "Should have at least one construction command");
         }
-        
+
         [Test]
         public void CultivationCommands_CanBeRetrieved()
         {
             // Arrange
             _serviceCoordinator.InitializeServiceLayer();
-            
+
             // Act
             var cultivationCommands = _serviceCoordinator.GetCommandsForMode("cultivation");
-            
+
             // Assert
             Assert.IsNotNull(cultivationCommands, "Cultivation commands should be available");
             Assert.IsTrue(System.Linq.Enumerable.Any(cultivationCommands), "Should have at least one cultivation command");
         }
-        
+
         [Test]
         public void GeneticsCommands_CanBeRetrieved()
         {
             // Arrange
             _serviceCoordinator.InitializeServiceLayer();
-            
+
             // Act
             var geneticsCommands = _serviceCoordinator.GetCommandsForMode("genetics");
-            
+
             // Assert
             Assert.IsNotNull(geneticsCommands, "Genetics commands should be available");
             Assert.IsTrue(System.Linq.Enumerable.Any(geneticsCommands), "Should have at least one genetics command");
         }
-        
+
         [Test]
         public void PlaceStructureCommand_CanExecute()
         {
@@ -98,16 +98,16 @@ namespace ProjectChimera.Testing.Phase2_1
             var constructionService = new MockConstructionService();
             var economyManager = new MockEconomyManager();
             var command = new PlaceStructureCommand("wall", Vector3Int.zero, constructionService, economyManager);
-            
+
             // Act
             var canExecute = command.CanExecute();
             var result = command.Execute();
-            
+
             // Assert
             Assert.IsTrue(canExecute, "PlaceStructureCommand should be able to execute");
             Assert.IsTrue(result.IsSuccess, "Command execution should succeed");
         }
-        
+
         [Test]
         public void PlantSeedCommand_CanExecute()
         {
@@ -115,16 +115,16 @@ namespace ProjectChimera.Testing.Phase2_1
             var cultivationService = new MockCultivationService();
             var economyManager = new MockEconomyManager();
             var command = new PlantSeedCommand("og_kush", Vector3Int.zero, "Test Plant", cultivationService, economyManager);
-            
+
             // Act
             var canExecute = command.CanExecute();
             var result = command.Execute();
-            
+
             // Assert
             Assert.IsTrue(canExecute, "PlantSeedCommand should be able to execute");
             Assert.IsTrue(result.IsSuccess, "Command execution should succeed");
         }
-        
+
         [Test]
         public void BreedPlantsCommand_RequiresSkill()
         {
@@ -132,16 +132,16 @@ namespace ProjectChimera.Testing.Phase2_1
             var geneticsService = new MockGeneticsService();
             var progressionManager = new MockProgressionManager();
             progressionManager.SetSkillUnlocked("breeding_basic", false); // Skill not unlocked
-            
+
             var command = new BreedPlantsCommand("plant1", "plant2", geneticsService, progressionManager);
-            
+
             // Act
             var canExecute = command.CanExecute();
-            
+
             // Assert
             Assert.IsFalse(canExecute, "BreedPlantsCommand should require breeding skill to be unlocked");
         }
-        
+
         [Test]
         public void BreedPlantsCommand_ExecutesWithSkill()
         {
@@ -149,18 +149,18 @@ namespace ProjectChimera.Testing.Phase2_1
             var geneticsService = new MockGeneticsService();
             var progressionManager = new MockProgressionManager();
             progressionManager.SetSkillUnlocked("breeding_basic", true); // Skill unlocked
-            
+
             var command = new BreedPlantsCommand("plant1", "plant2", geneticsService, progressionManager);
-            
+
             // Act
             var canExecute = command.CanExecute();
             var result = command.Execute();
-            
+
             // Assert
             Assert.IsTrue(canExecute, "BreedPlantsCommand should be able to execute with skill unlocked");
             Assert.IsTrue(result.IsSuccess, "Command execution should succeed");
         }
-        
+
         [Test]
         public void ServiceValidation_PreventsInvalidCommands()
         {
@@ -169,14 +169,14 @@ namespace ProjectChimera.Testing.Phase2_1
             constructionService.SetCanPlaceStructure(false); // Simulate invalid placement
             var economyManager = new MockEconomyManager();
             var command = new PlaceStructureCommand("wall", Vector3Int.zero, constructionService, economyManager);
-            
+
             // Act
             var canExecute = command.CanExecute();
-            
+
             // Assert
             Assert.IsFalse(canExecute, "Command should not execute when validation fails");
         }
-        
+
         [Test]
         public void EconomyIntegration_ChecksFunds()
         {
@@ -185,16 +185,16 @@ namespace ProjectChimera.Testing.Phase2_1
             var economyManager = new MockEconomyManager();
             economyManager.SetPlayerMoney(50f); // Insufficient funds
             economyManager.SetCanAfford(false);
-            
+
             var command = new PlaceStructureCommand("expensive_structure", Vector3Int.zero, constructionService, economyManager);
-            
+
             // Act
             var canExecute = command.CanExecute();
-            
+
             // Assert
             Assert.IsFalse(canExecute, "Command should check funds before execution");
         }
-        
+
         [UnityTest]
         public IEnumerator ServiceLayerCoordinator_HandlesCommandExecution()
         {
@@ -202,39 +202,39 @@ namespace ProjectChimera.Testing.Phase2_1
             _serviceCoordinator.InitializeServiceLayer();
             bool commandExecuted = false;
             _serviceCoordinator.OnCommandExecuted += (commandId, result) => commandExecuted = true;
-            
+
             // Act
             _serviceCoordinator.HandleMenuItemSelected("construction", "place_structure_wall");
-            
+
             // Wait a frame for event processing
             yield return null;
-            
+
             // Assert
             Assert.IsTrue(commandExecuted, "Service coordinator should handle command execution");
         }
-        
+
         [Test]
         public void CommandRegistry_SupportsAllPillars()
         {
             // Arrange
             _serviceCoordinator.InitializeServiceLayer();
-            
+
             // Act & Assert
             var constructionCommands = _serviceCoordinator.GetCommandsForMode("construction");
             var cultivationCommands = _serviceCoordinator.GetCommandsForMode("cultivation");
             var geneticsCommands = _serviceCoordinator.GetCommandsForMode("genetics");
-            
+
             Assert.IsTrue(System.Linq.Enumerable.Any(constructionCommands), "Should have construction commands");
             Assert.IsTrue(System.Linq.Enumerable.Any(cultivationCommands), "Should have cultivation commands");
             Assert.IsTrue(System.Linq.Enumerable.Any(geneticsCommands), "Should have genetics commands");
         }
     }
-    
+
     // Mock implementations for testing
     public class TestGameManager : MonoBehaviour, IDIContainer
     {
         private Dictionary<System.Type, object> _managers = new Dictionary<System.Type, object>();
-        
+
         private void Awake()
         {
             // Register mock managers
@@ -242,35 +242,35 @@ namespace ProjectChimera.Testing.Phase2_1
             _managers[typeof(IProgressionManager)] = new MockProgressionManager();
             _managers[typeof(ITimeManager)] = new MockTimeManager();
         }
-        
+
         public T GetManager<T>() where T : class
         {
             _managers.TryGetValue(typeof(T), out var manager);
             return manager as T;
         }
     }
-    
+
     public class MockEconomyManager : IEconomyManager
     {
         private float _playerMoney = 1000f;
         private bool _canAfford = true;
-        
+
         public string ManagerName => "MockEconomyManager";
         public float PlayerMoney => _playerMoney;
         public float TotalRevenue => 0f;
         public float TotalExpenses => 0f;
         public float NetProfit => 0f;
         public bool IsInitialized => true;
-        
+
         public void SetPlayerMoney(float amount) => _playerMoney = amount;
         public void SetCanAfford(bool canAfford) => _canAfford = canAfford;
-        
+
         public bool CanAfford(float amount) => _canAfford && _playerMoney >= amount;
         public void AddMoney(float amount, string source = null) => _playerMoney += amount;
         public void SpendMoney(float amount, string reason = null) => _playerMoney -= amount;
         public void ProcessTransaction(float amount, string description) => _playerMoney += amount;
-        public System.Collections.Generic.IEnumerable<ProjectChimera.Data.Economy.Transaction> GetTransactionHistory(int count = 10) => 
-            new List<ProjectChimera.Data.Economy.Transaction>();
+        public System.Collections.Generic.IEnumerable<object> GetTransactionHistory(int count = 10) =>
+            new List<object>();
         public float GetMarketPrice(string itemId) => 100f;
         public void UpdateMarketPrices() { }
         public void Initialize() { }
@@ -293,12 +293,12 @@ namespace ProjectChimera.Testing.Phase2_1
         public string GetStatus() => "Mock Economy Manager - Test Mode";
         public bool ValidateHealth() => true;
     }
-    
+
     public class MockProgressionManager : IProgressionManager
     {
         private Dictionary<string, bool> _unlockedSkills = new Dictionary<string, bool>();
         private int _skillPoints = 100;
-        
+
         public string ManagerName => "MockProgressionManager";
         public int PlayerLevel => 1;
         public float CurrentExperience => 0f;
@@ -306,9 +306,9 @@ namespace ProjectChimera.Testing.Phase2_1
         public int SkillPoints => _skillPoints;
         public int UnlockedAchievements => 0;
         public bool IsInitialized => true;
-        
+
         public void SetSkillUnlocked(string skillId, bool unlocked) => _unlockedSkills[skillId] = unlocked;
-        
+
         public void AddExperience(float amount, string source = null) { }
         public void AddSkillPoints(int amount, string source = null) => _skillPoints += amount;
         public void SpendSkillPoints(int amount, string reason = null) => _skillPoints -= amount;
@@ -338,7 +338,7 @@ namespace ProjectChimera.Testing.Phase2_1
         public string GetStatus() => $"Mock Progression Manager - Level {PlayerLevel}, {SkillPoints} SP";
         public bool ValidateHealth() => true;
     }
-    
+
     public class MockTimeManager : ITimeManager
     {
         public string ManagerName => "MockTimeManager";
@@ -346,7 +346,7 @@ namespace ProjectChimera.Testing.Phase2_1
         public float CurrentTimeScale => 1.0f;
         public bool IsTimePaused => false;
         public bool IsInitialized => true;
-        
+
         public void Pause() { }
         public void Resume() { }
         public void SetSpeedLevel(TimeSpeedLevel newSpeedLevel) { }
@@ -373,15 +373,15 @@ namespace ProjectChimera.Testing.Phase2_1
         public string GetStatus() => $"Mock Time Manager - Speed: {CurrentSpeedLevel}";
         public bool ValidateHealth() => true;
     }
-    
+
     // Enhanced Mock Services for Testing
     public class MockConstructionService : IConstructionService
     {
         private bool _canPlaceStructure = true;
         public bool IsInitialized => true;
-        
+
         public void SetCanPlaceStructure(bool canPlace) => _canPlaceStructure = canPlace;
-        
+
         public void Initialize() { }
         public void Shutdown() { }
         public bool CanPlaceStructure(string structureId, Vector3Int gridPosition) => _canPlaceStructure;
@@ -403,7 +403,7 @@ namespace ProjectChimera.Testing.Phase2_1
         public float GetUtilityCost(string utilityType, float length) => 50f * length;
         public bool IsPositionOccupied(Vector3Int gridPosition) => false;
     }
-    
+
     // Interface for DI container resolution
     public interface IDIContainer
     {

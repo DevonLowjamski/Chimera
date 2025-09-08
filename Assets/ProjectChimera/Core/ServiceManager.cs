@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core.DependencyInjection
 {
@@ -20,7 +21,7 @@ namespace ProjectChimera.Core.DependencyInjection
         [SerializeField] private float _moduleInitializationTimeout = 30f;
 
         private static ServiceManager _instance;
-        private IServiceLocator _serviceLocator;
+        private IServiceContainer _serviceContainer;
         private readonly Dictionary<string, ModuleRegistration> _modules = new Dictionary<string, ModuleRegistration>();
         private readonly List<string> _initializationOrder = new List<string>();
 
@@ -47,7 +48,7 @@ namespace ProjectChimera.Core.DependencyInjection
                     }
                     catch (Exception ex)
                     {
-                        Debug.LogWarning($"[ServiceManager] Failed to resolve from DI container: {ex.Message}");
+                        ChimeraLogger.LogWarning($"[ServiceManager] Failed to resolve from DI container: {ex.Message}");
                     }
                     
                     if (_instance == null)
@@ -63,7 +64,7 @@ namespace ProjectChimera.Core.DependencyInjection
                         }
                         catch (Exception ex)
                         {
-                            Debug.LogWarning($"[ServiceManager] Failed to register with DI container: {ex.Message}");
+                            ChimeraLogger.LogWarning($"[ServiceManager] Failed to register with DI container: {ex.Message}");
                         }
                     }
                 }
@@ -78,8 +79,8 @@ namespace ProjectChimera.Core.DependencyInjection
                 _instance = this;
                 DontDestroyOnLoad(gameObject);
                 
-                // Initialize ServiceLocator integration as standard DI route
-                InitializeServiceLocatorIntegration();
+                // Initialize ServiceContainer integration as standard DI route
+                InitializeServiceContainerIntegration();
                 
                 if (_enableAutoInitialization)
                 {
@@ -130,26 +131,26 @@ namespace ProjectChimera.Core.DependencyInjection
         }
 
         /// <summary>
-        /// Initialize ServiceLocator integration as the standard DI route
+        /// Initialize ServiceContainer integration as the standard DI route
         /// This replaces parallel container systems with a unified approach
         /// </summary>
-        private void InitializeServiceLocatorIntegration()
+        private void InitializeServiceContainerIntegration()
         {
             try
             {
-                // Get ServiceLocator instance (creates one if needed)
-                _serviceLocator = ProjectChimera.Core.DependencyInjection.ServiceLocator.Instance;
-                LogServiceAction("ServiceLocator integration initialized");
+                // Get ServiceContainer instance (creates one if needed)
+                _serviceContainer = ServiceContainerFactory.Instance;
+                LogServiceAction("ServiceContainer integration initialized");
 
-                // Register ServiceManager itself with ServiceLocator
-                _serviceLocator.RegisterSingleton<IServiceLocator>(_serviceLocator);
-                _serviceLocator.RegisterSingleton<ServiceManager>(this);
+                // Register ServiceManager itself with ServiceContainer
+                _serviceContainer.RegisterSingleton<IServiceContainer>(_serviceContainer);
+                _serviceContainer.RegisterSingleton<ServiceManager>(this);
                 
-                LogServiceAction("ServiceManager registered with ServiceLocator as standard DI route");
+                LogServiceAction("ServiceManager registered with ServiceContainer as standard DI route");
             }
             catch (Exception ex)
             {
-                LogServiceError($"Failed to initialize ServiceLocator integration: {ex.Message}");
+                LogServiceError($"Failed to initialize ServiceContainer integration: {ex.Message}");
             }
         }
 
@@ -164,7 +165,7 @@ namespace ProjectChimera.Core.DependencyInjection
             try
             {
                 _initializationStartTime = DateTime.Now;
-                _serviceLocator = ServiceLocator.Instance;
+                _serviceContainer = ServiceContainerFactory.Instance;
                 RegisterCoreServices();
                 _isInitialized = true;
                 OnServiceManagerInitialized?.Invoke(this);
@@ -194,7 +195,7 @@ namespace ProjectChimera.Core.DependencyInjection
                     {
                         try
                         {
-                            registration.Module.Shutdown(_serviceLocator);
+                            registration.Module.Shutdown(_serviceContainer);
                             LogServiceAction($"Module '{moduleName}' shutdown completed");
                         }
                         catch (Exception ex)
@@ -204,9 +205,9 @@ namespace ProjectChimera.Core.DependencyInjection
                     }
                 }
 
-                if (_serviceLocator is IServiceContainer container)
+                if (_serviceContainer != null)
                 {
-                    container.Clear();
+                    _serviceContainer.Clear();
                 }
 
                 _modules.Clear();
@@ -237,7 +238,7 @@ namespace ProjectChimera.Core.DependencyInjection
             {
                 var registration = new ModuleRegistration { Module = module };
                 _modules[module.ModuleName] = registration;
-                module.ConfigureServices(_serviceLocator);
+                module.ConfigureServices(_serviceContainer);
                 _totalServicesRegistered++;
                 OnModuleRegistered?.Invoke(module);
                 LogServiceAction($"Module '{module.ModuleName}' registered successfully");
@@ -306,7 +307,7 @@ namespace ProjectChimera.Core.DependencyInjection
             try
             {
                 LogServiceAction($"Initializing module '{moduleName}'");
-                registration.Module.Initialize(_serviceLocator);
+                registration.Module.Initialize(_serviceContainer);
                 registration.IsInitialized = true;
                 OnModuleInitialized?.Invoke(registration.Module);
                 LogServiceAction($"Module '{moduleName}' initialized successfully");
@@ -362,9 +363,9 @@ namespace ProjectChimera.Core.DependencyInjection
 
         private void RegisterCoreServices()
         {
-            if (_serviceLocator is IServiceContainer container)
+            if (_serviceContainer != null)
             {
-                container.RegisterSingleton<ServiceManager>(this);
+                _serviceContainer.RegisterSingleton<ServiceManager>(this);
             }
             LogServiceAction("Core services registered");
         }
@@ -378,7 +379,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 {
                     if (_enableModuleValidation)
                     {
-                        var isValid = registration.Module.ValidateServices(_serviceLocator);
+                        var isValid = registration.Module.ValidateServices(_serviceContainer);
                         registration.IsValidated = isValid;
                         if (!isValid)
                         {
@@ -402,14 +403,14 @@ namespace ProjectChimera.Core.DependencyInjection
             }
         }
 
-        public IServiceLocator GetServiceLocator()
+        public IServiceContainer GetServiceContainer()
         {
-            return _serviceLocator;
+            return _serviceContainer;
         }
 
         public T GetService<T>() where T : class
         {
-            return _serviceLocator?.Resolve<T>();
+            return _serviceContainer?.TryResolve<T>();
         }
 
         public bool IsInitialized => _isInitialized && !_isShuttingDown;
@@ -421,8 +422,8 @@ namespace ProjectChimera.Core.DependencyInjection
 
         public ServiceManagerMetrics GetMetrics()
         {
-            var serviceLocatorMetrics = _serviceLocator is ServiceLocator locator ?
-                locator.GetMetrics() : null;
+            // ServiceContainer doesn't have detailed metrics like the old ServiceLocator
+            // We'll provide basic metrics from ServiceManager itself
 
             return new ServiceManagerMetrics
             {
@@ -432,8 +433,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 ValidatedModules = _modules.Values.Count(r => r.IsValidated),
                 TotalServicesRegistered = _totalServicesRegistered,
                 InitializationTime = _isInitialized ?
-                    (DateTime.Now - _initializationStartTime).TotalSeconds : 0,
-                ServiceLocatorMetrics = serviceLocatorMetrics
+                    (DateTime.Now - _initializationStartTime).TotalSeconds : 0
             };
         }
 
@@ -441,13 +441,13 @@ namespace ProjectChimera.Core.DependencyInjection
         {
             if (_enableServiceLogging)
             {
-                Debug.Log($"[ServiceManager] {message}");
+                ChimeraLogger.Log($"[ServiceManager] {message}");
             }
         }
 
         private void LogServiceError(string message)
         {
-            Debug.LogError($"[ServiceManager] ERROR: {message}");
+            ChimeraLogger.LogError($"[ServiceManager] ERROR: {message}");
         }
 
         protected override void OnManagerInitialize()
@@ -456,7 +456,7 @@ namespace ProjectChimera.Core.DependencyInjection
 
         protected override void OnManagerShutdown()
         {
-            _serviceLocator = null;
+            _serviceContainer = null;
             _modules?.Clear();
         }
     }
@@ -469,7 +469,7 @@ namespace ProjectChimera.Core.DependencyInjection
         public int ValidatedModules { get; set; }
         public int TotalServicesRegistered { get; set; }
         public double InitializationTime { get; set; }
-        public ServiceLocatorMetrics ServiceLocatorMetrics { get; set; }
+        // ServiceLocatorMetrics removed - migrated to ServiceContainer
     }
     
     

@@ -8,7 +8,10 @@
         "ProjectChimera.Data.Economy",
         "ProjectChimera.Data.Events",
         "ProjectChimera.Data.Construction",
-        "ProjectChimera.Systems.Construction"
+        "ProjectChimera.Systems.Events",
+        "ProjectChimera.Systems.Registry",
+        "ProjectChimera.Systems.Diagnostics",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

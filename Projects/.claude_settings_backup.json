@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(find:*)",
+      "Bash(\"/Users/devon/Documents/Cursor/quality_gate.sh\")",
+      "Bash(\"/Users/devon/Documents/Cursor/validate_tickable_registration.sh\")",
+      "Bash(\"/Users/devon/Documents/Cursor/registration_report.sh\")",
+      "Bash(for:*)",
+      "Bash(done)"
+    ],
+    "additionalDirectories": [
+      "/Users/devon/Documents/Cursor"
+    ]
+  }
+}

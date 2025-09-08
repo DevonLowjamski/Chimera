@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectChimera.Core.Updates;
 using UnityEngine.UIElements;
 using UnityEngine.Profiling;
 using ProjectChimera.Systems.UI.Advanced;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using System;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.UI.Advanced
 {
@@ -14,7 +16,7 @@ namespace ProjectChimera.Systems.UI.Advanced
     /// Provides comprehensive performance optimization including object pooling,
     /// LOD system, batch processing, and memory management
     /// </summary>
-    public class MenuPerformanceOptimization : MonoBehaviour
+    public class MenuPerformanceOptimization : MonoBehaviour, ITickable
     {
         [Header("Performance Configuration")]
         [SerializeField] private bool _enableOptimizations = true;
@@ -22,133 +24,136 @@ namespace ProjectChimera.Systems.UI.Advanced
         [SerializeField] private bool _enableLODSystem = true;
         [SerializeField] private bool _enableBatchProcessing = true;
         [SerializeField] private bool _enableMemoryOptimization = true;
-        
+
         [Header("Object Pooling")]
         [SerializeField] private int _initialPoolSize = 50;
         [SerializeField] private int _maxPoolSize = 200;
         [SerializeField] private bool _allowPoolExpansion = true;
         [SerializeField] private float _poolCleanupInterval = 30f;
-        
+
         [Header("LOD System")]
         [SerializeField] private float _lodNearDistance = 5f;
         [SerializeField] private float _lodFarDistance = 20f;
         [SerializeField] private bool _enableDetailCulling = true;
         [SerializeField] private bool _enableAnimationLOD = true;
-        
+
         [Header("Batch Processing")]
         [SerializeField] private int _maxUpdatesPerFrame = 10;
         [SerializeField] private int _maxAnimationsPerFrame = 5;
         [SerializeField] private float _batchUpdateInterval = 0.016f; // ~60 FPS
         [SerializeField] private bool _prioritizeVisibleElements = true;
-        
+
         [Header("Memory Optimization")]
         [SerializeField] private bool _enableGarbageCollection = true;
         [SerializeField] private float _gcInterval = 60f;
         [SerializeField] private bool _enableTextureStreaming = true;
         [SerializeField] private bool _enableAssetUnloading = true;
-        
+
         [Header("Performance Monitoring")]
         [SerializeField] private bool _enableProfiling = true;
         [SerializeField] private bool _showPerformanceStats = false;
         [SerializeField] private float _profilingUpdateInterval = 1f;
-        
+
         // System references
         private AdvancedMenuSystem _menuSystem;
         private VisualFeedbackIntegration _visualFeedback;
         private ContextAwareActionFilter _actionFilter;
-        
+
         // Object pooling
         private Dictionary<Type, Queue<VisualElement>> _elementPools = new Dictionary<Type, Queue<VisualElement>>();
         private Dictionary<VisualElement, float> _elementLastUsed = new Dictionary<VisualElement, float>();
         private HashSet<VisualElement> _activeElements = new HashSet<VisualElement>();
-        
+
         // LOD system
         private Dictionary<VisualElement, LODLevel> _elementLOD = new Dictionary<VisualElement, LODLevel>();
         private List<VisualElement> _visibleElements = new List<VisualElement>();
-        
+
         // Batch processing
         private Queue<IUpdateable> _updateQueue = new Queue<IUpdateable>();
         private Queue<IAnimatable> _animationQueue = new Queue<IAnimatable>();
         private List<VisualElement> _pendingUpdates = new List<VisualElement>();
-        
+
         // Performance tracking
         private PerformanceMetrics _metrics = new PerformanceMetrics();
         private float _lastProfilingUpdate;
         private int _frameCount;
-        
+
         // Memory management
         private float _lastGCTime;
         private HashSet<Texture2D> _loadedTextures = new HashSet<Texture2D>();
         private Dictionary<string, WeakReference> _assetCache = new Dictionary<string, WeakReference>();
-        
+
         // Events
         public event Action<PerformanceMetrics> OnPerformanceUpdated;
         public event Action<string> OnOptimizationApplied;
-        
+
         private void Awake()
         {
             InitializeOptimizationSystem();
         }
-        
+
         private void Start()
         {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
             SetupPerformanceOptimization();
             StartCoroutine(OptimizationUpdateLoop());
-            
+
             if (_enableObjectPooling)
             {
                 InitializeObjectPools();
             }
         }
-        
-        private void Update()
-        {
+
+            public void Tick(float deltaTime)
+    {
             if (!_enableOptimizations)
                 return;
-            
+
             _frameCount++;
-            
+
             // Update performance metrics
             UpdatePerformanceMetrics();
-            
+
             // Process batch updates
             if (_enableBatchProcessing)
             {
                 ProcessBatchUpdates();
-            }
-            
+
+    }
+
             // Update LOD system
             if (_enableLODSystem)
             {
                 UpdateLODSystem();
             }
-            
+
             // Memory management
             if (_enableMemoryOptimization)
             {
                 CheckMemoryOptimization();
             }
         }
-        
+
         private void InitializeOptimizationSystem()
         {
             _menuSystem = GetComponent<AdvancedMenuSystem>();
             _visualFeedback = GetComponent<VisualFeedbackIntegration>();
             _actionFilter = GetComponent<ContextAwareActionFilter>();
-            
+
             if (_menuSystem == null)
             {
-                Debug.LogError("[MenuPerformanceOptimization] AdvancedMenuSystem component required");
+                ChimeraLogger.LogError("[MenuPerformanceOptimization] AdvancedMenuSystem component required");
                 enabled = false;
                 return;
             }
-            
+
             // Subscribe to system events
             _menuSystem.OnMenuOpened += OnMenuOpened;
             _menuSystem.OnMenuClosed += OnMenuClosed;
             _menuSystem.OnActionExecuted += OnActionExecuted;
         }
-        
+
         private void SetupPerformanceOptimization()
         {
             // Configure Unity's UI Toolkit performance settings
@@ -159,12 +164,12 @@ namespace ProjectChimera.Systems.UI.Advanced
                 panelSettings.clearColor = true;
                 panelSettings.sortingOrder = 1000; // Ensure UI renders on top
             }
-            
+
             // Set target frame rate for consistent performance
             Application.targetFrameRate = 60;
             QualitySettings.vSyncCount = 1;
         }
-        
+
         private void InitializeObjectPools()
         {
             // Initialize pools for common element types
@@ -174,35 +179,35 @@ namespace ProjectChimera.Systems.UI.Advanced
             CreateElementPool<ScrollView>(_initialPoolSize / 5);
             CreateElementPool<ListView>(_initialPoolSize / 10);
         }
-        
+
         /// <summary>
         /// Get an element from the object pool or create a new one
         /// </summary>
         public T GetPooledElement<T>() where T : VisualElement, new()
         {
             var elementType = typeof(T);
-            
+
             if (_elementPools.TryGetValue(elementType, out var pool) && pool.Count > 0)
             {
                 var element = (T)pool.Dequeue();
                 _activeElements.Add(element);
                 _elementLastUsed[element] = Time.time;
-                
+
                 // Reset element state
                 ResetElementState(element);
-                
+
                 return element;
             }
-            
+
             // Create new element if pool is empty
             var newElement = new T();
             _activeElements.Add(newElement);
             _elementLastUsed[newElement] = Time.time;
-            
+
             OnOptimizationApplied?.Invoke($"Created new {elementType.Name}");
             return newElement;
         }
-        
+
         /// <summary>
         /// Return an element to the object pool
         /// </summary>
@@ -210,12 +215,12 @@ namespace ProjectChimera.Systems.UI.Advanced
         {
             if (element == null)
                 return;
-            
+
             var elementType = element.GetType();
-            
+
             // Remove from active set
             _activeElements.Remove(element);
-            
+
             // Return to pool if not at capacity
             if (_elementPools.TryGetValue(elementType, out var pool))
             {
@@ -238,7 +243,7 @@ namespace ProjectChimera.Systems.UI.Advanced
                 _elementPools[elementType].Enqueue(element);
             }
         }
-        
+
         /// <summary>
         /// Update LOD (Level of Detail) for elements based on distance and visibility
         /// </summary>
@@ -246,23 +251,23 @@ namespace ProjectChimera.Systems.UI.Advanced
         {
             if (!_enableLODSystem || element == null)
                 return;
-            
+
             LODLevel newLOD;
-            
+
             if (distance <= _lodNearDistance)
                 newLOD = LODLevel.High;
             else if (distance <= _lodFarDistance)
                 newLOD = LODLevel.Medium;
             else
                 newLOD = LODLevel.Low;
-            
+
             if (!_elementLOD.TryGetValue(element, out var currentLOD) || currentLOD != newLOD)
             {
                 _elementLOD[element] = newLOD;
                 ApplyLOD(element, newLOD);
             }
         }
-        
+
         /// <summary>
         /// Add element to batch update queue
         /// </summary>
@@ -273,7 +278,7 @@ namespace ProjectChimera.Systems.UI.Advanced
                 _updateQueue.Enqueue(updateable);
             }
         }
-        
+
         /// <summary>
         /// Add animation to batch processing queue
         /// </summary>
@@ -284,7 +289,7 @@ namespace ProjectChimera.Systems.UI.Advanced
                 _animationQueue.Enqueue(animatable);
             }
         }
-        
+
         /// <summary>
         /// Optimize texture memory usage
         /// </summary>
@@ -292,10 +297,10 @@ namespace ProjectChimera.Systems.UI.Advanced
         {
             if (!_enableTextureStreaming)
                 return;
-            
+
             // Unload unused textures
             var texturesToUnload = new List<Texture2D>();
-            
+
             foreach (var texture in _loadedTextures)
             {
                 if (texture != null)
@@ -303,19 +308,19 @@ namespace ProjectChimera.Systems.UI.Advanced
                     texturesToUnload.Add(texture);
                 }
             }
-            
+
             foreach (var texture in texturesToUnload)
             {
                 Resources.UnloadAsset(texture);
                 _loadedTextures.Remove(texture);
             }
-            
+
             if (texturesToUnload.Count > 0)
             {
                 OnOptimizationApplied?.Invoke($"Unloaded {texturesToUnload.Count} textures");
             }
         }
-        
+
         /// <summary>
         /// Force garbage collection if memory usage is high
         /// </summary>
@@ -323,48 +328,48 @@ namespace ProjectChimera.Systems.UI.Advanced
         {
             if (!_enableGarbageCollection)
                 return;
-            
+
             var beforeMemory = Profiler.GetTotalAllocatedMemory();
-            
+
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            
+
             var afterMemory = Profiler.GetTotalAllocatedMemory();
             var freedMemory = beforeMemory - afterMemory;
-            
+
             _lastGCTime = Time.time;
-            
+
             OnOptimizationApplied?.Invoke($"GC freed {freedMemory / (1024 * 1024)} MB");
         }
-        
+
         private void CreateElementPool<T>(int initialSize) where T : VisualElement, new()
         {
             CreateElementPool(typeof(T), initialSize);
         }
-        
+
         private void CreateElementPool(Type elementType, int initialSize)
         {
             if (_elementPools.ContainsKey(elementType))
                 return;
-            
+
             var pool = new Queue<VisualElement>();
-            
+
             for (int i = 0; i < initialSize; i++)
             {
                 var element = (VisualElement)Activator.CreateInstance(elementType);
                 ResetElementState(element);
                 pool.Enqueue(element);
             }
-            
+
             _elementPools[elementType] = pool;
         }
-        
+
         private void ResetElementState(VisualElement element)
         {
             if (element == null)
                 return;
-            
+
             // Reset common properties
             element.style.opacity = 1f;
             element.style.display = DisplayStyle.Flex;
@@ -373,36 +378,36 @@ namespace ProjectChimera.Systems.UI.Advanced
             element.style.rotate = StyleKeyword.Null;
             element.style.translate = StyleKeyword.Null;
             element.style.backgroundColor = StyleKeyword.Null;
-            
+
             // Clear event callbacks
             element.UnregisterCallback<ClickEvent>(null);
             element.UnregisterCallback<MouseEnterEvent>(null);
             element.UnregisterCallback<MouseLeaveEvent>(null);
-            
+
             // Reset text content
             if (element is Label label)
             {
                 label.text = string.Empty;
             }
-            
+
             // Clear user data
             element.userData = null;
-            
+
             // Clear class list
             element.ClearClassList();
         }
-        
+
         private void DestroyElement(VisualElement element)
         {
             if (element == null)
                 return;
-            
+
             element.RemoveFromHierarchy();
             _activeElements.Remove(element);
             _elementLastUsed.Remove(element);
             _elementLOD.Remove(element);
         }
-        
+
         private void ApplyLOD(VisualElement element, LODLevel lod)
         {
             switch (lod)
@@ -413,14 +418,14 @@ namespace ProjectChimera.Systems.UI.Advanced
                     EnableAnimations(element, true);
                     EnableDetailedVisuals(element, true);
                     break;
-                
+
                 case LODLevel.Medium:
                     // Reduced quality
                     element.style.opacity = 0.9f;
                     EnableAnimations(element, false);
                     EnableDetailedVisuals(element, true);
                     break;
-                
+
                 case LODLevel.Low:
                     // Minimal quality
                     element.style.opacity = 0.7f;
@@ -429,12 +434,12 @@ namespace ProjectChimera.Systems.UI.Advanced
                     break;
             }
         }
-        
+
         private void EnableAnimations(VisualElement element, bool enabled)
         {
             if (!_enableAnimationLOD)
                 return;
-            
+
             // Disable/enable animations based on LOD
             if (enabled)
             {
@@ -445,28 +450,28 @@ namespace ProjectChimera.Systems.UI.Advanced
                 element.style.transitionDuration = new StyleList<TimeValue>(new List<TimeValue> { new TimeValue(0f) });
             }
         }
-        
+
         private void EnableDetailedVisuals(VisualElement element, bool enabled)
         {
             if (!_enableDetailCulling)
                 return;
-            
+
             // Show/hide detailed visual elements
             var detailElements = element.Query(className: "detail-element").ToList();
-            
+
             foreach (var detail in detailElements)
             {
                 detail.style.display = enabled ? DisplayStyle.Flex : DisplayStyle.None;
             }
         }
-        
+
         private void ProcessBatchUpdates()
         {
             Profiler.BeginSample("MenuSystem.ProcessBatchUpdates");
-            
+
             int processedUpdates = 0;
             int processedAnimations = 0;
-            
+
             // Process updates
             while (_updateQueue.Count > 0 && processedUpdates < _maxUpdatesPerFrame)
             {
@@ -477,7 +482,7 @@ namespace ProjectChimera.Systems.UI.Advanced
                     processedUpdates++;
                 }
             }
-            
+
             // Process animations
             while (_animationQueue.Count > 0 && processedAnimations < _maxAnimationsPerFrame)
             {
@@ -488,36 +493,36 @@ namespace ProjectChimera.Systems.UI.Advanced
                     processedAnimations++;
                 }
             }
-            
+
             Profiler.EndSample();
-            
+
             // Update metrics
             _metrics.ProcessedUpdatesThisFrame = processedUpdates;
             _metrics.ProcessedAnimationsThisFrame = processedAnimations;
         }
-        
+
         private void UpdateLODSystem()
         {
             Profiler.BeginSample("MenuSystem.UpdateLODSystem");
-            
+
             var cameraPosition = Camera.main?.transform.position ?? Vector3.zero;
-            
+
             foreach (var element in _activeElements.ToList()) // ToList to avoid modification during enumeration
             {
                 if (element == null || element.parent == null)
                     continue;
-                
+
                 // Calculate distance from camera (simplified)
                 var elementRect = element.layout;
                 var elementWorldPos = new Vector3(elementRect.center.x, elementRect.center.y, 0);
                 var distance = Vector3.Distance(cameraPosition, elementWorldPos);
-                
+
                 UpdateElementLOD(element, distance);
             }
-            
+
             Profiler.EndSample();
         }
-        
+
         private void UpdatePerformanceMetrics()
         {
             _metrics.FPS = 1.0f / Time.deltaTime;
@@ -527,20 +532,20 @@ namespace ProjectChimera.Systems.UI.Advanced
             _metrics.UpdateQueueSize = _updateQueue.Count;
             _metrics.AnimationQueueSize = _animationQueue.Count;
             _metrics.AllocatedMemory = Profiler.GetTotalAllocatedMemory() / (1024 * 1024); // Convert to MB
-            
+
             // Update profiling data
             if (_enableProfiling && Time.time - _lastProfilingUpdate >= _profilingUpdateInterval)
             {
                 _lastProfilingUpdate = Time.time;
                 OnPerformanceUpdated?.Invoke(_metrics);
-                
+
                 if (_showPerformanceStats)
                 {
                     LogPerformanceStats();
                 }
             }
         }
-        
+
         private void CheckMemoryOptimization()
         {
             // Garbage collection check
@@ -551,24 +556,24 @@ namespace ProjectChimera.Systems.UI.Advanced
                     ForceGarbageCollection();
                 }
             }
-            
+
             // Texture optimization check
             if (_enableTextureStreaming && _loadedTextures.Count > 50)
             {
                 OptimizeTextureMemory();
             }
-            
+
             // Asset cache cleanup
             if (_enableAssetUnloading)
             {
                 CleanupAssetCache();
             }
         }
-        
+
         private void CleanupAssetCache()
         {
             var keysToRemove = new List<string>();
-            
+
             foreach (var kvp in _assetCache)
             {
                 if (kvp.Value == null || !kvp.Value.IsAlive)
@@ -576,45 +581,45 @@ namespace ProjectChimera.Systems.UI.Advanced
                     keysToRemove.Add(kvp.Key);
                 }
             }
-            
+
             foreach (var key in keysToRemove)
             {
                 _assetCache.Remove(key);
             }
-            
+
             if (keysToRemove.Count > 0)
             {
                 OnOptimizationApplied?.Invoke($"Cleaned up {keysToRemove.Count} asset references");
             }
         }
-        
+
         private void LogPerformanceStats()
         {
-            Debug.Log($"[MenuPerformanceOptimization] FPS: {_metrics.FPS:F1}, " +
+            ChimeraLogger.Log($"[MenuPerformanceOptimization] FPS: {_metrics.FPS:F1}, " +
                      $"Frame Time: {_metrics.FrameTime:F2}ms, " +
                      $"Active Elements: {_metrics.ActiveElements}, " +
                      $"Memory: {_metrics.AllocatedMemory:F1}MB");
         }
-        
+
         private System.Collections.IEnumerator OptimizationUpdateLoop()
         {
             while (true)
             {
                 yield return new WaitForSeconds(_poolCleanupInterval);
-                
+
                 // Cleanup unused pooled elements
                 CleanupObjectPools();
-                
+
                 // Cleanup expired LOD data
                 CleanupLODData();
             }
         }
-        
+
         private void CleanupObjectPools()
         {
             var elementsToRemove = new List<VisualElement>();
             var cutoffTime = Time.time - _poolCleanupInterval;
-            
+
             foreach (var kvp in _elementLastUsed.ToList())
             {
                 if (kvp.Value < cutoffTime && !_activeElements.Contains(kvp.Key))
@@ -622,22 +627,22 @@ namespace ProjectChimera.Systems.UI.Advanced
                     elementsToRemove.Add(kvp.Key);
                 }
             }
-            
+
             foreach (var element in elementsToRemove)
             {
                 DestroyElement(element);
             }
-            
+
             if (elementsToRemove.Count > 0)
             {
                 OnOptimizationApplied?.Invoke($"Cleaned up {elementsToRemove.Count} unused elements");
             }
         }
-        
+
         private void CleanupLODData()
         {
             var elementsToRemove = new List<VisualElement>();
-            
+
             foreach (var element in _elementLOD.Keys.ToList())
             {
                 if (element == null || element.parent == null)
@@ -645,40 +650,42 @@ namespace ProjectChimera.Systems.UI.Advanced
                     elementsToRemove.Add(element);
                 }
             }
-            
+
             foreach (var element in elementsToRemove)
             {
                 _elementLOD.Remove(element);
             }
         }
-        
+
         // Event handlers
-        private void OnMenuOpened(string menuId)
+        private void OnMenuOpened()
         {
             // Clear update queues when menu opens
             _updateQueue.Clear();
             _animationQueue.Clear();
         }
-        
-        private void OnMenuClosed(string menuId)
+
+        private void OnMenuClosed()
         {
             // Return elements to pools when menu closes
             var elementsToReturn = _activeElements.Where(e => e.parent == null).ToList();
-            
+
             foreach (var element in elementsToReturn)
             {
                 ReturnToPool(element);
             }
         }
-        
+
         private void OnActionExecuted(string actionId, MenuAction action)
         {
             // Track action execution for performance analysis
             _metrics.ActionsExecutedThisFrame++;
         }
-        
+
         private void OnDestroy()
         {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
             // Cleanup all resources
             foreach (var pool in _elementPools.Values)
             {
@@ -688,13 +695,13 @@ namespace ProjectChimera.Systems.UI.Advanced
                     DestroyElement(element);
                 }
             }
-            
+
             _elementPools.Clear();
             _activeElements.Clear();
             _elementLastUsed.Clear();
             _elementLOD.Clear();
         }
-        
+
         // Public API
         public PerformanceMetrics GetPerformanceMetrics() => _metrics;
         public int GetActiveElementCount() => _activeElements.Count;
@@ -702,26 +709,59 @@ namespace ProjectChimera.Systems.UI.Advanced
         public void SetOptimizationsEnabled(bool enabled) => _enableOptimizations = enabled;
         public void SetLODEnabled(bool enabled) => _enableLODSystem = enabled;
         public void SetBatchProcessingEnabled(bool enabled) => _enableBatchProcessing = enabled;
+
+    // ITickable implementation
+    public int Priority => 0;
+    public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+    public virtual void OnRegistered()
+    {
+        // Override in derived classes if needed
     }
-    
+
+    public virtual void OnUnregistered()
+    {
+        // Override in derived classes if needed
+    }
+
+    // Stub methods for test compilation - to be implemented by UI team
+    public bool IsOptimizationEnabled() => true;
+    public void OptimizeMenuDisplay() { }
+    public void CreatePool(string poolType, int capacity) { }
+    public bool HasPool(string poolType) => false;
+    public VisualElement RentObject(string poolType) => null;
+    public void ReturnObject(string poolType, VisualElement element) { }
+    public int CalculateLODLevel(Camera camera, Vector3 position) => 1;
+    public int CalculateLODLevel(Camera camera) => 1;
+    public int CalculateLODLevel(float distance) => 1;
+    public void ApplyLOD(string elementId, int lodLevel) { }
+    public void ProcessBatch(List<VisualElement> elements, Action<VisualElement> operation) { }
+    public void ProcessBatch(List<object> elements, Action<object> operation) { }
+    public void ProcessBatch(List<object> elements, string operationName) { }
+    public void OptimizeMemory() { }
+    public bool HasActiveMemoryPools() => false;
+    public void OptimizeDataFlow(int dataSize) { }
+    public void OptimizeDataFlow(string dataType) { }
+    }
+
     // Supporting interfaces and structures
     public interface IUpdateable
     {
         void UpdateElement();
     }
-    
+
     public interface IAnimatable
     {
         void UpdateAnimation();
     }
-    
+
     public enum LODLevel
     {
         Low = 0,
         Medium = 1,
         High = 2
     }
-    
+
     [System.Serializable]
     public class PerformanceMetrics
     {
@@ -735,7 +775,7 @@ namespace ProjectChimera.Systems.UI.Advanced
         public int ProcessedUpdatesThisFrame;
         public int ProcessedAnimationsThisFrame;
         public int ActionsExecutedThisFrame;
-        
+
         public void Reset()
         {
             ProcessedUpdatesThisFrame = 0;

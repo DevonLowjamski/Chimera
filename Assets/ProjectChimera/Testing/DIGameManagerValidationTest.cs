@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using ProjectChimera.Core;
 using ProjectChimera.Core.DependencyInjection;
+using ProjectChimera.Core.Logging;
 
 
 namespace ProjectChimera.Testing
@@ -99,8 +100,8 @@ namespace ProjectChimera.Testing
             
             try
             {
-                // Find DIGameManager
-                _gameManager = DIGameManager.Instance ?? FindObjectOfType<DIGameManager>();
+                // Find DIGameManager - try multiple resolution methods for validation
+                _gameManager = DIGameManager.Instance ?? ServiceContainerFactory.Instance?.TryResolve<DIGameManager>();
                 if (_gameManager == null)
                 {
                     result.AddError("DIGameManager not found in scene");
@@ -899,7 +900,7 @@ namespace ProjectChimera.Testing
         private void LogValidation(string message)
         {
             if (_enableValidationLogging)
-                Debug.Log($"[DIGameManagerValidation] {message}");
+                ChimeraLogger.Log($"[DIGameManagerValidation] {message}");
         }
         
         /// <summary>

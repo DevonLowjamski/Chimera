@@ -1,0 +1,331 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.Save
+{
+    /// <summary>
+    /// Data Transfer Objects for Trading System Save/Load Operations
+    /// </summary>
+    
+    /// <summary>
+    /// DTO for trading system state
+    /// </summary>
+    [System.Serializable]
+    public class TradingStateDTO
+    {
+        [Header("Trading Posts")]
+        public List<TradingPostDTO> TradingPosts = new List<TradingPostDTO>();
+        public Dictionary<string, TradingPostStateDTO> TradingPostStates = new Dictionary<string, TradingPostStateDTO>();
+        
+        [Header("Pending Transactions")]
+        public List<PendingTransactionDTO> PendingTransactions = new List<PendingTransactionDTO>();
+        public List<TradingOpportunityDTO> AvailableOpportunities = new List<TradingOpportunityDTO>();
+        
+        [Header("Trading Performance")]
+        public TradingMetricsDTO TradingMetrics;
+        public List<TransactionRecordDTO> RecentTransactions = new List<TransactionRecordDTO>();
+        
+        [Header("Trading Configuration")]
+        public TradingSettingsDTO TradingSettings;
+        public List<PaymentMethodDTO> AvailablePaymentMethods = new List<PaymentMethodDTO>();
+        
+        [Header("System State")]
+        public bool IsTradingActive = true;
+        public DateTime LastTradingUpdate;
+    }
+    
+    /// <summary>
+    /// DTO for trading post information
+    /// </summary>
+    [System.Serializable]
+    public class TradingPostDTO
+    {
+        [Header("Trading Post Identity")]
+        public string TradingPostId;
+        public string TradingPostName;
+        public Vector3 Location;
+        
+        [Header("Contact Information")]
+        public ContactInformationDTO ContactInfo;
+        
+        [Header("Operating Information")]
+        public TradingHoursDTO OperatingHours;
+        public bool IsActive;
+        public DateTime LastContact;
+        
+        [Header("Trading Capacity")]
+        public float MaxTransactionValue;
+        public List<string> AcceptedProducts = new List<string>();
+        public List<string> PreferredPaymentMethods = new List<string>();
+        
+        [Header("Storage and Logistics")]
+        public List<StorageLocationDTO> StorageLocations = new List<StorageLocationDTO>();
+        public float TotalStorageCapacity;
+        public float AvailableStorageCapacity;
+        
+        [Header("Reputation and Trust")]
+        public float TrustRating;
+        public float ReliabilityScore;
+        public List<ReputationEventDTO> ReputationHistory = new List<ReputationEventDTO>();
+    }
+    
+    /// <summary>
+    /// DTO for trading post state
+    /// </summary>
+    [System.Serializable]
+    public class TradingPostStateDTO
+    {
+        public string TradingPostId;
+        public bool IsCurrentlyOpen;
+        public float CurrentInventoryLevel;
+        public Dictionary<string, float> ProductAvailability = new Dictionary<string, float>();
+        public List<string> CurrentPromotions = new List<string>();
+        public DateTime LastStateUpdate;
+    }
+    
+    /// <summary>
+    /// DTO for pending transactions
+    /// </summary>
+    [System.Serializable]
+    public class PendingTransactionDTO
+    {
+        [Header("Transaction Details")]
+        public string TransactionId;
+        public string ProductId;
+        public float Quantity;
+        public float UnitPrice;
+        public float TotalValue;
+        
+        [Header("Parties")]
+        public string BuyerId;
+        public string SellerId;
+        public string TradingPostId;
+        
+        [Header("Transaction Status")]
+        public string Status; // "Pending", "Confirmed", "InTransit", "Delivered"
+        public DateTime CreatedDate;
+        public DateTime ExpectedDeliveryDate;
+        public DateTime LastStatusUpdate;
+        
+        [Header("Payment Information")]
+        public PaymentMethodDTO PaymentMethod;
+        public string PaymentStatus; // "Pending", "Authorized", "Completed"
+        
+        [Header("Additional Information")]
+        public List<string> SpecialInstructions = new List<string>();
+        public Dictionary<string, object> AdditionalData = new Dictionary<string, object>();
+    }
+    
+    /// <summary>
+    /// DTO for trading opportunities
+    /// </summary>
+    [System.Serializable]
+    public class TradingOpportunityDTO
+    {
+        [Header("Opportunity Details")]
+        public string OpportunityId;
+        public string ProductId;
+        public string OpportunityType; // "Buy", "Sell", "Exchange"
+        
+        [Header("Offer Details")]
+        public float Quantity;
+        public float PricePerUnit;
+        public float TotalValue;
+        public string Currency;
+        
+        [Header("Trading Partner")]
+        public string TradingPartnerId;
+        public string TradingPartnerName;
+        public float PartnerReputationScore;
+        
+        [Header("Opportunity Metrics")]
+        public float ProfitPotential;
+        public float RiskLevel; // 0.0 to 1.0
+        public string RiskFactors;
+        
+        [Header("Timing")]
+        public DateTime OpportunityCreated;
+        public DateTime ExpirationDate;
+        public bool IsUrgent;
+        
+        [Header("Requirements")]
+        public List<string> Requirements = new List<string>();
+        public Dictionary<string, object> AdditionalTerms = new Dictionary<string, object>();
+    }
+    
+    /// <summary>
+    /// DTO for transaction records
+    /// </summary>
+    [System.Serializable]
+    public class TransactionRecordDTO
+    {
+        [Header("Transaction Identity")]
+        public string TransactionId;
+        public string TransactionType; // "Buy", "Sell", "Exchange"
+        public DateTime TransactionDate;
+        
+        [Header("Product Information")]
+        public string ProductId;
+        public string ProductName;
+        public float Quantity;
+        public float UnitPrice;
+        public float TotalValue;
+        
+        [Header("Parties Involved")]
+        public string BuyerId;
+        public string SellerId;
+        public string TradingPostId;
+        
+        [Header("Transaction Status")]
+        public bool IsCompleted;
+        public string CompletionStatus;
+        public DateTime CompletionDate;
+        
+        [Header("Financial Details")]
+        public PaymentMethodDTO PaymentMethod;
+        public float TransactionFees;
+        public float NetAmount;
+        
+        [Header("Quality and Performance")]
+        public float ProductQuality;
+        public float CustomerSatisfaction;
+        public string TransactionNotes;
+    }
+    
+    /// <summary>
+    /// DTO for trading metrics and performance
+    /// </summary>
+    [System.Serializable]
+    public class TradingMetricsDTO
+    {
+        [Header("Volume Metrics")]
+        public float TotalTradingVolume;
+        public float AverageTransactionSize;
+        public int TotalTransactionCount;
+        
+        [Header("Financial Performance")]
+        public float TotalRevenue;
+        public float TotalProfit;
+        public float AverageProfitMargin;
+        
+        [Header("Success Rates")]
+        public float SuccessfulTransactionRate;
+        public float CustomerSatisfactionRate;
+        public float OnTimeDeliveryRate;
+        
+        [Header("Time Metrics")]
+        public DateTime FirstTransactionDate;
+        public DateTime LastTransactionDate;
+        public float AverageTransactionTime;
+        
+        [Header("Growth Metrics")]
+        public float VolumeGrowthRate;
+        public float RevenueGrowthRate;
+        public float CustomerGrowthRate;
+    }
+    
+    /// <summary>
+    /// DTO for payment methods
+    /// </summary>
+    [System.Serializable]
+    public class PaymentMethodDTO
+    {
+        [Header("Payment Method Details")]
+        public string PaymentMethodId;
+        public string PaymentMethodName;
+        public string PaymentType; // "Cash", "Credit", "BankTransfer", "Crypto", etc.
+        
+        [Header("Processing Information")]
+        public float ProcessingFeePercentage;
+        public float FixedProcessingFee;
+        public float ProcessingTimeHours;
+        
+        [Header("Limits and Requirements")]
+        public float MinTransactionAmount;
+        public float MaxTransactionAmount;
+        public bool RequiresVerification;
+        public List<string> RequiredDocuments = new List<string>();
+        
+        [Header("Availability")]
+        public bool IsAvailable;
+        public bool IsPreferred;
+        public List<string> AcceptedCurrencies = new List<string>();
+    }
+    
+    /// <summary>
+    /// DTO for trading settings and configuration
+    /// </summary>
+    [System.Serializable]
+    public class TradingSettingsDTO
+    {
+        [Header("General Trading Settings")]
+        public bool EnableAutomaticTrading;
+        public bool EnableNotifications;
+        public float MaxRiskTolerance; // 0.0 to 1.0
+        
+        [Header("Transaction Limits")]
+        public float MaxDailyTradingVolume;
+        public float MaxSingleTransactionValue;
+        public int MaxPendingTransactions;
+        
+        [Header("Automation Settings")]
+        public bool AutoAcceptLowRiskOpportunities;
+        public float AutoAcceptProfitThreshold;
+        public bool EnablePriceAlerts;
+        
+        [Header("Quality Standards")]
+        public float MinimumProductQuality;
+        public float MinimumPartnerReputation;
+        public bool RequireQualityCertification;
+        
+        [Header("Communication Preferences")]
+        public bool EnableEmailNotifications;
+        public bool EnableSMSNotifications;
+        public bool EnableInAppNotifications;
+        
+        [Header("Reporting Settings")]
+        public bool GenerateDailyReports;
+        public bool GenerateWeeklyReports;
+        public bool GenerateMonthlyReports;
+    }
+    
+    /// <summary>
+    /// Supporting DTOs for trading system
+    /// </summary>
+    
+    [System.Serializable]
+    public class ContactInformationDTO
+    {
+        public string PrimaryContactName;
+        public string EmailAddress;
+        public string PhoneNumber;
+        public string Address;
+        public string City;
+        public string PostalCode;
+        public string Country;
+    }
+    
+    [System.Serializable]
+    public class StorageLocationDTO
+    {
+        public string LocationId;
+        public string LocationName;
+        public Vector3 Position;
+        public float StorageCapacity;
+        public float CurrentOccupancy;
+        public List<string> StorageTypes = new List<string>(); // "Dry", "Cool", "Frozen", etc.
+        public bool IsActive;
+    }
+    
+    [System.Serializable]
+    public class ReputationEventDTO
+    {
+        public string EventId;
+        public DateTime EventDate;
+        public string EventType; // "Positive", "Negative", "Neutral"
+        public float ImpactScore; // -1.0 to 1.0
+        public string Description;
+        public string SourceId; // Who reported this event
+    }
+}

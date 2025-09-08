@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -65,14 +66,14 @@ namespace ProjectChimera.Systems.Environment
         {
             if (IsInitialized)
             {
-                Debug.LogWarning("[HVAC_Service] Already initialized");
+                ChimeraLogger.LogWarning("[HVAC_Service] Already initialized");
                 return;
             }
             
             InitializeHVACCalculations();
             IsInitialized = true;
             
-            Debug.Log("[HVAC_Service] HVAC control service initialized successfully");
+            ChimeraLogger.Log("[HVAC_Service] HVAC control service initialized successfully");
         }
         
         public void Shutdown()
@@ -84,7 +85,7 @@ namespace ProjectChimera.Systems.Environment
             _performanceMetrics = new HVACPerformanceMetrics();
             
             IsInitialized = false;
-            Debug.Log("[HVAC_Service] HVAC control service shutdown completed");
+            ChimeraLogger.Log("[HVAC_Service] HVAC control service shutdown completed");
         }
         
         /// <summary>
@@ -98,7 +99,7 @@ namespace ProjectChimera.Systems.Environment
         {
             if (!IsInitialized)
             {
-                Debug.LogWarning("[HVAC_Service] Service not initialized");
+                ChimeraLogger.LogWarning("[HVAC_Service] Service not initialized");
                 return CreateDefaultResponse();
             }
             
@@ -301,7 +302,7 @@ namespace ProjectChimera.Systems.Environment
             _hvacSystems[systemId] = systemState;
             _controlData[systemId] = new HVACControlData { SystemId = systemId };
             
-            Debug.Log($"[HVAC_Service] Registered HVAC system: {systemId}");
+            ChimeraLogger.Log($"[HVAC_Service] Registered HVAC system: {systemId}");
         }
         
         /// <summary>
@@ -314,7 +315,7 @@ namespace ProjectChimera.Systems.Environment
             _hvacSystems.Remove(systemId);
             _controlData.Remove(systemId);
             
-            Debug.Log($"[HVAC_Service] Unregistered HVAC system: {systemId}");
+            ChimeraLogger.Log($"[HVAC_Service] Unregistered HVAC system: {systemId}");
         }
         
         #region Private Calculation Methods

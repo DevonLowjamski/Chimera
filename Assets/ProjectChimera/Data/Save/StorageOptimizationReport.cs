@@ -1,0 +1,27 @@
+using System;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.Save
+{
+    /// <summary>
+    /// Report of storage optimization analysis
+    /// </summary>
+    [System.Serializable]
+    public class StorageOptimizationReport
+    {
+        public DateTime ReportDate;
+        public DateTime AnalysisDate;
+        public long TotalStorageUsed;
+        public long OptimizableStorage;
+        public float CompressionRatio;
+        public int SaveFileCount;
+        public int BackupCount;
+        public float FragmentationLevel;
+        public List<string> RecommendedActions = new List<string>();
+        public Dictionary<string, long> CategorySizes = new Dictionary<string, long>();
+        public bool RequiresAction;
+        public float OptimizationPotential;
+        public bool IsValid;
+        public string ErrorMessage;
+    }
+}

@@ -6,7 +6,7 @@ using UnityEngine;
 namespace ProjectChimera.Data.UI
 {
     // Competitive/Leaderboard types are now defined in SharedDataStructures.cs
-    
+
     [System.Serializable]
     public class LeaderboardDisplayData
     {
@@ -15,7 +15,7 @@ namespace ProjectChimera.Data.UI
         public float Score;
         public string Achievement;
         public DateTime LastUpdate;
-        
+
         // Additional properties for UI compatibility
         public bool IsCurrentPlayer = false;
         public string Badge = "";
@@ -23,19 +23,19 @@ namespace ProjectChimera.Data.UI
         public string FormattedScore => Score.ToString("F0"); // Formatted score display
         public string TrophyIcon => GetTrophyIconForRank(Rank);
         public Color RankColor => GetRankColor(Rank);
-        
+
         private string GetTrophyIconForRank(int rank)
         {
             return rank switch
             {
                 1 => "🥇", // Gold
-                2 => "🥈", // Silver  
+                2 => "🥈", // Silver
                 3 => "🥉", // Bronze
                 _ when rank <= 10 => "🏆", // Top 10
                 _ => ""
             };
         }
-        
+
         private Color GetRankColor(int rank)
         {
             return rank switch
@@ -60,7 +60,7 @@ namespace ProjectChimera.Data.UI
         public CompetitionStatus Status;
         public List<string> Participants;
         public Dictionary<string, float> Rewards;
-        
+
         // Compatibility property for UI
         public bool IsActive => Status == CompetitionStatus.Active;
     }
@@ -81,7 +81,7 @@ namespace ProjectChimera.Data.UI
         public int CultivationRank;
         public int EconomicRank;
         public int QualityRank;
-        
+
         // Legacy properties for compatibility
         public int CurrentRank;
         public float TotalScore;
@@ -89,13 +89,13 @@ namespace ProjectChimera.Data.UI
         public int CompetitionsParticipated;
         public float WinRate;
         public List<PersonalRecord> Records;
-        
+
         // New properties to match CompetitiveManager version
         public int TotalCompetitionsEntered;
         public int TotalWins;
         public int TotalPodiumFinishes;
         public PersonalRecords PersonalRecords;
-        
+
         // Level progression
         public int CompetitiveLevel;
         public float NextLevelProgress;
@@ -169,12 +169,12 @@ namespace ProjectChimera.Data.UI
         public List<EventChoice> Choices;
         public DateTime StartTime;
         public bool IsActive;
-        
+
         // Additional UI properties
         public string StoryContext;
         public string CategoryIcon => GetCategoryIcon(Type);
         public Color SeverityColor => GetSeverityColor(Severity);
-        
+
         private string GetCategoryIcon(RandomEventType type)
         {
             return type switch
@@ -188,7 +188,7 @@ namespace ProjectChimera.Data.UI
                 _ => "❓"
             };
         }
-        
+
         private Color GetSeverityColor(EventSeverity severity)
         {
             return severity switch
@@ -317,19 +317,7 @@ namespace ProjectChimera.Data.UI
     }
 
     // Plant cultivation types
-    [System.Serializable]
-    public class PlantInstance
-    {
-        public string PlantId;
-        public string SpeciesName;
-        public string StrainName;
-        public int Age;
-        public float Health;
-        public float GrowthStage;
-        public Dictionary<string, float> Traits;
-        public Vector3 Position;
-        public bool IsHarvestable;
-    }
+    // NOTE: PlantInstance moved to Systems/Cultivation/PlantInstance.cs to avoid CS0101 duplicate definition
 
     // Breeding result types
     [System.Serializable]
@@ -343,7 +331,7 @@ namespace ProjectChimera.Data.UI
         public List<TraitPrediction> TraitPredictions { get; set; } = new List<TraitPrediction>();
         public float HybridVigorFactor { get; set; }
         public DateTime CompletionTime { get; set; }
-        
+
         // Compatibility properties for different systems
             public object Parent1Genotype { get; set; }
             public object Parent2Genotype { get; set; }
@@ -381,7 +369,7 @@ namespace ProjectChimera.Data.UI
         public DateTime StartTime;
         public DateTime? CompletionTime;
         public Dictionary<string, object> Rewards;
-        
+
         // Compatibility properties for UI
         public float CurrentProgress => Progress;
         public float TargetProgress => Target;
@@ -403,7 +391,7 @@ namespace ProjectChimera.Data.UI
         public DateTime EndTime;
         public bool IsCompleted;
         public Dictionary<string, object> Rewards;
-        
+
         // Compatibility properties for UI
         public float CurrentProgress => Progress;
         public float TargetProgress => Target;

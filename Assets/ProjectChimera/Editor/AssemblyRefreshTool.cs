@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Compilation;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Editor
 {
@@ -13,7 +14,7 @@ namespace ProjectChimera.Editor
         [MenuItem("Tools/Project Chimera/Refresh Assembly Definitions")]
         public static void RefreshAssemblyDefinitions()
         {
-            Debug.Log("Refreshing Assembly Definitions...");
+            ChimeraLogger.Log("Refreshing Assembly Definitions...");
             
             // Force Unity to refresh assets
             AssetDatabase.Refresh();
@@ -21,13 +22,13 @@ namespace ProjectChimera.Editor
             // Request script compilation
             CompilationPipeline.RequestScriptCompilation();
             
-            Debug.Log("Assembly refresh completed. Check console for compilation results.");
+            ChimeraLogger.Log("Assembly refresh completed. Check console for compilation results.");
         }
         
         [MenuItem("Tools/Project Chimera/Force Recompile")]
         public static void ForceRecompile()
         {
-            Debug.Log("Forcing Unity recompilation...");
+            ChimeraLogger.Log("Forcing Unity recompilation...");
             
             // Refresh assets
             AssetDatabase.Refresh();
@@ -38,7 +39,7 @@ namespace ProjectChimera.Editor
             // Request script compilation
             CompilationPipeline.RequestScriptCompilation();
             
-            Debug.Log("Forced recompilation requested. Check console for compilation results.");
+            ChimeraLogger.Log("Forced recompilation requested. Check console for compilation results.");
         }
     }
 } 

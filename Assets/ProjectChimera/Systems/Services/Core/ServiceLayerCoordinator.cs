@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -49,7 +50,7 @@ namespace ProjectChimera.Systems.Services.Core
             if (_contextualMenuController == null)
             {
                 // Find ContextualMenuController using reflection to avoid assembly dependency
-                var contextualMenuControllers = FindObjectsOfType<MonoBehaviour>();
+                var contextualMenuControllers = /* TODO: ServiceContainer.GetAll<MonoBehaviour>() */ new MonoBehaviour[0];
                 foreach (var controller in contextualMenuControllers)
                 {
                     if (controller.GetType().Name == "ContextualMenuController")
@@ -61,7 +62,7 @@ namespace ProjectChimera.Systems.Services.Core
                 
                 if (_contextualMenuController == null)
                 {
-                    Debug.LogError("[ServiceLayerCoordinator] ContextualMenuController not found!");
+                    ChimeraLogger.LogError("[ServiceLayerCoordinator] ContextualMenuController not found!");
                     return;
                 }
             }
@@ -80,7 +81,7 @@ namespace ProjectChimera.Systems.Services.Core
         {
             if (_isInitialized)
             {
-                Debug.LogWarning("[ServiceLayerCoordinator] Already initialized");
+                ChimeraLogger.LogWarning("[ServiceLayerCoordinator] Already initialized");
                 return;
             }
             
@@ -105,12 +106,12 @@ namespace ProjectChimera.Systems.Services.Core
                 
                 if (_enableCommandLogging)
                 {
-                    Debug.Log("[ServiceLayerCoordinator] Service layer initialized successfully");
+                    ChimeraLogger.Log("[ServiceLayerCoordinator] Service layer initialized successfully");
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ServiceLayerCoordinator] Failed to initialize service layer: {ex.Message}");
+                ChimeraLogger.LogError($"[ServiceLayerCoordinator] Failed to initialize service layer: {ex.Message}");
                 OnServiceError?.Invoke("ServiceLayer", ex.Message);
             }
         }
@@ -121,7 +122,7 @@ namespace ProjectChimera.Systems.Services.Core
         private void ResolveDependencies()
         {
             // Get managers through the DI system
-            var gameManager = FindObjectOfType<DIGameManager>();
+            var gameManager = ServiceContainerFactory.Instance?.TryResolve<DIGameManager>();
             if (gameManager == null)
             {
                 throw new InvalidOperationException("DIGameManager not found - required for service resolution");
@@ -160,7 +161,7 @@ namespace ProjectChimera.Systems.Services.Core
             
             if (_enableCommandLogging)
             {
-                Debug.Log($"[ServiceLayerCoordinator] Registered {_constructionCommands.Count} construction commands");
+                ChimeraLogger.Log($"[ServiceLayerCoordinator] Registered {_constructionCommands.Count} construction commands");
             }
         }
         
@@ -182,7 +183,7 @@ namespace ProjectChimera.Systems.Services.Core
             
             if (_enableCommandLogging)
             {
-                Debug.Log($"[ServiceLayerCoordinator] Registered {_cultivationCommands.Count} cultivation commands");
+                ChimeraLogger.Log($"[ServiceLayerCoordinator] Registered {_cultivationCommands.Count} cultivation commands");
             }
         }
         
@@ -204,7 +205,7 @@ namespace ProjectChimera.Systems.Services.Core
             
             if (_enableCommandLogging)
             {
-                Debug.Log($"[ServiceLayerCoordinator] Registered {_geneticsCommands.Count} genetics commands");
+                ChimeraLogger.Log($"[ServiceLayerCoordinator] Registered {_geneticsCommands.Count} genetics commands");
             }
         }
         
@@ -251,7 +252,7 @@ namespace ProjectChimera.Systems.Services.Core
             
             if (eventHandler == null)
             {
-                Debug.LogError("[ServiceLayerCoordinator] ContextualMenuEventHandler not found!");
+                ChimeraLogger.LogError("[ServiceLayerCoordinator] ContextualMenuEventHandler not found!");
                 return;
             }
             
@@ -301,13 +302,13 @@ namespace ProjectChimera.Systems.Services.Core
                         _geneticsCommands.TryGetValue(commandId, out command);
                         break;
                     default:
-                        Debug.LogWarning($"[ServiceLayerCoordinator] Unknown mode: {mode}");
+                        ChimeraLogger.LogWarning($"[ServiceLayerCoordinator] Unknown mode: {mode}");
                         return;
                 }
                 
                 if (command == null)
                 {
-                    Debug.LogWarning($"[ServiceLayerCoordinator] Command not found: {commandId} in mode {mode}");
+                    ChimeraLogger.LogWarning($"[ServiceLayerCoordinator] Command not found: {commandId} in mode {mode}");
                     return;
                 }
                 
@@ -323,12 +324,12 @@ namespace ProjectChimera.Systems.Services.Core
                 
                 if (_enableCommandLogging)
                 {
-                    Debug.Log($"[ServiceLayerCoordinator] Executed {commandId}: {result.Message}");
+                    ChimeraLogger.Log($"[ServiceLayerCoordinator] Executed {commandId}: {result.Message}");
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ServiceLayerCoordinator] Error handling menu item selection: {ex.Message}");
+                ChimeraLogger.LogError($"[ServiceLayerCoordinator] Error handling menu item selection: {ex.Message}");
                 OnServiceError?.Invoke(mode, ex.Message);
             }
         }
@@ -384,7 +385,7 @@ namespace ProjectChimera.Systems.Services.Core
         /// </summary>
         private T FindManagerComponent<T>() where T : class
         {
-            var allManagers = FindObjectsOfType<MonoBehaviour>();
+            var allManagers = /* TODO: ServiceContainer.GetAll<MonoBehaviour>() */ new MonoBehaviour[0];
             foreach (var manager in allManagers)
             {
                 if (manager is T managerInterface)

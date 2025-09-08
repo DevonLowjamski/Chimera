@@ -207,25 +207,25 @@ namespace ProjectChimera.Data.Equipment
             
             if (string.IsNullOrEmpty(_componentName))
             {
-                Debug.LogError($"FacilityComponentSO '{name}' has no component name assigned.", this);
+                SharedLogger.LogError($"FacilityComponentSO '{name}' has no component name assigned.");
                 isValid = false;
             }
             
             if (_floorArea <= 0f)
             {
-                Debug.LogError($"Facility Component {name}: Floor area must be positive");
+                SharedLogger.LogError($"Facility Component {name}: Floor area must be positive");
                 isValid = false;
             }
             
             if (_volume <= 0f)
             {
-                Debug.LogError($"Facility Component {name}: Volume must be positive");
+                SharedLogger.LogError($"Facility Component {name}: Volume must be positive");
                 isValid = false;
             }
             
             if (_maxPlantCapacity < 0)
             {
-                Debug.LogError($"Facility Component {name}: Plant capacity cannot be negative");
+                SharedLogger.LogError($"Facility Component {name}: Plant capacity cannot be negative");
                 isValid = false;
             }
             
@@ -233,7 +233,7 @@ namespace ProjectChimera.Data.Equipment
             float calculatedArea = _dimensions.x * _dimensions.z;
             if (Mathf.Abs(calculatedArea - _floorArea) > 0.1f)
             {
-                Debug.LogWarning($"Facility Component {name}: Floor area doesn't match dimensions");
+                SharedLogger.LogWarning($"Facility Component {name}: Floor area doesn't match dimensions");
                 isValid = false;
             }
             

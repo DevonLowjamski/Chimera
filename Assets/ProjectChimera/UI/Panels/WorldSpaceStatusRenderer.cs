@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -9,7 +11,7 @@ namespace ProjectChimera.UI.Panels
     /// Renders 3D health bars, status indicators, and vital information for cannabis plants and facilities.
     /// Utilizes Unity 6.2's enhanced World Space UI capabilities for immersive cultivation management.
     /// </summary>
-    public class WorldSpaceStatusRenderer : MonoBehaviour
+    public class WorldSpaceStatusRenderer : MonoBehaviour, ITickable
     {
         [Header("Status Display Configuration")]
         [SerializeField] private WorldSpaceStatusConfig _config = new WorldSpaceStatusConfig();
@@ -45,10 +47,23 @@ namespace ProjectChimera.UI.Panels
             InitializeDisplayPool();
         }
         
-        private void Update()
+        private void Start()
+        {
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+        }
+        
+        #region ITickable Implementation
+        
+        public int Priority => TickPriority.UIManager;
+        public bool Enabled => enabled && _targetCamera != null;
+        
+        public void Tick(float deltaTime)
         {
             UpdateStatusDisplays();
         }
+        
+        #endregion
         
         /// <summary>
         /// Initializes the UI document pool for performance
@@ -88,7 +103,7 @@ namespace ProjectChimera.UI.Panels
         {
             if (target == null || statusData == null)
             {
-                Debug.LogWarning("[WorldSpaceStatusRenderer] Invalid parameters for status display");
+                ChimeraLogger.LogWarning("[WorldSpaceStatusRenderer] Invalid parameters for status display");
                 return false;
             }
             
@@ -103,7 +118,7 @@ namespace ProjectChimera.UI.Panels
             var statusDocument = GetStatusDocument();
             if (statusDocument == null)
             {
-                Debug.LogWarning("[WorldSpaceStatusRenderer] No available status documents in pool");
+                ChimeraLogger.LogWarning("[WorldSpaceStatusRenderer] No available status documents in pool");
                 return false;
             }
             
@@ -131,7 +146,7 @@ namespace ProjectChimera.UI.Panels
             UpdateDisplayPosition(displayData);
             statusDocument.gameObject.SetActive(true);
             
-            Debug.Log($"[WorldSpaceStatusRenderer] Created status display for {target.name}");
+            ChimeraLogger.Log($"[WorldSpaceStatusRenderer] Created status display for {target.name}");
             return true;
         }
         
@@ -147,7 +162,7 @@ namespace ProjectChimera.UI.Panels
             ReturnStatusDocument(displayData.UIDocument);
             _activeDisplays.Remove(target);
             
-            Debug.Log($"[WorldSpaceStatusRenderer] Removed status display for {target.name}");
+            ChimeraLogger.Log($"[WorldSpaceStatusRenderer] Removed status display for {target.name}");
             return true;
         }
         
@@ -182,7 +197,7 @@ namespace ProjectChimera.UI.Panels
             var template = GetTemplateForDisplayType(displayType);
             if (template == null)
             {
-                Debug.LogWarning($"[WorldSpaceStatusRenderer] No template found for display type: {displayType}");
+                ChimeraLogger.LogWarning($"[WorldSpaceStatusRenderer] No template found for display type: {displayType}");
                 return false;
             }
             
@@ -480,6 +495,10 @@ namespace ProjectChimera.UI.Panels
         
         private void OnDestroy()
         {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
             HideAllDisplays();
         }
     }

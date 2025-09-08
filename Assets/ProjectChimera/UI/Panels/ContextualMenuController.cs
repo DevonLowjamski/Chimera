@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 using ProjectChimera.UI.Core;
 using ProjectChimera.UI.Panels;
 using ProjectChimera.UI.Components;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -160,7 +161,7 @@ namespace ProjectChimera.UI.Panels
         private void LogDebug(string message)
         {
             if (_enableDebugLogging)
-                Debug.Log($"[ContextualMenuController] {message}");
+                ChimeraLogger.Log($"[ContextualMenuController] {message}");
         }
         
         // Cleanup

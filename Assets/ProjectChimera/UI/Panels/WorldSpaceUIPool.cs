@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -43,7 +44,7 @@ namespace ProjectChimera.UI.Panels
                 _pool.Enqueue(document);
             }
             
-            Debug.Log($"[WorldSpaceUIPool] Initialized with {_initialPoolSize} UI documents");
+            ChimeraLogger.Log($"[WorldSpaceUIPool] Initialized with {_initialPoolSize} UI documents");
         }
         
         /// <summary>
@@ -59,7 +60,7 @@ namespace ProjectChimera.UI.Panels
             }
             
             // Create new if pool is empty
-            Debug.Log("[WorldSpaceUIPool] Pool empty, creating new UI document");
+            ChimeraLogger.Log("[WorldSpaceUIPool] Pool empty, creating new UI document");
             return CreateUIDocument();
         }
         
@@ -146,7 +147,7 @@ namespace ProjectChimera.UI.Panels
                 DestroyUIDocument(document);
             }
             
-            Debug.Log("[WorldSpaceUIPool] Pool cleared");
+            ChimeraLogger.Log("[WorldSpaceUIPool] Pool cleared");
         }
         
         /// <summary>
@@ -161,7 +162,7 @@ namespace ProjectChimera.UI.Panels
                 _pool.Enqueue(document);
             }
             
-            Debug.Log($"[WorldSpaceUIPool] Preloaded {count} documents, pool size: {_pool.Count}");
+            ChimeraLogger.Log($"[WorldSpaceUIPool] Preloaded {count} documents, pool size: {_pool.Count}");
         }
         
         private void OnDestroy()

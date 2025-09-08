@@ -1,20 +1,20 @@
+using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Core.DependencyInjection;
-using ProjectChimera.Systems.Cultivation;
-using ProjectChimera.Systems.Economy;
-using ProjectChimera.Systems.Environment;
 
 namespace ProjectChimera.Systems.Analytics
 {
     /// <summary>
-    /// Lightweight analytics system for tracking and aggregating basic KPIs
-    /// Phase 9 implementation focusing on yield/time, cash flow, and energy metrics
+    /// Analytics Manager - orchestrates all analytics components
+    /// Maintains the original IAnalyticsService interface while using modular components
+    /// Refactored from monolithic 1,175-line class into focused components
     /// </summary>
-    public class AnalyticsManager : DIChimeraManager, IAnalyticsService
+    public class AnalyticsManager : DIChimeraManager, IAnalyticsService, ITickable
     {
         [Header("Analytics Configuration")]
         [SerializeField] private bool _enableAnalytics = true;
@@ -28,16 +28,11 @@ namespace ProjectChimera.Systems.Analytics
         [SerializeField] private bool _trackEnergyUsage = true;
         [SerializeField] private bool _trackFacilityMetrics = true;
 
-        // Core metrics storage
-        private Dictionary<string, List<MetricDataPoint>> _metricHistory;
-        private Dictionary<string, float> _currentMetrics;
-        private Dictionary<string, IMetricCollector> _metricCollectors;
-
-        // Facility-specific metrics storage
-        private Dictionary<string, Dictionary<string, List<MetricDataPoint>>> _facilityMetricHistory;
-        private Dictionary<string, Dictionary<string, float>> _facilityCurrentMetrics;
-        private List<string> _availableFacilities;
-        private string _currentFacilityFilter = "All Facilities";
+        // Analytics components
+        private IAnalyticsCore _coreAnalytics;
+        private IEventAnalytics _eventAnalytics;
+        private IPerformanceAnalytics _performanceAnalytics;
+        private IReportingAnalytics _reportingAnalytics;
 
         // Update timing
         private float _lastUpdateTime;
@@ -58,8 +53,7 @@ namespace ProjectChimera.Systems.Analytics
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"[AnalyticsManager] Failed to get service from DI container: {ex.Message}");
-                // Return null instead of using FindObjectOfType anti-pattern
+                ChimeraLogger.LogWarning($"[AnalyticsManager] Failed to get service from DI container: {ex.Message}");
                 return null;
             }
         }
@@ -68,75 +62,84 @@ namespace ProjectChimera.Systems.Analytics
 
         public float GetMetric(string metricName)
         {
-            if (!IsEnabled || !_currentMetrics.ContainsKey(metricName))
-                return 0f;
-
-            return _currentMetrics[metricName];
+            return GetCurrentMetric(metricName);
         }
 
         public List<MetricDataPoint> GetMetricHistory(string metricName, TimeRange timeRange)
         {
-            if (!IsEnabled || !_metricHistory.ContainsKey(metricName))
-                return new List<MetricDataPoint>();
-
-            var cutoffTime = DateTime.Now - GetTimeSpanFromRange(timeRange);
-            var filteredData = _metricHistory[metricName]
-                .Where(point => point.Timestamp >= cutoffTime)
-                .OrderBy(point => point.Timestamp)
-                .ToList();
-
-            // Apply data aggregation for large time ranges to improve performance
-            return AggregateDataPoints(filteredData, timeRange);
+            return _reportingAnalytics?.GetMetricHistory(metricName, timeRange) ?? new List<MetricDataPoint>();
         }
 
         public Dictionary<string, float> GetCurrentMetrics()
         {
-            return IsEnabled ? new Dictionary<string, float>(_currentMetrics) : new Dictionary<string, float>();
+            return _coreAnalytics?.GetCurrentMetrics() ?? new Dictionary<string, float>();
+        }
+
+        Dictionary<string, object> IAnalyticsService.GetCurrentMetrics()
+        {
+            var floatMetrics = GetCurrentMetrics();
+            var result = new Dictionary<string, object>();
+            foreach (var kvp in floatMetrics)
+            {
+                result[kvp.Key] = kvp.Value;
+            }
+            return result;
+        }
+
+        Dictionary<string, object> IAnalyticsService.GetCurrentMetrics(string category)
+        {
+            var floatMetrics = GetCurrentMetrics();
+            var result = new Dictionary<string, object>();
+            foreach (var kvp in floatMetrics)
+            {
+                if (string.IsNullOrEmpty(category) || kvp.Key.StartsWith(category + "."))
+                {
+                    result[kvp.Key] = kvp.Value;
+                }
+            }
+            return result;
+        }
+
+        List<Dictionary<string, object>> IAnalyticsService.GetMetricHistory(string metricKey, int count, string category)
+        {
+            // Convert MetricDataPoint history to Dictionary format
+            var history = GetMetricHistory(metricKey, ProjectChimera.Systems.Analytics.TimeRange.LastHour);
+            return history.Take(count).Select(m => new Dictionary<string, object>
+            {
+                ["timestamp"] = m.Timestamp,
+                ["value"] = m.Value,
+                ["metric"] = m.MetricName
+            }).ToList();
         }
 
         public void RegisterMetricCollector(string metricName, IMetricCollector collector)
         {
-            if (!IsEnabled) return;
-
-            _metricCollectors[metricName] = collector;
-            
-            if (_enableDebugLogging)
-                Debug.Log($"[AnalyticsManager] Registered collector for metric: {metricName}");
+            _eventAnalytics?.RegisterMetricCollector(metricName, collector);
         }
 
         public void UnregisterMetricCollector(string metricName)
         {
-            if (!IsEnabled) return;
-
-            _metricCollectors.Remove(metricName);
-            
-            if (_enableDebugLogging)
-                Debug.Log($"[AnalyticsManager] Unregistered collector for metric: {metricName}");
+            _eventAnalytics?.UnregisterMetricCollector(metricName);
         }
 
         public void RecordMetric(string metricName, float value)
         {
-            if (!IsEnabled) return;
+            _coreAnalytics?.RecordMetric(metricName, value);
+        }
 
-            _currentMetrics[metricName] = value;
-            
-            if (!_metricHistory.ContainsKey(metricName))
-                _metricHistory[metricName] = new List<MetricDataPoint>();
+        public float GetCurrentMetric(string metricName)
+        {
+            return _coreAnalytics?.GetMetric(metricName) ?? 0f;
+        }
 
-            var dataPoint = new MetricDataPoint
-            {
-                Value = value,
-                Timestamp = DateTime.Now,
-                MetricName = metricName
-            };
+        public Dictionary<string, float> GetAllMetrics()
+        {
+            return _coreAnalytics?.GetCurrentMetrics() ?? new Dictionary<string, float>();
+        }
 
-            _metricHistory[metricName].Add(dataPoint);
-
-            // Limit history size
-            if (_metricHistory[metricName].Count > _maxDataPoints)
-            {
-                _metricHistory[metricName].RemoveAt(0);
-            }
+        public void ClearMetrics()
+        {
+            _coreAnalytics?.ClearMetrics();
         }
 
         #endregion
@@ -146,1012 +149,185 @@ namespace ProjectChimera.Systems.Analytics
         protected override void Awake()
         {
             base.Awake();
+            InitializeComponents();
         }
 
-        private void Update()
-        {
-            if (!IsEnabled) return;
+        public int Priority => TickPriority.AnalyticsManager;
+        public bool Enabled => IsEnabled;
 
-            if (Time.time >= _lastUpdateTime + _updateInterval)
-            {
-                UpdateMetrics();
-                _lastUpdateTime = Time.time;
-            }
+        public void Tick(float deltaTime)
+        {
+            if (!IsEnabled || Time.time - _lastUpdateTime < _updateInterval) return;
+
+            UpdateMetrics();
+            _lastUpdateTime = Time.time;
+        }
+
+        public void OnRegistered()
+        {
+            // Called when registered with UpdateOrchestrator
+        }
+
+        public void OnUnregistered()
+        {
+            // Called when unregistered from UpdateOrchestrator
         }
 
         #endregion
 
-        #region ChimeraManager Implementation
+        #region Manager Lifecycle
 
         protected override void OnManagerInitialize()
         {
-            InitializeAnalytics();
+            try
+            {
+                InitializeAllComponents();
+                _isInitialized = true;
+                _lastUpdateTime = Time.time;
+
+                if (_enableDebugLogging)
+                    ChimeraLogger.Log("[AnalyticsManager] Analytics system initialized successfully");
+            }
+            catch (Exception ex)
+            {
+                ChimeraLogger.LogError($"[AnalyticsManager] Failed to initialize analytics: {ex.Message}");
+                _enableAnalytics = false;
+            }
         }
 
         protected override void OnManagerShutdown()
         {
-            if (_metricHistory != null)
+            try
             {
-                _metricHistory.Clear();
+                _coreAnalytics?.Shutdown();
+                _eventAnalytics?.Shutdown();
+                _reportingAnalytics?.Shutdown();
             }
-            
-            if (_currentMetrics != null)
+            catch (Exception ex)
             {
-                _currentMetrics.Clear();
-            }
-            
-            if (_metricCollectors != null)
-            {
-                _metricCollectors.Clear();
+                ChimeraLogger.LogError($"[AnalyticsManager] Error during shutdown: {ex.Message}");
             }
 
             _isInitialized = false;
 
             if (_enableDebugLogging)
-                Debug.Log("[AnalyticsManager] Analytics system shutdown complete");
+                ChimeraLogger.Log("[AnalyticsManager] Analytics system shutdown complete");
         }
 
         #endregion
 
-        #region Initialization
+        #region Component Management
 
-        private void InitializeAnalytics()
+        private void InitializeComponents()
         {
-            try
-            {
-                _metricHistory = new Dictionary<string, List<MetricDataPoint>>();
-                _currentMetrics = new Dictionary<string, float>();
-                _metricCollectors = new Dictionary<string, IMetricCollector>();
-
-                // Initialize facility-specific storage
-                _facilityMetricHistory = new Dictionary<string, Dictionary<string, List<MetricDataPoint>>>();
-                _facilityCurrentMetrics = new Dictionary<string, Dictionary<string, float>>();
-                _availableFacilities = new List<string>();
-
-                InitializeFacilities();
-                InitializeDefaultMetrics();
-                InitializeMetricCollectors();
-                
-                _isInitialized = true;
-                _lastUpdateTime = Time.time;
-
-                if (_enableDebugLogging)
-                    Debug.Log("[AnalyticsManager] Analytics system initialized successfully");
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[AnalyticsManager] Failed to initialize analytics: {ex.Message}");
-                _enableAnalytics = false;
-            }
+            // Create analytics components
+            _coreAnalytics = new CoreAnalytics();
+            _reportingAnalytics = new ReportingAnalytics();
+            _eventAnalytics = new EventAnalytics(_coreAnalytics);
+            _performanceAnalytics = new PerformanceAnalytics(_coreAnalytics, _reportingAnalytics);
         }
 
-        private void InitializeMetricCollectors()
+        private void InitializeAllComponents()
         {
-            try
-            {
-                // Find required managers
-                var cultivationManager = UnityEngine.Object.FindObjectOfType<CultivationManager>();
-                var currencyManager = UnityEngine.Object.FindObjectOfType<CurrencyManager>();
-                var environmentManager = UnityEngine.Object.FindObjectOfType<EnvironmentManager>();
+            // Configure components
+            (_coreAnalytics as CoreAnalytics)?.SetDebugLogging(_enableDebugLogging);
+            (_eventAnalytics as EventAnalytics)?.SetDebugLogging(_enableDebugLogging);
+            (_eventAnalytics as EventAnalytics)?.SetTrackingOptions(_trackYieldMetrics, _trackCashFlow, _trackEnergyUsage);
+            (_performanceAnalytics as PerformanceAnalytics)?.SetDebugLogging(_enableDebugLogging);
+            (_reportingAnalytics as ReportingAnalytics)?.SetConfiguration(_maxDataPoints, _enableDebugLogging);
 
-                // Initialize yield/time collectors if cultivation system is available
-                if (_trackYieldMetrics && cultivationManager != null)
-                {
-                    RegisterMetricCollector("YieldPerHour", new YieldPerHourCollector(cultivationManager));
-                    RegisterMetricCollector("ActivePlants", new ActivePlantsCollector(cultivationManager));
-                    RegisterMetricCollector("PlantHealth", new PlantHealthCollector(cultivationManager));
-                    RegisterMetricCollector("TotalHarvested", new TotalHarvestedCollector(cultivationManager));
-                    RegisterMetricCollector("FacilityUtilization", new FacilityUtilizationCollector(cultivationManager));
-                    RegisterMetricCollector("OperationalEfficiency", new OperationalEfficiencyCollector(cultivationManager, currencyManager));
-                    
-                    if (_enableDebugLogging)
-                        Debug.Log("[AnalyticsManager] Yield/time metric collectors initialized");
-                }
+            // Initialize all components
+            _coreAnalytics.Initialize();
+            _reportingAnalytics.Initialize();
+            (_eventAnalytics as EventAnalytics)?.Initialize();
 
-                // Initialize cash flow collectors if currency system is available
-                if (_trackCashFlow && currencyManager != null)
-                {
-                    RegisterMetricCollector("CashBalance", new CashBalanceCollector(currencyManager));
-                    RegisterMetricCollector("TotalRevenue", new TotalRevenueCollector(currencyManager));
-                    RegisterMetricCollector("TotalExpenses", new TotalExpensesCollector(currencyManager));
-                    RegisterMetricCollector("NetCashFlow", new NetCashFlowCollector(currencyManager));
-                    
-                    if (_enableDebugLogging)
-                        Debug.Log("[AnalyticsManager] Cash flow metric collectors initialized");
-                }
-
-                // Initialize energy collectors (enhanced implementation)
-                if (_trackEnergyUsage)
-                {
-                    var energyCollector = new EnergyUsageCollector(environmentManager);
-                    RegisterMetricCollector("EnergyUsage", energyCollector);
-                    RegisterMetricCollector("TotalEnergyConsumed", new TotalEnergyConsumedCollector());
-                    RegisterMetricCollector("EnergyDailyCost", new EnergyDailyCostCollector(0.12f)); // $0.12/kWh default rate
-                    
-                    if (cultivationManager != null)
-                    {
-                        RegisterMetricCollector("EnergyEfficiency", new EnergyEfficiencyCollector(cultivationManager, energyCollector));
-                    }
-                    
-                    if (_enableDebugLogging)
-                        Debug.Log("[AnalyticsManager] Enhanced energy metric collectors initialized");
-                }
-
-                if (_enableDebugLogging)
-                    Debug.Log($"[AnalyticsManager] Initialized {_metricCollectors.Count} metric collectors");
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[AnalyticsManager] Failed to initialize metric collectors: {ex.Message}");
-            }
+            if (_enableDebugLogging)
+                ChimeraLogger.Log("[AnalyticsManager] All components initialized");
         }
-
-        private void InitializeDefaultMetrics()
-        {
-            // Initialize core metrics with default values
-            _currentMetrics["YieldPerHour"] = 0f;
-            _currentMetrics["CashFlow"] = 0f;
-            _currentMetrics["EnergyUsage"] = 0f;
-            _currentMetrics["TotalEnergyConsumed"] = 0f;
-            _currentMetrics["EnergyDailyCost"] = 0f;
-            _currentMetrics["EnergyEfficiency"] = 0f;
-            _currentMetrics["ActivePlants"] = 0f;
-            _currentMetrics["TotalRevenue"] = 0f;
-            _currentMetrics["TotalExpenses"] = 0f;
-            _currentMetrics["NetCashFlow"] = 0f;
-            _currentMetrics["FacilityUtilization"] = 0f;
-            _currentMetrics["OperationalEfficiency"] = 0f;
-        }
-
-        #endregion
-
-        #region Metric Collection
 
         private void UpdateMetrics()
         {
             try
             {
-                foreach (var collector in _metricCollectors)
-                {
-                    var value = collector.Value.CollectMetric();
-                    RecordMetric(collector.Key, value);
-                }
+                // Collect all metrics via event analytics
+                _eventAnalytics?.ProcessMetrical();
 
-                // Update derived metrics
-                UpdateDerivedMetrics();
-                
-                // Update facility-specific metrics
-                if (_trackFacilityMetrics)
-                {
-                    UpdateFacilityMetrics();
-                }
+                // Update derived metrics via performance analytics
+                _performanceAnalytics?.UpdateDerivedMetrics();
+
+                if (_enableDebugLogging)
+                    ChimeraLogger.Log("[AnalyticsManager] Metrics update completed");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[AnalyticsManager] Error updating metrics: {ex.Message}");
+                ChimeraLogger.LogError($"[AnalyticsManager] Error updating metrics: {ex.Message}");
             }
-        }
-
-        private void UpdateDerivedMetrics()
-        {
-            // Calculate net cash flow
-            var revenue = GetMetric("TotalRevenue");
-            var expenses = GetMetric("TotalExpenses");
-            RecordMetric("NetCashFlow", revenue - expenses);
-
-            // Calculate facility efficiency
-            var activePlants = GetMetric("ActivePlants");
-            var maxPlants = GetMaxPlantsCapacity();
-            if (maxPlants > 0)
-            {
-                RecordMetric("FacilityUtilization", (activePlants / maxPlants) * 100f);
-            }
-        }
-
-        private float GetMaxPlantsCapacity()
-        {
-            // Stub implementation - would integrate with facility manager
-            return 100f; // Default max capacity
         }
 
         #endregion
 
-        #region Utility Methods
-
-        private TimeSpan GetTimeSpanFromRange(TimeRange timeRange)
-        {
-            return timeRange switch
-            {
-                TimeRange.LastHour => TimeSpan.FromHours(1),
-                TimeRange.Last6Hours => TimeSpan.FromHours(6),
-                TimeRange.Last12Hours => TimeSpan.FromHours(12),
-                TimeRange.Last24Hours => TimeSpan.FromDays(1),
-                TimeRange.Last3Days => TimeSpan.FromDays(3),
-                TimeRange.LastWeek => TimeSpan.FromDays(7),
-                TimeRange.Last2Weeks => TimeSpan.FromDays(14),
-                TimeRange.LastMonth => TimeSpan.FromDays(30),
-                TimeRange.Last3Months => TimeSpan.FromDays(90),
-                TimeRange.Last6Months => TimeSpan.FromDays(180),
-                TimeRange.LastYear => TimeSpan.FromDays(365),
-                TimeRange.AllTime => TimeSpan.FromDays(3650), // 10 years as "all time"
-                _ => TimeSpan.FromDays(1)
-            };
-        }
-
-        private List<MetricDataPoint> AggregateDataPoints(List<MetricDataPoint> dataPoints, TimeRange timeRange)
-        {
-            if (dataPoints.Count == 0) return dataPoints;
-
-            // Determine aggregation interval based on time range
-            var aggregationInterval = GetAggregationInterval(timeRange);
-            
-            if (aggregationInterval == TimeSpan.Zero || dataPoints.Count <= 100)
-            {
-                // No aggregation needed for short ranges or small datasets
-                return dataPoints;
-            }
-
-            // Group data points by aggregation interval and average values
-            var aggregatedData = new List<MetricDataPoint>();
-            var currentBucketStart = dataPoints.First().Timestamp;
-            var currentBucketEnd = currentBucketStart.Add(aggregationInterval);
-            var currentBucketValues = new List<float>();
-            
-            foreach (var point in dataPoints)
-            {
-                if (point.Timestamp >= currentBucketEnd)
-                {
-                    // Finalize current bucket
-                    if (currentBucketValues.Count > 0)
-                    {
-                        aggregatedData.Add(new MetricDataPoint
-                        {
-                            MetricName = point.MetricName,
-                            Value = currentBucketValues.Average(),
-                            Timestamp = currentBucketStart.AddMilliseconds(aggregationInterval.TotalMilliseconds / 2) // Midpoint
-                        });
-                    }
-                    
-                    // Start new bucket
-                    currentBucketStart = currentBucketEnd;
-                    currentBucketEnd = currentBucketStart.Add(aggregationInterval);
-                    currentBucketValues.Clear();
-                }
-                
-                currentBucketValues.Add(point.Value);
-            }
-            
-            // Finalize last bucket
-            if (currentBucketValues.Count > 0)
-            {
-                aggregatedData.Add(new MetricDataPoint
-                {
-                    MetricName = dataPoints.First().MetricName,
-                    Value = currentBucketValues.Average(),
-                    Timestamp = currentBucketStart.AddMilliseconds(aggregationInterval.TotalMilliseconds / 2)
-                });
-            }
-
-            if (_enableDebugLogging)
-                Debug.Log($"[AnalyticsManager] Aggregated {dataPoints.Count} points to {aggregatedData.Count} for range {timeRange}");
-            
-            return aggregatedData;
-        }
-
-        private TimeSpan GetAggregationInterval(TimeRange timeRange)
-        {
-            return timeRange switch
-            {
-                // Short ranges - no aggregation
-                TimeRange.LastHour => TimeSpan.Zero,
-                TimeRange.Last6Hours => TimeSpan.Zero,
-                TimeRange.Last12Hours => TimeSpan.FromMinutes(5),
-                
-                // Medium ranges - aggregate by minutes/hours
-                TimeRange.Last24Hours => TimeSpan.FromMinutes(15),
-                TimeRange.Last3Days => TimeSpan.FromHours(1),
-                TimeRange.LastWeek => TimeSpan.FromHours(2),
-                TimeRange.Last2Weeks => TimeSpan.FromHours(4),
-                
-                // Long ranges - aggregate by hours/days
-                TimeRange.LastMonth => TimeSpan.FromHours(8),
-                TimeRange.Last3Months => TimeSpan.FromDays(1),
-                TimeRange.Last6Months => TimeSpan.FromDays(2),
-                TimeRange.LastYear => TimeSpan.FromDays(7),
-                TimeRange.AllTime => TimeSpan.FromDays(30),
-                
-                _ => TimeSpan.Zero
-            };
-        }
-
-        #endregion
-
-        #region Facility Filtering
-
-        private void InitializeFacilities()
-        {
-            // Initialize with default facilities - in a real implementation, 
-            // this would discover facilities from a FacilityManager or similar system
-            _availableFacilities.Clear();
-            _availableFacilities.Add("All Facilities");
-            _availableFacilities.Add("Main Facility");
-            _availableFacilities.Add("Greenhouse A");
-            _availableFacilities.Add("Greenhouse B");
-            _availableFacilities.Add("Processing Wing");
-            
-            // Initialize storage for each facility
-            foreach (var facility in _availableFacilities)
-            {
-                if (facility != "All Facilities")
-                {
-                    _facilityMetricHistory[facility] = new Dictionary<string, List<MetricDataPoint>>();
-                    _facilityCurrentMetrics[facility] = new Dictionary<string, float>();
-                }
-            }
-
-            if (_enableDebugLogging)
-                Debug.Log($"[AnalyticsManager] Initialized {_availableFacilities.Count} facilities for filtering");
-        }
-
-        public List<string> GetAvailableFacilities()
-        {
-            return new List<string>(_availableFacilities);
-        }
+        #region Extended Interface for Facility Support
 
         public void SetFacilityFilter(string facilityName)
         {
-            if (_availableFacilities.Contains(facilityName))
-            {
-                _currentFacilityFilter = facilityName;
-                
-                if (_enableDebugLogging)
-                    Debug.Log($"[AnalyticsManager] Facility filter set to: {facilityName}");
-            }
-            else
-            {
-                Debug.LogWarning($"[AnalyticsManager] Unknown facility: {facilityName}");
-            }
+            _reportingAnalytics?.SetFacilityFilter(facilityName);
         }
 
         public string GetCurrentFacilityFilter()
         {
-            return _currentFacilityFilter;
+            return _reportingAnalytics?.GetCurrentFacilityFilter() ?? "All Facilities";
         }
 
-        public Dictionary<string, float> GetCurrentMetrics(string facilityName)
+        public List<string> GetAvailableFacilities()
         {
-            if (facilityName == "All Facilities" || string.IsNullOrEmpty(facilityName))
-            {
-                return GetCurrentMetrics(); // Return aggregated metrics
-            }
-
-            if (_facilityCurrentMetrics.ContainsKey(facilityName))
-            {
-                return new Dictionary<string, float>(_facilityCurrentMetrics[facilityName]);
-            }
-
-            return new Dictionary<string, float>();
-        }
-
-        public List<MetricDataPoint> GetMetricHistory(string metricName, TimeRange timeRange, string facilityName)
-        {
-            if (facilityName == "All Facilities" || string.IsNullOrEmpty(facilityName))
-            {
-                return GetMetricHistory(metricName, timeRange); // Return aggregated history
-            }
-
-            if (!_facilityMetricHistory.ContainsKey(facilityName) || 
-                !_facilityMetricHistory[facilityName].ContainsKey(metricName))
-            {
-                return new List<MetricDataPoint>();
-            }
-
-            var cutoffTime = DateTime.Now - GetTimeSpanFromRange(timeRange);
-            var filteredData = _facilityMetricHistory[facilityName][metricName]
-                .Where(point => point.Timestamp >= cutoffTime)
-                .OrderBy(point => point.Timestamp)
-                .ToList();
-
-            // Apply data aggregation for large time ranges
-            return AggregateDataPoints(filteredData, timeRange);
+            return _reportingAnalytics?.GetAvailableFacilities() ?? new List<string>();
         }
 
         public void RecordMetricForFacility(string facilityName, string metricName, float value)
         {
-            if (!IsEnabled || facilityName == "All Facilities") return;
-
-            // Ensure facility exists
-            if (!_facilityCurrentMetrics.ContainsKey(facilityName))
-            {
-                _facilityCurrentMetrics[facilityName] = new Dictionary<string, float>();
-                _facilityMetricHistory[facilityName] = new Dictionary<string, List<MetricDataPoint>>();
-            }
-
-            // Record for specific facility
-            _facilityCurrentMetrics[facilityName][metricName] = value;
-            
-            if (!_facilityMetricHistory[facilityName].ContainsKey(metricName))
-                _facilityMetricHistory[facilityName][metricName] = new List<MetricDataPoint>();
-
-            var dataPoint = new MetricDataPoint
-            {
-                MetricName = metricName,
-                Value = value,
-                Timestamp = DateTime.Now
-            };
-
-            _facilityMetricHistory[facilityName][metricName].Add(dataPoint);
-
-            // Limit data points per facility
-            if (_facilityMetricHistory[facilityName][metricName].Count > _maxDataPoints)
-            {
-                _facilityMetricHistory[facilityName][metricName].RemoveAt(0);
-            }
-
-            // Also update aggregate metrics
-            RecordMetric(metricName, value);
+            _reportingAnalytics?.RecordMetricForFacility(facilityName, metricName, value);
         }
 
-        private void UpdateFacilityMetrics()
+        public Dictionary<string, float> GetFacilityMetrics(string facilityName)
         {
-            // In a real implementation, this would collect metrics from each facility
-            // For now, generate some sample facility-specific data
-            
-            foreach (var facility in _availableFacilities)
-            {
-                if (facility == "All Facilities") continue;
-
-                // Generate facility-specific variations of metrics
-                float facilityMultiplier = GetFacilityMultiplier(facility);
-                
-                foreach (var collector in _metricCollectors)
-                {
-                    try
-                    {
-                        float baseValue = collector.Value.CollectMetric();
-                        float facilityValue = baseValue * facilityMultiplier;
-                        
-                        RecordMetricForFacility(facility, collector.Key, facilityValue);
-                    }
-                    catch (Exception ex)
-                    {
-                        if (_enableDebugLogging)
-                            Debug.LogWarning($"[AnalyticsManager] Failed to collect {collector.Key} for {facility}: {ex.Message}");
-                    }
-                }
-            }
+            return _reportingAnalytics?.GetFacilityMetrics(facilityName) ?? new Dictionary<string, float>();
         }
 
-        private float GetFacilityMultiplier(string facilityName)
+        public Dictionary<string, float> GetPerformanceSummary()
         {
-            // Simple facility-specific multipliers for demo purposes
-            return facilityName switch
-            {
-                "Main Facility" => 1.2f,
-                "Greenhouse A" => 0.9f,
-                "Greenhouse B" => 1.1f,
-                "Processing Wing" => 0.7f,
-                _ => 1.0f
-            };
+            return _performanceAnalytics?.GetPerformanceSummary() ?? new Dictionary<string, float>();
+        }
+
+        public float GetAverageMetric(string metricName, TimeRange timeRange)
+        {
+            return _performanceAnalytics?.GetAverageMetric(metricName, timeRange) ?? 0f;
         }
 
         #endregion
 
-        #region Data Aggregation and Calculation Logic
+        #region Configuration
 
-        /// <summary>
-        /// Aggregates metric data over a specified time range using different aggregation methods
-        /// </summary>
-        public AggregatedMetricData GetAggregatedMetric(string metricName, TimeRange timeRange, AggregationType aggregationType, string facilityName = null)
+        public void SetAnalyticsEnabled(bool enabled)
         {
-            try
-            {
-                var dataPoints = GetFilteredDataPoints(metricName, timeRange, facilityName);
-                if (!dataPoints.Any())
-                {
-                    return new AggregatedMetricData
-                    {
-                        MetricName = metricName,
-                        TimeRange = timeRange,
-                        AggregationType = aggregationType,
-                        Value = 0f,
-                        DataPointCount = 0,
-                        IsValid = false
-                    };
-                }
-
-                var aggregatedValue = CalculateAggregation(dataPoints, aggregationType);
-                var trend = CalculateTrend(dataPoints);
-                var statistics = CalculateStatistics(dataPoints);
-
-                return new AggregatedMetricData
-                {
-                    MetricName = metricName,
-                    TimeRange = timeRange,
-                    AggregationType = aggregationType,
-                    Value = aggregatedValue,
-                    DataPointCount = dataPoints.Count,
-                    IsValid = true,
-                    Trend = trend,
-                    Statistics = statistics,
-                    FacilityName = facilityName
-                };
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[AnalyticsManager] Error aggregating metric '{metricName}': {ex.Message}");
-                return new AggregatedMetricData { MetricName = metricName, IsValid = false };
-            }
+            _enableAnalytics = enabled;
         }
 
-        /// <summary>
-        /// Gets multiple aggregated metrics in a single call for dashboard efficiency
-        /// </summary>
-        public Dictionary<string, AggregatedMetricData> GetAggregatedMetrics(List<string> metricNames, TimeRange timeRange, AggregationType aggregationType, string facilityName = null)
+        public void SetUpdateInterval(float interval)
         {
-            var results = new Dictionary<string, AggregatedMetricData>();
-            
-            foreach (var metricName in metricNames)
-            {
-                results[metricName] = GetAggregatedMetric(metricName, timeRange, aggregationType, facilityName);
-            }
-
-            return results;
+            _updateInterval = Mathf.Max(0.1f, interval);
         }
 
-        /// <summary>
-        /// Calculates KPI summary data for dashboard cards
-        /// </summary>
-        public KPISummary GetKPISummary(string metricName, TimeRange timeRange, string facilityName = null)
+        public void SetDebugLogging(bool enabled)
         {
-            try
-            {
-                var currentValue = GetAggregatedMetric(metricName, TimeRange.LastHour, AggregationType.Average, facilityName);
-                var previousValue = GetAggregatedMetric(metricName, GetPreviousTimeRange(timeRange), AggregationType.Average, facilityName);
-                var trend = CalculateKPITrend(currentValue.Value, previousValue.Value);
-                var sparklineData = GetSparklineData(metricName, timeRange, facilityName);
+            _enableDebugLogging = enabled;
 
-                return new KPISummary
-                {
-                    MetricName = metricName,
-                    CurrentValue = currentValue.Value,
-                    PreviousValue = previousValue.Value,
-                    PercentageChange = trend.PercentageChange,
-                    TrendDirection = trend.Direction,
-                    TrendIndicator = trend.Indicator,
-                    SparklineData = sparklineData,
-                    Unit = GetMetricUnit(metricName),
-                    DisplayName = GetMetricDisplayName(metricName),
-                    IsValid = currentValue.IsValid
-                };
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[AnalyticsManager] Error calculating KPI summary for '{metricName}': {ex.Message}");
-                return new KPISummary { MetricName = metricName, IsValid = false };
-            }
-        }
-
-        /// <summary>
-        /// Gets sparkline data for KPI cards - simplified trending visualization
-        /// </summary>
-        public List<float> GetSparklineData(string metricName, TimeRange timeRange, string facilityName = null, int maxPoints = 20)
-        {
-            var dataPoints = GetFilteredDataPoints(metricName, timeRange, facilityName);
-            if (!dataPoints.Any()) return new List<float>();
-
-            // Downsample data to maxPoints for sparkline visualization
-            var sampledData = SampleDataPoints(dataPoints, maxPoints);
-            return sampledData.Select(dp => dp.Value).ToList();
-        }
-
-        #region Private Aggregation Helpers
-
-        private List<MetricDataPoint> GetFilteredDataPoints(string metricName, TimeRange timeRange, string facilityName)
-        {
-            var allDataPoints = new List<MetricDataPoint>();
-            var cutoffTime = GetTimeRangeCutoff(timeRange);
-
-            if (string.IsNullOrEmpty(facilityName) || facilityName == "All Facilities")
-            {
-                // Global metrics
-                if (_metricHistory.ContainsKey(metricName))
-                {
-                    allDataPoints.AddRange(_metricHistory[metricName].Where(dp => dp.Timestamp >= cutoffTime));
-                }
-            }
-            else
-            {
-                // Facility-specific metrics
-                if (_facilityMetricHistory.ContainsKey(facilityName) && 
-                    _facilityMetricHistory[facilityName].ContainsKey(metricName))
-                {
-                    allDataPoints.AddRange(_facilityMetricHistory[facilityName][metricName].Where(dp => dp.Timestamp >= cutoffTime));
-                }
-            }
-
-            return allDataPoints.OrderBy(dp => dp.Timestamp).ToList();
-        }
-
-        private float CalculateAggregation(List<MetricDataPoint> dataPoints, AggregationType aggregationType)
-        {
-            if (!dataPoints.Any()) return 0f;
-
-            return aggregationType switch
-            {
-                AggregationType.Sum => dataPoints.Sum(dp => dp.Value),
-                AggregationType.Average => dataPoints.Average(dp => dp.Value),
-                AggregationType.Minimum => dataPoints.Min(dp => dp.Value),
-                AggregationType.Maximum => dataPoints.Max(dp => dp.Value),
-                AggregationType.Latest => dataPoints.Last().Value,
-                AggregationType.First => dataPoints.First().Value,
-                AggregationType.Count => dataPoints.Count,
-                AggregationType.Median => CalculateMedian(dataPoints.Select(dp => dp.Value).ToList()),
-                AggregationType.StandardDeviation => CalculateStandardDeviation(dataPoints.Select(dp => dp.Value).ToList()),
-                AggregationType.Range => dataPoints.Max(dp => dp.Value) - dataPoints.Min(dp => dp.Value),
-                _ => dataPoints.Average(dp => dp.Value)
-            };
-        }
-
-        private TrendData CalculateTrend(List<MetricDataPoint> dataPoints)
-        {
-            if (dataPoints.Count < 2)
-            {
-                return new TrendData { Direction = TrendDirection.Stable, PercentageChange = 0f };
-            }
-
-            var firstValue = dataPoints.First().Value;
-            var lastValue = dataPoints.Last().Value;
-            var percentageChange = firstValue != 0 ? ((lastValue - firstValue) / firstValue) * 100f : 0f;
-
-            return new TrendData
-            {
-                Direction = percentageChange > 5f ? TrendDirection.Increasing :
-                           percentageChange < -5f ? TrendDirection.Decreasing : TrendDirection.Stable,
-                PercentageChange = percentageChange,
-                Slope = CalculateLinearTrendSlope(dataPoints)
-            };
-        }
-
-        private MetricStatistics CalculateStatistics(List<MetricDataPoint> dataPoints)
-        {
-            if (!dataPoints.Any())
-            {
-                return new MetricStatistics();
-            }
-
-            var values = dataPoints.Select(dp => dp.Value).ToList();
-            var mean = values.Average();
-
-            return new MetricStatistics
-            {
-                Mean = mean,
-                Median = CalculateMedian(values),
-                StandardDeviation = CalculateStandardDeviation(values),
-                Minimum = values.Min(),
-                Maximum = values.Max(),
-                Range = values.Max() - values.Min(),
-                Count = values.Count,
-                Sum = values.Sum()
-            };
-        }
-
-        private float CalculateMedian(List<float> values)
-        {
-            if (!values.Any()) return 0f;
-            
-            var sorted = values.OrderBy(x => x).ToList();
-            var count = sorted.Count;
-            
-            if (count % 2 == 0)
-            {
-                return (sorted[count / 2 - 1] + sorted[count / 2]) / 2f;
-            }
-            else
-            {
-                return sorted[count / 2];
-            }
-        }
-
-        private float CalculateStandardDeviation(List<float> values)
-        {
-            if (values.Count < 2) return 0f;
-            
-            var mean = values.Average();
-            var sumOfSquaredDifferences = values.Sum(x => Math.Pow(x - mean, 2));
-            return (float)Math.Sqrt(sumOfSquaredDifferences / (values.Count - 1));
-        }
-
-        private float CalculateLinearTrendSlope(List<MetricDataPoint> dataPoints)
-        {
-            if (dataPoints.Count < 2) return 0f;
-
-            var n = dataPoints.Count;
-            var sumX = 0f;
-            var sumY = 0f;
-            var sumXY = 0f;
-            var sumX2 = 0f;
-
-            for (int i = 0; i < n; i++)
-            {
-                var x = i; // Time index
-                var y = dataPoints[i].Value;
-                
-                sumX += x;
-                sumY += y;
-                sumXY += x * y;
-                sumX2 += x * x;
-            }
-
-            var slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-            return slope;
-        }
-
-        private KPITrendData CalculateKPITrend(float currentValue, float previousValue)
-        {
-            if (previousValue == 0f)
-            {
-                return new KPITrendData
-                {
-                    Direction = TrendDirection.Stable,
-                    PercentageChange = 0f,
-                    Indicator = "stable"
-                };
-            }
-
-            var percentageChange = ((currentValue - previousValue) / previousValue) * 100f;
-            var direction = Math.Abs(percentageChange) < 0.1f ? TrendDirection.Stable :
-                           percentageChange > 0 ? TrendDirection.Increasing : TrendDirection.Decreasing;
-
-            return new KPITrendData
-            {
-                Direction = direction,
-                PercentageChange = percentageChange,
-                Indicator = direction == TrendDirection.Increasing ? "up" :
-                           direction == TrendDirection.Decreasing ? "down" : "stable"
-            };
-        }
-
-        private List<MetricDataPoint> SampleDataPoints(List<MetricDataPoint> dataPoints, int targetCount)
-        {
-            if (dataPoints.Count <= targetCount) return dataPoints;
-
-            var sampledPoints = new List<MetricDataPoint>();
-            var step = (float)dataPoints.Count / targetCount;
-
-            for (int i = 0; i < targetCount; i++)
-            {
-                var index = Mathf.RoundToInt(i * step);
-                if (index < dataPoints.Count)
-                {
-                    sampledPoints.Add(dataPoints[index]);
-                }
-            }
-
-            return sampledPoints;
-        }
-
-        private DateTime GetTimeRangeCutoff(TimeRange timeRange)
-        {
-            var now = DateTime.Now;
-            return timeRange switch
-            {
-                TimeRange.LastHour => now.AddHours(-1),
-                TimeRange.Last24Hours => now.AddDays(-1),
-                TimeRange.LastWeek => now.AddDays(-7),
-                TimeRange.LastMonth => now.AddMonths(-1),
-                TimeRange.Last3Months => now.AddMonths(-3),
-                TimeRange.LastYear => now.AddYears(-1),
-                _ => now.AddDays(-1)
-            };
-        }
-
-        private TimeRange GetPreviousTimeRange(TimeRange timeRange)
-        {
-            return timeRange switch
-            {
-                TimeRange.LastHour => TimeRange.LastHour, // Previous hour
-                TimeRange.Last24Hours => TimeRange.Last24Hours, // Previous day
-                TimeRange.LastWeek => TimeRange.LastWeek, // Previous week
-                TimeRange.LastMonth => TimeRange.LastMonth, // Previous month
-                _ => TimeRange.Last24Hours
-            };
-        }
-
-        private string GetMetricUnit(string metricName)
-        {
-            return metricName switch
-            {
-                "TotalRevenue" or "TotalExpenses" or "DailyRevenue" or "CashBalance" => "$",
-                "ActivePlants" or "SeedlingCount" or "VegetativeCount" => "plants",
-                "AveragePlantHealth" or "HealthyPlantsRatio" or "FacilityUtilization" => "%",
-                "TotalYieldHarvested" or "YieldPerHour" => "g",
-                "EnergyConsumption" or "PowerUsage" => "kWh",
-                _ => ""
-            };
-        }
-
-        private string GetMetricDisplayName(string metricName)
-        {
-            return metricName switch
-            {
-                "TotalRevenue" => "Total Revenue",
-                "TotalExpenses" => "Total Expenses", 
-                "DailyRevenue" => "Daily Revenue",
-                "CashBalance" => "Cash Balance",
-                "ActivePlants" => "Active Plants",
-                "AveragePlantHealth" => "Plant Health",
-                "TotalYieldHarvested" => "Total Yield",
-                "FacilityUtilization" => "Facility Usage",
-                "EnergyConsumption" => "Energy Used",
-                _ => metricName
-            };
+            // Update all components
+            (_coreAnalytics as CoreAnalytics)?.SetDebugLogging(enabled);
+            (_eventAnalytics as EventAnalytics)?.SetDebugLogging(enabled);
+            (_performanceAnalytics as PerformanceAnalytics)?.SetDebugLogging(enabled);
+            (_reportingAnalytics as ReportingAnalytics)?.SetConfiguration(_maxDataPoints, enabled);
         }
 
         #endregion
-
-        #endregion
-
     }
-
-    #region Supporting Types
-
-    /// <summary>
-    /// Interface for analytics service functionality
-    /// </summary>
-    public interface IAnalyticsService
-    {
-        float GetMetric(string metricName);
-        List<MetricDataPoint> GetMetricHistory(string metricName, TimeRange timeRange);
-        Dictionary<string, float> GetCurrentMetrics();
-        void RegisterMetricCollector(string metricName, IMetricCollector collector);
-        void UnregisterMetricCollector(string metricName);
-        void RecordMetric(string metricName, float value);
-        
-        // New aggregation methods
-        AggregatedMetricData GetAggregatedMetric(string metricName, TimeRange timeRange, AggregationType aggregationType, string facilityName = null);
-        Dictionary<string, AggregatedMetricData> GetAggregatedMetrics(List<string> metricNames, TimeRange timeRange, AggregationType aggregationType, string facilityName = null);
-        KPISummary GetKPISummary(string metricName, TimeRange timeRange, string facilityName = null);
-        List<float> GetSparklineData(string metricName, TimeRange timeRange, string facilityName = null, int maxPoints = 20);
-    }
-
-    /// <summary>
-    /// Interface for metric collection from other systems
-    /// </summary>
-    public interface IMetricCollector
-    {
-        float CollectMetric();
-    }
-
-    /// <summary>
-    /// Data point for metric storage
-    /// </summary>
-    [System.Serializable]
-    public class MetricDataPoint
-    {
-        public string MetricName;
-        public float Value;
-        public DateTime Timestamp;
-    }
-
-    /// <summary>
-    /// Time range enumeration for filtering metrics
-    /// </summary>
-    public enum TimeRange
-    {
-        LastHour,
-        Last6Hours,
-        Last12Hours,
-        Last24Hours,
-        Last3Days,
-        LastWeek,
-        Last2Weeks,
-        LastMonth,
-        Last3Months,
-        Last6Months,
-        LastYear,
-        AllTime
-    }
-
-    /// <summary>
-    /// Enumeration of available aggregation types for metric calculations
-    /// </summary>
-    public enum AggregationType
-    {
-        Sum,
-        Average,
-        Minimum,
-        Maximum,
-        Latest,
-        First,
-        Count,
-        Median,
-        StandardDeviation,
-        Range
-    }
-
-    /// <summary>
-    /// Enumeration for trend direction indicators
-    /// </summary>
-    public enum TrendDirection
-    {
-        Increasing,
-        Decreasing,
-        Stable
-    }
-
-    /// <summary>
-    /// Data structure for aggregated metric results
-    /// </summary>
-    [System.Serializable]
-    public class AggregatedMetricData
-    {
-        public string MetricName;
-        public TimeRange TimeRange;
-        public AggregationType AggregationType;
-        public float Value;
-        public int DataPointCount;
-        public bool IsValid;
-        public TrendData Trend;
-        public MetricStatistics Statistics;
-        public string FacilityName;
-    }
-
-    /// <summary>
-    /// Data structure for trend analysis results
-    /// </summary>
-    [System.Serializable]
-    public class TrendData
-    {
-        public TrendDirection Direction;
-        public float PercentageChange;
-        public float Slope;
-    }
-
-    /// <summary>
-    /// Data structure for statistical analysis of metrics
-    /// </summary>
-    [System.Serializable]
-    public class MetricStatistics
-    {
-        public float Mean;
-        public float Median;
-        public float StandardDeviation;
-        public float Minimum;
-        public float Maximum;
-        public float Range;
-        public int Count;
-        public float Sum;
-    }
-
-    /// <summary>
-    /// Data structure for KPI summary cards
-    /// </summary>
-    [System.Serializable]
-    public class KPISummary
-    {
-        public string MetricName;
-        public string DisplayName;
-        public float CurrentValue;
-        public float PreviousValue;
-        public float PercentageChange;
-        public TrendDirection TrendDirection;
-        public string TrendIndicator;
-        public List<float> SparklineData;
-        public string Unit;
-        public bool IsValid;
-    }
-
-    /// <summary>
-    /// Data structure for KPI trend calculations
-    /// </summary>
-    [System.Serializable]
-    public class KPITrendData
-    {
-        public TrendDirection Direction;
-        public float PercentageChange;
-        public string Indicator;
-    }
-
-    #endregion
 }

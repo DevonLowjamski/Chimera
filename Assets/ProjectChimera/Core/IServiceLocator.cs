@@ -3,6 +3,12 @@ using System.Collections.Generic;
 
 namespace ProjectChimera.Core
 {
+    /// <summary>
+    /// DEPRECATED: IServiceLocator is obsolete and should not be used.
+    /// Use IServiceContainer from ServiceContainerFactory.Instance instead for dependency injection.
+    /// This will be removed in a future version.
+    /// </summary>
+    [System.Obsolete("IServiceLocator is deprecated. Use IServiceContainer from ServiceContainerFactory.Instance instead for dependency injection. This will cause compile errors in future releases.", false)]
     public interface IServiceLocator
     {
         // Service Registration Methods

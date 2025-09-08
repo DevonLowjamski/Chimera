@@ -74,7 +74,7 @@ namespace ProjectChimera.Data.UI
             
             if (_logBindingEvents)
             {
-                Debug.Log($"[UIDataBinding] Activated binding: {_bindingName}");
+                SharedLogger.Log($"[UIDataBinding] Activated binding: {_bindingName}");
             }
             
             OnBindingActivated?.Invoke();
@@ -91,7 +91,7 @@ namespace ProjectChimera.Data.UI
             
             if (_logBindingEvents)
             {
-                Debug.Log($"[UIDataBinding] Deactivated binding: {_bindingName}");
+                SharedLogger.Log($"[UIDataBinding] Deactivated binding: {_bindingName}");
             }
             
             OnBindingDeactivated?.Invoke();
@@ -129,7 +129,7 @@ namespace ProjectChimera.Data.UI
             
             if (_logBindingEvents)
             {
-                Debug.Log($"[UIDataBinding] Updated {_bindingName}: {value} -> {convertedValue}");
+                SharedLogger.Log($"[UIDataBinding] Updated {_bindingName}: {value} -> {convertedValue}");
             }
         }
         
@@ -161,7 +161,7 @@ namespace ProjectChimera.Data.UI
             
             if (_logBindingEvents)
             {
-                Debug.Log($"[UIDataBinding] Updating source {_bindingName}: {value} -> {convertedValue}");
+                SharedLogger.Log($"[UIDataBinding] Updating source {_bindingName}: {value} -> {convertedValue}");
             }
         }
         
@@ -186,7 +186,7 @@ namespace ProjectChimera.Data.UI
             
             if (_logBindingEvents)
             {
-                Debug.Log($"[UIDataBinding] Cleared cache for {_bindingName}");
+                SharedLogger.Log($"[UIDataBinding] Cleared cache for {_bindingName}");
             }
         }
         

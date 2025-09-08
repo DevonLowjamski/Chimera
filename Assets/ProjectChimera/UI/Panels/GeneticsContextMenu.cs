@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.UI.Components;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Panels
 {
@@ -106,7 +107,7 @@ namespace ProjectChimera.UI.Panels
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[GeneticsContextMenu] Error handling menu selection: {ex.Message}");
+                ChimeraLogger.LogError($"[GeneticsContextMenu] Error handling menu selection: {ex.Message}");
                 return false;
             }
         }
@@ -191,7 +192,7 @@ namespace ProjectChimera.UI.Panels
                 case "Breeding Calculator":
                     return _actionHandler.OpenBreedingCalculator();
                 default:
-                    Debug.LogWarning($"[GeneticsContextMenu] Unhandled action: {menuItem}");
+                    ChimeraLogger.LogWarning($"[GeneticsContextMenu] Unhandled action: {menuItem}");
                     return false;
             }
         }
@@ -210,7 +211,7 @@ namespace ProjectChimera.UI.Panels
             // Refresh menu items
             OnMenuItemsChanged?.Invoke(GetMenuItems());
             
-            Debug.Log($"[GeneticsContextMenu] Selected strain: {strainId}");
+            ChimeraLogger.Log($"[GeneticsContextMenu] Selected strain: {strainId}");
         }
         
         
@@ -233,7 +234,7 @@ namespace ProjectChimera.UI.Panels
         public void Activate()
         {
             IsActive = true;
-            Debug.Log("[GeneticsContextMenu] Activated");
+            ChimeraLogger.Log("[GeneticsContextMenu] Activated");
         }
         
         /// <summary>
@@ -246,7 +247,7 @@ namespace ProjectChimera.UI.Panels
             _selectedStrains.Clear();
             _currentAnalysisTarget = string.Empty;
             
-            Debug.Log("[GeneticsContextMenu] Deactivated");
+            ChimeraLogger.Log("[GeneticsContextMenu] Deactivated");
         }
         
         /// <summary>
