@@ -15,7 +15,7 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
 
     /// <summary>
     /// Main Plant Update Processor coordinator.
-    /// Orchestrates growth calculations, health management, environmental responses, 
+    /// Orchestrates growth calculations, health management, environmental responses,
     /// and genetic trait expression using specialized component systems.
     /// Significantly reduced from original 947-line monolithic class.
     /// </summary>
@@ -25,7 +25,7 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
         private readonly PlantGrowthCalculator _growthCalculator;
         private readonly PlantHealthSystem _healthSystem;
         private readonly EnvironmentalResponseSystem _environmentalSystem;
-        
+
         // Configuration and state
         private readonly PlantUpdateConfiguration _configuration;
         private readonly UpdateStatistics _statistics;
@@ -40,7 +40,7 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
         {
             _configuration = configuration ?? PlantUpdateConfiguration.CreateDefault();
             _statistics = new UpdateStatistics();
-            
+
             // Initialize component systems
             _growthCalculator = new PlantGrowthCalculator();
             _healthSystem = new PlantHealthSystem();
@@ -51,7 +51,7 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
             {
                 _traitExpressionEngine = new TraitExpressionEngine();
             }
-            
+
             ChimeraLogger.Log("[PlantUpdateProcessor] Initialized with specialized component systems");
         }
 
@@ -63,7 +63,7 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
             _growthCalculator.Initialize(strain, traits, _configuration);
             _healthSystem.Initialize(strain, traits?.DiseaseResistance ?? 1f, _configuration);
             _environmentalSystem.Initialize(strain, _configuration);
-            
+
             ChimeraLogger.LogDebug($"[PlantUpdateProcessor] Initialized for strain: {strain?.GetType().Name}");
         }
 
@@ -75,10 +75,10 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
         {
             if (plant == null || !plant.IsActive)
                 return;
-                
+
             var startTime = Time.realtimeSinceStartup;
             bool updateSuccessful = false;
-            
+
             try
             {
                 // Get current environmental conditions for the plant
@@ -87,20 +87,20 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
                 // Update environmental response system
                 _environmentalSystem.UpdateEnvironmentalResponse(environmentalConditions, deltaTime);
                 float environmentalFitness = _environmentalSystem.GetEnvironmentalFitness();
-                
+
                 // Get environmental stress factors
                 var environmentalStresses = _environmentalSystem.GetEnvironmentalStressFactors();
                 var activeStressors = ConvertToActiveStressors(environmentalStresses);
-                
+
                 // Update health system with environmental effects
                 _healthSystem.UpdateHealth(deltaTime, activeStressors, environmentalFitness);
                 float currentHealth = _healthSystem.GetCurrentHealth();
-                
+
                 // Calculate growth rate using integrated systems
                 float growthRate = _growthCalculator.CalculateGrowthRate(
-                    plant.CurrentGrowthStage, 
-                    environmentalFitness, 
-                    currentHealth, 
+                    plant.CurrentGrowthStage,
+                    environmentalFitness,
+                    currentHealth,
                     globalGrowthModifier);
 
                 // Calculate genetic trait expression if advanced genetics is enabled
@@ -120,7 +120,7 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
                     // Update with standard systems integration
                     UpdatePlantWithSystems(plant, growthRate, currentHealth, environmentalFitness, deltaTime, globalGrowthModifier);
                 }
-                
+
                 updateSuccessful = true;
             }
             catch (System.Exception ex)
@@ -139,18 +139,18 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
         /// <summary>
         /// Update plant using integrated systems data
         /// </summary>
-        private void UpdatePlantWithSystems(PlantInstance plant, float growthRate, float currentHealth, 
+        private void UpdatePlantWithSystems(PlantInstance plant, float growthRate, float currentHealth,
             float environmentalFitness, float deltaTime, float globalGrowthModifier)
         {
             // Apply growth rate from growth calculator
             plant.ApplyGrowthRate(growthRate, deltaTime);
-            
+
             // Apply health effects from health system
             plant.SetCurrentHealth(currentHealth);
-            
+
             // Apply environmental fitness effects
             plant.SetEnvironmentalFitness(environmentalFitness);
-            
+
             // Update plant's basic systems with integrated data
             plant.UpdatePlant(deltaTime, globalGrowthModifier);
         }
@@ -196,7 +196,7 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
         {
             if (plants == null || plants.Count == 0)
                 return;
-                
+
             var startTime = Time.realtimeSinceStartup;
             int successfulUpdates = 0;
 
@@ -204,13 +204,13 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
             {
                 // Group plants by strain for more efficient processing
                 var plantsByStrain = GroupPlantsByStrain(plants);
-                
+
                 foreach (var strainGroup in plantsByStrain)
                 {
                     ProcessStrainBatch(strainGroup.Value, strainGroup.Key, deltaTime, globalGrowthModifier);
                     successfulUpdates += strainGroup.Value.Count;
                 }
-                
+
                 _statistics.ProcessedBatches++;
                 ChimeraLogger.LogDebug($"[PlantUpdateProcessor] Batch processed {successfulUpdates} plants in {plantsByStrain.Count} strain groups");
             }
@@ -236,11 +236,11 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
             {
                 var samplePlant = plants[0];
                 var traits = ExtractPhenotypicTraits(samplePlant);
-                
+
                 // Ensure systems are initialized for this strain
                 InitializeForStrain(strain, traits);
             }
-            
+
             // Process each plant in the strain group
             foreach (var plant in plants)
             {
@@ -275,7 +275,7 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
         {
             // Apply growth rate from integrated calculations
             plant.ApplyGrowthRate(growthRate, deltaTime);
-            
+
             // Apply height trait effects
             if (traitExpression.HeightExpression > 0f)
             {
@@ -311,16 +311,16 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
         public HarvestResults CalculateHarvestResults(PlantInstance plant)
         {
             if (plant == null) return new HarvestResults();
-            
+
             float finalHealth = _healthSystem.GetCurrentHealth();
             float environmentalFitness = _environmentalSystem.GetEnvironmentalFitness();
             var traits = ExtractPhenotypicTraits(plant);
-            
+
             // Use growth calculator for harvest calculations
             return _growthCalculator.CalculateHarvestResults(
-                finalHealth, 
-                plant.QualityPotential, 
-                traits, 
+                finalHealth,
+                plant.QualityPotential,
+                traits,
                 environmentalFitness,
                 plant.TotalDaysGrown
             );
@@ -358,7 +358,7 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
         private Dictionary<object, List<PlantInstance>> GroupPlantsByStrain(List<PlantInstance> plants)
         {
             var groups = new Dictionary<object, List<PlantInstance>>();
-            
+
             foreach (var plant in plants)
             {
                 if (plant?.Strain != null)
@@ -370,10 +370,10 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
                     groups[plant.Strain].Add(plant);
                 }
             }
-            
+
             return groups;
         }
-        
+
         /// <summary>
         /// Extract phenotypic traits from plant instance
         /// </summary>
@@ -390,14 +390,14 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
                 FloweringTime = 60f
             };
         }
-        
+
         /// <summary>
         /// Convert environmental stress factors to active stressors
         /// </summary>
         private List<ActiveStressor> ConvertToActiveStressors(List<StressFactor> stressFactors)
         {
             var activeStressors = new List<ActiveStressor>();
-            
+
             foreach (var stressFactor in stressFactors)
             {
                 activeStressors.Add(new ActiveStressor
@@ -414,7 +414,7 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
                     Duration = stressFactor.Duration
                 });
             }
-            
+
             return activeStressors;
         }
 
@@ -476,7 +476,7 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
                 LastUpdate = _statistics.LastUpdate
             };
         }
-        
+
         /// <summary>
         /// Get update statistics
         /// </summary>
@@ -484,7 +484,7 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
         {
             return _statistics;
         }
-        
+
         /// <summary>
         /// Get environmental recommendations from environmental system
         /// </summary>
@@ -492,7 +492,7 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
         {
             return _environmentalSystem.GetEnvironmentalRecommendations();
         }
-        
+
         /// <summary>
         /// Get health recommendations from health system
         /// </summary>
@@ -525,7 +525,7 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
 
             ChimeraLogger.Log("[PlantUpdateProcessor] Performance optimization completed");
         }
-        
+
         /// <summary>
         /// Reset all component systems
         /// </summary>
@@ -535,22 +535,22 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
             _environmentalSystem.ResetAdaptation();
             _statistics.Reset();
             ClearTraitExpressionCache();
-            
+
             ChimeraLogger.Log("[PlantUpdateProcessor] All systems reset");
         }
-        
+
         #endregion
-        
+
         #region Private Helper Methods
-        
+
         private double CalculateCacheHitRatio()
         {
             // Simplified cache hit ratio calculation
             // In a full implementation, this would track cache hits vs misses
             return _traitExpressionCache.Count > 0 ? 0.8 : 0.0;
         }
-        
+
         #endregion
 
     }
-}
+
