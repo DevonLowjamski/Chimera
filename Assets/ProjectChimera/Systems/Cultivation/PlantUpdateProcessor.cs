@@ -24,14 +24,14 @@ namespace ProjectChimera.Systems.Cultivation
     public class PlantUpdateProcessor
     {
         // Core processing components
-        private readonly PlantGrowthCalculator _growthCalculator;
-        private readonly PlantHealthSystem _healthSystem;
-        private readonly EnvironmentalResponseSystem _environmentalSystem;
+        private PlantGrowthCalculator _growthCalculator;
+        private PlantHealthSystem _healthSystem;
+        private EnvironmentalResponseSystem _environmentalSystem;
 
         // Configuration and state
-        private readonly PlantUpdateConfiguration _configuration;
-        private readonly UpdateStatistics _statistics;
-        private readonly TraitExpressionEngine _traitExpressionEngine;
+        private PlantUpdateConfiguration _configuration;
+        private UpdateStatistics _statistics;
+        private TraitExpressionEngine _traitExpressionEngine;
 
         // Performance optimization
         private readonly Dictionary<string, TraitExpressionResult> _traitExpressionCache = new Dictionary<string, TraitExpressionResult>();

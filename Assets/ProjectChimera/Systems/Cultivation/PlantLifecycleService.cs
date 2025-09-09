@@ -601,10 +601,16 @@ namespace ProjectChimera.Systems.Cultivation
         public float HealthAfter;
         public string Description;
 
-        // Additional properties for compatibility
-        public float Timestamp => (float)(EventDate - System.DateTime.UnixEpoch).TotalSeconds;
-        public float Health => HealthAfter;
-        public float Change => HealthAfter - HealthBefore;
-        public float StressLevel => 1f - HealthAfter; // Simplified stress calculation
+        // Additional assignable properties for compatibility
+        public float Timestamp;
+        public float Health;
+        public float Change;
+        public float StressLevel;
+
+        // Computed properties based on existing data
+        public float ComputedTimestamp => (float)(EventDate - System.DateTime.UnixEpoch).TotalSeconds;
+        public float ComputedHealth => HealthAfter;
+        public float ComputedChange => HealthAfter - HealthBefore;
+        public float ComputedStressLevel => 1f - HealthAfter;
     }
 }

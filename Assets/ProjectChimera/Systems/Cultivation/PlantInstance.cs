@@ -654,7 +654,7 @@ namespace ProjectChimera.Systems.Cultivation
                 return null;
             }
 
-            var results = _growthCalculator?.CalculateHarvestResults(_currentHealth, _qualityPotential, _expressedTraits);
+            var results = _growthCalculator?.CalculateHarvestResults(_currentHealth, _qualityPotential, _expressedTraits, _environmentalFitness, TotalDaysGrown);
             _isActive = false;
 
             ChimeraLogger.Log($"[PlantInstance] Harvested plant {_plantID}: {results?.TotalYield ?? 0}g");

@@ -5,7 +5,6 @@ using ProjectChimera.Data.Genetics;
 using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
 using System.Linq;
-using PlantStrainSO = ProjectChimera.Data.Genetics.PlantStrainSO;
 
 namespace ProjectChimera.Systems.Cultivation
 {
@@ -20,16 +19,16 @@ namespace ProjectChimera.Systems.Cultivation
         private float _environmentalFitness = 1f;
         private EnvironmentalConditions _currentConditions;
         private EnvironmentalConditions _previousConditions;
-        
+
         // Adaptation tracking
         private Dictionary<string, float> _adaptationLevels = new Dictionary<string, float>();
         private float _overallAdaptation = 1f;
         private List<EnvironmentalChangeEvent> _changeHistory = new List<EnvironmentalChangeEvent>();
-        
+
         // Configuration and thresholds
         private PlantUpdateConfiguration _configuration;
         private readonly Dictionary<string, Vector2> _optimalRanges = new Dictionary<string, Vector2>();
-        
+
         // Performance tracking
         private float _lastUpdateTime;
         private const int MAX_CHANGE_HISTORY = 50;
@@ -41,18 +40,18 @@ namespace ProjectChimera.Systems.Cultivation
         {
             _strain = strain;
             _configuration = configuration ?? PlantUpdateConfiguration.CreateDefault();
-            
+
             // Initialize adaptation levels
             InitializeAdaptationParameters();
-            
+
             // Extract environmental preferences from strain
             ExtractStrainEnvironmentalPreferences(strain);
-            
+
             // Setup optimal ranges
             SetupOptimalRanges();
-            
+
             _lastUpdateTime = Time.time;
-            
+
             ChimeraLogger.Log($"[EnvironmentalResponseSystem] Initialized for strain: {strain?.GetType().Name}");
         }
 
@@ -63,20 +62,20 @@ namespace ProjectChimera.Systems.Cultivation
         {
             _previousConditions = _currentConditions;
             _currentConditions = conditions;
-            
+
             // Calculate environmental fitness
             _environmentalFitness = CalculateEnvironmentalFitness(conditions);
-            
+
             // Process adaptation if conditions have changed
             if (HasSignificantChange(_previousConditions, conditions))
             {
                 ProcessEnvironmentalChange(_previousConditions, conditions);
                 ProcessAdaptationResponse(conditions, deltaTime);
             }
-            
+
             // Update adaptation levels over time
             UpdateAdaptationLevels(conditions, deltaTime);
-            
+
             _lastUpdateTime = Time.time;
         }
 
@@ -87,32 +86,32 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (previous.Temperature == 0f) // Invalid previous conditions
                 return;
-            
+
             var changeEvent = new EnvironmentalChangeEvent
             {
                 Timestamp = Time.time,
                 PreviousConditions = previous,
                 CurrentConditions = current
             };
-            
+
             // Calculate changes in each parameter
             float tempChange = Mathf.Abs(current.Temperature - previous.Temperature);
             float humidityChange = Mathf.Abs(current.Humidity - previous.Humidity);
             float lightChange = Mathf.Abs(current.LightIntensity - previous.LightIntensity);
             float co2Change = Mathf.Abs(current.CO2Level - previous.CO2Level);
-            
+
             // Determine change severity
             changeEvent.ChangeSeverity = CalculateChangeSeverity(tempChange, humidityChange, lightChange, co2Change);
-            
+
             // Record change event
             _changeHistory.Add(changeEvent);
-            
+
             // Limit history size
             if (_changeHistory.Count > MAX_CHANGE_HISTORY)
             {
                 _changeHistory.RemoveAt(0);
             }
-            
+
             // Log significant changes
             if (changeEvent.ChangeSeverity > 0.3f)
             {
@@ -136,9 +135,9 @@ namespace ProjectChimera.Systems.Cultivation
         public List<StressFactor> GetEnvironmentalStressFactors()
         {
             var stressFactors = new List<StressFactor>();
-            
+
             if (_currentConditions.Temperature == 0f) return stressFactors; // No valid conditions
-            
+
             // Temperature stress
             float tempStress = CalculateParameterStress("Temperature", _currentConditions.Temperature);
             if (tempStress > 0.1f)
@@ -151,7 +150,7 @@ namespace ProjectChimera.Systems.Cultivation
                     IsAcute = tempStress > 0.7f
                 });
             }
-            
+
             // Humidity stress
             float humidityStress = CalculateParameterStress("Humidity", _currentConditions.Humidity);
             if (humidityStress > 0.1f)
@@ -164,7 +163,7 @@ namespace ProjectChimera.Systems.Cultivation
                     IsAcute = humidityStress > 0.7f
                 });
             }
-            
+
             // Light stress
             float lightStress = CalculateParameterStress("Light", _currentConditions.LightIntensity);
             if (lightStress > 0.1f)
@@ -177,7 +176,7 @@ namespace ProjectChimera.Systems.Cultivation
                     IsAcute = lightStress > 0.7f
                 });
             }
-            
+
             // CO2 stress
             float co2Stress = CalculateParameterStress("CO2", _currentConditions.CO2Level);
             if (co2Stress > 0.1f)
@@ -190,7 +189,7 @@ namespace ProjectChimera.Systems.Cultivation
                     IsAcute = co2Stress > 0.7f
                 });
             }
-            
+
             return stressFactors;
         }
 
@@ -199,7 +198,7 @@ namespace ProjectChimera.Systems.Cultivation
         public float GetEnvironmentalFitness() => _environmentalFitness;
         public float GetOverallAdaptation() => _overallAdaptation;
         public EnvironmentalConditions GetCurrentConditions() => _currentConditions;
-        
+
         /// <summary>
         /// Get adaptation level for specific environmental parameter
         /// </summary>
@@ -207,14 +206,14 @@ namespace ProjectChimera.Systems.Cultivation
         {
             return _adaptationLevels.TryGetValue(parameter, out float level) ? level : 1f;
         }
-        
+
         /// <summary>
         /// Get environmental stress summary
         /// </summary>
         public EnvironmentalStressSummary GetStressSummary()
         {
             var stressFactors = GetEnvironmentalStressFactors();
-            
+
             return new EnvironmentalStressSummary
             {
                 TotalStressFactors = stressFactors.Count,
@@ -224,7 +223,7 @@ namespace ProjectChimera.Systems.Cultivation
                 EnvironmentalFitness = _environmentalFitness
             };
         }
-        
+
         /// <summary>
         /// Get recent environmental changes
         /// </summary>
@@ -303,15 +302,15 @@ namespace ProjectChimera.Systems.Cultivation
         private float CalculateParameterStress(string parameter, float value)
         {
             var optimalRange = GetOptimalRange(parameter);
-            
+
             if (value >= optimalRange.x && value <= optimalRange.y)
                 return 0f; // No stress within optimal range
-            
+
             // Calculate distance from optimal range
-            float distance = value < optimalRange.x ? 
-                optimalRange.x - value : 
+            float distance = value < optimalRange.x ?
+                optimalRange.x - value :
                 value - optimalRange.y;
-            
+
             // Normalize stress based on parameter type
             float maxDistance = parameter switch
             {
@@ -321,7 +320,7 @@ namespace ProjectChimera.Systems.Cultivation
                 "CO2" => 800f,        // 800 ppm from optimal
                 _ => 10f
             };
-            
+
             return Mathf.Clamp01(distance / maxDistance);
         }
 
@@ -332,7 +331,7 @@ namespace ProjectChimera.Systems.Cultivation
             float normalizedHumidityChange = Mathf.Clamp01(humidityChange / 30f); // 30% = severe
             float normalizedLightChange = Mathf.Clamp01(lightChange / 300f); // 300 PPFD = severe
             float normalizedCO2Change = Mathf.Clamp01(co2Change / 500f); // 500 ppm = severe
-            
+
             // Weighted average of all changes
             return (normalizedTempChange * 0.4f) + (normalizedHumidityChange * 0.3f) +
                    (normalizedLightChange * 0.2f) + (normalizedCO2Change * 0.1f);
@@ -341,13 +340,13 @@ namespace ProjectChimera.Systems.Cultivation
         private void ProcessAdaptationResponse(EnvironmentalConditions conditions, float deltaTime)
         {
             float adaptationRate = _configuration.AdaptationRate * deltaTime;
-            
+
             // Update adaptation for each parameter
             UpdateParameterAdaptation("Temperature", conditions.Temperature, adaptationRate);
             UpdateParameterAdaptation("Humidity", conditions.Humidity, adaptationRate);
             UpdateParameterAdaptation("Light", conditions.LightIntensity, adaptationRate);
             UpdateParameterAdaptation("CO2", conditions.CO2Level, adaptationRate);
-            
+
             // Calculate overall adaptation
             _overallAdaptation = _adaptationLevels.Values.Average();
         }
@@ -357,7 +356,7 @@ namespace ProjectChimera.Systems.Cultivation
             var optimalRange = GetOptimalRange(parameter);
             float currentFitness = CalculateFitnessFromRange(currentValue, optimalRange);
             float currentAdaptation = GetAdaptationLevel(parameter);
-            
+
             // Adapt towards current conditions
             if (currentFitness < currentAdaptation)
             {
@@ -369,7 +368,7 @@ namespace ProjectChimera.Systems.Cultivation
                 // Adapting to better conditions - faster process
                 _adaptationLevels[parameter] = Mathf.Lerp(currentAdaptation, currentFitness, adaptationRate);
             }
-            
+
             // Clamp adaptation level
             _adaptationLevels[parameter] = Mathf.Clamp(_adaptationLevels[parameter], 0.3f, 1.2f);
         }
@@ -397,10 +396,15 @@ namespace ProjectChimera.Systems.Cultivation
         {
             try
             {
-                if (strain is PlantStrainSO strainSO)
+                if (strain is ProjectChimera.Data.Genetics.PlantStrainSO geneticsStrain)
                 {
-                    // Try to get GxE profile
-                    _gxeProfile = strainSO.GxEProfile;
+                    // Try to get GxE profile from genetics strain
+                    _gxeProfile = geneticsStrain.GxEProfile;
+                }
+                else if (strain is ProjectChimera.Data.Cultivation.PlantStrainSO cultivationStrain)
+                {
+                    // Try to get GxE profile from cultivation strain
+                    _gxeProfile = cultivationStrain.GxEProfile;
                 }
                 else
                 {
@@ -431,12 +435,12 @@ namespace ProjectChimera.Systems.Cultivation
         private bool HasSignificantChange(EnvironmentalConditions previous, EnvironmentalConditions current)
         {
             if (previous.Temperature == 0f) return false; // No valid previous data
-            
+
             float tempChange = Mathf.Abs(current.Temperature - previous.Temperature);
             float humidityChange = Mathf.Abs(current.Humidity - previous.Humidity);
             float lightChange = Mathf.Abs(current.LightIntensity - previous.LightIntensity);
             float co2Change = Mathf.Abs(current.CO2Level - previous.CO2Level);
-            
+
             // Consider changes significant if any parameter changes beyond thresholds
             return tempChange > 2f || humidityChange > 10f || lightChange > 100f || co2Change > 200f;
         }
@@ -458,13 +462,13 @@ namespace ProjectChimera.Systems.Cultivation
         {
             var recommendations = new List<EnvironmentalRecommendation>();
             var stressFactors = GetEnvironmentalStressFactors();
-            
+
             foreach (var stressFactor in stressFactors.Where(s => s.Severity > 0.3f))
             {
                 string parameter = stressFactor.GetStressTypeName();
                 var optimalRange = GetOptimalRange(parameter);
                 float currentValue = GetCurrentParameterValue(parameter);
-                
+
                 var recommendation = new EnvironmentalRecommendation
                 {
                     Parameter = parameter,
@@ -473,10 +477,10 @@ namespace ProjectChimera.Systems.Cultivation
                     Priority = stressFactor.Severity > 0.7f ? "High" : "Medium",
                     Suggestion = GenerateAdjustmentSuggestion(parameter, currentValue, optimalRange)
                 };
-                
+
                 recommendations.Add(recommendation);
             }
-            
+
             return recommendations.OrderByDescending(r => r.Priority).ToList();
         }
 
@@ -496,7 +500,7 @@ namespace ProjectChimera.Systems.Cultivation
             InitializeAdaptationParameters();
             _overallAdaptation = 1f;
             _changeHistory.Clear();
-            
+
             ChimeraLogger.Log("[EnvironmentalResponseSystem] Adaptation levels reset");
         }
 

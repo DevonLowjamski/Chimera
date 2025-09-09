@@ -85,7 +85,7 @@ namespace ProjectChimera.Systems.Cultivation
     {
         public bool IsActive { get; set; } = true;
         public float Intensity { get; set; }
-        public StressSource StressSource { get; set; }
+        public object StressSource { get; set; }
         public float StartTime { get; set; }
         public float Duration { get; set; }
 
