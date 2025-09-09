@@ -5,16 +5,16 @@ using ProjectChimera.Core.DependencyInjection;
 using ContainerVerificationResult = ProjectChimera.Core.DependencyInjection.ContainerVerificationResult;
 using AdvancedServiceDescriptor = ProjectChimera.Core.DependencyInjection.AdvancedServiceDescriptor;
 
-/// <summary>
-/// Factory interface for creating service containers
-/// </summary>
-public interface IServiceContainerFactory
-{
-    IServiceContainer CreateContainer();
-}
-
 namespace ProjectChimera.Core
 {
+    /// <summary>
+    /// Factory interface for creating service containers
+    /// </summary>
+    public interface IServiceContainerFactory
+    {
+        IServiceContainer CreateContainer();
+    }
+
     /// <summary>
     /// PC014-1a: Core interface for dependency injection service container
     /// Provides registration, resolution, and lifecycle management for all Project Chimera services
@@ -169,27 +169,27 @@ namespace ProjectChimera.Core
         /// Gets a service by type, returns null if not found
         /// </summary>
         T GetService<T>() where T : class;
-        
+
         /// <summary>
         /// Gets a service by type, returns null if not found
         /// </summary>
         object GetService(Type serviceType);
-        
+
         /// <summary>
         /// Tries to get a service, returns true if found
         /// </summary>
         bool TryGetService<T>(out T service) where T : class;
-        
+
         /// <summary>
         /// Tries to get a service, returns true if found
         /// </summary>
         bool TryGetService(Type serviceType, out object service);
-        
+
         /// <summary>
         /// Checks if the container contains a service
         /// </summary>
         bool ContainsService<T>() where T : class;
-        
+
         /// <summary>
         /// Checks if the container contains a service
         /// </summary>
@@ -208,28 +208,28 @@ namespace ProjectChimera.Core
         /// <summary>
         /// Registers a named service
         /// </summary>
-        void RegisterNamed<TInterface, TImplementation>(string name) 
+        void RegisterNamed<TInterface, TImplementation>(string name)
             where TInterface : class
             where TImplementation : class, TInterface, new();
 
         /// <summary>
         /// Registers a conditional service
         /// </summary>
-        void RegisterConditional<TInterface, TImplementation>(Func<IServiceLocator, bool> condition) 
+        void RegisterConditional<TInterface, TImplementation>(Func<IServiceLocator, bool> condition)
             where TInterface : class
             where TImplementation : class, TInterface, new();
 
         /// <summary>
         /// Registers a decorator service
         /// </summary>
-        void RegisterDecorator<TInterface, TDecorator>() 
+        void RegisterDecorator<TInterface, TDecorator>()
             where TInterface : class
             where TDecorator : class, TInterface, new();
 
         /// <summary>
         /// Registers a service with callback
         /// </summary>
-        void RegisterWithCallback<TInterface, TImplementation>(Action<TImplementation> initializer) 
+        void RegisterWithCallback<TInterface, TImplementation>(Action<TImplementation> initializer)
             where TInterface : class
             where TImplementation : class, TInterface, new();
 
@@ -276,7 +276,7 @@ namespace ProjectChimera.Core
         /// <summary>
         /// Replaces a service registration
         /// </summary>
-        void Replace<TInterface, TImplementation>() 
+        void Replace<TInterface, TImplementation>()
             where TInterface : class
             where TImplementation : class, TInterface, new();
 
@@ -299,7 +299,7 @@ namespace ProjectChimera.Core
         public DateTime RegistrationTime { get; set; }
     }
 
-    
+
 
 
 
@@ -328,7 +328,7 @@ namespace ProjectChimera.Core
     {
         public IEnumerable<Type> DependencyChain { get; }
 
-        public CircularDependencyException(Type serviceType, IEnumerable<Type> dependencyChain) 
+        public CircularDependencyException(Type serviceType, IEnumerable<Type> dependencyChain)
             : base(serviceType, $"Circular dependency detected for service {serviceType.Name}. Dependency chain: {string.Join(" -> ", dependencyChain.Select(t => t.Name))}")
         {
             DependencyChain = dependencyChain;

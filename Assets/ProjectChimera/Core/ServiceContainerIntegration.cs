@@ -197,12 +197,17 @@ namespace ProjectChimera.Core.DependencyInjection
         {
             _additionalServices[typeof(TInterface)] = instance;
             ServiceRegistered?.Invoke(new ProjectChimera.Core.ServiceRegistration(
-                typeof(TInterface), 
-                instance.GetType(), 
-                ServiceLifetime.Singleton, 
-                instance, 
+                typeof(TInterface),
+                instance.GetType(),
+                ServiceLifetime.Singleton,
+                instance,
                 null
             ));
+        }
+
+        public void RegisterInstance<TInterface>(TInterface instance) where TInterface : class
+        {
+            RegisterSingleton<TInterface>(instance);
         }
 
         public void RegisterSingleton(Type serviceType, object instance)
@@ -323,6 +328,7 @@ namespace ProjectChimera.Core.DependencyInjection
         public void RegisterSingleton<TInterface>(TInterface instance) => _container.RegisterSingleton(instance);
         public void RegisterSingleton<TInterface>(Func<IServiceContainer, TInterface> factory) => _container.RegisterSingleton(factory);
         public void RegisterSingleton(Type serviceType, object instance) => _container.RegisterSingleton(serviceType, instance);
+        public void RegisterInstance<TInterface>(TInterface instance) where TInterface : class => _container.RegisterInstance(instance);
         public void RegisterTransient<TInterface, TImplementation>() where TImplementation : class, TInterface, new() => _container.RegisterTransient<TInterface, TImplementation>();
         public void RegisterTransient<TInterface>(Func<IServiceContainer, TInterface> factory) => _container.RegisterTransient(factory);
         public void RegisterScoped<TInterface, TImplementation>() where TImplementation : class, TInterface, new() => _container.RegisterScoped<TInterface, TImplementation>();
