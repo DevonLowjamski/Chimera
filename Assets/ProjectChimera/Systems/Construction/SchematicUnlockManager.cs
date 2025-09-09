@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_ADDRESSABLES
+using UnityEngine.AddressableAssets;
+#endif
 using ProjectChimera.Core.Updates;
 using System.Collections.Generic;
 using System.Linq;
@@ -398,15 +401,25 @@ namespace ProjectChimera.Systems.Construction
 
             try
             {
-                // Construction assembly fallback - use Resources temporarily
-                // This will be replaced when proper asset loading architecture is established
-                LogInfo("[SchematicUnlockManager] Using Resources fallback in Construction assembly");
+                // Load all schematics via Addressables for proper async loading
+#if UNITY_ADDRESSABLES
+                LogInfo("[SchematicUnlockManager] Loading schematics via Addressables");
 
-                // Load all schematics from Resources
-                var schematics = Resources.LoadAll<SchematicSO>("");
+                // Use Addressables label to load all schematics
+                var schematicsHandle = Addressables.LoadAssetsAsync<SchematicSO>("schematics", null);
+                var schematics = await schematicsHandle.Task;
                 _allSchematics.AddRange(schematics);
 
-                LogInfo($"Loaded {_allSchematics.Count} schematics for unlock system via Resources fallback");
+                LogInfo($"Loaded {_allSchematics.Count} schematics for unlock system via Addressables");
+#else
+                LogInfo("[SchematicUnlockManager] Addressables not available, using Resources fallback");
+
+                // Fallback to Resources if Addressables not available
+                var schematics = Resources.LoadAll<SchematicSO>("Schematics");
+                _allSchematics.AddRange(schematics);
+
+                LogInfo($"Loaded {_allSchematics.Count} schematics for unlock system via Resources");
+#endif
             }
             catch (System.Exception ex)
             {

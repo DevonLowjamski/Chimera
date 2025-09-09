@@ -1,6 +1,10 @@
 using UnityEngine;
+#if UNITY_ADDRESSABLES
+using UnityEngine.AddressableAssets;
+#endif
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Genetics;
 
@@ -72,11 +76,19 @@ namespace ProjectChimera.Systems.Genetics
             ChimeraLogger.Log("[FractalGeneticsEngine] Fractal genetics engine initialized successfully");
         }
 
-        private void LoadComputeShader()
+        private async void LoadComputeShader()
         {
             try
             {
+#if UNITY_ADDRESSABLES
+                var shaderHandle = Addressables.LoadAssetAsync<ComputeShader>("Genetics/FractalGeneticsCompute");
+                _fractalComputeShader = await shaderHandle.Task;
+                ChimeraLogger.Log("[FractalGeneticsEngine] Compute shader loaded via Addressables");
+#else
                 _fractalComputeShader = Resources.Load<ComputeShader>("Genetics/FractalGeneticsCompute");
+                ChimeraLogger.Log("[FractalGeneticsEngine] Compute shader loaded via Resources");
+#endif
+
                 if (_fractalComputeShader == null)
                 {
                     ChimeraLogger.LogWarning("[FractalGeneticsEngine] Compute shader not found, using CPU calculations");

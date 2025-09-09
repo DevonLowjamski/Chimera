@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_ADDRESSABLES
+using UnityEngine.AddressableAssets;
+#endif
 // using ProjectChimera.Systems.Addressables; // Removed to avoid circular dependency
 using System.Collections.Generic;
 using System.Linq;
@@ -113,25 +116,47 @@ namespace ProjectChimera.Core
 
             try
             {
-                // Core assembly fallback - use Resources temporarily
-                // This will be replaced when Addressables integration is moved to higher-level assemblies
-                ChimeraLogger.Log("[DataManager] Using Resources fallback in Core assembly");
-                
-                // Load all ChimeraDataSO assets
+#if UNITY_ADDRESSABLES
+                // Use Addressables for proper async asset loading
+                ChimeraLogger.Log("[DataManager] Loading data assets via Addressables");
+
+                // Load all ChimeraDataSO assets using Addressables
+                var dataAssetsHandle = Addressables.LoadAssetsAsync<ChimeraDataSO>("data", null);
+                var dataAssetsList = await dataAssetsHandle.Task;
+
+                foreach (var dataAsset in dataAssetsList)
+                {
+                    RegisterDataAsset(dataAsset);
+                }
+
+                // Load all ChimeraConfigSO assets using Addressables
+                var configAssetsHandle = Addressables.LoadAssetsAsync<ChimeraConfigSO>("config", null);
+                var configAssetsList = await configAssetsHandle.Task;
+
+                foreach (var configAsset in configAssetsList)
+                {
+                    RegisterConfigAsset(configAsset);
+                }
+#else
+                // Fallback to Resources if Addressables not available
+                ChimeraLogger.Log("[DataManager] Addressables not available, using Resources fallback");
+
+                // Load data assets using Resources
                 var dataAssets = Resources.LoadAll<ChimeraDataSO>("Data");
                 foreach (var dataAsset in dataAssets)
                 {
                     RegisterDataAsset(dataAsset);
                 }
 
-                // Load all ChimeraConfigSO assets
+                // Load config assets using Resources
                 var configAssets = Resources.LoadAll<ChimeraConfigSO>("Config");
                 foreach (var configAsset in configAssets)
                 {
                     RegisterConfigAsset(configAsset);
                 }
+#endif
 
-                ChimeraLogger.Log($"Loaded {_totalDataAssets} data assets and {_totalConfigAssets} config assets via Resources fallback");
+                ChimeraLogger.Log($"Loaded {_totalDataAssets} data assets and {_totalConfigAssets} config assets via Addressables");
             }
             catch (System.Exception ex)
             {

@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+#if UNITY_ADDRESSABLES
+using UnityEngine.AddressableAssets;
+#endif
 using ProjectChimera.Core;
 using ProjectChimera.Systems.Registry;
 
@@ -387,18 +390,27 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 #if UNITY_SPEEDTREE
         private async Task<UnityEngine.Object> LoadAssetFromPath(string assetPath)
         {
-            // SpeedTree assembly fallback - use Resources temporarily
-            // This will be replaced when proper asset loading architecture is established
-            await Task.Delay(100); // Simulate loading time
+            // SpeedTree assembly - use Addressables for proper async loading
+            ChimeraLogger.Log("[SpeedTreeAssetManagementService] Loading SpeedTree asset via Addressables");
 
-            ChimeraLogger.LogWarning("[SpeedTreeAssetManagementService] Using Resources fallback in SpeedTree assembly");
-
-            var asset = Resources.Load<UnityEngine.Object>(assetPath);
-            if (asset != null)
+            try
             {
-                ChimeraLogger.Log($"[SpeedTreeAssetManagementService] Successfully loaded SpeedTree asset: {assetPath}");
+#if UNITY_ADDRESSABLES
+                var asset = await Addressables.LoadAssetAsync<UnityEngine.Object>(assetPath);
+#else
+                var asset = Resources.Load<UnityEngine.Object>(assetPath);
+#endif
+                if (asset != null)
+                {
+                    ChimeraLogger.Log($"[SpeedTreeAssetManagementService] Successfully loaded SpeedTree asset: {assetPath}");
+                }
+                return asset;
             }
-            return asset;
+            catch (Exception ex)
+            {
+                ChimeraLogger.LogError($"[SpeedTreeAssetManagementService] Failed to load SpeedTree asset {assetPath}: {ex.Message}");
+                return null;
+            }
         }
 
         private void ConfigureAssetForCannabis(UnityEngine.Object asset)

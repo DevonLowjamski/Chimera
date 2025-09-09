@@ -3,6 +3,9 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+#if UNITY_ADDRESSABLES
+using UnityEngine.AddressableAssets;
+#endif
 using ProjectChimera.Core;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Shared;
@@ -581,15 +584,22 @@ namespace ProjectChimera.Core.DependencyInjection
         {
             await Task.Yield(); // Make it async for consistency
 
-            // Fallback for Core assembly - use Resources as temporary measure
-            // This will be replaced when Addressables infrastructure is properly integrated
-            ChimeraLogger.LogWarning("[ResourcesBasedSchematicAssetService] Using Resources fallback in Core assembly");
+            // Load schematics via Addressables for proper async loading
+            ChimeraLogger.Log("[ResourcesBasedSchematicAssetService] Loading schematics via Addressables in Core assembly");
 
             try
             {
-                // Use Resources.LoadAll as fallback since we're in Core assembly
+#if UNITY_ADDRESSABLES
+                // Use Addressables label to load all schematic scriptable objects
+                var schematicsHandle = Addressables.LoadAssetsAsync<ChimeraScriptableObject>("schematics", null);
+                var schematicsList = await schematicsHandle.Task;
+                return schematicsList.ToArray();
+#else
+                // Fallback to Resources if Addressables not available
+                ChimeraLogger.LogWarning("[ResourcesBasedSchematicAssetService] Addressables not available, using Resources fallback");
                 var schematics = Resources.LoadAll<ChimeraScriptableObject>("Schematics");
                 return schematics;
+#endif
             }
             catch (System.Exception ex)
             {

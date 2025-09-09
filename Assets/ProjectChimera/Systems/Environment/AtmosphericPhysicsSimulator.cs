@@ -1,5 +1,7 @@
 using ProjectChimera.Core.Logging;
-// using UnityEngine.AddressableAssets; // Addressables not available
+#if UNITY_ADDRESSABLES
+using UnityEngine.AddressableAssets;
+#endif
 // using ProjectChimera.Systems.Addressables; // Addressables assembly not available
 using UnityEngine;
 using System;
@@ -142,17 +144,29 @@ namespace ProjectChimera.Systems.Environment
 
             try
             {
-                // Environment assembly fallback - use Resources temporarily
-                // This will be replaced when proper asset loading architecture is established
-                ChimeraLogger.LogWarning("[AtmosphericPhysicsSimulator] Using Resources fallback in Environment assembly");
+#if UNITY_ADDRESSABLES
+                // Load compute shaders for GPU acceleration using Addressables
+                ChimeraLogger.Log("[AtmosphericPhysicsSimulator] Loading GPU compute shaders via Addressables");
 
-                // Load compute shaders for GPU acceleration
-                // Addressables not available - using Resources fallback
+                var fluidDynamicsHandle = Addressables.LoadAssetAsync<ComputeShader>("Shaders/FluidDynamicsCS");
+                var heatTransferHandle = Addressables.LoadAssetAsync<ComputeShader>("Shaders/HeatTransferCS");
+                var turbulenceHandle = Addressables.LoadAssetAsync<ComputeShader>("Shaders/TurbulenceCS");
+
+                _fluidDynamicsCompute = await fluidDynamicsHandle.Task;
+                _heatTransferCompute = await heatTransferHandle.Task;
+                _turbulenceCompute = await turbulenceHandle.Task;
+
+                ChimeraLogger.Log("[AtmosphericPhysicsSimulator] GPU compute shaders loaded via Addressables");
+#else
+                // Fallback to Resources if Addressables not available
+                ChimeraLogger.Log("[AtmosphericPhysicsSimulator] Addressables not available, using Resources fallback");
+
                 _fluidDynamicsCompute = Resources.Load<ComputeShader>("Shaders/FluidDynamicsCS");
                 _heatTransferCompute = Resources.Load<ComputeShader>("Shaders/HeatTransferCS");
                 _turbulenceCompute = Resources.Load<ComputeShader>("Shaders/TurbulenceCS");
 
-                ChimeraLogger.Log("[AtmosphericPhysicsSimulator] GPU compute shaders loaded via Resources fallback");
+                ChimeraLogger.Log("[AtmosphericPhysicsSimulator] GPU compute shaders loaded via Resources");
+#endif
             }
             catch (Exception ex)
             {

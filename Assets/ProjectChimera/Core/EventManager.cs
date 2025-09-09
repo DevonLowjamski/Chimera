@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_ADDRESSABLES
+using UnityEngine.AddressableAssets;
+#endif
 // using ProjectChimera.Systems.Addressables; // Removed to avoid circular dependency
 using System.Collections.Generic;
 using System;
@@ -136,18 +139,32 @@ namespace ProjectChimera.Core
 
             try
             {
-                // Core assembly fallback - use Resources temporarily
-                // This will be replaced when Addressables integration is moved to higher-level assemblies
-                ChimeraLogger.Log("[EventManager] Using Resources fallback in Core assembly");
-                
-                // Find all event channel assets
+#if UNITY_ADDRESSABLES
+                // Use Addressables for proper async asset loading
+                ChimeraLogger.Log("[EventManager] Loading event channels via Addressables");
+
+                // Find all event channel assets using Addressables
+                var eventChannelsHandle = Addressables.LoadAssetsAsync<ChimeraEventSO>("events", null);
+                var eventChannelsList = await eventChannelsHandle.Task;
+
+                foreach (var channel in eventChannelsList)
+                {
+                    RegisterEventChannel(channel);
+                }
+
+                ChimeraLogger.Log($"Auto-discovered {eventChannelsList.Count} event channels via Addressables");
+#else
+                // Fallback to Resources if Addressables not available
+                ChimeraLogger.Log("[EventManager] Addressables not available, using Resources fallback");
                 var eventChannels = Resources.LoadAll<ChimeraEventSO>("Events");
+
                 foreach (var channel in eventChannels)
                 {
                     RegisterEventChannel(channel);
                 }
 
-                ChimeraLogger.Log($"Auto-discovered {eventChannels.Length} event channels via Resources fallback");
+                ChimeraLogger.Log($"Auto-discovered {eventChannels.Length} event channels via Resources");
+#endif
             }
             catch (System.Exception ex)
             {
