@@ -650,8 +650,11 @@ namespace ProjectChimera.Core
     public class ServiceHealthData
     {
         public Type ServiceType { get; set; }
+        public string ServiceId { get; set; }
         public ServiceStatus CurrentStatus { get; set; }
         public DateTime LastUpdated { get; set; }
+        public DateTime LastChecked { get; set; }
+        public DateTime RegistrationTime { get; set; }
         public List<ServiceStatusEntry> StatusHistory { get; set; } = new List<ServiceStatusEntry>();
     }
 
