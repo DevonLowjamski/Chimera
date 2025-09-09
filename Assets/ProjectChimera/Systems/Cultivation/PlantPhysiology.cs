@@ -12,6 +12,15 @@ using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 namespace ProjectChimera.Systems.Cultivation
 {
     /// <summary>
+    /// Interface for plant visual instance components
+    /// </summary>
+    public interface IPlantVisualInstance
+    {
+        void Initialize(string plantId, object strain, object genotype, Camera camera);
+        void UpdateVisualParameters(object phenotype, float health, PlantGrowthStage stage, object environmentalConditions);
+    }
+
+    /// <summary>
     /// Real-time plant physiology component that manages plant health, growth, and trait expression.
     /// This component should be attached to plant GameObjects in the scene for runtime simulation.
     /// </summary>
@@ -23,7 +32,7 @@ namespace ProjectChimera.Systems.Cultivation
         [SerializeField] private GrowthCalculationSO _growthCalculation;
 
         [Header("Visual Integration")]
-        [SerializeField] private MonoBehaviour _visualInstance; // Loosely coupled - will be cast to PlantVisualInstance if available
+        [SerializeField] private MonoBehaviour _visualInstance; // Loosely coupled - will be cast to IPlantVisualInstance if available
         [SerializeField] private bool _autoConnectVisuals = true;
 
         [Header("Runtime Settings")]
@@ -213,13 +222,12 @@ namespace ProjectChimera.Systems.Cultivation
             // Connect to visual instance if available
             if (_visualInstance != null && _plantData != null)
             {
-                // Initialize visual instance with plant data using reflection
-                var initializeMethod = _visualInstance.GetType().GetMethod("Initialize");
-                if (initializeMethod != null)
+                // Initialize visual instance with plant data using interface
+                if (_visualInstance is IPlantVisualInstance visualInterface)
                 {
                     try
                     {
-                        initializeMethod.Invoke(_visualInstance, new object[] { _plantData.PlantID, _plantData.Strain, null, Camera.main });
+                        visualInterface.Initialize(_plantData.PlantID, _plantData.Strain, null, Camera.main);
                     }
                     catch (System.Exception ex)
                     {
@@ -407,12 +415,11 @@ namespace ProjectChimera.Systems.Cultivation
             // Update visual instance if connected
             if (_visualInstance != null)
             {
-                var updateMethod = _visualInstance.GetType().GetMethod("UpdateVisualParameters");
-                if (updateMethod != null)
+                if (_visualInstance is IPlantVisualInstance visualInterface)
                 {
                     try
                     {
-                        updateMethod.Invoke(_visualInstance, null);
+                        visualInterface.UpdateVisualParameters(null, _plantData.OverallHealth, _plantData.CurrentGrowthStage, _currentEnvironment);
                     }
                     catch (System.Exception ex)
                     {

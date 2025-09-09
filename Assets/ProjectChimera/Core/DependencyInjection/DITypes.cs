@@ -219,15 +219,12 @@ namespace ProjectChimera.Core.DependencyInjection
             var containerObject = new GameObject("DI_Container_Development");
             var container = containerObject.AddComponent<ChimeraDIContainer>();
             
-            // Configure for development
-            var containerType = typeof(ChimeraDIContainer);
-            var debugField = containerType.GetField("_enableDebugLogging", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var validationField = containerType.GetField("_enableValidation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var metricsField = containerType.GetField("_enablePerformanceMetrics", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
-            debugField?.SetValue(container, true);
-            validationField?.SetValue(container, true);
-            metricsField?.SetValue(container, true);
+            // Configure for development using proper API instead of dangerous reflection
+            container.ConfigureContainer(
+                enableDebugLogging: true,
+                enableValidation: true,
+                enablePerformanceMetrics: true
+            );
             
             UnityEngine.Object.DontDestroyOnLoad(containerObject);
             
@@ -243,15 +240,12 @@ namespace ProjectChimera.Core.DependencyInjection
             var containerObject = new GameObject("DI_Container_Production");
             var container = containerObject.AddComponent<ChimeraDIContainer>();
             
-            // Configure for production
-            var containerType = typeof(ChimeraDIContainer);
-            var debugField = containerType.GetField("_enableDebugLogging", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var validationField = containerType.GetField("_enableValidation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var metricsField = containerType.GetField("_enablePerformanceMetrics", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
-            debugField?.SetValue(container, false);
-            validationField?.SetValue(container, false);
-            metricsField?.SetValue(container, false);
+            // Configure for production using proper API instead of dangerous reflection
+            container.ConfigureContainer(
+                enableDebugLogging: false,
+                enableValidation: false,
+                enablePerformanceMetrics: false
+            );
             
             UnityEngine.Object.DontDestroyOnLoad(containerObject);
             
@@ -267,15 +261,12 @@ namespace ProjectChimera.Core.DependencyInjection
             var containerObject = new GameObject("DI_Container_Testing");
             var container = containerObject.AddComponent<ChimeraDIContainer>();
             
-            // Configure for testing
-            var containerType = typeof(ChimeraDIContainer);
-            var debugField = containerType.GetField("_enableDebugLogging", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var validationField = containerType.GetField("_enableValidation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var metricsField = containerType.GetField("_enablePerformanceMetrics", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
-            debugField?.SetValue(container, true);
-            validationField?.SetValue(container, true);
-            metricsField?.SetValue(container, false);
+            // Configure for testing using proper API instead of dangerous reflection
+            container.ConfigureContainer(
+                enableDebugLogging: true,
+                enableValidation: true,
+                enablePerformanceMetrics: false
+            );
             
             ChimeraLogger.Log("[ChimeraDIContainerFactory] Testing container created with validation enabled");
             return container;

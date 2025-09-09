@@ -333,9 +333,7 @@ namespace ProjectChimera.Systems.UI.Advanced
             
             if (_menuSystem.IsMenuOpen())
             {
-                _menuSystem.GetType()
-                    .GetMethod("CloseAllMenus", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                    ?.Invoke(_menuSystem, null);
+                _menuSystem.CloseAllMenus();
             }
             else
             {
@@ -399,9 +397,7 @@ namespace ProjectChimera.Systems.UI.Advanced
             }
             else if (_menuSystem.IsMenuOpen())
             {
-                _menuSystem.GetType()
-                    .GetMethod("CloseAllMenus", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                    ?.Invoke(_menuSystem, null);
+                _menuSystem.CloseAllMenus();
             }
         }
         

@@ -1,6 +1,7 @@
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Construction;
 using ProjectChimera.Data.Economy;
+using ProjectChimera.Systems.Analytics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,27 +17,27 @@ namespace ProjectChimera.Systems.Construction
         private bool _requireInstantPayment = false;
         private bool _enablePaymentPlans = true;
         private bool _isInitialized = false;
-        
+
         // Transaction tracking
         private List<PaymentTransaction> _transactionHistory = new List<PaymentTransaction>();
         private Dictionary<Vector3Int, string> _placementTransactions = new Dictionary<Vector3Int, string>();
-        
+
         // External dependencies
-        private MonoBehaviour _currencyManager;
+        private ICurrencyManager _currencyManager;
         private MonoBehaviour _tradingManager;
         private ICostCalculator _costCalculator;
         private IRefundHandler _refundHandler;
 
-        public bool RequireInstantPayment 
-        { 
-            get => _requireInstantPayment; 
-            set => _requireInstantPayment = value; 
+        public bool RequireInstantPayment
+        {
+            get => _requireInstantPayment;
+            set => _requireInstantPayment = value;
         }
 
-        public bool EnablePaymentPlans 
-        { 
-            get => _enablePaymentPlans; 
-            set => _enablePaymentPlans = value; 
+        public bool EnablePaymentPlans
+        {
+            get => _enablePaymentPlans;
+            set => _enablePaymentPlans = value;
         }
 
         public List<PaymentTransaction> TransactionHistory => new List<PaymentTransaction>(_transactionHistory);
@@ -45,7 +46,7 @@ namespace ProjectChimera.Systems.Construction
         public Action<PaymentTransaction> OnPaymentProcessed { get; set; }
         public Action<PaymentError> OnPaymentError { get; set; }
 
-        public PaymentProcessor(MonoBehaviour currencyManager = null, MonoBehaviour tradingManager = null, 
+        public PaymentProcessor(ICurrencyManager currencyManager = null, MonoBehaviour tradingManager = null,
                                ICostCalculator costCalculator = null, IRefundHandler refundHandler = null)
         {
             _currencyManager = currencyManager;
@@ -59,7 +60,7 @@ namespace ProjectChimera.Systems.Construction
             _requireInstantPayment = requireInstantPayment;
             _enablePaymentPlans = enablePaymentPlans;
             _isInitialized = true;
-            
+
             ChimeraLogger.Log("[PaymentProcessor] Payment processor initialized");
         }
 
@@ -68,7 +69,7 @@ namespace ProjectChimera.Systems.Construction
             _transactionHistory.Clear();
             _placementTransactions.Clear();
             _isInitialized = false;
-            
+
             ChimeraLogger.Log("[PaymentProcessor] Payment processor shutdown");
         }
 
@@ -76,10 +77,10 @@ namespace ProjectChimera.Systems.Construction
         {
             if (!_isInitialized)
             {
-                return new PaymentProcessingResult 
-                { 
-                    Success = false, 
-                    ErrorMessage = "Payment processor not initialized" 
+                return new PaymentProcessingResult
+                {
+                    Success = false,
+                    ErrorMessage = "Payment processor not initialized"
                 };
             }
 
@@ -109,7 +110,7 @@ namespace ProjectChimera.Systems.Construction
             };
 
             RecordTransaction(transaction);
-            
+
             if (result.Success)
             {
                 _placementTransactions[gridPosition] = transaction.TransactionId;
@@ -117,7 +118,7 @@ namespace ProjectChimera.Systems.Construction
             }
 
             OnPaymentProcessed?.Invoke(transaction);
-            
+
             ChimeraLogger.Log($"[PaymentProcessor] Payment processing {(result.Success ? "successful" : "failed")} for {placeable.name} at {gridPosition}");
             return result;
         }
@@ -146,7 +147,7 @@ namespace ProjectChimera.Systems.Construction
                 {
                     result.Success = false;
                     result.ErrorMessage = "Failed to deduct funds";
-                    
+
                     OnPaymentError?.Invoke(new PaymentError
                     {
                         ErrorCode = "INSUFFICIENT_FUNDS",
@@ -154,7 +155,7 @@ namespace ProjectChimera.Systems.Construction
                         AttemptedCost = result.TotalCost,
                         Position = gridPosition
                     });
-                    
+
                     return result;
                 }
 
@@ -164,10 +165,10 @@ namespace ProjectChimera.Systems.Construction
                 {
                     // Rollback funds
                     RefundFunds(result.TotalCost);
-                    
+
                     result.Success = false;
                     result.ErrorMessage = "Failed to consume resources";
-                    
+
                     OnPaymentError?.Invoke(new PaymentError
                     {
                         ErrorCode = "RESOURCE_CONSUMPTION_FAILED",
@@ -175,7 +176,7 @@ namespace ProjectChimera.Systems.Construction
                         AttemptedCost = result.TotalCost,
                         Position = gridPosition
                     });
-                    
+
                     return result;
                 }
 
@@ -244,7 +245,7 @@ namespace ProjectChimera.Systems.Construction
         public void RecordTransaction(PaymentTransaction transaction)
         {
             _transactionHistory.Add(transaction);
-            
+
             // Maintain transaction history size (keep last 1000 transactions)
             if (_transactionHistory.Count > 1000)
             {
@@ -322,7 +323,7 @@ namespace ProjectChimera.Systems.Construction
             ChimeraLogger.Log($"[PaymentProcessor] Player resources updated: {resources.Count} resource types");
         }
 
-        public void SetDependencies(MonoBehaviour currencyManager, MonoBehaviour tradingManager, 
+        public void SetDependencies(ICurrencyManager currencyManager, MonoBehaviour tradingManager,
                                    ICostCalculator costCalculator, IRefundHandler refundHandler)
         {
             _currencyManager = currencyManager;
@@ -341,23 +342,21 @@ namespace ProjectChimera.Systems.Construction
 
             try
             {
-                // Use reflection to deduct funds
-                var method = _currencyManager.GetType().GetMethod("SpendCurrency");
-                if (method != null)
+                // Use proper interface methods instead of reflection
+                // Try SpendCurrency first with CurrencyType.Cash (0)
+                if (_currencyManager.SpendCurrency(0, amount, "Construction Payment"))
                 {
-                    // Try with CurrencyType.Cash parameter
-                    return (bool)method.Invoke(_currencyManager, new object[] { 0, amount, "Construction Payment" }); // 0 = CurrencyType.Cash
+                    return true;
                 }
 
-                // Fallback: try simpler spend method
-                var spendMethod = _currencyManager.GetType().GetMethod("SpendCash");
-                if (spendMethod != null)
+                // Fallback: try SpendCash method
+                if (_currencyManager.SpendCash(amount))
                 {
-                    return (bool)spendMethod.Invoke(_currencyManager, new object[] { amount });
+                    return true;
                 }
 
-                ChimeraLogger.LogWarning("[PaymentProcessor] Could not find suitable method to deduct funds");
-                return true; // Allow if we can't determine
+                ChimeraLogger.LogWarning("[PaymentProcessor] Could not deduct funds - insufficient balance");
+                return false;
             }
             catch (Exception ex)
             {
@@ -372,12 +371,8 @@ namespace ProjectChimera.Systems.Construction
 
             try
             {
-                // Use reflection to refund funds
-                var method = _currencyManager.GetType().GetMethod("AddCurrency");
-                if (method != null)
-                {
-                    method.Invoke(_currencyManager, new object[] { 0, amount, "Construction Refund" }); // 0 = CurrencyType.Cash
-                }
+                // Use proper interface method instead of reflection
+                _currencyManager.AddCurrency(0, amount, "Construction Refund"); // 0 = CurrencyType.Cash
             }
             catch (Exception ex)
             {
@@ -391,13 +386,10 @@ namespace ProjectChimera.Systems.Construction
 
             try
             {
-                var method = _tradingManager.GetType().GetMethod("ConsumeResource");
-                if (method != null)
-                {
-                    return (bool)method.Invoke(_tradingManager, new object[] { resourceId, quantity });
-                }
-
-                return true; // Allow if we can't check
+                // TODO: Replace with proper interface method call when TradingInventoryManager is integrated
+                // For now, return true as the inventory consumption logic is not yet implemented
+                ChimeraLogger.Log($"[PaymentProcessor] Resource consumption requested: {resourceId} x{quantity} - Inventory system not yet integrated");
+                return true;
             }
             catch (Exception ex)
             {
@@ -411,7 +403,7 @@ namespace ProjectChimera.Systems.Construction
             // Simple cost calculation for reserved resources
             // In a real system, this might involve complex pricing
             float totalCost = 0f;
-            
+
             foreach (var resource in reservedResources)
             {
                 totalCost += resource.quantity * 10f; // Simple cost of 10 per unit

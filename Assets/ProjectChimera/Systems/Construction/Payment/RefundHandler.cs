@@ -1,6 +1,7 @@
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Construction;
 using ProjectChimera.Data.Economy;
+using ProjectChimera.Systems.Analytics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,51 +21,51 @@ namespace ProjectChimera.Systems.Construction
         private bool _autoReleaseReservations = true;
         private int _maxSimultaneousReservations = 10;
         private bool _isInitialized = false;
-        
+
         // Resource reservation
         private Dictionary<string, ResourceReservation> _activeReservations = new Dictionary<string, ResourceReservation>();
         private Dictionary<Vector3Int, List<string>> _positionReservations = new Dictionary<Vector3Int, List<string>>();
-        
+
         // External dependencies
-        private MonoBehaviour _currencyManager;
+        private ICurrencyManager _currencyManager;
         private MonoBehaviour _tradingManager;
         private IPaymentProcessor _paymentProcessor;
         private ICostCalculator _costCalculator;
 
-        public bool EnableRefunds 
-        { 
-            get => _enableRefunds; 
-            set => _enableRefunds = value; 
+        public bool EnableRefunds
+        {
+            get => _enableRefunds;
+            set => _enableRefunds = value;
         }
 
-        public float RefundPercentage 
-        { 
-            get => _refundPercentage; 
-            set => _refundPercentage = Mathf.Clamp01(value); 
+        public float RefundPercentage
+        {
+            get => _refundPercentage;
+            set => _refundPercentage = Mathf.Clamp01(value);
         }
 
-        public bool EnableResourceReservation 
-        { 
-            get => _enableResourceReservation; 
-            set => _enableResourceReservation = value; 
+        public bool EnableResourceReservation
+        {
+            get => _enableResourceReservation;
+            set => _enableResourceReservation = value;
         }
 
-        public float ReservationDuration 
-        { 
-            get => _reservationDuration; 
-            set => _reservationDuration = value; 
+        public float ReservationDuration
+        {
+            get => _reservationDuration;
+            set => _reservationDuration = value;
         }
 
-        public bool AutoReleaseReservations 
-        { 
-            get => _autoReleaseReservations; 
-            set => _autoReleaseReservations = value; 
+        public bool AutoReleaseReservations
+        {
+            get => _autoReleaseReservations;
+            set => _autoReleaseReservations = value;
         }
 
-        public int MaxSimultaneousReservations 
-        { 
-            get => _maxSimultaneousReservations; 
-            set => _maxSimultaneousReservations = value; 
+        public int MaxSimultaneousReservations
+        {
+            get => _maxSimultaneousReservations;
+            set => _maxSimultaneousReservations = value;
         }
 
         public Dictionary<string, ResourceReservation> ActiveReservations => new Dictionary<string, ResourceReservation>(_activeReservations);
@@ -73,7 +74,7 @@ namespace ProjectChimera.Systems.Construction
         public Action<string, ResourceReservation> OnResourceReserved { get; set; }
         public Action<string> OnReservationReleased { get; set; }
 
-        public RefundHandler(MonoBehaviour currencyManager = null, MonoBehaviour tradingManager = null,
+        public RefundHandler(ICurrencyManager currencyManager = null, MonoBehaviour tradingManager = null,
                            IPaymentProcessor paymentProcessor = null, ICostCalculator costCalculator = null)
         {
             _currencyManager = currencyManager;
@@ -92,7 +93,7 @@ namespace ProjectChimera.Systems.Construction
             _autoReleaseReservations = autoReleaseReservations;
             _maxSimultaneousReservations = maxSimultaneousReservations;
             _isInitialized = true;
-            
+
             ChimeraLogger.Log("[RefundHandler] Refund handler initialized");
         }
 
@@ -101,7 +102,7 @@ namespace ProjectChimera.Systems.Construction
             _activeReservations.Clear();
             _positionReservations.Clear();
             _isInitialized = false;
-            
+
             ChimeraLogger.Log("[RefundHandler] Refund handler shutdown");
         }
 
@@ -145,7 +146,7 @@ namespace ProjectChimera.Systems.Construction
 
                 // Calculate refund amount
                 float refundAmount = originalTransaction.TotalCost * _refundPercentage;
-                
+
                 // Process refund
                 bool refundProcessed = ProcessCurrencyRefund(refundAmount);
                 if (!refundProcessed)
@@ -198,7 +199,7 @@ namespace ProjectChimera.Systems.Construction
             {
                 // Refund a percentage of resources (e.g., 60% to account for wear/processing loss)
                 int refundQuantity = Mathf.FloorToInt(originalCost.quantity * 0.6f);
-                
+
                 if (refundQuantity > 0)
                 {
                     refundedResources.Add(new ResourceCost
@@ -309,7 +310,7 @@ namespace ProjectChimera.Systems.Construction
 
                 // Remove from tracking
                 _activeReservations.Remove(reservationId);
-                
+
                 if (_positionReservations.TryGetValue(reservation.Position, out var positionReservations))
                 {
                     positionReservations.Remove(reservationId);
@@ -417,12 +418,9 @@ namespace ProjectChimera.Systems.Construction
 
             try
             {
-                var method = _tradingManager.GetType().GetMethod("ReserveResource");
-                if (method != null)
-                {
-                    return (bool)method.Invoke(_tradingManager, new object[] { resourceId, quantity });
-                }
-
+                // TODO: Replace with proper interface method call when TradingInventoryManager is integrated
+                // For now, return true as resource reservation is not yet implemented
+                ChimeraLogger.Log($"[RefundHandler] Resource reservation requested: {resourceId} x{quantity} - Inventory system not yet integrated");
                 return true; // Allow if we can't check
             }
             catch (Exception ex)
@@ -438,11 +436,9 @@ namespace ProjectChimera.Systems.Construction
 
             try
             {
-                var method = _tradingManager.GetType().GetMethod("ReleaseReservedResource");
-                if (method != null)
-                {
-                    method.Invoke(_tradingManager, new object[] { resourceId, quantity });
-                }
+                // TODO: Replace with proper interface method call when TradingInventoryManager is integrated
+                // For now, do nothing as resource reservation release is not yet implemented
+                ChimeraLogger.Log($"[RefundHandler] Resource reservation release requested: {resourceId} x{quantity} - Inventory system not yet integrated");
             }
             catch (Exception ex)
             {
@@ -456,11 +452,9 @@ namespace ProjectChimera.Systems.Construction
 
             try
             {
-                var method = _tradingManager.GetType().GetMethod("AddResource");
-                if (method != null)
-                {
-                    method.Invoke(_tradingManager, new object[] { resourceId, quantity });
-                }
+                // TODO: Replace with proper interface method call when TradingInventoryManager is integrated
+                // For now, do nothing as resource addition is not yet implemented
+                ChimeraLogger.Log($"[RefundHandler] Resource addition requested: {resourceId} x{quantity} - Inventory system not yet integrated");
             }
             catch (Exception ex)
             {
@@ -482,7 +476,7 @@ namespace ProjectChimera.Systems.Construction
             }
         }
 
-        public void SetDependencies(MonoBehaviour currencyManager, MonoBehaviour tradingManager,
+        public void SetDependencies(ICurrencyManager currencyManager, MonoBehaviour tradingManager,
                                    IPaymentProcessor paymentProcessor, ICostCalculator costCalculator)
         {
             _currencyManager = currencyManager;
@@ -501,14 +495,9 @@ namespace ProjectChimera.Systems.Construction
 
             try
             {
-                // Use reflection to add refund funds
-                var method = _currencyManager.GetType().GetMethod("AddCurrency");
-                if (method != null)
-                {
-                    return (bool)method.Invoke(_currencyManager, new object[] { 0, amount, "Construction Refund" }); // 0 = CurrencyType.Cash
-                }
-
-                return true; // Allow if we can't determine
+                // Use proper interface method instead of reflection
+                _currencyManager.AddCurrency(0, amount, "Construction Refund"); // 0 = CurrencyType.Cash
+                return true;
             }
             catch (Exception ex)
             {

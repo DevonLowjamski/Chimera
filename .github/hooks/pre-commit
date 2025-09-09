@@ -64,6 +64,20 @@ for file in $STAGED_FILES; do
     fi
 done
 
+# Check for dangerous reflection patterns
+echo "🔍 Checking for dangerous reflection violations..."
+for file in $STAGED_FILES; do
+    if [ -f "$file" ] && [[ "$file" != *"DependencyInjection"* ]] && [[ "$file" != *"ServiceCollection"* ]]; then
+        VIOLATIONS=$(grep -n "GetType()\.GetField\|GetType()\.GetProperty\|GetType()\.GetMethod" "$file" || true)
+        if [ ! -z "$VIOLATIONS" ]; then
+            echo "❌ Dangerous reflection found in $file:"
+            echo "$VIOLATIONS"
+            echo ""
+            VIOLATIONS_FOUND=true
+        fi
+    fi
+done
+
 # Report results
 if [ "$VIOLATIONS_FOUND" = true ]; then
     echo ""
@@ -73,6 +87,7 @@ if [ "$VIOLATIONS_FOUND" = true ]; then
     echo "  • Replace FindObjectOfType with ServiceContainer.Resolve<T>()"
     echo "  • Replace Resources.Load with Addressables or direct references"
     echo "  • Replace Debug.Log with ChimeraLogger.Log()"
+    echo "  • Replace dangerous reflection with proper interfaces or direct access"
     echo ""
     echo "Then retry your commit."
     exit 1

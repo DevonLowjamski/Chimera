@@ -263,8 +263,8 @@ namespace ProjectChimera.Core.DependencyInjection
     {
         public static IServiceContainer GetUnderlyingContainer(this ServiceProviderAdapter adapter)
         {
-            var field = typeof(ServiceProviderAdapter).GetField("_container", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            return field?.GetValue(adapter) as IServiceContainer;
+            // Use proper API instead of dangerous reflection
+            return adapter.UnderlyingContainer;
         }
     }
     

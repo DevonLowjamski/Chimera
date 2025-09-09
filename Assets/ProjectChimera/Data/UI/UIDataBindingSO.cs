@@ -56,6 +56,22 @@ namespace ProjectChimera.Data.UI
         public string TargetProperty => _targetProperty;
         public bool IsActive => _isActive;
         
+        /// <summary>
+        /// Initialize binding configuration programmatically (replaces reflection-based setup)
+        /// </summary>
+        public void InitializeBinding(string bindingName, string description, string sourceManagerType, 
+            string sourcePropertyPath, string targetUIElement, string targetProperty, 
+            DataConverter dataConverter = DataConverter.None)
+        {
+            _bindingName = bindingName;
+            _description = description;
+            _sourceManagerType = sourceManagerType;
+            _sourcePropertyPath = sourcePropertyPath;
+            _targetUIElement = targetUIElement;
+            _targetProperty = targetProperty;
+            _dataConverter = dataConverter;
+        }
+        
         // Events
         public event Action<object> OnValueChanged;
         public event Action<string> OnBindingError;

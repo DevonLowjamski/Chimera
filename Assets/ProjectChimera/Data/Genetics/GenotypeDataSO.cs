@@ -104,6 +104,30 @@ namespace ProjectChimera.Data.Genetics
         public bool RecommendedForBreeding => _recommenedForBreeding;
 
         /// <summary>
+        /// Initialize genotype data programmatically (replaces reflection-based setup)
+        /// </summary>
+        public void InitializeGenotype(string individualID, PlantStrainSO parentStrain, int generation, 
+            float overallFitness, List<GenePair> genePairs = null, List<MutationEvent> mutationHistory = null)
+        {
+            _individualID = individualID;
+            _parentStrain = parentStrain;
+            _generation = generation;
+            _overallFitness = overallFitness;
+            
+            if (genePairs != null)
+            {
+                _genePairs = new List<GenePair>(genePairs);
+            }
+            
+            if (mutationHistory != null)
+            {
+                _mutationHistory = new List<MutationEvent>(mutationHistory);
+            }
+            
+            RecalculateGeneticStats();
+        }
+
+        /// <summary>
         /// Initializes the genotype with a basic set of genes from the parent strain.
         /// </summary>
         public void InitializeFromStrain(PlantStrainSO strain, List<GeneDefinitionSO> geneSet = null)

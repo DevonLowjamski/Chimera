@@ -17,7 +17,7 @@ namespace ProjectChimera.Systems.Economy
     /// Maintains original interface while using modular components
     /// Refactored from monolithic 1,022-line class into focused components
     /// </summary>
-    public class CurrencyManager : DIChimeraManager, ITickable
+    public class CurrencyManager : DIChimeraManager, ITickable, ProjectChimera.Systems.Analytics.ICurrencyManager
     {
         [Header("Currency Configuration")]
         [SerializeField] private float _startingCash = 25000f;
@@ -25,19 +25,19 @@ namespace ProjectChimera.Systems.Economy
         [SerializeField] private bool _enableCreditSystem = true;
         [SerializeField] private bool _enableTaxation = false;
         [SerializeField] private float _creditLimit = 50000f;
-        
+
         [Header("Transaction Settings")]
         [SerializeField] private bool _enableTransactionHistory = true;
         [SerializeField] private int _maxTransactionHistory = 1000;
         [SerializeField] private bool _enableTransactionValidation = true;
         [SerializeField] private bool _enableFraudDetection = true;
-        
+
         [Header("Financial Analytics")]
         [SerializeField] private bool _enableFinancialReports = true;
         [SerializeField] private bool _enableBudgetTracking = true;
         [SerializeField] private bool _enableCashFlowPrediction = true;
         [SerializeField] private float _reportGenerationInterval = 3600f; // 1 hour
-        
+
         [Header("Event Channels")]
         [SerializeField] private SimpleGameEventSO _onCurrencyChanged;
         [SerializeField] private SimpleGameEventSO _onTransactionCompleted;
@@ -56,7 +56,7 @@ namespace ProjectChimera.Systems.Economy
         private Dictionary<CurrencyType, float> _lastKnownBalances = new Dictionary<CurrencyType, float>();
 
         public override ManagerPriority Priority => ManagerPriority.High;
-        
+
         // Public Properties
         public float Cash => _currencyCore?.Cash ?? 0f;
         public float SkillPoints => _currencyCore?.SkillPoints ?? 0f;
@@ -67,7 +67,31 @@ namespace ProjectChimera.Systems.Economy
         public List<Transaction> RecentTransactions => _transactions?.RecentTransactions ?? new List<Transaction>();
         public FinancialStatistics Statistics => _economyBalance?.Statistics ?? new FinancialStatistics();
         public Dictionary<CurrencyType, float> AllCurrencies => _currencyCore?.AllCurrencies ?? new Dictionary<CurrencyType, float>();
-        
+
+        // ICurrencyManager interface implementation for analytics
+        public float GetCurrentCash() => Cash;
+        public float GetBalance() => Cash; // For compatibility
+
+        // Implementation of new ICurrencyManager methods
+        public bool SpendCurrency(int currencyType, float amount, string reason)
+        {
+            // Convert int currencyType to CurrencyType enum
+            CurrencyType type = (CurrencyType)currencyType;
+            return SpendCurrency(type, amount, reason);
+        }
+
+        public bool SpendCash(float amount)
+        {
+            return SpendCurrency(CurrencyType.Cash, amount, "Cash Spend");
+        }
+
+        public void AddCurrency(int currencyType, float amount, string reason)
+        {
+            // Convert int currencyType to CurrencyType enum
+            CurrencyType type = (CurrencyType)currencyType;
+            AddCurrency(type, amount, reason);
+        }
+
         // Events - forwarded from components
         public System.Action<CurrencyType, float, float> OnCurrencyChanged; // type, oldAmount, newAmount
         public System.Action<Transaction> OnTransactionCompleted;
@@ -83,11 +107,11 @@ namespace ProjectChimera.Systems.Economy
             ConfigureComponentIntegrations();
             InitializeAllComponents();
             SetupEventForwarding();
-            
+
             // Register with UpdateOrchestrator for centralized ticking
             var orchestrator = UpdateOrchestrator.Instance;
             orchestrator?.RegisterTickable(this);
-            
+
             LogInfo($"CurrencyManager initialized with ${_startingCash:F2} starting cash");
         }
 
@@ -111,26 +135,26 @@ namespace ProjectChimera.Systems.Economy
         #endregion
 
         #region ITickable Implementation
-        
+
         int ITickable.Priority => TickPriority.EconomyManager;
         bool ITickable.Enabled => IsInitialized;
-        
+
         public void Tick(float deltaTime)
         {
             if (!IsInitialized) return;
-            
+
             _economyBalance?.Tick(deltaTime);
             _exchangeRates?.Tick(deltaTime);
-            
+
             // Detect currency changes for events
             _economyBalance?.DetectCurrencyChanges(AllCurrencies, _lastKnownBalances);
         }
-        
+
         public void OnRegistered()
         {
             // Called when registered with UpdateOrchestrator
         }
-        
+
         public void OnUnregistered()
         {
             // Called when unregistered from UpdateOrchestrator
@@ -158,11 +182,6 @@ namespace ProjectChimera.Systems.Economy
         public float GetCurrencyAmount(CurrencyType currencyType)
         {
             return _currencyCore?.GetCurrencyAmount(currencyType) ?? 0f;
-        }
-
-        public float GetBalance()
-        {
-            return _currencyCore?.GetBalance() ?? 0f;
         }
 
         public float GetBalance(CurrencyType currencyType)

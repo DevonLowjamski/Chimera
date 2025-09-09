@@ -6,6 +6,7 @@ using System.Linq;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Construction;
 using ProjectChimera.Data.Economy;
+using ProjectChimera.Systems.Analytics;
 
 namespace ProjectChimera.Systems.Construction
 {
@@ -39,7 +40,7 @@ namespace ProjectChimera.Systems.Construction
 
         // Core references
         private GridSystem _gridSystem;
-        private MonoBehaviour _currencyManager;
+        private ICurrencyManager _currencyManager;
         private MonoBehaviour _tradingManager;
 
         // Payment components
@@ -133,7 +134,7 @@ namespace ProjectChimera.Systems.Construction
 
             // TODO: Replace with proper service resolution once managers are updated
             var currencyObj = GameObject.Find("CurrencyManager"); // Temporary until service container is fully implemented
-            _currencyManager = currencyObj?.GetComponent<MonoBehaviour>();
+            _currencyManager = currencyObj?.GetComponent<ICurrencyManager>();
 
             var tradingObj = GameObject.Find("TradingManager"); // Temporary until service container is fully implemented
             _tradingManager = tradingObj?.GetComponent<MonoBehaviour>();

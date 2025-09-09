@@ -60,6 +60,12 @@ jobs:
           exit 1
         fi
         
+        # Check for dangerous reflection patterns
+        if grep -r "GetType()\.GetField\|GetType()\.GetProperty\|GetType()\.GetMethod" Assets/ProjectChimera --include="*.cs" --exclude-dir="Testing" | grep -v "DependencyInjection" | grep -v "ServiceCollection"; then
+          echo "❌ FAIL: Dangerous reflection patterns detected - use proper interfaces"
+          exit 1
+        fi
+        
         echo "✅ PASS: No anti-patterns detected"
         
     - name: Dependency Injection Validation

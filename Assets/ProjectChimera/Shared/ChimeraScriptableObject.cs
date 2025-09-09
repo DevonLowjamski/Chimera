@@ -30,6 +30,15 @@ namespace ProjectChimera.Shared
     {
         public string UniqueID => name;
         public string DisplayName => name;
+        
+        /// <summary>
+        /// Sets display name for editor configuration (replaces dangerous reflection access)
+        /// </summary>
+        public virtual void SetDisplayNameFromAssetName()
+        {
+            // Base implementation - derived classes can override for specific behavior
+            name = string.IsNullOrEmpty(name) ? GetType().Name : name;
+        }
 
         protected virtual void OnValidate()
         {

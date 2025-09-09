@@ -21,73 +21,73 @@ namespace ProjectChimera.UI.Core
         [SerializeField] private List<UIDataBindingSO> _dataBindings = new List<UIDataBindingSO>();
         [SerializeField] private bool _enableAutoDiscovery = true;
         [SerializeField] private float _dataRefreshInterval = 0.1f;
-        
+
         [Header("Debug Configuration")]
         [SerializeField] private bool _logIntegrationEvents = true;
         [SerializeField] private bool _logDataBindings = false;
         [SerializeField] private bool _logManagerCommunication = true;
-        
+
         // System references
         // private GameUIManager _uiManager;
         private Dictionary<Type, ChimeraManager> _managerReferences = new Dictionary<Type, ChimeraManager>();
-        
+
         // Integration state
         private Dictionary<string, UIDataBindingSO> _activeBindings = new Dictionary<string, UIDataBindingSO>();
         private Dictionary<string, UIEventChannelSO> _channelRegistry = new Dictionary<string, UIEventChannelSO>();
         private Queue<IntegrationTask> _integrationTasks = new Queue<IntegrationTask>();
-        
+
         // Data cache and synchronization
         private Dictionary<string, object> _managerDataCache = new Dictionary<string, object>();
         private Dictionary<string, DateTime> _lastDataUpdate = new Dictionary<string, DateTime>();
         private bool _isProcessingTasks = false;
         private float _lastDataRefreshTime = 0f;
-        
+
         public override ManagerPriority Priority => ManagerPriority.High;
-        
+
         // Properties
         public UIEventChannelSO GlobalEventChannel => _globalEventChannel;
         public IReadOnlyDictionary<string, UIDataBindingSO> ActiveBindings => _activeBindings;
         public IReadOnlyDictionary<string, UIEventChannelSO> EventChannels => _channelRegistry;
         public bool IsIntegrationActive { get; private set; }
-        
+
         // Events
         public event Action OnIntegrationInitialized;
         public event Action<string, object> OnManagerDataUpdated;
         public event Action<UIEventData> OnUIEventProcessed;
         public event Action<string> OnBindingError;
-        
+
         protected override void OnManagerInitialize()
         {
             InitializeSystemReferences();
             SetupEventChannels();
             InitializeDataBindings();
             RegisterEventHandlers();
-            
+
             // Start integration processing
             IsIntegrationActive = true;
-            
+
             // Register with UpdateOrchestrator (replaces InvokeRepeating)
             UpdateOrchestrator.Instance.RegisterTickable(this);
-            
+
             OnIntegrationInitialized?.Invoke();
             // LogInfo("UI Integration Manager initialized with comprehensive manager communication");
         }
-        
+
         #region ITickable Implementation
-        
+
         int ITickable.Priority => TickPriority.UIManager;
         public bool Enabled => IsInitialized;
-        
+
         public void Tick(float deltaTime)
         {
             if (!IsInitialized) return;
-            
+
             // Process any pending integration tasks
             if (!_isProcessingTasks && _integrationTasks.Count > 0)
             {
                 ProcessIntegrationTasks();
             }
-            
+
             // Handle periodic data refresh (replaces InvokeRepeating)
             if (Time.time - _lastDataRefreshTime >= _dataRefreshInterval)
             {
@@ -95,9 +95,9 @@ namespace ProjectChimera.UI.Core
                 _lastDataRefreshTime = Time.time;
             }
         }
-        
+
         #endregion
-        
+
         private void InitializeSystemReferences()
         {
             // Get UI Manager reference
@@ -106,41 +106,44 @@ namespace ProjectChimera.UI.Core
             // {
                 // LogWarning("GameUIManager not found - UI integration will be limited");
             // }
-            
+
             // Discover and cache all manager references
             if (_enableAutoDiscovery)
             {
                 DiscoverManagers();
             }
-            
+
             LogInfo($"UI Integration initialized with {_managerReferences.Count} managers");
-        }        
+        }
         private void DiscoverManagers()
         {
             _managerReferences.Clear();
-            
+
             var gameManager = GameManager.Instance;
             if (gameManager == null) return;
-            
-            // Use reflection to find all manager types
-            var managerTypes = Assembly.GetExecutingAssembly().GetTypes()
-                // .Where(t => t.IsSubclassOf(typeof(ChimeraManager)) && !t.IsAbstract)
-                .ToList();
-            
+
+            // TODO: Replace with proper service discovery when service registry is implemented
+            // For now, manually specify known manager types to avoid reflection
+            var managerTypes = new List<Type>
+            {
+                // Add known manager types here when they are available
+                // typeof(GameUIManager),
+                // typeof(ConstructionManager),
+                // typeof(CultivationManager),
+                // etc.
+            };
+
             foreach (var managerType in managerTypes)
             {
                 try
                 {
-                    // Try to get manager instance using GetManager<T>()
-                    // var getManagerMethod = typeof(GameManager).GetMethod("GetManager")
-                        // .MakeGenericMethod(managerType);
-                    var getManagerMethod = (System.Reflection.MethodInfo)null; // Placeholder
-                    
-                    var manager = getManagerMethod.Invoke(gameManager, null) as ChimeraManager;
+                    // TODO: Replace with proper manager resolution when GameManager.GetManager<T>() is available
+                    // For now, skip manager discovery to avoid reflection
+                    ChimeraManager manager = null; // Placeholder
                     if (manager != null)
                     {
                         _managerReferences[managerType] = manager;
-                        
+
                         if (_logIntegrationEvents)
                         {
                             LogInfo($"Discovered manager: {managerType.Name}");
@@ -153,18 +156,18 @@ namespace ProjectChimera.UI.Core
                 }
             }
         }
-        
+
         private void SetupEventChannels()
         {
             _channelRegistry.Clear();
-            
+
             // Register global event channel
             if (_globalEventChannel != null)
             {
                 _channelRegistry["global"] = _globalEventChannel;
                 _globalEventChannel.OnUIEvent += HandleUIEvent;
             }
-            
+
             // Register specific event channels
             foreach (var channel in _eventChannels)
             {
@@ -174,13 +177,13 @@ namespace ProjectChimera.UI.Core
                     channel.OnUIEvent += HandleUIEvent;
                 }
             }
-            
+
             LogInfo($"Registered {_channelRegistry.Count} event channels");
-        }        
+        }
         private void InitializeDataBindings()
         {
             _activeBindings.Clear();
-            
+
             foreach (var binding in _dataBindings)
             {
                 if (binding != null)
@@ -189,10 +192,10 @@ namespace ProjectChimera.UI.Core
                     binding.ActivateBinding();
                 }
             }
-            
+
             LogInfo($"Initialized {_activeBindings.Count} data bindings");
         }
-        
+
         private void RegisterEventHandlers()
         {
             // Register with UI Manager if available
@@ -201,7 +204,7 @@ namespace ProjectChimera.UI.Core
                 // Add event handler registrations here when needed
             // }
         }
-        
+
         private void HandleUIEvent(UIEventData eventData)
         {
             var task = new IntegrationTask
@@ -210,27 +213,27 @@ namespace ProjectChimera.UI.Core
                 Data = eventData,
                 Timestamp = DateTime.Now
             };
-            
+
             _integrationTasks.Enqueue(task);
             OnUIEventProcessed?.Invoke(eventData);
-            
+
             if (_logIntegrationEvents)
             {
                 LogInfo($"Queued UI event: {eventData}");
             }
-        }        
+        }
         private void ProcessIntegrationTasks()
         {
             if (_isProcessingTasks || _integrationTasks.Count == 0)
                 return;
-            
+
             _isProcessingTasks = true;
-            
+
             try
             {
                 int tasksProcessed = 0;
                 const int maxTasksPerFrame = 10;
-                
+
                 while (_integrationTasks.Count > 0 && tasksProcessed < maxTasksPerFrame)
                 {
                     var task = _integrationTasks.Dequeue();
@@ -247,7 +250,7 @@ namespace ProjectChimera.UI.Core
                 _isProcessingTasks = false;
             }
         }
-        
+
         private void ProcessIntegrationTask(IntegrationTask task)
         {
             switch (task.Type)
@@ -258,23 +261,23 @@ namespace ProjectChimera.UI.Core
                         ProcessUIEventData(eventData);
                     }
                     break;
-                    
+
                 case TaskType.UpdateManagerData:
                     // Process manager data updates
                     break;
-                    
+
                 case TaskType.ExecuteAction:
                     if (task.Data is string actionId)
                     {
                         ExecuteManagerAction(actionId);
                     }
                     break;
-                    
+
                 case TaskType.RefreshBindings:
                     RefreshAllDataBindings();
                     break;
             }
-        }        
+        }
         private void ProcessUIEventData(UIEventData eventData)
         {
             // Route event to appropriate manager based on target
@@ -283,7 +286,7 @@ namespace ProjectChimera.UI.Core
                 LogInfo($"Processing UI event data: {eventData}");
             // }
         }
-        
+
         private void ExecuteManagerAction(string actionId)
         {
             try
@@ -293,7 +296,7 @@ namespace ProjectChimera.UI.Core
                 {
                     var managerName = parts[0];
                     var methodName = parts[1];
-                    
+
                     // if (_logManagerCommunication)
                     // {
                         LogInfo($"Executing action: {actionId}");
@@ -305,18 +308,18 @@ namespace ProjectChimera.UI.Core
                 LogError($"Failed to execute action {actionId}: {ex.Message}");
             }
         }
-        
+
         private void RefreshAllDataBindings()
         {
             foreach (var binding in _activeBindings.Values)
             {
                 // Refresh binding data
             }
-        }        
+        }
         private void RefreshManagerData()
         {
             if (!IsIntegrationActive) return;
-            
+
             foreach (var managerKvp in _managerReferences)
             {
                 try
@@ -326,7 +329,7 @@ namespace ProjectChimera.UI.Core
                     var cacheKey = managerKvp.Key.Name;
                     _managerDataCache[cacheKey] = managerData;
                     _lastDataUpdate[cacheKey] = DateTime.Now;
-                    
+
                     OnManagerDataUpdated?.Invoke(cacheKey, managerData);
                 }
                 catch (Exception ex)
@@ -335,11 +338,11 @@ namespace ProjectChimera.UI.Core
                 }
             }
         }
-        
+
         protected override void OnManagerShutdown()
         {
             IsIntegrationActive = false;
-            
+
             // Cleanup event subscriptions
             foreach (var channel in _channelRegistry.Values)
             {
@@ -348,13 +351,13 @@ namespace ProjectChimera.UI.Core
                     channel.OnUIEvent -= HandleUIEvent;
                 }
             }
-            
+
             // Deactivate all bindings
             foreach (var binding in _activeBindings.Values)
             {
                 binding.DeactivateBinding();
             }
-            
+
             // Clear collections
             _activeBindings.Clear();
             _channelRegistry.Clear();
@@ -362,10 +365,10 @@ namespace ProjectChimera.UI.Core
             _managerDataCache.Clear();
             _lastDataUpdate.Clear();
             _integrationTasks.Clear();
-            
+
             // LogInfo("UI Integration Manager shutdown complete");
         }
-        
+
         private void OnDestroy()
         {
             if (UpdateOrchestrator.Instance != null)
@@ -373,7 +376,7 @@ namespace ProjectChimera.UI.Core
                 UpdateOrchestrator.Instance.UnregisterTickable(this);
             }
         }
-    }    
+    }
     /// <summary>
     /// Task for integration processing
     /// </summary>
@@ -385,7 +388,7 @@ namespace ProjectChimera.UI.Core
         public DateTime Timestamp;
         public int Priority = 0;
     }
-    
+
     /// <summary>
     /// Types of integration tasks
     /// </summary>

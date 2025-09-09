@@ -257,15 +257,9 @@ namespace ProjectChimera.Core.DependencyInjection
             var childContainerObject = new GameObject("ChildContainer");
             var childContainer = childContainerObject.AddComponent<ChimeraDIContainer>();
             
-            // Copy configuration settings using reflection since fields are private
-            var containerType = typeof(ChimeraDIContainer);
-            var debugField = containerType.GetField("_enableDebugLogging", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var validationField = containerType.GetField("_enableValidation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var metricsField = containerType.GetField("_enablePerformanceMetrics", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
-            debugField?.SetValue(childContainer, _enableDebugLogging);
-            validationField?.SetValue(childContainer, _enableValidation);
-            metricsField?.SetValue(childContainer, _enablePerformanceMetrics);
+            // Copy configuration settings using proper API instead of dangerous reflection
+            var (debugLogging, validation, performanceMetrics) = GetConfiguration();
+            childContainer.ConfigureContainer(debugLogging, validation, performanceMetrics);
             
             // Copy parent registrations
             foreach (var service in _services)

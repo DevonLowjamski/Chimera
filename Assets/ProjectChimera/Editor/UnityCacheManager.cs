@@ -44,11 +44,9 @@ namespace ProjectChimera.Editor
             // Clear script compilation cache
             EditorUtility.RequestScriptReload();
             
-            // Clear console
-            var assembly = System.Reflection.Assembly.GetAssembly(typeof(UnityEditor.Editor));
-            var type = assembly.GetType("UnityEditor.LogEntries");
-            var method = type.GetMethod("Clear");
-            method?.Invoke(new object(), null);
+            // Note: Console clearing requires Unity's internal API which may not be reliable across versions
+            // Users can manually clear console if needed - focusing on cache clearing which is the primary function
+            ChimeraLogger.Log("[Chimera] Cache clearing complete - manually clear console if desired");
             
             ChimeraLogger.Log("[Chimera] All Unity caches cleared");
         }

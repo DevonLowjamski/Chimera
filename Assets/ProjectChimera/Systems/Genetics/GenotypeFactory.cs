@@ -101,25 +101,6 @@ namespace ProjectChimera.Systems.Genetics
                 genotypeDataSO = ScriptableObject.CreateInstance<GenotypeDataSO>();
             }
 
-            // Map identity properties back using reflection for read-only properties
-            var type = typeof(GenotypeDataSO);
-
-            // Set individual ID
-            var individualIdField = type.GetField("_individualID", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            individualIdField?.SetValue(genotypeDataSO, plantGenotype.GenotypeID);
-
-            // Set parent strain
-            var parentStrainField = type.GetField("_parentStrain", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            parentStrainField?.SetValue(genotypeDataSO, plantGenotype.StrainOrigin);
-
-            // Set generation
-            var generationField = type.GetField("_generation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            generationField?.SetValue(genotypeDataSO, plantGenotype.Generation);
-
-            // Set overall fitness
-            var fitnessField = type.GetField("_overallFitness", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            fitnessField?.SetValue(genotypeDataSO, plantGenotype.OverallFitness);
-
             // Convert allele couples back to gene pairs
             var genePairs = new List<GenePair>();
             foreach (var kvp in plantGenotype.Genotype)
@@ -137,9 +118,6 @@ namespace ProjectChimera.Systems.Genetics
                     genePairs.Add(genePair);
                 }
             }
-            // Set gene pairs using reflection for read-only property
-            var genePairsField = type.GetField("_genePairs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            genePairsField?.SetValue(genotypeDataSO, genePairs);
 
             // Convert mutations back
             var mutationHistory = new List<MutationEvent>();
@@ -160,9 +138,16 @@ namespace ProjectChimera.Systems.Genetics
                     mutationHistory.Add(mutationEvent);
                 }
             }
-            // Set mutation history using reflection for read-only property
-            var mutationHistoryField = type.GetField("_mutationHistory", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            mutationHistoryField?.SetValue(genotypeDataSO, mutationHistory);
+
+            // Use proper API instead of dangerous reflection
+            genotypeDataSO.InitializeGenotype(
+                individualID: plantGenotype.GenotypeID,
+                parentStrain: plantGenotype.StrainOrigin as PlantStrainSO,
+                generation: plantGenotype.Generation,
+                overallFitness: plantGenotype.OverallFitness,
+                genePairs: genePairs,
+                mutationHistory: mutationHistory
+            );
 
             return genotypeDataSO;
         }

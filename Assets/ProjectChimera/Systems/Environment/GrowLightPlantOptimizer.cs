@@ -6,6 +6,7 @@ using System.Linq;
 using ProjectChimera.Data.Cultivation;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Core;
+using ProjectChimera.Systems.Cultivation;
 
 namespace ProjectChimera.Systems.Environment
 {
@@ -357,17 +358,16 @@ namespace ProjectChimera.Systems.Environment
         }
 
         /// <summary>
-        /// Get plant growth stage from component using reflection if needed
+        /// Get plant growth stage from component using interface
         /// </summary>
         private ProjectChimera.Data.Shared.PlantGrowthStage GetPlantGrowthStage(MonoBehaviour plantComponent)
         {
             if (plantComponent == null) return ProjectChimera.Data.Shared.PlantGrowthStage.Seed;
 
-            // Try to get CurrentGrowthStage property using reflection
-            var property = plantComponent.GetType().GetProperty("CurrentGrowthStage");
-            if (property != null && property.PropertyType == typeof(ProjectChimera.Data.Shared.PlantGrowthStage))
+            // Use interface instead of reflection
+            if (plantComponent is ProjectChimera.Systems.Cultivation.IPlantGrowthStageProvider provider)
             {
-                return (ProjectChimera.Data.Shared.PlantGrowthStage)property.GetValue(plantComponent);
+                return provider.CurrentGrowthStage;
             }
 
             return ProjectChimera.Data.Shared.PlantGrowthStage.Seed; // Default

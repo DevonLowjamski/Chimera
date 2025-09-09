@@ -631,7 +631,7 @@ namespace ProjectChimera.Systems.UI.Advanced
             }
         }
 
-        private void CloseAllMenus()
+        public void CloseAllMenus()
         {
             var menuIds = _activeMenus.Keys.ToArray();
             foreach (var menuId in menuIds)

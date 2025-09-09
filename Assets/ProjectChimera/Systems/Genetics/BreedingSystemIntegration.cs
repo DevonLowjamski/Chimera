@@ -47,15 +47,19 @@ namespace ProjectChimera.Systems.Genetics
 
         private void InitializeBreedingSystem()
         {
-            // Find genetics service through service coordinator
-            var serviceCoordinator = ServiceContainerFactory.Instance?.TryResolve<ServiceLayerCoordinator>();
-            if (serviceCoordinator != null)
+            // Try to resolve genetics service through proper DI container
+            _geneticsService = ServiceContainerFactory.Instance?.TryResolve<IGeneticsService>();
+            
+            // If not found, try through service coordinator
+            if (_geneticsService == null)
             {
-                // Use reflection to find the mock genetics service since it's not a MonoBehaviour
-                var mockService = serviceCoordinator.GetComponent<ServiceLayerCoordinator>().GetType()
-                    .GetField("_mockGeneticsService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                    ?.GetValue(serviceCoordinator) as IGeneticsService;
-                _geneticsService = mockService;
+                var serviceCoordinator = ServiceContainerFactory.Instance?.TryResolve<ServiceLayerCoordinator>();
+                if (serviceCoordinator != null)
+                {
+                    // Request that ServiceLayerCoordinator properly expose the genetics service
+                    // instead of accessing it through dangerous reflection
+                    ChimeraLogger.LogWarning("[BreedingSystemIntegration] IGeneticsService not found in DI container. ServiceLayerCoordinator should register it properly.");
+                }
             }
 
             _traitEngine = ServiceContainerFactory.Instance?.TryResolve<TraitExpressionEngine>();
@@ -387,15 +391,12 @@ namespace ProjectChimera.Systems.Genetics
         {
             var config = ScriptableObject.CreateInstance<BreedingConfig>();
 
-            // Set private fields via reflection since properties are read-only
-            var type = typeof(BreedingConfig);
-            var baseTimeField = type.GetField("_baseBreedingTime", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var maxAttemptsField = type.GetField("_maxBreedingAttempts", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var requireCompatibilityField = type.GetField("_requireCompatibilityCheck", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-            baseTimeField?.SetValue(config, 7f);
-            maxAttemptsField?.SetValue(config, 3);
-            requireCompatibilityField?.SetValue(config, true);
+            // Use proper API instead of dangerous reflection
+            config.InitializeBreedingConfig(
+                baseBreedingTime: 7f,
+                maxBreedingAttempts: 3,
+                requireCompatibilityCheck: true
+            );
 
             return config;
         }

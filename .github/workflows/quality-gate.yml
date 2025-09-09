@@ -58,6 +58,21 @@ jobs:
           echo "✅ PASS: No raw Debug.Log violations found"
         fi
         
+    - name: Check for dangerous reflection violations
+      run: |
+        echo "🔍 Scanning for dangerous reflection patterns..."
+        # Check for reflection field/property/method access outside DI framework
+        VIOLATIONS=$(grep -r "GetType()\.GetField\|GetType()\.GetProperty\|GetType()\.GetMethod" Assets/ProjectChimera --include="*.cs" | grep -v "Test" | grep -v "\.backup" | grep -v "DependencyInjection" | grep -v "ServiceCollection" || true)
+        if [ ! -z "$VIOLATIONS" ]; then
+          echo "❌ FAIL: Dangerous reflection patterns detected:"
+          echo "$VIOLATIONS"
+          echo ""
+          echo "Replace with proper interfaces or direct property/method access"
+          exit 1
+        else
+          echo "✅ PASS: No dangerous reflection violations found"
+        fi
+        
     - name: Check for GetComponent in lifecycle methods (Warning)
       run: |
         echo "🔍 Scanning for GetComponent in Awake/Start/Update methods..."
@@ -79,4 +94,5 @@ jobs:
         echo "✅ No FindObjectOfType anti-patterns"
         echo "✅ No Resources.Load anti-patterns" 
         echo "✅ No raw Debug.Log calls outside diagnostics"
+        echo "✅ No dangerous reflection violations"
         echo "✅ Ready for Phase 1 development"

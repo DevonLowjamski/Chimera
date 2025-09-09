@@ -150,9 +150,7 @@ namespace ProjectChimera.Editor
             // Check if display name is empty
             if (string.IsNullOrEmpty(eventChannel.DisplayName))
             {
-                var displayNameField = typeof(ChimeraScriptableObject).GetField("_displayName", 
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                displayNameField?.SetValue(eventChannel, eventChannel.name);
+                eventChannel.SetDisplayNameFromAssetName();
                 needsUpdate = true;
             }
             

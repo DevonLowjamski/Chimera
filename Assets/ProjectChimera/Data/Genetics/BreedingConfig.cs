@@ -77,6 +77,16 @@ namespace ProjectChimera.Data.Genetics
         public List<CompatibilityRule> CompatibilityRules => _compatibilityRules;
         public ResourceRequirement[] BreedingCosts => _breedingCosts;
         public float PedigreeCostMultiplier => _pedigreeCostMultiplier;
+
+        /// <summary>
+        /// Initialize breeding configuration programmatically (replaces reflection-based setup)
+        /// </summary>
+        public void InitializeBreedingConfig(float baseBreedingTime, int maxBreedingAttempts, bool requireCompatibilityCheck)
+        {
+            _baseBreedingTime = baseBreedingTime;
+            _maxBreedingAttempts = maxBreedingAttempts;
+            _requireCompatibilityCheck = requireCompatibilityCheck;
+        }
         
         /// <summary>
         /// Calculate breeding success rate for specific parents

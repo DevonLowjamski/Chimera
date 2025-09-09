@@ -39,6 +39,24 @@ namespace ProjectChimera.Core.DependencyInjection
         public int SingletonCount => _singletonInstances.Count;
         
         /// <summary>
+        /// Configure container settings (replaces reflection-based setup)
+        /// </summary>
+        public void ConfigureContainer(bool enableDebugLogging, bool enableValidation, bool enablePerformanceMetrics)
+        {
+            _enableDebugLogging = enableDebugLogging;
+            _enableValidation = enableValidation;
+            _enablePerformanceMetrics = enablePerformanceMetrics;
+        }
+        
+        /// <summary>
+        /// Get current configuration settings (replaces reflection-based access)
+        /// </summary>
+        public (bool debugLogging, bool validation, bool performanceMetrics) GetConfiguration()
+        {
+            return (_enableDebugLogging, _enableValidation, _enablePerformanceMetrics);
+        }
+        
+        /// <summary>
         /// Registers a singleton service instance
         /// </summary>
         public void RegisterSingleton<T>(T instance) where T : class

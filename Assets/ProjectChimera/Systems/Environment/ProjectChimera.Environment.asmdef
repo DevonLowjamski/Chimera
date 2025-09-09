@@ -7,6 +7,8 @@
         "ProjectChimera.Systems.Events",
         "ProjectChimera.Systems.Registry",
         "ProjectChimera.Systems.Diagnostics",
+        "ProjectChimera.Systems.Cultivation",
+        "ProjectChimera.Systems.Analytics",
         "ProjectChimera.Shared",
         "ProjectChimera.Data.Shared",
         "ProjectChimera.Data.Cultivation",

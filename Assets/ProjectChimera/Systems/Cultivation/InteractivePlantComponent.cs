@@ -14,10 +14,18 @@ using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 namespace ProjectChimera.Systems.Cultivation
 {
     /// <summary>
+    /// Interface for plant components that provide growth stage information
+    /// </summary>
+    public interface IPlantGrowthStageProvider
+    {
+        PlantGrowthStage CurrentGrowthStage { get; }
+    }
+
+    /// <summary>
     /// Interactive plant component for Project Chimera cultivation system.
     /// Handles player interactions with individual plants including harvesting, treatment, and inspection.
     /// </summary>
-    public class InteractivePlantComponent : MonoBehaviour
+    public class InteractivePlantComponent : MonoBehaviour, IPlantGrowthStageProvider
     {
         [Header("Plant Configuration")]
         [SerializeField] private object _plantStrain;

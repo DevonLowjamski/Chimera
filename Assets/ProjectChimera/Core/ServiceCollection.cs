@@ -204,6 +204,11 @@ namespace ProjectChimera.Core.DependencyInjection
         private readonly List<ProjectChimera.Core.IServiceScope> _activeScopes = new List<ProjectChimera.Core.IServiceScope>();
         private bool _disposed = false;
 
+        /// <summary>
+        /// Get the underlying container (replaces reflection-based access)
+        /// </summary>
+        public IServiceContainer UnderlyingContainer => _container;
+
         public ServiceProviderAdapter(IServiceContainer container, ServiceProviderOptions options)
         {
             _container = container ?? throw new ArgumentNullException(nameof(container));
