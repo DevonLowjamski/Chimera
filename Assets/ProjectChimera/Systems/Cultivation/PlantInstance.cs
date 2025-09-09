@@ -856,6 +856,36 @@ namespace ProjectChimera.Systems.Cultivation
         {
             return UnityEngine.Random.Range(1000, 9999).ToString();
         }
+
+        /// <summary>
+        /// Apply growth rate modification
+        /// </summary>
+        public void ApplyGrowthRate(float growthRate, float deltaTime)
+        {
+            _growthProgress += growthRate * deltaTime;
+            _overallGrowthProgress = Mathf.Clamp01(_overallGrowthProgress + (growthRate * deltaTime * 0.1f));
+        }
+
+        /// <summary>
+        /// Set current health value
+        /// </summary>
+        public void SetCurrentHealth(float health)
+        {
+            _currentHealth = Mathf.Clamp01(health);
+        }
+
+        /// <summary>
+        /// Set environmental fitness value
+        /// </summary>
+        public void SetEnvironmentalFitness(float fitness)
+        {
+            _environmentalFitness = Mathf.Clamp01(fitness);
+        }
+
+        /// <summary>
+        /// Get total days grown (property for TotalDaysGrown)
+        /// </summary>
+        public int TotalDaysGrown => _daysSincePlanted;
     }
 
 

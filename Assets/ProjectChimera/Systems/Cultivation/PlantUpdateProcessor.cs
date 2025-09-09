@@ -40,7 +40,29 @@ namespace ProjectChimera.Systems.Cultivation
 
         public PlantUpdateProcessor(PlantUpdateConfiguration configuration = null)
         {
-            _configuration = configuration ?? PlantUpdateConfiguration.CreateDefault();
+            _configuration = configuration ?? new PlantUpdateConfiguration();
+            InitializeProcessor();
+        }
+
+        /// <summary>
+        /// Constructor with individual feature flags for compatibility
+        /// </summary>
+        public PlantUpdateProcessor(bool enableStressSystem, bool enableGxEInteractions, bool enableAdvancedGenetics)
+        {
+            _configuration = new PlantUpdateConfiguration
+            {
+                EnableStressSystem = enableStressSystem,
+                EnableGxEInteractions = enableGxEInteractions,
+                EnableAdvancedGenetics = enableAdvancedGenetics
+            };
+            InitializeProcessor();
+        }
+
+        /// <summary>
+        /// Initialize the processor with the current configuration
+        /// </summary>
+        private void InitializeProcessor()
+        {
             _statistics = new UpdateStatistics();
 
             // Initialize component systems
@@ -66,7 +88,7 @@ namespace ProjectChimera.Systems.Cultivation
             _healthSystem.Initialize(strain, traits?.DiseaseResistance ?? 1f, _configuration);
             _environmentalSystem.Initialize(strain, _configuration);
 
-            ChimeraLogger.LogDebug($"[PlantUpdateProcessor] Initialized for strain: {strain?.GetType().Name}");
+            ChimeraLogger.LogVerbose($"[PlantUpdateProcessor] Initialized for strain: {strain?.GetType().Name}");
         }
 
         /// <summary>
@@ -214,7 +236,7 @@ namespace ProjectChimera.Systems.Cultivation
                 }
 
                 _statistics.ProcessedBatches++;
-                ChimeraLogger.LogDebug($"[PlantUpdateProcessor] Batch processed {successfulUpdates} plants in {plantsByStrain.Count} strain groups");
+                ChimeraLogger.LogVerbose($"[PlantUpdateProcessor] Batch processed {successfulUpdates} plants in {plantsByStrain.Count} strain groups");
             }
             catch (System.Exception ex)
             {

@@ -600,5 +600,11 @@ namespace ProjectChimera.Systems.Cultivation
         public float HealthBefore;
         public float HealthAfter;
         public string Description;
+
+        // Additional properties for compatibility
+        public float Timestamp => (float)(EventDate - System.DateTime.UnixEpoch).TotalSeconds;
+        public float Health => HealthAfter;
+        public float Change => HealthAfter - HealthBefore;
+        public float StressLevel => 1f - HealthAfter; // Simplified stress calculation
     }
 }

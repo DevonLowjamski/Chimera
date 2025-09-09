@@ -381,6 +381,10 @@ namespace ProjectChimera.Systems.Cultivation
         public Dictionary<string, float> Terpenes;
         public int FloweringDays;
         public float FinalHealth;
+        public int TotalDaysGrown;
+        public float BudDensity;
+        public float TrichomeProduction;
+        public float EstimatedValue;
 
         public HarvestResults()
         {

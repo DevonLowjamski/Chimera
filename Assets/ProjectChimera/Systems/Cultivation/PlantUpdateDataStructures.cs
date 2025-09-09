@@ -10,7 +10,7 @@ namespace ProjectChimera.Systems.Cultivation
     /// Core data structures and types for the Plant Update Processing system.
     /// Contains internal classes, performance metrics, and supporting data types.
     /// </summary>
-    
+
     /// <summary>
     /// Minimal local stub to decouple from genetics stress types during early phase
     /// </summary>
@@ -20,17 +20,17 @@ namespace ProjectChimera.Systems.Cultivation
         public float OverallStressLevel { get; set; }
         public float AdaptiveCapacity { get; set; }
         public List<StressFactor> ActiveStresses { get; set; } = new List<StressFactor>();
-        
+
         /// <summary>
         /// Check if the stress response indicates significant stress
         /// </summary>
         public bool HasSignificantStress => OverallStressLevel > 0.3f;
-        
+
         /// <summary>
         /// Check if the plant has good adaptive capacity
         /// </summary>
         public bool HasGoodAdaptiveCapacity => AdaptiveCapacity > 0.7f;
-        
+
         /// <summary>
         /// Get the most severe stress factor
         /// </summary>
@@ -38,7 +38,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             StressFactor mostSevere = null;
             float maxSeverity = 0f;
-            
+
             foreach (var stress in ActiveStresses)
             {
                 if (stress.Severity > maxSeverity)
@@ -47,7 +47,7 @@ namespace ProjectChimera.Systems.Cultivation
                     mostSevere = stress;
                 }
             }
-            
+
             return mostSevere;
         }
     }
@@ -62,7 +62,7 @@ namespace ProjectChimera.Systems.Cultivation
         public float Severity { get; set; }
         public float Duration { get; set; }
         public bool IsAcute { get; set; } // True for sudden stress, false for chronic
-        
+
         /// <summary>
         /// Get stress type name for processing
         /// </summary>
@@ -70,13 +70,13 @@ namespace ProjectChimera.Systems.Cultivation
         {
             return StressType?.ToString() ?? "Unknown";
         }
-        
+
         /// <summary>
         /// Check if this is a critical stress level
         /// </summary>
         public bool IsCritical => Severity > 0.8f;
     }
-    
+
     /// <summary>
     /// Active stressor affecting plant health
     /// </summary>
@@ -88,30 +88,30 @@ namespace ProjectChimera.Systems.Cultivation
         public StressSource StressSource { get; set; }
         public float StartTime { get; set; }
         public float Duration { get; set; }
-        
+
         /// <summary>
         /// Check if the stressor has been active for a significant duration
         /// </summary>
         public bool IsChronic => Duration > 300f; // 5 minutes
-        
+
         /// <summary>
         /// Get the current severity based on intensity and duration
         /// </summary>
         public float GetCurrentSeverity()
         {
             float baseSeverity = Intensity * StressSource.StressMultiplier;
-            
+
             // Chronic stress becomes more severe over time
             if (IsChronic)
             {
                 float chronicMultiplier = 1f + (Duration - 300f) / 600f; // +50% after 10 minutes
                 baseSeverity *= Mathf.Clamp(chronicMultiplier, 1f, 1.5f);
             }
-            
+
             return Mathf.Clamp01(baseSeverity);
         }
     }
-    
+
     /// <summary>
     /// Source of stress affecting plant health
     /// </summary>
@@ -122,7 +122,7 @@ namespace ProjectChimera.Systems.Cultivation
         public float DamagePerSecond { get; set; }
         public float StressMultiplier { get; set; } = 1f;
         public string Description { get; set; }
-        
+
         /// <summary>
         /// Check if this is a biotic stress source
         /// </summary>
@@ -131,18 +131,18 @@ namespace ProjectChimera.Systems.Cultivation
             var typeName = StressType?.ToString() ?? "";
             return typeName.Contains("Biotic") || typeName.Contains("Disease") || typeName.Contains("Pest");
         }
-        
+
         /// <summary>
         /// Check if this is an abiotic stress source
         /// </summary>
         public bool IsAbiotic()
         {
             var typeName = StressType?.ToString() ?? "";
-            return typeName.Contains("Abiotic") || typeName.Contains("Temperature") || 
+            return typeName.Contains("Abiotic") || typeName.Contains("Temperature") ||
                    typeName.Contains("Light") || typeName.Contains("Water") || typeName.Contains("Nutrient");
         }
     }
-    
+
     /// <summary>
     /// Performance metrics for genetic calculations
     /// </summary>
@@ -157,7 +157,7 @@ namespace ProjectChimera.Systems.Cultivation
         public double AverageUpdateTimeMs { get; set; }
         public int CacheSize { get; set; }
         public DateTime LastUpdate { get; set; }
-        
+
         /// <summary>
         /// Check if performance is within acceptable thresholds
         /// </summary>
@@ -167,7 +167,7 @@ namespace ProjectChimera.Systems.Cultivation
                    CacheHitRatio > 0.7 && // At least 70% cache hit rate
                    AverageUpdateTimeMs < 10.0; // Less than 10ms per update
         }
-        
+
         /// <summary>
         /// Get performance summary string
         /// </summary>
@@ -177,7 +177,7 @@ namespace ProjectChimera.Systems.Cultivation
                    $"Cache Hit: {CacheHitRatio:P1}, Batch Avg: {AverageBatchTimeMs:F2}ms";
         }
     }
-    
+
     /// <summary>
     /// Cannabinoid profile for harvest results
     /// </summary>
@@ -191,7 +191,7 @@ namespace ProjectChimera.Systems.Cultivation
         public float CBC { get; set; }
         public float THCA { get; set; }
         public float CBDA { get; set; }
-        
+
         /// <summary>
         /// Get total cannabinoid content
         /// </summary>
@@ -199,7 +199,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             return THC + CBD + CBG + CBN + CBC + THCA + CBDA;
         }
-        
+
         /// <summary>
         /// Get THC to CBD ratio
         /// </summary>
@@ -207,23 +207,23 @@ namespace ProjectChimera.Systems.Cultivation
         {
             return CBD > 0f ? THC / CBD : float.MaxValue;
         }
-        
+
         /// <summary>
         /// Classify the cannabinoid profile
         /// </summary>
         public string GetProfileType()
         {
             float ratio = GetTHCToCBDRatio();
-            
+
             if (THC > 0.15f && CBD < 0.05f) return "THC Dominant";
             if (CBD > 0.15f && THC < 0.05f) return "CBD Dominant";
             if (ratio >= 0.5f && ratio <= 2f) return "Balanced";
             if (THC < 0.05f && CBD < 0.05f) return "Low Potency";
-            
+
             return "Mixed Profile";
         }
     }
-    
+
     /// <summary>
     /// Terpene profile for harvest results
     /// </summary>
@@ -238,16 +238,16 @@ namespace ProjectChimera.Systems.Cultivation
         public float Humulene { get; set; }
         public float Terpinolene { get; set; }
         public float Ocimene { get; set; }
-        
+
         /// <summary>
         /// Get total terpene content
         /// </summary>
         public float GetTotalTerpenes()
         {
-            return Myrcene + Limonene + Pinene + Linalool + 
+            return Myrcene + Limonene + Pinene + Linalool +
                    Caryophyllene + Humulene + Terpinolene + Ocimene;
         }
-        
+
         /// <summary>
         /// Get dominant terpene
         /// </summary>
@@ -264,10 +264,10 @@ namespace ProjectChimera.Systems.Cultivation
                 { "Terpinolene", Terpinolene },
                 { "Ocimene", Ocimene }
             };
-            
+
             string dominant = "None";
             float maxValue = 0f;
-            
+
             foreach (var kvp in terpenes)
             {
                 if (kvp.Value > maxValue)
@@ -276,17 +276,17 @@ namespace ProjectChimera.Systems.Cultivation
                     dominant = kvp.Key;
                 }
             }
-            
+
             return maxValue > 0.01f ? dominant : "None";
         }
-        
+
         /// <summary>
         /// Get aroma profile based on terpenes
         /// </summary>
         public string GetAromaProfile()
         {
             string dominant = GetDominantTerpene();
-            
+
             return dominant switch
             {
                 "Myrcene" => "Earthy, Musky",
@@ -301,7 +301,7 @@ namespace ProjectChimera.Systems.Cultivation
             };
         }
     }
-    
+
     /// <summary>
     /// Phenotypic traits affecting plant characteristics
     /// </summary>
@@ -316,18 +316,23 @@ namespace ProjectChimera.Systems.Cultivation
         public float StretchFactor { get; set; } = 1f;
         public float BudDensity { get; set; } = 1f;
         public float TrichromeProduction { get; set; } = 1f;
-        
+        public float PlantHeight { get; set; } = 1f; // meters
+        public float HeatTolerance { get; set; } = 1f;
+        public float ColdTolerance { get; set; } = 1f;
+        public float DroughtTolerance { get; set; } = 1f;
+        public float QualityMultiplier { get; set; } = 1f;
+
         /// <summary>
         /// Calculate overall plant quality based on traits
         /// </summary>
         public float GetOverallQuality()
         {
-            float qualityScore = (YieldMultiplier + PotencyMultiplier + DiseaseResistance + 
+            float qualityScore = (YieldMultiplier + PotencyMultiplier + DiseaseResistance +
                                  BudDensity + TrichromeProduction) / 5f;
-            
+
             return Mathf.Clamp01(qualityScore);
         }
-        
+
         /// <summary>
         /// Get trait category (Indica-dominant, Sativa-dominant, or Hybrid)
         /// </summary>
@@ -341,17 +346,17 @@ namespace ProjectChimera.Systems.Cultivation
             else
                 return "Hybrid";
         }
-        
+
         /// <summary>
         /// Check if traits indicate a premium cultivar
         /// </summary>
         public bool IsPremiumCultivar()
         {
-            return YieldMultiplier > 1.2f && PotencyMultiplier > 1.2f && 
+            return YieldMultiplier > 1.2f && PotencyMultiplier > 1.2f &&
                    DiseaseResistance > 0.8f && TrichromeProduction > 1.1f;
         }
     }
-    
+
     /// <summary>
     /// Configuration options for plant update processing
     /// </summary>
@@ -366,7 +371,7 @@ namespace ProjectChimera.Systems.Cultivation
         public int MaxCacheSize { get; set; } = 1000;
         public float StressThreshold { get; set; } = 0.3f;
         public float AdaptationRate { get; set; } = 0.1f;
-        
+
         /// <summary>
         /// Create default configuration
         /// </summary>
@@ -374,7 +379,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             return new PlantUpdateConfiguration();
         }
-        
+
         /// <summary>
         /// Create high-performance configuration
         /// </summary>
@@ -390,7 +395,7 @@ namespace ProjectChimera.Systems.Cultivation
                 MaxCacheSize = 500 // Smaller cache
             };
         }
-        
+
         /// <summary>
         /// Create maximum quality configuration
         /// </summary>
@@ -408,7 +413,7 @@ namespace ProjectChimera.Systems.Cultivation
             };
         }
     }
-    
+
     /// <summary>
     /// Update statistics for monitoring system performance
     /// </summary>
@@ -423,7 +428,7 @@ namespace ProjectChimera.Systems.Cultivation
         public DateTime LastUpdate { get; set; }
         public int ActivePlants { get; set; }
         public int ProcessedBatches { get; set; }
-        
+
         /// <summary>
         /// Get success rate percentage
         /// </summary>
@@ -431,7 +436,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             return TotalUpdates > 0 ? (double)SuccessfulUpdates / TotalUpdates * 100.0 : 0.0;
         }
-        
+
         /// <summary>
         /// Reset statistics
         /// </summary>
@@ -446,7 +451,7 @@ namespace ProjectChimera.Systems.Cultivation
             ProcessedBatches = 0;
             LastUpdate = DateTime.Now;
         }
-        
+
         /// <summary>
         /// Record a successful update
         /// </summary>
@@ -457,13 +462,13 @@ namespace ProjectChimera.Systems.Cultivation
                 SuccessfulUpdates++;
             else
                 FailedUpdates++;
-                
+
             // Update running average
             AverageUpdateTime = (AverageUpdateTime * (TotalUpdates - 1) + updateTime) / TotalUpdates;
-            
+
             if (updateTime > MaxUpdateTime)
                 MaxUpdateTime = updateTime;
-                
+
             LastUpdate = DateTime.Now;
         }
     }

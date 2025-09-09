@@ -119,10 +119,10 @@ namespace ProjectChimera.Systems.Cultivation
                     // dynamic geneticsStats = _geneticPerformanceMonitor; // Disabled to avoid CS0656 missing compiler required member error
                     var stats = new GeneticPerformanceStats
                     {
-                        TotalCalculations = _totalCalculations,
+                        TotalCalculations = (int)_totalCalculations,
                         AverageCalculationTimeMs = _totalCalculations > 0 ? _totalCalculationTime / _totalCalculations : 0.0,
                         CacheHitRatio = 0.8, // Placeholder
-                        BatchCalculations = _totalBatchCalculations,
+                        BatchCalculations = (int)_totalBatchCalculations,
                         AverageBatchTimeMs = _totalBatchCalculations > 0 ? _totalBatchTime / _totalBatchCalculations : 0.0,
                         AverageUpdateTimeMs = _recentCalculationTimes.Count > 0 ? _recentCalculationTimes.Average() : 0.0
                     };
@@ -134,10 +134,10 @@ namespace ProjectChimera.Systems.Cultivation
             // Fallback to internal tracking
             return new GeneticPerformanceStats
             {
-                TotalCalculations = _totalCalculations,
+                TotalCalculations = (int)_totalCalculations,
                 AverageCalculationTimeMs = _totalCalculations > 0 ? _totalCalculationTime / _totalCalculations : 0.0,
                 CacheHitRatio = 0.0, // Not tracked in fallback
-                BatchCalculations = _totalBatchCalculations,
+                BatchCalculations = (int)_totalBatchCalculations,
                 AverageBatchTimeMs = _totalBatchCalculations > 0 ? _totalBatchTime / _totalBatchCalculations : 0.0,
                 AverageUpdateTimeMs = _recentCalculationTimes.Count > 0 ? _recentCalculationTimes.Average() : 0.0
             };
