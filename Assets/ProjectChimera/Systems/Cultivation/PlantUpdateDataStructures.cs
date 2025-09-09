@@ -64,11 +64,30 @@ namespace ProjectChimera.Systems.Cultivation
         public bool IsAcute { get; set; } // True for sudden stress, false for chronic
 
         /// <summary>
+        /// Stress multiplier for damage calculation
+        /// </summary>
+        public float StressMultiplier { get; set; } = 1f;
+
+        /// <summary>
+        /// Damage per second for this stress factor
+        /// </summary>
+        public float DamagePerSecond { get; set; } = 0.01f;
+
+        /// <summary>
         /// Get stress type name for processing
         /// </summary>
         public string GetStressTypeName()
         {
             return StressType?.ToString() ?? "Unknown";
+        }
+
+        /// <summary>
+        /// Check if this stress factor is biotic (disease/pest related)
+        /// </summary>
+        public bool IsBiotic()
+        {
+            var typeName = GetStressTypeName();
+            return typeName.Contains("Disease") || typeName.Contains("Pest") || typeName.Contains("Biotic");
         }
 
         /// <summary>

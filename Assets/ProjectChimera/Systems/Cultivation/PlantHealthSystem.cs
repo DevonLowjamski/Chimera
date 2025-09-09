@@ -216,8 +216,7 @@ namespace ProjectChimera.Systems.Cultivation
             if (stressor.StressSource is ProjectChimera.Data.Simulation.EnvironmentalStressSO environmentalStress)
             {
                 damagePerSecond = environmentalStress.DamagePerSecond;
-                isBiotic = environmentalStress.StressType == ProjectChimera.Data.Simulation.StressType.Disease ||
-                          environmentalStress.StressType == ProjectChimera.Data.Simulation.StressType.Pest;
+                isBiotic = environmentalStress.StressType == ProjectChimera.Data.Simulation.StressType.Biotic;
             }
             else if (stressor.StressSource is StressFactor stressFactor)
             {
