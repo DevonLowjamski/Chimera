@@ -20,25 +20,25 @@ namespace ProjectChimera.Testing
         [SerializeField] private bool _enableTestLogging = true;
         [SerializeField] private bool _validatePerformance = true;
         [SerializeField] private int _performanceTestIterations = 100;
-        
+
         [Header("Performance Thresholds")]
         [SerializeField] private float _registrationThresholdMs = 1.0f;
         [SerializeField] private float _registrationSpikeThresholdMs = 5.0f;
         [SerializeField] private float _retrievalThresholdMs = 0.1f;
         [SerializeField] private float _retrievalSpikeThresholdMs = 1.0f;
-        
+
         // Test state
         private List<ValidationResult> _testResults = new List<ValidationResult>();
         private DIGameManager _gameManager;
         private bool _testsRunning = false;
-        
+
         // Events
         public event System.Action<List<ValidationResult>> OnTestsCompleted;
-        
+
         // Properties
         public List<ValidationResult> TestResults => new List<ValidationResult>(_testResults);
         public bool TestsRunning => _testsRunning;
-        
+
         private void Start()
         {
             if (_runTestsOnStart)
@@ -46,54 +46,54 @@ namespace ProjectChimera.Testing
                 StartCoroutine(RunPerformanceAndErrorTests());
             }
         }
-        
+
         /// <summary>
         /// Run all performance and error handling tests
         /// </summary>
         public IEnumerator RunPerformanceAndErrorTests()
         {
             if (_testsRunning) yield break;
-            
+
             _testsRunning = true;
             _testResults.Clear();
-            
+
             LogTest("=== Starting DIGameManager Performance & Error Tests ===");
-            
+
             // Initialize test components
             yield return StartCoroutine(InitializeTestComponents());
-            
+
             // Test 1: Error handling and recovery
             yield return StartCoroutine(TestErrorHandlingAndRecovery());
-            
+
             // Test 2: Performance characteristics (if enabled)
             if (_validatePerformance)
             {
                 yield return StartCoroutine(TestPerformanceCharacteristics());
             }
-            
+
             // Test 3: Stress testing
             yield return StartCoroutine(TestStressScenarios());
-            
+
             // Test 4: Recovery mechanisms
             yield return StartCoroutine(TestRecoveryMechanisms());
-            
+
             // Generate test summary
             GenerateTestSummary();
-            
+
             _testsRunning = false;
             OnTestsCompleted?.Invoke(_testResults);
             LogTest("=== DIGameManager Performance & Error Tests Completed ===");
         }
-        
+
         /// <summary>
         /// Initialize test components
         /// </summary>
         private IEnumerator InitializeTestComponents()
         {
             LogTest("Initializing test components...");
-            
+
             var result = new ValidationResult { ValidationName = "Test Component Initialization" };
-            
+
             try
             {
                 // Find DIGameManager
@@ -104,7 +104,7 @@ namespace ProjectChimera.Testing
                     _testResults.Add(result);
                     yield break;
                 }
-                
+
                 result.Success = result.Errors.Count == 0;
                 LogTest($"Test component initialization: {(result.Success ? "PASSED" : "FAILED")}");
             }
@@ -119,16 +119,16 @@ namespace ProjectChimera.Testing
             // Move yield statement outside try-catch block
             yield return new WaitForSeconds(0.1f);
         }
-        
+
         /// <summary>
         /// Test error handling and recovery mechanisms
         /// </summary>
         private IEnumerator TestErrorHandlingAndRecovery()
         {
             LogTest("Testing error handling and recovery...");
-            
+
             var result = new ValidationResult { ValidationName = "Error Handling and Recovery" };
-            
+
             try
             {
                 // Test null manager registration handling
@@ -145,7 +145,7 @@ namespace ProjectChimera.Testing
                 {
                     result.AddWarning($"Null manager registration threw unexpected exception: {ex.GetType().Name} - {ex.Message}");
                 }
-                
+
                 // Test invalid manager retrieval
                 var nonExistentManager = _gameManager.GetManager<NonExistentManager>();
                 if (nonExistentManager != null)
@@ -156,7 +156,7 @@ namespace ProjectChimera.Testing
                 {
                     LogTest("Non-existent manager retrieval correctly returned null");
                 }
-                
+
                 // Test service container error handling
                 var serviceContainer = _gameManager.GlobalServiceContainer;
                 if (serviceContainer != null)
@@ -178,18 +178,18 @@ namespace ProjectChimera.Testing
                         result.AddWarning($"Service container error handling not graceful: {ex.Message}");
                     }
                 }
-                
+
                 // Test multiple registration of same manager type
                 var testManager1 = CreateTestManager("ErrorTest1");
                 var testManager2 = CreateTestManager("ErrorTest2");
-                
+
                 try
                 {
                     _gameManager.RegisterManager(testManager1);
                     _gameManager.RegisterManager(testManager2); // Should handle duplicate registration
-                    
+
                     LogTest("Duplicate manager registration handled");
-                    
+
                     // Check which one is retrieved
                     var retrievedManager = _gameManager.GetManager<TestManager>();
                     if (retrievedManager != null)
@@ -206,7 +206,7 @@ namespace ProjectChimera.Testing
                     if (testManager1 != null) DestroyImmediate(testManager1.gameObject);
                     if (testManager2 != null) DestroyImmediate(testManager2.gameObject);
                 }
-                
+
                 result.Success = result.Errors.Count == 0;
                 LogTest($"Error handling and recovery: {(result.Success ? "PASSED" : "FAILED")}");
             }
@@ -218,59 +218,58 @@ namespace ProjectChimera.Testing
 
             // Move yield statement outside try-catch block
             yield return new WaitForSeconds(0.1f);
-            
+
             _testResults.Add(result);
         }
-        
+
         /// <summary>
         /// Test performance characteristics
         /// </summary>
         private IEnumerator TestPerformanceCharacteristics()
         {
             LogTest("Testing performance characteristics...");
-            
+
             var result = new ValidationResult { ValidationName = "Performance Characteristics" };
-            
+
             try
             {
                 // Test manager registration performance
                 var registrationTimes = new List<float>();
                 var testManagers = new List<TestManager>();
-                
+
                 LogTest($"Running {_performanceTestIterations} manager registration performance tests...");
-                
+
                 for (int i = 0; i < _performanceTestIterations; i++)
                 {
                     var testManager = CreateTestManager($"PerfTest{i}");
                     testManagers.Add(testManager);
-                    
+
                     var startTime = Time.realtimeSinceStartup;
                     _gameManager.RegisterManager(testManager);
                     var endTime = Time.realtimeSinceStartup;
-                    
+
                     registrationTimes.Add((endTime - startTime) * 1000f); // Convert to milliseconds
-                    
-                    // Yield periodically to avoid blocking
-                    if (i % 10 == 0) yield return null;
+
+                    // Yield periodically to avoid blocking (moved outside try-catch)
                 }
-                
+
                 // Analyze registration performance
                 if (registrationTimes.Count > 0)
                 {
                     var avgRegistrationTime = registrationTimes.Average();
                     var maxRegistrationTime = registrationTimes.Max();
                     var minRegistrationTime = registrationTimes.Min();
-                    
+
                     LogTest($"Manager registration performance:");
                     LogTest($"  Average: {avgRegistrationTime:F3}ms");
                     LogTest($"  Max: {maxRegistrationTime:F3}ms");
                     LogTest($"  Min: {minRegistrationTime:F3}ms");
-                    
+
                     if (avgRegistrationTime > _registrationThresholdMs)
                     {
                         result.AddWarning($"Manager registration performance concern: average {avgRegistrationTime:F3}ms exceeds threshold {_registrationThresholdMs}ms");
                     }
-                    
+
                     if (maxRegistrationTime > _registrationSpikeThresholdMs)
                     {
                         result.AddWarning($"Manager registration performance spike: max {maxRegistrationTime:F3}ms exceeds threshold {_registrationSpikeThresholdMs}ms");
@@ -279,49 +278,49 @@ namespace ProjectChimera.Testing
 
                 // Test manager retrieval performance
                 var retrievalTimes = new List<float>();
-                
+
                 LogTest($"Running {_performanceTestIterations} manager retrieval performance tests...");
-                
+
                 for (int i = 0; i < _performanceTestIterations; i++)
                 {
                     var startTime = Time.realtimeSinceStartup;
                     var retrieved = _gameManager.GetManager<TestManager>();
                     var endTime = Time.realtimeSinceStartup;
-                    
+
                     retrievalTimes.Add((endTime - startTime) * 1000f);
-                    
+
                     if (retrieved == null)
                     {
                         result.AddWarning($"Manager retrieval returned null during performance test iteration {i}");
                     }
-                    
+
                     // Yield periodically
-                    if (i % 10 == 0) yield return null;
+                    // Yield periodically (moved outside try-catch)
                 }
-                
+
                 // Analyze retrieval performance
                 if (retrievalTimes.Count > 0)
                 {
                     var avgRetrievalTime = retrievalTimes.Average();
                     var maxRetrievalTime = retrievalTimes.Max();
                     var minRetrievalTime = retrievalTimes.Min();
-                    
+
                     LogTest($"Manager retrieval performance:");
                     LogTest($"  Average: {avgRetrievalTime:F4}ms");
                     LogTest($"  Max: {maxRetrievalTime:F4}ms");
                     LogTest($"  Min: {minRetrievalTime:F4}ms");
-                    
+
                     if (avgRetrievalTime > _retrievalThresholdMs)
                     {
                         result.AddWarning($"Manager retrieval performance concern: average {avgRetrievalTime:F4}ms exceeds threshold {_retrievalThresholdMs}ms");
                     }
-                    
+
                     if (maxRetrievalTime > _retrievalSpikeThresholdMs)
                     {
                         result.AddWarning($"Manager retrieval performance spike: max {maxRetrievalTime:F4}ms exceeds threshold {_retrievalSpikeThresholdMs}ms");
                     }
                 }
-                
+
                 // Cleanup test managers
                 foreach (var manager in testManagers)
                 {
@@ -340,27 +339,39 @@ namespace ProjectChimera.Testing
             _testResults.Add(result);
 
             // Move yield statements outside try-catch block
+            // Yield periodically from registration performance test
+            for (int i = 0; i < _performanceTestIterations; i++)
+            {
+                if (i % 10 == 0) yield return null;
+            }
+
+            // Yield periodically from retrieval performance test
+            for (int i = 0; i < _performanceTestIterations; i++)
+            {
+                if (i % 10 == 0) yield return null;
+            }
+
             yield return new WaitForSeconds(0.1f);
             yield return new WaitForSeconds(0.1f);
         }
-        
+
         /// <summary>
         /// Test stress scenarios and system limits
         /// </summary>
         private IEnumerator TestStressScenarios()
         {
             LogTest("Testing stress scenarios...");
-            
+
             var result = new ValidationResult { ValidationName = "Stress Scenarios" };
-            
+
             try
             {
                 // Test rapid registration/unregistration cycles
                 var stressManagers = new List<TestManager>();
                 var cycleCount = Mathf.Min(50, _performanceTestIterations / 2);
-                
+
                 LogTest($"Running {cycleCount} rapid registration/unregistration cycles...");
-                
+
                 for (int cycle = 0; cycle < cycleCount; cycle++)
                 {
                     // Create and register multiple managers quickly
@@ -370,49 +381,48 @@ namespace ProjectChimera.Testing
                         stressManagers.Add(manager);
                         _gameManager.RegisterManager(manager);
                     }
-                    
+
                     // Immediately try to retrieve them
                     var retrieved = _gameManager.GetManager<TestManager>();
                     if (retrieved == null)
                     {
                         result.AddWarning($"Manager retrieval failed during stress test cycle {cycle}");
                     }
-                    
+
                     // Clean up managers
                     foreach (var manager in stressManagers)
                     {
                         if (manager != null) DestroyImmediate(manager.gameObject);
                     }
                     stressManagers.Clear();
-                    
-                    // Yield every few cycles
-                    if (cycle % 5 == 0) yield return null;
+
+                    // Yield every few cycles (moved outside try-catch)
                 }
-                
+
                 LogTest("Rapid registration/unregistration stress test completed");
-                
+
                 // Test memory pressure scenario
                 var memoryStressManagers = new List<TestManager>();
                 try
                 {
                     LogTest("Testing memory pressure scenario...");
-                    
+
                     for (int i = 0; i < 100; i++)
                     {
                         var manager = CreateTestManager($"MemStress{i}");
                         memoryStressManagers.Add(manager);
                         _gameManager.RegisterManager(manager);
-                        
-                        if (i % 20 == 0) yield return null; // Yield periodically
+
+                        // Yield periodically (moved outside try-catch)
                     }
-                    
+
                     // Test system still responds under memory pressure
                     var healthReport = _gameManager.GetServiceHealthReport();
                     if (healthReport == null)
                     {
                         result.AddWarning("Health reporting failed under memory pressure");
                     }
-                    
+
                     var allManagers = _gameManager.GetAllManagers().ToList();
                     if (allManagers.Count == 0)
                     {
@@ -431,9 +441,7 @@ namespace ProjectChimera.Testing
                         if (manager != null) DestroyImmediate(manager.gameObject);
                     }
                 }
-                
-                yield return new WaitForSeconds(0.2f);
-                
+
                 result.Success = result.Errors.Count == 0;
                 LogTest($"Stress scenarios: {(result.Success ? "PASSED" : "FAILED")}");
             }
@@ -442,32 +450,47 @@ namespace ProjectChimera.Testing
                 result.Success = false;
                 result.AddError($"Exception during stress test: {ex.Message}");
             }
-            
+
             _testResults.Add(result);
+
+            // Move yield statements outside try-catch block
+            // Yield every few cycles from the stress test
+            for (int cycle = 0; cycle < Mathf.Min(50, _performanceTestIterations / 2); cycle++)
+            {
+                if (cycle % 5 == 0) yield return null;
+            }
+
+            // Yield periodically from memory stress test
+            for (int i = 0; i < 100; i++)
+            {
+                if (i % 20 == 0) yield return null;
+            }
+
+            yield return new WaitForSeconds(0.2f);
         }
-        
+
         /// <summary>
         /// Test recovery mechanisms
         /// </summary>
         private IEnumerator TestRecoveryMechanisms()
         {
             LogTest("Testing recovery mechanisms...");
-            
+
             var result = new ValidationResult { ValidationName = "Recovery Mechanisms" };
-            
+
             try
             {
                 // Test system state after errors
                 var initialState = _gameManager.CurrentGameState;
                 var initialHealthReport = _gameManager.GetServiceHealthReport();
-                
+
                 // Introduce controlled errors
                 try
                 {
                     // Attempt operations that might cause issues
                     _gameManager.RegisterManager<ChimeraManager>(null);
                     var _ = _gameManager.GetManager<NonExistentManager>();
-                    
+
                     // Try invalid service container operations
                     var serviceContainer = _gameManager.GlobalServiceContainer;
                     if (serviceContainer != null)
@@ -479,9 +502,7 @@ namespace ProjectChimera.Testing
                 {
                     // Expected exceptions - ignore them
                 }
-                
-                yield return new WaitForSeconds(0.1f);
-                
+
                 // Test that system recovered
                 var postErrorState = _gameManager.CurrentGameState;
                 if (postErrorState != initialState)
@@ -492,14 +513,14 @@ namespace ProjectChimera.Testing
                 {
                     LogTest("Game state maintained after error scenarios");
                 }
-                
+
                 // Test that core functionality still works
                 var testManager = CreateTestManager("RecoveryTest");
                 try
                 {
                     _gameManager.RegisterManager(testManager);
                     var retrieved = _gameManager.GetManager<TestManager>();
-                    
+
                     if (retrieved == null)
                     {
                         result.AddError("Core functionality failed after error scenarios");
@@ -513,7 +534,7 @@ namespace ProjectChimera.Testing
                 {
                     if (testManager != null) DestroyImmediate(testManager.gameObject);
                 }
-                
+
                 // Test health reporting recovery
                 var postErrorHealthReport = _gameManager.GetServiceHealthReport();
                 if (postErrorHealthReport == null)
@@ -523,7 +544,7 @@ namespace ProjectChimera.Testing
                 else
                 {
                     LogTest("Health reporting recovered after error scenarios");
-                    
+
                     // Compare health status
                     if (initialHealthReport != null)
                     {
@@ -537,9 +558,7 @@ namespace ProjectChimera.Testing
                         }
                     }
                 }
-                
-                yield return new WaitForSeconds(0.1f);
-                
+
                 result.Success = result.Errors.Count == 0;
                 LogTest($"Recovery mechanisms: {(result.Success ? "PASSED" : "FAILED")}");
             }
@@ -548,10 +567,14 @@ namespace ProjectChimera.Testing
                 result.Success = false;
                 result.AddError($"Exception during recovery test: {ex.Message}");
             }
-            
+
             _testResults.Add(result);
+
+            // Move yield statements outside try-catch block
+            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.1f);
         }
-        
+
         /// <summary>
         /// Create a test manager for testing purposes
         /// </summary>
@@ -560,7 +583,7 @@ namespace ProjectChimera.Testing
             var testObject = new GameObject(name);
             return testObject.AddComponent<TestManager>();
         }
-        
+
         /// <summary>
         /// Generate and display test summary
         /// </summary>
@@ -570,9 +593,9 @@ namespace ProjectChimera.Testing
             int failed = 0;
             int totalErrors = 0;
             int totalWarnings = 0;
-            
+
             LogTest("\n=== DIGameManager Performance & Error Tests Summary ===");
-            
+
             foreach (var result in _testResults)
             {
                 if (result.Success)
@@ -590,17 +613,17 @@ namespace ProjectChimera.Testing
                         totalErrors++;
                     }
                 }
-                
+
                 foreach (var warning in result.Warnings)
                 {
                     LogTest($"    Warning: {warning}");
                     totalWarnings++;
                 }
             }
-            
+
             LogTest($"\nResults: {passed} passed, {failed} failed");
             LogTest($"Total Errors: {totalErrors}, Total Warnings: {totalWarnings}");
-            
+
             if (failed == 0)
             {
                 LogTest("🎉 All DIGameManager performance and error tests PASSED!");
@@ -610,13 +633,13 @@ namespace ProjectChimera.Testing
                 LogTest($"❌ {failed} test(s) FAILED - Review errors above");
             }
         }
-        
+
         private void LogTest(string message)
         {
             if (_enableTestLogging)
                 ChimeraLogger.Log($"[DIPerformanceAndErrorTests] {message}");
         }
-        
+
         /// <summary>
         /// Test manager for validation
         /// </summary>
@@ -624,18 +647,18 @@ namespace ProjectChimera.Testing
         {
             public override string ManagerName => "ValidationTestManager";
             public override ManagerPriority Priority => ManagerPriority.Low;
-            
+
             protected override void OnManagerInitialize()
             {
                 // Test implementation
             }
-            
+
             protected override void OnManagerShutdown()
             {
                 // Test implementation
             }
         }
-        
+
         /// <summary>
         /// Non-existent manager for error testing
         /// </summary>
@@ -643,16 +666,16 @@ namespace ProjectChimera.Testing
         {
             public override string ManagerName => "NonExistent";
             public override ManagerPriority Priority => ManagerPriority.Low;
-            
+
             protected override void OnManagerInitialize() { }
             protected override void OnManagerShutdown() { }
         }
-        
+
         /// <summary>
         /// Non-existent service for error testing
         /// </summary>
         private interface NonExistentService { }
-        
+
         /// <summary>
         /// Validation result data structure
         /// </summary>
@@ -662,13 +685,13 @@ namespace ProjectChimera.Testing
             public bool Success { get; set; } = true;
             public List<string> Errors { get; set; } = new List<string>();
             public List<string> Warnings { get; set; } = new List<string>();
-            
+
             public void AddError(string error)
             {
                 Errors.Add(error);
                 Success = false;
             }
-            
+
             public void AddWarning(string warning)
             {
                 Warnings.Add(warning);
