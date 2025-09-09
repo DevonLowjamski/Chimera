@@ -37,7 +37,7 @@ namespace ProjectChimera.Systems.Construction
 
         // System references
         private BlueprintOverlayRenderer _overlayRenderer;
-        private UtilityLayerRenderer _utilityRenderer;
+        private UtilityRenderingCore _utilityRenderer;
         private BlueprintOverlayIntegration _overlayIntegration;
 
         // Integration state
@@ -182,7 +182,7 @@ namespace ProjectChimera.Systems.Construction
 
             return new UtilityPositionInfo
             {
-                HasUtilities = connections.Count > 0,
+                HasUtilities = (connections != null && connections.Count > 0),
                 Position = worldPosition,
                 Connections = connections,
                 UtilityTypes = connections.Select(c => c.UtilityType).Distinct().ToList(),
@@ -234,7 +234,7 @@ namespace ProjectChimera.Systems.Construction
         private void InitializeIntegration()
         {
             _overlayRenderer = ServiceContainerFactory.Instance?.TryResolve<BlueprintOverlayRenderer>();
-            _utilityRenderer = ServiceContainerFactory.Instance?.TryResolve<UtilityLayerRenderer>();
+            _utilityRenderer = ServiceContainerFactory.Instance?.TryResolve<UtilityRenderingCore>();
             _overlayIntegration = ServiceContainerFactory.Instance?.TryResolve<BlueprintOverlayIntegration>();
 
             if (_overlayRenderer == null)
@@ -244,7 +244,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_utilityRenderer == null)
             {
-                LogError("UtilityLayerRenderer not found - utility integration disabled");
+                LogError("UtilityRenderingCore not found - utility integration disabled");
                 _enableUtilityIntegration = false;
             }
         }

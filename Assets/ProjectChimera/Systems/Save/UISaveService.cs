@@ -120,7 +120,7 @@ namespace ProjectChimera.Systems.Save
                     },
 
                     // UI Panel states - default panel configuration
-                    UIPanelStates = new System.Collections.Generic.List<UIPanelStateDTO>
+                    PanelStates = new System.Collections.Generic.List<UIPanelStateDTO>
                     {
                         new UIPanelStateDTO
                         {
@@ -173,18 +173,18 @@ namespace ProjectChimera.Systems.Save
                     WindowManagement = new UIWindowManagementDTO
                     {
                         ActiveWindows = new System.Collections.Generic.List<string> { "cultivation_panel" },
-                        WindowStack = new System.Collections.Generic.List<string> 
-                        { 
-                            "cultivation_panel", 
-                            "plant_info_panel", 
-                            "facility_overview_panel" 
+                        WindowStack = new System.Collections.Generic.List<string>
+                        {
+                            "cultivation_panel",
+                            "plant_info_panel",
+                            "facility_overview_panel"
                         },
                         MaxOpenWindows = 5,
                         WindowLayoutName = "Default"
                     }
                 };
 
-                ChimeraLogger.Log($"[UISaveService] UI state gathered: {uiState.UIPanelStates.Count} panels, Mode: {uiState.UIModeState.CurrentMode}");
+                ChimeraLogger.Log($"[UISaveService] UI state gathered: {uiState.PanelStates.Count} panels, Mode: {uiState.UIModeState.CurrentMode}");
                 return uiState;
             }
             catch (Exception ex)
@@ -215,7 +215,7 @@ namespace ProjectChimera.Systems.Save
 
             try
             {
-                ChimeraLogger.Log($"[UISaveService] Applying UI state with {uiData.UIPanelStates?.Count ?? 0} panels");
+                ChimeraLogger.Log($"[UISaveService] Applying UI state with {uiData.PanelStates?.Count ?? 0} panels");
 
                 // Apply UI mode state
                 if (uiData.UIModeState != null)
@@ -230,9 +230,9 @@ namespace ProjectChimera.Systems.Save
                 }
 
                 // Apply panel states
-                if (uiData.UIPanelStates != null)
+                if (uiData.PanelStates != null)
                 {
-                    await ApplyUIPanelStates(uiData.UIPanelStates);
+                    await ApplyUIPanelStates(uiData.PanelStates);
                 }
 
                 // Apply user preferences
@@ -262,7 +262,7 @@ namespace ProjectChimera.Systems.Save
         private async Task ApplyUIModeState(UIModeStateDTO modeState)
         {
             ChimeraLogger.Log($"[UISaveService] Applying UI mode state (Current: {modeState.CurrentMode})");
-            
+
             // UI mode state application would integrate with actual UI mode systems
             await Task.CompletedTask;
         }
@@ -270,7 +270,7 @@ namespace ProjectChimera.Systems.Save
         private async Task ApplyUILevelState(UILevelStateDTO levelState)
         {
             ChimeraLogger.Log($"[UISaveService] Applying UI level state (Level: {levelState.CurrentLevel}, Complexity: {levelState.UIComplexity})");
-            
+
             // UI level state application would integrate with actual UI complexity systems
             await Task.CompletedTask;
         }
@@ -278,26 +278,26 @@ namespace ProjectChimera.Systems.Save
         private async Task ApplyUIPanelStates(System.Collections.Generic.List<UIPanelStateDTO> panelStates)
         {
             ChimeraLogger.Log($"[UISaveService] Applying {panelStates.Count} panel states");
-            
+
             // Panel state application would integrate with actual UI panel management systems
             foreach (var panel in panelStates)
             {
                 ChimeraLogger.Log($"[UISaveService] Restoring panel: {panel.PanelName} (Visible: {panel.IsVisible}, Position: {panel.Position})");
-                
+
                 // This would involve:
                 // 1. Finding the actual UI panel by ID
                 // 2. Setting its visibility, position, size, minimized state
                 // 3. Applying Z-order for layering
                 // 4. Updating last accessed time
             }
-            
+
             await Task.CompletedTask;
         }
 
         private async Task ApplyUserPreferences(UIUserPreferencesDTO preferences)
         {
             ChimeraLogger.Log($"[UISaveService] Applying user preferences (Theme: {preferences.Theme}, Scale: {preferences.UIScale})");
-            
+
             // User preferences application would integrate with actual UI theming and settings systems
             await Task.CompletedTask;
         }
@@ -305,7 +305,7 @@ namespace ProjectChimera.Systems.Save
         private async Task ApplyWindowManagement(UIWindowManagementDTO windowManagement)
         {
             ChimeraLogger.Log($"[UISaveService] Applying window management ({windowManagement.ActiveWindows.Count} active windows)");
-            
+
             // Window management application would integrate with actual window management systems
             await Task.CompletedTask;
         }

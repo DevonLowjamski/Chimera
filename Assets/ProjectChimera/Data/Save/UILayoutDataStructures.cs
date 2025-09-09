@@ -1,0 +1,159 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.Save
+{
+    /// <summary>
+    /// UI layout and window management data structures for save/load operations.
+    /// Contains window management, panel layouts, and positioning information.
+    /// </summary>
+    
+    /// <summary>
+    /// DTO for window manager state
+    /// </summary>
+    [System.Serializable]
+    public class WindowManagerStateDTO
+    {
+        [Header("Window Layout")]
+        public string CurrentLayout = "Default";
+        public List<string> SavedLayouts = new List<string>();
+        public Dictionary<string, UILayoutConfigDTO> LayoutConfigurations = new Dictionary<string, UILayoutConfigDTO>();
+        
+        [Header("Window Management")]
+        public List<string> OpenWindows = new List<string>();
+        public string ActiveWindow;
+        public string FocusedWindow;
+        
+        [Header("Multi-Monitor Support")]
+        public bool EnableMultiMonitor = false;
+        public List<UIMonitorConfigDTO> MonitorConfigurations = new List<UIMonitorConfigDTO>();
+        
+        [Header("Window Behavior")]
+        public bool EnableWindowSnapping = true;
+        public bool EnableWindowGrouping = true;
+        public bool RememberWindowPositions = true;
+        public bool AutoSaveLayout = true;
+        
+        [Header("Performance")]
+        public int MaxOpenWindows = 20;
+        public bool EnableWindowVirtualization = true;
+        public bool OptimizeOffscreenWindows = true;
+    }
+    
+    /// <summary>
+    /// DTO for UI window management and organization
+    /// </summary>
+    [System.Serializable]
+    public class UIWindowManagementDTO
+    {
+        [Header("Active Windows")]
+        public List<string> ActiveWindows = new List<string>();
+        public string FocusedWindow;
+        public DateTime LastWindowFocus;
+        
+        [Header("Window Stack")]
+        public List<string> WindowStack = new List<string>();
+        public int MaxOpenWindows = 10;
+        public bool AllowOverlapping = true;
+        
+        [Header("Window Layout")]
+        public string WindowLayoutName;
+        public Dictionary<string, Vector2> WindowPositions = new Dictionary<string, Vector2>();
+        public Dictionary<string, Vector2> WindowSizes = new Dictionary<string, Vector2>();
+        public Dictionary<string, int> WindowZOrders = new Dictionary<string, int>();
+        
+        [Header("Window Behavior")]
+        public bool AutoArrangeWindows = false;
+        public bool SnapToGrid = true;
+        public bool RememberWindowStates = true;
+        public float GridSize = 10f;
+    }
+    
+    /// <summary>
+    /// DTO for HUD state
+    /// </summary>
+    [System.Serializable]
+    public class UIHUDStateDTO
+    {
+        [Header("HUD Elements")]
+        public List<UIHUDElementDTO> HUDElements = new List<UIHUDElementDTO>();
+        
+        [Header("HUD Configuration")]
+        public bool ShowHUD = true;
+        public float HUDOpacity = 0.8f;
+        public string HUDLayout = "Default";
+        
+        [Header("Information Display")]
+        public bool ShowResourceCounters = true;
+        public bool ShowStatusIndicators = true;
+        public bool ShowPerformanceMetrics = false;
+        public bool ShowDebugInfo = false;
+        
+        [Header("HUD Customization")]
+        public List<UIHUDCustomizationDTO> HUDCustomizations = new List<UIHUDCustomizationDTO>();
+        public bool AllowHUDCustomization = true;
+        
+        [Header("Auto-Hide Settings")]
+        public bool EnableAutoHide = false;
+        public float AutoHideDelay = 3.0f;
+        public List<string> AlwaysVisibleElements = new List<string>();
+    }
+    
+    // Supporting DTOs for layout management
+    
+    [System.Serializable]
+    public class UILayoutConfigDTO
+    {
+        public string LayoutName;
+        public List<UIPanelLayoutDTO> PanelLayouts = new List<UIPanelLayoutDTO>();
+        public Dictionary<string, object> LayoutSettings = new Dictionary<string, object>();
+        public bool IsDefault = false;
+        public DateTime CreatedDate;
+    }
+
+    [System.Serializable]
+    public class UIPanelLayoutDTO
+    {
+        public string PanelId;
+        public Vector2 Position;
+        public Vector2 Size;
+        public bool IsVisible;
+        public string DockState;
+        public int ZOrder;
+    }
+
+    [System.Serializable]
+    public class UIMonitorConfigDTO
+    {
+        public int MonitorIndex;
+        public Vector2 Resolution;
+        public Vector2 Position;
+        public bool IsPrimary;
+        public string MonitorName;
+        public List<string> AssignedWindows = new List<string>();
+    }
+    
+    [System.Serializable]
+    public class UIHUDElementDTO
+    {
+        public string ElementId;
+        public string ElementName;
+        public string ElementType;
+        public Vector2 Position;
+        public Vector2 Size;
+        public bool IsVisible = true;
+        public float Opacity = 1.0f;
+        public Dictionary<string, object> ElementData = new Dictionary<string, object>();
+    }
+
+    [System.Serializable]
+    public class UIHUDCustomizationDTO
+    {
+        public string ElementId;
+        public Vector2 CustomPosition;
+        public Vector2 CustomSize;
+        public bool IsCustomized = false;
+        public Dictionary<string, object> CustomProperties = new Dictionary<string, object>();
+    }
+}

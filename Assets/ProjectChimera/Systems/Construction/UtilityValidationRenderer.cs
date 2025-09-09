@@ -1,0 +1,399 @@
+using UnityEngine;
+using ProjectChimera.Core;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace ProjectChimera.Systems.Construction
+{
+    /// <summary>
+    /// Specialized renderer for utility validation and system health visualization.
+    /// Handles validation feedback, error indicators, and system status rendering.
+    /// </summary>
+    public class UtilityValidationRenderer
+    {
+        private readonly UtilityRenderingCore _renderingCore;
+        
+        // Validation indicators
+        private List<UtilityValidationIndicator> _validationIndicators = new List<UtilityValidationIndicator>();
+        private Queue<GameObject> _validationIndicatorPool = new Queue<GameObject>();
+        
+        // Validation state
+        private Dictionary<UtilityType, UtilityValidationResult> _lastValidationResults = new Dictionary<UtilityType, UtilityValidationResult>();
+        
+        // Events
+        public System.Action<List<UtilityValidationResult>> OnValidationUpdated;
+        public System.Action<UtilityValidationIndicator> OnValidationIndicatorCreated;
+        public System.Action<UtilityValidationIndicator> OnValidationIndicatorRemoved;
+
+        public UtilityValidationRenderer(UtilityRenderingCore renderingCore)
+        {
+            _renderingCore = renderingCore;
+            InitializeValidationSystem();
+        }
+
+        private void InitializeValidationSystem()
+        {
+            // Pre-populate validation indicator pool
+            for (int i = 0; i < 20; i++)
+            {
+                var indicator = CreatePooledValidationIndicator();
+                indicator.SetActive(false);
+                _validationIndicatorPool.Enqueue(indicator);
+            }
+        }
+
+        /// <summary>
+        /// Validate utility layout and update visual indicators
+        /// </summary>
+        public List<UtilityValidationResult> ValidateUtilityLayout(UtilityNodeRenderer nodeRenderer, UtilityConnectionRenderer connectionRenderer)
+        {
+            var results = new List<UtilityValidationResult>();
+
+            foreach (UtilityType utilityType in System.Enum.GetValues(typeof(UtilityType)))
+            {
+                var validationResult = ValidateUtilityType(utilityType, nodeRenderer, connectionRenderer);
+                results.Add(validationResult);
+                
+                // Update validation indicators
+                UpdateValidationIndicators(validationResult);
+                
+                // Store for comparison
+                _lastValidationResults[utilityType] = validationResult;
+            }
+
+            OnValidationUpdated?.Invoke(results);
+            return results;
+        }
+
+        /// <summary>
+        /// Update validation state for connections
+        /// </summary>
+        public void UpdateValidation()
+        {
+            if (!_renderingCore.ShowConnectionValidation) return;
+
+            // Update validation indicators based on current state
+            foreach (var indicator in _validationIndicators)
+            {
+                UpdateValidationIndicatorVisuals(indicator);
+            }
+        }
+
+        /// <summary>
+        /// Create validation indicator at position
+        /// </summary>
+        public void CreateValidationIndicator(Vector3 position, UtilityValidationType validationType, UtilityType utilityType, string message = "")
+        {
+            var indicator = new UtilityValidationIndicator
+            {
+                IndicatorId = System.Guid.NewGuid().ToString(),
+                Position = position,
+                ValidationType = validationType,
+                UtilityType = utilityType,
+                Message = message,
+                IsActive = true
+            };
+
+            // Create visual representation
+            indicator.VisualObject = CreateValidationIndicatorVisual(indicator);
+
+            _validationIndicators.Add(indicator);
+            OnValidationIndicatorCreated?.Invoke(indicator);
+        }
+
+        /// <summary>
+        /// Remove validation indicator
+        /// </summary>
+        public void RemoveValidationIndicator(string indicatorId)
+        {
+            var indicator = _validationIndicators.FirstOrDefault(vi => vi.IndicatorId == indicatorId);
+            if (indicator != null)
+            {
+                ReturnValidationIndicatorToPool(indicator.VisualObject);
+                _validationIndicators.Remove(indicator);
+                OnValidationIndicatorRemoved?.Invoke(indicator);
+            }
+        }
+
+        /// <summary>
+        /// Clear all validation indicators
+        /// </summary>
+        public void ClearValidationIndicators()
+        {
+            foreach (var indicator in _validationIndicators)
+            {
+                ReturnValidationIndicatorToPool(indicator.VisualObject);
+                OnValidationIndicatorRemoved?.Invoke(indicator);
+            }
+            _validationIndicators.Clear();
+        }
+
+        /// <summary>
+        /// Get validation result for utility type
+        /// </summary>
+        public UtilityValidationResult GetValidationResult(UtilityType utilityType)
+        {
+            return _lastValidationResults.TryGetValue(utilityType, out var result) ? result : null;
+        }
+
+        /// <summary>
+        /// Get all current validation results
+        /// </summary>
+        public Dictionary<UtilityType, UtilityValidationResult> GetAllValidationResults()
+        {
+            return new Dictionary<UtilityType, UtilityValidationResult>(_lastValidationResults);
+        }
+
+        /// <summary>
+        /// Check if utility layout is valid
+        /// </summary>
+        public bool IsUtilityLayoutValid()
+        {
+            return _lastValidationResults.Values.All(result => result.IsValid);
+        }
+
+        /// <summary>
+        /// Get validation issues for utility type
+        /// </summary>
+        public List<string> GetValidationIssues(UtilityType utilityType)
+        {
+            var issues = new List<string>();
+            
+            if (_lastValidationResults.TryGetValue(utilityType, out var result))
+            {
+                if (!result.IsValid)
+                {
+                    if (result.NodeCount == 0)
+                        issues.Add($"No {utilityType} nodes found");
+                    
+                    if (result.ConnectionCount == 0 && result.NodeCount > 1)
+                        issues.Add($"No {utilityType} connections found");
+                    
+                    if (result.ValidConnections < result.ConnectionCount)
+                        issues.Add($"{result.ConnectionCount - result.ValidConnections} invalid {utilityType} connections");
+                    
+                    if (result.TotalFlow > result.TotalCapacity)
+                        issues.Add($"{utilityType} system overloaded");
+                }
+            }
+            
+            return issues;
+        }
+
+        private UtilityValidationResult ValidateUtilityType(UtilityType utilityType, UtilityNodeRenderer nodeRenderer, UtilityConnectionRenderer connectionRenderer)
+        {
+            var nodes = nodeRenderer.GetNodesOfType(utilityType);
+            var connections = connectionRenderer.GetConnectionsOfType(utilityType).ToList();
+
+            var result = new UtilityValidationResult
+            {
+                UtilityType = utilityType,
+                NodeCount = nodes.Count,
+                ConnectionCount = connections.Count,
+                ValidConnections = connections.Count(c => c.IsValid),
+                TotalCapacity = nodes.Sum(n => n.Capacity),
+                TotalFlow = connections.Sum(c => c.CurrentFlow),
+                IsValid = connections.All(c => c.IsValid) && nodes.Count > 0
+            };
+
+            // Generate validation message
+            result.ValidationMessage = GenerateValidationMessage(result);
+
+            return result;
+        }
+
+        private string GenerateValidationMessage(UtilityValidationResult result)
+        {
+            if (result.IsValid)
+            {
+                return $"{result.UtilityType} system is functioning correctly";
+            }
+
+            var issues = GetValidationIssues(result.UtilityType);
+            return $"{result.UtilityType} system issues: {string.Join(", ", issues)}";
+        }
+
+        private void UpdateValidationIndicators(UtilityValidationResult result)
+        {
+            // Remove old indicators for this utility type
+            var oldIndicators = _validationIndicators.Where(vi => vi.UtilityType == result.UtilityType).ToList();
+            foreach (var indicator in oldIndicators)
+            {
+                RemoveValidationIndicator(indicator.IndicatorId);
+            }
+
+            // Create new indicators if there are issues
+            if (!result.IsValid)
+            {
+                var issues = GetValidationIssues(result.UtilityType);
+                foreach (var issue in issues)
+                {
+                    // Create indicator at relevant position (simplified - would use actual problematic locations)
+                    var position = Vector3.zero; // Would calculate based on actual problem location
+                    CreateValidationIndicator(position, UtilityValidationType.Error, result.UtilityType, issue);
+                }
+            }
+        }
+
+        private void UpdateValidationIndicatorVisuals(UtilityValidationIndicator indicator)
+        {
+            if (indicator.VisualObject != null)
+            {
+                // Update indicator color based on validation type
+                var renderer = indicator.VisualObject.GetComponent<Renderer>();
+                if (renderer != null)
+                {
+                    var color = GetValidationColor(indicator.ValidationType);
+                    renderer.material.color = color;
+                }
+
+                // Update scale for pulsing effect
+                float pulse = 1f + Mathf.Sin(Time.time * 3f) * 0.2f;
+                indicator.VisualObject.transform.localScale = Vector3.one * 0.3f * pulse;
+            }
+        }
+
+        private GameObject CreateValidationIndicatorVisual(UtilityValidationIndicator indicator)
+        {
+            GameObject indicatorObj;
+
+            // Try to get from pool
+            if (_validationIndicatorPool.Count > 0)
+            {
+                indicatorObj = _validationIndicatorPool.Dequeue();
+                indicatorObj.SetActive(true);
+            }
+            else
+            {
+                indicatorObj = CreatePooledValidationIndicator();
+            }
+
+            // Configure indicator
+            indicatorObj.name = $"ValidationIndicator_{indicator.ValidationType}_{indicator.UtilityType}";
+            indicatorObj.transform.position = indicator.Position;
+            indicatorObj.transform.localScale = Vector3.one * 0.3f;
+
+            // Set material based on validation type
+            var renderer = indicatorObj.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                var material = new Material(_renderingCore.GetRenderingMaterial(UtilityRenderingMaterialType.ValidationIndicator));
+                material.color = GetValidationColor(indicator.ValidationType);
+                renderer.material = material;
+            }
+
+            // Add validation component for identification
+            var validationComponent = indicatorObj.GetComponent<UtilityValidationComponent>();
+            if (validationComponent == null)
+            {
+                validationComponent = indicatorObj.AddComponent<UtilityValidationComponent>();
+            }
+            validationComponent.Initialize(indicator);
+
+            return indicatorObj;
+        }
+
+        private GameObject CreatePooledValidationIndicator()
+        {
+            var indicatorObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            indicatorObj.layer = _renderingCore.UtilityLayer;
+
+            // Remove collider for performance
+            if (indicatorObj.GetComponent<Collider>())
+                Object.DestroyImmediate(indicatorObj.GetComponent<Collider>());
+
+            return indicatorObj;
+        }
+
+        private Color GetValidationColor(UtilityValidationType validationType)
+        {
+            return validationType switch
+            {
+                UtilityValidationType.Valid => Color.green,
+                UtilityValidationType.Warning => Color.yellow,
+                UtilityValidationType.Error => Color.red,
+                UtilityValidationType.Info => Color.blue,
+                _ => Color.white
+            };
+        }
+
+        private void ReturnValidationIndicatorToPool(GameObject indicatorVisual)
+        {
+            if (indicatorVisual != null)
+            {
+                indicatorVisual.SetActive(false);
+                indicatorVisual.transform.position = Vector3.zero;
+                indicatorVisual.transform.localScale = Vector3.one;
+                _validationIndicatorPool.Enqueue(indicatorVisual);
+            }
+        }
+
+        public void Cleanup()
+        {
+            ClearValidationIndicators();
+            
+            // Clear pool
+            while (_validationIndicatorPool.Count > 0)
+            {
+                var indicator = _validationIndicatorPool.Dequeue();
+                if (indicator != null)
+                    Object.DestroyImmediate(indicator);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Component for identifying validation indicators in the scene
+    /// </summary>
+    public class UtilityValidationComponent : MonoBehaviour
+    {
+        public UtilityValidationIndicator IndicatorData { get; private set; }
+
+        public void Initialize(UtilityValidationIndicator indicatorData)
+        {
+            IndicatorData = indicatorData;
+        }
+    }
+
+    /// <summary>
+    /// Validation indicator for utility systems
+    /// </summary>
+    [System.Serializable]
+    public class UtilityValidationIndicator
+    {
+        public string IndicatorId;
+        public Vector3 Position;
+        public UtilityValidationType ValidationType;
+        public UtilityType UtilityType;
+        public string Message;
+        public bool IsActive;
+        public GameObject VisualObject;
+    }
+
+    /// <summary>
+    /// Validation result for utility systems
+    /// </summary>
+    [System.Serializable]
+    public class UtilityValidationResult
+    {
+        public UtilityType UtilityType;
+        public int NodeCount;
+        public int ConnectionCount;
+        public int ValidConnections;
+        public float TotalCapacity;
+        public float TotalFlow;
+        public bool IsValid;
+        public string ValidationMessage;
+    }
+
+    /// <summary>
+    /// Types of validation indicators
+    /// </summary>
+    public enum UtilityValidationType
+    {
+        Valid,
+        Warning,
+        Error,
+        Info
+    }
+}

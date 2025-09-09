@@ -1,0 +1,247 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.Save
+{
+    /// <summary>
+    /// UI user preferences and customization data structures for save/load operations.
+    /// Contains user preferences, themes, localization, and animation settings.
+    /// </summary>
+    
+    /// <summary>
+    /// DTO for UI user preferences
+    /// </summary>
+    [System.Serializable]
+    public class UIUserPreferencesDTO
+    {
+        [Header("Visual Preferences")]
+        public string ColorScheme = "Default"; // "Default", "Dark", "Light", "HighContrast"
+        public string FontSizeCategory = "Medium"; // "Small", "Medium", "Large", "ExtraLarge"
+        public string FontFamily = "Default";
+        public bool EnableAnimations = true;
+        public float AnimationSpeed = 1.0f;
+        
+        [Header("Interaction Preferences")]
+        public string ClickBehavior = "Single"; // "Single", "Double"
+        public bool EnableDragAndDrop = true;
+        public bool EnableContextMenus = true;
+        public float TooltipDelay = 0.5f;
+        public bool EnableKeyboardShortcuts = true;
+        
+        [Header("Layout Preferences")]
+        public bool CompactMode = false;
+        public bool ShowStatusBar = true;
+        public bool ShowToolbar = true;
+        public bool AutoHidePanels = false;
+        public string DefaultPanelPosition = "Right";
+        
+        [Header("Notification Preferences")]
+        public bool EnableNotifications = true;
+        public bool ShowNotifications = true;
+        public bool EnableSoundNotifications = true;
+        public bool EnablePopupNotifications = true;
+        public float NotificationDuration = 5.0f;
+        
+        [Header("Accessibility")]
+        public bool HighContrastMode = false;
+        public bool LargeTextMode = false;
+        public bool ScreenReaderSupport = false;
+        public bool ReducedMotion = false;
+        public bool EnableVoiceCommands = false;
+        
+        [Header("Performance Preferences")]
+        public bool EnableVSync = true;
+        public int TargetFrameRate = 60;
+        public bool EnableUIBatching = true;
+        public bool ReduceUIComplexity = false;
+        
+        [Header("User Interface Settings")]
+        public string Theme = "Default";
+        public float FontSize = 14f;
+        public float UIScale = 1f;
+        public bool AutoSavePanelStates = true;
+        public DateTime LastPreferencesUpdate;
+    }
+    
+    /// <summary>
+    /// DTO for UI theme state
+    /// </summary>
+    [System.Serializable]
+    public class UIThemeStateDTO
+    {
+        [Header("Current Theme")]
+        public string CurrentTheme = "Default";
+        public string ThemeVariant = "Standard"; // "Standard", "Dark", "Light", "HighContrast"
+        
+        [Header("Theme Customization")]
+        public Dictionary<string, Color> CustomColors = new Dictionary<string, Color>();
+        public Dictionary<string, float> CustomValues = new Dictionary<string, float>();
+        public Dictionary<string, string> CustomTextures = new Dictionary<string, string>();
+        
+        [Header("Theme Settings")]
+        public bool EnableThemeTransitions = true;
+        public float ThemeTransitionDuration = 0.5f;
+        public bool ApplyThemeToAllElements = true;
+        
+        [Header("Available Themes")]
+        public List<string> AvailableThemes = new List<string>();
+        public bool AllowThemeCustomization = true;
+    }
+    
+    /// <summary>
+    /// DTO for UI animation state
+    /// </summary>
+    [System.Serializable]
+    public class UIAnimationStateDTO
+    {
+        [Header("Animation Settings")]
+        public bool EnableAnimations = true;
+        public float GlobalAnimationSpeed = 1.0f;
+        public string AnimationQuality = "High"; // "Low", "Medium", "High"
+        
+        [Header("Active Animations")]
+        public List<UIActiveAnimationDTO> ActiveAnimations = new List<UIActiveAnimationDTO>();
+        
+        [Header("Animation Preferences")]
+        public bool EnableTransitionAnimations = true;
+        public bool EnableHoverAnimations = true;
+        public bool EnableLoadingAnimations = true;
+        public bool EnableParticleEffects = true;
+        
+        [Header("Performance")]
+        public int MaxConcurrentAnimations = 10;
+        public bool EnableAnimationBatching = true;
+        public bool PauseAnimationsWhenInactive = true;
+    }
+    
+    /// <summary>
+    /// DTO for UI localization state
+    /// </summary>
+    [System.Serializable]
+    public class UILocalizationStateDTO
+    {
+        [Header("Language Settings")]
+        public string CurrentLanguage = "en-US";
+        public string FallbackLanguage = "en-US";
+        public List<string> AvailableLanguages = new List<string>();
+        
+        [Header("Regional Settings")]
+        public string CurrentRegion = "US";
+        public string DateFormat = "MM/dd/yyyy";
+        public string TimeFormat = "12-hour";
+        public string NumberFormat = "US";
+        public string CurrencyFormat = "USD";
+        
+        [Header("Text Settings")]
+        public string TextDirection = "LeftToRight"; // "LeftToRight", "RightToLeft"
+        public bool EnableRightToLeftSupport = false;
+        public float TextScale = 1.0f;
+        
+        [Header("Localization Cache")]
+        public Dictionary<string, string> CachedTranslations = new Dictionary<string, string>();
+        public DateTime LastLocalizationUpdate;
+    }
+    
+    /// <summary>
+    /// DTO for UI control state
+    /// </summary>
+    [System.Serializable]
+    public class UIControlStateDTO
+    {
+        [Header("Control Values")]
+        public Dictionary<string, object> ControlValues = new Dictionary<string, object>();
+        
+        [Header("Form State")]
+        public Dictionary<string, UIFormStateDTO> FormStates = new Dictionary<string, UIFormStateDTO>();
+        
+        [Header("Validation State")]
+        public Dictionary<string, UIValidationStateDTO> ValidationStates = new Dictionary<string, UIValidationStateDTO>();
+        
+        [Header("Control Behavior")]
+        public bool EnableRealTimeValidation = true;
+        public bool EnableAutoSave = false;
+        public float AutoSaveInterval = 30f; // seconds
+        
+        [Header("Input History")]
+        public Dictionary<string, List<object>> InputHistory = new Dictionary<string, List<object>>();
+        public int MaxHistoryItems = 20;
+    }
+    
+    /// <summary>
+    /// DTO for UI interaction state
+    /// </summary>
+    [System.Serializable]
+    public class UIInteractionStateDTO
+    {
+        [Header("Current Interactions")]
+        public List<UIActiveInteractionDTO> ActiveInteractions = new List<UIActiveInteractionDTO>();
+        
+        [Header("Input State")]
+        public bool MouseOverUI = false;
+        public Vector2 LastMousePosition;
+        public bool KeyboardFocusOnUI = false;
+        public string FocusedElement;
+        
+        [Header("Drag and Drop")]
+        public bool IsDragging = false;
+        public string DraggedElement;
+        public Vector2 DragStartPosition;
+        public Dictionary<string, object> DragData = new Dictionary<string, object>();
+        
+        [Header("Selection State")]
+        public List<string> SelectedElements = new List<string>();
+        public string PrimarySelection;
+        public bool MultiSelectEnabled = true;
+        
+        [Header("Hover State")]
+        public string HoveredElement;
+        public DateTime HoverStartTime;
+        public bool ShowHoverEffects = true;
+    }
+    
+    // Supporting DTOs for user preferences and customization
+    
+    [System.Serializable]
+    public class UIActiveAnimationDTO
+    {
+        public string AnimationId;
+        public string TargetElement;
+        public string AnimationType;
+        public float Duration;
+        public float ElapsedTime;
+        public bool IsLooping = false;
+        public Dictionary<string, object> AnimationData = new Dictionary<string, object>();
+    }
+    
+    [System.Serializable]
+    public class UIActiveInteractionDTO
+    {
+        public string InteractionId;
+        public string InteractionType;
+        public string TargetElement;
+        public DateTime StartTime;
+        public Dictionary<string, object> InteractionData = new Dictionary<string, object>();
+    }
+    
+    [System.Serializable]
+    public class UIFormStateDTO
+    {
+        public string FormId;
+        public Dictionary<string, object> FieldValues = new Dictionary<string, object>();
+        public bool IsDirty = false;
+        public bool IsValid = true;
+        public DateTime LastModified;
+        public List<string> ModifiedFields = new List<string>();
+    }
+    
+    [System.Serializable]
+    public class UIValidationStateDTO
+    {
+        public string ControlId;
+        public bool IsValid = true;
+        public List<string> ErrorMessages = new List<string>();
+        public List<string> WarningMessages = new List<string>();
+        public DateTime LastValidated;
+    }
+}

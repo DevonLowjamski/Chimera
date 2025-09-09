@@ -117,8 +117,13 @@ namespace ProjectChimera.Systems.Analytics
         public string ReportId { get; set; }
         public string ReportType { get; set; }
         public DateTime GeneratedAt { get; set; }
+        public DateTime GenerationTime { get; set; }
+        public TimeSpan TimeWindow { get; set; }
         public string Title { get; set; }
         public string Summary { get; set; }
+        public string GeneratedBy { get; set; }
+        public ReportTemplate Template { get; set; }
+        public List<string> Sections { get; set; } = new List<string>();
         public List<InsightResult> Insights { get; set; } = new List<InsightResult>();
         public List<AnomalyAlert> Alerts { get; set; } = new List<AnomalyAlert>();
         public Dictionary<string, object> Data { get; set; } = new Dictionary<string, object>();
@@ -131,6 +136,7 @@ namespace ProjectChimera.Systems.Analytics
         public string PatternType { get; set; }
         public DateTime FirstObserved { get; set; }
         public DateTime LastObserved { get; set; }
+        public DateTime IdentifiedAt { get; set; }
         public int Frequency { get; set; }
         public float Strength { get; set; }
         public Dictionary<string, object> Characteristics { get; set; } = new Dictionary<string, object>();
@@ -183,8 +189,10 @@ namespace ProjectChimera.Systems.Analytics
     {
         Low = 0,
         Normal = 1,
-        High = 2,
-        Critical = 3
+        Medium = 2,
+        High = 3,
+        Critical = 4,
+        Automatic = 5
     }
 
     public enum ReportType
@@ -257,6 +265,8 @@ namespace ProjectChimera.Systems.Analytics
         public string Message { get; set; }
         public AlertSeverity Severity { get; set; }
         public DateTime Timestamp { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string CreatedBy { get; set; }
         public object Data { get; set; }
         public bool IsResolved { get; set; } = false;
     }
@@ -315,7 +325,7 @@ namespace ProjectChimera.Systems.Analytics
             // Create a composite pattern from multiple events
             var firstEvent = playerEvents.First();
             var lastEvent = playerEvents.Last();
-            
+
             var pattern = new BehaviorPattern
             {
                 PatternId = System.Guid.NewGuid().ToString(),
@@ -412,7 +422,7 @@ namespace ProjectChimera.Systems.Analytics
 
         public PredictionResult Predict(Dictionary<string, object> inputData, string predictionType = "general")
         {
-            if (!IsActive) 
+            if (!IsActive)
             {
                 return new PredictionResult
                 {
@@ -544,16 +554,16 @@ namespace ProjectChimera.Systems.Analytics
             AnalyticsAlerts.Add(alert);
 
             // Limit alerts per minute
-            var recentAlerts = AnalyticsAlerts.Where(a => 
+            var recentAlerts = AnalyticsAlerts.Where(a =>
                 (DateTime.UtcNow - a.Timestamp).TotalMinutes < 1).Count();
-            
+
             if (recentAlerts > MaxAlertsPerMinute)
             {
                 // Remove oldest alerts to stay within limit
                 var oldestAlerts = AnalyticsAlerts
                     .OrderBy(a => a.Timestamp)
                     .Take(recentAlerts - MaxAlertsPerMinute);
-                
+
                 foreach (var oldAlert in oldestAlerts)
                 {
                     AnalyticsAlerts.Remove(oldAlert);

@@ -1,0 +1,156 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.Save
+{
+    /// <summary>
+    /// UI navigation and menu data structures for save/load operations.
+    /// Contains navigation state, menu systems, and user interaction tracking.
+    /// </summary>
+    
+    /// <summary>
+    /// DTO for UI navigation state
+    /// </summary>
+    [System.Serializable]
+    public class UINavigationStateDTO
+    {
+        [Header("Navigation Stack")]
+        public List<UINavigationItemDTO> NavigationStack = new List<UINavigationItemDTO>();
+        public int CurrentNavigationIndex = 0;
+        
+        [Header("Breadcrumbs")]
+        public List<UIBreadcrumbDTO> Breadcrumbs = new List<UIBreadcrumbDTO>();
+        public bool EnableBreadcrumbs = true;
+        
+        [Header("Navigation History")]
+        public List<UINavigationHistoryDTO> NavigationHistory = new List<UINavigationHistoryDTO>();
+        public int MaxHistoryItems = 50;
+        
+        [Header("Quick Navigation")]
+        public List<UIQuickAccessDTO> QuickAccessItems = new List<UIQuickAccessDTO>();
+        public bool EnableQuickAccess = true;
+        
+        [Header("Navigation Behavior")]
+        public bool EnableBackForwardNavigation = true;
+        public bool RememberNavigationState = true;
+        public bool EnableKeyboardNavigation = true;
+    }
+    
+    /// <summary>
+    /// DTO for UI menu state
+    /// </summary>
+    [System.Serializable]
+    public class UIMenuStateDTO
+    {
+        [Header("Menu Configuration")]
+        public List<UIMenuItemDTO> MenuItems = new List<UIMenuItemDTO>();
+        public Dictionary<string, bool> MenuVisibility = new Dictionary<string, bool>();
+        
+        [Header("Context Menus")]
+        public List<UIContextMenuDTO> ContextMenus = new List<UIContextMenuDTO>();
+        public bool EnableContextMenus = true;
+        
+        [Header("Menu Behavior")]
+        public bool EnableMenuAnimations = true;
+        public float MenuAnimationSpeed = 1.0f;
+        public bool EnableMenuSounds = true;
+        public bool AutoCloseMenus = true;
+        
+        [Header("Custom Menus")]
+        public List<UICustomMenuDTO> CustomMenus = new List<UICustomMenuDTO>();
+        public bool AllowMenuCustomization = true;
+        
+        [Header("Recent Items")]
+        public List<UIRecentItemDTO> RecentMenuItems = new List<UIRecentItemDTO>();
+        public int MaxRecentItems = 10;
+    }
+    
+    // Supporting DTOs for navigation and menu systems
+    
+    [System.Serializable]
+    public class UINavigationItemDTO
+    {
+        public string ItemId;
+        public string ItemName;
+        public string ItemType;
+        public string TargetView;
+        public Dictionary<string, object> NavigationData = new Dictionary<string, object>();
+        public DateTime AccessTime;
+    }
+
+    [System.Serializable]
+    public class UIBreadcrumbDTO
+    {
+        public string ItemName;
+        public string ItemId;
+        public string TargetView;
+        public bool IsClickable = true;
+        public int Level;
+    }
+
+    [System.Serializable]
+    public class UINavigationHistoryDTO
+    {
+        public string ViewName;
+        public DateTime AccessTime;
+        public Dictionary<string, object> ViewState = new Dictionary<string, object>();
+        public float TimeSpent; // seconds
+    }
+
+    [System.Serializable]
+    public class UIQuickAccessDTO
+    {
+        public string ItemId;
+        public string ItemName;
+        public string IconName;
+        public string TargetView;
+        public int Priority;
+        public int UsageCount;
+        public DateTime LastUsed;
+    }
+
+    [System.Serializable]
+    public class UIMenuItemDTO
+    {
+        public string MenuId;
+        public string MenuName;
+        public string IconName;
+        public bool IsVisible = true;
+        public bool IsEnabled = true;
+        public List<string> SubMenuItems = new List<string>();
+        public string Action;
+        public string KeyboardShortcut;
+    }
+
+    [System.Serializable]
+    public class UIContextMenuDTO
+    {
+        public string ContextId;
+        public string TargetElement;
+        public List<UIMenuItemDTO> MenuItems = new List<UIMenuItemDTO>();
+        public bool IsEnabled = true;
+    }
+
+    [System.Serializable]
+    public class UICustomMenuDTO
+    {
+        public string MenuId;
+        public string MenuName;
+        public List<UIMenuItemDTO> CustomItems = new List<UIMenuItemDTO>();
+        public string MenuPosition;
+        public bool IsUserCreated = true;
+        public DateTime CreatedDate;
+    }
+
+    [System.Serializable]
+    public class UIRecentItemDTO
+    {
+        public string ItemId;
+        public string ItemName;
+        public string ItemType;
+        public DateTime LastAccessed;
+        public int AccessCount;
+        public string IconName;
+    }
+}
