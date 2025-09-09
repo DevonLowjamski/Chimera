@@ -784,7 +784,21 @@ namespace ProjectChimera.Systems.Cultivation
             foreach (var stressor in _activeStressors)
             {
                 if (stressor.IsActive)
-                    _stressLevel += stressor.Intensity * stressor.StressSource.StressMultiplier;
+                {
+                    float stressMultiplier = 1f;
+
+                    // Try to get stress multiplier from different possible types
+                    if (stressor.StressSource is ProjectChimera.Data.Simulation.EnvironmentalStressSO environmentalStress)
+                    {
+                        stressMultiplier = environmentalStress.StressMultiplier;
+                    }
+                    else if (stressor.StressSource is StressFactor stressFactor)
+                    {
+                        stressMultiplier = stressFactor.StressMultiplier;
+                    }
+
+                    _stressLevel += stressor.Intensity * stressMultiplier;
+                }
             }
 
             _stressLevel = Mathf.Clamp01(_stressLevel);

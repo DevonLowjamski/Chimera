@@ -99,7 +99,19 @@ namespace ProjectChimera.Systems.Cultivation
         /// </summary>
         public float GetCurrentSeverity()
         {
-            float baseSeverity = Intensity * StressSource.StressMultiplier;
+            float stressMultiplier = 1f;
+
+            // Try to get stress multiplier from different possible types
+            if (StressSource is StressFactor stressFactor)
+            {
+                stressMultiplier = stressFactor.StressMultiplier;
+            }
+            else if (StressSource is ProjectChimera.Data.Simulation.EnvironmentalStressSO environmentalStress)
+            {
+                stressMultiplier = environmentalStress.StressMultiplier;
+            }
+
+            float baseSeverity = Intensity * stressMultiplier;
 
             // Chronic stress becomes more severe over time
             if (IsChronic)

@@ -209,10 +209,26 @@ namespace ProjectChimera.Systems.Cultivation
 
         private float CalculateStressSpecificDamage(ActiveStressor stressor, float deltaTime)
         {
-            float baseDamage = stressor.Intensity * stressor.StressSource.DamagePerSecond * deltaTime;
+            float damagePerSecond = 0.01f; // Default damage per second
+            bool isBiotic = false;
+
+            // Try to get properties from different possible types
+            if (stressor.StressSource is ProjectChimera.Data.Simulation.EnvironmentalStressSO environmentalStress)
+            {
+                damagePerSecond = environmentalStress.DamagePerSecond;
+                isBiotic = environmentalStress.StressType == ProjectChimera.Data.Simulation.StressType.Disease ||
+                          environmentalStress.StressType == ProjectChimera.Data.Simulation.StressType.Pest;
+            }
+            else if (stressor.StressSource is StressFactor stressFactor)
+            {
+                damagePerSecond = stressFactor.DamagePerSecond;
+                isBiotic = stressFactor.IsBiotic();
+            }
+
+            float baseDamage = stressor.Intensity * damagePerSecond * deltaTime;
 
             // Apply disease resistance for biotic stress
-            if (stressor.StressSource.IsBiotic())
+            if (isBiotic)
             {
                 baseDamage *= (1f - _diseaseResistance);
             }

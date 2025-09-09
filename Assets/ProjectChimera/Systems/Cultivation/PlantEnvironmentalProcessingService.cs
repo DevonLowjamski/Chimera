@@ -297,7 +297,7 @@ namespace ProjectChimera.Systems.Cultivation
             var plantId = plant.PlantID;
             if (_plantActiveStressors.ContainsKey(plantId))
             {
-                _plantActiveStressors[plantId].RemoveAll(s => s.StressSource == stressSource);
+                _plantActiveStressors[plantId].RemoveAll(s => s.StressSource is EnvironmentalStressSO envStress && envStress == stressSource);
             }
 
             if (_enableDetailedLogging)
@@ -476,7 +476,10 @@ namespace ProjectChimera.Systems.Cultivation
 
                     if (stressor.Intensity <= 0f)
                     {
-                        RemoveEnvironmentalStress(plant, stressor.StressSource);
+                        if (stressor.StressSource is EnvironmentalStressSO environmentalStress)
+                        {
+                            RemoveEnvironmentalStress(plant, environmentalStress);
+                        }
                     }
                 }
             }
