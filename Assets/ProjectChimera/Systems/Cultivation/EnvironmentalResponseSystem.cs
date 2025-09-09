@@ -396,7 +396,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             try
             {
-                if (strain is ProjectChimera.Data.Genetics.PlantStrainSO geneticsStrain)
+                if (strain is ProjectChimera.Data.Genetics.PlantGeneticsData geneticsStrain)
                 {
                     // Try to get GxE profile from genetics strain
                     _gxeProfile = geneticsStrain.GxEProfile;
