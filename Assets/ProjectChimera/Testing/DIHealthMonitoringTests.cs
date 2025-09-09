@@ -300,8 +300,6 @@ namespace ProjectChimera.Testing
                     LogTest($"Health report timestamp is fresh: {timeDiff.TotalSeconds:F1} seconds old");
                 }
 
-                yield return new WaitForSeconds(0.1f);
-
                 result.Success = result.Errors.Count == 0;
                 LogTest($"Health report generation: {(result.Success ? "PASSED" : "FAILED")}");
             }
@@ -312,6 +310,9 @@ namespace ProjectChimera.Testing
             }
 
             _testResults.Add(result);
+
+            // Move yield statement outside try-catch block
+            yield return new WaitForSeconds(0.1f);
         }
 
         /// <summary>
@@ -340,8 +341,6 @@ namespace ProjectChimera.Testing
                 _gameManager.PauseGame();
                 pauseTestSuccessful = true;
 
-                yield return new WaitForSeconds(0.1f);
-
                 if (!_gameManager.IsGamePaused)
                 {
                     result.AddError("Game pause functionality failed - IsGamePaused still false");
@@ -354,8 +353,6 @@ namespace ProjectChimera.Testing
                 // Test resume functionality
                 _gameManager.ResumeGame();
                 resumeTestSuccessful = true;
-
-                yield return new WaitForSeconds(0.1f);
 
                 if (_gameManager.IsGamePaused)
                 {
@@ -436,6 +433,10 @@ namespace ProjectChimera.Testing
             }
 
             _testResults.Add(result);
+
+            // Move yield statements outside try-catch block
+            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.1f);
         }
 
         /// <summary>
@@ -460,8 +461,6 @@ namespace ProjectChimera.Testing
                 {
                     // Register service for monitoring
                     _healthMonitor.RegisterService(serviceId, testService);
-
-                    yield return new WaitForSeconds(0.1f);
 
                     var newTrackedCount = _healthMonitor.TrackedServicesCount;
                     if (newTrackedCount <= initialTrackedCount)
@@ -500,8 +499,6 @@ namespace ProjectChimera.Testing
                     {
                         _healthMonitor.UnregisterService(serviceId);
 
-                        yield return new WaitForSeconds(0.1f);
-
                         var finalTrackedCount = _healthMonitor.TrackedServicesCount;
                         if (finalTrackedCount >= newTrackedCount)
                         {
@@ -533,8 +530,6 @@ namespace ProjectChimera.Testing
                     result.AddWarning("Health monitor stopped monitoring during service tests");
                 }
 
-                yield return new WaitForSeconds(0.1f);
-
                 result.Success = result.Errors.Count == 0;
                 LogTest($"Service monitoring functionality: {(result.Success ? "PASSED" : "FAILED")}");
             }
@@ -545,6 +540,11 @@ namespace ProjectChimera.Testing
             }
 
             _testResults.Add(result);
+
+            // Move yield statements outside try-catch block
+            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.1f);
         }
 
         /// <summary>
