@@ -2,6 +2,7 @@ using UnityEditor;
 using UnityEngine;
 using System.IO;
 using System.Linq;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.CI.Editor
 {
@@ -30,7 +31,7 @@ namespace ProjectChimera.CI.Editor
 
             if (isCIBuild)
             {
-                Debug.Log("🔧 CI Environment detected - configuring tools...");
+                ChimeraLogger.Log("🔧 CI Environment detected - configuring tools...");
                 ConfigureCISettings();
             }
 
@@ -54,7 +55,7 @@ namespace ProjectChimera.CI.Editor
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = 60;
 
-            Debug.Log("✅ CI settings configured");
+            ChimeraLogger.Log("✅ CI settings configured");
         }
 
         /// <summary>
@@ -86,7 +87,7 @@ namespace ProjectChimera.CI.Editor
         /// </summary>
         public static void RunQualityAnalysisCI()
         {
-            Debug.Log("🔍 Running CI Quality Analysis...");
+            ChimeraLogger.Log("🔍 Running CI Quality Analysis...");
             CodeQualityAnalyzer.RunQualityAnalysis();
         }
 
@@ -95,7 +96,7 @@ namespace ProjectChimera.CI.Editor
         /// </summary>
         public static void BuildPerformanceTestsCI()
         {
-            Debug.Log("🎯 Building Performance Tests for CI...");
+            ChimeraLogger.Log("🎯 Building Performance Tests for CI...");
             PerformanceBuildMethod.BuildPerformanceTest();
         }
 
@@ -104,7 +105,7 @@ namespace ProjectChimera.CI.Editor
         /// </summary>
         public static void RunAllCIChecks()
         {
-            Debug.Log("🚀 Running Complete CI Analysis Pipeline...");
+            ChimeraLogger.Log("🚀 Running Complete CI Analysis Pipeline...");
 
             try
             {
@@ -117,12 +118,12 @@ namespace ProjectChimera.CI.Editor
                 // Step 3: Performance Build
                 PerformanceBuildMethod.BuildPerformanceTest();
 
-                Debug.Log("✅ All CI checks completed successfully");
+                ChimeraLogger.Log("✅ All CI checks completed successfully");
                 EditorApplication.Exit(0);
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"❌ CI checks failed: {e.Message}");
+                ChimeraLogger.LogError($"❌ CI checks failed: {e.Message}");
                 EditorApplication.Exit(1);
             }
         }
@@ -132,7 +133,7 @@ namespace ProjectChimera.CI.Editor
         /// </summary>
         private static void ValidateArchitecture()
         {
-            Debug.Log("🏗️ Validating architectural patterns...");
+            ChimeraLogger.Log("🏗️ Validating architectural patterns...");
 
             var violations = new System.Collections.Generic.List<string>();
 
@@ -168,15 +169,15 @@ namespace ProjectChimera.CI.Editor
 
             if (violations.Count > 0)
             {
-                Debug.LogWarning("⚠️ Architecture validation found issues:");
+                ChimeraLogger.LogWarning("⚠️ Architecture validation found issues:");
                 foreach (var violation in violations)
                 {
-                    Debug.LogWarning($"  • {violation}");
+                    ChimeraLogger.LogWarning($"  • {violation}");
                 }
             }
             else
             {
-                Debug.Log("✅ Architecture validation passed");
+                ChimeraLogger.Log("✅ Architecture validation passed");
             }
         }
 
@@ -203,7 +204,7 @@ namespace ProjectChimera.CI.Editor
             File.WriteAllText(buildInfoPath, json);
             AssetDatabase.Refresh();
 
-            Debug.Log($"✅ Build info generated: {buildInfoPath}");
+            ChimeraLogger.Log($"✅ Build info generated: {buildInfoPath}");
         }
 
         /// <summary>
@@ -212,7 +213,7 @@ namespace ProjectChimera.CI.Editor
         [MenuItem("Project Chimera/CI/Validate Assembly Definitions")]
         public static void ValidateAssemblyDefinitions()
         {
-            Debug.Log("🔍 Validating assembly definitions...");
+            ChimeraLogger.Log("🔍 Validating assembly definitions...");
 
             var asmdefFiles = Directory.GetFiles("Assets/ProjectChimera", "*.asmdef", SearchOption.AllDirectories);
             var issues = new System.Collections.Generic.List<string>();
@@ -249,15 +250,15 @@ namespace ProjectChimera.CI.Editor
 
             if (issues.Count > 0)
             {
-                Debug.LogWarning("⚠️ Assembly definition validation issues:");
+                ChimeraLogger.LogWarning("⚠️ Assembly definition validation issues:");
                 foreach (var issue in issues)
                 {
-                    Debug.LogWarning($"  • {issue}");
+                    ChimeraLogger.LogWarning($"  • {issue}");
                 }
             }
             else
             {
-                Debug.Log($"✅ Validated {asmdefFiles.Length} assembly definitions");
+                ChimeraLogger.Log($"✅ Validated {asmdefFiles.Length} assembly definitions");
             }
         }
 

@@ -4,6 +4,7 @@ using UnityEditor.Build.Reporting;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.CI
 {
@@ -34,12 +35,12 @@ namespace ProjectChimera.CI
 
             if (summary.result == BuildResult.Succeeded)
             {
-                Debug.Log($"Performance build succeeded: {summary.totalSize} bytes");
+                ChimeraLogger.Log($"Performance build succeeded: {summary.totalSize} bytes");
                 GeneratePerformanceBuildReport(report);
             }
             else
             {
-                Debug.LogError($"Performance build failed: {summary.result}");
+                ChimeraLogger.LogError($"Performance build failed: {summary.result}");
                 EditorApplication.Exit(1);
             }
         }
@@ -68,7 +69,7 @@ namespace ProjectChimera.CI
                 }
                 else
                 {
-                    Debug.LogWarning($"Performance test scene not found: {scene}");
+                    ChimeraLogger.LogWarning($"Performance test scene not found: {scene}");
                 }
             }
 
@@ -117,7 +118,7 @@ namespace ProjectChimera.CI
 
             PlayerSettings.SetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup, string.Join(";", defines));
 
-            Debug.Log("Configured build settings for performance testing");
+            ChimeraLogger.Log("Configured build settings for performance testing");
         }
 
         /// <summary>
@@ -177,8 +178,8 @@ namespace ProjectChimera.CI
             var reportPath = "performance-build-report.json";
             File.WriteAllText(reportPath, reportJson);
 
-            Debug.Log($"Performance build report generated: {reportPath}");
-            Debug.Log($"Build completed in {report.summary.totalTime.TotalSeconds:F2}s with {report.summary.totalWarnings} warnings");
+            ChimeraLogger.Log($"Performance build report generated: {reportPath}");
+            ChimeraLogger.Log($"Build completed in {report.summary.totalTime.TotalSeconds:F2}s with {report.summary.totalWarnings} warnings");
         }
     }
 

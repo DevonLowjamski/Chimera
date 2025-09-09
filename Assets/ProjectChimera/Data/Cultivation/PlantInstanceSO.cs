@@ -3,6 +3,7 @@ using ProjectChimera.Shared;
 using ProjectChimera.Data.Genetics;
 using System;
 using ProjectChimera.Data.Shared;
+using ProjectChimera.Core.Logging;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 
 
@@ -870,7 +871,7 @@ namespace ProjectChimera.Data.Cultivation
             _cumulativeStressDays = 0f;
             _optimalDays = 0f;
 
-            Debug.Log($"[PlantInstanceSO] Initialized plant {_plantID} with strain {strain?.strainName ?? "Unknown"}");
+            ChimeraLogger.Log($"[PlantInstanceSO] Initialized plant {_plantID} with strain {strain?.strainName ?? "Unknown"}");
         }
 
 

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.CI
 {
@@ -31,7 +32,7 @@ namespace ProjectChimera.CI
         [MenuItem("Project Chimera/CI/Run Quality Analysis")]
         public static void RunQualityAnalysis()
         {
-            Debug.Log("🔍 Starting Code Quality Analysis...");
+            ChimeraLogger.Log("🔍 Starting Code Quality Analysis...");
 
             var overallReport = new QualityAnalysisReport
             {
@@ -45,7 +46,7 @@ namespace ProjectChimera.CI
                 .Where(f => !IsExcludedPath(f))
                 .ToArray();
 
-            Debug.Log($"Analyzing {csFiles.Length} C# files...");
+            ChimeraLogger.Log($"Analyzing {csFiles.Length} C# files...");
 
             int criticalViolations = 0;
             int majorViolations = 0;
@@ -79,7 +80,7 @@ namespace ProjectChimera.CI
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"Failed to analyze {filePath}: {e.Message}");
+                    ChimeraLogger.LogError($"Failed to analyze {filePath}: {e.Message}");
                 }
             }
 
@@ -106,12 +107,12 @@ namespace ProjectChimera.CI
 #if CHIMERA_CI_BUILD
             if (!overallReport.summary.passesQualityGates)
             {
-                Debug.LogError("❌ Quality gates failed - build should not proceed");
+                ChimeraLogger.LogError("❌ Quality gates failed - build should not proceed");
                 EditorApplication.Exit(1);
             }
             else
             {
-                Debug.Log("✅ Quality gates passed");
+                ChimeraLogger.Log("✅ Quality gates passed");
                 EditorApplication.Exit(0);
             }
 #endif
@@ -172,11 +173,11 @@ namespace ProjectChimera.CI
                 }
 
                 File.WriteAllText(QUALITY_REPORT_PATH, jsonReport);
-                Debug.Log($"Quality report saved to: {QUALITY_REPORT_PATH}");
+                ChimeraLogger.Log($"Quality report saved to: {QUALITY_REPORT_PATH}");
             }
             catch (Exception e)
             {
-                Debug.LogError($"Failed to save quality report: {e.Message}");
+                ChimeraLogger.LogError($"Failed to save quality report: {e.Message}");
             }
         }
 
@@ -187,50 +188,50 @@ namespace ProjectChimera.CI
         {
             var summary = report.summary;
 
-            Debug.Log("═══════════════════════════════════════");
-            Debug.Log("📊 PROJECT CHIMERA QUALITY ANALYSIS");
-            Debug.Log("═══════════════════════════════════════");
-            Debug.Log($"Analysis Time: {report.analysisTime:yyyy-MM-dd HH:mm:ss}");
-            Debug.Log($"Files Analyzed: {summary.totalFiles}");
-            Debug.Log($"Quality Grade: {summary.qualityGrade}");
-            Debug.Log($"Average Complexity: {summary.averageComplexityScore:F2}");
-            Debug.Log("");
+            ChimeraLogger.Log("═══════════════════════════════════════");
+            ChimeraLogger.Log("📊 PROJECT CHIMERA QUALITY ANALYSIS");
+            ChimeraLogger.Log("═══════════════════════════════════════");
+            ChimeraLogger.Log($"Analysis Time: {report.analysisTime:yyyy-MM-dd HH:mm:ss}");
+            ChimeraLogger.Log($"Files Analyzed: {summary.totalFiles}");
+            ChimeraLogger.Log($"Quality Grade: {summary.qualityGrade}");
+            ChimeraLogger.Log($"Average Complexity: {summary.averageComplexityScore:F2}");
+            ChimeraLogger.Log("");
 
-            Debug.Log("📋 VIOLATION SUMMARY");
-            Debug.Log("─────────────────────");
-            Debug.Log($"🔴 Critical: {summary.criticalViolations}");
-            Debug.Log($"🟡 Major:    {summary.majorViolations}");
-            Debug.Log($"🟢 Minor:    {summary.minorViolations}");
-            Debug.Log($"📁 Files with violations: {summary.filesWithViolations}/{summary.totalFiles}");
-            Debug.Log("");
+            ChimeraLogger.Log("📋 VIOLATION SUMMARY");
+            ChimeraLogger.Log("─────────────────────");
+            ChimeraLogger.Log($"🔴 Critical: {summary.criticalViolations}");
+            ChimeraLogger.Log($"🟡 Major:    {summary.majorViolations}");
+            ChimeraLogger.Log($"🟢 Minor:    {summary.minorViolations}");
+            ChimeraLogger.Log($"📁 Files with violations: {summary.filesWithViolations}/{summary.totalFiles}");
+            ChimeraLogger.Log("");
 
             if (summary.criticalViolations > 0)
             {
-                Debug.Log("🔴 CRITICAL VIOLATIONS (MUST FIX)");
-                Debug.Log("─────────────────────────────────");
+                ChimeraLogger.Log("🔴 CRITICAL VIOLATIONS (MUST FIX)");
+                ChimeraLogger.Log("─────────────────────────────────");
                 LogViolationsByType(report, ViolationSeverity.Critical);
-                Debug.Log("");
+                ChimeraLogger.Log("");
             }
 
             if (summary.majorViolations > 0)
             {
-                Debug.Log("🟡 MAJOR VIOLATIONS (HIGH PRIORITY)");
-                Debug.Log("───────────────────────────────────");
+                ChimeraLogger.Log("🟡 MAJOR VIOLATIONS (HIGH PRIORITY)");
+                ChimeraLogger.Log("───────────────────────────────────");
                 LogViolationsByType(report, ViolationSeverity.Major);
-                Debug.Log("");
+                ChimeraLogger.Log("");
             }
 
             var gateStatus = summary.passesQualityGates ? "✅ PASSED" : "❌ FAILED";
-            Debug.Log($"🚪 QUALITY GATES: {gateStatus}");
+            ChimeraLogger.Log($"🚪 QUALITY GATES: {gateStatus}");
 
             if (!summary.passesQualityGates)
             {
-                Debug.Log("Quality gates criteria:");
-                Debug.Log("- Zero critical violations ✓/❌");
-                Debug.Log($"- Major violations ≤ 10% of files ({summary.majorViolations}/{summary.totalFiles * 0.1:F0}) ✓/❌");
+                ChimeraLogger.Log("Quality gates criteria:");
+                ChimeraLogger.Log("- Zero critical violations ✓/❌");
+                ChimeraLogger.Log($"- Major violations ≤ 10% of files ({summary.majorViolations}/{summary.totalFiles * 0.1:F0}) ✓/❌");
             }
 
-            Debug.Log("═══════════════════════════════════════");
+            ChimeraLogger.Log("═══════════════════════════════════════");
         }
 
         /// <summary>
@@ -248,17 +249,17 @@ namespace ProjectChimera.CI
             {
                 var fileName = Path.GetFileName(item.File);
                 var lineInfo = item.Violation.LineNumber > 0 ? $":{item.Violation.LineNumber}" : "";
-                Debug.Log($"  • {fileName}{lineInfo} - {item.Violation.Message}");
+                ChimeraLogger.Log($"  • {fileName}{lineInfo} - {item.Violation.Message}");
 
                 if (!string.IsNullOrEmpty(item.Violation.Suggestion))
                 {
-                    Debug.Log($"    💡 {item.Violation.Suggestion}");
+                    ChimeraLogger.Log($"    💡 {item.Violation.Suggestion}");
                 }
             }
 
             if (violationsOfType.Count > 20)
             {
-                Debug.Log($"    ... and {violationsOfType.Count - 20} more violations");
+                ChimeraLogger.Log($"    ... and {violationsOfType.Count - 20} more violations");
             }
         }
 
@@ -275,7 +276,7 @@ namespace ProjectChimera.CI
             AssetDatabase.CreateAsset(unityReport, reportAssetPath);
             AssetDatabase.SaveAssets();
 
-            Debug.Log($"Unity quality report created: {reportAssetPath}");
+            ChimeraLogger.Log($"Unity quality report created: {reportAssetPath}");
         }
 
         /// <summary>
@@ -286,7 +287,7 @@ namespace ProjectChimera.CI
         {
             if (!File.Exists(QUALITY_REPORT_PATH))
             {
-                Debug.LogWarning("No quality report found. Run quality analysis first.");
+                ChimeraLogger.LogWarning("No quality report found. Run quality analysis first.");
                 return;
             }
 
@@ -303,8 +304,8 @@ namespace ProjectChimera.CI
                     .Take(10)
                     .ToList();
 
-                Debug.Log("🎯 TOP 10 FILES NEEDING ATTENTION");
-                Debug.Log("═════════════════════════════════");
+                ChimeraLogger.Log("🎯 TOP 10 FILES NEEDING ATTENTION");
+                ChimeraLogger.Log("═════════════════════════════════");
 
                 foreach (var fileReport in topViolatingFiles)
                 {
@@ -313,15 +314,15 @@ namespace ProjectChimera.CI
                     var major = fileReport.Violations.Count(v => v.Severity == ViolationSeverity.Major);
                     var minor = fileReport.Violations.Count(v => v.Severity == ViolationSeverity.Minor);
 
-                    Debug.Log($"📄 {fileName} ({fileReport.SystemType})");
-                    Debug.Log($"   Lines: {fileReport.Metrics.LineCount}, Methods: {fileReport.Metrics.MethodCount}");
-                    Debug.Log($"   Violations: 🔴{critical} 🟡{major} 🟢{minor}");
-                    Debug.Log("");
+                    ChimeraLogger.Log($"📄 {fileName} ({fileReport.SystemType})");
+                    ChimeraLogger.Log($"   Lines: {fileReport.Metrics.LineCount}, Methods: {fileReport.Metrics.MethodCount}");
+                    ChimeraLogger.Log($"   Violations: 🔴{critical} 🟡{major} 🟢{minor}");
+                    ChimeraLogger.Log("");
                 }
             }
             catch (Exception e)
             {
-                Debug.LogError($"Failed to load quality report: {e.Message}");
+                ChimeraLogger.LogError($"Failed to load quality report: {e.Message}");
             }
         }
     }
