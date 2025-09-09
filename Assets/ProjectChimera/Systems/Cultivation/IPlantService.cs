@@ -161,24 +161,6 @@ namespace ProjectChimera.Systems.Cultivation
 
     // CannabinoidProfile and TerpeneProfile classes moved to SystemsHarvestResults.cs to avoid duplication
 
-    /// <summary>
-    /// Genetic performance statistics structure
-    /// </summary>
-    [System.Serializable]
-    public class GeneticPerformanceStats
-    {
-        public long TotalCalculations;
-        public double AverageCalculationTimeMs;
-        public double CacheHitRatio;
-        public long BatchCalculations;
-        public double AverageBatchTimeMs;
-        public double AverageUpdateTimeMs;
-
-        public override string ToString()
-        {
-            return $"Calcs: {TotalCalculations}, Avg: {AverageCalculationTimeMs:F2}ms, Cache: {CacheHitRatio:F2}, Batch: {BatchCalculations}, BatchAvg: {AverageBatchTimeMs:F2}ms";
-        }
-    }
 
     /// <summary>
     /// Genetic diversity statistics structure

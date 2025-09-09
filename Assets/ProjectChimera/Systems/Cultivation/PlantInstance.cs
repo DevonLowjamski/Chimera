@@ -858,35 +858,6 @@ namespace ProjectChimera.Systems.Cultivation
         }
     }
 
-    /// <summary>
-    /// Represents an active stressor affecting the plant.
-    /// </summary>
-    [System.Serializable]
-    public class ActiveStressor
-    {
-        public EnvironmentalStressSO StressSource;
-        public float Intensity;
-        public float StartTime;
-        public bool IsActive;
-        public float Duration => Time.time - StartTime;
-    }
-
-    /// <summary>
-    /// Phenotypic traits expressed by the plant.
-    /// </summary>
-    [System.Serializable]
-    public class PhenotypicTraits
-    {
-        public float YieldMultiplier = 1f;
-        public float QualityMultiplier = 1f;
-        public float PotencyMultiplier = 1f;
-        public int FloweringTime = 60; // days
-        public float PlantHeight = 1f; // meters
-        public float DiseaseResistance = 1f;
-        public float HeatTolerance = 1f;
-        public float ColdTolerance = 1f;
-        public float DroughtTolerance = 1f;
-    }
 
     /// <summary>
     /// GxE response data for environmental interactions.

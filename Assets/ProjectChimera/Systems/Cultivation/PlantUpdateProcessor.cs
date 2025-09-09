@@ -13,6 +13,8 @@ using PlantGenotype = ProjectChimera.Data.Genetics.PlantGenotype;
 using GxEInteractionProfile = ProjectChimera.Data.Genetics.GxEInteractionProfile; // Correct type name
 using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for accessing managers
 
+namespace ProjectChimera.Systems.Cultivation
+{
     /// <summary>
     /// Main Plant Update Processor coordinator.
     /// Orchestrates growth calculations, health management, environmental responses,
@@ -553,4 +555,5 @@ using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for acce
         #endregion
 
     }
+}
 
