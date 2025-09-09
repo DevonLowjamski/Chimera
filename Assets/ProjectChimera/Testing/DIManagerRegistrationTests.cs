@@ -18,20 +18,20 @@ namespace ProjectChimera.Testing
         [Header("Test Configuration")]
         [SerializeField] private bool _runTestsOnStart = false;
         [SerializeField] private bool _enableTestLogging = true;
-        
+
         // Test state
         private List<ValidationResult> _testResults = new List<ValidationResult>();
         private DIGameManager _gameManager;
         private ProjectChimera.Core.ManagerRegistry _managerRegistry;
         private bool _testsRunning = false;
-        
+
         // Events
         public event System.Action<List<ValidationResult>> OnTestsCompleted;
-        
+
         // Properties
         public List<ValidationResult> TestResults => new List<ValidationResult>(_testResults);
         public bool TestsRunning => _testsRunning;
-        
+
         private void Start()
         {
             if (_runTestsOnStart)
@@ -39,51 +39,51 @@ namespace ProjectChimera.Testing
                 StartCoroutine(RunManagerRegistrationTests());
             }
         }
-        
+
         /// <summary>
         /// Run all manager registration and discovery tests
         /// </summary>
         public IEnumerator RunManagerRegistrationTests()
         {
             if (_testsRunning) yield break;
-            
+
             _testsRunning = true;
             _testResults.Clear();
-            
+
             LogTest("=== Starting DIGameManager Registration Tests ===");
-            
+
             // Initialize test components
             yield return StartCoroutine(InitializeTestComponents());
-            
+
             // Test 1: Manager registration system
             yield return StartCoroutine(TestManagerRegistrationSystem());
-            
+
             // Test 2: Service discovery mechanisms
             yield return StartCoroutine(TestServiceDiscoveryMechanisms());
-            
+
             // Test 3: Manager registry functionality
             yield return StartCoroutine(TestManagerRegistryFunctionality());
-            
+
             // Test 4: Interface-based discovery
             yield return StartCoroutine(TestInterfaceBasedDiscovery());
-            
+
             // Generate test summary
             GenerateTestSummary();
-            
+
             _testsRunning = false;
             OnTestsCompleted?.Invoke(_testResults);
             LogTest("=== DIGameManager Registration Tests Completed ===");
         }
-        
+
         /// <summary>
         /// Initialize test components
         /// </summary>
         private IEnumerator InitializeTestComponents()
         {
             LogTest("Initializing test components...");
-            
+
             var result = new ValidationResult { ValidationName = "Test Component Initialization" };
-            
+
             try
             {
                 // Find DIGameManager
@@ -118,26 +118,26 @@ namespace ProjectChimera.Testing
             // Move yield statement outside try-catch block
             yield return new WaitForSeconds(0.1f);
         }
-        
+
         /// <summary>
         /// Test manager registration system
         /// </summary>
         private IEnumerator TestManagerRegistrationSystem()
         {
             LogTest("Testing manager registration system...");
-            
+
             var result = new ValidationResult { ValidationName = "Manager Registration System" };
-            
+
             var testManager1 = CreateTestManager("TestManager1");
             var testManager2 = CreateTestManager("TestManager2");
             bool registrationSuccessful = false;
-            
+
             try
             {
                 // Test manager registration through DIGameManager
                 _gameManager.RegisterManager(testManager1);
                 _gameManager.RegisterManager(testManager2);
-                
+
                 registrationSuccessful = true;
                 LogTest("Test managers registered successfully");
 
@@ -155,7 +155,7 @@ namespace ProjectChimera.Testing
                 {
                     LogTest("Manager retrieval through GetManager successful");
                 }
-                
+
                 // Validate registration through GetAllManagers
                 var allManagers = _gameManager.GetAllManagers().ToList();
                 bool foundTestManager = allManagers.Any(m => m is TestManager);
@@ -168,11 +168,11 @@ namespace ProjectChimera.Testing
                     var testManagerCount = allManagers.Count(m => m is TestManager);
                     LogTest($"Found {testManagerCount} test managers in GetAllManagers");
                 }
-                
+
                 // Test registry access directly
                 var registeredCount = _managerRegistry.RegisteredManagerCount;
                 LogTest($"Manager registry has {registeredCount} registered managers");
-                
+
                 var isRegistered = _managerRegistry.IsManagerRegistered<TestManager>();
                 if (!isRegistered)
                 {
@@ -182,7 +182,7 @@ namespace ProjectChimera.Testing
                 {
                     LogTest("Manager correctly registered in ManagerRegistry");
                 }
-                
+
                 // Test service container registration integration
                 var serviceContainer = _gameManager.GlobalServiceContainer;
                 if (serviceContainer != null)
@@ -204,7 +204,7 @@ namespace ProjectChimera.Testing
                         result.AddWarning($"Service container manager resolution failed: {ex.Message}");
                     }
                 }
-                
+
                 result.Success = result.Errors.Count == 0;
                 LogTest($"Manager registration system: {(result.Success ? "PASSED" : "FAILED")}");
             }
@@ -225,30 +225,30 @@ namespace ProjectChimera.Testing
             // Move yield statement outside try-catch block
             yield return new WaitForSeconds(0.1f);
         }
-        
+
         /// <summary>
         /// Test service discovery mechanisms
         /// </summary>
         private IEnumerator TestServiceDiscoveryMechanisms()
         {
             LogTest("Testing service discovery mechanisms...");
-            
+
             var result = new ValidationResult { ValidationName = "Service Discovery Mechanisms" };
-            
+
             try
             {
                 // Test auto-discovery through ManagerRegistry
                 int initialCount = _managerRegistry.RegisteredManagerCount;
                 LogTest($"Initial manager count: {initialCount}");
-                
+
                 // Trigger auto-discovery
                 _managerRegistry.DiscoverAndRegisterAllManagers();
-                
+
                 yield return new WaitForSeconds(0.2f);
-                
+
                 int finalCount = _managerRegistry.RegisteredManagerCount;
                 LogTest($"Auto-discovery result: {initialCount} → {finalCount} managers");
-                
+
                 if (finalCount < initialCount)
                 {
                     result.AddError("Auto-discovery reduced manager count");
@@ -261,7 +261,7 @@ namespace ProjectChimera.Testing
                 {
                     LogTest($"Auto-discovery found {finalCount - initialCount} additional managers");
                 }
-                
+
                 // Validate that DIGameManager discovered itself
                 var diGameManagerRegistered = _managerRegistry.IsManagerRegistered(_gameManager);
                 if (!diGameManagerRegistered)
@@ -272,9 +272,9 @@ namespace ProjectChimera.Testing
                 {
                     LogTest("DIGameManager correctly auto-discovered");
                 }
-                
+
                 // Test discovery of specific manager types
-                var discoveredGameManager = _managerRegistry.GetManagerByType<DIGameManager>();
+                var discoveredGameManager = _managerRegistry.GetManagerByType(typeof(DIGameManager));
                 if (discoveredGameManager == null)
                 {
                     result.AddError("DIGameManager not discoverable by type");
@@ -287,7 +287,7 @@ namespace ProjectChimera.Testing
                 {
                     LogTest("Type-based discovery working correctly");
                 }
-                
+
                 result.Success = result.Errors.Count == 0;
                 LogTest($"Service discovery mechanisms: {(result.Success ? "PASSED" : "FAILED")}");
             }
@@ -296,45 +296,45 @@ namespace ProjectChimera.Testing
                 result.Success = false;
                 result.AddError($"Exception during service discovery test: {ex.Message}");
             }
-            
+
             _testResults.Add(result);
         }
-        
+
         /// <summary>
         /// Test manager registry functionality
         /// </summary>
         private IEnumerator TestManagerRegistryFunctionality()
         {
             LogTest("Testing manager registry functionality...");
-            
+
             var result = new ValidationResult { ValidationName = "Manager Registry Functionality" };
-            
+
             var testManager = CreateTestManager("RegistryTest");
-            
+
             try
             {
                 // Test direct registry operations
                 int initialCount = _managerRegistry.RegisteredManagerCount;
-                
+
                 // Register manager directly through registry
                 _managerRegistry.RegisterManager(testManager);
-                
+
                 yield return new WaitForSeconds(0.1f);
-                
+
                 int afterRegistrationCount = _managerRegistry.RegisteredManagerCount;
                 if (afterRegistrationCount != initialCount + 1)
                 {
                     result.AddError($"Registry manager count not updated correctly: expected {initialCount + 1}, got {afterRegistrationCount}");
                 }
-                
+
                 // Test registry query methods
                 var isRegistered = _managerRegistry.IsManagerRegistered<TestManager>();
                 if (!isRegistered)
                 {
                     result.AddError("IsManagerRegistered returned false for registered manager");
                 }
-                
-                var managerByType = _managerRegistry.GetManagerByType<TestManager>();
+
+                var managerByType = _managerRegistry.GetManagerByType(typeof(TestManager));
                 if (managerByType == null)
                 {
                     result.AddError("GetManagerByType returned null for registered manager");
@@ -343,13 +343,13 @@ namespace ProjectChimera.Testing
                 {
                     result.AddError("GetManagerByType returned wrong instance");
                 }
-                
+
                 var isInstanceRegistered = _managerRegistry.IsManagerRegistered(testManager);
                 if (!isInstanceRegistered)
                 {
                     result.AddError("IsManagerRegistered(instance) returned false for registered manager");
                 }
-                
+
                 // Test registry enumeration
                 var allManagers = _managerRegistry.GetAllRegisteredManagers().ToList();
                 bool foundTestManager = allManagers.Contains(testManager);
@@ -357,14 +357,14 @@ namespace ProjectChimera.Testing
                 {
                     result.AddError("Test manager not found in GetAllRegisteredManagers");
                 }
-                
+
                 // Test unregistration (if supported)
                 try
                 {
                     _managerRegistry.UnregisterManager(testManager);
-                    
+
                     yield return new WaitForSeconds(0.1f);
-                    
+
                     var stillRegistered = _managerRegistry.IsManagerRegistered<TestManager>();
                     if (stillRegistered)
                     {
@@ -379,7 +379,7 @@ namespace ProjectChimera.Testing
                 {
                     result.AddWarning($"Manager unregistration not supported: {ex.Message}");
                 }
-                
+
                 result.Success = result.Errors.Count == 0;
                 LogTest($"Manager registry functionality: {(result.Success ? "PASSED" : "FAILED")}");
             }
@@ -393,19 +393,19 @@ namespace ProjectChimera.Testing
                 // Cleanup test manager
                 if (testManager != null) DestroyImmediate(testManager.gameObject);
             }
-            
+
             _testResults.Add(result);
         }
-        
+
         /// <summary>
         /// Test interface-based discovery
         /// </summary>
         private IEnumerator TestInterfaceBasedDiscovery()
         {
             LogTest("Testing interface-based discovery...");
-            
+
             var result = new ValidationResult { ValidationName = "Interface-Based Discovery" };
-            
+
             try
             {
                 // Test interface-based discovery (if supported)
@@ -429,11 +429,11 @@ namespace ProjectChimera.Testing
                 {
                     result.AddWarning($"Interface-based discovery not supported: {ex.Message}");
                 }
-                
+
                 // Test multiple interface implementations (if any exist)
                 try
                 {
-                    var allGameManagers = _managerRegistry.GetAllManagersByInterface<IGameManager>().ToList();
+                    var allGameManagers = _managerRegistry.GetAllManagersByInterface(typeof(IGameManager)).ToList();
                     if (allGameManagers.Count == 0)
                     {
                         result.AddWarning("GetAllManagersByInterface returned no results");
@@ -441,7 +441,7 @@ namespace ProjectChimera.Testing
                     else
                     {
                         LogTest($"Found {allGameManagers.Count} managers implementing IGameManager");
-                        
+
                         bool foundOurGameManager = allGameManagers.Contains(_gameManager);
                         if (!foundOurGameManager)
                         {
@@ -453,9 +453,9 @@ namespace ProjectChimera.Testing
                 {
                     result.AddWarning($"Multiple interface-based discovery not supported: {ex.Message}");
                 }
-                
+
                 yield return new WaitForSeconds(0.1f);
-                
+
                 result.Success = result.Errors.Count == 0;
                 LogTest($"Interface-based discovery: {(result.Success ? "PASSED" : "FAILED")}");
             }
@@ -464,10 +464,10 @@ namespace ProjectChimera.Testing
                 result.Success = false;
                 result.AddError($"Exception during interface-based discovery test: {ex.Message}");
             }
-            
+
             _testResults.Add(result);
         }
-        
+
         /// <summary>
         /// Create a test manager for testing purposes
         /// </summary>
@@ -476,7 +476,7 @@ namespace ProjectChimera.Testing
             var testObject = new GameObject(name);
             return testObject.AddComponent<TestManager>();
         }
-        
+
         /// <summary>
         /// Generate and display test summary
         /// </summary>
@@ -486,9 +486,9 @@ namespace ProjectChimera.Testing
             int failed = 0;
             int totalErrors = 0;
             int totalWarnings = 0;
-            
+
             LogTest("\n=== DIGameManager Registration Tests Summary ===");
-            
+
             foreach (var result in _testResults)
             {
                 if (result.Success)
@@ -506,17 +506,17 @@ namespace ProjectChimera.Testing
                         totalErrors++;
                     }
                 }
-                
+
                 foreach (var warning in result.Warnings)
                 {
                     LogTest($"    Warning: {warning}");
                     totalWarnings++;
                 }
             }
-            
+
             LogTest($"\nResults: {passed} passed, {failed} failed");
             LogTest($"Total Errors: {totalErrors}, Total Warnings: {totalWarnings}");
-            
+
             if (failed == 0)
             {
                 LogTest("🎉 All DIGameManager registration tests PASSED!");
@@ -526,13 +526,13 @@ namespace ProjectChimera.Testing
                 LogTest($"❌ {failed} test(s) FAILED - Review errors above");
             }
         }
-        
+
         private void LogTest(string message)
         {
             if (_enableTestLogging)
                 ChimeraLogger.Log($"[DIManagerRegistrationTests] {message}");
         }
-        
+
         /// <summary>
         /// Test manager for validation
         /// </summary>
@@ -540,18 +540,18 @@ namespace ProjectChimera.Testing
         {
             public override string ManagerName => "ValidationTestManager";
             public override ManagerPriority Priority => ManagerPriority.Low;
-            
+
             protected override void OnManagerInitialize()
             {
                 // Test implementation
             }
-            
+
             protected override void OnManagerShutdown()
             {
                 // Test implementation
             }
         }
-        
+
         /// <summary>
         /// Validation result data structure
         /// </summary>
@@ -561,13 +561,13 @@ namespace ProjectChimera.Testing
             public bool Success { get; set; } = true;
             public List<string> Errors { get; set; } = new List<string>();
             public List<string> Warnings { get; set; } = new List<string>();
-            
+
             public void AddError(string error)
             {
                 Errors.Add(error);
                 Success = false;
             }
-            
+
             public void AddWarning(string warning)
             {
                 Warnings.Add(warning);

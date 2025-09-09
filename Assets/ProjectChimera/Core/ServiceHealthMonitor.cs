@@ -624,6 +624,7 @@ namespace ProjectChimera.Core
 
         // Properties from ServiceContainerValidator
         public DateTime CheckTimestamp { get; set; }
+        public DateTime Timestamp => CheckTimestamp;
         public Dictionary<Type, ServiceHealthStatus> ServiceHealth { get; set; } = new Dictionary<Type, ServiceHealthStatus>();
         public List<string> HealthIssues { get; set; } = new List<string>();
         public int TotalServices { get; set; }
@@ -656,6 +657,10 @@ namespace ProjectChimera.Core
         public DateTime LastChecked { get; set; }
         public DateTime RegistrationTime { get; set; }
         public List<ServiceStatusEntry> StatusHistory { get; set; } = new List<ServiceStatusEntry>();
+
+        // Additional properties for test compatibility
+        public bool IsHealthy => CurrentStatus == ServiceStatus.Healthy;
+        public DateTime LastCheckTime => LastChecked;
     }
 
     /// <summary>
