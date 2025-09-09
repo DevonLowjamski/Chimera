@@ -244,8 +244,6 @@ namespace ProjectChimera.Testing
                 // Trigger auto-discovery
                 _managerRegistry.DiscoverAndRegisterAllManagers();
 
-                yield return new WaitForSeconds(0.2f);
-
                 int finalCount = _managerRegistry.RegisteredManagerCount;
                 LogTest($"Auto-discovery result: {initialCount} → {finalCount} managers");
 
@@ -298,6 +296,9 @@ namespace ProjectChimera.Testing
             }
 
             _testResults.Add(result);
+
+            // Move yield statement outside try-catch block
+            yield return new WaitForSeconds(0.2f);
         }
 
         /// <summary>
@@ -318,8 +319,6 @@ namespace ProjectChimera.Testing
 
                 // Register manager directly through registry
                 _managerRegistry.RegisterManager(testManager);
-
-                yield return new WaitForSeconds(0.1f);
 
                 int afterRegistrationCount = _managerRegistry.RegisteredManagerCount;
                 if (afterRegistrationCount != initialCount + 1)
@@ -363,8 +362,6 @@ namespace ProjectChimera.Testing
                 {
                     _managerRegistry.UnregisterManager(testManager);
 
-                    yield return new WaitForSeconds(0.1f);
-
                     var stillRegistered = _managerRegistry.IsManagerRegistered<TestManager>();
                     if (stillRegistered)
                     {
@@ -395,6 +392,10 @@ namespace ProjectChimera.Testing
             }
 
             _testResults.Add(result);
+
+            // Move yield statements outside try-catch blocks
+            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.1f);
         }
 
         /// <summary>
@@ -454,8 +455,6 @@ namespace ProjectChimera.Testing
                     result.AddWarning($"Multiple interface-based discovery not supported: {ex.Message}");
                 }
 
-                yield return new WaitForSeconds(0.1f);
-
                 result.Success = result.Errors.Count == 0;
                 LogTest($"Interface-based discovery: {(result.Success ? "PASSED" : "FAILED")}");
             }
@@ -466,6 +465,9 @@ namespace ProjectChimera.Testing
             }
 
             _testResults.Add(result);
+
+            // Move yield statement outside try-catch block
+            yield return new WaitForSeconds(0.1f);
         }
 
         /// <summary>
