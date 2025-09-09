@@ -154,7 +154,7 @@ namespace ProjectChimera.Core
                     case ServiceLifetime.Singleton:
                         if (registration.Instance != null)
                             return registration.Instance;
-                        
+
                         if (_singletonInstances.TryGetValue(serviceType, out var singletonInstance))
                             return singletonInstance;
 
@@ -341,28 +341,28 @@ namespace ProjectChimera.Core
             Advanced.RegisterCollection<TInterface>(implementations);
         }
 
-        public void RegisterNamed<TInterface, TImplementation>(string name) 
+        public void RegisterNamed<TInterface, TImplementation>(string name)
             where TInterface : class
             where TImplementation : class, TInterface, new()
         {
             Advanced.RegisterNamed<TInterface, TImplementation>(name);
         }
 
-        public void RegisterConditional<TInterface, TImplementation>(Func<IServiceLocator, bool> condition) 
+        public void RegisterConditional<TInterface, TImplementation>(Func<IServiceLocator, bool> condition)
             where TInterface : class
             where TImplementation : class, TInterface, new()
         {
             Advanced.RegisterConditional<TInterface, TImplementation>(condition);
         }
 
-        public void RegisterDecorator<TInterface, TDecorator>() 
+        public void RegisterDecorator<TInterface, TDecorator>()
             where TInterface : class
             where TDecorator : class, TInterface, new()
         {
             Advanced.RegisterDecorator<TInterface, TDecorator>();
         }
 
-        public void RegisterWithCallback<TInterface, TImplementation>(Action<TImplementation> initializer) 
+        public void RegisterWithCallback<TInterface, TImplementation>(Action<TImplementation> initializer)
             where TInterface : class
             where TImplementation : class, TInterface, new()
         {
@@ -415,7 +415,7 @@ namespace ProjectChimera.Core
             });
         }
 
-        public void Replace<TInterface, TImplementation>() 
+        public void Replace<TInterface, TImplementation>()
             where TInterface : class
             where TImplementation : class, TInterface, new()
         {
@@ -455,7 +455,7 @@ namespace ProjectChimera.Core
         #endregion
 
         #region Private Helper Methods
-        
+
         private void DisposeInstances(IEnumerable<object> instances, string instanceType)
         {
             foreach (var instance in instances.OfType<IDisposable>())
@@ -470,7 +470,7 @@ namespace ProjectChimera.Core
                 }
             }
         }
-        
+
         #endregion
     }
 

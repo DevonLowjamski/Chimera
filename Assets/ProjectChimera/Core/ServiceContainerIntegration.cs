@@ -82,7 +82,7 @@ namespace ProjectChimera.Core.DependencyInjection
 
         public bool ContainsService<T>() where T : class => IsRegistered<T>();
         public bool ContainsService(Type serviceType) => IsRegistered(serviceType);
-        
+
         // Missing IServiceProvider interface methods
         public T GetRequiredService<T>() where T : class
         {
@@ -93,7 +93,7 @@ namespace ProjectChimera.Core.DependencyInjection
             }
             return service;
         }
-        
+
         public object GetRequiredService(Type serviceType)
         {
             var service = GetService(serviceType);
@@ -103,7 +103,7 @@ namespace ProjectChimera.Core.DependencyInjection
             }
             return service;
         }
-        
+
         public IEnumerable<object> GetServices(Type serviceType)
         {
             try
@@ -115,8 +115,8 @@ namespace ProjectChimera.Core.DependencyInjection
                 return Array.Empty<object>();
             }
         }
-        
-        public IEnumerable<T> GetServices<T>() where T : class 
+
+        public IEnumerable<T> GetServices<T>() where T : class
         {
             try
             {
@@ -127,7 +127,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 return Array.Empty<T>();
             }
         }
-        
+
         public T Resolve<T>()
         {
             try
@@ -142,7 +142,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 throw;
             }
         }
-        
+
         public object Resolve(Type serviceType)
         {
             try
@@ -157,7 +157,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 throw;
             }
         }
-        
+
         public T TryResolve<T>() where T : class => (T)_serviceProvider.GetService(typeof(T));
         public object TryResolve(Type serviceType) => _serviceProvider.GetService(serviceType);
         public bool IsRegistered<T>() => _serviceProvider.GetService(typeof(T)) != null;
@@ -191,7 +191,7 @@ namespace ProjectChimera.Core.DependencyInjection
             ChimeraLogger.LogWarning("[ServiceProviderContainerAdapter] Cannot get registrations from underlying IServiceProvider");
             return new Dictionary<Type, ProjectChimera.Core.ServiceRegistration>();
         }
-        
+
         public void RegisterSingleton<TInterface, TImplementation>() where TImplementation : class, TInterface, new() => throw new NotSupportedException("Cannot register services on IServiceProvider adapter");
         public void RegisterSingleton<TInterface>(TInterface instance)
         {
@@ -219,10 +219,10 @@ namespace ProjectChimera.Core.DependencyInjection
 
             _additionalServices[serviceType] = instance;
             ServiceRegistered?.Invoke(new ProjectChimera.Core.ServiceRegistration(
-                serviceType, 
-                instance.GetType(), 
-                ServiceLifetime.Singleton, 
-                instance, 
+                serviceType,
+                instance.GetType(),
+                ServiceLifetime.Singleton,
+                instance,
                 null
             ));
         }
@@ -232,7 +232,7 @@ namespace ProjectChimera.Core.DependencyInjection
         public void RegisterScoped<TInterface, TImplementation>() where TImplementation : class, TInterface, new() => throw new NotSupportedException("Cannot register services on IServiceProvider adapter");
         public void RegisterScoped<TInterface>(Func<IServiceContainer, TInterface> factory) => throw new NotSupportedException("Cannot register factories on IServiceProvider adapter");
         public void RegisterFactory<TInterface>(Func<IServiceLocator, TInterface> factory) where TInterface : class => throw new NotSupportedException("Cannot register factories on IServiceProvider adapter");
-        
+
         public void RegisterCollection<TInterface>(params Type[] implementations) where TInterface : class => throw new NotSupportedException("Advanced registration not supported on IServiceProvider adapter");
         public void RegisterNamed<TInterface, TImplementation>(string name) where TInterface : class where TImplementation : class, TInterface, new() => throw new NotSupportedException("Named registration not supported on IServiceProvider adapter");
         public void RegisterConditional<TInterface, TImplementation>(Func<IServiceLocator, bool> condition) where TInterface : class where TImplementation : class, TInterface, new() => throw new NotSupportedException("Conditional registration not supported on IServiceProvider adapter");
@@ -272,38 +272,38 @@ namespace ProjectChimera.Core.DependencyInjection
             return adapter.UnderlyingContainer;
         }
     }
-    
+
     public class UnifiedDIContainer : ProjectChimera.Core.IServiceContainer, IServiceProvider, IServiceScopeFactory
     {
         private readonly ProjectChimera.Core.IServiceContainer _container;
         private readonly IServiceProvider _serviceProvider;
-        
+
         public UnifiedDIContainer()
         {
             _container = ServiceContainerFactory.Instance;
             _serviceProvider = ServiceContainerIntegration.ToServiceProvider(_container, new ServiceProviderOptions());
         }
-        
+
         public bool IsDisposed => _container.IsDisposed;
-        
+
         public event Action<ProjectChimera.Core.ServiceRegistration> ServiceRegistered
         {
             add => _container.ServiceRegistered += value;
             remove => _container.ServiceRegistered -= value;
         }
-        
+
         public event Action<Type, object> ServiceResolved
         {
             add => _container.ServiceResolved += value;
             remove => _container.ServiceResolved -= value;
         }
-        
+
         public event Action<Type, Exception> ResolutionFailed
         {
             add => _container.ResolutionFailed += value;
             remove => _container.ResolutionFailed -= value;
         }
-        
+
         public T GetService<T>() where T : class => _container.GetService<T>();
         public object GetService(Type serviceType) => _container.GetService(serviceType);
         public bool TryGetService<T>(out T service) where T : class => _container.TryGetService(out service);
@@ -350,11 +350,11 @@ namespace ProjectChimera.Core.DependencyInjection
         public IEnumerable<AdvancedServiceDescriptor> GetServiceDescriptors() => _container.GetServiceDescriptors();
         public void Replace<TInterface, TImplementation>() where TInterface : class where TImplementation : class, TInterface, new() => _container.Replace<TInterface, TImplementation>();
         public bool Unregister<T>() where T : class => _container.Unregister<T>();
-        
+
         public object GetRequiredService(Type serviceType) => _serviceProvider.GetService(serviceType) ?? throw new InvalidOperationException($"Service of type {serviceType.Name} not found.");
         public T GetRequiredService<T>() where T : class => (T)GetRequiredService(typeof(T));
         public IEnumerable<object> GetServices(Type serviceType) => (IEnumerable<object>)_serviceProvider.GetService(typeof(IEnumerable<>).MakeGenericType(serviceType));
-        public IEnumerable<T> GetServices<T>() where T : class 
+        public IEnumerable<T> GetServices<T>() where T : class
         {
             try
             {
@@ -365,13 +365,13 @@ namespace ProjectChimera.Core.DependencyInjection
                 return Array.Empty<T>();
             }
         }
-        
+
         IServiceScope IServiceScopeFactory.CreateScope()
         {
             var scopeFactory = (IServiceScopeFactory)_serviceProvider.GetService(typeof(IServiceScopeFactory));
             return scopeFactory?.CreateScope();
         }
-        
+
         public void Dispose()
         {
             if (_container is IDisposable disposableContainer)

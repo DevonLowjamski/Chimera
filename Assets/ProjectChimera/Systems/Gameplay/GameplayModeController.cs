@@ -85,13 +85,6 @@ namespace ProjectChimera.Systems.Gameplay
             base.OnDestroy();
         }
         
-        private void Update()
-        {
-            if (_enableKeyboardShortcuts)
-            {
-                HandleModeShortcuts();
-            }
-        }
         
         #endregion
         
@@ -285,7 +278,10 @@ namespace ProjectChimera.Systems.Gameplay
         
         public void Tick(float deltaTime)
         {
-            // No per-frame logic needed - mode changes are event-driven
+            if (_enableKeyboardShortcuts)
+            {
+                HandleModeShortcuts();
+            }
         }
         
         public virtual void OnRegistered() 

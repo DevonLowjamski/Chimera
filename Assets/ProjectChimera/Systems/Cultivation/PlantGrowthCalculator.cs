@@ -18,7 +18,7 @@ namespace ProjectChimera.Systems.Cultivation
         private AnimationCurve _growthCurve;
         private float _strainGrowthModifier = 1f;
         private PlantUpdateConfiguration _configuration;
-        
+
         /// <summary>
         /// Initialize the growth calculator with strain and trait data
         /// </summary>
@@ -30,10 +30,10 @@ namespace ProjectChimera.Systems.Cultivation
 
             // Initialize growth curve from strain data or use default
             _growthCurve = CreateGrowthCurveFromStrain(strain) ?? CreateDefaultGrowthCurve();
-            
+
             // Extract strain growth modifier
             ExtractStrainModifiers(strain);
-            
+
             ChimeraLogger.LogVerbose($"[PlantGrowthCalculator] Initialized for strain: {strain?.GetType().Name}");
         }
 
@@ -56,17 +56,17 @@ namespace ProjectChimera.Systems.Cultivation
 
             // Apply phenotypic expression
             float phenotypeModifier = CalculatePhenotypeGrowthModifier(stage);
-            
+
             // Apply growth curve evaluation based on plant age/development
             float curveModifier = EvaluateGrowthCurve(stage);
 
             // Combine all modifiers
-            float finalRate = baseRate * environmentalModifier * healthModifier * 
+            float finalRate = baseRate * environmentalModifier * healthModifier *
                              strainModifier * phenotypeModifier * curveModifier * globalModifier;
 
             // Ensure non-negative growth rate
             float clampedRate = Mathf.Max(0f, finalRate);
-            
+
             // Log significant growth rate changes for debugging
             if (_configuration.EnablePerformanceOptimization && clampedRate != finalRate)
             {
@@ -75,7 +75,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             return clampedRate;
         }
-        
+
         /// <summary>
         /// Calculate stage-specific growth progression
         /// </summary>
@@ -83,20 +83,20 @@ namespace ProjectChimera.Systems.Cultivation
         {
             float stageDuration = GetStageDuration(stage);
             float progressionRate = growthRate / stageDuration;
-            
+
             // Apply diminishing returns as stage nears completion
             float diminishingFactor = CalculateDiminishingReturns(currentProgress);
-            
+
             float progressDelta = progressionRate * diminishingFactor * deltaTime;
             float newProgress = Mathf.Clamp01(currentProgress + progressDelta);
-            
+
             return newProgress;
         }
 
         /// <summary>
         /// Calculates harvest results based on plant's final state
         /// </summary>
-        public HarvestResults CalculateHarvestResults(float finalHealth, float qualityPotential, PhenotypicTraits traits, 
+        public HarvestResults CalculateHarvestResults(float finalHealth, float qualityPotential, PhenotypicTraits traits,
             float environmentalFitness, int totalDaysGrown)
         {
             var results = new HarvestResults
@@ -130,7 +130,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             // Calculate market value based on quality and yield
             results.EstimatedValue = CalculateMarketValue(results);
-            
+
             ChimeraLogger.Log($"[PlantGrowthCalculator] Harvest calculated - Yield: {results.TotalYield:F1}g, Quality: {results.QualityScore:F2}");
 
             return results;
@@ -157,7 +157,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             // Environmental effects vary by growth stage
             float baseModifier = Mathf.Lerp(0.2f, 1.5f, environmentalFitness);
-            
+
             // Some stages are more sensitive to environment
             float stageSensitivity = stage switch
             {
@@ -166,14 +166,14 @@ namespace ProjectChimera.Systems.Cultivation
                 PlantGrowthStage.Vegetative => 1.0f, // Normal
                 _ => 0.8f // Less sensitive
             };
-            
+
             return baseModifier * stageSensitivity;
         }
 
         private float CalculateHealthModifier(float health, PlantGrowthStage stage)
         {
             float baseModifier = Mathf.Lerp(0.1f, 1.2f, health);
-            
+
             // Health effects are more pronounced in later stages
             float stageHealthSensitivity = stage switch
             {
@@ -181,7 +181,7 @@ namespace ProjectChimera.Systems.Cultivation
                 PlantGrowthStage.Vegetative => 1.1f, // Somewhat important
                 _ => 1.0f // Normal importance
             };
-            
+
             return baseModifier * stageHealthSensitivity;
         }
 
@@ -204,7 +204,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (_growthCurve == null)
                 return 1f;
-                
+
             // Map growth stage to curve time (0-1)
             float curveTime = stage switch
             {
@@ -216,7 +216,7 @@ namespace ProjectChimera.Systems.Cultivation
                 PlantGrowthStage.Harvest => 1f,
                 _ => 0.5f
             };
-            
+
             return _growthCurve.Evaluate(curveTime);
         }
 
@@ -266,21 +266,21 @@ namespace ProjectChimera.Systems.Cultivation
 
             return Mathf.Clamp01(healthComponent + potentialComponent + environmentalComponent);
         }
-        
+
         private float CalculateBudDensity(float health, PhenotypicTraits traits)
         {
             float baseDensity = traits.BudDensity;
             float healthModifier = Mathf.Lerp(0.6f, 1.0f, health);
-            
+
             return baseDensity * healthModifier;
         }
-        
+
         private float CalculateTrichomeProduction(float health, PhenotypicTraits traits, float qualityPotential)
         {
             float baseProduction = traits.TrichromeProduction;
             float healthModifier = Mathf.Lerp(0.4f, 1.0f, health);
             float qualityModifier = Mathf.Lerp(0.8f, 1.2f, qualityPotential);
-            
+
             return baseProduction * healthModifier * qualityModifier;
         }
 
@@ -320,22 +320,22 @@ namespace ProjectChimera.Systems.Cultivation
 
             return profile;
         }
-        
+
         private float CalculateMarketValue(HarvestResults results)
         {
             // Base price per gram (this would come from market data)
             float basePricePerGram = 10f;
-            
+
             // Quality multiplier
             float qualityMultiplier = Mathf.Lerp(0.5f, 2.0f, results.QualityScore);
-            
+
             // Premium for high THC
             float thcPremium = 1f;
             if (results.CannabinoidProfile.TryGetValue("THC", out float thc) && thc > 0.2f)
             {
                 thcPremium = 1.2f; // 20% premium for high THC
             }
-            
+
             return results.TotalYield * basePricePerGram * qualityMultiplier * thcPremium;
         }
 

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using ProjectChimera.Data.Save;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Systems.Save.Components;
 using ProjectChimera.Systems.Save.Storage;
 using System.IO.Compression;
@@ -29,7 +30,7 @@ namespace ProjectChimera.Systems.Save
     /// Comprehensive save system storage for Project Chimera
     /// Handles save/load operations, cloud sync, backup management, and data validation
     /// </summary>
-    public class SaveStorage : MonoBehaviour
+    public class SaveStorage : MonoBehaviour, ITickable
     {
         [Header("Save Configuration")]
         [SerializeField] private string _saveDirectory = "Saves";
@@ -78,9 +79,16 @@ namespace ProjectChimera.Systems.Save
             {
                 InitializeCloudSync();
             }
+            
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
         }
 
-        private void Update()
+        // ITickable implementation
+        public int Priority => 100; // Lower priority for save system
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+        
+        public void Tick(float deltaTime)
         {
             if (!_isInitialized) return;
 
@@ -97,6 +105,16 @@ namespace ProjectChimera.Systems.Save
                 // Implement auto-sync logic here
                 _lastSyncTime = Time.time;
             }
+        }
+        
+        public void OnRegistered()
+        {
+            // Called when registered with UpdateOrchestrator
+        }
+        
+        public void OnUnregistered()
+        {
+            // Called when unregistered from UpdateOrchestrator
         }
 
         private void InitializeSystem()

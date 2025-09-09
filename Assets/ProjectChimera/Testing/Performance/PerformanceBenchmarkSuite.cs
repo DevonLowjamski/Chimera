@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using ProjectChimera.Systems.Cultivation;
 using ProjectChimera.Systems.Environment;
 using ProjectChimera.Systems.Genetics;
@@ -474,7 +475,7 @@ namespace ProjectChimera.Testing.Performance
     /// <summary>
     /// Simplified plant component for performance testing
     /// </summary>
-    public class PlantPerformanceTest : MonoBehaviour
+    public class PlantPerformanceTest : MonoBehaviour, ITickable
     {
         private int _plantId;
         private float _nextUpdate;
@@ -485,9 +486,16 @@ namespace ProjectChimera.Testing.Performance
             _plantId = plantId;
             _position = transform.position;
             _nextUpdate = Time.time + Random.Range(0f, 1f);
+            
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
         }
 
-        private void Update()
+        // ITickable implementation
+        public int Priority => 200; // Low priority for performance test components
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+        
+        public void Tick(float deltaTime)
         {
             if (Time.time >= _nextUpdate)
             {
@@ -495,6 +503,22 @@ namespace ProjectChimera.Testing.Performance
                 ProcessPlantUpdate();
                 _nextUpdate = Time.time + 0.1f; // Update every 100ms
             }
+        }
+        
+        public void OnRegistered()
+        {
+            // Called when registered with UpdateOrchestrator
+        }
+        
+        public void OnUnregistered()
+        {
+            // Called when unregistered from UpdateOrchestrator
+        }
+        
+        private void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
         }
 
         private void ProcessPlantUpdate()

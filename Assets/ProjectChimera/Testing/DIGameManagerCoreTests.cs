@@ -17,21 +17,21 @@ namespace ProjectChimera.Testing
         [Header("Test Configuration")]
         [SerializeField] private bool _runTestsOnStart = false;
         [SerializeField] private bool _enableTestLogging = true;
-        
+
         // Test state
         private List<ValidationResult> _testResults = new List<ValidationResult>();
         private DIGameManager _gameManager;
         private ProjectChimera.Core.ManagerRegistry _managerRegistry;
         private ServiceHealthMonitor _healthMonitor;
         private bool _testsRunning = false;
-        
+
         // Events
         public event System.Action<List<ValidationResult>> OnTestsCompleted;
-        
+
         // Properties
         public List<ValidationResult> TestResults => new List<ValidationResult>(_testResults);
         public bool TestsRunning => _testsRunning;
-        
+
         private void Start()
         {
             if (_runTestsOnStart)
@@ -39,48 +39,48 @@ namespace ProjectChimera.Testing
                 StartCoroutine(RunCoreTests());
             }
         }
-        
+
         /// <summary>
         /// Run all core functionality tests for DIGameManager
         /// </summary>
         public IEnumerator RunCoreTests()
         {
             if (_testsRunning) yield break;
-            
+
             _testsRunning = true;
             _testResults.Clear();
-            
+
             LogTest("=== Starting DIGameManager Core Tests ===");
-            
+
             // Test 1: Component initialization
             yield return StartCoroutine(TestComponentInitialization());
-            
+
             // Test 2: Basic functionality access
             yield return StartCoroutine(TestBasicFunctionalityAccess());
-            
+
             // Test 3: Singleton pattern enforcement
             yield return StartCoroutine(TestSingletonPatternEnforcement());
-            
+
             // Test 4: Game state management
             yield return StartCoroutine(TestGameStateManagement());
-            
+
             // Generate test summary
             GenerateTestSummary();
-            
+
             _testsRunning = false;
             OnTestsCompleted?.Invoke(_testResults);
             LogTest("=== DIGameManager Core Tests Completed ===");
         }
-        
+
         /// <summary>
         /// Test component initialization and access
         /// </summary>
         private IEnumerator TestComponentInitialization()
         {
             LogTest("Testing component initialization...");
-            
+
             var result = new ValidationResult { ValidationName = "Component Initialization" };
-            
+
             try
             {
                 // Find DIGameManager - try multiple resolution methods
@@ -91,7 +91,7 @@ namespace ProjectChimera.Testing
                     _testResults.Add(result);
                     yield break;
                 }
-                
+
                 // Test manager registry access
                 _managerRegistry = _gameManager.ManagerRegistry;
                 if (_managerRegistry == null)
@@ -102,7 +102,7 @@ namespace ProjectChimera.Testing
                 {
                     LogTest($"ManagerRegistry accessed successfully, has {_managerRegistry.RegisteredManagerCount} managers");
                 }
-                
+
                 // Test health monitor access
                 _healthMonitor = _gameManager.HealthMonitor;
                 if (_healthMonitor == null)
@@ -113,7 +113,7 @@ namespace ProjectChimera.Testing
                 {
                     LogTest($"ServiceHealthMonitor accessed successfully, monitoring: {_healthMonitor.IsMonitoring}");
                 }
-                
+
                 // Test service container access
                 var serviceContainer = _gameManager.GlobalServiceContainer;
                 if (serviceContainer == null)
@@ -124,7 +124,7 @@ namespace ProjectChimera.Testing
                 {
                     LogTest("GlobalServiceContainer accessed successfully");
                 }
-                
+
                 result.Success = result.Errors.Count == 0;
                 LogTest($"Component initialization: {(result.Success ? "PASSED" : "FAILED")}");
             }
@@ -139,16 +139,16 @@ namespace ProjectChimera.Testing
             // Move yield statement outside try-catch block
             yield return new WaitForSeconds(0.1f);
         }
-        
+
         /// <summary>
         /// Test basic functionality access
         /// </summary>
         private IEnumerator TestBasicFunctionalityAccess()
         {
             LogTest("Testing basic functionality access...");
-            
+
             var result = new ValidationResult { ValidationName = "Basic Functionality Access" };
-            
+
             try
             {
                 // Test GetManager functionality
@@ -161,7 +161,7 @@ namespace ProjectChimera.Testing
                 {
                     result.AddError("GetManager<DIGameManager>() returned wrong instance");
                 }
-                
+
                 // Test GetAllManagers functionality
                 var allManagers = _gameManager.GetAllManagers();
                 if (allManagers == null)
@@ -172,7 +172,7 @@ namespace ProjectChimera.Testing
                 {
                     var managersList = new List<IChimeraManager>(allManagers);
                     LogTest($"GetAllManagers returned {managersList.Count} managers");
-                    
+
                     // Check if DIGameManager is in the list
                     bool foundSelf = false;
                     foreach (var manager in managersList)
@@ -183,26 +183,26 @@ namespace ProjectChimera.Testing
                             break;
                         }
                     }
-                    
+
                     if (!foundSelf)
                     {
                         result.AddWarning("DIGameManager not found in GetAllManagers result");
                     }
                 }
-                
+
                 // Test basic properties
                 var gameStartTime = _gameManager.GameStartTime;
                 if (gameStartTime == default(DateTime))
                 {
                     result.AddWarning("GameStartTime not initialized");
                 }
-                
+
                 var totalGameTime = _gameManager.TotalGameTime;
                 if (totalGameTime.TotalSeconds < 0)
                 {
                     result.AddError("TotalGameTime calculation failed");
                 }
-                
+
                 var currentState = _gameManager.CurrentGameState;
                 LogTest($"Current game state: {currentState}");
 
@@ -220,32 +220,32 @@ namespace ProjectChimera.Testing
             // Move yield statement outside try-catch block
             yield return new WaitForSeconds(0.1f);
         }
-        
+
         /// <summary>
         /// Test singleton pattern enforcement
         /// </summary>
         private IEnumerator TestSingletonPatternEnforcement()
         {
             LogTest("Testing singleton pattern enforcement...");
-            
+
             var result = new ValidationResult { ValidationName = "Singleton Pattern Enforcement" };
-            
+
             try
             {
                 // Test that Instance returns same object
                 var instance1 = DIGameManager.Instance;
                 var instance2 = DIGameManager.Instance;
-                
+
                 if (instance1 != instance2)
                 {
                     result.AddError("Singleton Instance property returns different objects");
                 }
-                
+
                 if (instance1 != _gameManager)
                 {
                     result.AddError("Singleton Instance does not match discovered DIGameManager");
                 }
-                
+
                 // Test that only one DIGameManager exists in scene
                 var allGameManagers = FindObjectsOfType<DIGameManager>();
                 if (allGameManagers.Length > 1)
@@ -275,26 +275,26 @@ namespace ProjectChimera.Testing
             // Move yield statement outside try-catch block
             yield return new WaitForSeconds(0.1f);
         }
-        
+
         /// <summary>
         /// Test game state management
         /// </summary>
         private IEnumerator TestGameStateManagement()
         {
             LogTest("Testing game state management...");
-            
+
             var result = new ValidationResult { ValidationName = "Game State Management" };
-            
+
             bool pauseTestSuccessful = false;
             bool resumeTestSuccessful = false;
-            
+
             try
             {
                 // Test initial state
                 var initialState = _gameManager.CurrentGameState;
                 var initialPauseState = _gameManager.IsGamePaused;
                 LogTest($"Initial game state: {initialState}, paused: {initialPauseState}");
-                
+
                 // Test pause functionality
                 _gameManager.PauseGame();
                 pauseTestSuccessful = true;
@@ -320,24 +320,24 @@ namespace ProjectChimera.Testing
                 {
                     LogTest("Game resume successful");
                 }
-                
+
                 // Test time tracking
                 var gameStartTime = _gameManager.GameStartTime;
                 var totalGameTime = _gameManager.TotalGameTime;
-                
+
                 LogTest($"Game start time: {gameStartTime}");
                 LogTest($"Total game time: {totalGameTime.TotalSeconds:F2} seconds");
-                
+
                 if (gameStartTime == default(DateTime))
                 {
                     result.AddWarning("Game start time not properly initialized");
                 }
-                
+
                 if (totalGameTime.TotalSeconds < 0)
                 {
                     result.AddError("Total game time is negative");
                 }
-                
+
                 result.Success = result.Errors.Count == 0;
                 LogTest($"Game state management: {(result.Success ? "PASSED" : "FAILED")}");
             }
@@ -345,7 +345,7 @@ namespace ProjectChimera.Testing
             {
                 result.Success = false;
                 result.AddError($"Exception during game state test: {ex.Message}");
-                
+
                 // Try to restore game state on exception
                 if (pauseTestSuccessful && !resumeTestSuccessful)
                 {
@@ -365,7 +365,7 @@ namespace ProjectChimera.Testing
             // Move yield statement outside try-catch block
             yield return new WaitForSeconds(0.1f);
         }
-        
+
         /// <summary>
         /// Generate and display test summary
         /// </summary>
@@ -375,9 +375,9 @@ namespace ProjectChimera.Testing
             int failed = 0;
             int totalErrors = 0;
             int totalWarnings = 0;
-            
+
             LogTest("\n=== DIGameManager Core Tests Summary ===");
-            
+
             foreach (var result in _testResults)
             {
                 if (result.Success)
@@ -395,17 +395,17 @@ namespace ProjectChimera.Testing
                         totalErrors++;
                     }
                 }
-                
+
                 foreach (var warning in result.Warnings)
                 {
                     LogTest($"    Warning: {warning}");
                     totalWarnings++;
                 }
             }
-            
+
             LogTest($"\nResults: {passed} passed, {failed} failed");
             LogTest($"Total Errors: {totalErrors}, Total Warnings: {totalWarnings}");
-            
+
             if (failed == 0)
             {
                 LogTest("🎉 All DIGameManager core tests PASSED!");
@@ -415,13 +415,13 @@ namespace ProjectChimera.Testing
                 LogTest($"❌ {failed} test(s) FAILED - Review errors above");
             }
         }
-        
+
         private void LogTest(string message)
         {
             if (_enableTestLogging)
                 ChimeraLogger.Log($"[DIGameManagerCoreTests] {message}");
         }
-        
+
         /// <summary>
         /// Validation result data structure
         /// </summary>
@@ -431,13 +431,13 @@ namespace ProjectChimera.Testing
             public bool Success { get; set; } = true;
             public List<string> Errors { get; set; } = new List<string>();
             public List<string> Warnings { get; set; } = new List<string>();
-            
+
             public void AddError(string error)
             {
                 Errors.Add(error);
                 Success = false;
             }
-            
+
             public void AddWarning(string warning)
             {
                 Warnings.Add(warning);
