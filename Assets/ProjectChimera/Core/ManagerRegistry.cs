@@ -401,6 +401,35 @@ namespace ProjectChimera.Core
         }
         
         /// <summary>
+        /// Get manager by type (alias for GetManager)
+        /// </summary>
+        public ChimeraManager GetManagerByType(Type managerType)
+        {
+            return GetManager(managerType);
+        }
+
+        /// <summary>
+        /// Get all registered managers
+        /// </summary>
+        public IEnumerable<ChimeraManager> GetAllRegisteredManagers()
+        {
+            return _managerRegistry.Values;
+        }
+
+        /// <summary>
+        /// Get all managers by interface type
+        /// </summary>
+        public IEnumerable<ChimeraManager> GetAllManagersByInterface(Type interfaceType)
+        {
+            if (_interfaceToTypeMapping.TryGetValue(interfaceType, out var types))
+            {
+                return types.Select(t => _managerRegistry.TryGetValue(t, out var manager) ? manager : null)
+                           .Where(m => m != null);
+            }
+            return Enumerable.Empty<ChimeraManager>();
+        }
+
+        /// <summary>
         /// Get registration summary for all managers
         /// </summary>
         public RegistrationSummary GetRegistrationSummary()

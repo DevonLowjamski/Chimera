@@ -97,6 +97,83 @@ namespace ProjectChimera.Core
         public void StopContinuousMonitoring()
         {
             if (!_isMonitoring) return;
+
+            _isMonitoring = false;
+            if (_continuousMonitoringCoroutine != null)
+            {
+                StopCoroutine(_continuousMonitoringCoroutine);
+                _continuousMonitoringCoroutine = null;
+            }
+
+            LogDebug("Stopped continuous health monitoring");
+        }
+
+        /// <summary>
+        /// Start monitoring (alias for StartContinuousMonitoring for test compatibility)
+        /// </summary>
+        public void StartMonitoring()
+        {
+            StartContinuousMonitoring();
+        }
+
+        /// <summary>
+        /// Register a service for health monitoring
+        /// </summary>
+        public void RegisterService(string serviceId, UnityEngine.Object service)
+        {
+            if (service == null) return;
+
+            Type serviceType = service.GetType();
+            if (!_serviceHealthHistory.ContainsKey(serviceType))
+            {
+                _serviceHealthHistory[serviceType] = new ServiceHealthData
+                {
+                    ServiceType = serviceType,
+                    ServiceId = serviceId,
+                    CurrentStatus = ServiceStatus.Healthy,
+                    LastChecked = DateTime.Now,
+                    RegistrationTime = DateTime.Now
+                };
+
+                LogDebug($"Registered service for health monitoring: {serviceType.Name}");
+            }
+        }
+
+        /// <summary>
+        /// Get health status of a specific service
+        /// </summary>
+        public ServiceHealthData GetServiceHealth(string serviceId)
+        {
+            foreach (var healthData in _serviceHealthHistory.Values)
+            {
+                if (healthData.ServiceId == serviceId)
+                {
+                    return healthData;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Unregister a service from health monitoring
+        /// </summary>
+        public void UnregisterService(string serviceId)
+        {
+            var serviceToRemove = _serviceHealthHistory.Values.FirstOrDefault(h => h.ServiceId == serviceId);
+            if (serviceToRemove != null)
+            {
+                _serviceHealthHistory.Remove(serviceToRemove.ServiceType);
+                LogDebug($"Unregistered service from health monitoring: {serviceToRemove.ServiceType.Name}");
+            }
+        }
+
+        /// <summary>
+        /// Stop continuous health monitoring
+        /// </summary>
+        public void StopContinuousMonitoring()
+        {
+            if (!_isMonitoring) return;
             
             _isMonitoring = false;
             if (_continuousMonitoringCoroutine != null)

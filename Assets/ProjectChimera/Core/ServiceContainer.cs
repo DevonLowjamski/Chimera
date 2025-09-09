@@ -60,8 +60,13 @@ namespace ProjectChimera.Core
         {
             var registration = new ServiceRegistration(typeof(TInterface), instance.GetType(), ServiceLifetime.Singleton, instance, null);
             _services[typeof(TInterface)] = registration;
-                _singletonInstances[typeof(TInterface)] = instance;
+            _singletonInstances[typeof(TInterface)] = instance;
             ServiceRegistered?.Invoke(registration);
+        }
+
+        public void RegisterInstance<TInterface>(TInterface instance) where TInterface : class
+        {
+            RegisterSingleton<TInterface>(instance);
         }
 
         public void RegisterTransient<TInterface, TImplementation>()

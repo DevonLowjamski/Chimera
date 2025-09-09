@@ -5,6 +5,14 @@ using ProjectChimera.Core.DependencyInjection;
 using ContainerVerificationResult = ProjectChimera.Core.DependencyInjection.ContainerVerificationResult;
 using AdvancedServiceDescriptor = ProjectChimera.Core.DependencyInjection.AdvancedServiceDescriptor;
 
+/// <summary>
+/// Factory interface for creating service containers
+/// </summary>
+public interface IServiceContainerFactory
+{
+    IServiceContainer CreateContainer();
+}
+
 namespace ProjectChimera.Core
 {
     /// <summary>
@@ -29,6 +37,11 @@ namespace ProjectChimera.Core
         /// Registers a service with singleton lifetime using an existing instance
         /// </summary>
         void RegisterSingleton<TInterface>(TInterface instance);
+
+        /// <summary>
+        /// Registers a service instance (alias for RegisterSingleton for compatibility)
+        /// </summary>
+        void RegisterInstance<TInterface>(TInterface instance) where TInterface : class;
 
         /// <summary>
         /// Registers a service with transient lifetime (new instance per resolution)
