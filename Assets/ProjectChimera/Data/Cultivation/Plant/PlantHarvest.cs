@@ -208,7 +208,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
     public enum QualityGrade
     {
         Poor,
-        Fair, 
+        Fair,
         Good,
         Excellent,
         Premium

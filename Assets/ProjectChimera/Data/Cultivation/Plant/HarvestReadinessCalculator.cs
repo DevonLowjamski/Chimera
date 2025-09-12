@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 namespace ProjectChimera.Data.Cultivation.Plant
 {
@@ -258,5 +259,16 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public DateTime StartDate;
         public DateTime EndDate;
         public float QualityScore;
+
+        // Additional properties for compatibility
+        public string PlantID { get; set; }
+        public DateTime EarliestHarvestDate => StartDate;
+        public DateTime OptimalHarvestDate => StartDate.AddDays((EndDate - StartDate).TotalDays / 2);
+        public DateTime LatestHarvestDate => EndDate;
+
+        // Additional properties for harvest quality
+        public float EarlyHarvestQuality => QualityScore * 0.8f;
+        public float OptimalHarvestQuality => QualityScore;
+        public float LateHarvestQuality => QualityScore * 0.6f;
     }
 }

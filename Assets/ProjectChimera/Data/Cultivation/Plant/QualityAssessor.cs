@@ -228,7 +228,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
         /// </summary>
         private static string GenerateQualityDescription(HarvestQuality quality)
         {
-            switch (quality.QualityGrade)
+            switch (quality.QualityGradeEnum)
             {
                 case QualityGrade.Premium:
                     return "Exceptional quality with outstanding trichome development, balanced cannabinoid profile, and rich terpene expression. Premium market material.";

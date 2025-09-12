@@ -128,6 +128,56 @@ namespace ProjectChimera.Data.Cultivation.Plant
 
             return string.Join(", ", recommendations);
         }
+
+        /// <summary>
+        /// Get resource status summary
+        /// </summary>
+        public static ResourceStatus GetResourceStatus(PlantStateData plantState)
+        {
+            return new ResourceStatus
+            {
+                WaterLevel = plantState.EnergyReserves,
+                NutrientLevel = plantState.EnergyReserves,
+                OverallStatus = plantState.EnergyReserves > 0.7f ? "Healthy" : plantState.EnergyReserves > 0.3f ? "Adequate" : "Deficient"
+            };
+        }
+
+        /// <summary>
+        /// Get optimal watering schedule
+        /// </summary>
+        public static WateringSchedule GetOptimalWateringSchedule(PlantStateData plantState)
+        {
+            return new WateringSchedule
+            {
+                FrequencyHours = plantState.EnergyReserves < 0.5f ? 12f : 24f,
+                AmountPerPlant = plantState.EnergyReserves < 0.5f ? 0.75f : 0.5f,
+                LastWateringTime = DateTime.Now.AddHours(-plantState.EnergyReserves * 24)
+            };
+        }
+
+        /// <summary>
+        /// Get optimal feeding schedule
+        /// </summary>
+        public static FeedingSchedule GetOptimalFeedingSchedule(PlantStateData plantState)
+        {
+            return new FeedingSchedule
+            {
+                FrequencyHours = plantState.EnergyReserves < 0.5f ? 48f : 72f,
+                NutrientAmount = plantState.EnergyReserves < 0.5f ? 0.75f : 0.5f,
+                LastNutrientTime = DateTime.Now.AddHours(-plantState.EnergyReserves * 48)
+            };
+        }
+    }
+
+    /// <summary>
+    /// Resource status data structure
+    /// </summary>
+    [System.Serializable]
+    public class ResourceStatus
+    {
+        public float WaterLevel;
+        public float NutrientLevel;
+        public string OverallStatus;
     }
 
     /// <summary>

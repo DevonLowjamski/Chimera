@@ -210,6 +210,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
 
         // Basic health
         public float Health; // 0-1
+        public PlantSex Sex; // Plant gender
 
         // Basic resources
         public float WaterLevel;   // 0-1
@@ -241,5 +242,16 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public bool NeedsWatering;
         public bool NeedsFeeding;
         public bool IsHealthy;
+    }
+
+    /// <summary>
+    /// Plant sex/gender enumeration
+    /// </summary>
+    public enum PlantSex
+    {
+        Unknown,
+        Male,
+        Female,
+        Hermaphrodite
     }
 }

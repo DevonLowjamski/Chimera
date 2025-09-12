@@ -56,6 +56,12 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public bool HasPests;
         public bool HasDisease;
 
+        // Additional properties for compatibility
+        public string PlantID => $"{Strain?.Name ?? "Unknown"}_{PlantedDate.Ticks}";
+        public float CurrentHeight { get; set; } = 10f; // Default seedling height
+        public PlantGrowthStage CurrentGrowthStage { get; set; } = PlantGrowthStage.Seedling;
+        public float AgeInDays => GetAgeInDays();
+
         /// <summary>
         /// Get plant age in days
         /// </summary>
