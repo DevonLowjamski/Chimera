@@ -238,8 +238,24 @@ namespace ProjectChimera.Systems.Diagnostics
         /// </summary>
         private int GetPlantCount()
         {
-            // Placeholder - would integrate with actual cultivation system
-            var plants = GameObject.FindGameObjectsWithTag("Plant");
+            // Primary: Try ServiceContainer resolution for registered plant GameObjects
+            var plants = ServiceContainerFactory.Instance.ResolveAll<GameObject>()
+                ?.Where(go => go.CompareTag("Plant")).ToArray();
+                
+            if (plants?.Any() != true)
+            {
+                // Fallback: Placeholder - would integrate with actual cultivation system
+                plants = GameObject.FindGameObjectsWithTag("Plant");
+                
+                // Auto-register discovered plants in ServiceContainer for future debug queries
+                foreach (var plant in plants)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<GameObject>(plant);
+                }
+                
+                Debug.Log($"[DebugOverlayManager] Registered {plants.Length} plant GameObjects in ServiceContainer for debug display");
+            }
+            
             return plants.Length;
         }
 
