@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using ProjectChimera.Core;
 using ProjectChimera.Core.Updates;
-using ProjectChimera.Core.DependencyInjection;
+// Migrated to unified ServiceContainer - old DI namespace no longer needed
 using ProjectChimera.Systems.Gameplay;
 using ProjectChimera.Data.Events;
 using ProjectChimera.Core.Logging;

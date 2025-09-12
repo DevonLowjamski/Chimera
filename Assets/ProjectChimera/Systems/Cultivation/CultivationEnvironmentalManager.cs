@@ -2,7 +2,7 @@ using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
 using UnityEngine;
 using ProjectChimera.Core;
-using ProjectChimera.Core.DependencyInjection;
+// Migrated to unified ServiceContainer architecture
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Environment;
 using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
@@ -38,7 +38,7 @@ namespace ProjectChimera.Systems.Cultivation
             
             ChimeraLogger.Log("[CultivationEnvironmentalManager] Initializing environmental management...");
             
-            // Register with ServiceLocator for dependency injection
+            // Register with unified ServiceContainer architecture
             try
             {
                 var serviceContainer = ServiceContainerFactory.Instance;

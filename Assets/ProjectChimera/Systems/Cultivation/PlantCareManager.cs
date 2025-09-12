@@ -2,7 +2,7 @@ using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
 using UnityEngine;
 using ProjectChimera.Core;
-using ProjectChimera.Core.DependencyInjection;
+// Migrated to unified ServiceContainer architecture
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Environment;
 

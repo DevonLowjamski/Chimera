@@ -1,7 +1,7 @@
 using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
-using ProjectChimera.Core.DependencyInjection;
+// Migrated to unified ServiceContainer architecture
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Cultivation;
 using ProjectChimera.Data.Cultivation.Plant;
@@ -51,7 +51,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             ChimeraLogger.Log("[HarvestManager] Initializing harvest management...");
 
-            // Register with ServiceLocator for dependency injection
+            // Register with unified ServiceContainer architecture
             try
             {
                 var serviceContainer = ServiceContainerFactory.Instance;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using ProjectChimera.Core;
-using ProjectChimera.Core.DependencyInjection;
+// Migrated to unified ServiceContainer architecture
 using ProjectChimera.Core.Events;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Cultivation;
@@ -75,7 +75,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             ChimeraLogger.Log("[PlantLifecycleManager] Initializing plant lifecycle management...");
 
-            // Register with both ServiceLocator (deprecated) and ServiceContainer for gradual migration
+            // Register with unified ServiceContainer architecture
             try
             {
                 // Register with ServiceContainer for dependency injection
