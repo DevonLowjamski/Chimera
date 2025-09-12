@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Core.SimpleDI;
@@ -59,8 +60,40 @@ namespace ProjectChimera.Core.SimpleDI
         /// </summary>
         private void RegisterCoreManagers()
         {
-            // Find and register managers in the scene
-            var managers = FindObjectsOfType<MonoBehaviour>();
+            MonoBehaviour[] managers;
+            
+            // Try to use ServiceContainer first for unified DI approach
+            if (ServiceContainerFactory.Instance != null)
+            {
+                // Use ServiceContainer to get all MonoBehaviour services
+                var services = ServiceContainerFactory.Instance.GetServices(typeof(MonoBehaviour));
+                managers = services.OfType<MonoBehaviour>().ToArray();
+                
+                // If no services found, fallback to scene discovery
+                if (managers.Length == 0)
+                {
+                    // Fallback to scene discovery and register in ServiceContainer
+                    var sceneManagers = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
+                    foreach (var manager in sceneManagers)
+                    {
+                        if (manager is IChimeraManager chimeraManager)
+                        {
+                            ServiceContainerFactory.Instance.RegisterInstance<IChimeraManager>(chimeraManager);
+                        }
+                    }
+                    managers = sceneManagers;
+                }
+            }
+            else if (ServiceLocator.TryGet<SimpleDIContainer>(out var simpleDIContainer))
+            {
+                // Use SimpleDIContainer as secondary option
+                managers = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
+            }
+            else
+            {
+                // Final fallback to scene discovery
+                managers = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
+            }
 
             foreach (var manager in managers)
             {
@@ -70,8 +103,12 @@ namespace ProjectChimera.Core.SimpleDI
                 }
             }
 
-            // Register with DI container if available
-            if (ServiceLocator.TryGet<SimpleDIContainer>(out var container))
+            // Register with unified ServiceContainer first, then SimpleDI for backward compatibility
+            if (ServiceContainerFactory.Instance != null)
+            {
+                ServiceContainerFactory.Instance.RegisterInstance<SimpleManagerRegistry>(this);
+            }
+            else if (ServiceLocator.TryGet<SimpleDIContainer>(out var container))
             {
                 container.RegisterSingleton<SimpleManagerRegistry, SimpleManagerRegistry>(this);
             }
