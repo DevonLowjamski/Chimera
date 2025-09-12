@@ -63,7 +63,8 @@ namespace ProjectChimera.Editor
 
             foreach (var componentType in componentTypes)
             {
-                var components = FindObjectsOfType(componentType, true);
+                // Editor tool: Use explicit Unity API for reliable editor-time discovery
+                var components = UnityEngine.Object.FindObjectsOfType(componentType, true);
                 foreach (var component in components)
                 {
                     ChimeraLogger.Log($"[CreateModeChangedEventAsset] Found {componentType.Name} on {component.name}", component);
