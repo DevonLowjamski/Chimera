@@ -90,10 +90,29 @@ namespace ProjectChimera.Systems.Gameplay
         {
             _monitoredPlants.Clear();
 
-            // Find all plants in the scene (would use actual plant detection system)
-            var plantTransforms = GameObject.FindGameObjectsWithTag("Plant")
-                .Select(obj => obj.transform)
-                .ToArray();
+            // Primary: Try ServiceContainer resolution for registered plant GameObjects
+            var plantGameObjects = ServiceContainerFactory.Instance.ResolveAll<GameObject>()
+                ?.Where(go => go.CompareTag("Plant")).ToArray();
+                
+            if (plantGameObjects?.Any() != true)
+            {
+                // Fallback: Find all plants in the scene (would use actual plant detection system)
+                plantGameObjects = GameObject.FindGameObjectsWithTag("Plant");
+                
+                // Auto-register discovered plants in ServiceContainer for future use
+                foreach (var plantGO in plantGameObjects)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<GameObject>(plantGO);
+                }
+                
+                ChimeraLogger.Log($"[PlantMonitor] Registered {plantGameObjects.Length} plant GameObjects in ServiceContainer");
+            }
+            else
+            {
+                ChimeraLogger.Log("[PlantMonitor] Using plant GameObjects from ServiceContainer");
+            }
+            
+            var plantTransforms = plantGameObjects.Select(obj => obj.transform).ToArray();
 
             foreach (var plantTransform in plantTransforms)
             {
