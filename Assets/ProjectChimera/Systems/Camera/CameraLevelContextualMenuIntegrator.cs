@@ -33,10 +33,33 @@ namespace ProjectChimera.Systems.Camera
         {
             if (_isInitialized) return;
 
-            _mainCamera = Camera.main;
-            if (_mainCamera == null)
+            // Primary: Try ServiceContainer resolution
+            if (ServiceContainerFactory.Instance.TryResolve<Camera>(out var serviceCamera))
             {
-                _mainCamera = FindObjectOfType<Camera>();
+                _mainCamera = serviceCamera;
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("[CameraLevelContextualMenuIntegrator] Using camera from ServiceContainer");
+                }
+            }
+            else
+            {
+                // Fallback: Standard Unity camera discovery
+                _mainCamera = Camera.main;
+                if (_mainCamera == null)
+                {
+                    _mainCamera = UnityEngine.Object.FindObjectOfType<Camera>();
+                }
+
+                // Auto-register discovered camera in ServiceContainer for other systems
+                if (_mainCamera != null)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<Camera>(_mainCamera);
+                    if (_enableLogging)
+                    {
+                        ChimeraLogger.Log("[CameraLevelContextualMenuIntegrator] Camera registered in ServiceContainer for system-wide access");
+                    }
+                }
             }
 
             if (_mainCamera != null)
