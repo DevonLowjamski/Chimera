@@ -43,7 +43,10 @@ namespace ProjectChimera.Testing.Phase2_2
         {
             _testsRun++;
             // Check if basic breeding components exist
-            bool geneticsManagerExists = GameObject.FindObjectOfType<ProjectChimera.Systems.Genetics.FractalGeneticsEngine>() != null;
+            // Primary: Try ServiceContainer resolution
+            bool geneticsManagerExists = ServiceContainerFactory.Instance.TryResolve<ProjectChimera.Systems.Genetics.FractalGeneticsEngine>(out var serviceEngine) ||
+                                        // Fallback: Scene discovery for testing
+                                        GameObject.FindObjectOfType<ProjectChimera.Systems.Genetics.FractalGeneticsEngine>() != null;
 
             if (geneticsManagerExists)
             {
@@ -66,7 +69,12 @@ namespace ProjectChimera.Testing.Phase2_2
         private void TestBasicBreeding()
         {
             _testsRun++;
-            var geneticsEngine = GameObject.FindObjectOfType<ProjectChimera.Systems.Genetics.FractalGeneticsEngine>();
+            // Primary: Try ServiceContainer resolution
+            if (!ServiceContainerFactory.Instance.TryResolve<ProjectChimera.Systems.Genetics.FractalGeneticsEngine>(out var geneticsEngine))
+            {
+                // Fallback: Scene discovery for testing
+                geneticsEngine = GameObject.FindObjectOfType<ProjectChimera.Systems.Genetics.FractalGeneticsEngine>();
+            }
 
             if (geneticsEngine != null)
             {
@@ -107,7 +115,12 @@ namespace ProjectChimera.Testing.Phase2_2
         private void TestStrainCreation()
         {
             _testsRun++;
-            var geneticsEngine = GameObject.FindObjectOfType<ProjectChimera.Systems.Genetics.FractalGeneticsEngine>();
+            // Primary: Try ServiceContainer resolution
+            if (!ServiceContainerFactory.Instance.TryResolve<ProjectChimera.Systems.Genetics.FractalGeneticsEngine>(out var geneticsEngine))
+            {
+                // Fallback: Scene discovery for testing
+                geneticsEngine = GameObject.FindObjectOfType<ProjectChimera.Systems.Genetics.FractalGeneticsEngine>();
+            }
 
             if (geneticsEngine != null)
             {
