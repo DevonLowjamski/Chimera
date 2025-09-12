@@ -9,10 +9,27 @@ namespace ProjectChimera.Systems.Camera
 
         protected override void OnSystemInitialize()
         {
-            main = UnityEngine.Camera.main;
-            if (main == null)
+            // Primary: Try ServiceContainer resolution
+            if (ServiceContainerFactory.Instance.TryResolve<UnityEngine.Camera>(out var serviceCamera))
             {
-                main = FindObjectOfType<UnityEngine.Camera>();
+                main = serviceCamera;
+                LogInfo("[CameraService] Using camera from ServiceContainer");
+            }
+            else
+            {
+                // Fallback: Standard Unity camera discovery
+                main = UnityEngine.Camera.main;
+                if (main == null)
+                {
+                    main = UnityEngine.Object.FindObjectOfType<UnityEngine.Camera>();
+                }
+
+                // Auto-register discovered camera in ServiceContainer for other systems
+                if (main != null)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<UnityEngine.Camera>(main);
+                    LogInfo("[CameraService] Camera registered in ServiceContainer for system-wide access");
+                }
             }
 
             if (main == null)
