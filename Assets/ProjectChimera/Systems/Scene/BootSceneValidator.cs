@@ -1,7 +1,7 @@
 using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
-using ProjectChimera.Core.DependencyInjection;
+// ServiceContainer validation - checks legacy ServiceLocator during boot
 
 
 namespace ProjectChimera.Systems.Scene
