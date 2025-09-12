@@ -132,16 +132,60 @@ namespace ProjectChimera.Systems.Construction
         {
             _gridSystem = ServiceContainerFactory.Instance?.TryResolve<IGridSystem>() as GridSystem;
 
-            // TODO: Replace with proper service resolution once managers are updated
-            var currencyObj = GameObject.Find("CurrencyManager"); // Temporary until service container is fully implemented
-            _currencyManager = currencyObj?.GetComponent<ICurrencyManager>();
+            // Try to resolve Currency Manager from ServiceContainer first
+            if (ServiceContainerFactory.Instance != null && ServiceContainerFactory.Instance.TryResolve<ICurrencyManager>(out var currencyService))
+            {
+                _currencyManager = currencyService;
+                ChimeraLogger.LogDebug("[RefactoredPlacementPaymentService] ICurrencyManager resolved from ServiceContainer");
+            }
+            else
+            {
+                // Fallback to GameObject.Find for backward compatibility
+                var currencyObj = GameObject.Find("CurrencyManager");
+                _currencyManager = currencyObj?.GetComponent<ICurrencyManager>();
+                
+                // Register found manager in ServiceContainer for future use
+                if (_currencyManager != null && ServiceContainerFactory.Instance != null)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<ICurrencyManager>(_currencyManager);
+                    ChimeraLogger.LogDebug("[RefactoredPlacementPaymentService] ICurrencyManager discovered and registered in ServiceContainer");
+                }
+            }
 
-            var tradingObj = GameObject.Find("TradingManager"); // Temporary until service container is fully implemented
-            _tradingManager = tradingObj?.GetComponent<MonoBehaviour>();
+            // Try to resolve Trading Manager from ServiceContainer first
+            MonoBehaviour tradingManagerComponent = null;
+            if (ServiceContainerFactory.Instance != null && ServiceContainerFactory.Instance.TryResolve<ITradingManager>(out var tradingService))
+            {
+                tradingManagerComponent = tradingService as MonoBehaviour;
+                ChimeraLogger.LogDebug("[RefactoredPlacementPaymentService] ITradingManager resolved from ServiceContainer");
+            }
+            else
+            {
+                // Fallback to GameObject.Find for backward compatibility
+                var tradingObj = GameObject.Find("TradingManager");
+                tradingManagerComponent = tradingObj?.GetComponent<MonoBehaviour>();
+                
+                // Register found manager in ServiceContainer if it implements ITradingManager
+                if (tradingManagerComponent is ITradingManager tradingManager && ServiceContainerFactory.Instance != null)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<ITradingManager>(tradingManager);
+                    ChimeraLogger.LogDebug("[RefactoredPlacementPaymentService] ITradingManager discovered and registered in ServiceContainer");
+                }
+            }
+            _tradingManager = tradingManagerComponent;
 
+            // Log warnings for missing systems
             if (_gridSystem == null)
             {
-                ChimeraLogger.LogWarning("[PlacementPaymentService] GridSystem not found - some features may not work correctly");
+                ChimeraLogger.LogWarning("[RefactoredPlacementPaymentService] GridSystem not found - some features may not work correctly");
+            }
+            if (_currencyManager == null)
+            {
+                ChimeraLogger.LogWarning("[RefactoredPlacementPaymentService] CurrencyManager not found - payment processing may not work");
+            }
+            if (_tradingManager == null)
+            {
+                ChimeraLogger.LogWarning("[RefactoredPlacementPaymentService] TradingManager not found - trading features may not work");
             }
         }
 
