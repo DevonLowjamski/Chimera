@@ -78,7 +78,26 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
 
         private void FindExistingWindZones()
         {
-            var windZones = FindObjectsOfType<WindZone>();
+            // Primary: Try ServiceContainer resolution for registered WindZones
+            var windZones = ServiceContainerFactory.Instance.ResolveAll<WindZone>();
+            if (windZones?.Any() != true)
+            {
+                // Fallback: Scene discovery + auto-registration
+                windZones = UnityEngine.Object.FindObjectsOfType<WindZone>();
+                
+                // Auto-register discovered WindZones in ServiceContainer for future use
+                foreach (var windZone in windZones)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<WindZone>(windZone);
+                }
+                
+                Debug.Log($"[WindSystem] Registered {windZones.Length} WindZones in ServiceContainer");
+            }
+            else
+            {
+                Debug.Log("[WindSystem] Using WindZones from ServiceContainer");
+            }
+            
             foreach (var windZone in windZones)
             {
                 RegisterWindZone(windZone);
@@ -223,8 +242,24 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
 
         private void ApplyGlobalWindToRenderers()
         {
-            // Find all SpeedTree renderers in scene
-            var renderers = FindObjectsOfType<Renderer>()
+            // Primary: Try ServiceContainer resolution for registered Renderers
+            var allRenderers = ServiceContainerFactory.Instance.ResolveAll<Renderer>();
+            if (allRenderers?.Any() != true)
+            {
+                // Fallback: Scene discovery + auto-registration
+                allRenderers = UnityEngine.Object.FindObjectsOfType<Renderer>();
+                
+                // Auto-register discovered Renderers in ServiceContainer for future use
+                foreach (var renderer in allRenderers)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<Renderer>(renderer);
+                }
+                
+                Debug.Log($"[WindSystem] Registered {allRenderers.Length} Renderers in ServiceContainer");
+            }
+            
+            // Filter for SpeedTree renderers
+            var renderers = allRenderers
                 .Where(r => r.sharedMaterial != null &&
                            r.sharedMaterial.shader != null &&
                            r.sharedMaterial.shader.name.Contains("SpeedTree"));
@@ -239,8 +274,17 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         {
             if (windZone == null) return;
 
+            // Primary: Try ServiceContainer resolution for registered Renderers
+            var allRenderers = ServiceContainerFactory.Instance.ResolveAll<Renderer>();
+            if (allRenderers?.Any() != true)
+            {
+                // Fallback: Scene discovery (should already be registered from previous calls)
+                allRenderers = UnityEngine.Object.FindObjectsOfType<Renderer>();
+                Debug.Log($"[WindSystem] Fallback: Using {allRenderers.Length} scene renderers for wind zone application");
+            }
+            
             // Find renderers within wind zone range
-            var renderers = FindObjectsOfType<Renderer>()
+            var renderers = allRenderers
                 .Where(r => r.sharedMaterial != null &&
                            r.sharedMaterial.shader != null &&
                            r.sharedMaterial.shader.name.Contains("SpeedTree") &&
