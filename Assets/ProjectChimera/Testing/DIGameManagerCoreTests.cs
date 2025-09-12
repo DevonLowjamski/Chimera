@@ -247,7 +247,13 @@ namespace ProjectChimera.Testing
                 }
 
                 // Test that only one DIGameManager exists in scene
-                var allGameManagers = FindObjectsOfType<DIGameManager>();
+                // Primary: Try ServiceContainer resolution for registered managers
+                var allGameManagers = ServiceContainerFactory.Instance.ResolveAll<DIGameManager>();
+                if (allGameManagers?.Any() != true)
+                {
+                    // Fallback: Scene discovery for testing validation
+                    allGameManagers = UnityEngine.Object.FindObjectsOfType<DIGameManager>();
+                }
                 if (allGameManagers.Length > 1)
                 {
                     result.AddError($"Multiple DIGameManager instances found in scene: {allGameManagers.Length}");
