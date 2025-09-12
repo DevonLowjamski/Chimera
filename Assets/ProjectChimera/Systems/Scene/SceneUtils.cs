@@ -1,7 +1,7 @@
 using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
-using ProjectChimera.Core.DependencyInjection;
+// Migrated to unified ServiceContainer architecture
 
 namespace ProjectChimera.Systems.Scene
 {

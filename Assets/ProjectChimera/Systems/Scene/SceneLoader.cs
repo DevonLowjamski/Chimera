@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using ProjectChimera.Core;
-using ProjectChimera.Core.DependencyInjection;
+// Migrated to unified ServiceContainer architecture
 
 namespace ProjectChimera.Systems.Scene
 {

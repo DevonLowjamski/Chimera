@@ -1,7 +1,7 @@
 using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
-using ProjectChimera.Core.DependencyInjection;
+// Migrated to unified ServiceContainer architecture
 using ProjectChimera.Systems.Gameplay;
 using ProjectChimera.Data.Events;
 using static ProjectChimera.Data.Events.GameplayMode;
