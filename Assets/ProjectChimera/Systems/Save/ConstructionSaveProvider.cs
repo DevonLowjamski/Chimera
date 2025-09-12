@@ -80,8 +80,29 @@ namespace ProjectChimera.Systems.Save
         {
             if (_isInitialized) return;
 
-            // Find construction system
-            _constructionSystem = FindObjectOfType<MonoBehaviour>() as IConstructionSystem;
+            // Try to resolve IConstructionSystem from ServiceContainer first
+            if (ServiceContainerFactory.Instance != null && ServiceContainerFactory.Instance.TryResolve<IConstructionSystem>(out var constructionService))
+            {
+                _constructionSystem = constructionService;
+                ChimeraLogger.LogDebug("[ConstructionSaveProvider] IConstructionSystem resolved from ServiceContainer");
+            }
+            else
+            {
+                // Fallback to scene discovery for IConstructionSystem
+                var foundComponent = UnityEngine.Object.FindObjectOfType<MonoBehaviour>() as IConstructionSystem;
+                _constructionSystem = foundComponent;
+                
+                // Register found system in ServiceContainer for future use
+                if (_constructionSystem != null && ServiceContainerFactory.Instance != null)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<IConstructionSystem>(_constructionSystem);
+                    ChimeraLogger.LogDebug("[ConstructionSaveProvider] IConstructionSystem discovered and registered in ServiceContainer");
+                }
+                else if (_constructionSystem == null)
+                {
+                    ChimeraLogger.LogWarning("[ConstructionSaveProvider] No IConstructionSystem found - construction save/load will not function");
+                }
+            }
 
             _isInitialized = true;
         }
