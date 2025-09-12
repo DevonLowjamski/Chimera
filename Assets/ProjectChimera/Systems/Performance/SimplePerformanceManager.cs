@@ -217,8 +217,25 @@ namespace ProjectChimera.Systems.Performance
         /// </summary>
         public void OptimizeCurrentScene()
         {
-            // Find all renderers in the scene and register them for LOD
-            var renderers = FindObjectsOfType<MeshRenderer>();
+            // Primary: Try ServiceContainer resolution for registered renderers
+            var renderers = ServiceContainerFactory.Instance.ResolveAll<MeshRenderer>();
+            if (renderers?.Any() != true)
+            {
+                // Fallback: Find all renderers in the scene and register them for LOD
+                renderers = UnityEngine.Object.FindObjectsOfType<MeshRenderer>();
+                
+                // Auto-register discovered renderers in ServiceContainer for future use
+                foreach (var renderer in renderers)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<MeshRenderer>(renderer);
+                }
+                
+                ChimeraLogger.Log($"[SimplePerformanceManager] Registered {renderers.Length} MeshRenderers in ServiceContainer");
+            }
+            else
+            {
+                ChimeraLogger.Log("[SimplePerformanceManager] Using MeshRenderers from ServiceContainer");
+            }
             foreach (var renderer in renderers)
             {
                 if (renderer.gameObject.isStatic || renderer.gameObject.CompareTag("Terrain"))
