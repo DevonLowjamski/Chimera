@@ -326,13 +326,6 @@ namespace ProjectChimera.Data.Cultivation.IPM
             public float EffectivenessRating;
         }
 
-        public class MonitoringProtocol
-        {
-            public PestType PestType;
-            public InspectionFrequency InspectionFrequency;
-            public string[] EarlyDetectionMethods;
-            public float ActionThreshold;
-        }
 
         public class CulturalPractice
         {
@@ -367,19 +360,7 @@ namespace ProjectChimera.Data.Cultivation.IPM
         }
 
 
-        public class MonitoringStation
-        {
-            public string StationId;
-            public Vector3 Location;
-            public List<PestMonitoringData> Readings;
-        }
 
-        public class ImprovementRecommendation
-        {
-            public string RecommendationType;
-            public string Description;
-            public float ExpectedImprovement;
-        }
 
         /// <summary>
         /// IPM effectiveness report structure
@@ -413,15 +394,15 @@ namespace ProjectChimera.Data.Cultivation.IPM
             public DateTime StartDate;
             public DateTime EndDate;
             public float DurationDays;
-            
+
             // Compatibility aliases
-            public DateTime Start 
+            public DateTime Start
             {
                 get => StartDate;
                 set => StartDate = value;
             }
-            
-            public DateTime End 
+
+            public DateTime End
             {
                 get => EndDate;
                 set => EndDate = value;
@@ -457,17 +438,6 @@ namespace ProjectChimera.Data.Cultivation.IPM
             public string Justification;
         }
 
-        /// <summary>
-        /// Preventative recommendation structure
-        /// </summary>
-        public class PreventativeRecommendation
-        {
-            public string RecommendationID;
-            public PestType TargetPest;
-            public string Action;
-            public string Frequency;
-            public float Priority;
-        }
 
         /// <summary>
         /// Yield comparison structure

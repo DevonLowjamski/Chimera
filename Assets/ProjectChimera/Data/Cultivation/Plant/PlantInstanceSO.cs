@@ -417,14 +417,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public DateTime CalculationDate;
     }
 
-    [System.Serializable]
-    public class HarvestResult
-    {
-        public float WetWeight;
-        public float DryWeight;
-        public float QualityScore;
-        public DateTime HarvestDate;
-    }
 
     [System.Serializable]
     public class HarvestRecommendation
@@ -443,14 +435,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public float Humidity;
     }
 
-    [System.Serializable]
-    public class ResourceStatus
-    {
-        public float WaterLevel;
-        public float NutrientLevel;
-        public float LightIntensity;
-        public DateTime LastCheck;
-    }
 
     // PlantSummary class moved to PlantState.cs to avoid duplication
 

@@ -81,6 +81,44 @@ namespace ProjectChimera.Data.Save.Structures
         }
 
         /// <summary>
+        /// Clone save data
+        /// </summary>
+        public SaveGameData Clone()
+        {
+            return new SaveGameData
+            {
+                SaveName = this.SaveName,
+                SlotName = this.SlotName,
+                PlayerName = this.PlayerName,
+                SaveTime = this.SaveTime,
+                SaveTimestamp = this.SaveTimestamp,
+                GameVersion = this.GameVersion,
+                SaveSystemVersion = this.SaveSystemVersion,
+                PlayTimeHours = this.PlayTimeHours,
+                PlayerState = this.PlayerState,
+                CultivationState = this.CultivationState,
+                ConstructionState = this.ConstructionState,
+                EconomyState = this.EconomyState,
+                ProgressionState = this.ProgressionState,
+                FacilityData = this.FacilityData,
+                PlantsData = this.PlantsData,
+                EconomyStateData = this.EconomyStateData,
+                ProgressionStateData = this.ProgressionStateData,
+                UIData = this.UIData
+            };
+        }
+
+        /// <summary>
+        /// Validate save data
+        /// </summary>
+        public bool ValidateData()
+        {
+            return !string.IsNullOrEmpty(SaveName) &&
+                   !string.IsNullOrEmpty(PlayerName) &&
+                   SaveSystemVersion > 0;
+        }
+
+        /// <summary>
         /// Plant state DTO for offline progression calculations
         /// </summary>
         [System.Serializable]
@@ -318,41 +356,4 @@ namespace ProjectChimera.Data.Save.Structures
             public System.DateTime LastProgressionUpdate;
         }
 
-        /// <summary>
-        /// Clone save data
-        /// </summary>
-        public SaveGameData Clone()
-        {
-            return new SaveGameData
-            {
-                SaveName = this.SaveName,
-                SlotName = this.SlotName,
-                PlayerName = this.PlayerName,
-                SaveTime = this.SaveTime,
-                SaveTimestamp = this.SaveTimestamp,
-                GameVersion = this.GameVersion,
-                SaveSystemVersion = this.SaveSystemVersion,
-                PlayTimeHours = this.PlayTimeHours,
-                PlayerState = this.PlayerState,
-                CultivationState = this.CultivationState,
-                ConstructionState = this.ConstructionState,
-                EconomyState = this.EconomyState,
-                ProgressionState = this.ProgressionState,
-                FacilityData = this.FacilityData,
-                PlantsData = this.PlantsData,
-                EconomyStateData = this.EconomyStateData,
-                ProgressionStateData = this.ProgressionStateData,
-                UIData = this.UIData
-            };
-        }
-
-        /// <summary>
-        /// Validate save data
-        /// </summary>
-        public bool ValidateData()
-        {
-            return !string.IsNullOrEmpty(SaveName) &&
-                   !string.IsNullOrEmpty(PlayerName) &&
-                   SaveSystemVersion > 0;
-        }
 }

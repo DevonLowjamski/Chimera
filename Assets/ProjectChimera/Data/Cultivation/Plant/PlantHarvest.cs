@@ -177,18 +177,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
     }
 
 
-    /// <summary>
-    /// Quality metrics data structure
-    /// </summary>
-    [System.Serializable]
-    public class QualityMetrics
-    {
-        public float OverallScore;
-        public float VisualAppeal;
-        public float AromaScore;
-        public float StructureScore;
-        public DateTime EvaluationDate;
-    }
 
     /// <summary>
     /// Quality comparison data structure

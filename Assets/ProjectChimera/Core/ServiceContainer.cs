@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.DependencyInjection;
 
 namespace ProjectChimera.Core
 {
@@ -8,7 +9,7 @@ namespace ProjectChimera.Core
     /// SIMPLE: Basic service container aligned with Project Chimera's service architecture vision.
     /// Focuses on essential service registration and resolution without complex dependency injection.
     /// </summary>
-    public class ServiceContainer : IServiceContainer
+    public class ServiceContainer : IServiceContainer, IServiceLocator
     {
         private readonly Dictionary<Type, object> _services = new Dictionary<Type, object>();
         private readonly object _lock = new object();
@@ -17,18 +18,56 @@ namespace ProjectChimera.Core
         // Events
         public event Action<Type, object> ServiceRegistered;
         public event Action<Type, object> ServiceResolved;
+        public event Action<Type, Exception> ResolutionFailed;
 
 
         /// <summary>
         /// IServiceContainer interface implementation
         /// </summary>
-        public void RegisterSingleton<TInterface>(Func<IServiceContainer, TInterface> factory) where TInterface : class
+
+        // Register singleton with implementation type
+        public void RegisterSingleton<TInterface, TImplementation>()
+            where TImplementation : class, TInterface, new()
+        {
+            var instance = new TImplementation();
+            RegisterInstance<TInterface>(instance);
+        }
+
+        // Register singleton with existing instance
+        public void RegisterSingleton<TInterface>(TInterface instance)
+        {
+            RegisterInstance<TInterface>(instance);
+        }
+
+        // Register instance (alias for RegisterSingleton)
+        public void RegisterInstance<TInterface>(TInterface instance) where TInterface : class
+        {
+            if (_disposed) return;
+
+            lock (_lock)
+            {
+                var serviceType = typeof(TInterface);
+                _services[serviceType] = instance;
+
+                ServiceRegistered?.Invoke(serviceType, instance);
+            }
+        }
+
+        // Register transient with implementation type
+        public void RegisterTransient<TInterface, TImplementation>()
+            where TImplementation : class, TInterface, new()
+        {
+            // For simplicity, treat transient as singleton in this basic implementation
+            RegisterSingleton<TInterface, TImplementation>();
+        }
+
+        public void RegisterSingleton<TInterface>(Func<IServiceContainer, TInterface> factory)
         {
             var instance = factory(this);
             RegisterInstance<TInterface>(instance);
         }
 
-        public void RegisterTransient<TInterface>(Func<IServiceContainer, TInterface> factory) where TInterface : class
+        public void RegisterTransient<TInterface>(Func<IServiceContainer, TInterface> factory)
         {
             // For simplicity, treat transient as singleton in this basic implementation
             var instance = factory(this);
@@ -41,10 +80,64 @@ namespace ProjectChimera.Core
             RegisterInstance<TInterface>(new TImplementation());
         }
 
-        public void RegisterScoped<TInterface>(Func<IServiceContainer, TInterface> factory) where TInterface : class
+        public void RegisterScoped<TInterface>(Func<IServiceContainer, TInterface> factory)
         {
             var instance = factory(this);
             RegisterInstance<TInterface>(instance);
+        }
+
+        // Resolve service by type
+        public T Resolve<T>()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(ServiceContainer));
+
+            lock (_lock)
+            {
+                var serviceType = typeof(T);
+                if (_services.TryGetValue(serviceType, out var service))
+                {
+                    ServiceResolved?.Invoke(serviceType, service);
+                    return (T)service;
+                }
+            }
+
+            throw new InvalidOperationException($"Service of type {typeof(T).Name} is not registered.");
+        }
+
+        // Try to resolve service, returns null if not found
+        public T TryResolve<T>() where T : class
+        {
+            if (_disposed) return null;
+
+            lock (_lock)
+            {
+                var serviceType = typeof(T);
+                if (_services.TryGetValue(serviceType, out var service))
+                {
+                    ServiceResolved?.Invoke(serviceType, service);
+                    return (T)service;
+                }
+            }
+
+            return null;
+        }
+
+        // Try to resolve service by type, returns null if not found
+        public object TryResolve(Type serviceType)
+        {
+            if (_disposed) return null;
+
+            lock (_lock)
+            {
+                if (_services.TryGetValue(serviceType, out var service))
+                {
+                    ServiceResolved?.Invoke(serviceType, service);
+                    return service;
+                }
+            }
+
+            return null;
         }
 
         public object Resolve(Type serviceType)
@@ -95,7 +188,7 @@ namespace ProjectChimera.Core
             return false;
         }
 
-        public bool IsRegistered<T>() where T : class
+        public bool IsRegistered<T>()
         {
             if (_disposed) return false;
 
@@ -115,7 +208,7 @@ namespace ProjectChimera.Core
             }
         }
 
-        public IEnumerable<Type> GetRegisteredTypes<T>() where T : class
+        public IEnumerable<Type> GetRegisteredTypes<T>()
         {
             if (_disposed) yield break;
 
@@ -147,7 +240,7 @@ namespace ProjectChimera.Core
             }
         }
 
-        public IEnumerable<T> ResolveAll<T>() where T : class
+        public IEnumerable<T> ResolveAll<T>()
         {
             if (_disposed) yield break;
 
@@ -211,13 +304,13 @@ namespace ProjectChimera.Core
             }
         }
 
-        public void RegisterDecorator<TInterface, TDecorator>() where TDecorator : class, TInterface, new()
+        public void RegisterDecorator<TInterface, TDecorator>() where TInterface : class where TDecorator : class, TInterface, new()
         {
             // Simplified decorator implementation
             RegisterInstance<TInterface>(new TDecorator());
         }
 
-        public void RegisterWithCallback<TInterface, TImplementation>(Action<TImplementation> callback) where TImplementation : class, TInterface, new()
+        public void RegisterWithCallback<TInterface, TImplementation>(Action<TImplementation> callback) where TInterface : class where TImplementation : class, TInterface, new()
         {
             var instance = new TImplementation();
             callback(instance);
@@ -296,7 +389,7 @@ namespace ProjectChimera.Core
             }
         }
 
-        public void Replace<TInterface, TImplementation>() where TImplementation : class, TInterface, new()
+        public void Replace<TInterface, TImplementation>() where TInterface : class where TImplementation : class, TInterface, new()
         {
             RegisterInstance<TInterface>(new TImplementation());
         }
@@ -358,8 +451,65 @@ namespace ProjectChimera.Core
         // Additional properties and events
         public bool IsDisposed => _disposed;
 
-        public Action<ServiceRegistration> ServiceRegistered { get; set; }
-        public Action<Type> ResolutionFailed { get; set; }
+        // Validate services
+        public void ValidateServices()
+        {
+            // Basic validation - could be enhanced
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(ServiceContainer));
+        }
+
+        // Get registration info
+        public IEnumerable<ServiceRegistrationInfo> GetRegistrationInfo()
+        {
+            if (_disposed) yield break;
+
+            lock (_lock)
+            {
+                foreach (var kvp in _services)
+                {
+                    yield return new ServiceRegistrationInfo
+                    {
+                        ServiceType = kvp.Key,
+                        ImplementationType = kvp.Value?.GetType(),
+                        Lifetime = ServiceLifetime.Singleton,
+                        HasInstance = kvp.Value != null,
+                        RegistrationTime = DateTime.Now
+                    };
+                }
+            }
+        }
+
+        // Clear all services
+        public void Clear()
+        {
+            if (_disposed) return;
+
+            lock (_lock)
+            {
+                _services.Clear();
+            }
+        }
+
+        // Create child container
+        public IServiceContainer CreateChildContainer()
+        {
+            // For simplicity, return a new instance
+            return new ServiceContainer();
+        }
+
+        // Dispose implementation
+        public void Dispose()
+        {
+            if (_disposed) return;
+
+            lock (_lock)
+            {
+                _services.Clear();
+                _disposed = true;
+            }
+        }
+
 
         public void RegisterSingleton(Type serviceType, object instance)
         {
@@ -385,7 +535,7 @@ namespace ProjectChimera.Core
             }
         }
 
-        public void RegisterNamed<TInterface, TImplementation>(string name) where TImplementation : class, TInterface, new()
+        public void RegisterNamed<TInterface, TImplementation>(string name) where TInterface : class where TImplementation : class, TInterface, new()
         {
             // Simplified - name not used in basic implementation
             RegisterInstance<TInterface>(new TImplementation());
@@ -412,15 +562,4 @@ namespace ProjectChimera.Core
         public ServiceLifetime Lifetime { get; set; }
     }
 
-    /// <summary>
-    /// Service registration info
-    /// </summary>
-    public class ServiceRegistration
-    {
-        public Type ServiceType { get; set; }
-        public Type ImplementationType { get; set; }
-        public ServiceLifetime Lifetime { get; set; }
-        public object Instance { get; set; }
-        public Func<IServiceContainer, object> Factory { get; set; }
-    }
 }

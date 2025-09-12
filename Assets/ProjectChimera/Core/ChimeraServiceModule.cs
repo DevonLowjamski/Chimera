@@ -250,33 +250,6 @@ namespace ProjectChimera.Core.DependencyInjection
             }
         }
 
-        private void ConfigureChimeraServiceProviders()
-        {
-            // Configure manager registration provider settings
-            if (_managerRegistrationProvider != null)
-            {
-                // Enable all manager categories by default for Chimera
-                // This could be made configurable in the future
-            }
-
-            // Configure utility service provider settings
-            if (_utilityServiceProvider != null)
-            {
-                // Enable all utility service categories by default
-            }
-
-            // Configure data service provider settings
-            if (_dataServiceProvider != null)
-            {
-                // Enable all data service categories by default
-            }
-
-            // Configure null implementation provider settings
-            if (_nullImplementationProvider != null)
-            {
-                // Enable all null implementation categories by default
-            }
-        }
 
         /// <summary>
         /// Legacy support method for backward compatibility
