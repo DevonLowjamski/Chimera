@@ -35,10 +35,34 @@ namespace ProjectChimera.Systems.Construction
         {
             if (_isInitialized) return;
 
-            _mainCamera = Camera.main;
+            // Try to resolve camera from ServiceContainer first
+            if (ServiceContainerFactory.Instance != null && ServiceContainerFactory.Instance.TryResolve<Camera>(out var serviceCamera))
+            {
+                _mainCamera = serviceCamera;
+                if (_enableLogging)
+                    ChimeraLogger.Log("[GridInputHandler] Camera resolved from ServiceContainer");
+            }
+            else
+            {
+                // Fallback to traditional camera discovery
+                _mainCamera = Camera.main;
+                if (_mainCamera == null)
+                {
+                    _mainCamera = UnityEngine.Object.FindObjectOfType<Camera>();
+                }
+
+                // Register discovered camera in ServiceContainer for other systems
+                if (_mainCamera != null && ServiceContainerFactory.Instance != null)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<Camera>(_mainCamera);
+                    if (_enableLogging)
+                        ChimeraLogger.Log("[GridInputHandler] Camera discovered and registered in ServiceContainer");
+                }
+            }
+
             if (_mainCamera == null)
             {
-                _mainCamera = FindObjectOfType<Camera>();
+                ChimeraLogger.LogError("[GridInputHandler] No camera found - grid input will not function");
             }
 
             _isInitialized = true;
