@@ -139,8 +139,36 @@ namespace ProjectChimera.Core
             
             try
             {
-                // Find all ChimeraManager instances using Unity 6 API
-                var allManagers = UnityEngine.Object.FindObjectsByType<ChimeraManager>(FindObjectsSortMode.None);
+                ChimeraManager[] allManagers;
+                
+                // Try to use ServiceContainer first for unified manager discovery
+                if (ServiceContainerFactory.Instance != null)
+                {
+                    allManagers = ServiceContainerFactory.Instance.ResolveAll<ChimeraManager>().ToArray();
+                    LogDebug($"Discovered managers via ServiceContainer: {allManagers.Length}");
+                    
+                    // If no managers found via ServiceContainer, fallback to scene discovery
+                    if (allManagers.Length == 0)
+                    {
+                        LogDebug("No managers found in ServiceContainer, falling back to scene discovery");
+                        var sceneManagers = UnityEngine.Object.FindObjectsByType<ChimeraManager>(FindObjectsSortMode.None);
+                        
+                        // Register discovered managers in ServiceContainer for future use
+                        foreach (var manager in sceneManagers)
+                        {
+                            ServiceContainerFactory.Instance.RegisterInstance<ChimeraManager>(manager);
+                        }
+                        
+                        allManagers = sceneManagers;
+                        LogDebug($"Registered {sceneManagers.Length} managers in ServiceContainer from scene discovery");
+                    }
+                }
+                else
+                {
+                    // Fallback to Unity scene discovery when ServiceContainer is not available
+                    LogDebug("ServiceContainer not available, using Unity scene discovery");
+                    allManagers = UnityEngine.Object.FindObjectsByType<ChimeraManager>(FindObjectsSortMode.None);
+                }
                 
                 _discoveredManagers.Clear();
                 
