@@ -175,7 +175,7 @@ namespace ProjectChimera.Testing
                 else
                 {
                     // Check if camera exists in scene for fallback testing
-                    var sceneCamera = FindObjectOfType<Camera>();
+                    var sceneCamera = UnityEngine.Object.FindObjectOfType<Camera>();
                     if (sceneCamera != null)
                     {
                         LogWarning($"⚠️ Camera service not in ServiceContainer but exists in scene - fallback should work");
@@ -336,7 +336,7 @@ namespace ProjectChimera.Testing
             try
             {
                 // Find GameSystemInitializer in scene
-                var initializer = FindObjectOfType<GameSystemInitializer>();
+                var initializer = UnityEngine.Object.FindObjectOfType<GameSystemInitializer>();
                 if (initializer == null)
                 {
                     LogWarning("⚠️ GameSystemInitializer not found in scene - may not be present in test scene");
@@ -414,10 +414,10 @@ namespace ProjectChimera.Testing
             try
             {
                 // Test that scene discovery still works for missing services
-                var sceneManagers = FindObjectsOfType<ChimeraManager>();
+                var sceneManagers = UnityEngine.Object.FindObjectsOfType<ChimeraManager>();
                 LogDebug($"Scene discovery found {sceneManagers.Length} ChimeraManagers");
                 
-                var sceneCameras = FindObjectsOfType<Camera>();
+                var sceneCameras = UnityEngine.Object.FindObjectsOfType<Camera>();
                 LogDebug($"Scene discovery found {sceneCameras.Length} Cameras");
                 
                 result.Passed = true;
