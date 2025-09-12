@@ -434,16 +434,27 @@ namespace ProjectChimera.Systems.Services.Time
         }
         
         /// <summary>
-        /// Helper method to find TimeManager component using reflection to avoid generic constraints
+        /// Helper method to find TimeManager component using ServiceContainer resolution
         /// </summary>
         private ITimeManager FindTimeManagerComponent()
         {
-            var allManagers = /* TODO: ServiceContainer.GetAll<MonoBehaviour>() */ new MonoBehaviour[0];
+            // Primary: Try ServiceContainer resolution for ITimeManager interface
+            if (ServiceContainerFactory.Instance.TryResolve<ITimeManager>(out var timeManager))
+            {
+                Debug.Log("[TimeManagerUIIntegration] Using ITimeManager from ServiceContainer");
+                return timeManager;
+            }
+            
+            // Fallback: Scene discovery through MonoBehaviour collection
+            var allManagers = UnityEngine.Object.FindObjectsOfType<MonoBehaviour>();
             foreach (var manager in allManagers)
             {
-                if (manager is ITimeManager timeManager)
+                if (manager is ITimeManager foundTimeManager)
                 {
-                    return timeManager;
+                    // Auto-register discovered ITimeManager in ServiceContainer for future use
+                    ServiceContainerFactory.Instance.RegisterInstance<ITimeManager>(foundTimeManager);
+                    Debug.Log("[TimeManagerUIIntegration] ITimeManager registered in ServiceContainer for UI integration");
+                    return foundTimeManager;
                 }
             }
             return null;
