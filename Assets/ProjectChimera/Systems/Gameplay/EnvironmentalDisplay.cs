@@ -162,7 +162,23 @@ namespace ProjectChimera.Systems.Gameplay
         /// </summary>
         private void FindEnvironmentalController()
         {
-            _environmentalController = FindObjectOfType<Systems.Environment.EnvironmentalController>();
+            // Primary: Try ServiceContainer resolution
+            if (ServiceContainerFactory.Instance.TryResolve<Systems.Environment.EnvironmentalController>(out var serviceController))
+            {
+                _environmentalController = serviceController;
+                ChimeraLogger.Log("[EnvironmentalDisplay] Using EnvironmentalController from ServiceContainer");
+            }
+            else
+            {
+                // Fallback: Scene discovery + auto-registration
+                _environmentalController = UnityEngine.Object.FindObjectOfType<Systems.Environment.EnvironmentalController>();
+                if (_environmentalController != null)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<Systems.Environment.EnvironmentalController>(_environmentalController);
+                    ChimeraLogger.Log("[EnvironmentalDisplay] EnvironmentalController registered in ServiceContainer for system-wide access");
+                }
+            }
+
             if (_environmentalController == null)
             {
                 ChimeraLogger.LogWarning("[EnvironmentalDisplay] No EnvironmentalController found in scene");
