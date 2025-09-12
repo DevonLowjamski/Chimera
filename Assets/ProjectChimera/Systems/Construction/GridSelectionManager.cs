@@ -319,7 +319,25 @@ namespace ProjectChimera.Systems.Construction
             if (camera == null) return;
 
             var objectsInBounds = new List<GridPlaceable>();
-            GridPlaceable[] allPlaceables = /* TODO: Replace FindObjectsOfType with ServiceContainer.GetAll<GridPlaceable>() */ null;
+            // Primary: Try ServiceContainer resolution for registered GridPlaceable components
+            var allPlaceables = ServiceContainerFactory.Instance.ResolveAll<GridPlaceable>();
+            if (allPlaceables?.Any() != true)
+            {
+                // Fallback: Scene discovery + auto-registration
+                allPlaceables = UnityEngine.Object.FindObjectsOfType<GridPlaceable>();
+                
+                // Auto-register discovered placeables in ServiceContainer for future use
+                foreach (var placeable in allPlaceables)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<GridPlaceable>(placeable);
+                }
+                
+                Debug.Log($"[GridSelectionManager] Registered {allPlaceables.Length} GridPlaceable components in ServiceContainer");
+            }
+            else
+            {
+                Debug.Log("[GridSelectionManager] Using GridPlaceable components from ServiceContainer");
+            }
 
             foreach (var placeable in allPlaceables)
             {
