@@ -58,14 +58,38 @@ namespace ProjectChimera.Core
         /// </summary>
         private void DiscoverAndRegisterManagers()
         {
-            var managers = FindObjectsOfType<ChimeraManager>();
+            ChimeraManager[] managers;
+            
+            // Try to use ServiceContainer first, fallback to FindObjectsOfType for compatibility
+            if (_serviceContainer != null)
+            {
+                managers = _serviceContainer.ResolveAll<ChimeraManager>().ToArray();
+                
+                // If no managers found via ServiceContainer, fallback to scene discovery
+                if (managers.Length == 0)
+                {
+                    // Fallback to scene discovery and register them in ServiceContainer
+                    var sceneManagers = UnityEngine.Object.FindObjectsByType<ChimeraManager>(FindObjectsSortMode.None);
+                    foreach (var manager in sceneManagers)
+                    {
+                        _serviceContainer.RegisterInstance<ChimeraManager>(manager);
+                    }
+                    managers = sceneManagers;
+                }
+            }
+            else
+            {
+                // Fallback for when ServiceContainer is not available
+                managers = UnityEngine.Object.FindObjectsByType<ChimeraManager>(FindObjectsSortMode.None);
+            }
+            
             foreach (var manager in managers)
             {
                 RegisterManager(manager);
             }
 
             if (_enableRegistryLogging)
-                ChimeraLogger.LogVerbose($"Auto-discovered and registered {managers.Length} managers");
+                ChimeraLogger.LogVerbose($"Auto-discovered and registered {managers.Length} managers via {(_serviceContainer != null ? "ServiceContainer" : "scene discovery")}");
         }
 
         /// <summary>
