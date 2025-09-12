@@ -1,640 +1,204 @@
-using ProjectChimera.Core.Logging;
 using UnityEngine;
-using ProjectChimera.Core;
-using ProjectChimera.Core.DependencyInjection;
-// Removed ProjectChimera.Systems.Gameplay - need to determine correct namespace or move functionality
-using ProjectChimera.Data.Events;
 using System.Collections.Generic;
-using System.Collections;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
 
 namespace ProjectChimera.Systems.Events
 {
     /// <summary>
-    /// Comprehensive event-driven mode change system demonstrating subscriber reactions
-    /// Coordinates all mode change responses across the game systems
-    /// Phase 2 implementation following roadmap requirements
+    /// SIMPLE: Basic mode change event system aligned with Project Chimera's gameplay vision.
+    /// Focuses on essential mode change notifications for Construction, Cultivation, and Genetics modes.
     /// </summary>
     public class ModeChangeEventSystem : MonoBehaviour
     {
-        [Header("Event System Configuration")]
-        [SerializeField] private bool _enableEventLogging = true;
-        [SerializeField] private bool _enablePerformanceMonitoring = true;
-        [SerializeField] private bool _enableEventValidation = true;
-        [SerializeField] private bool _debugMode = false;
-        
-        [Header("Event Channels")]
-        [SerializeField] private ModeChangedEventSO _modeChangedEvent;
-        
-        [Header("Subscriber Management")]
-        [SerializeField] private int _maxSubscribers = 50;
-        [SerializeField] private float _eventTimeout = 5f; // Maximum time for all subscribers to respond
-        [SerializeField] private int _eventHistorySize = 100;
-        
-        [Header("Performance Monitoring")]
-        [SerializeField] private bool _trackResponseTimes = true;
-        [SerializeField] private bool _detectSlowSubscribers = true;
-        [SerializeField] private float _slowSubscriberThreshold = 0.1f; // 100ms threshold
-        
-        // Services - IGameplayModeController not yet implemented, removed temporarily
-        
-        // Event system state
-        private bool _isInitialized = false;
-        private List<IEventSubscriber> _registeredSubscribers = new List<IEventSubscriber>();
-        private List<EventResponse> _eventHistory = new List<EventResponse>();
-        private Dictionary<string, SubscriberStats> _subscriberStats = new Dictionary<string, SubscriberStats>();
-        
-        // Performance tracking
-        private System.Diagnostics.Stopwatch _eventStopwatch = new System.Diagnostics.Stopwatch();
-        private float _lastEventTimestamp;
-        private int _totalEventsProcessed = 0;
-        private int _totalSubscribersNotified = 0;
-        
-        [System.Serializable]
-        public class EventResponse
-        {
-            public GameplayMode fromMode;
-            public GameplayMode toMode;
-            public System.DateTime timestamp;
-            public float processingTime;
-            public int subscribersNotified;
-            public int successfulResponses;
-            public int failedResponses;
-            public List<string> errors;
-            
-            public EventResponse()
-            {
-                errors = new List<string>();
-            }
-        }
-        
-        [System.Serializable]
-        public class SubscriberStats
-        {
-            public string subscriberName;
-            public int eventsReceived;
-            public int successfulResponses;
-            public int failedResponses;
-            public float totalResponseTime;
-            public float averageResponseTime;
-            public float slowestResponse;
-            public System.DateTime lastResponseTime;
-            
-            public void RecordResponse(float responseTime, bool success)
-            {
-                eventsReceived++;
-                if (success) successfulResponses++;
-                else failedResponses++;
-                
-                totalResponseTime += responseTime;
-                averageResponseTime = totalResponseTime / eventsReceived;
-                
-                if (responseTime > slowestResponse)
-                    slowestResponse = responseTime;
-                
-                lastResponseTime = System.DateTime.Now;
-            }
-        }
-        
+        [Header("Basic Event Settings")]
+        [SerializeField] private bool _enableEvents = true;
+        [SerializeField] private bool _enableLogging = true;
+
+        // Basic event handling
+        private GameplayMode _currentMode = GameplayMode.Cultivation;
+
         /// <summary>
-        /// Interface for components that want to subscribe to mode change events
+        /// Events for mode changes
         /// </summary>
-        public interface IEventSubscriber
-        {
-            string SubscriberName { get; }
-            int Priority { get; } // Higher priority subscribers get notified first
-            bool OnModeChangeEvent(ModeChangeEventData eventData);
-        }
-        
-        private void Start()
-        {
-            InitializeEventSystem();
-        }
-        
-        private void OnDestroy()
-        {
-            ShutdownEventSystem();
-        }
-        
-        private void InitializeEventSystem()
-        {
-            try
-            {
-                // TODO: Implement IGameplayModeController service when available
-                // _modeController = ServiceContainerFactory.Instance?.TryResolve<IGameplayModeController>();
-                
-                // Subscribe to the main mode changed event
-                if (_modeChangedEvent != null)
-                {
-                    _modeChangedEvent.Subscribe(OnModeChanged);
-                }
-                else
-                {
-                    ChimeraLogger.LogError("[ModeChangeEventSystem] ModeChangedEvent not assigned!");
-                    return;
-                }
-                
-                // Auto-discover and register event subscribers
-                DiscoverEventSubscribers();
-                
-                _isInitialized = true;
-                
-                if (_debugMode)
-                {
-                    ChimeraLogger.Log($"[ModeChangeEventSystem] Initialized with {_registeredSubscribers.Count} subscribers");
-                }
-            }
-            catch (System.Exception ex)
-            {
-                ChimeraLogger.LogError($"[ModeChangeEventSystem] Error during initialization: {ex.Message}");
-            }
-        }
-        
-        private void DiscoverEventSubscribers()
-        {
-            // Find all components implementing IEventSubscriber interface
-            var allComponents = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
-            
-            foreach (var component in allComponents)
-            {
-                if (component is IEventSubscriber subscriber)
-                {
-                    RegisterSubscriber(subscriber);
-                }
-            }
-            
-            // Create demo subscribers to showcase the system
-            CreateDemoSubscribers();
-            
-            if (_debugMode)
-            {
-                ChimeraLogger.Log($"[ModeChangeEventSystem] Discovered {_registeredSubscribers.Count} event subscribers");
-            }
-        }
-        
-        private void CreateDemoSubscribers()
-        {
-            // Create various demo subscribers to showcase different response patterns
-            
-            // UI System Subscriber
-            var uiSubscriber = new DemoUISystemSubscriber();
-            RegisterSubscriber(uiSubscriber);
-            
-            // Audio System Subscriber
-            var audioSubscriber = new DemoAudioSystemSubscriber();
-            RegisterSubscriber(audioSubscriber);
-            
-            // Lighting System Subscriber
-            var lightingSubscriber = new DemoLightingSystemSubscriber();
-            RegisterSubscriber(lightingSubscriber);
-            
-            // Analytics Subscriber
-            var analyticsSubscriber = new DemoAnalyticsSubscriber();
-            RegisterSubscriber(analyticsSubscriber);
-            
-            // Camera System Subscriber
-            var cameraSubscriber = new DemoCameraSystemSubscriber();
-            RegisterSubscriber(cameraSubscriber);
-        }
-        
-        public void RegisterSubscriber(IEventSubscriber subscriber)
-        {
-            if (subscriber == null) return;
-            
-            if (_registeredSubscribers.Count >= _maxSubscribers)
-            {
-                ChimeraLogger.LogWarning($"[ModeChangeEventSystem] Maximum subscribers ({_maxSubscribers}) reached!");
-                return;
-            }
-            
-            if (!_registeredSubscribers.Contains(subscriber))
-            {
-                _registeredSubscribers.Add(subscriber);
-                
-                // Sort by priority (higher priority first)
-                _registeredSubscribers.Sort((a, b) => b.Priority.CompareTo(a.Priority));
-                
-                // Initialize subscriber stats
-                _subscriberStats[subscriber.SubscriberName] = new SubscriberStats
-                {
-                    subscriberName = subscriber.SubscriberName
-                };
-                
-                if (_debugMode)
-                {
-                    ChimeraLogger.Log($"[ModeChangeEventSystem] Registered subscriber: {subscriber.SubscriberName} (Priority: {subscriber.Priority})");
-                }
-            }
-        }
-        
-        public void UnregisterSubscriber(IEventSubscriber subscriber)
-        {
-            if (subscriber != null && _registeredSubscribers.Contains(subscriber))
-            {
-                _registeredSubscribers.Remove(subscriber);
-                _subscriberStats.Remove(subscriber.SubscriberName);
-                
-                if (_debugMode)
-                {
-                    ChimeraLogger.Log($"[ModeChangeEventSystem] Unregistered subscriber: {subscriber.SubscriberName}");
-                }
-            }
-        }
-        
-        private void OnModeChanged(ModeChangeEventData eventData)
-        {
-            if (!_isInitialized) return;
-            
-            _eventStopwatch.Restart();
-            
-            if (_enableEventLogging && _debugMode)
-            {
-                ChimeraLogger.Log($"[ModeChangeEventSystem] Processing mode change event: {eventData.PreviousMode} → {eventData.NewMode}");
-            }
-            
-            // Create event response record
-            var eventResponse = new EventResponse
-            {
-                fromMode = eventData.PreviousMode,
-                toMode = eventData.NewMode,
-                timestamp = System.DateTime.Now,
-                subscribersNotified = _registeredSubscribers.Count
-            };
-            
-            // Notify all subscribers
-            StartCoroutine(NotifySubscribersCoroutine(eventData, eventResponse));
-        }
-        
-        private IEnumerator NotifySubscribersCoroutine(ModeChangeEventData eventData, EventResponse eventResponse)
-        {
-            int successfulResponses = 0;
-            int failedResponses = 0;
-            
-            foreach (var subscriber in _registeredSubscribers)
-            {
-                if (subscriber == null) continue;
-                
-                float subscriberStartTime = Time.realtimeSinceStartup;
-                bool success = false;
-                
-                try
-                {
-                    // Notify subscriber
-                    success = subscriber.OnModeChangeEvent(eventData);
-                    
-                    if (success) successfulResponses++;
-                    else failedResponses++;
-                    
-                    if (_enableEventLogging && _debugMode)
-                    {
-                        ChimeraLogger.Log($"[ModeChangeEventSystem] Notified {subscriber.SubscriberName}: {(success ? "SUCCESS" : "FAILED")}");
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    failedResponses++;
-                    eventResponse.errors.Add($"{subscriber.SubscriberName}: {ex.Message}");
-                    
-                    ChimeraLogger.LogError($"[ModeChangeEventSystem] Error notifying {subscriber.SubscriberName}: {ex.Message}");
-                }
-                
-                // Track performance
-                float responseTime = Time.realtimeSinceStartup - subscriberStartTime;
-                
-                if (_subscriberStats.TryGetValue(subscriber.SubscriberName, out var stats))
-                {
-                    stats.RecordResponse(responseTime, success);
-                    
-                    if (_detectSlowSubscribers && responseTime > _slowSubscriberThreshold)
-                    {
-                        ChimeraLogger.LogWarning($"[ModeChangeEventSystem] Slow subscriber detected: {subscriber.SubscriberName} took {responseTime:F3}s");
-                    }
-                }
-                
-                // Yield every few subscribers to prevent frame drops
-                if (_registeredSubscribers.IndexOf(subscriber) % 5 == 0)
-                {
-                    yield return null;
-                }
-            }
-            
-            // Complete event processing
-            _eventStopwatch.Stop();
-            float totalProcessingTime = (float)_eventStopwatch.Elapsed.TotalSeconds;
-            
-            eventResponse.processingTime = totalProcessingTime;
-            eventResponse.successfulResponses = successfulResponses;
-            eventResponse.failedResponses = failedResponses;
-            
-            // Add to history
-            RecordEventResponse(eventResponse);
-            
-            // Update global stats
-            _totalEventsProcessed++;
-            _totalSubscribersNotified += _registeredSubscribers.Count;
-            _lastEventTimestamp = Time.time;
-            
-            if (_enableEventLogging || _debugMode)
-            {
-                ChimeraLogger.Log($"[ModeChangeEventSystem] Event processing complete: {successfulResponses}/{_registeredSubscribers.Count} successful, {totalProcessingTime:F3}s total");
-            }
-            
-            // Validate event completion if enabled
-            if (_enableEventValidation)
-            {
-                ValidateEventCompletion(eventData, eventResponse);
-            }
-        }
-        
-        private void RecordEventResponse(EventResponse response)
-        {
-            _eventHistory.Add(response);
-            
-            // Maintain history size limit
-            if (_eventHistory.Count > _eventHistorySize)
-            {
-                _eventHistory.RemoveAt(0);
-            }
-        }
-        
-        private void ValidateEventCompletion(ModeChangeEventData eventData, EventResponse response)
-        {
-            // Validate that the event was processed successfully
-            float successRate = (float)response.successfulResponses / response.subscribersNotified;
-            
-            if (successRate < 0.9f) // Less than 90% success rate
-            {
-                ChimeraLogger.LogWarning($"[ModeChangeEventSystem] Low success rate for mode change: {successRate:P} ({response.errors.Count} errors)");
-            }
-            
-            if (response.processingTime > _eventTimeout)
-            {
-                ChimeraLogger.LogWarning($"[ModeChangeEventSystem] Event processing timeout: {response.processingTime:F3}s > {_eventTimeout}s");
-            }
-            
-            // TODO: Add mode validation when IGameplayModeController is implemented
-            // Check if mode actually changed
-            // if (_modeController != null && _modeController.CurrentMode != eventData.NewMode)
-            // {
-            //     ChimeraLogger.LogError($"[ModeChangeEventSystem] Mode change validation failed! Expected: {eventData.NewMode}, Actual: {_modeController.CurrentMode}");
-            // }
-        }
-        
-        private void ShutdownEventSystem()
-        {
-            if (_modeChangedEvent != null)
-            {
-                _modeChangedEvent.Unsubscribe(OnModeChanged);
-            }
-            
-            _registeredSubscribers.Clear();
-            _subscriberStats.Clear();
-            _eventHistory.Clear();
-            
-            if (_debugMode)
-            {
-                ChimeraLogger.Log("[ModeChangeEventSystem] Event system shut down");
-            }
-        }
-        
-        #region Demo Subscribers
-        
+        public event System.Action<GameplayMode, GameplayMode> OnModeChanged;
+        public event System.Action<GameplayMode> OnConstructionModeEntered;
+        public event System.Action<GameplayMode> OnCultivationModeEntered;
+        public event System.Action<GameplayMode> OnGeneticsModeEntered;
+
         /// <summary>
-        /// Demo UI System Subscriber - High priority, quick response
+        /// Initialize the basic event system
         /// </summary>
-        private class DemoUISystemSubscriber : IEventSubscriber
+        public void Initialize()
         {
-            public string SubscriberName => "UI System";
-            public int Priority => 100; // High priority - UI should update first
-            
-            public bool OnModeChangeEvent(ModeChangeEventData eventData)
+            if (_enableLogging)
             {
-                // Simulate UI updates (navigation, panels, buttons)
-                System.Threading.Thread.Sleep(10); // 10ms simulation
-                
-                ChimeraLogger.Log($"[UI System] Mode changed to {eventData.NewMode} - Updated navigation and panels");
-                return true;
+                ChimeraLogger.Log("[ModeChangeEventSystem] Initialized successfully");
             }
         }
-        
+
         /// <summary>
-        /// Demo Audio System Subscriber - Medium priority, moderate response time
+        /// Change to a new gameplay mode
         /// </summary>
-        private class DemoAudioSystemSubscriber : IEventSubscriber
+        public void ChangeMode(GameplayMode newMode)
         {
-            public string SubscriberName => "Audio System";
-            public int Priority => 75; // Medium-high priority
-            
-            public bool OnModeChangeEvent(ModeChangeEventData eventData)
+            if (!_enableEvents || _currentMode == newMode) return;
+
+            GameplayMode previousMode = _currentMode;
+            _currentMode = newMode;
+
+            // Raise general mode change event
+            OnModeChanged?.Invoke(previousMode, newMode);
+
+            // Raise specific mode entered events
+            switch (newMode)
             {
-                // Simulate audio changes (background music, sound effects)
-                System.Threading.Thread.Sleep(25); // 25ms simulation
-                
-                string audioTheme = eventData.NewMode switch
-                {
-                    GameplayMode.Cultivation => "Ambient Nature",
-                    GameplayMode.Construction => "Industrial",
-                    GameplayMode.Genetics => "Scientific",
-                    _ => "Default"
-                };
-                
-                ChimeraLogger.Log($"[Audio System] Mode changed to {eventData.NewMode} - Switched to {audioTheme} audio theme");
-                return true;
+                case GameplayMode.Construction:
+                    OnConstructionModeEntered?.Invoke(previousMode);
+                    break;
+                case GameplayMode.Cultivation:
+                    OnCultivationModeEntered?.Invoke(previousMode);
+                    break;
+                case GameplayMode.Genetics:
+                    OnGeneticsModeEntered?.Invoke(previousMode);
+                    break;
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log($"[ModeChangeEventSystem] Mode changed from {previousMode} to {newMode}");
             }
         }
-        
+
         /// <summary>
-        /// Demo Lighting System Subscriber - Medium priority, slower response
+        /// Switch to construction mode
         /// </summary>
-        private class DemoLightingSystemSubscriber : IEventSubscriber
+        public void SwitchToConstructionMode()
         {
-            public string SubscriberName => "Lighting System";
-            public int Priority => 50; // Medium priority
-            
-            public bool OnModeChangeEvent(ModeChangeEventData eventData)
+            ChangeMode(GameplayMode.Construction);
+        }
+
+        /// <summary>
+        /// Switch to cultivation mode
+        /// </summary>
+        public void SwitchToCultivationMode()
+        {
+            ChangeMode(GameplayMode.Cultivation);
+        }
+
+        /// <summary>
+        /// Switch to genetics mode
+        /// </summary>
+        public void SwitchToGeneticsMode()
+        {
+            ChangeMode(GameplayMode.Genetics);
+        }
+
+        /// <summary>
+        /// Get current gameplay mode
+        /// </summary>
+        public GameplayMode GetCurrentMode()
+        {
+            return _currentMode;
+        }
+
+        /// <summary>
+        /// Check if currently in construction mode
+        /// </summary>
+        public bool IsInConstructionMode()
+        {
+            return _currentMode == GameplayMode.Construction;
+        }
+
+        /// <summary>
+        /// Check if currently in cultivation mode
+        /// </summary>
+        public bool IsInCultivationMode()
+        {
+            return _currentMode == GameplayMode.Cultivation;
+        }
+
+        /// <summary>
+        /// Check if currently in genetics mode
+        /// </summary>
+        public bool IsInGeneticsMode()
+        {
+            return _currentMode == GameplayMode.Genetics;
+        }
+
+        /// <summary>
+        /// Get mode display name
+        /// </summary>
+        public string GetModeDisplayName(GameplayMode mode)
+        {
+            switch (mode)
             {
-                // Simulate lighting changes (more expensive operations)
-                System.Threading.Thread.Sleep(75); // 75ms simulation
-                
-                string lightingMode = eventData.NewMode switch
-                {
-                    GameplayMode.Cultivation => "Warm Growing Lights",
-                    GameplayMode.Construction => "Bright Work Lights",
-                    GameplayMode.Genetics => "Cool Lab Lighting",
-                    _ => "Default Lighting"
-                };
-                
-                ChimeraLogger.Log($"[Lighting System] Mode changed to {eventData.NewMode} - Applied {lightingMode}");
-                return true;
+                case GameplayMode.Construction:
+                    return "Construction";
+                case GameplayMode.Cultivation:
+                    return "Cultivation";
+                case GameplayMode.Genetics:
+                    return "Genetics";
+                default:
+                    return "Unknown";
             }
         }
-        
+
         /// <summary>
-        /// Demo Analytics Subscriber - Low priority, background processing
+        /// Get current mode display name
         /// </summary>
-        private class DemoAnalyticsSubscriber : IEventSubscriber
+        public string GetCurrentModeDisplayName()
         {
-            public string SubscriberName => "Analytics System";
-            public int Priority => 10; // Low priority - can be delayed
-            
-            public bool OnModeChangeEvent(ModeChangeEventData eventData)
-            {
-                // Simulate analytics tracking (background task)
-                System.Threading.Thread.Sleep(5); // 5ms simulation
-                
-                ChimeraLogger.Log($"[Analytics System] Mode changed to {eventData.NewMode} - Logged user behavior event");
-                return true;
-            }
+            return GetModeDisplayName(_currentMode);
         }
-        
+
         /// <summary>
-        /// Demo Camera System Subscriber - High priority, quick response
+        /// Get event system statistics
         /// </summary>
-        private class DemoCameraSystemSubscriber : IEventSubscriber
+        public EventSystemStatistics GetStatistics()
         {
-            public string SubscriberName => "Camera System";
-            public int Priority => 90; // High priority - visual changes are important
-            
-            public bool OnModeChangeEvent(ModeChangeEventData eventData)
+            return new EventSystemStatistics
             {
-                // Simulate camera adjustments
-                System.Threading.Thread.Sleep(15); // 15ms simulation
-                
-                string cameraPreset = eventData.NewMode switch
-                {
-                    GameplayMode.Cultivation => "Plant View",
-                    GameplayMode.Construction => "Blueprint View", 
-                    GameplayMode.Genetics => "Analysis View",
-                    _ => "Default View"
-                };
-                
-                ChimeraLogger.Log($"[Camera System] Mode changed to {eventData.NewMode} - Applied {cameraPreset} camera preset");
-                return true;
-            }
-        }
-        
-        #endregion
-        
-        #region Public Interface & Debugging
-        
-        /// <summary>
-        /// Get comprehensive event system statistics
-        /// </summary>
-        public EventSystemStats GetEventSystemStats()
-        {
-            return new EventSystemStats
-            {
-                totalEventsProcessed = _totalEventsProcessed,
-                totalSubscribersNotified = _totalSubscribersNotified,
-                activeSubscribers = _registeredSubscribers.Count,
-                averageProcessingTime = CalculateAverageProcessingTime(),
-                lastEventTime = _lastEventTimestamp,
-                eventHistorySize = _eventHistory.Count
+                CurrentMode = _currentMode,
+                EventsEnabled = _enableEvents,
+                LoggingEnabled = _enableLogging,
+                CurrentModeName = GetCurrentModeDisplayName()
             };
         }
-        
-        [System.Serializable]
-        public class EventSystemStats
+
+        /// <summary>
+        /// Set events enabled/disabled
+        /// </summary>
+        public void SetEventsEnabled(bool enabled)
         {
-            public int totalEventsProcessed;
-            public int totalSubscribersNotified;
-            public int activeSubscribers;
-            public float averageProcessingTime;
-            public float lastEventTime;
-            public int eventHistorySize;
-        }
-        
-        private float CalculateAverageProcessingTime()
-        {
-            if (_eventHistory.Count == 0) return 0f;
-            
-            float total = 0f;
-            foreach (var response in _eventHistory)
+            _enableEvents = enabled;
+
+            if (_enableLogging)
             {
-                total += response.processingTime;
-            }
-            
-            return total / _eventHistory.Count;
-        }
-        
-        /// <summary>
-        /// Get statistics for a specific subscriber
-        /// </summary>
-        public SubscriberStats GetSubscriberStats(string subscriberName)
-        {
-            return _subscriberStats.TryGetValue(subscriberName, out var stats) ? stats : null;
-        }
-        
-        /// <summary>
-        /// Get all subscriber statistics
-        /// </summary>
-        public Dictionary<string, SubscriberStats> GetAllSubscriberStats()
-        {
-            return new Dictionary<string, SubscriberStats>(_subscriberStats);
-        }
-        
-        /// <summary>
-        /// Force trigger a mode change event for testing
-        /// </summary>
-        public void TriggerTestEvent(GameplayMode targetMode)
-        {
-            // TODO: Use IGameplayModeController when implemented
-            // For now, directly trigger the event for testing
-            ChimeraLogger.Log($"[ModeChangeEventSystem] Triggering test mode change to {targetMode}");
-            
-            var eventData = ModeChangedEventSO.CreateModeChangeData(targetMode, GameplayMode.Cultivation);
-            _modeChangedEvent?.Invoke(eventData);
-        }
-        
-        /// <summary>
-        /// Enable/disable debug mode at runtime
-        /// </summary>
-        public void SetDebugMode(bool enabled)
-        {
-            _debugMode = enabled;
-            ChimeraLogger.Log($"[ModeChangeEventSystem] Debug mode {(enabled ? "enabled" : "disabled")}");
-        }
-        
-        /// <summary>
-        /// Get current system state
-        /// </summary>
-        public bool IsInitialized => _isInitialized;
-        public int SubscriberCount => _registeredSubscribers.Count;
-        public int EventHistoryCount => _eventHistory.Count;
-        
-        #endregion
-        
-        #if UNITY_EDITOR
-        
-        /// <summary>
-        /// Editor-only method for testing the event system
-        /// </summary>
-        [ContextMenu("Test Event System - Cycle Modes")]
-        private void TestEventSystemCycleModes()
-        {
-            if (Application.isPlaying)
-            {
-                StartCoroutine(TestEventSequence());
-            }
-            else
-            {
-                ChimeraLogger.Log("[ModeChangeEventSystem] Test only works during play mode with initialized controller");
+                ChimeraLogger.Log($"[ModeChangeEventSystem] Events {(enabled ? "enabled" : "disabled")}");
             }
         }
-        
-        private IEnumerator TestEventSequence()
-        {
-            var modes = new[] { GameplayMode.Cultivation, GameplayMode.Construction, GameplayMode.Genetics };
-            
-            foreach (var mode in modes)
-            {
-                ChimeraLogger.Log($"[ModeChangeEventSystem] Testing mode change to: {mode}");
-                TriggerTestEvent(mode);
-                yield return new WaitForSeconds(1f);
-            }
-            
-            ChimeraLogger.Log("[ModeChangeEventSystem] Event system test sequence complete");
-        }
-        
-        #endif
+    }
+
+    /// <summary>
+    /// Gameplay mode enum
+    /// </summary>
+    public enum GameplayMode
+    {
+        Construction,
+        Cultivation,
+        Genetics
+    }
+
+    /// <summary>
+    /// Event system statistics
+    /// </summary>
+    [System.Serializable]
+    public class EventSystemStatistics
+    {
+        public GameplayMode CurrentMode;
+        public bool EventsEnabled;
+        public bool LoggingEnabled;
+        public string CurrentModeName;
     }
 }

@@ -1,0 +1,286 @@
+using UnityEngine;
+using UnityEngine.Profiling;
+using ProjectChimera.Core.Logging;
+using System.Collections.Generic;
+using System.Diagnostics;
+
+namespace ProjectChimera.Systems.Diagnostics
+{
+    /// <summary>
+    /// Performance Profiler - Handles performance profiling and FPS monitoring
+    /// Provides development-time performance metrics and profiling data
+    /// Only active in development builds (#if DEVELOPMENT_BUILD || UNITY_EDITOR)
+    /// </summary>
+    public class PerformanceProfiler : MonoBehaviour
+    {
+        [Header("Profiling Settings")]
+        [SerializeField] private float _profilingInterval = 1f;
+        [SerializeField] private int _maxProfileSamples = 300;
+        [SerializeField] private bool _enableGPUProfiling = true;
+        [SerializeField] private bool _trackFrameTime = true;
+
+        [Header("Alert Thresholds")]
+        [SerializeField] private float _fpsWarningThreshold = 30f;
+        [SerializeField] private float _fpsCriticalThreshold = 15f;
+
+        // Profiling data
+        private List<PerformanceProfileSample> _profileSamples = new List<PerformanceProfileSample>();
+        private Stopwatch _frameTimer = new Stopwatch();
+        private float _lastProfilingTime;
+        private float _currentFPS;
+        private float _averageFPS;
+        private float _minFPS = float.MaxValue;
+        private float _maxFPS = 0f;
+
+        // Performance counters
+        private int _frameCount;
+        private float _totalFrameTime;
+
+        private void Awake()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            InitializeProfiling();
+#endif
+        }
+
+        private void Update()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            UpdatePerformanceMetrics();
+#endif
+        }
+
+        private void OnDestroy()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            CleanupProfiling();
+#endif
+        }
+
+        /// <summary>
+        /// Initializes the performance profiling system
+        /// </summary>
+        private void InitializeProfiling()
+        {
+            _profileSamples.Clear();
+            _frameCount = 0;
+            _totalFrameTime = 0f;
+
+            ChimeraLogger.Log("[PerformanceProfiler] Initialized performance profiling");
+        }
+
+        /// <summary>
+        /// Updates performance metrics
+        /// </summary>
+        private void UpdatePerformanceMetrics()
+        {
+            // Calculate FPS
+            _currentFPS = 1f / Time.deltaTime;
+
+            // Update FPS statistics
+            _averageFPS = (_averageFPS * _frameCount + _currentFPS) / (_frameCount + 1);
+            _minFPS = Mathf.Min(_minFPS, _currentFPS);
+            _maxFPS = Mathf.Max(_maxFPS, _currentFPS);
+
+            _frameCount++;
+            _totalFrameTime += Time.deltaTime;
+
+            // Collect profiling sample at intervals
+            if (Time.time - _lastProfilingTime >= _profilingInterval)
+            {
+                CollectProfileSample();
+                _lastProfilingTime = Time.time;
+            }
+
+            // Check for performance alerts
+            CheckPerformanceAlerts();
+        }
+
+        /// <summary>
+        /// Collects a performance profiling sample
+        /// </summary>
+        private void CollectProfileSample()
+        {
+            var sample = new PerformanceProfileSample
+            {
+                Timestamp = Time.time,
+                FPS = _currentFPS,
+                AverageFPS = _averageFPS,
+                FrameTime = Time.deltaTime,
+                TotalAllocatedMemory = Profiler.GetTotalAllocatedMemoryLong(),
+                TotalReservedMemory = Profiler.GetTotalReservedMemoryLong(),
+                MonoUsedSize = Profiler.GetMonoUsedSizeLong(),
+                MonoHeapSize = Profiler.GetMonoHeapSizeLong(),
+                UsedHeapSize = Profiler.GetUsedHeapSizeLong(),
+                TotalHeapSize = Profiler.GetTotalHeapSizeLong()
+            };
+
+            // Add GPU profiling if enabled
+            if (_enableGPUProfiling)
+            {
+                // Note: GPU profiling would require additional setup
+                // For now, we'll track basic GPU frame time
+                sample.GPUFrameTime = Time.deltaTime; // Placeholder
+            }
+
+            _profileSamples.Add(sample);
+
+            // Maintain sample limit
+            if (_profileSamples.Count > _maxProfileSamples)
+            {
+                _profileSamples.RemoveAt(0);
+            }
+        }
+
+        /// <summary>
+        /// Checks for performance alerts
+        /// </summary>
+        private void CheckPerformanceAlerts()
+        {
+            if (_currentFPS <= _fpsCriticalThreshold)
+            {
+                ChimeraLogger.LogWarning($"[PerformanceProfiler] CRITICAL FPS: {_currentFPS:F1} (below {_fpsCriticalThreshold})");
+            }
+            else if (_currentFPS <= _fpsWarningThreshold)
+            {
+                ChimeraLogger.Log($"[PerformanceProfiler] WARNING FPS: {_currentFPS:F1} (below {_fpsWarningThreshold})");
+            }
+        }
+
+        /// <summary>
+        /// Cleans up profiling resources
+        /// </summary>
+        private void CleanupProfiling()
+        {
+            _profileSamples.Clear();
+            ChimeraLogger.Log("[PerformanceProfiler] Cleaned up performance profiling");
+        }
+
+        /// <summary>
+        /// Gets recent performance samples
+        /// </summary>
+        public List<PerformanceProfileSample> GetPerformanceSamples(int maxCount = 100)
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            int count = Mathf.Min(maxCount, _profileSamples.Count);
+            return _profileSamples.GetRange(_profileSamples.Count - count, count);
+#else
+            return new List<PerformanceProfileSample>();
+#endif
+        }
+
+        /// <summary>
+        /// Gets current FPS metrics
+        /// </summary>
+        public FPSMetrics GetFPSMetrics()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            return new FPSMetrics
+            {
+                CurrentFPS = _currentFPS,
+                AverageFPS = _averageFPS,
+                MinFPS = _minFPS,
+                MaxFPS = _maxFPS,
+                FrameCount = _frameCount
+            };
+#else
+            return new FPSMetrics { CurrentFPS = 0f };
+#endif
+        }
+
+        /// <summary>
+        /// Gets memory usage metrics
+        /// </summary>
+        public MemoryMetrics GetMemoryMetrics()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            return new MemoryMetrics
+            {
+                TotalAllocatedMemory = Profiler.GetTotalAllocatedMemoryLong(),
+                TotalReservedMemory = Profiler.GetTotalReservedMemoryLong(),
+                MonoUsedSize = Profiler.GetMonoUsedSizeLong(),
+                MonoHeapSize = Profiler.GetMonoHeapSizeLong(),
+                UsedHeapSize = Profiler.GetUsedHeapSizeLong(),
+                TotalHeapSize = Profiler.GetTotalHeapSizeLong()
+            };
+#else
+            return new MemoryMetrics { TotalAllocatedMemory = 0L };
+#endif
+        }
+
+        /// <summary>
+        /// Clears all performance data
+        /// </summary>
+        public void ClearPerformanceData()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            _profileSamples.Clear();
+            _frameCount = 0;
+            _totalFrameTime = 0f;
+            _minFPS = float.MaxValue;
+            _maxFPS = 0f;
+
+            ChimeraLogger.Log("[PerformanceProfiler] Cleared performance data");
+#endif
+        }
+
+        /// <summary>
+        /// Gets the number of collected samples
+        /// </summary>
+        public int GetSampleCount()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            return _profileSamples.Count;
+#else
+            return 0;
+#endif
+        }
+    }
+
+    /// <summary>
+    /// Performance profile sample data structure
+    /// </summary>
+    [System.Serializable]
+    public class PerformanceProfileSample
+    {
+        public float Timestamp;
+        public float FPS;
+        public float AverageFPS;
+        public float FrameTime;
+        public long TotalAllocatedMemory;
+        public long TotalReservedMemory;
+        public long MonoUsedSize;
+        public long MonoHeapSize;
+        public long UsedHeapSize;
+        public long TotalHeapSize;
+        public float GPUFrameTime;
+    }
+
+    /// <summary>
+    /// FPS metrics data structure
+    /// </summary>
+    [System.Serializable]
+    public struct FPSMetrics
+    {
+        public float CurrentFPS;
+        public float AverageFPS;
+        public float MinFPS;
+        public float MaxFPS;
+        public int FrameCount;
+    }
+
+    /// <summary>
+    /// Memory metrics data structure
+    /// </summary>
+    [System.Serializable]
+    public struct MemoryMetrics
+    {
+        public long TotalAllocatedMemory;
+        public long TotalReservedMemory;
+        public long MonoUsedSize;
+        public long MonoHeapSize;
+        public long UsedHeapSize;
+        public long TotalHeapSize;
+    }
+}
+

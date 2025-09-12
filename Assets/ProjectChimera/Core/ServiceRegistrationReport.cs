@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using ProjectChimera.Core;
 
 namespace ProjectChimera.Core.DependencyInjection
 {

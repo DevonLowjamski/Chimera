@@ -1,146 +1,91 @@
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Core.Updates;
 using UnityEngine;
-using UnityEngine.UI;
 using ProjectChimera.Core;
 using ProjectChimera.Core.DependencyInjection;
 using ProjectChimera.Systems.Gameplay;
 using ProjectChimera.Data.Events;
-using System.Collections.Generic;
 
 namespace ProjectChimera.Systems.Gameplay
 {
     /// <summary>
-    /// Genetics mode overlay system - shows heatmaps and genetic analysis tools
-    /// Responds to gameplay mode changes and provides genetics-specific visualizations
-    /// Phase 2 implementation following roadmap requirements
+    /// REFACTORED: Genetics mode overlay system decomposed into focused components.
+    /// This file now serves as a coordinator for specialized genetics overlay components.
+    ///
+    /// New Component Structure:
+    /// - GeneticVisualizationManager.cs: Handles trait overlays and heatmap visualizations
+    /// - GeneticsToolbarManager.cs: Manages genetics tools and menu interface
+    /// - GeneticsModeOverlay.cs: Coordinates the genetics mode overlay system
     /// </summary>
     public class GeneticsModeOverlay : MonoBehaviour, ITickable
     {
         [Header("Overlay Configuration")]
-        [SerializeField] private bool _enableHeatmapOverlay = true;
-        [SerializeField] private bool _enableGeneticTools = true;
+        [SerializeField] private bool _enableGeneticVisualization = true;
+        [SerializeField] private bool _enableGeneticsToolbar = true;
         [SerializeField] private bool _debugMode = false;
-        
-        [Header("Heatmap Overlays")]
-        [SerializeField] private GameObject _heatmapPanel;
-        [SerializeField] private UnityEngine.UI.Toggle _potencyHeatmapToggle;
-        [SerializeField] private UnityEngine.UI.Toggle _yieldHeatmapToggle;
-        [SerializeField] private UnityEngine.UI.Toggle _healthHeatmapToggle;
-        [SerializeField] private UnityEngine.UI.Toggle _geneticDiversityToggle;
-        [SerializeField] private UnityEngine.UI.Slider _heatmapIntensity;
-        
-        [Header("Genetic Analysis Tools")]
-        [SerializeField] private GameObject _geneticsToolbar;
-        [SerializeField] private UnityEngine.UI.Button _breedingAnalysisButton;
-        [SerializeField] private UnityEngine.UI.Button _phenotypeViewButton;
-        [SerializeField] private UnityEngine.UI.Button _traitMappingButton;
-        [SerializeField] private UnityEngine.UI.Button _crossbreedingButton;
-        
-        [Header("Visualization Controls")]
-        [SerializeField] private GameObject _visualizationPanel;
-        [SerializeField] private UnityEngine.UI.Dropdown _heatmapTypeDropdown;
-        [SerializeField] private UnityEngine.UI.Toggle _showLegendToggle;
-        [SerializeField] private UnityEngine.UI.Toggle _animatedHeatmapToggle;
-        [SerializeField] private UnityEngine.UI.Slider _updateFrequencySlider;
-        
-        [Header("Genetic Data Display")]
-        [SerializeField] private GameObject _geneticDataPanel;
-        [SerializeField] private UnityEngine.UI.Text _selectedPlantGenetics;
-        [SerializeField] private UnityEngine.UI.Image _geneticProfileImage;
-        [SerializeField] private UnityEngine.UI.Button _detailedAnalysisButton;
-        
-        [Header("Visual Overlays")]
-        [SerializeField] private GameObject _heatmapOverlayRoot;
-        [SerializeField] private Material _potencyHeatmapMaterial;
-        [SerializeField] private Material _yieldHeatmapMaterial;
-        [SerializeField] private Material _healthHeatmapMaterial;
-        [SerializeField] private Material _diversityHeatmapMaterial;
-        
+
+        [Header("Component References")]
+        [SerializeField] private GeneticVisualizationManager _geneticVisualizationManager;
+        [SerializeField] private GeneticsToolbarManager _geneticsToolbarManager;
+
         [Header("Event Channels")]
         [SerializeField] private ModeChangedEventSO _modeChangedEvent;
-        
+
         // Services
         private IGameplayModeController _modeController;
-        
+
         // State tracking
         private bool _isInitialized = false;
         private bool _isGeneticsModeActive = false;
-        private HeatmapType _activeHeatmapType = HeatmapType.None;
-        private float _heatmapUpdateTimer = 0f;
-        
-        // Heatmap management
-        private Dictionary<HeatmapType, GameObject> _heatmapObjects = new Dictionary<HeatmapType, GameObject>();
-        private Dictionary<HeatmapType, Material> _heatmapMaterials = new Dictionary<HeatmapType, Material>();
-        private List<Transform> _monitoredPlants = new List<Transform>();
-        
-        // Heatmap types for genetics analysis
-        public enum HeatmapType
-        {
-            None = 0,
-            Potency = 1,
-            Yield = 2,
-            Health = 3,
-            GeneticDiversity = 4
-        }
-        
+
         private void Start()
         {
-        // Register with UpdateOrchestrator
-        UpdateOrchestrator.Instance?.RegisterTickable(this);
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
             InitializeOverlay();
         }
-        
-            public void Tick(float deltaTime)
-    {
-            if (_isGeneticsModeActive && _animatedHeatmapToggle != null && _animatedHeatmapToggle.isOn)
-            {
-                UpdateAnimatedHeatmaps();
-            
-    }
+
+        public void Tick(float deltaTime)
+        {
+            // Component updates are handled by their respective systems
+            // This coordinator ensures proper orchestration between components
         }
-        
+
         private void OnDestroy()
         {
-        // Unregister from UpdateOrchestrator
-        UpdateOrchestrator.Instance?.UnregisterTickable(this);
+            // Unregister from UpdateOrchestrator
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
             UnsubscribeFromEvents();
-            CleanupHeatmapObjects();
         }
-        
+
         private void InitializeOverlay()
         {
             try
             {
                 // Get the gameplay mode controller service
                 _modeController = ServiceContainerFactory.Instance?.TryResolve<IGameplayModeController>();
-                
+
                 if (_modeController == null)
                 {
                     ChimeraLogger.LogError("[GeneticsModeOverlay] GameplayModeController service not found!");
                     return;
                 }
-                
-                // Initialize heatmap materials dictionary
-                InitializeHeatmapMaterials();
-                
+
+                // Validate component references
+                if (!ValidateComponents())
+                {
+                    ChimeraLogger.LogError("[GeneticsModeOverlay] Component validation failed!");
+                    return;
+                }
+
                 // Subscribe to mode change events
                 SubscribeToEvents();
-                
-                // Subscribe to UI control events
-                SubscribeToUIControls();
-                
+
                 // Initialize overlay visibility based on current mode
                 UpdateOverlayVisibility(_modeController.CurrentMode);
-                
-                // Set initial UI state
-                InitializeUIState();
-                
-                // Find plants to monitor for heatmaps
-                RefreshMonitoredPlants();
-                
+
                 _isInitialized = true;
-                
+
                 if (_debugMode)
                 {
                     ChimeraLogger.Log($"[GeneticsModeOverlay] Initialized with current mode: {_modeController.CurrentMode}");
@@ -151,15 +96,29 @@ namespace ProjectChimera.Systems.Gameplay
                 ChimeraLogger.LogError($"[GeneticsModeOverlay] Error during initialization: {ex.Message}");
             }
         }
-        
-        private void InitializeHeatmapMaterials()
+
+        /// <summary>
+        /// Validates that all required components are properly assigned
+        /// </summary>
+        private bool ValidateComponents()
         {
-            _heatmapMaterials[HeatmapType.Potency] = _potencyHeatmapMaterial;
-            _heatmapMaterials[HeatmapType.Yield] = _yieldHeatmapMaterial;
-            _heatmapMaterials[HeatmapType.Health] = _healthHeatmapMaterial;
-            _heatmapMaterials[HeatmapType.GeneticDiversity] = _diversityHeatmapMaterial;
+            bool allValid = true;
+
+            if (_enableGeneticVisualization && _geneticVisualizationManager == null)
+            {
+                ChimeraLogger.LogError("[GeneticsModeOverlay] GeneticVisualizationManager component is required but not assigned!");
+                allValid = false;
+            }
+
+            if (_enableGeneticsToolbar && _geneticsToolbarManager == null)
+            {
+                ChimeraLogger.LogError("[GeneticsModeOverlay] GeneticsToolbarManager component is required but not assigned!");
+                allValid = false;
+            }
+
+            return allValid;
         }
-        
+
         private void SubscribeToEvents()
         {
             if (_modeChangedEvent != null)
@@ -171,7 +130,7 @@ namespace ProjectChimera.Systems.Gameplay
                 ChimeraLogger.LogWarning("[GeneticsModeOverlay] ModeChangedEvent not assigned");
             }
         }
-        
+
         private void UnsubscribeFromEvents()
         {
             if (_modeChangedEvent != null)
@@ -179,509 +138,81 @@ namespace ProjectChimera.Systems.Gameplay
                 _modeChangedEvent.Unsubscribe(OnModeChanged);
             }
         }
-        
-        private void SubscribeToUIControls()
-        {
-            // Heatmap toggles
-            if (_potencyHeatmapToggle != null)
-            {
-                _potencyHeatmapToggle.onValueChanged.AddListener((enabled) => OnHeatmapToggleChanged(HeatmapType.Potency, enabled));
-            }
-            
-            if (_yieldHeatmapToggle != null)
-            {
-                _yieldHeatmapToggle.onValueChanged.AddListener((enabled) => OnHeatmapToggleChanged(HeatmapType.Yield, enabled));
-            }
-            
-            if (_healthHeatmapToggle != null)
-            {
-                _healthHeatmapToggle.onValueChanged.AddListener((enabled) => OnHeatmapToggleChanged(HeatmapType.Health, enabled));
-            }
-            
-            if (_geneticDiversityToggle != null)
-            {
-                _geneticDiversityToggle.onValueChanged.AddListener((enabled) => OnHeatmapToggleChanged(HeatmapType.GeneticDiversity, enabled));
-            }
-            
-            // Heatmap intensity
-            if (_heatmapIntensity != null)
-            {
-                _heatmapIntensity.onValueChanged.AddListener(OnHeatmapIntensityChanged);
-            }
-            
-            // Genetic analysis tools
-            if (_breedingAnalysisButton != null)
-            {
-                _breedingAnalysisButton.onClick.AddListener(() => OnGeneticToolSelected("BreedingAnalysis"));
-            }
-            
-            if (_phenotypeViewButton != null)
-            {
-                _phenotypeViewButton.onClick.AddListener(() => OnGeneticToolSelected("PhenotypeView"));
-            }
-            
-            if (_traitMappingButton != null)
-            {
-                _traitMappingButton.onClick.AddListener(() => OnGeneticToolSelected("TraitMapping"));
-            }
-            
-            if (_crossbreedingButton != null)
-            {
-                _crossbreedingButton.onClick.AddListener(() => OnGeneticToolSelected("Crossbreeding"));
-            }
-            
-            // Visualization controls
-            if (_heatmapTypeDropdown != null)
-            {
-                _heatmapTypeDropdown.onValueChanged.AddListener(OnHeatmapTypeDropdownChanged);
-            }
-            
-            if (_showLegendToggle != null)
-            {
-                _showLegendToggle.onValueChanged.AddListener(OnShowLegendToggleChanged);
-            }
-            
-            if (_animatedHeatmapToggle != null)
-            {
-                _animatedHeatmapToggle.onValueChanged.AddListener(OnAnimatedHeatmapToggleChanged);
-            }
-            
-            if (_updateFrequencySlider != null)
-            {
-                _updateFrequencySlider.onValueChanged.AddListener(OnUpdateFrequencyChanged);
-            }
-            
-            // Genetic data display
-            if (_detailedAnalysisButton != null)
-            {
-                _detailedAnalysisButton.onClick.AddListener(OnDetailedAnalysisClicked);
-            }
-        }
-        
-        private void InitializeUIState()
-        {
-            // Set default heatmap toggles to off
-            if (_potencyHeatmapToggle != null) _potencyHeatmapToggle.isOn = false;
-            if (_yieldHeatmapToggle != null) _yieldHeatmapToggle.isOn = false;
-            if (_healthHeatmapToggle != null) _healthHeatmapToggle.isOn = false;
-            if (_geneticDiversityToggle != null) _geneticDiversityToggle.isOn = false;
-            
-            // Set default heatmap intensity
-            if (_heatmapIntensity != null)
-            {
-                _heatmapIntensity.value = 0.8f; // Default 80% intensity
-            }
-            
-            // Initialize dropdown with heatmap types
-            if (_heatmapTypeDropdown != null)
-            {
-                _heatmapTypeDropdown.ClearOptions();
-                var options = new List<string> { "None", "Potency", "Yield", "Health", "Genetic Diversity" };
-                _heatmapTypeDropdown.AddOptions(options);
-                _heatmapTypeDropdown.value = 0; // Default to "None"
-            }
-            
-            // Set default visualization settings
-            if (_showLegendToggle != null) _showLegendToggle.isOn = true;
-            if (_animatedHeatmapToggle != null) _animatedHeatmapToggle.isOn = false;
-            
-            // Set default update frequency (1 second)
-            if (_updateFrequencySlider != null)
-            {
-                _updateFrequencySlider.value = 1f;
-            }
-        }
-        
+
         private void OnModeChanged(ModeChangeEventData eventData)
         {
             if (_debugMode)
             {
                 ChimeraLogger.Log($"[GeneticsModeOverlay] Mode changed: {eventData.PreviousMode} → {eventData.NewMode}");
             }
-            
+
             UpdateOverlayVisibility(eventData.NewMode);
         }
-        
+
         private void UpdateOverlayVisibility(GameplayMode currentMode)
         {
             bool shouldShowOverlay = currentMode == GameplayMode.Genetics;
-            
+
             if (_isGeneticsModeActive == shouldShowOverlay) return;
-            
+
             _isGeneticsModeActive = shouldShowOverlay;
-            
-            // Show/hide main overlay panels
-            if (_heatmapPanel != null)
-            {
-                _heatmapPanel.SetActive(shouldShowOverlay && _enableHeatmapOverlay);
-            }
-            
-            if (_geneticsToolbar != null)
-            {
-                _geneticsToolbar.SetActive(shouldShowOverlay && _enableGeneticTools);
-            }
-            
-            if (_visualizationPanel != null)
-            {
-                _visualizationPanel.SetActive(shouldShowOverlay);
-            }
-            
-            if (_geneticDataPanel != null)
-            {
-                _geneticDataPanel.SetActive(shouldShowOverlay);
-            }
-            
-            // Handle heatmap overlays
+
+            // Control component visibility through their respective interfaces
             if (shouldShowOverlay)
             {
-                RefreshMonitoredPlants();
-                ShowActiveHeatmaps();
+                // Show genetic visualization
+                if (_geneticVisualizationManager != null && _enableGeneticVisualization)
+                {
+                    _geneticVisualizationManager.SetTraitOverlaysEnabled(true);
+                    _geneticVisualizationManager.SetHeatmapsEnabled(true);
+                }
+
+                // Show genetics toolbar
+                if (_geneticsToolbarManager != null && _enableGeneticsToolbar)
+                {
+                    _geneticsToolbarManager.ShowToolbar();
+                }
             }
             else
             {
-                HideAllHeatmaps();
+                // Hide genetic visualization
+                if (_geneticVisualizationManager != null)
+                {
+                    _geneticVisualizationManager.SetTraitOverlaysEnabled(false);
+                    _geneticVisualizationManager.SetHeatmapsEnabled(false);
+                }
+
+                // Hide genetics toolbar
+                if (_geneticsToolbarManager != null)
+                {
+                    _geneticsToolbarManager.HideToolbar();
+                }
             }
-            
+
             if (_debugMode)
             {
                 ChimeraLogger.Log($"[GeneticsModeOverlay] Genetics mode overlay {(shouldShowOverlay ? "shown" : "hidden")}");
             }
         }
-        
-        private void RefreshMonitoredPlants()
-        {
-            _monitoredPlants.Clear();
-            
-            // Find all plant objects in the scene (placeholder implementation)
-            GameObject[] plantObjects = /* TODO: Replace GameObject.Find */ new GameObject[0];
-            foreach (var plantObj in plantObjects)
-            {
-                _monitoredPlants.Add(plantObj.transform);
-            }
-            
-            if (_debugMode)
-            {
-                ChimeraLogger.Log($"[GeneticsModeOverlay] Refreshed monitored plants: {_monitoredPlants.Count} found");
-            }
-        }
-        
-        private void ShowActiveHeatmaps()
-        {
-            // Show heatmaps based on current toggle states
-            if (_potencyHeatmapToggle != null && _potencyHeatmapToggle.isOn)
-            {
-                ShowHeatmap(HeatmapType.Potency);
-            }
-            
-            if (_yieldHeatmapToggle != null && _yieldHeatmapToggle.isOn)
-            {
-                ShowHeatmap(HeatmapType.Yield);
-            }
-            
-            if (_healthHeatmapToggle != null && _healthHeatmapToggle.isOn)
-            {
-                ShowHeatmap(HeatmapType.Health);
-            }
-            
-            if (_geneticDiversityToggle != null && _geneticDiversityToggle.isOn)
-            {
-                ShowHeatmap(HeatmapType.GeneticDiversity);
-            }
-        }
-        
-        private void HideAllHeatmaps()
-        {
-            foreach (var heatmapType in System.Enum.GetValues(typeof(HeatmapType)))
-            {
-                if ((HeatmapType)heatmapType != HeatmapType.None)
-                {
-                    HideHeatmap((HeatmapType)heatmapType);
-                }
-            }
-        }
-        
-        private void ShowHeatmap(HeatmapType heatmapType)
-        {
-            if (!_heatmapObjects.TryGetValue(heatmapType, out var heatmapObj))
-            {
-                // Create placeholder heatmap visualization
-                CreatePlaceholderHeatmap(heatmapType);
-                heatmapObj = _heatmapObjects[heatmapType];
-            }
-            
-            if (heatmapObj != null)
-            {
-                heatmapObj.SetActive(true);
-                UpdateHeatmapData(heatmapType);
-            }
-            
-            _activeHeatmapType = heatmapType;
-            
-            if (_debugMode)
-            {
-                ChimeraLogger.Log($"[GeneticsModeOverlay] {heatmapType} heatmap shown");
-            }
-        }
-        
-        private void HideHeatmap(HeatmapType heatmapType)
-        {
-            if (_heatmapObjects.TryGetValue(heatmapType, out var heatmapObj) && heatmapObj != null)
-            {
-                heatmapObj.SetActive(false);
-            }
-            
-            if (_activeHeatmapType == heatmapType)
-            {
-                _activeHeatmapType = HeatmapType.None;
-            }
-            
-            if (_debugMode)
-            {
-                ChimeraLogger.Log($"[GeneticsModeOverlay] {heatmapType} heatmap hidden");
-            }
-        }
-        
-        private void CreatePlaceholderHeatmap(HeatmapType heatmapType)
-        {
-            var heatmapObj = new GameObject($"Heatmap_{heatmapType}");
-            heatmapObj.transform.SetParent(_heatmapOverlayRoot?.transform ?? transform);
-            
-            // Add visual components for heatmap (placeholder implementation)
-            var meshRenderer = heatmapObj.AddComponent<MeshRenderer>();
-            var meshFilter = heatmapObj.AddComponent<MeshFilter>();
-            
-            // Create a simple quad mesh for the heatmap
-            meshFilter.mesh = CreateHeatmapQuad();
-            
-            // Apply appropriate material
-            if (_heatmapMaterials.TryGetValue(heatmapType, out var material) && material != null)
-            {
-                meshRenderer.material = material;
-            }
-            
-            _heatmapObjects[heatmapType] = heatmapObj;
-            
-            if (_debugMode)
-            {
-                ChimeraLogger.Log($"[GeneticsModeOverlay] Created placeholder {heatmapType} heatmap");
-            }
-        }
-        
-        private Mesh CreateHeatmapQuad()
-        {
-            // Create a simple quad mesh for heatmap visualization
-            var mesh = new Mesh();
-            
-            Vector3[] vertices = {
-                new Vector3(-5, 0, -5),
-                new Vector3( 5, 0, -5),
-                new Vector3( 5, 0,  5),
-                new Vector3(-5, 0,  5)
-            };
-            
-            int[] triangles = { 0, 1, 2, 0, 2, 3 };
-            
-            Vector2[] uvs = {
-                new Vector2(0, 0),
-                new Vector2(1, 0),
-                new Vector2(1, 1),
-                new Vector2(0, 1)
-            };
-            
-            mesh.vertices = vertices;
-            mesh.triangles = triangles;
-            mesh.uv = uvs;
-            mesh.RecalculateNormals();
-            
-            return mesh;
-        }
-        
-        private void UpdateHeatmapData(HeatmapType heatmapType)
-        {
-            // Placeholder implementation for updating heatmap data based on plant genetics
-            // In a real implementation, this would analyze actual plant genetic data
-            
-            if (_debugMode)
-            {
-                ChimeraLogger.Log($"[GeneticsModeOverlay] Updated {heatmapType} heatmap data for {_monitoredPlants.Count} plants");
-            }
-        }
-        
-        private void UpdateAnimatedHeatmaps()
-        {
-            if (_updateFrequencySlider == null) return;
-            
-            _heatmapUpdateTimer += Time.deltaTime;
-            
-            if (_heatmapUpdateTimer >= _updateFrequencySlider.value)
-            {
-                _heatmapUpdateTimer = 0f;
-                
-                // Update active heatmap with new data
-                if (_activeHeatmapType != HeatmapType.None)
-                {
-                    UpdateHeatmapData(_activeHeatmapType);
-                }
-            }
-        }
-        
-        private void CleanupHeatmapObjects()
-        {
-            foreach (var heatmapObj in _heatmapObjects.Values)
-            {
-                if (heatmapObj != null)
-                {
-                    DestroyImmediate(heatmapObj);
-                }
-            }
-            _heatmapObjects.Clear();
-        }
-        
-        #region UI Event Handlers
-        
-        private void OnHeatmapToggleChanged(HeatmapType heatmapType, bool enabled)
-        {
-            if (!_isGeneticsModeActive) return;
-            
-            if (enabled)
-            {
-                // Hide other heatmaps (only one active at a time for clarity)
-                HideAllHeatmaps();
-                ShowHeatmap(heatmapType);
-            }
-            else
-            {
-                HideHeatmap(heatmapType);
-            }
-            
-            if (_debugMode)
-            {
-                ChimeraLogger.Log($"[GeneticsModeOverlay] {heatmapType} heatmap toggled: {enabled}");
-            }
-        }
-        
-        private void OnHeatmapIntensityChanged(float intensity)
-        {
-            // Apply intensity to all active heatmaps
-            foreach (var kvp in _heatmapObjects)
-            {
-                if (kvp.Value != null && kvp.Value.activeInHierarchy)
-                {
-                    var renderer = kvp.Value.GetComponent<MeshRenderer>();
-                    if (renderer != null && renderer.material != null)
-                    {
-                        var color = renderer.material.color;
-                        color.a = intensity;
-                        renderer.material.color = color;
-                    }
-                }
-            }
-            
-            if (_debugMode)
-            {
-                ChimeraLogger.Log($"[GeneticsModeOverlay] Heatmap intensity changed: {intensity:F2}");
-            }
-        }
-        
-        private void OnGeneticToolSelected(string toolName)
-        {
-            if (_debugMode)
-            {
-                ChimeraLogger.Log($"[GeneticsModeOverlay] Genetic tool selected: {toolName}");
-            }
-            
-            // Placeholder for genetic tool activation
-            UpdateGeneticDataDisplay(toolName);
-        }
-        
-        private void OnHeatmapTypeDropdownChanged(int selectedIndex)
-        {
-            var heatmapType = (HeatmapType)selectedIndex;
-            
-            // Hide all heatmaps first
-            HideAllHeatmaps();
-            
-            // Show selected heatmap if not "None"
-            if (heatmapType != HeatmapType.None)
-            {
-                ShowHeatmap(heatmapType);
-            }
-            
-            if (_debugMode)
-            {
-                ChimeraLogger.Log($"[GeneticsModeOverlay] Heatmap type changed to: {heatmapType}");
-            }
-        }
-        
-        private void OnShowLegendToggleChanged(bool showLegend)
-        {
-            // Toggle heatmap legend visibility (placeholder)
-            if (_debugMode)
-            {
-                ChimeraLogger.Log($"[GeneticsModeOverlay] Heatmap legend visibility: {showLegend}");
-            }
-        }
-        
-        private void OnAnimatedHeatmapToggleChanged(bool enabled)
-        {
-            if (_debugMode)
-            {
-                ChimeraLogger.Log($"[GeneticsModeOverlay] Animated heatmap: {enabled}");
-            }
-        }
-        
-        private void OnUpdateFrequencyChanged(float frequency)
-        {
-            if (_debugMode)
-            {
-                ChimeraLogger.Log($"[GeneticsModeOverlay] Update frequency changed: {frequency:F1}s");
-            }
-        }
-        
-        private void OnDetailedAnalysisClicked()
-        {
-            if (_debugMode)
-            {
-                ChimeraLogger.Log("[GeneticsModeOverlay] Detailed genetic analysis requested");
-            }
-            
-            // Placeholder for detailed analysis window
-        }
-        
-        #endregion
-        
-        #region Helper Methods
-        
-        private void UpdateGeneticDataDisplay(string selectedTool)
-        {
-            // Placeholder implementation for updating genetic data display
-            if (_selectedPlantGenetics != null)
-            {
-                _selectedPlantGenetics.text = $"Genetic Analysis: {selectedTool}\nMode: {_activeHeatmapType}\nPlants Monitored: {_monitoredPlants.Count}";
-            }
-        }
-        
-        #endregion
-        
+
         #region Public Interface
-        
+
         /// <summary>
-        /// Manually refresh the genetics overlay (for debugging)
+        /// Manually refresh the genetics overlay
         /// </summary>
         public void RefreshOverlay()
         {
             if (_isInitialized && _modeController != null)
             {
-                RefreshMonitoredPlants();
                 UpdateOverlayVisibility(_modeController.CurrentMode);
-                
+
                 if (_debugMode)
                 {
                     ChimeraLogger.Log("[GeneticsModeOverlay] Overlay refreshed manually");
                 }
             }
         }
-        
+
         /// <summary>
         /// Enable/disable debug mode at runtime
         /// </summary>
@@ -690,18 +221,65 @@ namespace ProjectChimera.Systems.Gameplay
             _debugMode = enabled;
             ChimeraLogger.Log($"[GeneticsModeOverlay] Debug mode {(enabled ? "enabled" : "disabled")}");
         }
-        
+
         /// <summary>
         /// Get current overlay state
         /// </summary>
         public bool IsGeneticsModeActive => _isGeneticsModeActive;
-        public HeatmapType ActiveHeatmapType => _activeHeatmapType;
-        public int MonitoredPlantsCount => _monitoredPlants.Count;
-        
+
+        /// <summary>
+        /// Get visualization statistics
+        /// </summary>
+        public int GetVisualizedPlantCount()
+        {
+            return _geneticVisualizationManager != null ? _geneticVisualizationManager.GetVisualizedPlantCount() : 0;
+        }
+
+        /// <summary>
+        /// Get toolbar information
+        /// </summary>
+        public string GetCurrentToolbarTab()
+        {
+            return _geneticsToolbarManager != null ? _geneticsToolbarManager.GetCurrentTab() : "none";
+        }
+
+        /// <summary>
+        /// Get available strains count
+        /// </summary>
+        public int GetAvailableStrainsCount()
+        {
+            return _geneticsToolbarManager != null ? _geneticsToolbarManager.GetAvailableStrainsCount() : 0;
+        }
+
+        /// <summary>
+        /// Get tissue cultures count
+        /// </summary>
+        public int GetTissueCulturesCount()
+        {
+            return _geneticsToolbarManager != null ? _geneticsToolbarManager.GetTissueCulturesCount() : 0;
+        }
+
         #endregion
-        
+
+        #region ITickable Implementation
+
+        public int Priority => 0;
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+        public virtual void OnRegistered()
+        {
+            // Override in derived classes if needed
+        }
+
+        public virtual void OnUnregistered()
+        {
+            // Override in derived classes if needed
+        }
+
+        #endregion
+
         #if UNITY_EDITOR
-        
+
         /// <summary>
         /// Editor-only method for testing genetics mode toggle
         /// </summary>
@@ -719,21 +297,7 @@ namespace ProjectChimera.Systems.Gameplay
                 ChimeraLogger.Log("[GeneticsModeOverlay] Test only works during play mode with initialized controller");
             }
         }
-        
+
         #endif
-    
-    // ITickable implementation
-    public int Priority => 0;
-    public bool Enabled => enabled && gameObject.activeInHierarchy;
-    
-    public virtual void OnRegistered() 
-    { 
-        // Override in derived classes if needed
-    }
-    
-    public virtual void OnUnregistered() 
-    { 
-        // Override in derived classes if needed
-    }
     }
 }

@@ -1,0 +1,18 @@
+Assets/ProjectChimera/Testing/Phase2_2/BreedingSystemIntegrationTest.cs:46:            bool geneticsManagerExists = GameObject.FindObjectOfType<ProjectChimera.Systems.Genetics.FractalGeneticsEngine>() != null;
+Assets/ProjectChimera/Testing/Phase2_2/BreedingSystemIntegrationTest.cs:69:            var geneticsEngine = GameObject.FindObjectOfType<ProjectChimera.Systems.Genetics.FractalGeneticsEngine>();
+Assets/ProjectChimera/Testing/Phase2_2/BreedingSystemIntegrationTest.cs:110:            var geneticsEngine = GameObject.FindObjectOfType<ProjectChimera.Systems.Genetics.FractalGeneticsEngine>();
+Assets/ProjectChimera/Systems/Camera/CameraLevelContextualMenuIntegrator.cs:39:                _mainCamera = FindObjectOfType<Camera>();
+Assets/ProjectChimera/Systems/Camera/CameraService.cs:15:                main = FindObjectOfType<UnityEngine.Camera>();
+Assets/ProjectChimera/Systems/Gameplay/EnvironmentalDisplay.cs:165:            _environmentalController = FindObjectOfType<Systems.Environment.EnvironmentalController>();
+Assets/ProjectChimera/Systems/Construction/GridPlacementController.cs:98:                // Resolve from DI container instead of FindObjectOfType
+Assets/ProjectChimera/Systems/Construction/GridInputHandler.cs:41:                _mainCamera = FindObjectOfType<Camera>();
+Assets/ProjectChimera/Systems/Save/ConstructionSaveProvider.cs:84:            _constructionSystem = FindObjectOfType<MonoBehaviour>() as IConstructionSystem;
+Assets/ProjectChimera/Core/ManagerRegistry.cs:61:            var managers = FindObjectsOfType<ChimeraManager>();
+Assets/ProjectChimera/Core/SimpleDI/SimpleManagerRegistry.cs:63:            var managers = FindObjectsOfType<MonoBehaviour>();
+Assets/ProjectChimera/Testing/DIGameManagerCoreTests.cs:250:                var allGameManagers = FindObjectsOfType<DIGameManager>();
+Assets/ProjectChimera/Systems/Construction/GridSelectionManager.cs:322:            GridPlaceable[] allPlaceables = /* TODO: Replace FindObjectsOfType with ServiceContainer.GetAll<GridPlaceable>() */ null;
+Assets/ProjectChimera/Systems/Performance/SimplePerformanceManager.cs:221:            var renderers = FindObjectsOfType<MeshRenderer>();
+Assets/ProjectChimera/Systems/Services/SpeedTree/Environmental/WindSystem.cs:81:            var windZones = FindObjectsOfType<WindZone>();
+Assets/ProjectChimera/Systems/Services/SpeedTree/Environmental/WindSystem.cs:227:            var renderers = FindObjectsOfType<Renderer>()
+Assets/ProjectChimera/Systems/Services/SpeedTree/Environmental/WindSystem.cs:243:            var renderers = FindObjectsOfType<Renderer>()
+Assets/ProjectChimera/Editor/CreateModeChangedEventAsset.cs:66:                var components = FindObjectsOfType(componentType, true);

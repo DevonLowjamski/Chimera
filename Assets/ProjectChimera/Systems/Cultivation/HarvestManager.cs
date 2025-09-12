@@ -4,6 +4,7 @@ using ProjectChimera.Core;
 using ProjectChimera.Core.DependencyInjection;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Cultivation.Plant;
 using System;
 // using ProjectChimera.Data.Economy; // Temporarily decoupled
 using ProjectChimera.Data.Environment;

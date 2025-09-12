@@ -1,188 +1,95 @@
-using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
-using ProjectChimera.Systems.Save;
-using System.Threading.Tasks;
-using System.Linq;
+using ProjectChimera.Core.Logging;
 using ProjectChimera.Core;
-using ProjectChimera.Core.Updates;
-using ProjectChimera.Data.Save;
-using ProjectChimera.Core.Events;
-using ProjectChimera.Systems.Save;
 
 namespace ProjectChimera.Systems.Save
 {
     /// <summary>
-    /// Lightweight orchestrator for the advanced save/load system.
-    /// Delegates all functionality to specialized domain providers and serialization components.
-    /// Refactored from 1,845-line monolith to modular architecture.
-    /// Maintains full API compatibility for existing save/load operations.
+    /// SIMPLE: Basic save system aligned with Project Chimera's save needs.
+    /// Focuses on essential save/load functionality without complex systems.
     /// </summary>
-    public class SaveManager : DIChimeraManager, ProjectChimera.Core.IOfflineProgressionListener, ITickable
+    public class SaveManager : MonoBehaviour
     {
-        [Header("Domain Provider References")]
-        [SerializeField] private CultivationSaveProvider _cultivationProvider;
-        [SerializeField] private EconomySaveProvider _economyProvider;
-        [SerializeField] private ConstructionSaveProvider _constructionProvider;
-        [SerializeField] private UIStateSaveProvider _uiStateProvider;
-
-        [Header("Core Components")]
-        [SerializeField] private SaveSerializer _saveSerializer;
-        [SerializeField] private SaveStorage _saveStorage;
-        // Note: CompressionAndEncryption functionality integrated into SaveStorage component
-
-        [Header("Configuration")]
+        [Header("Basic Save Settings")]
         [SerializeField] private bool _enableAutoSave = true;
         [SerializeField] private float _autoSaveInterval = 300f; // 5 minutes
-        [SerializeField] private int _maxSaveSlots = 10;
-        [SerializeField] private bool _enableDebugLogging = false;
+        [SerializeField] private string _saveFileName = "game_save";
 
-        [Header("Event Channels")]
-        [SerializeField] private SimpleGameEventSO _onSaveStarted;
-        [SerializeField] private SimpleGameEventSO _onSaveCompleted;
-        [SerializeField] private SimpleGameEventSO _onLoadStarted;
-        [SerializeField] private SimpleGameEventSO _onLoadCompleted;
-        [SerializeField] private SimpleGameEventSO _onSaveError;
-        [SerializeField] private SimpleGameEventSO _onLoadError;
-
-        // State management
-        private List<ISaveSectionProvider> _saveProviders = new List<ISaveSectionProvider>();
-        private SaveGameData _currentGameData;
+        // Basic state
+        private GameData _currentGameData;
         private bool _isSaving = false;
         private bool _isLoading = false;
         private float _lastAutoSaveTime;
-        private string _currentSaveSlot = "";
+        private bool _isInitialized = false;
 
-        // Properties - maintain compatibility
-        public override ManagerPriority Priority => ManagerPriority.Critical;
-        public bool IsSaving => _isSaving;
-        public bool IsLoading => _isLoading;
-        public bool HasCurrentSave => _currentGameData != null;
-        public string CurrentSaveSlot => _currentSaveSlot;
-        public List<SaveSlotData> AvailableSaveSlots => new List<SaveSlotData>(); // Placeholder until SaveStorage implements method
-        public SaveMetrics SaveMetrics => new SaveMetrics(); // Placeholder until SaveStorage implements GetSaveMetrics
+        /// <summary>
+        /// Events for save/load operations
+        /// </summary>
+        public event System.Action OnSaveStarted;
+        public event System.Action OnSaveCompleted;
+        public event System.Action OnLoadStarted;
+        public event System.Action OnLoadCompleted;
+        public event System.Action<string> OnSaveError;
+        public event System.Action<string> OnLoadError;
 
-        protected override void OnManagerInitialize()
+        /// <summary>
+        /// Initialize basic save system
+        /// </summary>
+        public void Initialize()
         {
-            InitializeComponents();
-            InitializeSaveProviders();
-            SetupAutoSave();
-            LogDebug("SaveManager initialized with domain providers");
-        }
+            if (_isInitialized) return;
 
-        private void InitializeComponents()
-        {
-            // Find or create required components
-            if (_saveSerializer == null) _saveSerializer = GetComponent<SaveSerializer>();
-            if (_saveStorage == null) _saveStorage = GetComponent<SaveStorage>();
-            // Create missing components if needed
-            if (_saveSerializer == null) _saveSerializer = gameObject.AddComponent<SaveSerializer>();
-            if (_saveStorage == null) _saveStorage = gameObject.AddComponent<SaveStorage>();
+            _isInitialized = true;
+            _lastAutoSaveTime = Time.time;
 
-            LogDebug("Save system components initialized");
-        }
-
-        private void InitializeSaveProviders()
-        {
-            _saveProviders.Clear();
-
-            // Find or create domain providers
-            if (_cultivationProvider == null) _cultivationProvider = GetComponent<CultivationSaveProvider>();
-            if (_economyProvider == null) _economyProvider = GetComponent<EconomySaveProvider>();
-            if (_constructionProvider == null) _constructionProvider = GetComponent<ConstructionSaveProvider>();
-            if (_uiStateProvider == null) _uiStateProvider = GetComponent<UIStateSaveProvider>();
-
-            // Add providers to collection
-            if (_cultivationProvider != null) _saveProviders.Add(_cultivationProvider);
-            if (_economyProvider != null) _saveProviders.Add(_economyProvider);
-            if (_constructionProvider != null) _saveProviders.Add(_constructionProvider);
-            if (_uiStateProvider != null) _saveProviders.Add(_uiStateProvider);
-
-            LogDebug($"Initialized {_saveProviders.Count} save providers");
-        }
-
-        private void SetupAutoSave()
-        {
             if (_enableAutoSave)
             {
-                InvokeRepeating(nameof(AutoSaveCheck), _autoSaveInterval, _autoSaveInterval);
-                LogDebug($"Auto-save enabled with {_autoSaveInterval}s interval");
+                // Try to load existing save
+                LoadGame();
             }
+
+            ChimeraLogger.Log("[SaveManager] Initialized successfully");
         }
 
-        #region ITickable Implementation
-
-        int ITickable.Priority => TickPriority.SaveSystem;
-        bool ITickable.Enabled => IsInitialized;
-
-        public void Tick(float deltaTime)
+        /// <summary>
+        /// Save the current game state
+        /// </summary>
+        public void SaveGame()
         {
-            if (!IsInitialized) return;
-
-            // Let components and providers handle their own updates
-            // Auto-save logic could be handled here if needed
-        }
-
-        public void OnRegistered()
-        {
-            ChimeraLogger.LogVerbose("[SaveManager] Registered with UpdateOrchestrator");
-        }
-
-        public void OnUnregistered()
-        {
-            ChimeraLogger.LogVerbose("[SaveManager] Unregistered from UpdateOrchestrator");
-        }
-
-        #endregion
-
-        // Public API methods - delegate to appropriate components
-        public async Task<bool> SaveGameAsync(string slotName = "")
-        {
-            if (_isSaving)
-            {
-                LogDebug("Save already in progress, skipping");
-                return false;
-            }
+            if (_isSaving || !_isInitialized) return;
 
             _isSaving = true;
-            _onSaveStarted?.Raise();
+            OnSaveStarted?.Invoke();
 
             try
             {
-                LogDebug($"Starting save to slot: {slotName}");
-
-                // Collect data from all providers
-                var saveData = new SaveGameData();
-                await CollectSaveDataFromProviders(saveData);
-
-                // Serialize the data
-                var serializedData = await _saveSerializer.SerializeAsync(saveData);
-
-                // Save to storage
-                var saveResult = await _saveStorage.WriteFileAsync(slotName, serializedData, true);
-
-                if (saveResult.Success)
+                // Create basic game data
+                _currentGameData = new GameData
                 {
-                    _currentGameData = saveData;
-                    _currentSaveSlot = slotName;
-                    _lastAutoSaveTime = Time.time;
+                    SaveTime = System.DateTime.Now,
+                    GameVersion = "1.0",
+                    PlayerData = new PlayerData(),
+                    CultivationData = new CultivationData(),
+                    ConstructionData = new ConstructionData(),
+                    EconomyData = new EconomyData()
+                };
 
-                    _onSaveCompleted?.Raise();
-                    LogDebug($"Save completed successfully to slot: {slotName}");
-                    return true;
-                }
-                else
-                {
-                    _onSaveError?.Raise();
-                    LogDebug($"Save failed: {saveResult.ErrorMessage}");
-                    return false;
-                }
+                // Collect data from game systems
+                CollectGameData(_currentGameData);
+
+                // Save to file (simple JSON for now)
+                string jsonData = JsonUtility.ToJson(_currentGameData);
+                string filePath = System.IO.Path.Combine(Application.persistentDataPath, _saveFileName + ".json");
+                System.IO.File.WriteAllText(filePath, jsonData);
+
+                ChimeraLogger.Log($"[SaveManager] Game saved successfully to {filePath}");
+                OnSaveCompleted?.Invoke();
             }
             catch (System.Exception ex)
             {
-                _onSaveError?.Raise();
-                LogDebug($"Save exception: {ex.Message}");
-                return false;
+                ChimeraLogger.LogError($"[SaveManager] Save failed: {ex.Message}");
+                OnSaveError?.Invoke(ex.Message);
             }
             finally
             {
@@ -190,56 +97,43 @@ namespace ProjectChimera.Systems.Save
             }
         }
 
-        public async Task<bool> LoadGameAsync(string slotName)
+        /// <summary>
+        /// Load the saved game state
+        /// </summary>
+        public void LoadGame()
         {
-            if (_isLoading)
-            {
-                LogDebug("Load already in progress, skipping");
-                return false;
-            }
+            if (_isLoading || !_isInitialized) return;
 
             _isLoading = true;
-            _onLoadStarted?.Raise();
+            OnLoadStarted?.Invoke();
 
             try
             {
-                LogDebug($"Starting load from slot: {slotName}");
+                string filePath = System.IO.Path.Combine(Application.persistentDataPath, _saveFileName + ".json");
 
-                // Load from storage
-                var loadResult = await _saveStorage.ReadFileAsync(slotName);
-
-                if (!loadResult.Success)
+                if (System.IO.File.Exists(filePath))
                 {
-                    _onLoadError?.Raise();
-                    LogDebug($"Load failed: {loadResult.ErrorMessage}");
-                    return false;
+                    string jsonData = System.IO.File.ReadAllText(filePath);
+                    _currentGameData = JsonUtility.FromJson<GameData>(jsonData);
+
+                    // Apply loaded data to game systems
+                    ApplyGameData(_currentGameData);
+
+                    ChimeraLogger.Log($"[SaveManager] Game loaded successfully from {filePath}");
+                    OnLoadCompleted?.Invoke();
                 }
-
-                // Deserialize the data
-                var saveData = await _saveSerializer.DeserializeAsync<SaveGameData>(loadResult.Data);
-
-                if (saveData == null)
+                else
                 {
-                    _onLoadError?.Raise();
-                    LogDebug("Failed to deserialize save data");
-                    return false;
+                    // No save file exists, start new game
+                    ChimeraLogger.Log("[SaveManager] No save file found, starting new game");
+                    _currentGameData = null;
+                    OnLoadCompleted?.Invoke();
                 }
-
-                // Apply data to all providers
-                await ApplySaveDataToProviders(saveData);
-
-                _currentGameData = saveData;
-                _currentSaveSlot = slotName;
-
-                _onLoadCompleted?.Raise();
-                LogDebug($"Load completed successfully from slot: {slotName}");
-                return true;
             }
             catch (System.Exception ex)
             {
-                _onLoadError?.Raise();
-                LogDebug($"Load exception: {ex.Message}");
-                return false;
+                ChimeraLogger.LogError($"[SaveManager] Load failed: {ex.Message}");
+                OnLoadError?.Invoke(ex.Message);
             }
             finally
             {
@@ -247,366 +141,187 @@ namespace ProjectChimera.Systems.Save
             }
         }
 
-        public bool SaveGame(string slotName = "") => SaveGameAsync(slotName).Result;
-        public bool LoadGame(string slotName) => LoadGameAsync(slotName).Result;
-
-        public void QuickSave() => SaveGameAsync("quicksave");
-        public void QuickLoad() => LoadGameAsync("quicksave");
-
-        public async Task<bool> AutoSave()
+        /// <summary>
+        /// Update auto-save functionality
+        /// </summary>
+        public void Update()
         {
-            if (!_enableAutoSave || _isSaving || _isLoading)
-                return false;
+            if (!_enableAutoSave || !_isInitialized) return;
 
-            LogDebug("Performing auto-save");
-            return await SaveGameAsync("autosave_" + System.DateTime.Now.ToString("yyyyMMdd_HHmmss"));
-        }
-
-        public bool DeleteSaveSlot(string slotName) => _saveStorage?.DeleteFileAsync(slotName).Result?.Success ?? false;
-
-        public async Task<StorageInfo> GetStorageInfoAsync()
-        {
-            if (_saveStorage != null && _saveStorage.GetLoadCore() != null)
+            if (Time.time - _lastAutoSaveTime >= _autoSaveInterval)
             {
-                return await _saveStorage.GetLoadCore().GetStorageInfoAsync(_currentSaveSlot ?? "default");
-            }
-            return new StorageInfo { IsValid = false, ErrorMessage = "Storage not initialized" };
-        }
-        public List<SaveSlotData> GetSaveSlots() => AvailableSaveSlots;
-        public bool DoesSaveExist(string slotName) => _saveStorage?.ReadFileAsync(slotName).Result?.Success ?? false;
-        public SaveSlotData GetSaveSlotInfo(string slotName) => new SaveSlotData { SlotName = slotName };
-
-        public void ClearCurrentSave()
-        {
-            _currentGameData = null;
-            _currentSaveSlot = "";
-            LogDebug("Current save data cleared");
-        }
-
-        // Provider coordination methods
-        private async Task CollectSaveDataFromProviders(SaveGameData saveData)
-        {
-            // Sort providers by priority (highest first)
-            var sortedProviders = _saveProviders.OrderByDescending(p => p.Priority).ToList();
-
-            foreach (var provider in sortedProviders)
-            {
-                try
-                {
-                    // Pre-save cleanup
-                    await provider.PreSaveCleanupAsync();
-
-                    // Gather section data
-                    var sectionData = await provider.GatherSectionDataAsync();
-                    if (sectionData != null)
-                    {
-                        // Placeholder - SaveGameData.SetSectionData method doesn't exist yet
-                        LogDebug($"Would set section data for {provider.SectionKey}");
-                        provider.MarkClean(); // Mark as saved
-                        LogDebug($"Collected data from provider: {provider.SectionKey}");
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    LogDebug($"Error collecting data from provider {provider.SectionKey}: {ex.Message}");
-                }
+                _lastAutoSaveTime = Time.time;
+                SaveGame();
             }
         }
 
-        private async Task ApplySaveDataToProviders(SaveGameData saveData)
+        /// <summary>
+        /// Check if save file exists
+        /// </summary>
+        public bool SaveFileExists()
         {
-            // Sort providers by priority (highest first) and dependencies
-            var sortedProviders = SortProvidersByDependencies(_saveProviders);
-
-            foreach (var provider in sortedProviders)
-            {
-                try
-                {
-                    // Placeholder - SaveGameData.GetSectionData method doesn't exist yet
-                    ISaveSectionData sectionData = null;
-                    if (sectionData != null)
-                    {
-                        // Validate section data first
-                        var validation = await provider.ValidateSectionDataAsync(sectionData);
-
-                        if (validation.IsValid)
-                        {
-                            var result = await provider.ApplySectionDataAsync(sectionData);
-                            if (result.Success)
-                            {
-                                // Post-load initialization
-                                await provider.PostLoadInitializationAsync();
-                                LogDebug($"Applied data to provider: {provider.SectionKey}");
-                            }
-                            else
-                            {
-                                LogDebug($"Failed to apply data to provider {provider.SectionKey}: {result.ErrorMessage}");
-                            }
-                        }
-                        else
-                        {
-                            LogDebug($"Invalid data for provider {provider.SectionKey}: {string.Join(", ", validation.Errors)}");
-                        }
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    LogDebug($"Error applying data to provider {provider.SectionKey}: {ex.Message}");
-                }
-            }
+            string filePath = System.IO.Path.Combine(Application.persistentDataPath, _saveFileName + ".json");
+            return System.IO.File.Exists(filePath);
         }
 
-        private List<ISaveSectionProvider> SortProvidersByDependencies(List<ISaveSectionProvider> providers)
+        /// <summary>
+        /// Delete save file
+        /// </summary>
+        public void DeleteSaveFile()
         {
-            // Simple dependency-aware sorting - can be enhanced with topological sort
-            var sorted = new List<ISaveSectionProvider>();
-            var remaining = new List<ISaveSectionProvider>(providers);
-
-            while (remaining.Count > 0)
-            {
-                var added = false;
-                for (int i = remaining.Count - 1; i >= 0; i--)
-                {
-                    var provider = remaining[i];
-                    bool dependenciesReady = provider.Dependencies.All(dep =>
-                        sorted.Any(p => p.SectionKey == dep));
-
-                    if (dependenciesReady)
-                    {
-                        sorted.Add(provider);
-                        remaining.RemoveAt(i);
-                        added = true;
-                    }
-                }
-
-                // Prevent infinite loop if circular dependencies exist
-                if (!added && remaining.Count > 0)
-                {
-                    LogDebug($"Warning: Circular dependencies detected, adding remaining providers");
-                    sorted.AddRange(remaining);
-                    break;
-                }
-            }
-
-            return sorted;
-        }
-
-        // Auto-save functionality
-        private void AutoSaveCheck()
-        {
-            if (_enableAutoSave && !_isSaving && !_isLoading)
-            {
-                if (Time.time - _lastAutoSaveTime >= _autoSaveInterval)
-                {
-                    AutoSave();
-                }
-            }
-        }
-
-        // Configuration methods
-        public void SetAutoSaveEnabled(bool enabled)
-        {
-            _enableAutoSave = enabled;
-
-            if (!enabled)
-            {
-                CancelInvoke(nameof(AutoSaveCheck));
-            }
-            else
-            {
-                SetupAutoSave();
-            }
-
-            LogDebug($"Auto-save {(enabled ? "enabled" : "disabled")}");
-        }
-
-        public void SetAutoSaveInterval(float intervalSeconds)
-        {
-            _autoSaveInterval = Mathf.Max(60f, intervalSeconds); // Minimum 1 minute
-
-            if (_enableAutoSave)
-            {
-                CancelInvoke(nameof(AutoSaveCheck));
-                SetupAutoSave();
-            }
-
-            LogDebug($"Auto-save interval set to {_autoSaveInterval}s");
-        }
-
-        // Validation and integrity methods
-        public bool ValidateCurrentSave()
-        {
-            return _currentGameData != null && ValidateSaveData(_currentGameData);
-        }
-
-        private async Task<bool> ValidateSaveDataAsync(SaveGameData saveData)
-        {
-            if (saveData == null) return false;
-
-            bool isValid = true;
-
-            foreach (var provider in _saveProviders)
-            {
-                try
-                {
-                    // Placeholder - SaveGameData.GetSectionData method doesn't exist yet
-                    ISaveSectionData sectionData = null;
-                    if (sectionData != null)
-                    {
-                        var validation = await provider.ValidateSectionDataAsync(sectionData);
-                        if (!validation.IsValid)
-                        {
-                            LogDebug($"Validation failed for provider {provider.SectionKey}: {string.Join(", ", validation.Errors)}");
-                            isValid = false;
-                        }
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    LogDebug($"Validation error for provider {provider.SectionKey}: {ex.Message}");
-                    isValid = false;
-                }
-            }
-
-            return isValid;
-        }
-
-        private bool ValidateSaveData(SaveGameData saveData) => ValidateSaveDataAsync(saveData).Result;
-
-
-        // Error handling and recovery
-        public async Task<bool> RepairSaveData(string slotName)
-        {
-            LogDebug($"Attempting to repair save data for slot: {slotName}");
-
             try
             {
-                var loadResult = await _saveStorage.ReadFileAsync(slotName);
-                if (!loadResult.Success) return false;
-
-                var saveData = await _saveSerializer.DeserializeAsync<SaveGameData>(loadResult.Data);
-                if (saveData == null) return false;
-
-                // Attempt repair through providers using migration
-                bool repaired = false;
-                foreach (var provider in _saveProviders)
+                string filePath = System.IO.Path.Combine(Application.persistentDataPath, _saveFileName + ".json");
+                if (System.IO.File.Exists(filePath))
                 {
-                    // Placeholder - SaveGameData.GetSectionData method doesn't exist yet
-                    ISaveSectionData sectionData = null;
-                    if (sectionData != null)
-                    {
-                        try
-                        {
-                            // Try to migrate/repair the data
-                            var repairedData = await provider.MigrateSectionDataAsync(sectionData, sectionData.DataVersion);
-                            if (repairedData != null && repairedData != sectionData)
-                            {
-                                // Placeholder - SaveGameData.SetSectionData method doesn't exist yet
-                                LogDebug($"Would set repaired data for section: {provider.SectionKey}");
-                                repaired = true;
-                                LogDebug($"Repaired data for provider: {provider.SectionKey}");
-                            }
-                        }
-                        catch (System.Exception ex)
-                        {
-                            LogDebug($"Repair failed for provider {provider.SectionKey}: {ex.Message}");
-                        }
-                    }
+                    System.IO.File.Delete(filePath);
+                    ChimeraLogger.Log("[SaveManager] Save file deleted");
                 }
-
-                if (repaired)
-                {
-                    // Save the repaired data
-                    var serializedData = await _saveSerializer.SerializeAsync(saveData);
-                    var saveResult = await _saveStorage.WriteFileAsync(slotName + "_repaired", serializedData);
-                    return saveResult.Success;
-                }
-
-                return false;
             }
             catch (System.Exception ex)
             {
-                LogDebug($"Save repair failed: {ex.Message}");
-                return false;
+                ChimeraLogger.LogError($"[SaveManager] Failed to delete save file: {ex.Message}");
             }
         }
 
-        // Provider summary methods
-        public List<SaveSectionSummary> GetProviderSummaries()
+        /// <summary>
+        /// Get save file info
+        /// </summary>
+        public SaveFileInfo GetSaveFileInfo()
         {
-            var summaries = new List<SaveSectionSummary>();
-            foreach (var provider in _saveProviders)
+            string filePath = System.IO.Path.Combine(Application.persistentDataPath, _saveFileName + ".json");
+
+            if (System.IO.File.Exists(filePath))
             {
-                try
+                var fileInfo = new System.IO.FileInfo(filePath);
+                return new SaveFileInfo
                 {
-                    summaries.Add(provider.GetSectionSummary());
-                }
-                catch (System.Exception ex)
-                {
-                    LogDebug($"Failed to get summary for provider {provider.SectionKey}: {ex.Message}");
-                }
+                    FileSize = fileInfo.Length,
+                    LastModified = fileInfo.LastWriteTime,
+                    Exists = true
+                };
             }
-            return summaries;
+
+            return new SaveFileInfo { Exists = false };
         }
 
-        public async Task ResetAllProvidersAsync()
+        #region Private Methods
+
+        private void CollectGameData(GameData gameData)
         {
-            LogDebug("Resetting all providers to default state");
-            foreach (var provider in _saveProviders)
-            {
-                try
-                {
-                    await provider.ResetToDefaultStateAsync();
-                    LogDebug($"Reset provider: {provider.SectionKey}");
-                }
-                catch (System.Exception ex)
-                {
-                    LogDebug($"Failed to reset provider {provider.SectionKey}: {ex.Message}");
-                }
-            }
+            // Collect data from various game systems
+            // This would be implemented to gather data from cultivation, construction, economy systems
+            // For now, using placeholder data
         }
 
-        // Utility methods
-        private void LogDebug(string message)
+        private void ApplyGameData(GameData gameData)
         {
-            if (_enableDebugLogging)
-                ChimeraLogger.Log($"[SaveManager] {message}");
+            // Apply loaded data to various game systems
+            // This would be implemented to restore data to cultivation, construction, economy systems
+            // For now, just logging
+            ChimeraLogger.Log("[SaveManager] Applying loaded game data");
         }
 
-        // Cleanup
-        private void OnDestroy()
-        {
-            CancelInvoke(nameof(AutoSaveCheck));
-        }
+        #endregion
+    }
 
-        protected override void OnManagerShutdown()
-        {
-            _saveProviders?.Clear();
-            _currentGameData = null;
-        }
+    /// <summary>
+    /// Basic game data structure
+    /// </summary>
+    [System.Serializable]
+    public class GameData
+    {
+        public System.DateTime SaveTime;
+        public string GameVersion;
+        public PlayerData PlayerData;
+        public CultivationData CultivationData;
+        public ConstructionData ConstructionData;
+        public EconomyData EconomyData;
+    }
 
-        // IOfflineProgressionListener interface implementation
-        public void OnOfflineProgressionCalculated(float value)
-        {
-            LogDebug($"Offline progression calculated: {value}");
-            // Implementation would handle calculated offline progression
-            // For now, just log the value - actual implementation would process offline progression
-        }
+    /// <summary>
+    /// Basic player data
+    /// </summary>
+    [System.Serializable]
+    public class PlayerData
+    {
+        public string PlayerName = "Player";
+        public int ExperiencePoints = 0;
+        public int SkillPoints = 0;
+    }
 
-        // Streamlined API methods
-        public void RegisterSaveService(object service) => LogDebug($"Registering save service: {service?.GetType().Name}");
-        public List<string> GetAvailableSaveSlots() => new List<string> { "Slot1", "Slot2", "Slot3" };
-        public object GetSaveMetrics()
-        {
-            var storageInfo = _saveStorage?.GetLoadCore()?.GetStorageInfoAsync(_currentSaveSlot ?? "default").Result;
-            if (storageInfo != null)
-            {
-                return new { TotalSaves = storageInfo.TotalSaveFiles, LastSaveTime = System.DateTime.Now };
-            }
-            return new { TotalSaves = 0, LastSaveTime = System.DateTime.Now };
-        }
-        public bool DeleteSave(string slotName) => DeleteSaveSlot(slotName);
-        public ISaveSectionData GetSectionData(string sectionKey) => null; // Placeholder until SaveGameData implements section access
-        public void SetSectionData(string sectionKey, ISaveSectionData data) => LogDebug($"Would set section {sectionKey} with data");
+    /// <summary>
+    /// Basic cultivation data
+    /// </summary>
+    [System.Serializable]
+    public class CultivationData
+    {
+        public List<PlantData> Plants = new List<PlantData>();
+        public float FacilityTemperature = 25f;
+        public float FacilityHumidity = 60f;
+    }
+
+    /// <summary>
+    /// Basic construction data
+    /// </summary>
+    [System.Serializable]
+    public class ConstructionData
+    {
+        public List<RoomData> Rooms = new List<RoomData>();
+        public float FacilitySize = 100f;
+    }
+
+    /// <summary>
+    /// Basic economy data
+    /// </summary>
+    [System.Serializable]
+    public class EconomyData
+    {
+        public float Currency = 1000f;
+        public List<ItemData> Inventory = new List<ItemData>();
+    }
+
+    /// <summary>
+    /// Basic plant data
+    /// </summary>
+    [System.Serializable]
+    public class PlantData
+    {
+        public string PlantId;
+        public string StrainName;
+        public float Age;
+        public float Health;
+    }
+
+    /// <summary>
+    /// Basic room data
+    /// </summary>
+    [System.Serializable]
+    public class RoomData
+    {
+        public string RoomType;
+        public Vector3 Position;
+        public Vector3 Size;
+    }
+
+    /// <summary>
+    /// Basic item data
+    /// </summary>
+    [System.Serializable]
+    public class ItemData
+    {
+        public string ItemName;
+        public int Quantity;
+    }
+
+    /// <summary>
+    /// Save file information
+    /// </summary>
+    [System.Serializable]
+    public class SaveFileInfo
+    {
+        public bool Exists;
+        public long FileSize;
+        public System.DateTime LastModified;
     }
 }

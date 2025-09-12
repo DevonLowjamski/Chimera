@@ -1,616 +1,289 @@
-using ProjectChimera.Core.Logging;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using ProjectChimera.Core;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Shared;
-using ProjectChimera.Data.Genetics;
-using ProjectChimera.Data.Cultivation;
-using ProjectChimera.Core.Events;
-using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
+using ProjectChimera.Core;
 
 namespace ProjectChimera.Systems.Cultivation
 {
     /// <summary>
-    /// PC-013-3: Plant Lifecycle Service - Handles plant creation, registration, and lifecycle management
-    /// Extracted from monolithic PlantManager for Single Responsibility Principle
-    /// Focuses solely on plant lifecycle operations and basic plant management
+    /// SIMPLE: Basic plant lifecycle management aligned with Project Chimera's cultivation vision.
+    /// Focuses on essential plant creation and management without complex lifecycle systems.
     /// </summary>
-    public class PlantLifecycleService
+    public class PlantLifecycleService : MonoBehaviour
     {
-        [Header("Lifecycle Configuration")]
-        [SerializeField] private bool _enableDetailedLogging = false;
+        [Header("Basic Plant Settings")]
+        [SerializeField] private bool _enableBasicManagement = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private int _maxPlants = 50;
 
-        // Dependencies
-        private CultivationManager _cultivationManager;
-        private List<PlantInstance> _plantsToUpdate = new List<PlantInstance>();
+        // Basic plant tracking
+        private readonly List<PlantInstance> _activePlants = new List<PlantInstance>();
+        private bool _isInitialized = false;
 
-        // Event channels
-        [SerializeField] private SimpleGameEventSO _onPlantCreated;
+        /// <summary>
+        /// Events for plant lifecycle
+        /// </summary>
+        public event System.Action<PlantInstance> OnPlantCreated;
+        public event System.Action<PlantInstance> OnPlantDestroyed;
 
-        // Events for other systems to subscribe to
-        public System.Action<PlantInstance> OnPlantAdded { get; set; }
-        public System.Action<PlantInstance> OnPlantStageChanged { get; set; }
-        public System.Action<PlantInstance> OnPlantHealthUpdated { get; set; }
-
-        public bool IsInitialized { get; private set; }
-
-        public PlantLifecycleService() : this(null)
-        {
-        }
-
-        public PlantLifecycleService(CultivationManager cultivationManager)
-        {
-            _cultivationManager = cultivationManager;
-        }
-
+        /// <summary>
+        /// Initialize basic plant management
+        /// </summary>
         public void Initialize()
         {
-            if (IsInitialized) return;
+            if (_isInitialized) return;
 
-            ChimeraLogger.Log("[PlantLifecycleService] Initializing plant lifecycle management...");
+            _isInitialized = true;
 
-            // Get reference to CultivationManager as single source of truth
-            if (_cultivationManager == null)
+            if (_enableLogging)
             {
-                _cultivationManager = GameManager.Instance?.GetManager<CultivationManager>();
+                ChimeraLogger.Log("[PlantLifecycleService] Initialized successfully");
             }
-
-            if (_cultivationManager == null)
-            {
-                ChimeraLogger.LogError("[PlantLifecycleService] CultivationManager not found! PlantLifecycleService requires CultivationManager as data source.");
-                return;
-            }
-
-            IsInitialized = true;
-            ChimeraLogger.Log("[PlantLifecycleService] Plant lifecycle management initialized successfully.");
-        }
-
-        public void Shutdown()
-        {
-            if (!IsInitialized) return;
-
-            ChimeraLogger.Log("[PlantLifecycleService] Shutting down plant lifecycle management...");
-
-            // Unsubscribe from all plant events
-            foreach (var plant in _plantsToUpdate)
-            {
-                if (plant != null)
-                {
-                    UnsubscribeFromPlantEvents(plant);
-                }
-            }
-
-            _plantsToUpdate.Clear();
-            IsInitialized = false;
         }
 
         /// <summary>
-        /// Creates a new plant instance from a strain definition.
+        /// Create a new plant
         /// </summary>
-        public PlantInstance CreatePlant(object strain, Vector3 position, Transform parent = null)
+        public PlantInstance CreatePlant(Vector3 position, string plantName = "Plant")
         {
-            if (!IsInitialized)
+            if (!_enableBasicManagement || !_isInitialized) return null;
+
+            if (_activePlants.Count >= _maxPlants)
             {
-                ChimeraLogger.LogError("[PlantLifecycleService] Cannot create plant: Service not initialized");
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("[PlantLifecycleService] Maximum plant limit reached");
+                }
                 return null;
             }
 
-            if (strain == null)
+            // Create basic plant instance
+            var plant = new PlantInstance
             {
-                ChimeraLogger.LogError("[PlantLifecycleService] Cannot create plant: strain is null");
-                return null;
+                PlantID = System.Guid.NewGuid().ToString(),
+                PlantName = plantName,
+                WorldPosition = position,
+                CurrentGrowthStage = PlantGrowthStage.Seedling,
+                AgeInDays = 0f,
+                Health = 1f,
+                LastWatering = System.DateTime.Now,
+                LastFeeding = System.DateTime.Now.AddDays(-1)
+            };
+
+            _activePlants.Add(plant);
+            OnPlantCreated?.Invoke(plant);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log($"[PlantLifecycleService] Created plant {plant.PlantID} at {position}");
             }
 
-            var plantInstance = PlantInstance.CreateFromStrain(strain, position, parent);
-            RegisterPlant(plantInstance);
-
-            ChimeraLogger.Log($"[PlantLifecycleService] Created plant: {plantInstance.PlantID} (Strain: {(strain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown"})");
-
-            // Trigger plant created event
-            _onPlantCreated?.Raise();
-
-            return plantInstance;
+            return plant;
         }
 
         /// <summary>
-        /// Creates multiple plants from the same strain.
+        /// Destroy a plant
         /// </summary>
-        public List<PlantInstance> CreatePlants(object strain, List<Vector3> positions, Transform parent = null)
+        public bool DestroyPlant(PlantInstance plant)
         {
-            if (!IsInitialized)
+            if (plant == null) return false;
+
+            if (_activePlants.Remove(plant))
             {
-                ChimeraLogger.LogError("[PlantLifecycleService] Cannot create plants: Service not initialized");
-                return new List<PlantInstance>();
-            }
+                OnPlantDestroyed?.Invoke(plant);
 
-            var plants = new List<PlantInstance>();
-
-            foreach (var position in positions)
-            {
-                var plant = CreatePlant(strain, position, parent);
-                if (plant != null)
-                    plants.Add(plant);
-            }
-
-            ChimeraLogger.Log($"[PlantLifecycleService] Created {plants.Count} plants from strain: {(strain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown"}");
-            return plants;
-        }
-
-        /// <summary>
-        /// Registers an existing plant instance with the lifecycle service.
-        /// </summary>
-        public void RegisterPlant(PlantInstance plant)
-        {
-            if (!IsInitialized)
-            {
-                ChimeraLogger.LogError("[PlantLifecycleService] Cannot register plant: Service not initialized");
-                return;
-            }
-
-            if (plant == null)
-            {
-                ChimeraLogger.LogError("[PlantLifecycleService] Cannot register null plant");
-                return;
-            }
-
-            // Check if plant is already tracked by CultivationManager
-            var existingPlant = _cultivationManager.GetPlant(plant.PlantID);
-            if (existingPlant != null)
-            {
-                ChimeraLogger.LogWarning($"[PlantLifecycleService] Plant {plant.PlantID} already registered in CultivationManager, skipping");
-                return;
-            }
-
-            // Add to processing update list
-            if (!_plantsToUpdate.Contains(plant))
-            {
-                _plantsToUpdate.Add(plant);
-            }
-
-            // Subscribe to plant events
-            SubscribeToPlantEvents(plant);
-
-            // Invoke OnPlantAdded event for other systems
-            OnPlantAdded?.Invoke(plant);
-
-            if (_enableDetailedLogging)
-                ChimeraLogger.Log($"[PlantLifecycleService] Registered plant: {plant.PlantID}");
-        }
-
-        /// <summary>
-        /// Unregisters a plant from lifecycle management.
-        /// </summary>
-        public void UnregisterPlant(string plantID, PlantRemovalReason reason = PlantRemovalReason.Other)
-        {
-            if (!IsInitialized)
-            {
-                ChimeraLogger.LogError("[PlantLifecycleService] Cannot unregister plant: Service not initialized");
-                return;
-            }
-
-            // Find plant in processing list
-            var plant = _plantsToUpdate.FirstOrDefault(p => p.PlantID == plantID);
-            if (plant == null)
-            {
-                ChimeraLogger.LogWarning($"[PlantLifecycleService] Attempted to unregister unknown plant: {plantID}");
-                return;
-            }
-
-            // Unsubscribe from events
-            UnsubscribeFromPlantEvents(plant);
-
-            // Remove from processing list
-            _plantsToUpdate.Remove(plant);
-
-            ChimeraLogger.Log($"[PlantLifecycleService] Unregistered plant: {plantID} (Reason: {reason})");
-        }
-
-        /// <summary>
-        /// Gets a plant instance by ID - delegates to CultivationManager.
-        /// </summary>
-        public PlantInstanceSO GetPlant(string plantID)
-        {
-            if (!IsInitialized)
-            {
-                ChimeraLogger.LogError("[PlantLifecycleService] Cannot get plant: Service not initialized");
-                return null;
-            }
-
-            return _cultivationManager?.GetPlant(plantID);
-        }
-
-        /// <summary>
-        /// Gets all active plants - delegates to CultivationManager.
-        /// </summary>
-        public IEnumerable<PlantInstanceSO> GetAllPlants()
-        {
-            if (!IsInitialized)
-            {
-                ChimeraLogger.LogError("[PlantLifecycleService] Cannot get plants: Service not initialized");
-                return System.Linq.Enumerable.Empty<PlantInstanceSO>();
-            }
-
-            return _cultivationManager?.GetAllPlants() ?? System.Linq.Enumerable.Empty<PlantInstanceSO>();
-        }
-
-        /// <summary>
-        /// Gets all plants in a specific growth stage - delegates to CultivationManager.
-        /// </summary>
-        public IEnumerable<PlantInstanceSO> GetPlantsInStage(PlantGrowthStage stage)
-        {
-            if (!IsInitialized)
-            {
-                ChimeraLogger.LogError("[PlantLifecycleService] Cannot get plants by stage: Service not initialized");
-                return System.Linq.Enumerable.Empty<PlantInstanceSO>();
-            }
-
-            return _cultivationManager?.GetPlantsByStage(stage) ?? System.Linq.Enumerable.Empty<PlantInstanceSO>();
-        }
-
-
-
-        /// <summary>
-        /// Gets all plants that need attention - delegates to CultivationManager.
-        /// </summary>
-        public IEnumerable<PlantInstanceSO> GetPlantsNeedingAttention()
-        {
-            if (!IsInitialized)
-            {
-                ChimeraLogger.LogError("[PlantLifecycleService] Cannot get plants needing attention: Service not initialized");
-                return System.Linq.Enumerable.Empty<PlantInstanceSO>();
-            }
-
-            return _cultivationManager?.GetPlantsNeedingAttention() ?? System.Linq.Enumerable.Empty<PlantInstanceSO>();
-        }
-
-        /// <summary>
-        /// Gets all plants currently tracked for processing (PlantInstance objects).
-        /// </summary>
-        public IEnumerable<PlantInstance> GetTrackedPlants()
-        {
-            return _plantsToUpdate.AsReadOnly();
-        }
-
-        /// <summary>
-        /// Gets all plants ready for harvesting.
-        /// </summary>
-        public List<PlantInstance> GetHarvestablePlants()
-        {
-            return _plantsToUpdate.Where(plant =>
-                plant.CurrentGrowthStage == PlantGrowthStage.Harvest ||
-                plant.CurrentGrowthStage == PlantGrowthStage.Harvestable ||
-                plant.CurrentGrowthStage == PlantGrowthStage.Ripening)
-                .ToList();
-        }
-
-        /// <summary>
-        /// Gets a tracked plant instance by ID.
-        /// </summary>
-        public PlantInstance GetTrackedPlant(string plantID)
-        {
-            return _plantsToUpdate.FirstOrDefault(p => p.PlantID == plantID);
-        }
-
-        /// <summary>
-        /// Validates plant health and performs basic maintenance checks.
-        /// </summary>
-        public void ValidatePlantHealth()
-        {
-            if (!IsInitialized) return;
-
-            var plantsToRemove = new List<PlantInstance>();
-
-            foreach (var plant in _plantsToUpdate)
-            {
-                if (plant == null || !plant.IsActive)
+                if (_enableLogging)
                 {
-                    plantsToRemove.Add(plant);
-                    continue;
+                    ChimeraLogger.Log($"[PlantLifecycleService] Destroyed plant {plant.PlantID}");
                 }
 
-                // Check for critical health issues
-                if (plant.CurrentHealth <= 0f)
-                {
-                    ChimeraLogger.LogWarning($"[PlantLifecycleService] Plant {plant.PlantID} has died (Health: {plant.CurrentHealth})");
-                    plantsToRemove.Add(plant);
-                }
+                return true;
             }
 
-            // Remove inactive or dead plants
-            foreach (var plant in plantsToRemove)
-            {
-                if (plant != null)
-                {
-                    UnregisterPlant(plant.PlantID, PlantRemovalReason.Died);
-                }
-                else
-                {
-                    _plantsToUpdate.Remove(plant);
-                }
-            }
+            return false;
+        }
 
-            if (plantsToRemove.Count > 0)
+        /// <summary>
+        /// Destroy plant by ID
+        /// </summary>
+        public bool DestroyPlant(string plantId)
+        {
+            var plant = GetPlantById(plantId);
+            return DestroyPlant(plant);
+        }
+
+        /// <summary>
+        /// Get plant by ID
+        /// </summary>
+        public PlantInstance GetPlantById(string plantId)
+        {
+            return _activePlants.Find(p => p.PlantID == plantId);
+        }
+
+        /// <summary>
+        /// Get all active plants
+        /// </summary>
+        public List<PlantInstance> GetAllPlants()
+        {
+            return new List<PlantInstance>(_activePlants);
+        }
+
+        /// <summary>
+        /// Update all plants
+        /// </summary>
+        public void UpdateAllPlants(float deltaTime)
+        {
+            if (!_enableBasicManagement) return;
+
+            foreach (var plant in _activePlants)
             {
-                ChimeraLogger.Log($"[PlantLifecycleService] Removed {plantsToRemove.Count} inactive/dead plants during validation");
+                UpdatePlant(plant, deltaTime);
             }
         }
 
         /// <summary>
-        /// Gets lifecycle statistics.
+        /// Get plant count
         /// </summary>
-        public (int tracked, int total, int harvestable, int needingAttention) GetLifecycleStats()
+        public int GetPlantCount()
         {
-            if (!IsInitialized)
-                return (0, 0, 0, 0);
-
-            int tracked = _plantsToUpdate.Count;
-            int total = _cultivationManager?.ActivePlantCount ?? 0;
-            int harvestable = GetHarvestablePlants().Count();
-            int needingAttention = GetPlantsNeedingAttention().Count();
-
-            return (tracked, total, harvestable, needingAttention);
+            return _activePlants.Count;
         }
 
         /// <summary>
-        /// Update plant lifecycle for a single plant
+        /// Check if plant exists
         /// </summary>
-        public void UpdatePlantLifecycle(PlantInstance plant, float deltaTime)
+        public bool PlantExists(string plantId)
         {
-            if (!IsInitialized || plant == null || !plant.IsActive)
-                return;
+            return GetPlantById(plantId) != null;
+        }
 
-            var startTime = Time.realtimeSinceStartup;
+        /// <summary>
+        /// Clear all plants
+        /// </summary>
+        public void ClearAllPlants()
+        {
+            var plantsToDestroy = new List<PlantInstance>(_activePlants);
+            _activePlants.Clear();
 
-            // Update plant's internal lifecycle
-            plant.UpdatePlant(deltaTime);
-
-            // Check for stage progression
-            var currentStage = plant.CurrentGrowthStage;
-            bool canProgress = CanProgressToNextStage(plant);
-
-            if (canProgress)
+            foreach (var plant in plantsToDestroy)
             {
-                if (plant.AdvanceGrowthStage())
+                OnPlantDestroyed?.Invoke(plant);
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log($"[PlantLifecycleService] Cleared {plantsToDestroy.Count} plants");
+            }
+        }
+
+        /// <summary>
+        /// Get plants by growth stage
+        /// </summary>
+        public List<PlantInstance> GetPlantsByStage(PlantGrowthStage stage)
+        {
+            return _activePlants.FindAll(p => p.CurrentGrowthStage == stage);
+        }
+
+        /// <summary>
+        /// Get plants needing care
+        /// </summary>
+        public List<PlantInstance> GetPlantsNeedingCare()
+        {
+            return _activePlants.FindAll(p =>
+                p.Health < 0.8f ||
+                (System.DateTime.Now - p.LastWatering).TotalDays > 1 ||
+                (System.DateTime.Now - p.LastFeeding).TotalDays > 3);
+        }
+
+        /// <summary>
+        /// Get lifecycle statistics
+        /// </summary>
+        public LifecycleStatistics GetLifecycleStatistics()
+        {
+            if (_activePlants.Count == 0)
+            {
+                return new LifecycleStatistics();
+            }
+
+            float averageHealth = 0f;
+            float averageAge = 0f;
+            var stageCounts = new Dictionary<PlantGrowthStage, int>();
+
+            foreach (var plant in _activePlants)
+            {
+                averageHealth += plant.Health;
+                averageAge += plant.AgeInDays;
+
+                if (!stageCounts.ContainsKey(plant.CurrentGrowthStage))
                 {
-                    OnPlantGrowthStageChanged(plant);
+                    stageCounts[plant.CurrentGrowthStage] = 0;
                 }
+                stageCounts[plant.CurrentGrowthStage]++;
             }
 
-            // Update health tracking
-            if (plant.CurrentHealth <= 10f && plant.CurrentHealth > 0f)
-            {
-                ChimeraLogger.LogWarning($"[PlantLifecycleService] Plant {plant.PlantID} health is critical: {plant.CurrentHealth:F1}");
-            }
+            averageHealth /= _activePlants.Count;
+            averageAge /= _activePlants.Count;
 
-            // Track processing time
-            var processingTime = (Time.realtimeSinceStartup - startTime) * 1000f;
-
-            if (_enableDetailedLogging && processingTime > 1f)
+            return new LifecycleStatistics
             {
-                ChimeraLogger.Log($"[PlantLifecycleService] Updated lifecycle for {plant.PlantID} in {processingTime:F2}ms");
-            }
-        }
-
-        /// <summary>
-        /// Get comprehensive lifecycle data for a plant
-        /// </summary>
-        public PlantLifecycleData GetPlantLifecycleData(PlantInstance plant)
-        {
-            if (!IsInitialized || plant == null)
-            {
-                return new PlantLifecycleData
-                {
-                    PlantID = plant?.PlantID ?? "Unknown",
-                    CurrentStage = PlantGrowthStage.Seed,
-                    DaysInCurrentStage = 0f,
-                    TotalLifespanDays = 0f,
-                    HealthStatus = "Unknown",
-                    IsActive = false
-                };
-            }
-
-            return new PlantLifecycleData
-            {
-                PlantID = plant.PlantID,
-                CurrentStage = plant.CurrentGrowthStage,
-                DaysInCurrentStage = CalculateDaysInCurrentStage(plant),
-                TotalLifespanDays = plant.DaysSincePlanted,
-                HealthStatus = GetHealthStatus(plant.CurrentHealth),
-                IsActive = plant.IsActive,
-                StressLevel = plant.StressLevel,
-                NextStageETA = CalculateNextStageETA(plant),
-                LifecycleProgress = CalculateLifecycleProgress(plant)
+                TotalPlants = _activePlants.Count,
+                AverageHealth = averageHealth,
+                AverageAge = averageAge,
+                PlantsNeedingCare = GetPlantsNeedingCare().Count,
+                StageDistribution = stageCounts
             };
         }
 
-        private bool CanProgressToNextStage(PlantInstance plant)
-        {
-            // Basic progression logic - can be enhanced with more sophisticated requirements
-            if (plant.CurrentHealth < 30f) return false; // Too unhealthy to progress
-            if (plant.StressLevel > 80f) return false; // Too stressed to progress
+        #region Private Methods
 
-            // Stage-specific requirements
-            switch (plant.CurrentGrowthStage)
-            {
-                case PlantGrowthStage.Seed:
-                    return plant.DaysSincePlanted >= 1f;
-                case PlantGrowthStage.Germination:
-                    return plant.DaysSincePlanted >= 3f;
-                case PlantGrowthStage.Seedling:
-                    return plant.DaysSincePlanted >= 7f && plant.CurrentHealth > 50f;
-                case PlantGrowthStage.Vegetative:
-                    return plant.DaysSincePlanted >= 21f;
-                case PlantGrowthStage.PreFlowering:
-                    return plant.DaysSincePlanted >= 7f;
-                case PlantGrowthStage.Flowering:
-                    return plant.DaysSincePlanted >= 49f;
-                case PlantGrowthStage.Ripening:
-                    return plant.DaysSincePlanted >= 7f;
-                default:
-                    return false;
-            }
+        private void UpdatePlant(PlantInstance plant, float deltaTime)
+        {
+            if (plant == null) return;
+
+            // Basic aging
+            plant.AgeInDays += deltaTime / 86400f; // Convert to days
+
+            // Basic health decay if not cared for
+            float daysSinceWatering = (float)(System.DateTime.Now - plant.LastWatering).TotalDays;
+            float daysSinceFeeding = (float)(System.DateTime.Now - plant.LastFeeding).TotalDays;
+
+            float healthLoss = 0f;
+            if (daysSinceWatering > 1) healthLoss += 0.01f * deltaTime;
+            if (daysSinceFeeding > 3) healthLoss += 0.005f * deltaTime;
+
+            plant.Health = Mathf.Max(0f, plant.Health - healthLoss);
         }
 
-        private float CalculateDaysInCurrentStage(PlantInstance plant)
-        {
-            // This is a simplified calculation - would need stage entry tracking for accuracy
-            return Mathf.Max(0f, plant.DaysSincePlanted * 0.1f); // Rough approximation
-        }
-
-        private string GetHealthStatus(float health)
-        {
-            if (health > 80f) return "Excellent";
-            if (health > 60f) return "Good";
-            if (health > 40f) return "Fair";
-            if (health > 20f) return "Poor";
-            if (health > 0f) return "Critical";
-            return "Dead";
-        }
-
-        private float CalculateNextStageETA(PlantInstance plant)
-        {
-            // Simplified ETA calculation based on current stage
-            switch (plant.CurrentGrowthStage)
-            {
-                case PlantGrowthStage.Seed: return 1f - (plant.DaysSincePlanted % 1f);
-                case PlantGrowthStage.Germination: return 3f - (plant.DaysSincePlanted % 3f);
-                case PlantGrowthStage.Seedling: return 7f - (plant.DaysSincePlanted % 7f);
-                case PlantGrowthStage.Vegetative: return 21f - (plant.DaysSincePlanted % 21f);
-                case PlantGrowthStage.PreFlowering: return 7f - (plant.DaysSincePlanted % 7f);
-                case PlantGrowthStage.Flowering: return 49f - (plant.DaysSincePlanted % 49f);
-                case PlantGrowthStage.Ripening: return 7f - (plant.DaysSincePlanted % 7f);
-                default: return 0f;
-            }
-        }
-
-        private float CalculateLifecycleProgress(PlantInstance plant)
-        {
-            // Estimate overall lifecycle progress (0-1)
-            float totalLifecycleDays = 95f; // Approximate total lifecycle
-            return Mathf.Clamp01(plant.DaysSincePlanted / totalLifecycleDays);
-        }
-
-        /// <summary>
-        /// Subscribes to plant events for lifecycle tracking.
-        /// </summary>
-        private void SubscribeToPlantEvents(PlantInstance plant)
-        {
-            plant.OnGrowthStageChanged += OnPlantGrowthStageChanged;
-            plant.OnHealthChanged += OnPlantHealthChanged;
-            plant.OnPlantDied += OnPlantDied;
-        }
-
-        /// <summary>
-        /// Unsubscribes from plant events.
-        /// </summary>
-        private void UnsubscribeFromPlantEvents(PlantInstance plant)
-        {
-            plant.OnGrowthStageChanged -= OnPlantGrowthStageChanged;
-            plant.OnHealthChanged -= OnPlantHealthChanged;
-            plant.OnPlantDied -= OnPlantDied;
-        }
-
-        /// <summary>
-        /// Handles plant growth stage changes.
-        /// </summary>
-        private void OnPlantGrowthStageChanged(PlantInstance plant)
-        {
-            ChimeraLogger.Log($"[PlantLifecycleService] Plant {plant.PlantID} advanced to {plant.CurrentGrowthStage}");
-            OnPlantStageChanged?.Invoke(plant);
-        }
-
-        /// <summary>
-        /// Handles plant health changes.
-        /// </summary>
-        private void OnPlantHealthChanged(PlantInstance plant)
-        {
-            if (_enableDetailedLogging)
-                ChimeraLogger.Log($"[PlantLifecycleService] Plant {plant.PlantID} health changed to {plant.CurrentHealth:F2}");
-
-            OnPlantHealthUpdated?.Invoke(plant);
-        }
-
-        /// <summary>
-        /// Handles plant death events.
-        /// </summary>
-        private void OnPlantDied(PlantInstance plant)
-        {
-            ChimeraLogger.Log($"[PlantLifecycleService] Plant {plant.PlantID} died (Health: {plant.CurrentHealth:F2})");
-            UnregisterPlant(plant.PlantID, PlantRemovalReason.Died);
-        }
-
-                        // Interface properties implementation
-        public int PlantCount => _cultivationManager?.ActivePlantCount ?? 0;
-        public float AveragePlantHealth => _cultivationManager?.AveragePlantHealth ?? 0f;
+        #endregion
     }
 
     /// <summary>
-    /// Plant lifecycle data structure
+    /// Basic plant instance data
     /// </summary>
     [System.Serializable]
-    public class PlantLifecycleData
+    public class PlantInstance
     {
         public string PlantID;
-        public string PlantId;  // Alias for compatibility
-        public string InitialStrain;
-        public System.DateTime PlantedDate;
-        public System.DateTime? RemovalDate;
-        public PlantRemovalReason RemovalReason;
-        public PlantGrowthStage CurrentStage;
-        public PlantGrowthStage FinalStage;
-        public Vector3 Position;
-        public List<StageTransition> StageTransitions = new List<StageTransition>();
-        public List<HealthEvent> HealthEvents = new List<HealthEvent>();
-        public float FinalYield;
-        public float FinalQuality;
-        public float DaysInCurrentStage;
-        public float TotalLifespanDays;
-        public string HealthStatus;
-        public bool IsActive;
-        public float StressLevel;
-        public float NextStageETA;
-        public float LifecycleProgress;
-
-        public float TotalGrowthDays => RemovalDate.HasValue
-            ? (float)(RemovalDate.Value - PlantedDate).TotalDays
-            : (float)(System.DateTime.Now - PlantedDate).TotalDays;
-    }
-
-    /// <summary>
-    /// Records growth stage transitions
-    /// </summary>
-    [System.Serializable]
-    public struct StageTransition
-    {
-        public PlantGrowthStage FromStage;
-        public PlantGrowthStage ToStage;
-        public System.DateTime TransitionDate;
-        public float PlantAge;
-    }
-
-    /// <summary>
-    /// Records significant health events
-    /// </summary>
-    [System.Serializable]
-    public struct HealthEvent
-    {
-        public System.DateTime EventDate;
-        public string EventType;
-        public float HealthBefore;
-        public float HealthAfter;
-        public string Description;
-
-        // Additional assignable properties for compatibility
-        public float Timestamp;
+        public string PlantName;
+        public Vector3 WorldPosition;
+        public PlantGrowthStage CurrentGrowthStage;
+        public float AgeInDays;
         public float Health;
-        public float Change;
-        public float StressLevel;
+        public System.DateTime LastWatering;
+        public System.DateTime LastFeeding;
+    }
 
-        // Computed properties based on existing data
-        public float ComputedTimestamp => (float)(EventDate - System.DateTime.UnixEpoch).TotalSeconds;
-        public float ComputedHealth => HealthAfter;
-        public float ComputedChange => HealthAfter - HealthBefore;
-        public float ComputedStressLevel => 1f - HealthAfter;
+    /// <summary>
+    /// Lifecycle statistics
+    /// </summary>
+    [System.Serializable]
+    public class LifecycleStatistics
+    {
+        public int TotalPlants;
+        public float AverageHealth;
+        public float AverageAge;
+        public int PlantsNeedingCare;
+        public Dictionary<PlantGrowthStage, int> StageDistribution = new Dictionary<PlantGrowthStage, int>();
     }
 }

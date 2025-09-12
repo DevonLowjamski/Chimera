@@ -1,0 +1,230 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.Save
+{
+    /// <summary>
+    /// Plant Instance Data Transfer Object
+    /// Handles basic plant instance data for save/load operations
+    /// Includes position, health, growth stage, and basic plant state
+    /// </summary>
+    [Serializable]
+    public class PlantInstanceDTO
+    {
+        [Header("Plant Identity")]
+        public string PlantID;
+        public string PlantName;
+        public string StrainID;
+        public string ZoneID;
+
+        [Header("Physical State")]
+        public Vector3 Position;
+        public Vector3 Rotation;
+        public Vector3 Scale;
+        public ProjectChimera.Data.Shared.PlantGrowthStage CurrentGrowthStage;
+        public float GrowthProgress; // 0-1 progress within current stage
+        public float OverallGrowthProgress; // 0-1 overall growth
+
+        [Header("Health & Vitality")]
+        public float Health; // 0-1
+        public float NutrientLevel; // 0-1
+        public float WaterLevel; // 0-1
+        public float StressLevel; // 0-1
+
+        [Header("Environmental Conditions")]
+        public float Temperature;
+        public float Humidity;
+        public float LightIntensity;
+        public float CO2Level;
+
+        [Header("Genetic Expression")]
+        public float THCContent;
+        public float CBDContent;
+        public float YieldPotential;
+        public List<string> ActiveTraits = new List<string>();
+
+        [Header("Lifecycle")]
+        public DateTime PlantDate;
+        public DateTime LastUpdateDate;
+        public DateTime ExpectedHarvestDate;
+        public bool IsFlowering;
+        public bool IsAutoHarvested;
+
+        [Header("Care History")]
+        public List<DateTime> WateringHistory = new List<DateTime>();
+        public List<DateTime> NutrientHistory = new List<DateTime>();
+        public List<DateTime> PruningHistory = new List<DateTime>();
+        public DateTime LastCareDate;
+
+        [Header("Issues & Problems")]
+        public List<string> ActiveIssues = new List<string>();
+        public List<string> ResolvedIssues = new List<string>();
+        public bool HasPests;
+        public bool HasNutrientDeficiency;
+        public bool HasOverwatering;
+
+        [Header("Production")]
+        public float TotalYieldProduced;
+        public int HarvestCount;
+        public DateTime LastHarvestDate;
+
+        [Header("Metadata")]
+        public bool IsActive = true;
+        public string Notes;
+        public Dictionary<string, string> CustomData = new Dictionary<string, string>();
+
+        /// <summary>
+        /// Gets the plant's age in days
+        /// </summary>
+        public int GetAgeInDays()
+        {
+            return (int)(DateTime.Now - PlantDate).TotalDays;
+        }
+
+        /// <summary>
+        /// Gets the days since last care
+        /// </summary>
+        public int GetDaysSinceLastCare()
+        {
+            if (LastCareDate == default(DateTime))
+                return GetAgeInDays();
+
+            return (int)(DateTime.Now - LastCareDate).TotalDays;
+        }
+
+        /// <summary>
+        /// Gets the days until expected harvest
+        /// </summary>
+        public int GetDaysUntilHarvest()
+        {
+            if (ExpectedHarvestDate == default(DateTime))
+                return -1;
+
+            return Math.Max(0, (int)(ExpectedHarvestDate - DateTime.Now).TotalDays);
+        }
+
+        /// <summary>
+        /// Checks if the plant needs care
+        /// </summary>
+        public bool NeedsCare()
+        {
+            return Health < 0.8f ||
+                   NutrientLevel < 0.5f ||
+                   WaterLevel < 0.5f ||
+                   HasPests ||
+                   HasNutrientDeficiency ||
+                   HasOverwatering;
+        }
+
+        /// <summary>
+        /// Gets a summary of the plant's current state
+        /// </summary>
+        public string GetStatusSummary()
+        {
+            string status = $"{PlantName} ({CurrentGrowthStage}) - Health: {(Health * 100):F0}%";
+
+            if (NeedsCare())
+            {
+                status += " [NEEDS CARE]";
+            }
+
+            if (IsFlowering)
+            {
+                status += " [FLOWERING]";
+            }
+
+            return status;
+        }
+
+        /// <summary>
+        /// Updates the plant's last care date
+        /// </summary>
+        public void UpdateLastCare()
+        {
+            LastCareDate = DateTime.Now;
+        }
+
+        /// <summary>
+        /// Records a care event
+        /// </summary>
+        public void RecordCareEvent(CareEventType eventType)
+        {
+            switch (eventType)
+            {
+                case CareEventType.Watering:
+                    WateringHistory.Add(DateTime.Now);
+                    WaterLevel = Mathf.Min(1f, WaterLevel + 0.3f);
+                    break;
+                case CareEventType.NutrientApplication:
+                    NutrientHistory.Add(DateTime.Now);
+                    NutrientLevel = Mathf.Min(1f, NutrientLevel + 0.4f);
+                    break;
+                case CareEventType.Pruning:
+                    PruningHistory.Add(DateTime.Now);
+                    break;
+            }
+
+            UpdateLastCare();
+        }
+
+        /// <summary>
+        /// Updates environmental conditions
+        /// </summary>
+        public void UpdateEnvironmentalConditions(float temperature, float humidity, float light, float co2)
+        {
+            Temperature = temperature;
+            Humidity = humidity;
+            LightIntensity = light;
+            CO2Level = co2;
+            LastUpdateDate = DateTime.Now;
+        }
+
+        /// <summary>
+        /// Updates health based on conditions
+        /// </summary>
+        public void UpdateHealth()
+        {
+            // Simple health calculation based on conditions
+            float healthModifier = 1f;
+
+            // Temperature stress
+            if (Temperature < 20f || Temperature > 30f)
+                healthModifier -= 0.1f;
+
+            // Humidity stress
+            if (Humidity < 40f || Humidity > 70f)
+                healthModifier -= 0.1f;
+
+            // Light stress
+            if (LightIntensity < 0.5f || LightIntensity > 1.2f)
+                healthModifier -= 0.1f;
+
+            // Nutrient/water stress
+            if (NutrientLevel < 0.3f || WaterLevel < 0.3f)
+                healthModifier -= 0.2f;
+
+            // Issues
+            if (HasPests || HasNutrientDeficiency || HasOverwatering)
+                healthModifier -= 0.3f;
+
+            Health = Mathf.Clamp01(Health + healthModifier * 0.1f);
+            StressLevel = 1f - Health;
+        }
+    }
+
+    // PlantGrowthStage enum moved to Data.Shared.DataStructs.cs to avoid duplication
+
+    /// <summary>
+    /// Care event types
+    /// </summary>
+    public enum CareEventType
+    {
+        Watering,
+        NutrientApplication,
+        Pruning,
+        PestControl,
+        Training
+    }
+}
+

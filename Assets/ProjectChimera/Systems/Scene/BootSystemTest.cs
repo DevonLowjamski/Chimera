@@ -56,18 +56,18 @@ namespace ProjectChimera.Systems.Scene
                 LogTest("FAIL: BootManager not found");
             }
 
-            // Test 2: Validate DIGameManager is created
-            yield return new WaitForSeconds(1f); // Give boot time to create DIGameManager
-            var diGameManager = ServiceContainerFactory.Instance?.TryResolve<DIGameManager>();
+            // Test 2: Validate GameManager is created
+            yield return new WaitForSeconds(1f); // Give boot time to create GameManager
+            var diGameManager = ServiceContainerFactory.Instance?.TryResolve<GameManager>();
             if (diGameManager != null)
             {
-                testResults.AppendLine("✅ DIGameManager created");
-                LogTest("PASS: DIGameManager created");
+                testResults.AppendLine("✅ GameManager created");
+                LogTest("PASS: GameManager created");
             }
             else
             {
-                testResults.AppendLine("❌ DIGameManager not created");
-                LogTest("FAIL: DIGameManager not created");
+                testResults.AppendLine("❌ GameManager not created");
+                LogTest("FAIL: GameManager not created");
                 _testResults = testResults.ToString();
                 yield break;
             }
@@ -121,15 +121,20 @@ namespace ProjectChimera.Systems.Scene
             if (gameStateReached)
             {
                 var healthReport = diGameManager.GetServiceHealthReport();
-                if (healthReport.IsHealthy)
+                if (healthReport != null && healthReport.IsHealthy)
                 {
                     testResults.AppendLine("✅ System health check passed");
                     LogTest("PASS: System health check passed");
                 }
+                else if (healthReport != null)
+                {
+                    testResults.AppendLine($"⚠️ Health issues: {healthReport.CriticalErrors?.Count ?? 0} errors");
+                    LogTest($"WARN: Health issues - {healthReport.CriticalErrors?.Count ?? 0} errors");
+                }
                 else
                 {
-                    testResults.AppendLine($"⚠️ Health issues: {healthReport.CriticalErrors.Count} errors");
-                    LogTest($"WARN: Health issues - {healthReport.CriticalErrors.Count} errors");
+                    testResults.AppendLine("❌ Health report unavailable");
+                    LogTest("FAIL: Health report unavailable");
                 }
             }
 

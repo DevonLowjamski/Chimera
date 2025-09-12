@@ -1,536 +1,253 @@
 using UnityEngine;
-using ProjectChimera.Data.Shared;
-using ProjectChimera.Data.Genetics;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ProjectChimera.Data.Cultivation
 {
     /// <summary>
-    /// Handles all nutrient solution calculations and custom recipe creation.
-    /// Implements professional hydroponic nutrient management protocols.
+    /// BASIC: Simple fertigation calculator for Project Chimera's cultivation system.
+    /// Focuses on essential nutrient calculations without complex environmental adjustments and strain-specific protocols.
     /// </summary>
     public static class FertigationCalculator
     {
         /// <summary>
-        /// Calculates optimal nutrient solution for specific plants and conditions.
-        /// Implements professional hydroponic nutrient management protocols.
+        /// Calculate basic nutrient requirements for plants
         /// </summary>
-        public static NutrientSolution CalculateOptimalNutrientSolution(
-            FertigationConfig config,
-            PlantInstanceSO[] plants,
-            EnvironmentalConditions environmentalConditions,
-            CultivationZoneSO zone,
-            WaterQualityData sourceWater)
+        public static NutrientRequirements CalculateBasicNutrients(int plantCount, string growthStage)
         {
-            var solution = new NutrientSolution
+            float baseMultiplier = 1.0f;
+
+            // Simple stage-based multipliers
+            switch (growthStage?.ToLower())
             {
-                Timestamp = DateTime.Now,
-                ZoneID = zone?.ZoneID ?? "Default",
-                PlantCount = plants?.Length ?? 0
+                case "seedling": baseMultiplier = 0.5f; break;
+                case "vegetative": baseMultiplier = 1.0f; break;
+                case "flowering": baseMultiplier = 1.2f; break;
+                case "fruiting": baseMultiplier = 1.5f; break;
+                default: baseMultiplier = 1.0f; break;
+            }
+
+            return new NutrientRequirements
+            {
+                Nitrogen = 100f * baseMultiplier * plantCount,
+                Phosphorus = 50f * baseMultiplier * plantCount,
+                Potassium = 150f * baseMultiplier * plantCount,
+                Calcium = 80f * baseMultiplier * plantCount,
+                Magnesium = 30f * baseMultiplier * plantCount,
+                PlantCount = plantCount,
+                GrowthStage = growthStage,
+                CalculatedTime = System.DateTime.Now
             };
-            
-            // Determine dominant growth stage for the zone
-            PlantGrowthStage dominantStage = config.GetDominantGrowthStage(plants);
-            var stageProfile = config.GetNutrientProfileForStage(dominantStage);
-            
-            // Start with base nutrient profile
-            solution.TargetEC = stageProfile.TargetEC;
-            solution.TargetpH = stageProfile.TargetpH;
-            solution.NPKRatio = stageProfile.NPKRatio;
-            
-            // Apply environmental adjustments
-            solution = ApplyEnvironmentalAdjustments(solution, environmentalConditions);
-            
-            // Apply strain-specific adjustments
-            solution = ApplyStrainAdjustments(solution, plants);
-            
-            // Calculate individual nutrient concentrations
-            solution.NutrientConcentrations = CalculateNutrientConcentrations(solution, stageProfile);
-            
-            // Apply water quality corrections
-            solution = ApplyWaterQualityCorrections(solution, sourceWater);
-            
-            // Calculate dosing schedule
-            solution.DosingSchedule = CalculateDosingSchedule(solution, stageProfile, environmentalConditions);
-            
-            // Add micronutrients and supplements
-            solution.Micronutrients = CalculateMicronutrients(solution, dominantStage);
-            solution.Supplements = CalculateSupplements(solution, plants, environmentalConditions);
-            
-            // Validate solution safety and effectiveness
-            solution.ValidationResults = ValidateNutrientSolution(solution);
-            
-            return solution;
         }
-        
+
         /// <summary>
-        /// Creates a custom nutrient recipe for specific cultivation goals.
+        /// Calculate water and nutrient mix ratio
         /// </summary>
-        public static NutrientRecipe CreateCustomNutrientRecipe(
-            FertigationConfig config,
-            string recipeName,
-            PlantGrowthStage targetStage,
-            PlantStrainSO strain,
-            CultivationGoal goal,
-            EnvironmentalConditions targetEnvironment)
+        public static MixRatio CalculateMixRatio(string nutrientType, float concentration)
         {
-            var recipe = new NutrientRecipe
+            // Simple ratio calculations
+            float baseRatio = 1.0f;
+
+            switch (nutrientType?.ToLower())
             {
-                RecipeName = recipeName,
-                TargetStage = targetStage,
-                TargetStrain = strain,
-                CultivationGoal = goal,
-                CreatedDate = DateTime.Now
-            };
-            
-            // Start with base profile for stage
-            var baseProfile = config.GetNutrientProfileForStage(targetStage);
-            recipe.BaseNutrientProfile = baseProfile;
-            
-            // Apply goal-specific modifications
-            recipe.GoalModifications = ApplyGoalModifications(baseProfile, goal);
-            
-            // Apply strain-specific adjustments
-            if (strain != null)
-            {
-                recipe.StrainAdjustments = ApplyStrainSpecificNutrientAdjustments(baseProfile, strain);
+                case "nitrogen": baseRatio = concentration / 100f; break;
+                case "phosphorus": baseRatio = concentration / 50f; break;
+                case "potassium": baseRatio = concentration / 150f; break;
+                default: baseRatio = concentration / 100f; break;
             }
-            
-            // Environmental optimizations
-            recipe.EnvironmentalOptimizations = ApplyEnvironmentalNutrientOptimizations(baseProfile, targetEnvironment);
-            
-            // Calculate final nutrient concentrations
-            recipe.FinalConcentrations = CalculateFinalRecipeConcentrations(recipe);
-            
-            // Predict outcomes
-            recipe.PredictedOutcomes = PredictRecipeOutcomes(recipe, strain);
-            
-            // Add usage instructions
-            recipe.UsageInstructions = GenerateUsageInstructions(recipe);
-            
-            return recipe;
-        }
-        
-        #region Private Helper Methods
-        
-        private static NutrientSolution ApplyEnvironmentalAdjustments(NutrientSolution solution, EnvironmentalConditions conditions)
-        {
-            // Adjust EC based on temperature - higher temps need slightly lower EC
-            if (conditions.Temperature > 25f)
+
+            return new MixRatio
             {
-                solution.TargetEC *= 0.95f;
-            }
-            else if (conditions.Temperature < 18f)
-            {
-                solution.TargetEC *= 1.05f;
-            }
-            
-            // Adjust pH based on humidity and CO2
-            if (conditions.CO2Level > 800f)
-            {
-                solution.TargetpH -= 0.1f; // Slightly more acidic for better CO2 uptake
-            }
-            
-            // Adjust feeding frequency based on humidity
-            if (conditions.Humidity < 40f)
-            {
-                // Lower humidity means more water uptake - increase feeding frequency slightly
-                solution.TotalVolume *= 1.1f;
-            }
-            else if (conditions.Humidity > 70f)
-            {
-                // Higher humidity means less water uptake - reduce feeding volume slightly
-                solution.TotalVolume *= 0.95f;
-            }
-            
-            return solution;
-        }
-        
-        private static NutrientSolution ApplyStrainAdjustments(NutrientSolution solution, PlantInstanceSO[] plants)
-        {
-            if (plants == null || plants.Length == 0) return solution;
-            
-            // Calculate average strain nutrient preferences
-            float avgNitrogenPreference = 1f;
-            float avgPhosphorusPreference = 1f;
-            float avgPotassiumPreference = 1f;
-            
-            int validPlants = 0;
-            foreach (var plant in plants)
-            {
-                if (plant?.Strain != null)
-                {
-                    // These would come from strain data in a real implementation
-                    avgNitrogenPreference += GetStrainNitrogenPreference(plant.Strain);
-                    avgPhosphorusPreference += GetStrainPhosphorusPreference(plant.Strain);
-                    avgPotassiumPreference += GetStrainPotassiumPreference(plant.Strain);
-                    validPlants++;
-                }
-            }
-            
-            if (validPlants > 0)
-            {
-                avgNitrogenPreference /= validPlants + 1;
-                avgPhosphorusPreference /= validPlants + 1;
-                avgPotassiumPreference /= validPlants + 1;
-                
-                // Apply strain-specific NPK adjustments
-                solution.NPKRatio = new Vector3(
-                    solution.NPKRatio.x * avgNitrogenPreference,
-                    solution.NPKRatio.y * avgPhosphorusPreference,
-                    solution.NPKRatio.z * avgPotassiumPreference
-                );
-            }
-            
-            return solution;
-        }
-        
-        private static Dictionary<NutrientType, float> CalculateNutrientConcentrations(NutrientSolution solution, NutrientProfile profile)
-        {
-            var concentrations = new Dictionary<NutrientType, float>();
-            
-            // Calculate base macronutrient concentrations
-            concentrations[NutrientType.MacronutrientA] = profile.NitrogenPPM * solution.NPKRatio.x;
-            concentrations[NutrientType.MacronutrientB] = profile.PhosphorusPPM * solution.NPKRatio.y;
-            
-            // Calculate secondary nutrients
-            concentrations[NutrientType.CalciumMagnesium] = profile.CalciumPPM + profile.MagnesiumPPM;
-            concentrations[NutrientType.Micronutrients] = 50f; // Base micronutrient concentration
-            
-            // Add bloom enhancer for flowering stage
-            if (solution.NPKRatio.z > solution.NPKRatio.x) // More K than N suggests flowering
-            {
-                concentrations[NutrientType.BloomEnhancer] = profile.PotassiumPPM * solution.NPKRatio.z;
-            }
-            
-            return concentrations;
-        }
-        
-        private static NutrientSolution ApplyWaterQualityCorrections(NutrientSolution solution, WaterQualityData waterQuality)
-        {
-            if (waterQuality == null) return solution;
-            
-            // Adjust for source water EC
-            if (waterQuality.pH < 6.5f || waterQuality.pH > 7.5f)
-            {
-                // Source water pH is off - may need more pH correction later
-                solution.EstimatedCost *= 1.1f; // Account for additional pH correction costs
-            }
-            
-            // Adjust for high TDS in source water
-            if (waterQuality.TDS > 300f)
-            {
-                // High TDS source water - reduce nutrient concentrations slightly
-                solution.TargetEC *= 0.95f;
-            }
-            
-            return solution;
-        }
-        
-        private static DosingSchedule CalculateDosingSchedule(NutrientSolution solution, NutrientProfile profile, EnvironmentalConditions conditions)
-        {
-            var events = new List<DosingEvent>();
-            
-            // Calculate dosing intervals based on feeding frequency
-            int dailyFeedings = (int)profile.FeedingFrequency;
-            float intervalHours = 24f / dailyFeedings;
-            
-            for (int i = 0; i < dailyFeedings; i++)
-            {
-                var doseTime = DateTime.Now.AddHours(i * intervalHours);
-                
-                foreach (var concentration in solution.NutrientConcentrations)
-                {
-                    events.Add(new DosingEvent
-                    {
-                        Time = doseTime,
-                        Type = concentration.Key,
-                        Amount = concentration.Value / dailyFeedings // Split daily dose across feedings
-                    });
-                }
-            }
-            
-            return new DosingSchedule { Events = events.ToArray() };
-        }
-        
-        private static Dictionary<string, float> CalculateMicronutrients(NutrientSolution solution, PlantGrowthStage stage)
-        {
-            var micronutrients = new Dictionary<string, float>
-            {
-                ["Iron"] = 2.0f,
-                ["Manganese"] = 0.5f,
-                ["Zinc"] = 0.15f,
-                ["Copper"] = 0.02f,
-                ["Boron"] = 0.3f,
-                ["Molybdenum"] = 0.01f
-            };
-            
-            // Adjust based on growth stage
-            switch (stage)
-            {
-                case PlantGrowthStage.Seedling:
-                    // Reduce all micronutrients for young plants
-                    var keys = micronutrients.Keys.ToArray();
-                    foreach (var key in keys)
-                    {
-                        micronutrients[key] *= 0.5f;
-                    }
-                    break;
-                    
-                case PlantGrowthStage.Flowering:
-                    // Increase potassium-related micronutrients
-                    micronutrients["Boron"] *= 1.2f;
-                    micronutrients["Molybdenum"] *= 1.1f;
-                    break;
-            }
-            
-            return micronutrients;
-        }
-        
-        private static Dictionary<string, float> CalculateSupplements(NutrientSolution solution, PlantInstanceSO[] plants, EnvironmentalConditions conditions)
-        {
-            var supplements = new Dictionary<string, float>();
-            
-            // Add silica for stronger stems
-            supplements["Silica"] = 0.5f;
-            
-            // Add enzymes for better nutrient uptake
-            supplements["Enzymes"] = 0.25f;
-            
-            // Add Cal-Mag if needed
-            if (solution.TargetEC > 1.4f)
-            {
-                supplements["CalMag"] = 1.0f;
-            }
-            
-            // Environmental supplements
-            if (conditions.Temperature > 28f)
-            {
-                // Add cooling/stress supplements in high heat
-                supplements["StressRelief"] = 0.3f;
-            }
-            
-            return supplements;
-        }
-        
-        private static ValidationResults ValidateNutrientSolution(NutrientSolution solution)
-        {
-            var warnings = new List<string>();
-            var errors = new List<string>();
-            
-            // Validate EC range
-            if (solution.TargetEC < 0.3f)
-            {
-                warnings.Add("EC is very low - plants may be underfed");
-            }
-            else if (solution.TargetEC > 2.5f)
-            {
-                errors.Add("EC is too high - risk of nutrient burn");
-            }
-            
-            // Validate pH range
-            if (solution.TargetpH < 5.0f)
-            {
-                errors.Add("pH is too acidic - risk of nutrient lockout");
-            }
-            else if (solution.TargetpH > 7.5f)
-            {
-                errors.Add("pH is too alkaline - poor nutrient uptake");
-            }
-            
-            // Validate NPK ratios
-            if (solution.NPKRatio.x > 10f || solution.NPKRatio.y > 10f || solution.NPKRatio.z > 10f)
-            {
-                warnings.Add("One or more NPK values are very high");
-            }
-            
-            return new ValidationResults
-            {
-                IsValid = errors.Count == 0,
-                Warnings = warnings.ToArray(),
-                Errors = errors.ToArray()
+                NutrientType = nutrientType,
+                Concentration = concentration,
+                WaterToNutrientRatio = baseRatio,
+                RecommendedpH = 6.0f,
+                EC = baseRatio * 1.5f
             };
         }
-        
-        private static GoalModification[] ApplyGoalModifications(NutrientProfile baseProfile, CultivationGoal goal)
+
+        /// <summary>
+        /// Get nutrient deficiency symptoms
+        /// </summary>
+        public static string GetDeficiencySymptoms(string nutrient)
         {
-            var modifications = new List<GoalModification>();
-            
-            switch (goal)
+            switch (nutrient?.ToLower())
             {
-                case CultivationGoal.MaxYield:
-                    modifications.Add(new GoalModification { Parameter = "Nitrogen", Modification = 1.15f });
-                    modifications.Add(new GoalModification { Parameter = "Phosphorus", Modification = 1.1f });
-                    break;
-                    
-                case CultivationGoal.MaxPotency:
-                    modifications.Add(new GoalModification { Parameter = "Potassium", Modification = 1.2f });
-                    modifications.Add(new GoalModification { Parameter = "Phosphorus", Modification = 1.15f });
-                    break;
-                    
-                case CultivationGoal.MaxTerpenes:
-                    modifications.Add(new GoalModification { Parameter = "Sulfur", Modification = 1.3f });
-                    modifications.Add(new GoalModification { Parameter = "Magnesium", Modification = 1.1f });
-                    break;
-                    
-                case CultivationGoal.EnergyEfficient:
-                    modifications.Add(new GoalModification { Parameter = "OverallNutrients", Modification = 0.9f });
-                    break;
+                case "nitrogen": return "Yellowing of lower leaves, stunted growth";
+                case "phosphorus": return "Dark green or purple leaves, poor root development";
+                case "potassium": return "Brown leaf edges, weak stems";
+                case "calcium": return "Leaf tip burn, distorted new growth";
+                case "magnesium": return "Yellowing between leaf veins";
+                default: return "General nutrient deficiency symptoms";
             }
-            
-            return modifications.ToArray();
         }
-        
-        private static StrainAdjustment[] ApplyStrainSpecificNutrientAdjustments(NutrientProfile baseProfile, PlantStrainSO strain)
+
+        /// <summary>
+        /// Calculate nutrient cost
+        /// </summary>
+        public static float CalculateNutrientCost(NutrientRequirements requirements, Dictionary<string, float> prices)
         {
-            var adjustments = new List<StrainAdjustment>();
-            
-            // These would come from actual strain data in a real implementation
-            adjustments.Add(new StrainAdjustment { Parameter = "Nitrogen", Adjustment = GetStrainNitrogenPreference(strain) });
-            adjustments.Add(new StrainAdjustment { Parameter = "Phosphorus", Adjustment = GetStrainPhosphorusPreference(strain) });
-            adjustments.Add(new StrainAdjustment { Parameter = "Potassium", Adjustment = GetStrainPotassiumPreference(strain) });
-            
-            return adjustments.ToArray();
+            float totalCost = 0f;
+
+            if (prices.ContainsKey("nitrogen")) totalCost += requirements.Nitrogen * prices["nitrogen"];
+            if (prices.ContainsKey("phosphorus")) totalCost += requirements.Phosphorus * prices["phosphorus"];
+            if (prices.ContainsKey("potassium")) totalCost += requirements.Potassium * prices["potassium"];
+            if (prices.ContainsKey("calcium")) totalCost += requirements.Calcium * prices["calcium"];
+            if (prices.ContainsKey("magnesium")) totalCost += requirements.Magnesium * prices["magnesium"];
+
+            return totalCost;
         }
-        
-        private static EnvironmentalOptimization[] ApplyEnvironmentalNutrientOptimizations(NutrientProfile baseProfile, EnvironmentalConditions environment)
+
+        /// <summary>
+        /// Check if nutrient levels are optimal
+        /// </summary>
+        public static NutrientStatus CheckNutrientStatus(float nitrogen, float phosphorus, float potassium)
         {
-            var optimizations = new List<EnvironmentalOptimization>();
-            
-            if (environment.Temperature > 25f)
+            bool nitrogenOk = nitrogen >= 80f && nitrogen <= 120f;
+            bool phosphorusOk = phosphorus >= 40f && phosphorus <= 60f;
+            bool potassiumOk = potassium >= 120f && potassium <= 180f;
+
+            string status = "Unknown";
+            if (nitrogenOk && phosphorusOk && potassiumOk)
             {
-                optimizations.Add(new EnvironmentalOptimization 
-                { 
-                    OptimizationType = "High Temperature", 
-                    Value = 0.95f, 
-                    Description = "Reduced EC for high temperature conditions" 
-                });
+                status = "Optimal";
             }
-            
-            if (environment.Humidity < 40f)
+            else if (!nitrogenOk || !phosphorusOk || !potassiumOk)
             {
-                optimizations.Add(new EnvironmentalOptimization 
-                { 
-                    OptimizationType = "Low Humidity", 
-                    Value = 1.1f, 
-                    Description = "Increased feeding frequency for low humidity" 
-                });
+                status = "Deficient";
             }
-            
-            return optimizations.ToArray();
-        }
-        
-        private static Dictionary<NutrientType, float> CalculateFinalRecipeConcentrations(NutrientRecipe recipe)
-        {
-            var concentrations = new Dictionary<NutrientType, float>();
-            
-            // Start with base profile
-            var profile = recipe.BaseNutrientProfile;
-            concentrations[NutrientType.MacronutrientA] = profile.NitrogenPPM;
-            concentrations[NutrientType.MacronutrientB] = profile.PhosphorusPPM;
-            concentrations[NutrientType.CalciumMagnesium] = profile.CalciumPPM;
-            
-            // Apply goal modifications
-            foreach (var mod in recipe.GoalModifications)
+            else
             {
-                ApplyModificationToConcentrations(concentrations, mod);
+                status = "Excessive";
             }
-            
-            // Apply strain adjustments
-            foreach (var adj in recipe.StrainAdjustments)
+
+            return new NutrientStatus
             {
-                ApplyAdjustmentToConcentrations(concentrations, adj);
-            }
-            
-            return concentrations;
-        }
-        
-        private static FertigationRecipeOutcomes PredictRecipeOutcomes(NutrientRecipe recipe, PlantStrainSO strain)
-        {
-            // Simple prediction based on nutrient profile and goals
-            float expectedYield = 1f;
-            float expectedQuality = 1f;
-            float resourceEfficiency = 0.85f;
-            
-            // Adjust based on cultivation goal
-            switch (recipe.CultivationGoal)
-            {
-                case CultivationGoal.MaxYield:
-                    expectedYield = 1.15f;
-                    expectedQuality = 0.95f;
-                    resourceEfficiency = 0.8f;
-                    break;
-                    
-                case CultivationGoal.MaxQuality:
-                    expectedYield = 0.95f;
-                    expectedQuality = 1.2f;
-                    resourceEfficiency = 0.75f;
-                    break;
-                    
-                case CultivationGoal.EnergyEfficient:
-                    expectedYield = 0.9f;
-                    expectedQuality = 1f;
-                    resourceEfficiency = 1.1f;
-                    break;
-            }
-            
-            return new FertigationRecipeOutcomes
-            {
-                ExpectedYield = expectedYield,
-                ExpectedQuality = expectedQuality,
-                ResourceEfficiency = resourceEfficiency
+                IsOptimal = nitrogenOk && phosphorusOk && potassiumOk,
+                Status = status,
+                NitrogenLevel = nitrogen,
+                PhosphorusLevel = phosphorus,
+                PotassiumLevel = potassium
             };
         }
-        
-        private static UsageInstruction[] GenerateUsageInstructions(NutrientRecipe recipe)
+
+        /// <summary>
+        /// Get recommended nutrient schedule
+        /// </summary>
+        public static NutrientSchedule GetRecommendedSchedule(string growthStage)
         {
-            var instructions = new List<UsageInstruction>
+            string schedule = "Daily application";
+
+            switch (growthStage?.ToLower())
             {
-                new UsageInstruction { Step = "1", Instruction = "Prepare clean water at room temperature" },
-                new UsageInstruction { Step = "2", Instruction = "Add nutrients in the order specified" },
-                new UsageInstruction { Step = "3", Instruction = "Mix thoroughly between additions" },
-                new UsageInstruction { Step = "4", Instruction = "Check and adjust pH to target range" },
-                new UsageInstruction { Step = "5", Instruction = "Verify final EC matches target" },
-                new UsageInstruction { Step = "6", Instruction = "Apply according to dosing schedule" }
-            };
-            
-            return instructions.ToArray();
-        }
-        
-        // Helper methods for strain preferences (would be implemented with real data)
-        private static float GetStrainNitrogenPreference(PlantStrainSO strain) => 1f + UnityEngine.Random.Range(-0.1f, 0.1f);
-        private static float GetStrainPhosphorusPreference(PlantStrainSO strain) => 1f + UnityEngine.Random.Range(-0.1f, 0.1f);
-        private static float GetStrainPotassiumPreference(PlantStrainSO strain) => 1f + UnityEngine.Random.Range(-0.1f, 0.1f);
-        
-        private static void ApplyModificationToConcentrations(Dictionary<NutrientType, float> concentrations, GoalModification mod)
-        {
-            // Apply modifications based on parameter type
-            switch (mod.Parameter)
-            {
-                case "Nitrogen":
-                    if (concentrations.ContainsKey(NutrientType.MacronutrientA))
-                        concentrations[NutrientType.MacronutrientA] *= mod.Modification;
-                    break;
-                case "Phosphorus":
-                    if (concentrations.ContainsKey(NutrientType.MacronutrientB))
-                        concentrations[NutrientType.MacronutrientB] *= mod.Modification;
-                    break;
-                // Add other parameter types as needed
+                case "seedling": schedule = "Every 2-3 days, half strength"; break;
+                case "vegetative": schedule = "Every other day"; break;
+                case "flowering": schedule = "Daily with phosphorus boost"; break;
+                case "fruiting": schedule = "Daily with calcium supplement"; break;
             }
+
+            return new NutrientSchedule
+            {
+                GrowthStage = growthStage,
+                Schedule = schedule,
+                Frequency = "Daily",
+                Notes = "Monitor plant response and adjust as needed"
+            };
         }
-        
-        private static void ApplyAdjustmentToConcentrations(Dictionary<NutrientType, float> concentrations, StrainAdjustment adj)
+
+        /// <summary>
+        /// Calculate pH adjustment needs
+        /// </summary>
+        public static pHAdjustment CalculatepHAdjustment(float currentpH, float targetpH)
         {
-            // Similar to modifications but for strain-specific adjustments
-            ApplyModificationToConcentrations(concentrations, new GoalModification 
-            { 
-                Parameter = adj.Parameter, 
-                Modification = adj.Adjustment 
-            });
+            float difference = targetpH - currentpH;
+            string adjustment = "";
+
+            if (Mathf.Abs(difference) < 0.1f)
+            {
+                adjustment = "No adjustment needed";
+            }
+            else if (difference > 0)
+            {
+                adjustment = $"Add base to increase pH by {difference:F1}";
+            }
+            else
+            {
+                adjustment = $"Add acid to decrease pH by {Mathf.Abs(difference):F1}";
+            }
+
+            return new pHAdjustment
+            {
+                CurrentpH = currentpH,
+                TargetpH = targetpH,
+                Difference = difference,
+                AdjustmentNeeded = adjustment
+            };
         }
-        
-        #endregion
+    }
+
+    /// <summary>
+    /// Basic nutrient requirements
+    /// </summary>
+    [System.Serializable]
+    public struct NutrientRequirements
+    {
+        public float Nitrogen;
+        public float Phosphorus;
+        public float Potassium;
+        public float Calcium;
+        public float Magnesium;
+        public int PlantCount;
+        public string GrowthStage;
+        public System.DateTime CalculatedTime;
+    }
+
+    /// <summary>
+    /// Mix ratio data
+    /// </summary>
+    [System.Serializable]
+    public struct MixRatio
+    {
+        public string NutrientType;
+        public float Concentration;
+        public float WaterToNutrientRatio;
+        public float RecommendedpH;
+        public float EC;
+    }
+
+    /// <summary>
+    /// Nutrient status
+    /// </summary>
+    [System.Serializable]
+    public struct NutrientStatus
+    {
+        public bool IsOptimal;
+        public string Status;
+        public float NitrogenLevel;
+        public float PhosphorusLevel;
+        public float PotassiumLevel;
+    }
+
+    /// <summary>
+    /// Nutrient schedule
+    /// </summary>
+    [System.Serializable]
+    public struct NutrientSchedule
+    {
+        public string GrowthStage;
+        public string Schedule;
+        public string Frequency;
+        public string Notes;
+    }
+
+    /// <summary>
+    /// pH adjustment data
+    /// </summary>
+    [System.Serializable]
+    public struct pHAdjustment
+    {
+        public float CurrentpH;
+        public float TargetpH;
+        public float Difference;
+        public string AdjustmentNeeded;
     }
 }

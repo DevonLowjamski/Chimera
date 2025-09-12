@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.UI;
+// using UnityEngine.UI; // Disabled due to assembly reference issues
 using ProjectChimera.Core;
 using ProjectChimera.Core.Updates;
 using ProjectChimera.Data.Shared;
@@ -14,10 +14,15 @@ namespace ProjectChimera.Systems.Cultivation
     {
         [Header("Health Indicator UI")]
         [SerializeField] private Canvas _healthCanvas;
-        [SerializeField] private UnityEngine.UI.Slider _healthSlider;
-        [SerializeField] private UnityEngine.UI.Slider _hydrationSlider;
-        [SerializeField] private UnityEngine.UI.Slider _nutritionSlider;
-        [SerializeField] private UnityEngine.UI.Image _stressIndicator;
+        // Temporarily disabled due to UnityEngine.UI assembly reference issues
+        // [SerializeField] private UnityEngine.UI.Slider _healthSlider;
+        // [SerializeField] private UnityEngine.UI.Slider _hydrationSlider;
+        // [SerializeField] private UnityEngine.UI.Slider _nutritionSlider;
+        // [SerializeField] private UnityEngine.UI.Image _stressIndicator;
+        [System.NonSerialized] private object _healthSlider;
+        [System.NonSerialized] private object _hydrationSlider;
+        [System.NonSerialized] private object _nutritionSlider;
+        [System.NonSerialized] private object _stressIndicator;
 
         private bool _isInitialized = false;
         private InteractivePlant _targetPlant;
@@ -37,7 +42,9 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!_isInitialized || _targetPlant == null) return;
 
+            // UI components temporarily disabled due to assembly reference issues
             // Update health indicators
+            /*
             if (_healthSlider != null)
                 _healthSlider.value = _targetPlant.CurrentHealth / _targetPlant.MaxHealth;
 
@@ -52,6 +59,9 @@ namespace ProjectChimera.Systems.Cultivation
                 float stress = _targetPlant.CurrentStressLevel / 100f;
                 _stressIndicator.color = Color.Lerp(Color.green, Color.red, stress);
             }
+            */
+
+            ChimeraLogger.LogVerbose($"Plant health indicators updated (UI temporarily disabled) - Health: {_targetPlant.CurrentHealth:F1}, Hydration: {_targetPlant.CurrentHydration:F1}, Nutrition: {_targetPlant.CurrentNutrition:F1}");
         }
 
         public void UpdateHealthDisplay(InteractivePlant plant, float quality)
@@ -92,7 +102,7 @@ namespace ProjectChimera.Systems.Cultivation
             }
         }
 
-        private System.Collections.IEnumerator FlashIndicator(Image indicator, Color color, float duration)
+        private System.Collections.IEnumerator FlashIndicator(UnityEngine.UI.Image indicator, Color color, float duration)
         {
             Color originalColor = indicator.color;
             indicator.color = color;

@@ -8,384 +8,313 @@ using ProjectChimera.Core.Events;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
 using EnvironmentalStressSO = ProjectChimera.Data.Simulation.EnvironmentalStressSO;
-// using ProjectChimera.Systems.Genetics; // Invalid namespace - genetics in ProjectChimera.Data.Genetics // Added for TraitExpressionResult
-// using TraitExpressionResult = ProjectChimera.Systems.Genetics.TraitExpressionResult; // Decoupled for early compile
 using System;
 using System.Collections.Generic;
-// duplicate alias removed
-// using EnvironmentManager = ProjectChimera.Systems.Environment.EnvironmentManager; // Environment assembly not available
-using HarvestResults = ProjectChimera.Data.Cultivation.HarvestResults; // Use Systems version
+using HarvestResults = ProjectChimera.Data.Cultivation.HarvestResults;
 
 namespace ProjectChimera.Systems.Cultivation
 {
     /// <summary>
+    /// REFACTORED: Core plant functionality has been decomposed into focused system components.
+    /// This file now serves as a reference implementation using the new component structure.
+    /// 
+    /// New Component Structure:
+    /// - PlantInstanceCore.cs: Core plant instance infrastructure and component coordination
+    /// - PlantGrowthSystem.cs: Growth progression, stage advancement, and yield calculation
+    /// - PlantHealthSystem.cs: Health management, stress response, and disease resistance  
+    /// - PlantEnvironmentalSystem.cs: Environmental adaptation, condition processing, and GxE interactions
+    /// - PlantGeneticsSystem.cs: Genetic expression, trait inheritance, and breeding value calculation
+    /// - PlantVisualizationSystem.cs: Visual representation, size updates, and rendering coordination
+    /// 
     /// Represents an individual plant instance with genetic characteristics, growth state,
     /// environmental responses, and health status.
     /// </summary>
-    public class PlantInstance : MonoBehaviour
+    public class PlantInstance : PlantInstanceCore
     {
-        [Header("Plant Identity")]
-        [SerializeField] private string _plantID;
-        [SerializeField] private object _strain;
-        [SerializeField] private string _plantName;
-        [SerializeField] private DateTime _plantedDate;
-        [SerializeField] private DateTime _lastWatered;
-        [SerializeField] private DateTime _lastFed;
-        [SerializeField] private int _generationNumber = 1;
+        [Header("PlantInstance Legacy Settings")]
+        [SerializeField] private bool _enableLegacyCompatibility = true;
+        [SerializeField] private bool _enableSystemIntegration = true;
+        [SerializeField] private bool _enableEventForwarding = true;
 
-        [Header("Growth State")]
-        [SerializeField] private PlantGrowthStage _currentGrowthStage = PlantGrowthStage.Seed;
-        [SerializeField] private float _growthProgress = 0f; // 0-1 within current stage
-        [SerializeField] private float _overallGrowthProgress = 0f; // 0-1 from seed to harvest
-        [SerializeField] private int _daysSincePlanted = 0;
-        [SerializeField] private Vector3 _plantSize = Vector3.one;
-
-        [Header("Health and Condition")]
-        [SerializeField] private float _currentHealth = 1f;
-        [SerializeField] private float _maxHealth = 1f;
-        [SerializeField] private float _stressLevel = 0f;
-        [SerializeField] private float _diseaseResistance = 1f;
-        [SerializeField] private float _waterLevel = 1f;
-        [SerializeField] private float _nutrientLevel = 1f;
-        [SerializeField] private bool _isActive = true;
-
-        [Header("Environmental Response")]
-        [SerializeField] private EnvironmentalConditions _currentEnvironment;
-        [SerializeField] private List<ActiveStressor> _activeStressors = new List<ActiveStressor>();
-        [SerializeField] private float _environmentalFitness = 1f;
-        [SerializeField] private GxEResponseData _gxeResponse;
-
-        [Header("Phenotypic Expression")]
-        [SerializeField] private PhenotypicTraits _expressedTraits;
-        [SerializeField] private float _yieldPotential = 1f;
-        [SerializeField] private float _qualityPotential = 1f;
-        [SerializeField] private CannabinoidProfile _currentCannabinoids;
-        [SerializeField] private object _currentTerpenes;
-
-        [Header("Genetic Data")]
-        [SerializeField] private GenotypeDataSO _genotype;
-        [SerializeField] private TraitExpressionResult _lastTraitExpression;
-
-        // Events
+        // Legacy compatibility events
         public event Action<PlantInstance> OnGrowthStageChanged;
         public event Action<PlantInstance> OnHealthChanged;
         public event Action<PlantInstance> OnPlantDied;
         public event Action<PlantInstance> OnEnvironmentChanged;
 
-        // Private fields
-        private PlantGrowthCalculator _growthCalculator;
-        private PlantHealthSystem _healthSystem;
-        private EnvironmentalResponseSystem _environmentalSystem;
-        private Dictionary<PlantGrowthStage, float> _stageProgressThresholds;
+        // Legacy compatibility properties
+        public string PlantId => PlantID;
+        public object PlantStrain { get => Strain; set => InitializeFromStrain(value); }
+        public PlantGrowthStage CurrentStage { get => GrowthSystem?.CurrentGrowthStage ?? PlantGrowthStage.Seed; set => GrowthSystem?.SetGrowthStage(value); }
+        public float Health => HealthSystem?.CurrentHealth ?? 1f;
+        public float WaterLevel { get => HealthSystem?.WaterLevel ?? 1f; set => HealthSystem?.SetWaterLevel(value); }
+        public float NutrientLevel { get => HealthSystem?.NutrientLevel ?? 1f; set => HealthSystem?.SetNutrientLevel(value); }
+        public object GeneticProfile { get => Strain; set => InitializeFromStrain(value); }
+        public string StrainName => (Strain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown";
+        public int TotalDaysGrown => GrowthSystem?.DaysSincePlanted ?? 0;
 
-        // Public Properties
-        public string PlantID { get => _plantID; set => _plantID = value; }
-        public object Strain => _strain;
-        public string PlantName => _plantName;
-        public DateTime PlantedDate { get => _plantedDate; set => _plantedDate = value; }
-        public DateTime LastWatered { get => _lastWatered; set => _lastWatered = value; }
-        public DateTime LastFed { get => _lastFed; set => _lastFed = value; }
-        public int GenerationNumber => _generationNumber;
-        public PlantGrowthStage CurrentGrowthStage { get => _currentGrowthStage; set => _currentGrowthStage = value; }
-        public float GrowthProgress => _growthProgress;
-        public float OverallGrowthProgress => _overallGrowthProgress;
-        public int DaysSincePlanted => _daysSincePlanted;
-        public Vector3 PlantSize => _plantSize;
-        public float CurrentHealth => _currentHealth;
-        public float Health => _currentHealth; // Alias for compatibility with other systems
-        public float MaxHealth => _maxHealth;
-        public float StressLevel => _stressLevel;
-        public bool IsActive => _isActive;
-        public EnvironmentalConditions CurrentEnvironment => _currentEnvironment;
-        public float EnvironmentalFitness => _environmentalFitness;
-        public PhenotypicTraits ExpressedTraits => _expressedTraits;
-        public float YieldPotential => _yieldPotential;
-        public float QualityPotential => _qualityPotential;
+        // Additional legacy properties
+        public PlantGrowthStage CurrentGrowthStage => GrowthSystem?.CurrentGrowthStage ?? PlantGrowthStage.Seed;
+        public float GrowthProgress => GrowthSystem?.GrowthProgress ?? 0f;
+        public float OverallGrowthProgress => GrowthSystem?.OverallGrowthProgress ?? 0f;
+        public int DaysSincePlanted => GrowthSystem?.DaysSincePlanted ?? 0;
+        public Vector3 PlantSize => GrowthSystem?.PlantSize ?? Vector3.one;
+        public float CurrentHealth => HealthSystem?.CurrentHealth ?? 1f;
+        public float MaxHealth => HealthSystem?.MaxHealth ?? 1f;
+        public float StressLevel => HealthSystem?.StressLevel ?? 0f;
+        public EnvironmentalConditions CurrentEnvironment => EnvironmentalSystem?.CurrentEnvironment ?? new EnvironmentalConditions();
+        public float EnvironmentalFitness => EnvironmentalSystem?.EnvironmentalFitness ?? 1f;
+        public PhenotypicTraits ExpressedTraits => GeneticsSystem?.ExpressedTraits;
+        public float YieldPotential => GrowthSystem?.YieldPotential ?? 1f;
+        public float QualityPotential => GrowthSystem?.QualityPotential ?? 1f;
+        public bool IsHarvestable => GrowthSystem?.IsHarvestable ?? false;
 
-        // Additional properties for compatibility
-        public string PlantId => _plantID;
-        public object PlantStrain { get => _strain; set => _strain = value; }
-        public PlantGrowthStage CurrentStage { get => _currentGrowthStage; set => _currentGrowthStage = value; }
-        public bool IsHarvestable => _currentGrowthStage == PlantGrowthStage.Harvest || _currentGrowthStage == PlantGrowthStage.Harvestable;
-        public float WaterLevel { get => _waterLevel; set => _waterLevel = value; }
-        public float NutrientLevel { get => _nutrientLevel; set => _nutrientLevel = value; }
-        public object GeneticProfile { get => _strain; set => _strain = value; }
-        public string StrainName => (_strain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown";
-
-        // Genetic properties for Error Wave 22 compatibility
+        // Genetic properties for compatibility
         public GenotypeDataSO Genotype
         {
-            get => _genotype;
-            set => _genotype = value;
+            get => GeneticsSystem?.Genotype;
+            set { if (GeneticsSystem != null) GeneticsSystem.GetType().GetField("_genotype", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(GeneticsSystem, value); }
         }
 
-        public TraitExpressionResult LastTraitExpression => _lastTraitExpression;
+        public TraitExpressionResult LastTraitExpression => GeneticsSystem?.LastTraitExpression;
+
+        protected override void Awake()
+        {
+            base.Awake();
+            
+            if (_enableSystemIntegration)
+            {
+                SetupSystemIntegration();
+            }
+        }
+
+        protected override void Start()
+        {
+            base.Start();
+            
+            if (_enableEventForwarding)
+            {
+                SetupEventForwarding();
+            }
+        }
 
         /// <summary>
-        /// Set the last trait expression result for this plant.
+        /// Setup integration between plant systems
+        /// </summary>
+        private void SetupSystemIntegration()
+        {
+            // Integration between systems will be handled through the base PlantInstanceCore
+            LogPlantAction("System integration configured");
+        }
+
+        /// <summary>
+        /// Setup event forwarding for legacy compatibility
+        /// </summary>
+        private void SetupEventForwarding()
+        {
+            // Forward growth system events
+            if (GrowthSystem != null)
+            {
+                GrowthSystem.OnGrowthStageChanged += (stage) => OnGrowthStageChanged?.Invoke(this);
+            }
+
+            // Forward health system events
+            if (HealthSystem != null)
+            {
+                HealthSystem.OnHealthChanged += (health) => OnHealthChanged?.Invoke(this);
+                HealthSystem.OnPlantDied += () => OnPlantDied?.Invoke(this);
+            }
+
+            // Forward environmental system events
+            if (EnvironmentalSystem != null)
+            {
+                EnvironmentalSystem.OnEnvironmentChanged += (conditions) => OnEnvironmentChanged?.Invoke(this);
+            }
+        }
+
+        /// <summary>
+        /// Legacy method: Set the last trait expression result for this plant.
         /// </summary>
         public void SetLastTraitExpression(TraitExpressionResult traitExpression)
         {
-            _lastTraitExpression = traitExpression;
-
-            // Update phenotypic traits based on trait expression
-            if (_expressedTraits == null)
-                _expressedTraits = new PhenotypicTraits();
-
-            _expressedTraits.PlantHeight = traitExpression.HeightExpression;
-            _expressedTraits.PotencyMultiplier = traitExpression.THCExpression;
-            _expressedTraits.YieldMultiplier = traitExpression.YieldExpression;
-
-            ChimeraLogger.Log($"[PlantInstance] {PlantID} trait expression updated - Height: {traitExpression.HeightExpression:F2}, THC: {traitExpression.THCExpression:F2}, Yield: {traitExpression.YieldExpression:F2}");
+            GeneticsSystem?.SetLastTraitExpression(traitExpression);
         }
 
         /// <summary>
-        /// Apply height growth modifier based on genetic expression.
+        /// Legacy method: Apply height growth modifier based on genetic expression.
         /// </summary>
         public void ApplyHeightGrowthModifier(float heightModifier, float deltaTime)
         {
-            if (_expressedTraits == null)
-                _expressedTraits = new PhenotypicTraits();
-
-            // Apply height modifier with time-based growth
-            float growthRate = heightModifier * deltaTime * 0.1f; // Scale factor for realistic growth
-            _expressedTraits.PlantHeight += growthRate;
-            _expressedTraits.PlantHeight = Mathf.Clamp(_expressedTraits.PlantHeight, 0.1f, 3.0f); // Reasonable height limits
-
-            // Update plant size based on height
-            _plantSize = new Vector3(_plantSize.x, _expressedTraits.PlantHeight, _plantSize.z);
-
-            ChimeraLogger.Log($"[PlantInstance] {PlantID} height growth applied - New height: {_expressedTraits.PlantHeight:F2}m");
+            GeneticsSystem?.ApplyHeightGrowthModifier(heightModifier, deltaTime);
         }
 
         /// <summary>
-        /// Apply potency modifier based on THC expression.
+        /// Legacy method: Apply potency modifier based on THC expression.
         /// </summary>
         public void ApplyPotencyModifier(float potencyModifier)
         {
-            if (_expressedTraits == null)
-                _expressedTraits = new PhenotypicTraits();
-
-            _expressedTraits.PotencyMultiplier = potencyModifier;
-
-            // Update cannabinoid profile if available
-            if (_currentCannabinoids != null)
-            {
-                // TODO: Update THC content when CannabinoidProfile structure is available
-                // _currentCannabinoids.thcContent *= potencyModifier;
-                // _currentCannabinoids.thcContent = Mathf.Clamp(_currentCannabinoids.thcContent, 0f, 35f); // Realistic THC limits
-            }
-
-            ChimeraLogger.Log($"[PlantInstance] {PlantID} potency modifier applied - Modifier: {potencyModifier:F2}");
+            GeneticsSystem?.ApplyPotencyModifier(potencyModifier);
         }
 
         /// <summary>
-        /// Apply CBD modifier based on CBD expression.
+        /// Legacy method: Apply CBD modifier based on CBD expression.
         /// </summary>
         public void ApplyCBDModifier(float cbdModifier)
         {
-            if (_expressedTraits == null)
-                _expressedTraits = new PhenotypicTraits();
-
-            // Update cannabinoid profile if available
-            if (_currentCannabinoids != null)
-            {
-                // TODO: Update CBD content when CannabinoidProfile structure is available
-                // _currentCannabinoids.cbdContent *= cbdModifier;
-                // _currentCannabinoids.cbdContent = Mathf.Clamp(_currentCannabinoids.cbdContent, 0f, 25f); // Realistic CBD limits
-            }
-
-            ChimeraLogger.Log($"[PlantInstance] {PlantID} CBD modifier applied - Modifier: {cbdModifier:F2}");
+            GeneticsSystem?.ApplyCBDModifier(cbdModifier);
         }
 
         /// <summary>
-        /// Apply yield modifier based on yield expression.
+        /// Legacy method: Apply yield modifier based on yield expression.
         /// </summary>
         public void ApplyYieldModifier(float yieldModifier)
         {
-            if (_expressedTraits == null)
-                _expressedTraits = new PhenotypicTraits();
-
-            _expressedTraits.YieldMultiplier = yieldModifier;
-            _yieldPotential *= yieldModifier;
-            _yieldPotential = Mathf.Clamp(_yieldPotential, 0.1f, 3.0f); // Reasonable yield range
-
-            ChimeraLogger.Log($"[PlantInstance] {PlantID} yield modifier applied - Modifier: {yieldModifier:F2}, New potential: {_yieldPotential:F2}");
+            GeneticsSystem?.ApplyYieldModifier(yieldModifier);
         }
 
         /// <summary>
-        /// Apply genetic fitness modifier based on overall fitness expression.
+        /// Legacy method: Apply genetic fitness modifier based on overall fitness expression.
         /// </summary>
         public void ApplyGeneticFitnessModifier(float fitnessModifier)
         {
-            _environmentalFitness = fitnessModifier;
-
-            // Fitness affects overall health and stress resistance
-            _diseaseResistance *= (1f + (fitnessModifier - 1f) * 0.5f);
-            _diseaseResistance = Mathf.Clamp(_diseaseResistance, 0.1f, 2.0f);
-
-            // Fitness also affects stress level
-            _stressLevel *= (2f - fitnessModifier); // Higher fitness = lower stress
-            _stressLevel = Mathf.Clamp01(_stressLevel);
-
-            ChimeraLogger.Log($"[PlantInstance] {PlantID} genetic fitness applied - Fitness: {fitnessModifier:F2}, Disease resistance: {_diseaseResistance:F2}");
+            GeneticsSystem?.ApplyGeneticFitnessModifier(fitnessModifier);
         }
 
         /// <summary>
-        /// Apply health change to the plant.
+        /// Legacy method: Apply health change to the plant.
         /// </summary>
         public void ApplyHealthChange(float healthChange)
         {
-            _currentHealth += healthChange;
-            _currentHealth = Mathf.Clamp(_currentHealth, 0f, _maxHealth);
-
-            // Trigger health changed event if health drops significantly
-            if (healthChange < -0.05f)
-            {
-                OnHealthChanged?.Invoke(this);
-            }
-
-            // Check for plant death
-            if (_currentHealth <= 0f)
-            {
-                HandlePlantDeath();
-            }
+            HealthSystem?.ApplyHealthChange(healthChange);
         }
 
         /// <summary>
-        /// Apply temperature stress to the plant.
+        /// Legacy method: Apply stress types to the plant.
         /// </summary>
         public void ApplyTemperatureStress(float stressSeverity, float deltaTime)
         {
-            float stressDamage = stressSeverity * 0.02f * deltaTime; // Temperature stress damage rate
-            ApplyHealthChange(-stressDamage);
-
-            // Temperature stress affects growth rate
-            if (_expressedTraits != null)
-            {
-                float temperatureImpact = 1f - (stressSeverity * 0.3f);
-                _expressedTraits.HeatTolerance = Mathf.Max(0.1f, _expressedTraits.HeatTolerance * temperatureImpact);
-            }
-
-            ChimeraLogger.Log($"[PlantInstance] {PlantID} temperature stress applied - Severity: {stressSeverity:F2}, Damage: {stressDamage:F3}");
+            HealthSystem?.ApplyTemperatureStress(stressSeverity, deltaTime);
         }
 
-        /// <summary>
-        /// Apply light stress to the plant.
-        /// </summary>
         public void ApplyLightStress(float stressSeverity, float deltaTime)
         {
-            float stressDamage = stressSeverity * 0.015f * deltaTime; // Light stress damage rate
-            ApplyHealthChange(-stressDamage);
-
-            // Light stress affects photosynthesis and growth
-            if (_expressedTraits != null)
-            {
-                float lightImpact = 1f - (stressSeverity * 0.2f);
-                _expressedTraits.YieldMultiplier = Mathf.Max(0.1f, _expressedTraits.YieldMultiplier * lightImpact);
-            }
-
-            ChimeraLogger.Log($"[PlantInstance] {PlantID} light stress applied - Severity: {stressSeverity:F2}, Damage: {stressDamage:F3}");
+            HealthSystem?.ApplyLightStress(stressSeverity, deltaTime);
         }
 
-        /// <summary>
-        /// Apply water stress to the plant.
-        /// </summary>
         public void ApplyWaterStress(float stressSeverity, float deltaTime)
         {
-            float stressDamage = stressSeverity * 0.025f * deltaTime; // Water stress damage rate
-            ApplyHealthChange(-stressDamage);
-
-            // Water stress affects overall plant vigor
-            _waterLevel = Mathf.Max(0f, _waterLevel - (stressSeverity * 0.1f * deltaTime));
-
-            if (_expressedTraits != null)
-            {
-                float waterImpact = 1f - (stressSeverity * 0.4f);
-                _expressedTraits.DroughtTolerance = Mathf.Max(0.1f, _expressedTraits.DroughtTolerance * waterImpact);
-            }
-
-            ChimeraLogger.Log($"[PlantInstance] {PlantID} water stress applied - Severity: {stressSeverity:F2}, Water level: {_waterLevel:F2}");
+            HealthSystem?.ApplyWaterStress(stressSeverity, deltaTime);
         }
 
-        /// <summary>
-        /// Apply nutrient stress to the plant.
-        /// </summary>
         public void ApplyNutrientStress(float stressSeverity, float deltaTime)
         {
-            float stressDamage = stressSeverity * 0.02f * deltaTime; // Nutrient stress damage rate
-            ApplyHealthChange(-stressDamage);
-
-            // Nutrient stress affects nutrient levels and quality
-            _nutrientLevel = Mathf.Max(0f, _nutrientLevel - (stressSeverity * 0.05f * deltaTime));
-
-            if (_expressedTraits != null)
-            {
-                float nutrientImpact = 1f - (stressSeverity * 0.25f);
-                _expressedTraits.QualityMultiplier = Mathf.Max(0.1f, _expressedTraits.QualityMultiplier * nutrientImpact);
-            }
-
-            ChimeraLogger.Log($"[PlantInstance] {PlantID} nutrient stress applied - Severity: {stressSeverity:F2}, Nutrient level: {_nutrientLevel:F2}");
+            HealthSystem?.ApplyNutrientStress(stressSeverity, deltaTime);
         }
 
-        /// <summary>
-        /// Apply atmospheric stress to the plant.
-        /// </summary>
         public void ApplyAtmosphericStress(float stressSeverity, float deltaTime)
         {
-            float stressDamage = stressSeverity * 0.01f * deltaTime; // Atmospheric stress damage rate
-            ApplyHealthChange(-stressDamage);
-
-            // Atmospheric stress affects overall stress level
-            _stressLevel = Mathf.Min(1f, _stressLevel + (stressSeverity * 0.1f * deltaTime));
-
-            if (_expressedTraits != null)
-            {
-                float atmosphericImpact = 1f - (stressSeverity * 0.15f);
-                _expressedTraits.DiseaseResistance = Mathf.Max(0.1f, _expressedTraits.DiseaseResistance * atmosphericImpact);
-            }
-
-            ChimeraLogger.Log($"[PlantInstance] {PlantID} atmospheric stress applied - Severity: {stressSeverity:F2}, Stress level: {_stressLevel:F2}");
+            HealthSystem?.ApplyAtmosphericStress(stressSeverity, deltaTime);
         }
 
         /// <summary>
-        /// Make the plant sprout (transition from seed to germination)
+        /// Legacy method: Make the plant sprout (transition from seed to germination)
         /// </summary>
         public void Sprout()
         {
-            if (_currentGrowthStage == PlantGrowthStage.Seed)
-            {
-                _currentGrowthStage = PlantGrowthStage.Germination;
-                _growthProgress = 0f;
-                ChimeraLogger.Log($"[PlantInstance] {PlantID} has sprouted!");
-            }
+            GrowthSystem?.Sprout();
         }
 
-        private void Awake()
+        /// <summary>
+        /// Legacy method: Updates the plant's growth, health, and environmental responses.
+        /// </summary>
+        public void UpdatePlant(float deltaTime, float globalGrowthModifier = 1f)
         {
-
-            if (string.IsNullOrEmpty(_plantID))
-                _plantID = GenerateUniqueID();
-
-            InitializeStageThresholds();
-            InitializeSystems();
-        }
-
-        private void Start()
-        {
-
-            if (_strain != null)
+            // The base class UpdatePlantSystems handles this through the individual systems
+            // But we provide this method for legacy compatibility
+            if (IsActive && IsInitialized)
             {
-                InitializeFromStrain();
+                GrowthSystem?.ApplyGrowthRate(globalGrowthModifier, deltaTime);
             }
         }
 
         /// <summary>
-        /// Creates a new plant instance from a strain definition.
+        /// Legacy method: Updates the plant's environmental conditions.
+        /// </summary>
+        public void UpdateEnvironmentalConditions(EnvironmentalConditions newConditions)
+        {
+            EnvironmentalSystem?.UpdateEnvironmentalConditions(newConditions);
+        }
+
+        /// <summary>
+        /// Legacy method: Gets the current environmental conditions for this plant.
+        /// </summary>
+        public EnvironmentalConditions GetCurrentEnvironmentalConditions()
+        {
+            return EnvironmentalSystem?.GetCurrentEnvironmentalConditions() ?? EnvironmentalConditions.CreateIndoorDefault();
+        }
+
+        /// <summary>
+        /// Legacy method: Updates environmental adaptation for this plant based on current conditions.
+        /// </summary>
+        public void UpdateEnvironmentalAdaptation(EnvironmentalConditions conditions)
+        {
+            EnvironmentalSystem?.ProcessAdaptation(conditions, 0.01f);
+        }
+
+        /// <summary>
+        /// Legacy method: Applies stress to the plant.
+        /// </summary>
+        public bool ApplyStress(EnvironmentalStressSO stressSource, float intensity)
+        {
+            return HealthSystem?.ApplyStress(stressSource, intensity) ?? false;
+        }
+
+        /// <summary>
+        /// Legacy method: Removes a specific stress source.
+        /// </summary>
+        public void RemoveStress(EnvironmentalStressSO stressSource)
+        {
+            HealthSystem?.RemoveStress(stressSource);
+        }
+
+        /// <summary>
+        /// Legacy method: Checks if the plant has any active stressors.
+        /// </summary>
+        public bool HasActiveStressors()
+        {
+            return (HealthSystem?.ActiveStressors?.Count ?? 0) > 0;
+        }
+
+        /// <summary>
+        /// Legacy method: Harvests the plant and returns harvest results.
+        /// </summary>
+        public HarvestResults Harvest()
+        {
+            return GrowthSystem?.Harvest();
+        }
+
+        /// <summary>
+        /// Legacy method: Advances the plant to the next growth stage if conditions are met.
+        /// </summary>
+        public bool AdvanceGrowthStage()
+        {
+            return GrowthSystem?.AdvanceGrowthStage() ?? false;
+        }
+
+        /// <summary>
+        /// Legacy method: Calculates breeding value for genetic algorithms.
+        /// </summary>
+        public float CalculateBreedingValue()
+        {
+            return GeneticsSystem?.CalculateBreedingValue() ?? 0f;
+        }
+
+        /// <summary>
+        /// Legacy method: Creates a new plant instance from a strain definition.
         /// </summary>
         public static PlantInstance CreateFromStrain(object strain, Vector3 position, Transform parent = null)
         {
-            var plantObject = new GameObject($"Plant_{(strain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown"}_{GenerateShortID()}");
+            var plantObject = new GameObject($"Plant_{GetStrainNameFromObject(strain)}_{GenerateShortID()}");
             plantObject.transform.position = position;
 
             if (parent != null)
@@ -398,513 +327,116 @@ namespace ProjectChimera.Systems.Cultivation
         }
 
         /// <summary>
-        /// Creates a wrapper PlantInstance from a SpeedTree plant instance.
-        /// NOTE: SpeedTree integration commented out until proper assembly references are configured
+        /// Legacy method: Apply growth rate modification
         /// </summary>
-        /*
-        public static PlantInstance CreateFromSpeedTree(ProjectChimera.Systems.SpeedTree.SpeedTreePlantInstance speedTreeInstance)
+        public void ApplyGrowthRate(float growthRate, float deltaTime)
         {
-            if (speedTreeInstance == null)
-            {
-                ChimeraLogger.LogError("Cannot create PlantInstance from null SpeedTree instance");
-                return null;
-            }
-
-            var plantObject = new GameObject($"PlantWrapper_{speedTreeInstance.PlantId}");
-            plantObject.transform.position = speedTreeInstance.transform.position;
-            plantObject.transform.rotation = speedTreeInstance.transform.rotation;
-            plantObject.transform.SetParent(speedTreeInstance.transform.parent);
-
-            var plantInstance = plantObject.AddComponent<PlantInstance>();
-            plantInstance.InitializeFromSpeedTree(speedTreeInstance);
-
-            return plantInstance;
-        }
-        */
-
-        /// <summary>
-        /// Initializes the plant from a strain definition.
-        /// </summary>
-        public void InitializeFromStrain(object strain = null)
-        {
-            if (strain != null)
-                _strain = strain;
-
-            if (_strain == null)
-            {
-                ChimeraLogger.LogError($"Cannot initialize plant {_plantID}: no strain assigned");
-                return;
-            }
-
-            _plantName = $"{(_strain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown"}_{GenerateShortID()}";
-            _plantedDate = DateTime.Now;
-            _currentGrowthStage = PlantGrowthStage.Seed;
-            _growthProgress = 0f;
-            _overallGrowthProgress = 0f;
-            _daysSincePlanted = 0;
-
-            // Initialize health based on strain genetics
-            _maxHealth = 1.0f; // Base health - could be modified by strain genetics in future
-            _currentHealth = _maxHealth;
-            _diseaseResistance = 1.0f; // TODO: Add DiseaseResistanceModifier when strain structure is available
-
-            // Initialize phenotypic traits from genetics
-            InitializePhenotypicTraits();
-
-            // Initialize growth systems
-            _growthCalculator?.Initialize(_strain, _expressedTraits);
-            _healthSystem?.Initialize(_strain, _diseaseResistance);
-            _environmentalSystem?.Initialize(_strain);
-
-            ChimeraLogger.Log($"[PlantInstance] Initialized plant {_plantID} from strain {(_strain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown"}");
+            GrowthSystem?.ApplyGrowthRate(growthRate, deltaTime);
         }
 
         /// <summary>
-        /// Initializes the plant from a SpeedTree plant instance.
-        /// NOTE: SpeedTree integration commented out until proper assembly references are configured
+        /// Legacy method: Set current health value
         /// </summary>
-        /*
-        public void InitializeFromSpeedTree(ProjectChimera.Systems.SpeedTree.SpeedTreePlantInstance speedTreeInstance)
+        public void SetCurrentHealth(float health)
         {
-            if (speedTreeInstance == null)
-            {
-                ChimeraLogger.LogError($"Cannot initialize plant {_plantID}: null SpeedTree instance");
-                return;
-            }
-
-            _plantID = speedTreeInstance.PlantId;
-            _strain = speedTreeInstance.PlantStrain;
-            _plantName = speedTreeInstance.PlantId;
-            _plantedDate = speedTreeInstance.PlantedDate;
-            _currentGrowthStage = (PlantGrowthStage)speedTreeInstance.CurrentGrowthStage;
-            _growthProgress = speedTreeInstance.MaturityLevel;
-            _overallGrowthProgress = speedTreeInstance.MaturityLevel;
-            _daysSincePlanted = (int)(DateTime.Now - speedTreeInstance.PlantedDate).TotalDays;
-
-            // Map SpeedTree health values
-            _maxHealth = 1.0f;
-            _currentHealth = speedTreeInstance.Health / 100f; // Convert from 0-100 to 0-1
-            _stressLevel = speedTreeInstance.StressLevel / 100f; // Convert from 0-100 to 0-1
-            _diseaseResistance = speedTreeInstance.DiseaseResistance / 100f; // Convert from 0-100 to 0-1
-
-            // Initialize systems if strain is available
-            if (_strain != null)
-            {
-                InitializePhenotypicTraits();
-                _growthCalculator?.Initialize(_strain, _expressedTraits);
-                _healthSystem?.Initialize(_strain, _diseaseResistance);
-                _environmentalSystem?.Initialize(_strain);
-            }
-
-            LogInfo($"Initialized wrapper plant {_plantID} from SpeedTree instance");
-        }
-        */
-
-        /// <summary>
-        /// Updates the plant's growth, health, and environmental responses.
-        /// </summary>
-        public void UpdatePlant(float deltaTime, float globalGrowthModifier = 1f)
-        {
-            if (!_isActive || _currentHealth <= 0f)
-                return;
-
-            // Update environmental responses
-            _environmentalSystem?.UpdateEnvironmentalResponse(_currentEnvironment, deltaTime);
-            _environmentalFitness = _environmentalSystem?.GetEnvironmentalFitness() ?? 1f;
-
-            // Update health system
-            _healthSystem?.UpdateHealth(deltaTime, _activeStressors, _environmentalFitness);
-            UpdateHealthValues();
-
-            // Update growth if plant is healthy enough
-            if (_currentHealth > 0.1f)
-            {
-                UpdateGrowth(deltaTime, globalGrowthModifier);
-            }
-
-            // Update phenotypic expression based on environment
-            UpdatePhenotypicExpression();
-
-            // Update visual representation
-            UpdateVisualRepresentation();
-
-            // Check for death
-            if (_currentHealth <= 0f && _isActive)
-            {
-                HandlePlantDeath();
-            }
+            HealthSystem?.SetCurrentHealth(health);
         }
 
         /// <summary>
-        /// Updates the plant's environmental conditions.
+        /// Legacy method: Set environmental fitness value
         /// </summary>
-        public void UpdateEnvironmentalConditions(EnvironmentalConditions newConditions)
+        public void SetEnvironmentalFitness(float fitness)
         {
-            var previousConditions = _currentEnvironment;
-            _currentEnvironment = newConditions;
-
-            // Notify environmental response system
-            if (_environmentalSystem != null)
-            {
-                _environmentalSystem.ProcessEnvironmentalChange(previousConditions, newConditions);
-            }
-
-            OnEnvironmentChanged?.Invoke(this);
+            EnvironmentalSystem?.SetEnvironmentalFitness(fitness);
         }
 
         /// <summary>
-        /// Gets the current environmental conditions for this plant.
+        /// Get strain name from strain object
         /// </summary>
-        public EnvironmentalConditions GetCurrentEnvironmentalConditions()
+        protected static string GetStrainNameFromObject(object strain)
         {
-            // Return cached environment if valid (struct cannot be null)
-            if (_currentEnvironment.IsInitialized())
-            {
-                return _currentEnvironment;
-            }
-
-            // Try to get environment from environmental manager via GameManager
-            var gameManager = ProjectChimera.Core.GameManager.Instance;
-            if (gameManager != null)
-            {
-                // var environmentManager = gameManager.GetManager<EnvironmentManager>(); // EnvironmentManager not available
-                // if (environmentManager != null) // EnvironmentManager not available
-                {
-                    // Use the specific method that returns the correct type
-                    // return environmentManager.GetCultivationConditions(transform.position); // EnvironmentManager not available
-                }
-            }
-
-            // Fallback to default indoor conditions
-            return EnvironmentalConditions.CreateIndoorDefault();
+            return (strain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown";
         }
 
         /// <summary>
-        /// Updates environmental adaptation for this plant based on current conditions.
+        /// Generate short ID for plant naming
         /// </summary>
-        public void UpdateEnvironmentalAdaptation(EnvironmentalConditions conditions)
-        {
-            // Update environmental conditions first
-            UpdateEnvironmentalConditions(conditions);
-
-            // Calculate adaptation progress based on environmental fitness
-            var adaptationRate = 0.01f; // Base adaptation rate
-            var environmentalStress = 1f - _environmentalFitness;
-
-            // Increase adaptation rate under stress
-            if (environmentalStress > 0.3f)
-            {
-                adaptationRate *= (1f + environmentalStress);
-            }
-
-            // Apply adaptation to environmental system
-            _environmentalSystem?.ProcessAdaptation(conditions, adaptationRate);
-
-                ChimeraLogger.Log($"[PlantInstance] Updated environmental adaptation for plant {_plantID} (fitness: {_environmentalFitness:F2})");
-        }
-
-        /// <summary>
-        /// Applies stress to the plant.
-        /// </summary>
-        public bool ApplyStress(EnvironmentalStressSO stressSource, float intensity)
-        {
-            if (stressSource == null || intensity <= 0f)
-                return false;
-
-            var stressor = new ActiveStressor
-            {
-                StressSource = stressSource,
-                Intensity = intensity,
-                StartTime = Time.time,
-                IsActive = true
-            };
-
-            _activeStressors.Add(stressor);
-            UpdateStressLevel();
-
-            ChimeraLogger.Log($"[PlantInstance] Applied stress '{stressSource.StressName}' to plant {_plantID} (Intensity: {intensity:F2})");
-            return true;
-        }
-
-        /// <summary>
-        /// Removes a specific stress source.
-        /// </summary>
-        public void RemoveStress(EnvironmentalStressSO stressSource)
-        {
-            _activeStressors.RemoveAll(s => s.StressSource == stressSource);
-            UpdateStressLevel();
-        }
-
-        /// <summary>
-        /// Checks if the plant has any active stressors.
-        /// </summary>
-        public bool HasActiveStressors()
-        {
-            return _activeStressors.Count > 0;
-        }
-
-        /// <summary>
-        /// Harvests the plant and returns harvest results.
-        /// </summary>
-        public HarvestResults Harvest()
-        {
-            if (_currentGrowthStage != PlantGrowthStage.Harvest)
-            {
-                ChimeraLogger.LogWarning($"[PlantInstance] Plant {_plantID} is not ready for harvest");
-                return null;
-            }
-
-            var results = _growthCalculator?.CalculateHarvestResults(_currentHealth, _qualityPotential, _expressedTraits, _environmentalFitness, TotalDaysGrown);
-            _isActive = false;
-
-            ChimeraLogger.Log($"[PlantInstance] Harvested plant {_plantID}: {results?.TotalYield ?? 0}g");
-            return results;
-        }
-
-        /// <summary>
-        /// Advances the plant to the next growth stage if conditions are met.
-        /// </summary>
-        public bool AdvanceGrowthStage()
-        {
-            if (_currentGrowthStage == PlantGrowthStage.Harvest)
-                return false;
-
-            var nextStage = (PlantGrowthStage)((int)_currentGrowthStage + 1);
-
-            if (CanAdvanceToStage(nextStage))
-            {
-                _currentGrowthStage = nextStage;
-                _growthProgress = 0f;
-
-                OnGrowthStageChanged?.Invoke(this);
-                ChimeraLogger.Log($"[PlantInstance] Plant {_plantID} advanced to {_currentGrowthStage}");
-
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Calculates breeding value for genetic algorithms.
-        /// </summary>
-        public float CalculateBreedingValue()
-        {
-            float value = 0f;
-
-            // Base on expressed traits
-            value += _expressedTraits.YieldMultiplier * 0.3f;
-            value += _expressedTraits.QualityMultiplier * 0.3f;
-            value += _expressedTraits.PotencyMultiplier * 0.2f;
-            value += _maxHealth * 0.1f;
-            value += _diseaseResistance * 0.1f;
-
-            return Mathf.Clamp01(value);
-        }
-
-        private void InitializeStageThresholds()
-        {
-            _stageProgressThresholds = new Dictionary<PlantGrowthStage, float>
-            {
-                { PlantGrowthStage.Seed, 0.05f },
-                { PlantGrowthStage.Germination, 0.1f },
-                { PlantGrowthStage.Seedling, 0.2f },
-                { PlantGrowthStage.Vegetative, 0.6f },
-                { PlantGrowthStage.Flowering, 0.9f },
-                { PlantGrowthStage.Harvest, 1.0f }
-            };
-        }
-
-        private void InitializeSystems()
-        {
-            _growthCalculator = new PlantGrowthCalculator();
-            _healthSystem = new PlantHealthSystem();
-            _environmentalSystem = new EnvironmentalResponseSystem();
-        }
-
-        private void InitializePhenotypicTraits()
-        {
-            if (_strain == null)
-                return;
-
-            _expressedTraits = new PhenotypicTraits
-            {
-                YieldMultiplier = ((_strain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.BaseYieldGrams ?? 100f) / 100f + UnityEngine.Random.Range(-0.1f, 0.1f), // Convert grams to multiplier
-                QualityMultiplier = 1f + UnityEngine.Random.Range(-0.1f, 0.1f), // TODO: Add BaseQualityModifier when available
-                PotencyMultiplier = 1f + UnityEngine.Random.Range(-0.1f, 0.1f), // TODO: Add BasePotencyModifier when available
-                FloweringTime = (int)(60f + UnityEngine.Random.Range(-5, 5)), // TODO: Add BaseFloweringTime when available
-                PlantHeight = 1f + UnityEngine.Random.Range(-0.2f, 0.2f) // TODO: Add BaseHeight when available
-            };
-
-            _yieldPotential = _expressedTraits.YieldMultiplier;
-            _qualityPotential = _expressedTraits.QualityMultiplier;
-        }
-
-        private void UpdateGrowth(float deltaTime, float globalGrowthModifier)
-        {
-            var growthRate = _growthCalculator?.CalculateGrowthRate(
-                _currentGrowthStage,
-                _environmentalFitness,
-                _currentHealth,
-                globalGrowthModifier
-            ) ?? 0f;
-
-            var timeManager = GameManager.Instance?.GetManager<TimeManager>();
-            var gameTime = timeManager?.GetScaledDeltaTime() ?? deltaTime;
-
-            _growthProgress += growthRate * gameTime;
-            _overallGrowthProgress = CalculateOverallProgress();
-
-            // Update plant size based on growth
-            UpdatePlantSize();
-
-            // Check for stage advancement
-            if (_growthProgress >= 1f)
-            {
-                AdvanceGrowthStage();
-            }
-        }
-
-        private void UpdateHealthValues()
-        {
-            var previousHealth = _currentHealth;
-
-            _currentHealth = _healthSystem?.GetCurrentHealth() ?? _currentHealth;
-            _stressLevel = _healthSystem?.GetStressLevel() ?? _stressLevel;
-
-            if (Mathf.Abs(_currentHealth - previousHealth) > 0.01f)
-            {
-                OnHealthChanged?.Invoke(this);
-            }
-        }
-
-        private void UpdateStressLevel()
-        {
-            _stressLevel = 0f;
-            foreach (var stressor in _activeStressors)
-            {
-                if (stressor.IsActive)
-                {
-                    float stressMultiplier = 1f;
-
-                    // Try to get stress multiplier from different possible types
-                    if (stressor.StressSource is ProjectChimera.Data.Simulation.EnvironmentalStressSO environmentalStress)
-                    {
-                        stressMultiplier = environmentalStress.StressMultiplier;
-                    }
-                    else if (stressor.StressSource is StressFactor stressFactor)
-                    {
-                        stressMultiplier = stressFactor.StressMultiplier;
-                    }
-
-                    _stressLevel += stressor.Intensity * stressMultiplier;
-                }
-            }
-
-            _stressLevel = Mathf.Clamp01(_stressLevel);
-        }
-
-        private void UpdatePhenotypicExpression()
-        {
-            // Environmental factors affect trait expression
-            if (_environmentalFitness < 0.7f)
-            {
-                _yieldPotential = _expressedTraits.YieldMultiplier * _environmentalFitness;
-                _qualityPotential = _expressedTraits.QualityMultiplier * Mathf.Sqrt(_environmentalFitness);
-            }
-            else
-            {
-                _yieldPotential = _expressedTraits.YieldMultiplier;
-                _qualityPotential = _expressedTraits.QualityMultiplier;
-            }
-        }
-
-        private void UpdatePlantSize()
-        {
-            var baseSize = 1f; // TODO: Add BaseHeight when available in strain data
-            var sizeMultiplier = _expressedTraits.PlantHeight * _overallGrowthProgress;
-
-            _plantSize = Vector3.one * (baseSize * sizeMultiplier);
-            transform.localScale = _plantSize;
-        }
-
-        private void UpdateVisualRepresentation()
-        {
-            // Update visual elements based on growth stage and health
-            // This would interface with rendering components
-        }
-
-        private float CalculateOverallProgress()
-        {
-            float stageWeight = _stageProgressThresholds[_currentGrowthStage];
-            float previousStagesWeight = 0f;
-
-            foreach (var stage in _stageProgressThresholds)
-            {
-                if ((int)stage.Key < (int)_currentGrowthStage)
-                    previousStagesWeight += stage.Value;
-            }
-
-            return previousStagesWeight + (stageWeight * _growthProgress);
-        }
-
-        private bool CanAdvanceToStage(PlantGrowthStage targetStage)
-        {
-            // Add stage-specific advancement requirements here
-            return _currentHealth > 0.3f && _growthProgress >= 1f;
-        }
-
-        private void HandlePlantDeath()
-        {
-            _isActive = false;
-            ChimeraLogger.Log($"[PlantInstance] Plant {_plantID} died (Health: {_currentHealth:F2})");
-            OnPlantDied?.Invoke(this);
-        }
-
-        private static string GenerateUniqueID()
-        {
-            return $"PLANT_{DateTime.Now.Ticks:X}_{UnityEngine.Random.Range(1000, 9999)}";
-        }
-
-        private static string GenerateShortID()
+        protected static string GenerateShortID()
         {
             return UnityEngine.Random.Range(1000, 9999).ToString();
         }
 
         /// <summary>
-        /// Apply growth rate modification
+        /// Get comprehensive plant metrics from all systems
         /// </summary>
-        public void ApplyGrowthRate(float growthRate, float deltaTime)
+        public PlantInstanceMetrics GetComprehensivePlantMetrics()
         {
-            _growthProgress += growthRate * deltaTime;
-            _overallGrowthProgress = Mathf.Clamp01(_overallGrowthProgress + (growthRate * deltaTime * 0.1f));
+            var baseMetrics = GetPlantMetrics();
+            
+            return new PlantInstanceMetrics
+            {
+                PlantID = baseMetrics.PlantID,
+                PlantName = baseMetrics.PlantName,
+                IsActive = baseMetrics.IsActive,
+                IsInitialized = baseMetrics.IsInitialized,
+                InitializationTime = baseMetrics.InitializationTime,
+                DaysSincePlanted = baseMetrics.DaysSincePlanted,
+                SystemCount = baseMetrics.SystemCount,
+                GrowthSystemActive = baseMetrics.GrowthSystemActive,
+                HealthSystemActive = baseMetrics.HealthSystemActive,
+                EnvironmentalSystemActive = baseMetrics.EnvironmentalSystemActive,
+                GeneticsSystemActive = baseMetrics.GeneticsSystemActive,
+                VisualizationSystemActive = baseMetrics.VisualizationSystemActive,
+                
+                // Additional metrics from individual systems
+                GrowthMetrics = GrowthSystem?.GetGrowthMetrics(),
+                HealthMetrics = HealthSystem?.GetHealthMetrics(),
+                EnvironmentalMetrics = EnvironmentalSystem?.GetEnvironmentalMetrics(),
+                GeneticsMetrics = GeneticsSystem?.GetGeneticsMetrics(),
+                VisualizationMetrics = VisualizationSystem?.GetVisualizationMetrics()
+            };
         }
 
+        #if UNITY_EDITOR
         /// <summary>
-        /// Set current health value
+        /// Editor-only method for testing plant instance
         /// </summary>
-        public void SetCurrentHealth(float health)
+        [UnityEngine.ContextMenu("Test Plant Instance")]
+        private void TestPlantInstance()
         {
-            _currentHealth = Mathf.Clamp01(health);
+            if (UnityEngine.Application.isPlaying)
+            {
+                LogPlantAction("Testing plant instance...");
+                LogPlantAction($"Plant ID: {PlantID}");
+                LogPlantAction($"Strain: {StrainName}");
+                LogPlantAction($"Growth Stage: {CurrentGrowthStage}");
+                LogPlantAction($"Health: {CurrentHealth:F2}");
+                LogPlantAction($"Environmental Fitness: {EnvironmentalFitness:F2}");
+                LogPlantAction($"Systems Active: G:{(GrowthSystem != null ? "Y" : "N")} H:{(HealthSystem != null ? "Y" : "N")} E:{(EnvironmentalSystem != null ? "Y" : "N")} G:{(GeneticsSystem != null ? "Y" : "N")} V:{(VisualizationSystem != null ? "Y" : "N")}");
+            }
+            else
+            {
+                ChimeraLogger.Log("[PlantInstance] Test only works during play mode");
+            }
         }
+        #endif
 
         /// <summary>
-        /// Set environmental fitness value
+        /// Extended plant instance metrics data structure
         /// </summary>
-        public void SetEnvironmentalFitness(float fitness)
+        public new class PlantInstanceMetrics : PlantInstanceCore.PlantInstanceMetrics
         {
-            _environmentalFitness = Mathf.Clamp01(fitness);
+            public PlantGrowthSystem.PlantGrowthMetrics GrowthMetrics;
+            public PlantHealthSystem.PlantHealthMetrics HealthMetrics;
+            public PlantEnvironmentalSystem.PlantEnvironmentalMetrics EnvironmentalMetrics;
+            public PlantGeneticsSystem.PlantGeneticsMetrics GeneticsMetrics;
+            public PlantVisualizationSystem.PlantVisualizationMetrics VisualizationMetrics;
         }
-
-        /// <summary>
-        /// Get total days grown (property for TotalDaysGrown)
-        /// </summary>
-        public int TotalDaysGrown => _daysSincePlanted;
     }
-
 
     /// <summary>
     /// GxE response data for environmental interactions.
+    /// Maintained for legacy compatibility.
     /// </summary>
     [System.Serializable]
     public class GxEResponseData
@@ -915,6 +447,4 @@ namespace ProjectChimera.Systems.Cultivation
         public float NutrientResponse = 1f;
         public float CO2Response = 1f;
     }
-
-    // Note: HarvestResults moved to IPlantService.cs to avoid namespace conflicts
 }

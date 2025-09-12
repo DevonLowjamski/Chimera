@@ -1,0 +1,459 @@
+using UnityEngine;
+using ProjectChimera.Shared;
+using ProjectChimera.Data.Shared;
+using System;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.Cultivation.IPM
+{
+    /// <summary>
+    /// Specialized module for managing beneficial organisms in IPM systems.
+    /// Handles predator mites, parasitic wasps, and other biological control agents.
+    /// </summary>
+    public static class BeneficialOrganisms
+    {
+        /// <summary>
+        /// Default beneficial organisms configuration for cannabis cultivation
+        /// </summary>
+        public static readonly BeneficialOrganism[] DefaultBeneficials = new BeneficialOrganism[]
+        {
+            new BeneficialOrganism
+            {
+                OrganismName = "Phytoseiulus persimilis",
+                ScientificName = "Phytoseiulus persimilis",
+                OrganismType = BeneficialType.Predator,
+                TargetPests = new[] { "Spider mites" },
+                OptimalTemperature = new Vector2(20f, 28f),
+                OptimalHumidity = new Vector2(60f, 80f),
+                OptimalPhotoperiod = new Vector2(12f, 16f),
+                ReleaseRate = 2f,
+                EstablishmentTime = 7f,
+                LifeCycle = 21f,
+                ReproductionRate = 2f,
+                EffectivenessRating = 0.9f,
+                CostPerUnit = 0.5f,
+                RequiresRepeatedReleases = false,
+                ToleratedTemperatureRange = 5f,
+                SpecialRequirements = "Requires adequate prey population for establishment"
+            },
+            new BeneficialOrganism
+            {
+                OrganismName = "Amblyseius californicus",
+                ScientificName = "Neoseiulus californicus",
+                OrganismType = BeneficialType.Predator,
+                TargetPests = new[] { "Thrips", "Spider mites" },
+                OptimalTemperature = new Vector2(18f, 30f),
+                OptimalHumidity = new Vector2(50f, 90f),
+                OptimalPhotoperiod = new Vector2(10f, 18f),
+                ReleaseRate = 5f,
+                EstablishmentTime = 10f,
+                LifeCycle = 28f,
+                ReproductionRate = 3f,
+                EffectivenessRating = 0.85f,
+                CostPerUnit = 0.3f,
+                RequiresRepeatedReleases = false,
+                ToleratedTemperatureRange = 8f,
+                SpecialRequirements = "Tolerates lower humidity, good for drier climates"
+            },
+            new BeneficialOrganism
+            {
+                OrganismName = "Orius insidiosus",
+                ScientificName = "Orius insidiosus",
+                OrganismType = BeneficialType.Predator,
+                TargetPests = new[] { "Thrips", "Aphids" },
+                OptimalTemperature = new Vector2(22f, 28f),
+                OptimalHumidity = new Vector2(65f, 85f),
+                OptimalPhotoperiod = new Vector2(14f, 16f),
+                ReleaseRate = 1f,
+                EstablishmentTime = 14f,
+                LifeCycle = 35f,
+                ReproductionRate = 4f,
+                EffectivenessRating = 0.8f,
+                CostPerUnit = 0.8f,
+                RequiresRepeatedReleases = true,
+                ToleratedTemperatureRange = 6f,
+                SpecialRequirements = "Requires pollen for reproduction in thrips control"
+            },
+            new BeneficialOrganism
+            {
+                OrganismName = "Hypoaspis miles",
+                ScientificName = "Stratiolaelaps scimitus",
+                OrganismType = BeneficialType.Predator,
+                TargetPests = new[] { "Fungus gnats", "Thrips pupae" },
+                OptimalTemperature = new Vector2(15f, 25f),
+                OptimalHumidity = new Vector2(70f, 95f),
+                OptimalPhotoperiod = new Vector2(8f, 20f),
+                ReleaseRate = 250f,
+                EstablishmentTime = 21f,
+                LifeCycle = 42f,
+                ReproductionRate = 5f,
+                EffectivenessRating = 0.75f,
+                CostPerUnit = 0.1f,
+                RequiresRepeatedReleases = false,
+                ToleratedTemperatureRange = 7f,
+                SpecialRequirements = "Soil-dwelling predator, excellent for root pest control"
+            }
+        };
+
+        /// <summary>
+        /// Selects the most appropriate beneficial organisms for a given pest and environment
+        /// </summary>
+        public static BeneficialOrganism[] SelectBeneficialOrganisms(
+            PestType targetPest,
+            EnvironmentalConditions environment,
+            BeneficialOrganism[] availableBeneficials = null)
+        {
+            var beneficials = availableBeneficials ?? DefaultBeneficials;
+            var selected = new List<BeneficialOrganism>();
+
+            foreach (var beneficial in beneficials)
+            {
+                // Check if beneficial targets the pest
+                bool targetsPest = false;
+                foreach (var target in beneficial.TargetPests)
+                {
+                    if (target.Contains(targetPest.ToString().Replace("_", " ")))
+                    {
+                        targetsPest = true;
+                        break;
+                    }
+                }
+
+                if (!targetsPest) continue;
+
+                // Check environmental compatibility
+                if (IsEnvironmentallyCompatible(beneficial, environment))
+                {
+                    selected.Add(beneficial);
+                }
+            }
+
+            return selected.ToArray();
+        }
+
+        /// <summary>
+        /// Calculates optimal release strategy for beneficial organisms
+        /// </summary>
+        public static ReleaseStrategy CalculateReleaseStrategy(
+            BeneficialOrganism beneficial,
+            CultivationZoneSO zone,
+            float pestPressureLevel)
+        {
+            var strategy = new ReleaseStrategy
+            {
+                ReleaseDate = DateTime.Now,
+                Quantity = beneficial.ReleaseRate * zone?.Area ?? 10f,
+                ReleaseLocations = new[] { "Lower canopy", "Upper canopy", "Soil level" },
+                Frequency = beneficial.RequiresRepeatedReleases ? ReleaseFrequency.Weekly : ReleaseFrequency.Single,
+                MonitoringDays = beneficial.EstablishmentTime
+            };
+
+            // Adjust quantity based on pest pressure
+            if (pestPressureLevel > 1f)
+            {
+                strategy.Quantity *= pestPressureLevel;
+            }
+
+            return strategy;
+        }
+
+        /// <summary>
+        /// Assesses the current population and effectiveness of beneficial organisms
+        /// </summary>
+        public static BeneficialOrganismStatus[] AssessBeneficialOrganisms(
+            CultivationZoneSO zone,
+            EnvironmentalConditions environment,
+            BeneficialOrganism[] activeBeneficials)
+        {
+            var statuses = new List<BeneficialOrganismStatus>();
+
+            foreach (var beneficial in activeBeneficials)
+            {
+                var status = new BeneficialOrganismStatus
+                {
+                    OrganismName = beneficial.OrganismName,
+                    OrganismType = beneficial.OrganismType,
+                    Population = EstimatePopulation(beneficial, zone, environment),
+                    Effectiveness = CalculateEffectiveness(beneficial, environment),
+                    EstablishmentProgress = CalculateEstablishmentProgress(beneficial, zone),
+                    LastAssessment = DateTime.Now
+                };
+
+                statuses.Add(status);
+            }
+
+            return statuses.ToArray();
+        }
+
+        /// <summary>
+        /// Determines environmental modifications needed for beneficial organism success
+        /// </summary>
+        public static EnvironmentalModification[] CalculateEnvironmentalModifications(
+            BeneficialOrganism beneficial,
+            EnvironmentalConditions currentConditions)
+        {
+            var modifications = new List<EnvironmentalModification>();
+
+            // Temperature modifications
+            if (currentConditions.Temperature < beneficial.OptimalTemperature.x)
+            {
+                modifications.Add(new EnvironmentalModification
+                {
+                    Parameter = "Temperature",
+                    TargetValue = beneficial.OptimalTemperature.x,
+                    Justification = $"Increase temperature to support {beneficial.OrganismName} establishment",
+                    Priority = ModificationPriority.High,
+                    TimeToImplement = 2f
+                });
+            }
+            else if (currentConditions.Temperature > beneficial.OptimalTemperature.y)
+            {
+                modifications.Add(new EnvironmentalModification
+                {
+                    Parameter = "Temperature",
+                    TargetValue = beneficial.OptimalTemperature.y,
+                    Justification = $"Decrease temperature to support {beneficial.OrganismName} establishment",
+                    Priority = ModificationPriority.High,
+                    TimeToImplement = 2f
+                });
+            }
+
+            // Humidity modifications
+            if (currentConditions.Humidity < beneficial.OptimalHumidity.x)
+            {
+                modifications.Add(new EnvironmentalModification
+                {
+                    Parameter = "Humidity",
+                    TargetValue = beneficial.OptimalHumidity.x,
+                    Justification = $"Increase humidity to support {beneficial.OrganismName} establishment",
+                    Priority = ModificationPriority.Medium,
+                    TimeToImplement = 1f
+                });
+            }
+            else if (currentConditions.Humidity > beneficial.OptimalHumidity.y)
+            {
+                modifications.Add(new EnvironmentalModification
+                {
+                    Parameter = "Humidity",
+                    TargetValue = beneficial.OptimalHumidity.y,
+                    Justification = $"Decrease humidity to support {beneficial.OrganismName} establishment",
+                    Priority = ModificationPriority.Medium,
+                    TimeToImplement = 1f
+                });
+            }
+
+            return modifications.ToArray();
+        }
+
+        /// <summary>
+        /// Creates monitoring plan for beneficial organism establishment and effectiveness
+        /// </summary>
+        public static BiologicalMonitoringPlan CreateBiologicalMonitoringPlan(
+            BeneficialOrganism beneficial,
+            PestType targetPest)
+        {
+            return new BiologicalMonitoringPlan
+            {
+                MonitoringMethods = new[]
+                {
+                    "Visual inspection of release sites",
+                    "Sticky traps for population monitoring",
+                    "Pest population assessment",
+                    "Predatory activity observation"
+                },
+                MonitoringFrequency = beneficial.EstablishmentTime > 14f ? 7f : 3f, // days
+                TargetPest = targetPest,
+                SuccessMetrics = new[]
+                {
+                    "Beneficial population establishment",
+                    "Pest population reduction",
+                    "Predatory activity evidence"
+                },
+                Duration = beneficial.LifeCycle * 2f
+            };
+        }
+
+        /// <summary>
+        /// Calculates success probability for biological control implementation
+        /// </summary>
+        public static float CalculateBiologicalControlSuccessProbability(
+            BeneficialOrganism beneficial,
+            EnvironmentalConditions environment,
+            float pestPressureLevel)
+        {
+            float baseProbability = beneficial.EffectivenessRating;
+            float environmentalModifier = CalculateEnvironmentalCompatibilityScore(beneficial, environment);
+            float pestPressureModifier = Mathf.Clamp(pestPressureLevel, 0.5f, 2f);
+
+            return baseProbability * environmentalModifier * pestPressureModifier;
+        }
+
+        /// <summary>
+        /// Estimates cost for beneficial organism release and maintenance
+        /// </summary>
+        public static float CalculateBiologicalControlCosts(
+            BeneficialOrganism beneficial,
+            CultivationZoneSO zone,
+            float quantity)
+        {
+            float baseCost = beneficial.CostPerUnit * quantity;
+
+            // Add establishment and monitoring costs
+            float establishmentCost = baseCost * 0.2f; // 20% for establishment support
+            float monitoringCost = baseCost * 0.1f; // 10% for monitoring
+
+            return baseCost + establishmentCost + monitoringCost;
+        }
+
+        /// <summary>
+        /// Creates timeline for biological control implementation
+        /// </summary>
+        public static BiologicalControlTimeline CalculateBiologicalControlTimeline(
+            BeneficialOrganism beneficial)
+        {
+            var timeline = new BiologicalControlTimeline
+            {
+                MilestoneDates = new DateTime[]
+                {
+                    DateTime.Now, // Initial release
+                    DateTime.Now.AddDays(beneficial.EstablishmentTime), // Establishment check
+                    DateTime.Now.AddDays(beneficial.EstablishmentTime + 7f), // First effectiveness assessment
+                    DateTime.Now.AddDays(beneficial.LifeCycle) // Full cycle completion
+                },
+                MilestoneDescriptions = new[]
+                {
+                    $"Initial release of {beneficial.OrganismName}",
+                    $"Establishment assessment for {beneficial.OrganismName}",
+                    $"Effectiveness evaluation of {beneficial.OrganismName}",
+                    $"Full lifecycle completion for {beneficial.OrganismName}"
+                },
+                ExpectedDuration = beneficial.LifeCycle,
+                CriticalPathItems = new[]
+                {
+                    "Beneficial release",
+                    "Environmental optimization",
+                    "Population establishment"
+                }
+            };
+
+            return timeline;
+        }
+
+        // Private helper methods
+        private static bool IsEnvironmentallyCompatible(BeneficialOrganism beneficial, EnvironmentalConditions environment)
+        {
+            bool tempCompatible = environment.Temperature >= beneficial.OptimalTemperature.x - beneficial.ToleratedTemperatureRange &&
+                                 environment.Temperature <= beneficial.OptimalTemperature.y + beneficial.ToleratedTemperatureRange;
+
+            bool humidityCompatible = environment.Humidity >= beneficial.OptimalHumidity.x &&
+                                     environment.Humidity <= beneficial.OptimalHumidity.y;
+
+            return tempCompatible && humidityCompatible;
+        }
+
+        private static float EstimatePopulation(BeneficialOrganism beneficial, CultivationZoneSO zone, EnvironmentalConditions environment)
+        {
+            // Simplified population estimation based on environmental conditions
+            float environmentalScore = CalculateEnvironmentalCompatibilityScore(beneficial, environment);
+            float area = zone?.Area ?? 10f;
+            float basePopulation = beneficial.ReleaseRate * area;
+
+            return basePopulation * environmentalScore;
+        }
+
+        private static float CalculateEffectiveness(BeneficialOrganism beneficial, EnvironmentalConditions environment)
+        {
+            float environmentalScore = CalculateEnvironmentalCompatibilityScore(beneficial, environment);
+            return beneficial.EffectivenessRating * environmentalScore;
+        }
+
+        private static float CalculateEstablishmentProgress(BeneficialOrganism beneficial, CultivationZoneSO zone)
+        {
+            // Simplified establishment progress calculation
+            // In a full implementation, this would track actual release dates and monitoring data
+            return 0.5f; // Placeholder - would be calculated from actual data
+        }
+
+        private static float CalculateEnvironmentalCompatibilityScore(BeneficialOrganism beneficial, EnvironmentalConditions environment)
+        {
+            float tempScore = Mathf.Clamp01(1f - Mathf.Abs(environment.Temperature -
+                (beneficial.OptimalTemperature.x + beneficial.OptimalTemperature.y) * 0.5f) / beneficial.ToleratedTemperatureRange);
+
+            float humidityScore = Mathf.Clamp01(1f - Mathf.Abs(environment.Humidity -
+                (beneficial.OptimalHumidity.x + beneficial.OptimalHumidity.y) * 0.5f) / 20f);
+
+            return (tempScore + humidityScore) * 0.5f;
+        }
+    }
+
+    // BeneficialOrganism class is defined in BeneficialOrganism.cs to avoid duplication
+
+    public class BeneficialOrganismStatus
+    {
+        public string OrganismName;
+        public BeneficialType OrganismType;
+        public float Population;
+        public float Effectiveness;
+        public float EstablishmentProgress;
+        public DateTime LastAssessment;
+        public string[] LimitingFactors;
+    }
+
+    public class ReleaseStrategy
+    {
+        public DateTime ReleaseDate;
+        public float Quantity;
+        public string[] ReleaseLocations;
+        public ReleaseFrequency Frequency;
+        public float MonitoringDays;
+        public string[] SpecialInstructions;
+    }
+
+    public class BiologicalMonitoringPlan
+    {
+        public string[] MonitoringMethods;
+        public float MonitoringFrequency;
+        public PestType TargetPest;
+        public string[] SuccessMetrics;
+        public float Duration;
+        public string[] EquipmentNeeded;
+    }
+
+    public class BiologicalControlTimeline
+    {
+        public DateTime[] MilestoneDates;
+        public string[] MilestoneDescriptions;
+        public float ExpectedDuration;
+        public string[] CriticalPathItems;
+        public string[] Dependencies;
+    }
+
+    public class EnvironmentalModification
+    {
+        public string Parameter;
+        public float TargetValue;
+        public string Justification;
+        public ModificationPriority Priority;
+        public float TimeToImplement;
+        public string[] ImplementationSteps;
+    }
+
+    // BeneficialType enum moved to IPMEnums.cs to avoid duplicates
+
+    public enum ReleaseFrequency
+    {
+        Single,
+        Daily,
+        Weekly,
+        BiWeekly,
+        Monthly
+    }
+
+    public enum ModificationPriority
+    {
+        Low,
+        Medium,
+        High,
+        Critical
+    }
+}

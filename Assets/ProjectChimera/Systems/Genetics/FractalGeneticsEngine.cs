@@ -1,580 +1,262 @@
 using UnityEngine;
-#if UNITY_ADDRESSABLES
-using UnityEngine.AddressableAssets;
-#endif
-using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using ProjectChimera.Core.Logging;
-using ProjectChimera.Data.Genetics;
 
 namespace ProjectChimera.Systems.Genetics
 {
     /// <summary>
-    /// Phase 2.1.1: Fractal Mathematics Engine for Plant Genetics
-    /// Implements fractal-based trait inheritance and expression patterns for 95% biological accuracy
-    /// Uses mathematical fractals to model genetic complexity and emergent phenotypic traits
+    /// BASIC: Simple genetics calculations for Project Chimera.
+    /// Focuses on essential genetic operations without complex fractal mathematics.
     /// </summary>
     public class FractalGeneticsEngine : MonoBehaviour
     {
-        #region Configuration
+        [Header("Basic Genetics Settings")]
+        [SerializeField] private bool _enableBasicGenetics = true;
+        [SerializeField] private float _mutationRate = 0.01f; // 1% mutation rate
+        [SerializeField] private bool _enableLogging = true;
 
-        [Header("Fractal Parameters")]
-        [SerializeField] private int _fractalDepth = 8;
-        [SerializeField] private float _fractalScale = 2.618034f; // Golden ratio for natural patterns
-        [SerializeField] private float _complexityFactor = 1.414213f; // sqrt(2) for harmonic complexity
-        [SerializeField] private bool _enableRecursiveTraits = true;
-
-        [Header("Genetic Expression")]
-        [SerializeField] private float _baseExpressionThreshold = 0.5f;
-        [SerializeField] private float _dominanceModifier = 1.618f; // Golden ratio for dominance calculations
-        [SerializeField] private int _maxGeneInteractions = 32;
-        [SerializeField] private bool _enableEpigeneticFractals = true;
-
-        [Header("Performance")]
-        [SerializeField] private bool _enableGPUCompute = true;
-        [SerializeField] private int _batchSize = 256;
-        [SerializeField] private bool _enableCaching = true;
-
-        #endregion
-
-        #region Private Fields
-
-        private Dictionary<string, FractalGenePattern> _cachedPatterns = new Dictionary<string, FractalGenePattern>();
-        private Dictionary<string, float> _expressionCache = new Dictionary<string, float>();
-        private ComputeShader _fractalComputeShader;
+        // Basic genetics tracking
+        private readonly Dictionary<string, GeneticData> _geneticDatabase = new Dictionary<string, GeneticData>();
         private bool _isInitialized = false;
 
-        #endregion
+        /// <summary>
+        /// Events for genetic operations
+        /// </summary>
+        public event System.Action<string, GeneticData> OnGeneticDataCreated;
+        public event System.Action<string, string> OnBreedingCompleted;
 
-        #region Public Properties
-
-        public bool IsInitialized => _isInitialized;
-        public int FractalDepth => _fractalDepth;
-        public float ComplexityFactor => _complexityFactor;
-
-        #endregion
-
-        #region Initialization
-
+        /// <summary>
+        /// Initialize basic genetics system
+        /// </summary>
         public void Initialize()
         {
             if (_isInitialized) return;
 
-            ChimeraLogger.Log("[FractalGeneticsEngine] Initializing fractal mathematics for genetics...");
-
-            // Load compute shader if available
-            if (_enableGPUCompute)
-            {
-                LoadComputeShader();
-            }
-
-            // Initialize fractal patterns cache
-            InitializeFractalPatterns();
+            // Create some basic genetic data
+            CreateBasicGeneticData();
 
             _isInitialized = true;
-            ChimeraLogger.Log("[FractalGeneticsEngine] Fractal genetics engine initialized successfully");
-        }
 
-        private async void LoadComputeShader()
-        {
-            try
+            if (_enableLogging)
             {
-#if UNITY_ADDRESSABLES
-                var shaderHandle = Addressables.LoadAssetAsync<ComputeShader>("Genetics/FractalGeneticsCompute");
-                _fractalComputeShader = await shaderHandle.Task;
-                ChimeraLogger.Log("[FractalGeneticsEngine] Compute shader loaded via Addressables");
-#else
-                _fractalComputeShader = Resources.Load<ComputeShader>("Genetics/FractalGeneticsCompute");
-                ChimeraLogger.Log("[FractalGeneticsEngine] Compute shader loaded via Resources");
-#endif
-
-                if (_fractalComputeShader == null)
-                {
-                    ChimeraLogger.LogWarning("[FractalGeneticsEngine] Compute shader not found, using CPU calculations");
-                    _enableGPUCompute = false;
-                }
-            }
-            catch (Exception e)
-            {
-                ChimeraLogger.LogError($"[FractalGeneticsEngine] Failed to load compute shader: {e.Message}");
-                _enableGPUCompute = false;
+                ChimeraLogger.Log("[FractalGeneticsEngine] Initialized successfully");
             }
         }
-
-        private void InitializeFractalPatterns()
-        {
-            // Initialize basic fractal patterns for common genetic structures
-            CreateBasicFractalPatterns();
-        }
-
-        private void CreateBasicFractalPatterns()
-        {
-            // Mandelbrot-based pattern for dominant trait expression
-            _cachedPatterns["dominant_expression"] = new FractalGenePattern
-            {
-                PatternType = FractalPatternType.Mandelbrot,
-                Iterations = _fractalDepth,
-                Scale = _fractalScale,
-                Complexity = _complexityFactor,
-                DominanceFactor = _dominanceModifier
-            };
-
-            // Julia set pattern for recessive trait combinations
-            _cachedPatterns["recessive_combination"] = new FractalGenePattern
-            {
-                PatternType = FractalPatternType.Julia,
-                Iterations = _fractalDepth - 2,
-                Scale = _fractalScale * 0.618f,
-                Complexity = _complexityFactor * 0.5f,
-                DominanceFactor = 1.0f / _dominanceModifier
-            };
-
-            // Sierpinski pattern for polygenic traits
-            _cachedPatterns["polygenic_expression"] = new FractalGenePattern
-            {
-                PatternType = FractalPatternType.Sierpinski,
-                Iterations = _fractalDepth,
-                Scale = _fractalScale * 0.866f, // sqrt(3)/2 for triangular harmony
-                Complexity = _complexityFactor * 1.732f, // sqrt(3) for triangular complexity
-                DominanceFactor = 1.0f
-            };
-        }
-
-        #endregion
-
-        #region Core Fractal Calculations
 
         /// <summary>
-        /// Calculate trait expression using fractal mathematics
+        /// Create genetic data for a strain
         /// </summary>
-        public float CalculateTraitExpression(PlantGenotype genotype, TraitType traitType, EnvironmentSnapshot environment)
+        public void CreateGeneticData(string strainId, float thcContent, float cbdContent, float yield, string parent1 = "", string parent2 = "")
         {
-            if (!_isInitialized)
+            if (!_enableBasicGenetics || !_isInitialized) return;
+
+            var geneticData = new GeneticData
             {
-                ChimeraLogger.LogWarning("[FractalGeneticsEngine] Engine not initialized, using fallback calculation");
-                return CalculateFallbackExpression(genotype, traitType);
-            }
+                StrainId = strainId,
+                ThcContent = thcContent,
+                CbdContent = cbdContent,
+                YieldPotential = yield,
+                ParentStrain1 = parent1,
+                ParentStrain2 = parent2,
+                Stability = CalculateStability(thcContent, cbdContent),
+                CreatedTime = System.DateTime.Now
+            };
 
-            string cacheKey = GenerateCacheKey(genotype.GenotypeID, traitType, environment);
+            _geneticDatabase[strainId] = geneticData;
+            OnGeneticDataCreated?.Invoke(strainId, geneticData);
 
-            if (_enableCaching && _expressionCache.TryGetValue(cacheKey, out float cachedValue))
+            if (_enableLogging)
             {
-                return cachedValue;
-            }
-
-            float expression = _enableGPUCompute ?
-                CalculateExpressionGPU(genotype, traitType, environment) :
-                CalculateExpressionCPU(genotype, traitType, environment);
-
-            if (_enableCaching)
-            {
-                _expressionCache[cacheKey] = expression;
-            }
-
-            return expression;
-        }
-
-        private float CalculateExpressionCPU(PlantGenotype genotype, TraitType traitType, EnvironmentSnapshot environment)
-        {
-            // Get relevant genes for this trait
-            var relevantGenes = GetRelevantGenes(genotype, traitType);
-            if (relevantGenes.Count == 0) return 0.5f; // Neutral expression
-
-            // Calculate base fractal pattern
-            float baseExpression = CalculateBaseFractalExpression(relevantGenes, traitType);
-
-            // Apply environmental modulation using fractal noise
-            float environmentalModulation = CalculateEnvironmentalFractalModulation(environment, traitType);
-
-            // Combine base expression with environmental effects
-            float finalExpression = CombineFractalComponents(baseExpression, environmentalModulation);
-
-            // Apply gene interaction effects
-            if (_enableRecursiveTraits && relevantGenes.Count > 1)
-            {
-                float interactionEffect = CalculateGeneInteractionFractals(relevantGenes);
-                finalExpression = ModulateExpressionWithInteractions(finalExpression, interactionEffect);
-            }
-
-            // Apply epigenetic fractal modulation if enabled
-            if (_enableEpigeneticFractals)
-            {
-                float epigeneticModulation = CalculateEpigeneticFractalEffect(genotype, environment);
-                finalExpression = ApplyEpigeneticModulation(finalExpression, epigeneticModulation);
-            }
-
-            return Mathf.Clamp01(finalExpression);
-        }
-
-        private float CalculateExpressionGPU(PlantGenotype genotype, TraitType traitType, EnvironmentSnapshot environment)
-        {
-            // GPU compute implementation placeholder
-            // Would use compute buffers and dispatch compute shader
-            ChimeraLogger.LogWarning("[FractalGeneticsEngine] GPU compute not yet implemented, falling back to CPU");
-            return CalculateExpressionCPU(genotype, traitType, environment);
-        }
-
-        #endregion
-
-        #region Fractal Pattern Calculations
-
-        private float CalculateBaseFractalExpression(List<object> genes, TraitType traitType)
-        {
-            string patternKey = DeterminePatternType(genes, traitType);
-            if (!_cachedPatterns.TryGetValue(patternKey, out FractalGenePattern pattern))
-            {
-                pattern = _cachedPatterns["dominant_expression"]; // Fallback
-            }
-
-            switch (pattern.PatternType)
-            {
-                case FractalPatternType.Mandelbrot:
-                    return CalculateMandelbrotExpression(genes, pattern);
-                case FractalPatternType.Julia:
-                    return CalculateJuliaExpression(genes, pattern);
-                case FractalPatternType.Sierpinski:
-                    return CalculateSierpinskiExpression(genes, pattern);
-                default:
-                    return CalculateDefaultFractalExpression(genes, pattern);
+                ChimeraLogger.Log($"[FractalGeneticsEngine] Created genetic data for {strainId}");
             }
         }
 
-        private float CalculateMandelbrotExpression(List<object> genes, FractalGenePattern pattern)
+        /// <summary>
+        /// Breed two strains
+        /// </summary>
+        public string BreedStrains(string parent1Id, string parent2Id, string offspringName)
         {
-            float totalExpression = 0f;
-            int validGenes = 0;
+            if (!_enableBasicGenetics || !_isInitialized) return null;
 
-            foreach (var gene in genes)
+            if (!_geneticDatabase.ContainsKey(parent1Id) || !_geneticDatabase.ContainsKey(parent2Id))
             {
-                // Convert allele values to complex coordinates
-                Vector2 c = new Vector2(((GeneAllele)gene).DominantAllele, ((GeneAllele)gene).RecessiveAllele);
-                Vector2 z = Vector2.zero;
-
-                int iterations = 0;
-                for (int i = 0; i < pattern.Iterations; i++)
+                if (_enableLogging)
                 {
-                    // z = z² + c (Mandelbrot formula)
-                    Vector2 zSquared = new Vector2(z.x * z.x - z.y * z.y, 2f * z.x * z.y);
-                    z = zSquared + c;
-
-                    if ((z.x * z.x + z.y * z.y) > 4f) break;
-                    iterations++;
+                    ChimeraLogger.LogWarning("[FractalGeneticsEngine] Parent strains not found");
                 }
-
-                // Convert iterations to expression value
-                float expression = (float)iterations / pattern.Iterations;
-                expression *= pattern.DominanceFactor * ((GeneAllele)gene).ExpressionStrength;
-
-                totalExpression += expression;
-                validGenes++;
+                return null;
             }
 
-            return validGenes > 0 ? totalExpression / validGenes : 0.5f;
-        }
+            var parent1 = _geneticDatabase[parent1Id];
+            var parent2 = _geneticDatabase[parent2Id];
 
-        private float CalculateJuliaExpression(List<object> genes, FractalGenePattern pattern)
-        {
-            // Simplified Julia set calculation for recessive combinations
-            float totalExpression = 0f;
-            Vector2 c = new Vector2(-0.7269f, 0.1889f); // Classic Julia set constant
+            // Simple breeding - average traits with some variation
+            float avgThc = (parent1.ThcContent + parent2.ThcContent) / 2f;
+            float avgCbd = (parent1.CbdContent + parent2.CbdContent) / 2f;
+            float avgYield = (parent1.YieldPotential + parent2.YieldPotential) / 2f;
 
-            foreach (var gene in genes)
+            // Add some genetic variation
+            avgThc += Random.Range(-2f, 2f);
+            avgCbd += Random.Range(-0.5f, 0.5f);
+            avgYield += Random.Range(-50f, 50f);
+
+            // Apply mutation rate
+            if (Random.value < _mutationRate)
             {
-                Vector2 z = new Vector2(((GeneAllele)gene).DominantAllele, ((GeneAllele)gene).RecessiveAllele);
+                avgThc += Random.Range(-5f, 5f);
+                avgCbd += Random.Range(-1f, 1f);
+                avgYield += Random.Range(-100f, 100f);
 
-                int iterations = 0;
-                for (int i = 0; i < pattern.Iterations; i++)
+                if (_enableLogging)
                 {
-                    Vector2 zSquared = new Vector2(z.x * z.x - z.y * z.y, 2f * z.x * z.y);
-                    z = zSquared + c;
-
-                    if ((z.x * z.x + z.y * z.y) > 4f) break;
-                    iterations++;
-                }
-
-                float expression = (float)iterations / pattern.Iterations;
-                totalExpression += expression * ((GeneAllele)gene).ExpressionStrength;
-            }
-
-            return totalExpression / genes.Count;
-        }
-
-        private float CalculateSierpinskiExpression(List<object> genes, FractalGenePattern pattern)
-        {
-            // Sierpinski triangle for polygenic traits
-            float totalExpression = 0f;
-
-            foreach (var gene in genes)
-            {
-                // Use Sierpinski triangle pattern
-                int x = Mathf.FloorToInt(((GeneAllele)gene).DominantAllele * 256f);
-                int y = Mathf.FloorToInt(((GeneAllele)gene).RecessiveAllele * 256f);
-
-                // Sierpinski pattern calculation
-                float sierpinskiValue = (x & y) == 0 ? 1f : 0f;
-                totalExpression += sierpinskiValue * ((GeneAllele)gene).ExpressionStrength;
-            }
-
-            return totalExpression / genes.Count;
-        }
-
-        private float CalculateDefaultFractalExpression(List<object> genes, FractalGenePattern pattern)
-        {
-            // Simple fractal noise-based calculation
-            float totalExpression = 0f;
-
-            foreach (var gene in genes)
-            {
-                float noise = Mathf.PerlinNoise(((GeneAllele)gene).DominantAllele * pattern.Scale, ((GeneAllele)gene).RecessiveAllele * pattern.Scale);
-                totalExpression += noise * ((GeneAllele)gene).ExpressionStrength;
-            }
-
-            return totalExpression / genes.Count;
-        }
-
-        #endregion
-
-        #region Environmental Fractal Modulation
-
-        private float CalculateEnvironmentalFractalModulation(EnvironmentSnapshot environment, TraitType traitType)
-        {
-            // Use fractal noise to model environmental effects on gene expression
-            float environmentalSeed = HashEnvironment(environment);
-
-            // Multi-octave fractal noise for complex environmental interactions
-            float modulation = 0f;
-            float amplitude = 1f;
-            float frequency = 1f;
-
-            for (int octave = 0; octave < 4; octave++)
-            {
-                float noiseValue = Mathf.PerlinNoise(
-                    environmentalSeed * frequency,
-                    (float)traitType * frequency
-                );
-
-                modulation += noiseValue * amplitude;
-                amplitude *= 0.5f;
-                frequency *= 2f;
-            }
-
-            return Mathf.Clamp01(modulation / 1.875f); // Normalize multi-octave result
-        }
-
-        private float HashEnvironment(EnvironmentSnapshot environment)
-        {
-            // Create a hash of environmental conditions for fractal seed
-            return (environment.Temperature * 0.1f +
-                   environment.Humidity * 0.01f +
-                   environment.LightIntensity * 0.001f +
-                   environment.CO2Level * 0.0001f) % 1000f;
-        }
-
-        #endregion
-
-        #region Gene Interaction Fractals
-
-        private float CalculateGeneInteractionFractals(List<object> genes)
-        {
-            if (genes.Count < 2) return 0f;
-
-            float totalInteraction = 0f;
-            int interactionCount = 0;
-
-            // Calculate pairwise gene interactions using fractal mathematics
-            for (int i = 0; i < genes.Count && interactionCount < _maxGeneInteractions; i++)
-            {
-                for (int j = i + 1; j < genes.Count && interactionCount < _maxGeneInteractions; j++)
-                {
-                    float interaction = CalculatePairwiseInteractionFractal(genes[i], genes[j]);
-                    totalInteraction += interaction;
-                    interactionCount++;
+                    ChimeraLogger.Log("[FractalGeneticsEngine] Genetic mutation occurred!");
                 }
             }
 
-            return interactionCount > 0 ? totalInteraction / interactionCount : 0f;
-        }
+            // Clamp values to reasonable ranges
+            avgThc = Mathf.Clamp(avgThc, 5f, 30f);
+            avgCbd = Mathf.Clamp(avgCbd, 0f, 5f);
+            avgYield = Mathf.Clamp(avgYield, 200f, 800f);
 
-        private float CalculatePairwiseInteractionFractal(object gene1, object gene2)
-        {
-            // Use attractors and phase space analysis for gene interactions
-            // TODO: Implement proper gene interaction analysis when gene structure is available
-            Vector2 point1 = new Vector2(0.5f, 0.5f); // Default values for now
-            Vector2 point2 = new Vector2(0.5f, 0.5f); // Default values for now
+            string offspringId = offspringName + "_" + System.Guid.NewGuid().ToString().Substring(0, 8);
 
-            // Calculate phase space trajectory
-            float distance = Vector2.Distance(point1, point2);
-            float angle = Mathf.Atan2(point2.y - point1.y, point2.x - point1.x);
+            CreateGeneticData(offspringId, avgThc, avgCbd, avgYield, parent1Id, parent2Id);
+            OnBreedingCompleted?.Invoke(offspringId, offspringName);
 
-            // Use Strange Attractor mathematics for complex interactions
-            float lorenzX = distance * Mathf.Cos(angle);
-            float lorenzY = distance * Mathf.Sin(angle);
-
-            return Mathf.Clamp01((lorenzX + lorenzY) * 0.5f + 0.5f);
-        }
-
-        #endregion
-
-        #region Epigenetic Fractal Effects
-
-        private float CalculateEpigeneticFractalEffect(PlantGenotype genotype, EnvironmentSnapshot environment)
-        {
-            // Model epigenetic effects using fractal dimensions
-            float environmentalStress = CalculateEnvironmentalStress(environment);
-            float geneticComplexity = CalculateGeneticComplexity(genotype);
-
-            // Use fractal dimension to model epigenetic response
-            float fractalDimension = 1f + environmentalStress * geneticComplexity;
-            return Mathf.Pow(fractalDimension, _complexityFactor) * 0.1f;
-        }
-
-        private float CalculateEnvironmentalStress(EnvironmentSnapshot environment)
-        {
-            // Calculate stress based on deviation from optimal conditions
-            float temperatureStress = Mathf.Abs(environment.Temperature - 24f) / 10f;
-            float humidityStress = Mathf.Abs(environment.Humidity - 50f) / 25f;
-            float lightStress = Mathf.Abs(environment.LightIntensity - 600f) / 300f;
-
-            return Mathf.Clamp01((temperatureStress + humidityStress + lightStress) / 3f);
-        }
-
-        private float CalculateGeneticComplexity(PlantGenotype genotype)
-        {
-            // Use fractal analysis to determine genetic complexity
-            return Mathf.Clamp01(genotype.AlleleCount * 0.01f);
-        }
-
-        #endregion
-
-        #region Utility Methods
-
-        private List<object> GetRelevantGenes(PlantGenotype genotype, TraitType traitType)
-        {
-            // Filter genes relevant to the specific trait
-            var relevantGenes = new List<object>();
-
-            foreach (var gene in genotype.Genes)
+            if (_enableLogging)
             {
-                if (IsGeneRelevantToTrait(gene, traitType))
-                {
-                    relevantGenes.Add(gene);
-                }
+                ChimeraLogger.Log($"[FractalGeneticsEngine] Bred {offspringName} from {parent1Id} and {parent2Id}");
             }
 
-            return relevantGenes;
+            return offspringId;
         }
 
-        private bool IsGeneRelevantToTrait(object gene, TraitType traitType)
+        /// <summary>
+        /// Get genetic data for a strain
+        /// </summary>
+        public GeneticData GetGeneticData(string strainId)
         {
-            // Simplified trait-gene mapping
-            return true; // Simplified - assume all genes can influence all traits
+            return _geneticDatabase.TryGetValue(strainId, out var data) ? data : null;
         }
 
-        private string DeterminePatternType(List<object> genes, TraitType traitType)
+        /// <summary>
+        /// Get all genetic data
+        /// </summary>
+        public Dictionary<string, GeneticData> GetAllGeneticData()
         {
-            // Determine appropriate fractal pattern based on gene characteristics
-            if (genes.Count == 1) return "dominant_expression";
-            if (genes.Count > 5) return "polygenic_expression";
-            return "recessive_combination";
+            return new Dictionary<string, GeneticData>(_geneticDatabase);
         }
 
-        private float CombineFractalComponents(float baseExpression, float environmentalModulation)
+        /// <summary>
+        /// Calculate genetic stability
+        /// </summary>
+        public float CalculateStability(float thcContent, float cbdContent)
         {
-            return (baseExpression + environmentalModulation * 0.3f) / 1.3f;
+            // Simple stability calculation - balanced THC:CBD ratios are more stable
+            float ratio = thcContent / Mathf.Max(cbdContent, 0.1f);
+            if (ratio >= 2f && ratio <= 10f) return 0.9f; // Good ratio
+            if (ratio >= 1f && ratio <= 20f) return 0.7f; // Acceptable ratio
+            return 0.5f; // Poor ratio
         }
 
-        private float ModulateExpressionWithInteractions(float expression, float interactionEffect)
+        /// <summary>
+        /// Get breeding recommendations
+        /// </summary>
+        public string GetBreedingRecommendation(string strainId)
         {
-            return expression * (1f + interactionEffect * 0.2f);
+            var data = GetGeneticData(strainId);
+            if (data == null) return "Strain not found";
+
+            if (data.ThcContent > 20f)
+            {
+                return "High THC strain - good for potency breeding";
+            }
+            else if (data.CbdContent > data.ThcContent)
+            {
+                return "High CBD strain - good for medicinal breeding";
+            }
+            else if (data.YieldPotential > 500f)
+            {
+                return "High yield strain - good for commercial breeding";
+            }
+            else
+            {
+                return "Balanced strain - good for general breeding";
+            }
         }
 
-        private float ApplyEpigeneticModulation(float expression, float epigeneticEffect)
+        /// <summary>
+        /// Clear all genetic data
+        /// </summary>
+        public void ClearAllData()
         {
-            return expression * (1f + epigeneticEffect);
+            _geneticDatabase.Clear();
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("[FractalGeneticsEngine] Cleared all genetic data");
+            }
         }
 
-        private float CalculateFallbackExpression(PlantGenotype genotype, TraitType traitType)
+        /// <summary>
+        /// Get genetics statistics
+        /// </summary>
+        public GeneticsStats GetGeneticsStats()
         {
-            // Simple fallback when engine isn't initialized
-            return 0.5f + UnityEngine.Random.Range(-0.2f, 0.2f);
+            int totalStrains = _geneticDatabase.Count;
+            float avgThc = totalStrains > 0 ? _geneticDatabase.Values.Average(d => d.ThcContent) : 0f;
+            float avgYield = totalStrains > 0 ? _geneticDatabase.Values.Average(d => d.YieldPotential) : 0f;
+            int stableStrains = _geneticDatabase.Values.Count(d => d.Stability > 0.8f);
+
+            return new GeneticsStats
+            {
+                TotalStrains = totalStrains,
+                AverageThcContent = avgThc,
+                AverageYield = avgYield,
+                StableStrains = stableStrains,
+                IsGeneticsEnabled = _enableBasicGenetics
+            };
         }
 
-        private string GenerateCacheKey(string genotypeId, TraitType traitType, EnvironmentSnapshot environment)
+        #region Private Methods
+
+        private void CreateBasicGeneticData()
         {
-            return $"{genotypeId}_{traitType}_{environment.GetHashCode()}";
-        }
-
-        #endregion
-
-        #region Cleanup
-
-        private void OnDestroy()
-        {
-            _cachedPatterns?.Clear();
-            _expressionCache?.Clear();
+            // Create some basic starter strains
+            CreateGeneticData("Basic_Sativa", 18f, 0.5f, 450f);
+            CreateGeneticData("Basic_Indica", 15f, 1.2f, 400f);
+            CreateGeneticData("Basic_Hybrid", 17f, 0.8f, 425f);
         }
 
         #endregion
     }
 
-    #region Data Structures
-
     /// <summary>
-    /// Fractal pattern type for genetic calculations
-    /// </summary>
-    public enum FractalPatternType
-    {
-        Mandelbrot,
-        Julia,
-        Sierpinski,
-        Lorenz,
-        Custom
-    }
-
-    /// <summary>
-    /// Fractal pattern configuration for gene expression
+    /// Basic genetic data structure
     /// </summary>
     [System.Serializable]
-    public struct FractalGenePattern
+    public class GeneticData
     {
-        public FractalPatternType PatternType;
-        public int Iterations;
-        public float Scale;
-        public float Complexity;
-        public float DominanceFactor;
-
-        public static FractalGenePattern Default => new FractalGenePattern
-        {
-            PatternType = FractalPatternType.Mandelbrot,
-            Iterations = 8,
-            Scale = 2.618034f,
-            Complexity = 1.414213f,
-            DominanceFactor = 1.618f
-        };
+        public string StrainId;
+        public float ThcContent;
+        public float CbdContent;
+        public float YieldPotential;
+        public string ParentStrain1;
+        public string ParentStrain2;
+        public float Stability;
+        public System.DateTime CreatedTime;
     }
 
     /// <summary>
-    /// Gene allele data for fractal calculations
+    /// Genetics statistics
     /// </summary>
     [System.Serializable]
-    public struct GeneAllele
+    public struct GeneticsStats
     {
-        public string GeneId;
-        public float DominantAllele;
-        public float RecessiveAllele;
-        public float ExpressionStrength;
-        public Dictionary<TraitType, float> TraitInfluence;
-
-        public GeneAllele(string id, float dominant, float recessive)
-        {
-            GeneId = id;
-            DominantAllele = dominant;
-            RecessiveAllele = recessive;
-            ExpressionStrength = 1f;
-            TraitInfluence = new Dictionary<TraitType, float>();
-        }
+        public int TotalStrains;
+        public float AverageThcContent;
+        public float AverageYield;
+        public int StableStrains;
+        public bool IsGeneticsEnabled;
     }
-
-    #endregion
 }

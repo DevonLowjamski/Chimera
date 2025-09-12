@@ -1,0 +1,398 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.Save
+{
+    /// <summary>
+    /// Cultivation Zone Data Transfer Object
+    /// Handles zone and environmental data for save/load operations
+    /// Includes zone configuration, environmental conditions, and equipment
+    /// </summary>
+    [Serializable]
+    public class CultivationZoneDTO
+    {
+        [Header("Zone Identity")]
+        public string ZoneID;
+        public string ZoneName;
+        public string FacilityID;
+        public string ZoneType;
+
+        [Header("Physical Properties")]
+        public Vector3 Dimensions; // Width, Height, Length in meters
+        public float FloorArea; // Square meters
+        public float CeilingHeight; // Meters
+        public float AirVolume; // Cubic meters
+        public Vector2Int GridSize; // Plant grid dimensions
+
+        [Header("Environmental Settings")]
+        public float TargetTemperature; // Celsius
+        public float TargetHumidity; // Percentage
+        public float TargetCO2Level; // ppm
+        public float TargetLightIntensity; // 0-1
+
+        [Header("Current Conditions")]
+        public float CurrentTemperature;
+        public float CurrentHumidity;
+        public float CurrentCO2Level;
+        public float CurrentLightIntensity;
+        public DateTime LastEnvironmentalUpdate;
+
+        [Header("Equipment")]
+        public List<ZoneEquipmentDTO> InstalledEquipment = new List<ZoneEquipmentDTO>();
+        public Dictionary<string, bool> EquipmentStatus = new Dictionary<string, bool>();
+
+        [Header("Plants")]
+        public List<string> PlantIDs = new List<string>();
+        public int MaxPlantCapacity;
+        public int CurrentPlantCount;
+        public PlantSpacing PlantSpacing;
+
+        [Header("Zone Status")]
+        public ZoneStatus Status;
+        public float UtilizationPercentage; // 0-1
+        public DateTime LastMaintenanceDate;
+        public List<string> ActiveIssues = new List<string>();
+
+        [Header("Growth Stage Focus")]
+        public ProjectChimera.Data.Shared.PlantGrowthStage PrimaryGrowthStage;
+        public bool IsDedicatedStage;
+        public string StageDescription;
+
+        [Header("Performance Metrics")]
+        public float AveragePlantHealth; // 0-1
+        public float AverageYieldPerPlant;
+        public float EnergyConsumption; // kWh per day
+        public float WaterConsumption; // Liters per day
+
+        [Header("Maintenance")]
+        public List<MaintenanceRecordDTO> MaintenanceHistory = new List<MaintenanceRecordDTO>();
+        public DateTime NextScheduledMaintenance;
+        public bool NeedsMaintenance;
+
+        /// <summary>
+        /// Gets the zone's capacity utilization
+        /// </summary>
+        public float GetCapacityUtilization()
+        {
+            if (MaxPlantCapacity == 0) return 0f;
+            return (float)CurrentPlantCount / MaxPlantCapacity;
+        }
+
+        /// <summary>
+        /// Gets the number of active plants
+        /// </summary>
+        public int GetActivePlantCount()
+        {
+            return PlantIDs.Count;
+        }
+
+        /// <summary>
+        /// Gets the number of installed equipment
+        /// </summary>
+        public int GetEquipmentCount()
+        {
+            return InstalledEquipment.Count;
+        }
+
+        /// <summary>
+        /// Gets equipment by type
+        /// </summary>
+        public List<ZoneEquipmentDTO> GetEquipmentByType(EquipmentType type)
+        {
+            return InstalledEquipment.FindAll(eq => eq.EquipmentType == type);
+        }
+
+        /// <summary>
+        /// Checks if zone has specific equipment type
+        /// </summary>
+        public bool HasEquipmentType(EquipmentType type)
+        {
+            return InstalledEquipment.Exists(eq => eq.EquipmentType == type);
+        }
+
+        /// <summary>
+        /// Gets active equipment count
+        /// </summary>
+        public int GetActiveEquipmentCount()
+        {
+            int count = 0;
+            foreach (var equipment in InstalledEquipment)
+            {
+                if (EquipmentStatus.ContainsKey(equipment.EquipmentID) &&
+                    EquipmentStatus[equipment.EquipmentID])
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        /// <summary>
+        /// Checks if environmental conditions are within target range
+        /// </summary>
+        public bool AreConditionsOptimal()
+        {
+            const float tolerance = 5f; // 5% tolerance
+
+            bool tempOptimal = Mathf.Abs(CurrentTemperature - TargetTemperature) <= (TargetTemperature * tolerance / 100f);
+            bool humidityOptimal = Mathf.Abs(CurrentHumidity - TargetHumidity) <= (TargetHumidity * tolerance / 100f);
+            bool co2Optimal = Mathf.Abs(CurrentCO2Level - TargetCO2Level) <= (TargetCO2Level * tolerance / 100f);
+            bool lightOptimal = Mathf.Abs(CurrentLightIntensity - TargetLightIntensity) <= (TargetLightIntensity * tolerance / 100f);
+
+            return tempOptimal && humidityOptimal && co2Optimal && lightOptimal;
+        }
+
+        /// <summary>
+        /// Gets environmental condition summary
+        /// </summary>
+        public string GetEnvironmentalSummary()
+        {
+            return $"Temp: {CurrentTemperature:F1}°C (Target: {TargetTemperature:F1}°C), " +
+                   $"Humidity: {CurrentHumidity:F1}% (Target: {TargetHumidity:F1}%), " +
+                   $"CO2: {CurrentCO2Level:F0}ppm (Target: {TargetCO2Level:F0}ppm), " +
+                   $"Light: {CurrentLightIntensity:F2} (Target: {TargetLightIntensity:F2})";
+        }
+
+        /// <summary>
+        /// Updates current environmental conditions
+        /// </summary>
+        public void UpdateEnvironmentalConditions(float temperature, float humidity, float co2, float light)
+        {
+            CurrentTemperature = temperature;
+            CurrentHumidity = humidity;
+            CurrentCO2Level = co2;
+            CurrentLightIntensity = light;
+            LastEnvironmentalUpdate = DateTime.Now;
+
+            // Update status based on conditions
+            UpdateZoneStatus();
+        }
+
+        /// <summary>
+        /// Adds equipment to the zone
+        /// </summary>
+        public void AddEquipment(string equipmentID, EquipmentType type, Vector3 position, string equipmentData)
+        {
+            var equipment = new ZoneEquipmentDTO
+            {
+                EquipmentID = equipmentID,
+                EquipmentType = type,
+                Position = position,
+                InstallationDate = DateTime.Now,
+                EquipmentData = equipmentData
+            };
+
+            InstalledEquipment.Add(equipment);
+            EquipmentStatus[equipmentID] = true;
+
+            UpdateZoneStatus();
+        }
+
+        /// <summary>
+        /// Removes equipment from the zone
+        /// </summary>
+        public bool RemoveEquipment(string equipmentID)
+        {
+            var equipment = InstalledEquipment.Find(eq => eq.EquipmentID == equipmentID);
+            if (equipment != null)
+            {
+                InstalledEquipment.Remove(equipment);
+                EquipmentStatus.Remove(equipmentID);
+                UpdateZoneStatus();
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Adds a plant to the zone
+        /// </summary>
+        public void AddPlant(string plantID)
+        {
+            if (!PlantIDs.Contains(plantID))
+            {
+                PlantIDs.Add(plantID);
+                CurrentPlantCount = PlantIDs.Count;
+                UpdateZoneStatus();
+            }
+        }
+
+        /// <summary>
+        /// Removes a plant from the zone
+        /// </summary>
+        public bool RemovePlant(string plantID)
+        {
+            if (PlantIDs.Remove(plantID))
+            {
+                CurrentPlantCount = PlantIDs.Count;
+                UpdateZoneStatus();
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Records maintenance activity
+        /// </summary>
+        public void RecordMaintenance(string maintenanceType, string description, string performedBy)
+        {
+            var maintenance = new MaintenanceRecordDTO
+            {
+                MaintenanceDate = DateTime.Now,
+                MaintenanceType = maintenanceType,
+                Description = description,
+                TechnicianName = performedBy
+            };
+
+            MaintenanceHistory.Add(maintenance);
+            LastMaintenanceDate = DateTime.Now;
+            NeedsMaintenance = false;
+
+            // Schedule next maintenance (simplified - 30 days from now)
+            NextScheduledMaintenance = DateTime.Now.AddDays(30);
+        }
+
+        /// <summary>
+        /// Updates the zone status based on current conditions
+        /// </summary>
+        private void UpdateZoneStatus()
+        {
+            UtilizationPercentage = GetCapacityUtilization();
+
+            if (CurrentPlantCount == 0)
+            {
+                Status = ZoneStatus.Empty;
+            }
+            else if (UtilizationPercentage >= 0.9f)
+            {
+                Status = ZoneStatus.Full;
+            }
+            else
+            {
+                Status = ZoneStatus.Active;
+            }
+
+            // Check for maintenance needs
+            if (DateTime.Now > NextScheduledMaintenance)
+            {
+                NeedsMaintenance = true;
+                if (!ActiveIssues.Contains("Maintenance Required"))
+                {
+                    ActiveIssues.Add("Maintenance Required");
+                }
+            }
+            else
+            {
+                NeedsMaintenance = false;
+                ActiveIssues.Remove("Maintenance Required");
+            }
+        }
+
+        /// <summary>
+        /// Gets a summary of the zone's current state
+        /// </summary>
+        public string GetZoneSummary()
+        {
+            string summary = $"{ZoneName} ({ZoneType}) - {Status}";
+            summary += $"\nPlants: {CurrentPlantCount}/{MaxPlantCapacity} ({(UtilizationPercentage * 100):F1}%)";
+            summary += $"\nEquipment: {GetActiveEquipmentCount()}/{InstalledEquipment.Count} active";
+            summary += $"\nConditions: {(AreConditionsOptimal() ? "Optimal" : "Needs Adjustment")}";
+
+            if (ActiveIssues.Count > 0)
+            {
+                summary += $"\nIssues: {string.Join(", ", ActiveIssues)}";
+            }
+
+            return summary;
+        }
+
+        /// <summary>
+        /// Checks if the zone is ready for planting
+        /// </summary>
+        public bool IsReadyForPlanting()
+        {
+            return Status != ZoneStatus.Full &&
+                   AreConditionsOptimal() &&
+                   !NeedsMaintenance &&
+                   HasRequiredEquipment();
+        }
+
+        /// <summary>
+        /// Checks if the zone has required equipment for its type
+        /// </summary>
+        private bool HasRequiredEquipment()
+        {
+            // Basic equipment requirements based on zone type
+            switch (ZoneType)
+            {
+                case "VegetativeRoom":
+                    return HasEquipmentType(EquipmentType.Lighting) &&
+                           HasEquipmentType(EquipmentType.Irrigation);
+                case "FloweringRoom":
+                    return HasEquipmentType(EquipmentType.Lighting) &&
+                           HasEquipmentType(EquipmentType.Irrigation) &&
+                           HasEquipmentType(EquipmentType.HVAC);
+                case "CloningRoom":
+                    return HasEquipmentType(EquipmentType.Lighting) &&
+                           HasEquipmentType(EquipmentType.Irrigation);
+                default:
+                    return true; // No specific requirements
+            }
+        }
+    }
+
+    /// <summary>
+    /// Zone equipment data structure
+    /// </summary>
+    [Serializable]
+    public class ZoneEquipmentDTO
+    {
+        public string EquipmentID;
+        public EquipmentType EquipmentType;
+        public Vector3 Position;
+        public DateTime InstallationDate;
+        public string EquipmentData; // JSON string with equipment-specific data
+        public bool IsActive = true;
+    }
+
+    // MaintenanceRecordDTO is defined in ConstructionDTO.cs to avoid duplication
+
+    // ZoneType enum is defined in ProjectChimera.Data.Cultivation.CultivationZoneSO to avoid duplication
+
+    /// <summary>
+    /// Zone status enumeration
+    /// </summary>
+    public enum ZoneStatus
+    {
+        Empty,
+        Active,
+        Full,
+        Maintenance,
+        Offline
+    }
+
+    /// <summary>
+    /// Equipment type enumeration
+    /// </summary>
+    public enum EquipmentType
+    {
+        Lighting,
+        HVAC,
+        Irrigation,
+        Monitoring,
+        Safety,
+        Other
+    }
+
+    /// <summary>
+    /// Plant spacing enumeration
+    /// </summary>
+    public enum PlantSpacing
+    {
+        Dense,
+        Standard,
+        Sparse
+    }
+}
+

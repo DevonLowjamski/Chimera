@@ -2,6 +2,7 @@ using UnityEngine;
 using ProjectChimera.Shared;
 using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Shared;
+using ProjectChimera.Data.Cultivation.Plant;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 
 namespace ProjectChimera.Data.Cultivation

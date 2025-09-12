@@ -25,6 +25,14 @@ namespace ProjectChimera.Testing.Phase2_3
         // Test components
         private VisualFeedbackIntegration _visualFeedback;
 
+        /// <summary>
+        /// Set detailed logging configuration (replaces reflection usage)
+        /// </summary>
+        public void SetEnableDetailedLogging(bool enable)
+        {
+            _enableDetailedLogging = enable;
+        }
+
         public void RunTests()
         {
             ChimeraLogger.Log("[VisualFeedbackTests] Starting visual feedback tests...");

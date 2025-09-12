@@ -1,477 +1,244 @@
-using ProjectChimera.Core.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
-#if UNITY_ADDRESSABLES
-using UnityEngine.AddressableAssets;
-#endif
-using ProjectChimera.Core;
-using ProjectChimera.Systems.Registry;
-
-#if UNITY_SPEEDTREE
-using SpeedTree;
-#endif
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Services.SpeedTree
 {
     /// <summary>
-    /// PC014-5a: SpeedTree Asset Management Service
-    /// Handles SpeedTree asset loading, renderer management, and cannabis-specific configurations
-    /// Decomposed from AdvancedSpeedTreeManager (360 lines target)
+    /// BASIC: Simple SpeedTree asset management service for Project Chimera.
+    /// Focuses on essential asset loading without complex SpeedTree configurations and strain databases.
     /// </summary>
-    public class SpeedTreeAssetManagementService : MonoBehaviour, ISpeedTreeAssetService
+    public class SpeedTreeAssetManagementService : MonoBehaviour
     {
-        #region Properties
+        [Header("Basic Asset Settings")]
+        [SerializeField] private bool _enableBasicAssetManagement = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private List<GameObject> _plantPrefabs = new List<GameObject>();
 
-        public bool IsInitialized { get; private set; }
+        // Basic asset tracking
+        private readonly Dictionary<string, GameObject> _loadedAssets = new Dictionary<string, GameObject>();
+        private readonly List<GameObject> _activeInstances = new List<GameObject>();
+        private bool _isInitialized = false;
 
-        #endregion
+        /// <summary>
+        /// Events for asset management
+        /// </summary>
+        public event System.Action<GameObject> OnAssetLoaded;
+        public event System.Action<GameObject> OnAssetUnloaded;
+        public event System.Action<GameObject> OnInstanceCreated;
 
-        #region Private Fields
-
-        [Header("SpeedTree Asset Configuration")]
-        [SerializeField] private ScriptableObject _speedTreeLibrary;
-        [SerializeField] private ScriptableObject _shaderConfig;
-        [SerializeField] private List<ScriptableObject> _cannabisStrains = new List<ScriptableObject>();
-
-        [Header("Physics Integration")]
-        [SerializeField] private bool _enablePhysicsInteraction = true;
-        [SerializeField] private LayerMask _physicsLayers = -1;
-
-        // Asset Management
-        private Dictionary<string, UnityEngine.Object> _loadedAssets = new Dictionary<string, UnityEngine.Object>();
-        private Dictionary<string, ScriptableObject> _strainDatabase = new Dictionary<string, ScriptableObject>();
-        private List<GameObject> _activeRenderers = new List<GameObject>();
-
-        // Shader Property IDs (cached for performance)
-        private int _colorPropertyId;
-        private int _healthPropertyId;
-        private int _growthPropertyId;
-        private int _geneticVariationPropertyId;
-
-        #endregion
-
-        #region Events
-
-        public event Action<GameObject> OnRendererCreated;
-        public event Action<GameObject> OnRendererDestroyed;
-        public event Action<UnityEngine.Object> OnAssetLoaded;
-
-        #endregion
-
-        #region IService Implementation
-
+        /// <summary>
+        /// Initialize basic asset management
+        /// </summary>
         public void Initialize()
         {
-            if (IsInitialized) return;
+            if (_isInitialized) return;
 
-            ChimeraLogger.Log("Initializing SpeedTreeAssetManagementService...");
+            _isInitialized = true;
 
-            // Cache shader property IDs
-            CacheShaderProperties();
-
-            // Initialize strain database
-            InitializeStrainDatabase();
-
-            // Load initial SpeedTree assets
-            LoadSpeedTreeAssets();
-
-            // Register with ServiceRegistry
-            ServiceContainerFactory.Instance.RegisterSingleton<ISpeedTreeAssetService>(this);
-
-            IsInitialized = true;
-            ChimeraLogger.Log("SpeedTreeAssetManagementService initialized successfully");
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("[SpeedTreeAssetManagementService] Initialized successfully");
+            }
         }
 
-        public void Shutdown()
+        /// <summary>
+        /// Load plant asset by name
+        /// </summary>
+        public GameObject LoadPlantAsset(string assetName)
         {
-            if (!IsInitialized) return;
+            if (!_enableBasicAssetManagement || !_isInitialized) return null;
 
-            ChimeraLogger.Log("Shutting down SpeedTreeAssetManagementService...");
-
-            // Cleanup all renderers
-            foreach (var renderer in _activeRenderers.ToArray())
+            // Check if already loaded
+            if (_loadedAssets.TryGetValue(assetName, out var existingAsset))
             {
-                DestroySpeedTreeRenderer(renderer);
+                return existingAsset;
             }
 
-            // Unload all assets
-            foreach (var assetPath in _loadedAssets.Keys.ToList())
+            // Try to find in prefabs list
+            foreach (var prefab in _plantPrefabs)
             {
-                UnloadSpeedTreeAsset(assetPath);
-            }
-
-            // Clear collections
-            _activeRenderers.Clear();
-            _loadedAssets.Clear();
-            _strainDatabase.Clear();
-
-            IsInitialized = false;
-            ChimeraLogger.Log("SpeedTreeAssetManagementService shutdown complete");
-        }
-
-        #endregion
-
-        #region Asset Management
-
-        public async Task<UnityEngine.Object> LoadSpeedTreeAssetAsync(string assetPath)
-        {
-            if (_loadedAssets.ContainsKey(assetPath))
-            {
-                return _loadedAssets[assetPath];
-            }
-
-#if UNITY_SPEEDTREE
-            try
-            {
-                var asset = await LoadAssetFromPath(assetPath);
-                if (asset != null)
+                if (prefab != null && prefab.name == assetName)
                 {
-                    _loadedAssets[assetPath] = asset;
-                    ConfigureAssetForCannabis(asset);
-                    OnAssetLoaded?.Invoke(asset);
-                    ChimeraLogger.Log($"SpeedTree asset loaded: {assetPath}");
-                }
-                return asset;
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogError($"Failed to load SpeedTree asset {assetPath}: {ex.Message}");
-                return null;
-            }
-#else
-            ChimeraLogger.LogWarning("SpeedTree package not available - asset loading disabled");
-            return null;
-#endif
-        }
+                    _loadedAssets[assetName] = prefab;
+                    OnAssetLoaded?.Invoke(prefab);
 
-        public void UnloadSpeedTreeAsset(string assetPath)
-        {
-            if (_loadedAssets.TryGetValue(assetPath, out var asset))
-            {
-                _loadedAssets.Remove(assetPath);
-
-#if UNITY_SPEEDTREE
-                if (asset != null)
-                {
-                    // Cleanup SpeedTree asset resources
-                    Resources.UnloadAsset(asset);
-                }
-#endif
-                ChimeraLogger.Log($"SpeedTree asset unloaded: {assetPath}");
-            }
-        }
-
-        public UnityEngine.Object GetSpeedTreeAssetForStrain(string strainId)
-        {
-            if (string.IsNullOrEmpty(strainId) || !_strainDatabase.TryGetValue(strainId, out var strain))
-                return null;
-
-            // This would need to be implemented based on actual strain data structure
-            return null; // Placeholder
-        }
-
-        public bool IsAssetLoaded(string assetPath)
-        {
-            return _loadedAssets.ContainsKey(assetPath);
-        }
-
-        #endregion
-
-        #region Renderer Management
-
-        public GameObject CreateSpeedTreeRenderer(int plantId, Vector3 position, Quaternion rotation)
-        {
-            if (plantId <= 0)
-            {
-                ChimeraLogger.LogError("Cannot create SpeedTree renderer - invalid plant ID");
-                return null;
-            }
-
-#if UNITY_SPEEDTREE
-            try
-            {
-                var rendererObject = new GameObject($"SpeedTree_Plant_{plantId}");
-                rendererObject.transform.position = position;
-                rendererObject.transform.rotation = rotation;
-
-                // Add SpeedTree renderer component if available
-                var renderer = rendererObject.AddComponent<Renderer>();
-
-                ConfigureRendererForCannabis(rendererObject, plantId);
-
-                _activeRenderers.Add(rendererObject);
-                OnRendererCreated?.Invoke(rendererObject);
-
-                ChimeraLogger.Log($"SpeedTree renderer created for plant {plantId}");
-                return rendererObject;
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogError($"Failed to create SpeedTree renderer for plant {plantId}: {ex.Message}");
-                return null;
-            }
-#else
-            ChimeraLogger.LogWarning("SpeedTree package not available - renderer creation disabled");
-            return null;
-#endif
-        }
-
-        public void DestroySpeedTreeRenderer(GameObject renderer)
-        {
-            if (renderer == null) return;
-
-            _activeRenderers.Remove(renderer);
-            OnRendererDestroyed?.Invoke(renderer);
-
-            DestroyImmediate(renderer);
-
-            ChimeraLogger.Log("SpeedTree renderer destroyed");
-        }
-
-        public void ConfigureRendererForCannabis(GameObject renderer, int plantId)
-        {
-            if (renderer == null || plantId <= 0) return;
-
-#if UNITY_SPEEDTREE
-            // Apply shader configuration
-            if (_shaderConfig != null)
-            {
-                ApplyShaderConfiguration(renderer, _shaderConfig);
-            }
-
-            // Configure for cannabis-specific rendering
-            ConfigureCannabisRendering(renderer, plantId);
-
-            // Set up LOD if configured
-            ConfigureLODSystem(renderer, plantId);
-
-            // Enable physics interaction if requested
-            if (_enablePhysicsInteraction)
-            {
-                AddPhysicsInteraction(renderer, plantId);
-            }
-#endif
-        }
-
-        #endregion
-
-        #region Material Management
-
-        public void ApplyGeneticVariationsToRenderer(GameObject renderer, object genetics)
-        {
-            if (renderer == null || genetics == null) return;
-
-#if UNITY_SPEEDTREE
-            var materials = renderer.GetComponent<Renderer>()?.materials;
-            if (materials == null) return;
-
-            foreach (var material in materials)
-            {
-                // Apply genetic variations - placeholder implementation
-                if (material.HasProperty(_geneticVariationPropertyId))
-                {
-                    material.SetFloat(_geneticVariationPropertyId, 1.0f);
-                }
-            }
-#endif
-        }
-
-        public void ApplyMorphologicalVariations(GameObject renderer, object genetics)
-        {
-            if (renderer == null || genetics == null) return;
-
-#if UNITY_SPEEDTREE
-            // Apply morphological variations - placeholder implementation
-            var rendererComponent = renderer.GetComponent<Renderer>();
-            if (rendererComponent != null)
-            {
-                ChimeraLogger.Log($"Applied morphological variations to renderer: {renderer.name}");
-            }
-#endif
-        }
-
-        public void UpdatePlantAppearanceForStage(int plantId, object stage)
-        {
-            var renderer = FindRendererForInstance(plantId);
-            if (renderer == null) return;
-
-#if UNITY_SPEEDTREE
-            var materials = renderer.GetComponent<Renderer>()?.materials;
-            if (materials == null) return;
-
-            foreach (var material in materials)
-            {
-                // Update growth stage properties
-                if (material.HasProperty(_growthPropertyId))
-                {
-                    material.SetFloat(_growthPropertyId, 0.5f); // Placeholder value
-                }
-            }
-
-            ChimeraLogger.Log($"Updated plant appearance for stage: {stage}");
-#endif
-        }
-
-        #endregion
-
-        #region Physics Integration
-
-        public void AddPhysicsInteraction(GameObject renderer, int plantId)
-        {
-            if (renderer == null || plantId <= 0) return;
-
-            // Add collider for physics interaction
-            var capsuleCollider = renderer.GetComponent<CapsuleCollider>();
-            if (capsuleCollider == null)
-            {
-                capsuleCollider = renderer.AddComponent<CapsuleCollider>();
-            }
-
-            // Configure collider with default values
-            capsuleCollider.height = 2.0f; // Default height
-            capsuleCollider.radius = 0.4f; // Default radius
-            capsuleCollider.center = new Vector3(0, 1.0f, 0);
-
-            ChimeraLogger.Log($"Physics interaction added for plant {plantId}");
-        }
-
-        public void RemovePhysicsInteraction(GameObject renderer)
-        {
-            if (renderer == null) return;
-
-            var collider = renderer.GetComponent<Collider>();
-            if (collider != null)
-            {
-                DestroyImmediate(collider);
-            }
-        }
-
-        #endregion
-
-        #region Private Helper Methods
-
-        private void CacheShaderProperties()
-        {
-            _colorPropertyId = Shader.PropertyToID("_Color");
-            _healthPropertyId = Shader.PropertyToID("_Health");
-            _growthPropertyId = Shader.PropertyToID("_GrowthStage");
-            _geneticVariationPropertyId = Shader.PropertyToID("_GeneticVariation");
-        }
-
-        private void InitializeStrainDatabase()
-        {
-            _strainDatabase.Clear();
-
-            if (_cannabisStrains != null)
-            {
-                foreach (var strain in _cannabisStrains)
-                {
-                    if (strain != null && !string.IsNullOrEmpty(strain.name))
+                    if (_enableLogging)
                     {
-                        _strainDatabase[strain.name] = strain;
+                        ChimeraLogger.Log($"[SpeedTreeAssetManagementService] Loaded asset: {assetName}");
                     }
+
+                    return prefab;
                 }
             }
 
-            ChimeraLogger.Log($"Initialized strain database with {_strainDatabase.Count} strains");
-        }
-
-        private void LoadSpeedTreeAssets()
-        {
-            if (_speedTreeLibrary == null) return;
-
-            // Placeholder implementation - would load from configured asset paths
-            ChimeraLogger.Log("SpeedTree assets loading initialized");
-        }
-
-#if UNITY_SPEEDTREE
-        private async Task<UnityEngine.Object> LoadAssetFromPath(string assetPath)
-        {
-            // SpeedTree assembly - use Addressables for proper async loading
-            ChimeraLogger.Log("[SpeedTreeAssetManagementService] Loading SpeedTree asset via Addressables");
-
-            try
+            // Try to load from Resources
+            var loadedAsset = Resources.Load<GameObject>(assetName);
+            if (loadedAsset != null)
             {
-#if UNITY_ADDRESSABLES
-                var asset = await Addressables.LoadAssetAsync<UnityEngine.Object>(assetPath);
-#else
-                var asset = Resources.Load<UnityEngine.Object>(assetPath);
-#endif
-                if (asset != null)
+                _loadedAssets[assetName] = loadedAsset;
+                OnAssetLoaded?.Invoke(loadedAsset);
+
+                if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[SpeedTreeAssetManagementService] Successfully loaded SpeedTree asset: {assetPath}");
+                    ChimeraLogger.Log($"[SpeedTreeAssetManagementService] Loaded asset from Resources: {assetName}");
                 }
-                return asset;
+
+                return loadedAsset;
             }
-            catch (Exception ex)
+
+            if (_enableLogging)
             {
-                ChimeraLogger.LogError($"[SpeedTreeAssetManagementService] Failed to load SpeedTree asset {assetPath}: {ex.Message}");
-                return null;
+                ChimeraLogger.LogWarning($"[SpeedTreeAssetManagementService] Asset not found: {assetName}");
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Unload plant asset
+        /// </summary>
+        public void UnloadPlantAsset(string assetName)
+        {
+            if (_loadedAssets.Remove(assetName))
+            {
+                OnAssetUnloaded?.Invoke(null); // Could pass the asset if we stored it
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log($"[SpeedTreeAssetManagementService] Unloaded asset: {assetName}");
+                }
             }
         }
 
-        private void ConfigureAssetForCannabis(UnityEngine.Object asset)
+        /// <summary>
+        /// Create plant instance
+        /// </summary>
+        public GameObject CreatePlantInstance(string assetName, Vector3 position, Quaternion rotation)
         {
-            if (asset == null) return;
+            var prefab = LoadPlantAsset(assetName);
+            if (prefab == null) return null;
 
-            ChimeraLogger.Log($"Configured asset for cannabis: {asset.name}");
+            var instance = Instantiate(prefab, position, rotation);
+            instance.name = $"{assetName}_Instance";
+            _activeInstances.Add(instance);
+
+            OnInstanceCreated?.Invoke(instance);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log($"[SpeedTreeAssetManagementService] Created instance: {instance.name}");
+            }
+
+            return instance;
         }
 
-        private void ApplyShaderConfiguration(GameObject renderer, ScriptableObject config)
+        /// <summary>
+        /// Destroy plant instance
+        /// </summary>
+        public void DestroyPlantInstance(GameObject instance)
         {
-            if (renderer == null || config == null) return;
+            if (instance != null && _activeInstances.Remove(instance))
+            {
+                Destroy(instance);
 
-            ChimeraLogger.Log($"Applied shader configuration to renderer: {renderer.name}");
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log($"[SpeedTreeAssetManagementService] Destroyed instance: {instance.name}");
+                }
+            }
         }
 
-        private void ConfigureCannabisRendering(GameObject renderer, int plantId)
+        /// <summary>
+        /// Get loaded asset by name
+        /// </summary>
+        public GameObject GetLoadedAsset(string assetName)
         {
-            if (renderer == null || plantId <= 0) return;
-
-            ChimeraLogger.Log($"Configured cannabis rendering for plant {plantId}");
+            return _loadedAssets.TryGetValue(assetName, out var asset) ? asset : null;
         }
 
-        private void ConfigureLODSystem(GameObject renderer, int plantId)
+        /// <summary>
+        /// Get all loaded asset names
+        /// </summary>
+        public List<string> GetLoadedAssetNames()
         {
-            if (renderer == null || plantId <= 0) return;
-
-            ChimeraLogger.Log($"Configured LOD system for plant {plantId}");
-        }
-#endif
-
-        private ScriptableObject GetStrainForInstance(int plantId)
-        {
-            // Return default strain if available
-            return _cannabisStrains?.Count > 0 ? _cannabisStrains[0] : null;
+            return new List<string>(_loadedAssets.Keys);
         }
 
-        private GameObject FindRendererForInstance(int plantId)
+        /// <summary>
+        /// Get all active instances
+        /// </summary>
+        public List<GameObject> GetActiveInstances()
         {
-            return _activeRenderers.Find(r =>
-                r != null &&
-                r.name.Contains($"SpeedTree_Plant_{plantId}"));
+            return new List<GameObject>(_activeInstances);
         }
 
-        // All helper methods simplified to avoid type references
-        // These would be reimplemented when the genetics system is rebuilt
-
-        #endregion
-
-        #region Unity Lifecycle
-
-        private void Start()
+        /// <summary>
+        /// Clear all assets and instances
+        /// </summary>
+        public void ClearAllAssets()
         {
-            Initialize();
+            // Destroy all instances
+            foreach (var instance in _activeInstances.ToArray())
+            {
+                if (instance != null)
+                {
+                    Destroy(instance);
+                }
+            }
+            _activeInstances.Clear();
+
+            // Clear loaded assets
+            _loadedAssets.Clear();
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("[SpeedTreeAssetManagementService] Cleared all assets and instances");
+            }
         }
 
-        private void OnDestroy()
+        /// <summary>
+        /// Set asset management enabled state
+        /// </summary>
+        public void SetAssetManagementEnabled(bool enabled)
         {
-            Shutdown();
+            _enableBasicAssetManagement = enabled;
+
+            if (!enabled)
+            {
+                ClearAllAssets();
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log($"[SpeedTreeAssetManagementService] Asset management {(enabled ? "enabled" : "disabled")}");
+            }
         }
 
-        #endregion
+        /// <summary>
+        /// Get asset management statistics
+        /// </summary>
+        public AssetManagementStats GetStats()
+        {
+            return new AssetManagementStats
+            {
+                LoadedAssets = _loadedAssets.Count,
+                ActiveInstances = _activeInstances.Count,
+                IsManagementEnabled = _enableBasicAssetManagement,
+                IsInitialized = _isInitialized
+            };
+        }
+    }
+
+    /// <summary>
+    /// Asset management statistics
+    /// </summary>
+    [System.Serializable]
+    public struct AssetManagementStats
+    {
+        public int LoadedAssets;
+        public int ActiveInstances;
+        public bool IsManagementEnabled;
+        public bool IsInitialized;
     }
 }

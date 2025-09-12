@@ -231,11 +231,57 @@ namespace ProjectChimera.Core.DependencyInjection
         public void RegisterTransient<TInterface>(Func<IServiceContainer, TInterface> factory) => throw new NotSupportedException("Cannot register factories on IServiceProvider adapter");
         public void RegisterScoped<TInterface, TImplementation>() where TImplementation : class, TInterface, new() => throw new NotSupportedException("Cannot register services on IServiceProvider adapter");
         public void RegisterScoped<TInterface>(Func<IServiceContainer, TInterface> factory) => throw new NotSupportedException("Cannot register factories on IServiceProvider adapter");
-        public void RegisterFactory<TInterface>(Func<IServiceLocator, TInterface> factory) where TInterface : class => throw new NotSupportedException("Cannot register factories on IServiceProvider adapter");
+        public void RegisterFactory<TInterface>(Func<IServiceLocator, TInterface> factory) where TInterface : class
+        {
+            // Store the factory for later resolution
+            var serviceType = typeof(TInterface);
+            _additionalServices[serviceType] = factory;
+
+            ServiceRegistered?.Invoke(new ProjectChimera.Core.ServiceRegistration(
+                serviceType,
+                serviceType,
+                ServiceLifetime.Transient,
+                null,
+                factory
+            ));
+        }
 
         public void RegisterCollection<TInterface>(params Type[] implementations) where TInterface : class => throw new NotSupportedException("Advanced registration not supported on IServiceProvider adapter");
         public void RegisterNamed<TInterface, TImplementation>(string name) where TInterface : class where TImplementation : class, TInterface, new() => throw new NotSupportedException("Named registration not supported on IServiceProvider adapter");
-        public void RegisterConditional<TInterface, TImplementation>(Func<IServiceLocator, bool> condition) where TInterface : class where TImplementation : class, TInterface, new() => throw new NotSupportedException("Conditional registration not supported on IServiceProvider adapter");
+        public void RegisterConditional<TInterface, TImplementation>(Func<IServiceLocator, bool> condition) where TInterface : class where TImplementation : class, TInterface, new()
+        {
+            // For conditional registration, we'll register if the condition is met
+            if (condition != null && condition(this))
+            {
+                var serviceType = typeof(TInterface);
+                var implementationType = typeof(TImplementation);
+
+                try
+                {
+                    var instance = Activator.CreateInstance<TImplementation>();
+                    _additionalServices[serviceType] = instance;
+
+                    ServiceRegistered?.Invoke(new ProjectChimera.Core.ServiceRegistration(
+                        serviceType,
+                        implementationType,
+                        ServiceLifetime.Singleton,
+                        instance,
+                        null
+                    ));
+                }
+                catch (Exception ex)
+                {
+                    // Log error but don't throw
+                    UnityEngine.Debug.LogError($"Failed to create conditional service {implementationType.Name}: {ex.Message}");
+                }
+            }
+        }
+
+        public T ResolveWithLifetime<T>(ServiceLifetime lifetime) where T : class
+        {
+            // For this adapter, we always return singleton-like behavior
+            return (T)_serviceProvider.GetService(typeof(T));
+        }
         public void RegisterDecorator<TInterface, TDecorator>() where TInterface : class where TDecorator : class, TInterface, new() => throw new NotSupportedException("Decorator registration not supported on IServiceProvider adapter");
         public void RegisterWithCallback<TInterface, TImplementation>(Action<TImplementation> initializer) where TInterface : class where TImplementation : class, TInterface, new() => throw new NotSupportedException("Callback registration not supported on IServiceProvider adapter");
         public void RegisterOpenGeneric(Type serviceType, Type implementationType) => throw new NotSupportedException("Open generic registration not supported on IServiceProvider adapter");
@@ -243,7 +289,6 @@ namespace ProjectChimera.Core.DependencyInjection
         public IEnumerable<T> ResolveWhere<T>(Func<T, bool> predicate) where T : class => ((IEnumerable<T>)_serviceProvider.GetService(typeof(IEnumerable<T>))).Where(predicate);
         public T ResolveOrCreate<T>(Func<T> factory) where T : class => (T)_serviceProvider.GetService(typeof(T)) ?? factory();
         public T ResolveLast<T>() where T : class => ((IEnumerable<T>)_serviceProvider.GetService(typeof(IEnumerable<T>))).LastOrDefault();
-        public T ResolveWithLifetime<T>(ServiceLifetime lifetime) where T : class => (T)_serviceProvider.GetService(typeof(T));
         public IEnumerable<Type> GetRegisteredTypes<T>() => throw new NotSupportedException("GetRegisteredTypes not supported on IServiceProvider adapter");
         public IEnumerable<Type> GetRegisteredTypes(Type interfaceType) => throw new NotSupportedException("GetRegisteredTypes not supported on IServiceProvider adapter");
         public void ValidateServices() => throw new NotSupportedException("ValidateServices not supported on IServiceProvider adapter");
@@ -333,10 +378,16 @@ namespace ProjectChimera.Core.DependencyInjection
         public void RegisterTransient<TInterface>(Func<IServiceContainer, TInterface> factory) => _container.RegisterTransient(factory);
         public void RegisterScoped<TInterface, TImplementation>() where TImplementation : class, TInterface, new() => _container.RegisterScoped<TInterface, TImplementation>();
         public void RegisterScoped<TInterface>(Func<IServiceContainer, TInterface> factory) => _container.RegisterScoped(factory);
-        public void RegisterFactory<TInterface>(Func<IServiceLocator, TInterface> factory) where TInterface : class => _container.RegisterFactory(factory);
+        public void RegisterFactory<TInterface>(Func<IServiceLocator, TInterface> factory) where TInterface : class
+        {
+            _container.RegisterFactory(factory);
+        }
         public void RegisterCollection<TInterface>(params Type[] implementations) where TInterface : class => _container.RegisterCollection<TInterface>(implementations);
         public void RegisterNamed<TInterface, TImplementation>(string name) where TInterface : class where TImplementation : class, TInterface, new() => _container.RegisterNamed<TInterface, TImplementation>(name);
-        public void RegisterConditional<TInterface, TImplementation>(Func<IServiceLocator, bool> condition) where TInterface : class where TImplementation : class, TInterface, new() => _container.RegisterConditional<TInterface, TImplementation>(condition);
+        public void RegisterConditional<TInterface, TImplementation>(Func<IServiceLocator, bool> condition) where TInterface : class where TImplementation : class, TInterface, new()
+        {
+            _container.RegisterConditional<TInterface, TImplementation>(condition);
+        }
         public void RegisterDecorator<TInterface, TDecorator>() where TInterface : class where TDecorator : class, TInterface, new() => _container.RegisterDecorator<TInterface, TDecorator>();
         public void RegisterWithCallback<TInterface, TImplementation>(Action<TImplementation> initializer) where TInterface : class where TImplementation : class, TInterface, new() => _container.RegisterWithCallback<TInterface, TImplementation>(initializer);
         public void RegisterOpenGeneric(Type serviceType, Type implementationType) => _container.RegisterOpenGeneric(serviceType, implementationType);
@@ -344,12 +395,16 @@ namespace ProjectChimera.Core.DependencyInjection
         public IEnumerable<T> ResolveWhere<T>(Func<T, bool> predicate) where T : class => _container.ResolveWhere(predicate);
         public T ResolveOrCreate<T>(Func<T> factory) where T : class => _container.ResolveOrCreate(factory);
         public T ResolveLast<T>() where T : class => _container.ResolveLast<T>();
-        public T ResolveWithLifetime<T>(ServiceLifetime lifetime) where T : class => _container.ResolveWithLifetime<T>(lifetime);
         public IServiceContainer CreateChildContainer() => _container.CreateChildContainer();
         public ContainerVerificationResult Verify() => _container.Verify();
         public IEnumerable<AdvancedServiceDescriptor> GetServiceDescriptors() => _container.GetServiceDescriptors();
         public void Replace<TInterface, TImplementation>() where TInterface : class where TImplementation : class, TInterface, new() => _container.Replace<TInterface, TImplementation>();
         public bool Unregister<T>() where T : class => _container.Unregister<T>();
+
+        public T ResolveWithLifetime<T>(ServiceLifetime lifetime) where T : class
+        {
+            return _container.ResolveWithLifetime<T>(lifetime);
+        }
 
         public object GetRequiredService(Type serviceType) => _serviceProvider.GetService(serviceType) ?? throw new InvalidOperationException($"Service of type {serviceType.Name} not found.");
         public T GetRequiredService<T>() where T : class => (T)GetRequiredService(typeof(T));

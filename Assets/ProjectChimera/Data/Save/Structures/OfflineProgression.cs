@@ -1,0 +1,140 @@
+using System;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.Save.Structures
+{
+    /// <summary>
+    /// BASIC: Simple offline progression for Project Chimera's save system.
+    /// Focuses on essential offline time tracking without complex calculation systems.
+    /// </summary>
+    public static class OfflineProgression
+    {
+        /// <summary>
+        /// Basic offline progression constants
+        /// </summary>
+        public const float MaxOfflineHours = 168f; // 1 week
+        public const float MinOfflineHours = 0.0167f; // 1 minute
+
+        /// <summary>
+        /// Calculate basic offline progression
+        /// </summary>
+        public static OfflineProgressionResult CalculateProgression(BasicSaveData saveData, DateTime currentTime)
+        {
+            var result = new OfflineProgressionResult();
+
+            try
+            {
+                // Calculate offline duration
+                TimeSpan offlineDuration = currentTime - saveData.SaveTime;
+                float offlineHours = (float)offlineDuration.TotalHours;
+
+                // Validate offline duration
+                if (offlineHours < MinOfflineHours)
+                {
+                    result.Success = false;
+                    result.Message = "Offline duration too short";
+                    return result;
+                }
+
+                if (offlineHours > MaxOfflineHours)
+                {
+                    offlineHours = MaxOfflineHours; // Cap at maximum
+                }
+
+                // Simple progression calculation
+                float experienceGained = offlineHours * 10f; // 10 XP per hour
+                float currencyEarned = offlineHours * 5f; // 5 currency per hour
+
+                result.Success = true;
+                result.Message = "Offline progression calculated successfully";
+                result.OfflineDuration = offlineDuration;
+                result.ExperienceGained = experienceGained;
+                result.CurrencyEarned = currencyEarned;
+
+                // Update save data
+                saveData.PlayerLevel += (int)(experienceGained / 100f); // Simple level calculation
+                saveData.Currency += currencyEarned;
+                saveData.PlayTimeHours += offlineHours;
+                saveData.SaveTime = currentTime;
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.Message = $"Calculation failed: {ex.Message}";
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Check if offline progression is available
+        /// </summary>
+        public static bool IsOfflineProgressionAvailable(BasicSaveData saveData, DateTime currentTime)
+        {
+            if (saveData == null) return false;
+
+            TimeSpan offlineDuration = currentTime - saveData.SaveTime;
+            float offlineHours = (float)offlineDuration.TotalHours;
+
+            return offlineHours >= MinOfflineHours;
+        }
+
+        /// <summary>
+        /// Get offline progression summary
+        /// </summary>
+        public static OfflineProgressionSummary GetProgressionSummary(BasicSaveData saveData, DateTime currentTime)
+        {
+            TimeSpan offlineDuration = currentTime - saveData.SaveTime;
+            float offlineHours = (float)offlineDuration.TotalHours;
+
+            return new OfflineProgressionSummary
+            {
+                OfflineDuration = offlineDuration,
+                IsAvailable = IsOfflineProgressionAvailable(saveData, currentTime),
+                EstimatedExperience = offlineHours * 10f,
+                EstimatedCurrency = offlineHours * 5f,
+                IsCapped = offlineHours > MaxOfflineHours
+            };
+        }
+
+        /// <summary>
+        /// Validate offline progression data
+        /// </summary>
+        public static bool ValidateOfflineData(BasicSaveData saveData, DateTime currentTime)
+        {
+            if (saveData == null) return false;
+            if (saveData.SaveTime > currentTime) return false; // Save time can't be in future
+
+            TimeSpan offlineDuration = currentTime - saveData.SaveTime;
+            float offlineHours = (float)offlineDuration.TotalHours;
+
+            return offlineHours >= 0 && offlineHours <= MaxOfflineHours * 2; // Allow some buffer
+        }
+    }
+
+    /// <summary>
+    /// Offline progression result
+    /// </summary>
+    [System.Serializable]
+    public class OfflineProgressionResult
+    {
+        public bool Success;
+        public string Message;
+        public TimeSpan OfflineDuration;
+        public float ExperienceGained;
+        public float CurrencyEarned;
+    }
+
+    /// <summary>
+    /// Offline progression summary
+    /// </summary>
+    [System.Serializable]
+    public struct OfflineProgressionSummary
+    {
+        public TimeSpan OfflineDuration;
+        public bool IsAvailable;
+        public float EstimatedExperience;
+        public float EstimatedCurrency;
+        public bool IsCapped;
+    }
+}

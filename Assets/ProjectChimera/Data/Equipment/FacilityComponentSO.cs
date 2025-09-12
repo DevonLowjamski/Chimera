@@ -382,6 +382,7 @@ namespace ProjectChimera.Data.Equipment
     {
         Minimal,
         Standard,
+        Secured,
         Enhanced,
         Maximum,
         Military_Grade

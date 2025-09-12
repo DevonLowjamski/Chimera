@@ -26,6 +26,14 @@ namespace ProjectChimera.Testing.Phase2_3
         private List<MenuAction> _testActions = new List<MenuAction>();
         private List<MenuCategory> _testCategories = new List<MenuCategory>();
 
+        /// <summary>
+        /// Set detailed logging configuration (replaces reflection usage)
+        /// </summary>
+        public void SetEnableDetailedLogging(bool enable)
+        {
+            _enableDetailedLogging = enable;
+        }
+
         public void RunTests()
         {
             ChimeraLogger.Log("[MenuSystemCoreTests] Starting core menu system tests...");

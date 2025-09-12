@@ -91,4 +91,59 @@ namespace ProjectChimera.Data.Simulation.HVAC
         Alarm,
         Offline
     }
+
+    [System.Serializable]
+    public enum ZonePriority
+    {
+        Low,
+        Normal,
+        High,
+        Critical
+    }
+
+    [System.Serializable]
+    public class ActiveHVACEquipment
+    {
+        public string EquipmentId;
+        public string EquipmentType;
+        public bool IsActive;
+        public float PowerConsumption;
+    }
+
+    [System.Serializable]
+    public class HVACControlParameters
+    {
+        public float TemperatureTolerance;
+        public float HumidityTolerance;
+        public bool AutoMode;
+        public HVACOperationMode OperationMode = HVACOperationMode.Auto;
+    }
+
+    [System.Serializable]
+    public enum HVACOperationMode
+    {
+        Auto,
+        Manual,
+        Cooling,
+        Heating,
+        Ventilation,
+        Dehumidification
+    }
+
+    [System.Serializable]
+    public class HVACEquipmentSnapshot
+    {
+        public string EquipmentId;
+        public float CurrentLoad;
+        public bool IsOperational;
+        public DateTime LastMaintenance;
+    }
+
+    [System.Serializable]
+    public class HVACControlPerformance
+    {
+        public float EfficiencyRating;
+        public float ResponseTime;
+        public int AdjustmentCount;
+    }
 }

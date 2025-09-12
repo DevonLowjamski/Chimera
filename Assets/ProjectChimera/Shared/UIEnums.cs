@@ -19,4 +19,18 @@ namespace ProjectChimera.Shared
         Grid,
         List
     }
+
+    /// <summary>
+    /// Plant health status levels
+    /// </summary>
+    public enum PlantHealthStatus
+    {
+        Unknown,
+        Excellent,
+        Good,
+        Fair,
+        Poor,
+        Critical,
+        Dead
+    }
 }

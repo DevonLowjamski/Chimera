@@ -1,530 +1,267 @@
-using ProjectChimera.Core.Logging;
-using ProjectChimera.Core.Updates;
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
-using System;
+using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Facilities;
-using ProjectChimera.Systems.Scene;
 
 namespace ProjectChimera.Systems.Facilities
 {
     /// <summary>
-    /// Handles facility tracking, discovery, and scene-to-facility mapping.
-    /// Extracted from FacilityManager for modular architecture.
-    /// Manages owned facilities, scene mappings, and facility information retrieval.
+    /// BASIC: Simple facility registry for Project Chimera's facility management.
+    /// Focuses on essential facility tracking without complex scene mapping and validation systems.
     /// </summary>
-    public class FacilityRegistry : MonoBehaviour, ITickable
+    public class FacilityRegistry : MonoBehaviour
     {
-        [Header("Registry Configuration")]
-        [SerializeField] private bool _enableRegistryLogging = false;
-        [SerializeField] private bool _validateOnUpdate = false;
-        [SerializeField] private float _validationInterval = 30f;
+        [Header("Basic Registry Settings")]
+        [SerializeField] private bool _enableBasicRegistry = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private int _maxFacilities = 10;
 
-        [Header("Scene Integration")]
-        [SerializeField] private string _defaultFacilityScene = SceneConstants.WAREHOUSE_SMALL_BAY;
-
-        // Facility storage
-        private Dictionary<string, OwnedFacility> _ownedFacilities = new Dictionary<string, OwnedFacility>();
-        private Dictionary<string, FacilitySceneMapping> _sceneMapping = new Dictionary<string, FacilitySceneMapping>();
+        // Basic facility storage
+        private readonly Dictionary<string, BasicFacility> _facilities = new Dictionary<string, BasicFacility>();
         private string _currentFacilityId;
 
-        // Validation tracking
-        private float _lastValidationTime = 0f;
-
-        // Events
-        public System.Action<OwnedFacility> OnFacilityAdded;
-        public System.Action<OwnedFacility> OnFacilityRemoved;
-        public System.Action<string> OnCurrentFacilityChanged;
-        public System.Action<string> OnRegistryValidationFailed;
-
-        // Properties
-        public int OwnedFacilitiesCount => _ownedFacilities.Count;
-        public string CurrentFacilityId => _currentFacilityId;
-        public IEnumerable<OwnedFacility> OwnedFacilities => _ownedFacilities.Values;
-        public IEnumerable<string> FacilityIds => _ownedFacilities.Keys;
+        /// <summary>
+        /// Events for facility management
+        /// </summary>
+        public event System.Action<string> OnFacilityAdded;
+        public event System.Action<string> OnFacilityRemoved;
+        public event System.Action<string> OnCurrentFacilityChanged;
 
         /// <summary>
-        /// Initialize the facility registry with scene mapping
+        /// Initialize basic facility registry
         /// </summary>
         public void Initialize()
         {
-            InitializeSceneMapping();
-            LogDebug("Facility registry initialized");
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("[FacilityRegistry] Initialized successfully");
+            }
         }
 
         /// <summary>
-        /// Initialize scene mapping for facility tiers to Unity scenes
+        /// Add facility to registry
         /// </summary>
-        private void InitializeSceneMapping()
+        public bool AddFacility(string facilityId, string facilityName, Vector3 position, float size)
         {
-            LogDebug("Initializing facility scene mapping...");
-
-            _sceneMapping = new Dictionary<string, FacilitySceneMapping>
+            if (!_enableBasicRegistry || _facilities.Count >= _maxFacilities)
             {
-                { "Tier1_SmallBay", new FacilitySceneMapping
-                    { TierName = "Small Bay Facility", SceneName = SceneConstants.WAREHOUSE_SMALL_BAY, BuildIndex = SceneConstants.WAREHOUSE_SMALL_BAY_INDEX } },
-                { "Tier2_MediumBay", new FacilitySceneMapping
-                    { TierName = "Medium Bay Facility", SceneName = SceneConstants.WAREHOUSE_MEDIUM_BAY, BuildIndex = SceneConstants.WAREHOUSE_MEDIUM_BAY_INDEX } },
-                { "Tier3_SmallStandalone", new FacilitySceneMapping
-                    { TierName = "Small Standalone Facility", SceneName = SceneConstants.WAREHOUSE_SMALL_STANDALONE, BuildIndex = SceneConstants.WAREHOUSE_SMALL_STANDALONE_INDEX } },
-                { "Tier4_LargeStandalone", new FacilitySceneMapping
-                    { TierName = "Large Standalone Facility", SceneName = SceneConstants.WAREHOUSE_LARGE_STANDALONE, BuildIndex = SceneConstants.WAREHOUSE_LARGE_STANDALONE_INDEX } },
-                { "Tier5_MassiveCustom", new FacilitySceneMapping
-                    { TierName = "Massive Custom Facility", SceneName = SceneConstants.WAREHOUSE_MASSIVE_CUSTOM, BuildIndex = SceneConstants.WAREHOUSE_MASSIVE_CUSTOM_INDEX } }
+                return false;
+            }
+
+            if (_facilities.ContainsKey(facilityId))
+            {
+                return false; // Already exists
+            }
+
+            var facility = new BasicFacility
+            {
+                FacilityId = facilityId,
+                FacilityName = facilityName,
+                Position = position,
+                Size = size,
+                IsActive = true,
+                DateCreated = System.DateTime.Now
             };
 
-            LogDebug($"Scene mapping initialized with {_sceneMapping.Count} facility scenes");
-        }
+            _facilities[facilityId] = facility;
+            OnFacilityAdded?.Invoke(facilityId);
 
-        #region Facility Management
-
-        /// <summary>
-        /// Register a new owned facility
-        /// </summary>
-        public bool RegisterFacility(OwnedFacility facility)
-        {
-            if (facility.FacilityId == null)
+            if (_enableLogging)
             {
-                LogError("Cannot register facility with null ID");
-                return false;
+                ChimeraLogger.Log($"[FacilityRegistry] Added facility: {facilityName} ({facilityId})");
             }
 
-            if (_ownedFacilities.ContainsKey(facility.FacilityId))
-            {
-                LogDebug($"Facility {facility.FacilityId} already registered, updating");
-            }
-
-            _ownedFacilities[facility.FacilityId] = facility;
-            LogDebug($"Registered facility: {facility.FacilityName} ({facility.FacilityId})");
-
-            OnFacilityAdded?.Invoke(facility);
             return true;
         }
 
         /// <summary>
-        /// Unregister an owned facility
+        /// Remove facility from registry
         /// </summary>
-        public bool UnregisterFacility(string facilityId)
+        public bool RemoveFacility(string facilityId)
         {
-            if (!_ownedFacilities.TryGetValue(facilityId, out var facility))
+            if (_facilities.Remove(facilityId))
             {
-                LogError($"Facility {facilityId} not found");
-                return false;
+                OnFacilityRemoved?.Invoke(facilityId);
+
+                // If this was the current facility, clear it
+                if (_currentFacilityId == facilityId)
+                {
+                    _currentFacilityId = null;
+                    OnCurrentFacilityChanged?.Invoke(null);
+                }
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log($"[FacilityRegistry] Removed facility: {facilityId}");
+                }
+
+                return true;
             }
 
-            _ownedFacilities.Remove(facilityId);
-
-            // Clear current facility if it was removed
-            if (_currentFacilityId == facilityId)
-            {
-                _currentFacilityId = null;
-                OnCurrentFacilityChanged?.Invoke(null);
-            }
-
-            LogDebug($"Unregistered facility: {facility.FacilityName}");
-            OnFacilityRemoved?.Invoke(facility);
-            return true;
+            return false;
         }
 
         /// <summary>
-        /// Set the current active facility
+        /// Set current facility
         /// </summary>
         public bool SetCurrentFacility(string facilityId)
         {
-            if (!string.IsNullOrEmpty(facilityId) && !_ownedFacilities.ContainsKey(facilityId))
+            if (!_facilities.ContainsKey(facilityId))
             {
-                LogError($"Cannot set current facility to unregistered facility: {facilityId}");
                 return false;
             }
 
-            var previousId = _currentFacilityId;
             _currentFacilityId = facilityId;
-
-            LogDebug($"Current facility changed: {previousId} -> {facilityId}");
             OnCurrentFacilityChanged?.Invoke(facilityId);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log($"[FacilityRegistry] Set current facility: {facilityId}");
+            }
+
             return true;
         }
 
         /// <summary>
         /// Get facility by ID
         /// </summary>
-        public OwnedFacility GetFacilityById(string facilityId)
+        public BasicFacility GetFacility(string facilityId)
         {
-            _ownedFacilities.TryGetValue(facilityId, out var facility);
-            return facility;
+            return _facilities.TryGetValue(facilityId, out var facility) ? facility : null;
         }
 
         /// <summary>
         /// Get current facility
         /// </summary>
-        public OwnedFacility? GetCurrentFacility()
+        public BasicFacility GetCurrentFacility()
         {
-            if (string.IsNullOrEmpty(_currentFacilityId) || !_ownedFacilities.TryGetValue(_currentFacilityId, out var facility))
-            {
-                return null;
-            }
-            return facility;
+            return GetFacility(_currentFacilityId);
         }
 
         /// <summary>
-        /// Get all owned facilities as list
+        /// Get all facilities
         /// </summary>
-        public List<OwnedFacility> GetOwnedFacilities()
+        public List<BasicFacility> GetAllFacilities()
         {
-            return _ownedFacilities.Values.ToList();
+            return new List<BasicFacility>(_facilities.Values);
         }
 
         /// <summary>
-        /// Get facilities by tier
+        /// Get facility IDs
         /// </summary>
-        public List<OwnedFacility> GetFacilitiesForTier(FacilityTierSO tier)
+        public List<string> GetFacilityIds()
         {
-            return _ownedFacilities.Values.Where(f => f.Tier == tier).ToList();
-        }
-
-        /// <summary>
-        /// Get facility count for specific tier
-        /// </summary>
-        public int GetFacilityCountForTier(FacilityTierSO tier)
-        {
-            return _ownedFacilities.Values.Count(f => f.Tier == tier);
+            return new List<string>(_facilities.Keys);
         }
 
         /// <summary>
         /// Check if facility exists
         /// </summary>
-        public bool HasFacility(string facilityId)
+        public bool FacilityExists(string facilityId)
         {
-            return !string.IsNullOrEmpty(facilityId) && _ownedFacilities.ContainsKey(facilityId);
+            return _facilities.ContainsKey(facilityId);
         }
 
         /// <summary>
-        /// Check if has facility of specified tier level
+        /// Get facility count
         /// </summary>
-        public bool HasFacilityOfTier(int tierLevel)
+        public int GetFacilityCount()
         {
-            return _ownedFacilities.Values.Any(f => f.Tier.TierLevel == tierLevel);
+            return _facilities.Count;
         }
 
-        #endregion
-
-        #region Scene Mapping
-
         /// <summary>
-        /// Get scene name for facility tier
+        /// Get current facility ID
         /// </summary>
-        public string GetSceneNameForTier(FacilityTierSO tier)
+        public string GetCurrentFacilityId()
         {
-            if (tier == null)
-                return _defaultFacilityScene;
-
-            // Try to get from tier ScriptableObject first
-            if (!string.IsNullOrEmpty(tier.SceneName))
-                return tier.SceneName;
-
-            // Fallback to scene mapping
-            var mapping = _sceneMapping.Values.FirstOrDefault(m => m.TierName.Contains(tier.TierName));
-            return mapping?.SceneName ?? _defaultFacilityScene;
+            return _currentFacilityId;
         }
 
         /// <summary>
-        /// Get facility information for scene
-        /// </summary>
-        public FacilitySceneMapping GetFacilityInfoForScene(string sceneName)
-        {
-            return _sceneMapping.Values.FirstOrDefault(m => m.SceneName == sceneName);
-        }
-
-        /// <summary>
-        /// Get all available facility scenes
-        /// </summary>
-        public List<string> GetAvailableFacilityScenes()
-        {
-            return _sceneMapping.Values.Select(m => m.SceneName).ToList();
-        }
-
-        /// <summary>
-        /// Check if scene is a warehouse/facility scene
-        /// </summary>
-        public bool IsWarehouseScene(string sceneName)
-        {
-            return SceneConstants.IsWarehouseScene(sceneName);
-        }
-
-        /// <summary>
-        /// Update current facility tracking based on loaded scene
-        /// </summary>
-        public void UpdateCurrentFacilityFromScene(string sceneName)
-        {
-            var mapping = _sceneMapping.Values.FirstOrDefault(m => m.SceneName == sceneName);
-            if (mapping != null)
-            {
-                LogDebug($"Updated current facility context to: {mapping.TierName}");
-                // Find facility that matches this scene
-                var facility = _ownedFacilities.Values.FirstOrDefault(f =>
-                    GetSceneNameForTier(f.Tier) == sceneName);
-
-                if (facility.FacilityId != null)
-                {
-                    SetCurrentFacility(facility.FacilityId);
-                }
-            }
-        }
-
-        #endregion
-
-        #region Portfolio Analysis
-
-        /// <summary>
-        /// Get total portfolio value of all owned facilities
-        /// </summary>
-        public float GetTotalPortfolioValue()
-        {
-            return _ownedFacilities.Values.Sum(f => f.CurrentValue);
-        }
-
-        /// <summary>
-        /// Get total investment made in facilities
-        /// </summary>
-        public float GetTotalInvestment()
-        {
-            return _ownedFacilities.Values.Sum(f => f.TotalInvestment);
-        }
-
-        /// <summary>
-        /// Get return on investment across all facilities
-        /// </summary>
-        public float GetPortfolioROI()
-        {
-            float totalInvestment = GetTotalInvestment();
-            if (totalInvestment <= 0) return 0f;
-
-            float totalValue = GetTotalPortfolioValue();
-            return ((totalValue - totalInvestment) / totalInvestment) * 100f;
-        }
-
-        /// <summary>
-        /// Update facility values based on market conditions
-        /// </summary>
-        public void UpdateFacilityValues()
-        {
-            var keys = new List<string>(_ownedFacilities.Keys);
-            foreach (var key in keys)
-            {
-                var facility = _ownedFacilities[key];
-
-                float ageInDays = (float)(DateTime.Now - facility.PurchaseDate).TotalDays;
-                float appreciationRate = 0.001f;
-                float depreciationRate = 0.002f;
-
-                if (facility.IsActive && facility.MaintenanceLevel > 0.7f)
-                {
-                    facility.CurrentValue *= (1f + appreciationRate);
-                }
-                else
-                {
-                    facility.CurrentValue *= (1f - depreciationRate);
-                }
-
-                // Ensure value doesn't go below 20% of original investment
-                facility.CurrentValue = Mathf.Max(facility.CurrentValue, facility.TotalInvestment * 0.2f);
-
-                _ownedFacilities[key] = facility;
-            }
-
-            LogDebug($"Updated values for {_ownedFacilities.Count} facilities");
-        }
-
-        #endregion
-
-        #region Facility Operations
-
-        /// <summary>
-        /// Rename a facility
-        /// </summary>
-        public bool RenameFacility(string facilityId, string newName)
-        {
-            if (!_ownedFacilities.TryGetValue(facilityId, out var facility))
-            {
-                LogError($"Facility {facilityId} not found");
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(newName))
-            {
-                LogError("Facility name cannot be empty");
-                return false;
-            }
-
-            facility.FacilityName = newName.Trim();
-            _ownedFacilities[facilityId] = facility;
-
-            LogDebug($"Renamed facility {facilityId} to '{newName}'");
-            return true;
-        }
-
-        /// <summary>
-        /// Clear all facilities (for reset/cleanup)
+        /// Clear all facilities
         /// </summary>
         public void ClearAllFacilities()
         {
-            LogDebug($"Clearing {_ownedFacilities.Count} facilities");
-
-            _ownedFacilities.Clear();
+            var facilityIds = new List<string>(_facilities.Keys);
+            _facilities.Clear();
             _currentFacilityId = null;
 
+            foreach (string facilityId in facilityIds)
+            {
+                OnFacilityRemoved?.Invoke(facilityId);
+            }
+
             OnCurrentFacilityChanged?.Invoke(null);
-            LogDebug("All facilities cleared");
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log($"[FacilityRegistry] Cleared {facilityIds.Count} facilities");
+            }
         }
-
-        #endregion
-
-        #region Validation
 
         /// <summary>
-        /// Validate registry integrity
+        /// Get facilities by type
         /// </summary>
-        public FacilityRegistryValidation ValidateRegistry()
+        public List<BasicFacility> GetFacilitiesByType(FacilityType type)
         {
-            var validation = new FacilityRegistryValidation();
+            var matchingFacilities = new List<BasicFacility>();
 
-            foreach (var kvp in _ownedFacilities)
+            foreach (var facility in _facilities.Values)
             {
-                var facilityId = kvp.Key;
-                var facility = kvp.Value;
-
-                if (string.IsNullOrEmpty(facility.FacilityId))
-                {
-                    validation.AddError($"Facility {facilityId} has null/empty FacilityId");
-                }
-                else if (facility.FacilityId != facilityId)
-                {
-                    validation.AddError($"Facility ID mismatch: key={facilityId}, facility.Id={facility.FacilityId}");
-                }
-
-                if (facility.Tier == null)
-                {
-                    validation.AddError($"Facility {facilityId} has null Tier");
-                }
-
-                if (string.IsNullOrEmpty(facility.FacilityName))
-                {
-                    validation.AddWarning($"Facility {facilityId} has no name");
-                }
-
-                validation.ValidatedFacilities++;
+                // For basic implementation, we don't have facility types in BasicFacility
+                // This could be expanded if needed
+                matchingFacilities.Add(facility);
             }
 
-            // Validate current facility reference
-            if (!string.IsNullOrEmpty(_currentFacilityId) && !_ownedFacilities.ContainsKey(_currentFacilityId))
+            return matchingFacilities;
+        }
+
+        /// <summary>
+        /// Get registry statistics
+        /// </summary>
+        public RegistryStats GetStats()
+        {
+            int activeFacilities = _facilities.Count(f => f.Value.IsActive);
+            int inactiveFacilities = _facilities.Count(f => !f.Value.IsActive);
+
+            return new RegistryStats
             {
-                validation.AddError($"Current facility ID {_currentFacilityId} not found in registry");
-            }
-
-            validation.IsValid = validation.Errors.Count == 0;
-            return validation;
+                TotalFacilities = _facilities.Count,
+                ActiveFacilities = activeFacilities,
+                InactiveFacilities = inactiveFacilities,
+                HasCurrentFacility = !string.IsNullOrEmpty(_currentFacilityId),
+                IsRegistryEnabled = _enableBasicRegistry
+            };
         }
-
-    public void Tick(float deltaTime)
-    {
-        if (!_validateOnUpdate) return;
-
-        float currentTime = Time.time;
-        if (currentTime - _lastValidationTime >= _validationInterval)
-        {
-            var validation = ValidateRegistry();
-            if (!validation.IsValid)
-            {
-                LogError($"Registry validation failed: {validation.Errors.Count} errors, {validation.Warnings.Count} warnings");
-                OnRegistryValidationFailed?.Invoke(validation.GetErrorsSummary());
-            }
-
-            _lastValidationTime = currentTime;
-        }
-    }
-
-        #endregion
-
-        #region Unity Lifecycle
-
-        protected virtual void Start()
-        {
-            // Register with UpdateOrchestrator
-            UpdateOrchestrator.Instance?.RegisterTickable(this);
-        }
-
-        private void OnDestroy()
-        {
-            // Unregister from UpdateOrchestrator
-            UpdateOrchestrator.Instance?.UnregisterTickable(this);
-            ClearAllFacilities();
-        }
-
-        #endregion
-
-        #region ITickable Implementation
-
-        public int Priority => 0;
-        public bool Enabled => enabled && gameObject.activeInHierarchy;
-
-        public virtual void OnRegistered()
-        {
-            // Override in derived classes if needed
-        }
-
-        public virtual void OnUnregistered()
-        {
-            // Override in derived classes if needed
-        }
-
-        #endregion
-
-        #region Logging
-
-        private void LogDebug(string message)
-        {
-            if (_enableRegistryLogging)
-                ChimeraLogger.Log($"[FacilityRegistry] {message}");
-        }
-
-        private void LogError(string message)
-        {
-            ChimeraLogger.LogError($"[FacilityRegistry] {message}");
-        }
-
-        #endregion
     }
 
     /// <summary>
-    /// Result of facility registry validation
+    /// Basic facility data
     /// </summary>
     [System.Serializable]
-    public class FacilityRegistryValidation
+    public class BasicFacility
     {
-        public bool IsValid { get; set; }
-        public int ValidatedFacilities { get; set; }
-        public List<string> Errors { get; set; } = new List<string>();
-        public List<string> Warnings { get; set; } = new List<string>();
+        public string FacilityId;
+        public string FacilityName;
+        public Vector3 Position;
+        public float Size;
+        public bool IsActive;
+        public System.DateTime DateCreated;
+    }
 
-        public void AddError(string error)
-        {
-            Errors.Add(error);
-        }
+    // FacilityType enum moved to ProjectChimera.Data.Facilities.FacilityEnums
 
-        public void AddWarning(string warning)
-        {
-            Warnings.Add(warning);
-        }
-
-        public string GetErrorsSummary()
-        {
-            return string.Join("\n", Errors);
-        }
-
-        public string GetWarningsSummary()
-        {
-            return string.Join("\n", Warnings);
-        }
+    /// <summary>
+    /// Registry statistics
+    /// </summary>
+    [System.Serializable]
+    public struct RegistryStats
+    {
+        public int TotalFacilities;
+        public int ActiveFacilities;
+        public int InactiveFacilities;
+        public bool HasCurrentFacility;
+        public bool IsRegistryEnabled;
     }
 }

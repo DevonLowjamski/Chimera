@@ -1,561 +1,241 @@
-using ProjectChimera.Core.Logging;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using ProjectChimera.Core;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Shared;
-using ProjectChimera.Data.Environment;
-using EnvironmentalStressSO = ProjectChimera.Data.Simulation.EnvironmentalStressSO;
-using ProjectChimera.Core.Events;
-using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
-using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
-using DataEnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
-using EnvironmentEnvironmentalConditions = ProjectChimera.Data.Environment.EnvironmentalConditions;
 
 namespace ProjectChimera.Systems.Cultivation
 {
     /// <summary>
-    /// PC-013-3: Plant Environmental Service - Handles environmental adaptation and stress management
-    /// Extracted from monolithic PlantManager for Single Responsibility Principle
-    /// Focuses solely on plant-environment interactions, stress application, and environmental adaptation
+    /// BASIC: Simple plant environmental service for Project Chimera's cultivation system.
+    /// Focuses on essential environmental monitoring without complex stress systems.
     /// </summary>
-    public class PlantEnvironmentalService
+    public class PlantEnvironmentalService : MonoBehaviour
     {
-        [Header("Environmental Configuration")]
-        [SerializeField] private bool _enableEnvironmentalStress = true;
-        [SerializeField] private float _stressRecoveryRate = 0.1f;
-        [SerializeField] private bool _enableDetailedLogging = false;
-        [SerializeField] private float _adaptationUpdateInterval = 2f; // Update every 2 seconds
+        [Header("Basic Environmental Settings")]
+        [SerializeField] private bool _enableBasicMonitoring = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _optimalTemperature = 25f;
+        [SerializeField] private float _optimalHumidity = 60f;
+        [SerializeField] private float _optimalLight = 500f;
 
-        // Dependencies
-        private IPlantLifecycleService _plantLifecycleService;
-        private CultivationManager _cultivationManager;
+        // Basic environmental tracking
+        private readonly Dictionary<string, EnvironmentalConditions> _plantEnvironments = new Dictionary<string, EnvironmentalConditions>();
+        private bool _isInitialized = false;
 
-        // Environmental tracking
-        private float _lastAdaptationUpdate = 0f;
-        private Dictionary<string, float> _plantStressLevels = new Dictionary<string, float>();
-        private int _stressEventsApplied = 0;
-        private float _totalStressRecovered = 0f;
+        /// <summary>
+        /// Events for environmental changes
+        /// </summary>
+        public event System.Action<string, EnvironmentalConditions> OnEnvironmentUpdated;
 
-        public bool IsInitialized { get; private set; }
-
-        public bool EnableEnvironmentalStress
-        {
-            get => _enableEnvironmentalStress;
-            set => _enableEnvironmentalStress = value;
-        }
-
-        public float StressRecoveryRate
-        {
-            get => _stressRecoveryRate;
-            set => _stressRecoveryRate = Mathf.Clamp(value, 0f, 1f);
-        }
-
-        public PlantEnvironmentalService() : this(null, null)
-        {
-        }
-
-        public PlantEnvironmentalService(IPlantLifecycleService plantLifecycleService, CultivationManager cultivationManager)
-        {
-            _plantLifecycleService = plantLifecycleService;
-            _cultivationManager = cultivationManager;
-        }
-
+        /// <summary>
+        /// Initialize basic environmental service
+        /// </summary>
         public void Initialize()
         {
-            if (IsInitialized) return;
+            if (_isInitialized) return;
 
-            ChimeraLogger.Log("[PlantEnvironmentalService] Initializing environmental management system...");
+            _isInitialized = true;
 
-            // Get dependencies if not provided
-            if (_cultivationManager == null)
+            if (_enableLogging)
             {
-                _cultivationManager = GameManager.Instance?.GetManager<CultivationManager>();
-            }
-
-            if (_cultivationManager == null)
-            {
-                ChimeraLogger.LogError("[PlantEnvironmentalService] CultivationManager not found - environmental services will be limited");
-                return;
-            }
-
-            _lastAdaptationUpdate = Time.time;
-
-            IsInitialized = true;
-            ChimeraLogger.Log($"[PlantEnvironmentalService] Environmental management initialized (Stress: {_enableEnvironmentalStress}, Recovery: {_stressRecoveryRate:F2})");
-        }
-
-        public void Shutdown()
-        {
-            if (!IsInitialized) return;
-
-            ChimeraLogger.Log("[PlantEnvironmentalService] Shutting down environmental management system...");
-
-            // Log final environmental statistics
-            if (_enableDetailedLogging)
-            {
-                ChimeraLogger.Log($"[PlantEnvironmentalService] Final stats - Stress events: {_stressEventsApplied}, Stress recovered: {_totalStressRecovered:F1}");
-            }
-
-            _plantStressLevels.Clear();
-
-            IsInitialized = false;
-        }
-
-        /// <summary>
-        /// Updates environmental adaptation for all plants based on current conditions.
-        /// </summary>
-        public void UpdateEnvironmentalAdaptation(EnvironmentalConditions conditions)
-        {
-            if (!IsInitialized) return;
-
-            // Check if update is needed
-            if (Time.time - _lastAdaptationUpdate < _adaptationUpdateInterval)
-                return;
-
-            var trackedPlants = _plantLifecycleService?.GetTrackedPlants();
-            if (trackedPlants == null) return;
-
-            var startTime = System.DateTime.Now;
-            int plantsUpdated = 0;
-
-            foreach (var plant in trackedPlants)
-            {
-                if (plant != null && plant.IsActive)
-                {
-                    try
-                    {
-                        // Update plant's environmental adaptation
-                        plant.UpdateEnvironmentalAdaptation(conditions);
-
-                        // Process stress recovery if enabled
-                        if (_enableEnvironmentalStress)
-                        {
-                            ProcessStressRecovery(plant);
-                        }
-
-                        plantsUpdated++;
-                    }
-                    catch (System.Exception ex)
-                    {
-                        ChimeraLogger.LogError($"[PlantEnvironmentalService] Error updating adaptation for plant {plant.PlantID}: {ex.Message}");
-                    }
-                }
-            }
-
-            _lastAdaptationUpdate = Time.time;
-
-            var updateTime = (System.DateTime.Now - startTime).TotalMilliseconds;
-
-            if (_enableDetailedLogging)
-            {
-                ChimeraLogger.Log($"[PlantEnvironmentalService] Updated environmental adaptation for {plantsUpdated} plants (Time: {updateTime:F1}ms)");
+                ChimeraLogger.Log("[PlantEnvironmentalService] Initialized successfully");
             }
         }
 
         /// <summary>
-        /// Updates environmental adaptation for a specific plant.
+        /// Update plant environmental conditions
         /// </summary>
-        public void UpdateEnvironmentalAdaptation(string plantID, EnvironmentalConditions conditions)
+        public void UpdatePlantEnvironment(string plantId, EnvironmentalConditions conditions)
         {
-            if (!IsInitialized) return;
+            if (!_enableBasicMonitoring || !_isInitialized) return;
 
-            var plant = _plantLifecycleService?.GetTrackedPlant(plantID);
-            if (plant == null)
+            _plantEnvironments[plantId] = conditions;
+            OnEnvironmentUpdated?.Invoke(plantId, conditions);
+
+            if (_enableLogging && Random.value < 0.01f) // Log occasionally
             {
-                ChimeraLogger.LogWarning($"[PlantEnvironmentalService] Plant {plantID} not found for environmental adaptation update");
-                return;
-            }
-
-            try
-            {
-                plant.UpdateEnvironmentalAdaptation(conditions);
-
-                // Process stress recovery if enabled
-                if (_enableEnvironmentalStress)
-                {
-                    ProcessStressRecovery(plant);
-                }
-
-                if (_enableDetailedLogging)
-                {
-                    ChimeraLogger.Log($"[PlantEnvironmentalService] Updated environmental adaptation for plant {plantID}");
-                }
-            }
-            catch (System.Exception ex)
-            {
-                ChimeraLogger.LogError($"[PlantEnvironmentalService] Error updating adaptation for plant {plantID}: {ex.Message}");
+                ChimeraLogger.Log($"[PlantEnvironmentalService] Updated {plantId}: T={conditions.Temperature:F1}, H={conditions.Humidity:F1}, L={conditions.LightIntensity:F0}");
             }
         }
 
         /// <summary>
-        /// Applies environmental stress to all plants.
+        /// Get plant environmental conditions
         /// </summary>
-        public void ApplyEnvironmentalStress(EnvironmentalStressSO stressSource, float intensity)
+        public EnvironmentalConditions GetPlantEnvironment(string plantId)
         {
-            if (!IsInitialized || !_enableEnvironmentalStress || stressSource == null) return;
-
-            var trackedPlants = _plantLifecycleService?.GetTrackedPlants();
-            if (trackedPlants == null) return;
-
-            var startTime = System.DateTime.Now;
-            int affectedPlants = 0;
-
-            foreach (var plant in trackedPlants)
-            {
-                if (plant != null && plant.IsActive)
-                {
-                    try
-                    {
-                        if (plant.ApplyStress(stressSource, intensity))
-                        {
-                            affectedPlants++;
-
-                            // Track stress level for recovery processing
-                            _plantStressLevels[plant.PlantID] = plant.StressLevel;
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        ChimeraLogger.LogError($"[PlantEnvironmentalService] Error applying stress to plant {plant.PlantID}: {ex.Message}");
-                    }
-                }
-            }
-
-            _stressEventsApplied++;
-
-            var stressTime = (System.DateTime.Now - startTime).TotalMilliseconds;
-
-            ChimeraLogger.Log($"[PlantEnvironmentalService] Applied stress '{stressSource.StressName}' (intensity: {intensity:F2}) to {affectedPlants} plants (Time: {stressTime:F1}ms)");
+            return _plantEnvironments.TryGetValue(plantId, out var conditions) ? conditions : GetDefaultConditions();
         }
 
         /// <summary>
-        /// Updates environmental conditions for all plants - delegates to CultivationManager.
+        /// Check if plant environment is optimal
         /// </summary>
-        public void UpdateEnvironmentalConditions(EnvironmentalConditions newConditions)
+        public bool IsEnvironmentOptimal(string plantId)
         {
-            if (!IsInitialized) return;
+            var conditions = GetPlantEnvironment(plantId);
+            return IsTemperatureOptimal(conditions.Temperature) &&
+                   IsHumidityOptimal(conditions.Humidity) &&
+                   IsLightOptimal(conditions.LightIntensity);
+        }
 
-            if (_cultivationManager != null)
+        /// <summary>
+        /// Get environmental recommendations for a plant
+        /// </summary>
+        public string GetEnvironmentalRecommendation(string plantId)
+        {
+            var conditions = GetPlantEnvironment(plantId);
+            var issues = new List<string>();
+
+            if (!IsTemperatureOptimal(conditions.Temperature))
             {
-                try
-                {
-                    // CultivationManager expects ProjectChimera.Data.Cultivation.EnvironmentalConditions
-                    _cultivationManager.SetZoneEnvironment("default", newConditions);
+                issues.Add("temperature");
+            }
 
-                    // Update adaptation for all plants
-                    UpdateEnvironmentalAdaptation(newConditions);
+            if (!IsHumidityOptimal(conditions.Humidity))
+            {
+                issues.Add("humidity");
+            }
 
-                    ChimeraLogger.Log($"[PlantEnvironmentalService] Updated environmental conditions via CultivationManager");
-                }
-                catch (System.Exception ex)
-                {
-                    ChimeraLogger.LogError($"[PlantEnvironmentalService] Error updating environmental conditions: {ex.Message}");
-                }
+            if (!IsLightOptimal(conditions.LightIntensity))
+            {
+                issues.Add("light");
+            }
+
+            if (issues.Count == 0)
+            {
+                return "Environment optimal";
             }
             else
             {
-                ChimeraLogger.LogError("[PlantEnvironmentalService] Cannot update environmental conditions: CultivationManager is null");
+                return $"Check {string.Join(", ", issues)} levels";
             }
         }
 
         /// <summary>
-        /// Applies targeted environmental stress to a specific plant.
+        /// Get optimal environmental ranges
         /// </summary>
-        public void ApplyStressToPlant(string plantID, EnvironmentalStressSO stressSource, float intensity)
+        public EnvironmentalRanges GetOptimalRanges()
         {
-            if (!IsInitialized || !_enableEnvironmentalStress || stressSource == null) return;
-
-            var plant = _plantLifecycleService?.GetTrackedPlant(plantID);
-            if (plant == null)
+            return new EnvironmentalRanges
             {
-                ChimeraLogger.LogWarning($"[PlantEnvironmentalService] Plant {plantID} not found for stress application");
-                return;
-            }
+                MinTemperature = _optimalTemperature - 5f,
+                MaxTemperature = _optimalTemperature + 5f,
+                MinHumidity = _optimalHumidity - 10f,
+                MaxHumidity = _optimalHumidity + 10f,
+                MinLight = _optimalLight - 200f,
+                MaxLight = _optimalLight + 200f
+            };
+        }
 
-            try
-            {
-                if (plant.ApplyStress(stressSource, intensity))
-                {
-                    // Track stress level for recovery processing
-                    _plantStressLevels[plant.PlantID] = plant.StressLevel;
+        /// <summary>
+        /// Remove plant from environmental tracking
+        /// </summary>
+        public void RemovePlant(string plantId)
+        {
+            _plantEnvironments.Remove(plantId);
 
-                    ChimeraLogger.Log($"[PlantEnvironmentalService] Applied stress '{stressSource.StressName}' (intensity: {intensity:F2}) to plant {plantID}");
-                }
-            }
-            catch (System.Exception ex)
+            if (_enableLogging)
             {
-                ChimeraLogger.LogError($"[PlantEnvironmentalService] Error applying stress to plant {plantID}: {ex.Message}");
+                ChimeraLogger.Log($"[PlantEnvironmentalService] Removed plant {plantId} from tracking");
             }
         }
 
         /// <summary>
-        /// Processes stress recovery for all plants.
+        /// Clear all plant environmental data
         /// </summary>
-        public void ProcessStressRecoveryForAllPlants()
+        public void ClearAllData()
         {
-            if (!IsInitialized || !_enableEnvironmentalStress) return;
+            _plantEnvironments.Clear();
 
-            var trackedPlants = _plantLifecycleService?.GetTrackedPlants();
-            if (trackedPlants == null) return;
-
-            var startTime = System.DateTime.Now;
-            int plantsRecovered = 0;
-
-            foreach (var plant in trackedPlants)
+            if (_enableLogging)
             {
-                if (plant != null && plant.IsActive)
-                {
-                    if (ProcessStressRecovery(plant))
-                    {
-                        plantsRecovered++;
-                    }
-                }
-            }
-
-            var recoveryTime = (System.DateTime.Now - startTime).TotalMilliseconds;
-
-            if (_enableDetailedLogging && plantsRecovered > 0)
-            {
-                ChimeraLogger.Log($"[PlantEnvironmentalService] Processed stress recovery for {plantsRecovered} plants (Time: {recoveryTime:F1}ms)");
+                ChimeraLogger.Log("[PlantEnvironmentalService] Cleared all environmental data");
             }
         }
 
         /// <summary>
-        /// Gets environmental service statistics.
+        /// Get environmental service statistics
         /// </summary>
-        public EnvironmentalServiceStats GetEnvironmentalStats()
+        public EnvironmentalServiceStats GetStats()
         {
-            if (!IsInitialized)
-                return new EnvironmentalServiceStats();
+            int totalPlants = _plantEnvironments.Count;
+            int optimalEnvironments = 0;
 
-            var trackedPlants = _plantLifecycleService?.GetTrackedPlants();
-            int trackedPlantsCount = trackedPlants?.Count() ?? 0;
-
-            float averageStressLevel = 0f;
-            int highStressPlants = 0;
-
-            if (trackedPlants != null)
+            foreach (var kvp in _plantEnvironments)
             {
-                var stressLevels = new List<float>();
-                foreach (var plant in trackedPlants)
+                if (IsEnvironmentOptimal(kvp.Key))
                 {
-                    if (plant != null && plant.IsActive)
-                    {
-                        float stress = plant.StressLevel;
-                        stressLevels.Add(stress);
-
-                        if (stress > 0.7f)
-                            highStressPlants++;
-                    }
+                    optimalEnvironments++;
                 }
-
-                averageStressLevel = stressLevels.Count > 0 ? stressLevels.Average() : 0f;
             }
 
             return new EnvironmentalServiceStats
             {
-                TrackedPlants = trackedPlantsCount,
-                AverageStressLevel = averageStressLevel,
-                HighStressPlants = highStressPlants,
-                StressEventsApplied = _stressEventsApplied,
-                TotalStressRecovered = _totalStressRecovered,
-                StressRecoveryRate = _stressRecoveryRate,
-                EnvironmentalStressEnabled = _enableEnvironmentalStress,
-                LastAdaptationUpdate = _lastAdaptationUpdate
+                TotalPlantsTracked = totalPlants,
+                OptimalEnvironments = optimalEnvironments,
+                SuboptimalEnvironments = totalPlants - optimalEnvironments,
+                IsMonitoringEnabled = _enableBasicMonitoring
             };
         }
 
-        /// <summary>
-        /// Resets environmental tracking data.
-        /// </summary>
-        public void ResetEnvironmentalData()
+        #region Private Methods
+
+        private EnvironmentalConditions GetDefaultConditions()
         {
-            if (!IsInitialized) return;
-
-            _plantStressLevels.Clear();
-            _stressEventsApplied = 0;
-            _totalStressRecovered = 0f;
-            _lastAdaptationUpdate = Time.time;
-
-            ChimeraLogger.Log("[PlantEnvironmentalService] Environmental tracking data reset");
-        }
-
-        /// <summary>
-        /// Processes stress recovery for a specific plant.
-        /// </summary>
-        private bool ProcessStressRecovery(PlantInstance plant)
-        {
-            if (plant == null || !plant.IsActive) return false;
-
-            string plantID = plant.PlantID;
-            float currentStress = plant.StressLevel;
-
-            // Check if plant has stress to recover from
-            if (currentStress <= 0.1f) return false;
-
-            // Calculate recovery amount based on recovery rate and time
-            float recoveryAmount = _stressRecoveryRate * Time.deltaTime;
-
-            // Apply recovery (reduce stress)
-            float newStressLevel = Mathf.Max(0f, currentStress - recoveryAmount);
-
-            // Update plant stress level (this would need to be implemented in PlantInstance)
-            // For now, just track the recovery
-            if (newStressLevel < currentStress)
+            return new EnvironmentalConditions
             {
-                _totalStressRecovered += (currentStress - newStressLevel);
-                _plantStressLevels[plantID] = newStressLevel;
-
-                if (_enableDetailedLogging)
-                {
-                    ChimeraLogger.Log($"[PlantEnvironmentalService] Plant {plantID} stress recovery: {currentStress:F2} -> {newStressLevel:F2}");
-                }
-
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Update environmental response for a plant under specific conditions
-        /// </summary>
-        public EnvironmentalResponseData UpdateEnvironmentalResponse(PlantInstance plant, EnvironmentalConditions conditions)
-        {
-            if (!IsInitialized || plant == null)
-            {
-                return new EnvironmentalResponseData
-                {
-                    PlantID = plant?.PlantID ?? "Unknown",
-                    ResponseLevel = 0f,
-                    AdaptationProgress = 0f,
-                    StressLevel = 0f
-                };
-            }
-
-            var startTime = System.DateTime.Now;
-
-            // Calculate environmental response factors
-            float temperatureResponse = CalculateTemperatureResponse(conditions.Temperature, plant);
-            float humidityResponse = CalculateHumidityResponse(conditions.Humidity, plant);
-            float lightResponse = CalculateLightResponse(conditions.LightIntensity, plant);
-            float co2Response = CalculateCO2Response(conditions.CO2Level, plant);
-
-            // Calculate overall environmental response
-            float overallResponse = (temperatureResponse * 0.3f + humidityResponse * 0.25f +
-                                   lightResponse * 0.3f + co2Response * 0.15f);
-
-            // Calculate adaptation progress (simplified)
-            float adaptationProgress = CalculateAdaptationProgress(plant, conditions);
-
-            // Update plant's environmental conditions
-            UpdatePlantConditions(plant, conditions);
-
-            var processingTime = (System.DateTime.Now - startTime).TotalMilliseconds;
-
-            return new EnvironmentalResponseData
-            {
-                PlantID = plant.PlantID,
-                ResponseLevel = Mathf.Clamp01(overallResponse),
-                AdaptationProgress = adaptationProgress,
-                StressLevel = plant.StressLevel,
-                TemperatureResponse = temperatureResponse,
-                HumidityResponse = humidityResponse,
-                LightResponse = lightResponse,
-                CO2Response = co2Response,
-                ProcessingTimeMs = (float)processingTime
+                Temperature = _optimalTemperature,
+                Humidity = _optimalHumidity,
+                LightIntensity = _optimalLight
             };
         }
 
-        private float CalculateTemperatureResponse(float temperature, PlantInstance plant)
+        private bool IsTemperatureOptimal(float temperature)
         {
-            // Optimal range for cannabis: 20-30°C
-            float optimal = 25f;
-            float deviation = Mathf.Abs(temperature - optimal);
-            return Mathf.Clamp01(1f - (deviation / 15f));
+            float minTemp = _optimalTemperature - 5f;
+            float maxTemp = _optimalTemperature + 5f;
+            return temperature >= minTemp && temperature <= maxTemp;
         }
 
-        private float CalculateHumidityResponse(float humidity, PlantInstance plant)
+        private bool IsHumidityOptimal(float humidity)
         {
-            // Optimal range for cannabis: 40-70%
-            float optimal = 55f;
-            float deviation = Mathf.Abs(humidity - optimal);
-            return Mathf.Clamp01(1f - (deviation / 25f));
+            float minHumidity = _optimalHumidity - 10f;
+            float maxHumidity = _optimalHumidity + 10f;
+            return humidity >= minHumidity && humidity <= maxHumidity;
         }
 
-        private float CalculateLightResponse(float lightIntensity, PlantInstance plant)
+        private bool IsLightOptimal(float light)
         {
-            // Optimal range for cannabis: 600-1000 PPFD
-            float optimal = 800f;
-            float deviation = Mathf.Abs(lightIntensity - optimal);
-            return Mathf.Clamp01(1f - (deviation / 400f));
+            float minLight = _optimalLight - 200f;
+            float maxLight = _optimalLight + 200f;
+            return light >= minLight && light <= maxLight;
         }
 
-        private float CalculateCO2Response(float co2Level, PlantInstance plant)
-        {
-            // Optimal range for cannabis: 800-1200 ppm
-            float optimal = 1000f;
-            float deviation = Mathf.Abs(co2Level - optimal);
-            return Mathf.Clamp01(1f - (deviation / 400f));
-        }
-
-        private float CalculateAdaptationProgress(PlantInstance plant, EnvironmentalConditions conditions)
-        {
-            // Simplified adaptation calculation based on exposure time
-            float daysAlive = plant.DaysSincePlanted;
-            float adaptationRate = 0.1f; // 10% adaptation per day
-            return Mathf.Clamp01(daysAlive * adaptationRate);
-        }
-
-        private void UpdatePlantConditions(PlantInstance plant, EnvironmentalConditions conditions)
-        {
-            // Update the plant's environmental conditions
-            plant.UpdateEnvironmentalConditions(conditions);
-        }
-
-        /// <summary>
-        /// Converts cultivation environmental conditions to environment environmental conditions.
-        /// </summary>
+        #endregion
     }
 
     /// <summary>
-    /// Environmental response data structure
+    /// Environmental ranges
     /// </summary>
     [System.Serializable]
-    public class EnvironmentalResponseData
+    public struct EnvironmentalRanges
     {
-        public string PlantID;
-        public float ResponseLevel;
-        public float AdaptationProgress;
-        public float StressLevel;
-        public float TemperatureResponse;
-        public float HumidityResponse;
-        public float LightResponse;
-        public float CO2Response;
-        public float ProcessingTimeMs;
+        public float MinTemperature;
+        public float MaxTemperature;
+        public float MinHumidity;
+        public float MaxHumidity;
+        public float MinLight;
+        public float MaxLight;
     }
 
     /// <summary>
-    /// Environmental service statistics structure.
+    /// Environmental service statistics
     /// </summary>
     [System.Serializable]
-    public class EnvironmentalServiceStats
+    public struct EnvironmentalServiceStats
     {
-        public int TrackedPlants;
-        public float AverageStressLevel;
-        public int HighStressPlants;
-        public int StressEventsApplied;
-        public float TotalStressRecovered;
-        public float StressRecoveryRate;
-        public bool EnvironmentalStressEnabled;
-        public float LastAdaptationUpdate;
-
-        public override string ToString()
-        {
-            return $"Environmental Stats - Plants: {TrackedPlants}, Avg Stress: {AverageStressLevel:F2}, " +
-                   $"High Stress: {HighStressPlants}, Events: {StressEventsApplied}, " +
-                   $"Recovered: {TotalStressRecovered:F1}, Rate: {StressRecoveryRate:F2}";
-        }
+        public int TotalPlantsTracked;
+        public int OptimalEnvironments;
+        public int SuboptimalEnvironments;
+        public bool IsMonitoringEnabled;
     }
 }

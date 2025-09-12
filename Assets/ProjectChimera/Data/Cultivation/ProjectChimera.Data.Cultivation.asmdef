@@ -2,11 +2,11 @@
     "name": "ProjectChimera.Data.Cultivation",
     "rootNamespace": "ProjectChimera.Data.Cultivation",
     "references": [
-        "ProjectChimera.Core",
         "ProjectChimera.Shared",
         "ProjectChimera.Data.Shared",
         "ProjectChimera.Data.Genetics",
-        "ProjectChimera.Data.Simulation"
+        "ProjectChimera.Data.Simulation",
+        "ProjectChimera.Data.Facilities"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

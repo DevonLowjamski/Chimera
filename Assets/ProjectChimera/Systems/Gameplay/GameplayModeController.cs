@@ -11,7 +11,7 @@ namespace ProjectChimera.Systems.Gameplay
     /// Centralized controller for gameplay modes - drives UI context and overlays
     /// Phase 2 implementation following the roadmap requirements
     /// </summary>
-    public class GameplayModeController : DIChimeraManager, ITickable, IGameplayModeController
+    public class GameplayModeController : ChimeraManager, ITickable, IGameplayModeController
     {
         [Header("Mode Configuration")]
         [SerializeField] private GameplayMode _defaultMode = GameplayMode.Cultivation;

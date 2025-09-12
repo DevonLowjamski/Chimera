@@ -1,0 +1,138 @@
+using UnityEngine;
+using System;
+
+namespace ProjectChimera.Data.Genetics
+{
+    /// <summary>
+    /// Record of a genetic mutation event
+    /// Contains information about genetic changes, their causes, and effects
+    /// </summary>
+    [System.Serializable]
+    public class MutationRecord
+    {
+        [Header("Mutation Identity")]
+        public string MutationID;
+        public DateTime MutationDate;
+        public int Generation;
+        
+        [Header("Genetic Information")]
+        public string GeneAffected;
+        public string AlleleFrom;
+        public string AlleleTo;
+        public string MutationType; // "Point", "Insertion", "Deletion", "Chromosomal"
+        
+        [Header("Mutation Details")]
+        public string MutationCause; // "Spontaneous", "Environmental", "Induced"
+        public float MutationRate;
+        public bool IsBeneficial;
+        public bool IsDetrimental;
+        public bool IsNeutral;
+        
+        [Header("Effects")]
+        public string TraitsAffected;
+        public float EffectMagnitude;
+        public string PhenotypicEffect;
+        public bool IsLethal;
+        public bool AffectsViability;
+        
+        [Header("Inheritance")]
+        public bool IsDominant;
+        public bool IsRecessive;
+        public bool IsCodomiant;
+        public float Penetrance = 1f;
+        public float Expressivity = 1f;
+        
+        [Header("Research Data")]
+        [TextArea(2, 4)] public string Description;
+        [TextArea(2, 4)] public string ResearchNotes;
+        public bool IsConfirmed;
+        public string ConfirmationMethod;
+        
+        /// <summary>
+        /// Creates a new mutation record
+        /// </summary>
+        public static MutationRecord CreateNew(string geneAffected, string alleleFrom, string alleleTo, string mutationType = "PointMutation")
+        {
+            return new MutationRecord
+            {
+                MutationID = System.Guid.NewGuid().ToString("N")[..8], // Short ID
+                MutationDate = DateTime.Now,
+                GeneAffected = geneAffected,
+                AlleleFrom = alleleFrom,
+                AlleleTo = alleleTo,
+                MutationType = mutationType,
+                MutationCause = "Spontaneous",
+                MutationRate = 0.001f, // Default 0.1%
+                IsNeutral = true, // Default assumption
+                Penetrance = 1f,
+                Expressivity = 1f,
+                IsConfirmed = false
+            };
+        }
+        
+        /// <summary>
+        /// Gets the mutation impact level
+        /// </summary>
+        public MutationImpact GetMutationImpact()
+        {
+            if (IsLethal) return MutationImpact.Lethal;
+            if (IsBeneficial) return MutationImpact.Beneficial;
+            if (IsDetrimental) return MutationImpact.Detrimental;
+            return MutationImpact.Neutral;
+        }
+        
+        /// <summary>
+        /// Gets a summary of the mutation
+        /// </summary>
+        public string GetSummary()
+        {
+            return $"{GeneAffected}: {AlleleFrom} → {AlleleTo} ({MutationType}, Gen {Generation})";
+        }
+        
+        /// <summary>
+        /// Checks if this mutation affects a specific trait
+        /// </summary>
+        public bool AffectsTrait(string traitName)
+        {
+            return !string.IsNullOrEmpty(TraitsAffected) && 
+                   TraitsAffected.Contains(traitName);
+        }
+        
+        /// <summary>
+        /// Gets the inheritance pattern description
+        /// </summary>
+        public string GetInheritancePattern()
+        {
+            if (IsDominant) return "Dominant";
+            if (IsRecessive) return "Recessive";
+            if (IsCodomiant) return "Codominant";
+            return "Unknown";
+        }
+    }
+    
+    /// <summary>
+    /// Mutation impact levels
+    /// </summary>
+    public enum MutationImpact
+    {
+        Beneficial,
+        Neutral,
+        Detrimental,
+        Lethal
+    }
+    
+    
+    /// <summary>
+    /// Mutation causes
+    /// </summary>
+    public enum MutationCause
+    {
+        Spontaneous,    // Natural mutation rate
+        Environmental, // Environmental mutagens
+        Chemical,      // Chemical mutagens
+        Radiation,     // Radiation exposure
+        Viral,         // Viral integration
+        Induced,       // Artificially induced
+        Breeding       // Breeding program selection
+    }
+}

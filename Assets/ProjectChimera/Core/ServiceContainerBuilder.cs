@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using ProjectChimera.Core;
-using ServiceLocatorAdapter = ProjectChimera.Core.ServiceLocatorAdapter;
 
 namespace ProjectChimera.Core.DependencyInjection
 {

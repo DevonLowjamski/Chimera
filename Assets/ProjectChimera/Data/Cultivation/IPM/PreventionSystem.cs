@@ -1,0 +1,257 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Data.Shared;
+using ProjectChimera.Data.Cultivation.Plant;
+
+namespace ProjectChimera.Data.Cultivation.IPM
+{
+    /// <summary>
+    /// SIMPLE: Basic plant care system aligned with Project Chimera's cultivation vision.
+    /// Focuses on essential plant care and basic pest prevention without complex IPM systems.
+    /// </summary>
+    public static class PreventionSystem
+    {
+        /// <summary>
+        /// Basic plant care actions
+        /// </summary>
+        public static readonly PlantCareAction[] BasicCareActions = new PlantCareAction[]
+        {
+            new PlantCareAction
+            {
+                ActionName = "Watering",
+                Description = "Provide adequate water to plants",
+                FrequencyDays = 1,
+                Importance = CareImportance.High
+            },
+            new PlantCareAction
+            {
+                ActionName = "Nutrient Feeding",
+                Description = "Apply appropriate nutrients",
+                FrequencyDays = 3,
+                Importance = CareImportance.High
+            },
+            new PlantCareAction
+            {
+                ActionName = "Pruning",
+                Description = "Remove dead or excess growth",
+                FrequencyDays = 7,
+                Importance = CareImportance.Medium
+            },
+            new PlantCareAction
+            {
+                ActionName = "Inspection",
+                Description = "Check for pests or issues",
+                FrequencyDays = 2,
+                Importance = CareImportance.Medium
+            }
+        };
+
+        /// <summary>
+        /// Check if plant needs care
+        /// </summary>
+        public static bool NeedsCare(PlantInstance plant, PlantCareAction action)
+        {
+            if (plant == null || action == null) return false;
+
+            float daysSinceCare = GetDaysSinceCare(plant, action);
+            return daysSinceCare >= action.FrequencyDays;
+        }
+
+        /// <summary>
+        /// Get care recommendations for a plant
+        /// </summary>
+        public static List<PlantCareAction> GetCareRecommendations(PlantInstance plant)
+        {
+            var recommendations = new List<PlantCareAction>();
+
+            if (plant == null) return recommendations;
+
+            foreach (var action in BasicCareActions)
+            {
+                if (NeedsCare(plant, action))
+                {
+                    recommendations.Add(action);
+                }
+            }
+
+            return recommendations;
+        }
+
+        /// <summary>
+        /// Apply care to a plant
+        /// </summary>
+        public static void ApplyCare(PlantInstance plant, PlantCareAction action)
+        {
+            if (plant == null || action == null) return;
+
+            // Update plant care timestamps
+            switch (action.ActionName)
+            {
+                case "Watering":
+                    plant.LastWatering = System.DateTime.Now;
+                    break;
+                case "Nutrient Feeding":
+                    plant.LastFeeding = System.DateTime.Now;
+                    break;
+                case "Pruning":
+                    // Could track pruning separately if needed
+                    break;
+                case "Inspection":
+                    // Could track inspection separately if needed
+                    break;
+            }
+
+            // Improve plant health slightly
+            plant.Health = Mathf.Min(1f, plant.Health + 0.1f);
+        }
+
+        /// <summary>
+        /// Get plant health status
+        /// </summary>
+        public static PlantHealthStatus GetHealthStatus(PlantInstance plant)
+        {
+            if (plant == null) return PlantHealthStatus.Unknown;
+
+            if (plant.Health >= 0.8f) return PlantHealthStatus.Excellent;
+            if (plant.Health >= 0.6f) return PlantHealthStatus.Good;
+            if (plant.Health >= 0.4f) return PlantHealthStatus.Fair;
+            if (plant.Health >= 0.2f) return PlantHealthStatus.Poor;
+            return PlantHealthStatus.Critical;
+        }
+
+        /// <summary>
+        /// Check for basic pest issues
+        /// </summary>
+        public static bool HasPestIssues(PlantInstance plant)
+        {
+            if (plant == null) return false;
+
+            // Simple pest detection based on health and care history
+            float daysSinceInspection = GetDaysSinceCare(plant,
+                BasicCareActions.First(a => a.ActionName == "Inspection"));
+
+            // Higher chance of pests if not inspected recently and health is low
+            if (daysSinceInspection > 3 && plant.Health < 0.7f)
+            {
+                return Random.value < 0.3f; // 30% chance
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Get basic care statistics
+        /// </summary>
+        public static CareStatistics GetCareStatistics(List<PlantInstance> plants)
+        {
+            if (plants == null || plants.Count == 0)
+            {
+                return new CareStatistics();
+            }
+
+            int plantsNeedingCare = 0;
+            int healthyPlants = 0;
+            int plantsWithPests = 0;
+
+            foreach (var plant in plants)
+            {
+                if (GetCareRecommendations(plant).Count > 0)
+                {
+                    plantsNeedingCare++;
+                }
+
+                if (GetHealthStatus(plant) >= PlantHealthStatus.Good)
+                {
+                    healthyPlants++;
+                }
+
+                if (HasPestIssues(plant))
+                {
+                    plantsWithPests++;
+                }
+            }
+
+            return new CareStatistics
+            {
+                TotalPlants = plants.Count,
+                PlantsNeedingCare = plantsNeedingCare,
+                HealthyPlants = healthyPlants,
+                PlantsWithPests = plantsWithPests
+            };
+        }
+
+        #region Private Methods
+
+        private static float GetDaysSinceCare(PlantInstance plant, PlantCareAction action)
+        {
+            if (plant == null || action == null) return float.MaxValue;
+
+            System.DateTime lastCareTime = System.DateTime.MinValue;
+
+            switch (action.ActionName)
+            {
+                case "Watering":
+                    lastCareTime = plant.LastWatering;
+                    break;
+                case "Nutrient Feeding":
+                    lastCareTime = plant.LastFeeding;
+                    break;
+                default:
+                    return 0f; // Assume recently done for other actions
+            }
+
+            if (lastCareTime == System.DateTime.MinValue) return float.MaxValue;
+
+            return (float)(System.DateTime.Now - lastCareTime).TotalDays;
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Basic plant care action
+    /// </summary>
+    [System.Serializable]
+    public class PlantCareAction
+    {
+        public string ActionName;
+        public string Description;
+        public float FrequencyDays;
+        public CareImportance Importance;
+    }
+
+    /// <summary>
+    /// Plant health status
+    /// </summary>
+    public enum PlantHealthStatus
+    {
+        Unknown,
+        Critical,
+        Poor,
+        Fair,
+        Good,
+        Excellent
+    }
+
+    /// <summary>
+    /// Care importance
+    /// </summary>
+    public enum CareImportance
+    {
+        Low,
+        Medium,
+        High
+    }
+
+    /// <summary>
+    /// Care statistics
+    /// </summary>
+    [System.Serializable]
+    public class CareStatistics
+    {
+        public int TotalPlants;
+        public int PlantsNeedingCare;
+        public int HealthyPlants;
+        public int PlantsWithPests;
+    }
+}

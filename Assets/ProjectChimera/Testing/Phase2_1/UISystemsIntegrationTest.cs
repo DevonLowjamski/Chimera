@@ -372,6 +372,11 @@ namespace ProjectChimera.Testing.Phase2_1
 
         public string GetStatus() => $"Mock Time Manager - Speed: {CurrentSpeedLevel}";
         public bool ValidateHealth() => true;
+
+        /// <summary>
+        /// Get scaled delta time for testing - returns mock value
+        /// </summary>
+        public float GetScaledDeltaTime() => 0.016f; // ~60 FPS delta time
     }
 
     // Enhanced Mock Services for Testing

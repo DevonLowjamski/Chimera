@@ -1,0 +1,305 @@
+using UnityEngine;
+using System;
+using YieldComparison = ProjectChimera.Data.Cultivation.IPM.IPMDataStructures.YieldComparison;
+
+namespace ProjectChimera.Data.Cultivation.Plant
+{
+    /// <summary>
+    /// Yield Calculator - Calculates harvest yields and predictions.
+    /// Analyzes genetic factors, environmental conditions, cultivation practices,
+    /// and plant health to predict and calculate harvest yields accurately.
+    /// </summary>
+    public static class YieldCalculator
+    {
+        // Yield calculation factors
+        private const float GENETIC_YIELD_FACTOR = 0.7f;
+        private const float ENVIRONMENTAL_YIELD_FACTOR = 0.2f;
+        private const float CULTIVATION_YIELD_FACTOR = 0.1f;
+
+        /// <summary>
+        /// Calculates yield prediction for a plant
+        /// </summary>
+        public static YieldPrediction CalculateYieldPrediction(PlantStateData plantState)
+        {
+            var prediction = new YieldPrediction
+            {
+                PlantID = plantState.PlantID,
+                PredictedYieldGrams = 0f,
+                ConfidenceLevel = 0f,
+                Factors = new YieldFactors()
+            };
+
+            // Calculate genetic yield contribution
+            prediction.Factors.GeneticFactor = CalculateGeneticYieldFactor(plantState);
+            float geneticYield = prediction.Factors.GeneticFactor * 50f; // Base yield in grams
+
+            // Calculate environmental yield contribution
+            prediction.Factors.EnvironmentalFactor = CalculateEnvironmentalYieldFactor(plantState);
+            float environmentalModifier = prediction.Factors.EnvironmentalFactor;
+
+            // Calculate cultivation yield contribution
+            prediction.Factors.CultivationFactor = CalculateCultivationYieldFactor(plantState);
+            float cultivationModifier = prediction.Factors.CultivationFactor;
+
+            // Calculate final yield prediction
+            prediction.PredictedYieldGrams = geneticYield * environmentalModifier * cultivationModifier;
+
+            // Calculate confidence level based on available data
+            prediction.ConfidenceLevel = CalculateConfidenceLevel(plantState);
+
+            // Generate yield breakdown
+            prediction.YieldBreakdown = GenerateYieldBreakdown(prediction);
+
+            return prediction;
+        }
+
+        /// <summary>
+        /// Calculates actual yield from harvest data
+        /// </summary>
+        public static float CalculateActualYield(PlantStateData plantState, HarvestResult harvestResult)
+        {
+            if (harvestResult == null || harvestResult.TotalWeightGrams <= 0)
+                return 0f;
+
+            // Apply quality adjustments to actual yield
+            float qualityModifier = harvestResult.QualityScore;
+            float actualYield = harvestResult.TotalWeightGrams * qualityModifier;
+
+            // Adjust for moisture content (dry weight vs wet weight)
+            if (harvestResult.MoistureContent > 0)
+            {
+                float dryMatterPercentage = 1f - (harvestResult.MoistureContent / 100f);
+                actualYield *= dryMatterPercentage;
+            }
+
+            return actualYield;
+        }
+
+        /// <summary>
+        /// Calculates yield efficiency compared to genetic potential
+        /// </summary>
+        public static float CalculateYieldEfficiency(PlantStateData plantState, float actualYield)
+        {
+            var prediction = CalculateYieldPrediction(plantState);
+            if (prediction.PredictedYieldGrams <= 0)
+                return 0f;
+
+            return actualYield / prediction.PredictedYieldGrams;
+        }
+
+        /// <summary>
+        /// Calculates genetic yield factor
+        /// </summary>
+        private static float CalculateGeneticYieldFactor(PlantStateData plantState)
+        {
+            float geneticFactor = 0.5f; // Base factor
+
+            if (plantState.Strain != null)
+            {
+                // Strain-specific yield potential
+                geneticFactor = plantState.Strain.YieldPotential;
+
+                // Adjust based on plant sex (females typically yield more)
+                if (plantState.Sex == PlantSex.Female)
+                {
+                    geneticFactor *= 1.2f;
+                }
+
+                // Adjust for strain maturity
+                if (plantState.Generation > 1)
+                {
+                    geneticFactor *= 0.9f; // F1 hybrids often have higher yield potential
+                }
+            }
+
+            // Adjust for plant health at genetic level
+            geneticFactor *= Mathf.Lerp(0.7f, 1.0f, plantState.OverallHealth);
+
+            return Mathf.Clamp01(geneticFactor);
+        }
+
+        /// <summary>
+        /// Calculates environmental yield factor
+        /// </summary>
+        private static float CalculateEnvironmentalYieldFactor(PlantStateData plantState)
+        {
+            if (plantState.Environment == null)
+                return 0.8f; // Default moderate factor
+
+            float environmentalFactor = 1.0f;
+
+            // Temperature impact on yield
+            float temp = plantState.Environment.Temperature;
+            if (temp >= 20f && temp <= 28f)
+            {
+                environmentalFactor *= 1.1f; // Optimal temperature range
+            }
+            else if (temp < 15f || temp > 32f)
+            {
+                environmentalFactor *= 0.6f; // Poor temperature conditions
+            }
+
+            // Humidity impact on yield
+            float humidity = plantState.Environment.Humidity;
+            if (humidity >= 40f && humidity <= 70f)
+            {
+                environmentalFactor *= 1.05f; // Optimal humidity range
+            }
+            else if (humidity < 30f || humidity > 80f)
+            {
+                environmentalFactor *= 0.8f; // Stressful humidity conditions
+            }
+
+            // Light intensity impact
+            float light = plantState.Environment.LightIntensity;
+            if (light >= 0.7f)
+            {
+                environmentalFactor *= 1.1f; // Good light conditions
+            }
+            else if (light < 0.4f)
+            {
+                environmentalFactor *= 0.7f; // Insufficient light
+            }
+
+            // CO2 enrichment impact
+            float co2 = plantState.Environment.CO2Level;
+            if (co2 >= 800f && co2 <= 1200f)
+            {
+                environmentalFactor *= 1.15f; // Optimal CO2 range
+            }
+            else if (co2 < 400f)
+            {
+                environmentalFactor *= 0.85f; // CO2 limitation
+            }
+
+            return Mathf.Clamp(environmentalFactor, 0.3f, 1.5f);
+        }
+
+        /// <summary>
+        /// Calculates cultivation yield factor
+        /// </summary>
+        private static float CalculateCultivationYieldFactor(PlantStateData plantState)
+        {
+            float cultivationFactor = 1.0f;
+
+            // Training techniques impact
+            if (plantState.TrainingTechniques != null)
+            {
+                if (plantState.TrainingTechniques.Contains("LST"))
+                    cultivationFactor *= 1.1f;
+                if (plantState.TrainingTechniques.Contains("SCROG"))
+                    cultivationFactor *= 1.15f;
+                if (plantState.TrainingTechniques.Contains("Topping"))
+                    cultivationFactor *= 1.05f;
+            }
+
+            // Nutrient regimen quality
+            if (plantState.NutrientRegimen != null)
+            {
+                cultivationFactor *= plantState.NutrientRegimen.QualityScore;
+            }
+
+            // Pest and disease management
+            if (plantState.PestManagementScore > 0)
+            {
+                cultivationFactor *= plantState.PestManagementScore;
+            }
+
+            // Irrigation consistency
+            if (plantState.IrrigationConsistency > 0)
+            {
+                cultivationFactor *= plantState.IrrigationConsistency;
+            }
+
+            return Mathf.Clamp(cultivationFactor, 0.5f, 1.4f);
+        }
+
+        /// <summary>
+        /// Calculates confidence level for yield prediction
+        /// </summary>
+        private static float CalculateConfidenceLevel(PlantStateData plantState)
+        {
+            float confidence = 0.5f; // Base confidence
+
+            // Increase confidence based on available data
+            if (plantState.Strain != null) confidence += 0.2f;
+            if (plantState.Environment != null) confidence += 0.15f;
+            if (plantState.NutrientRegimen != null) confidence += 0.1f;
+            if (plantState.TrainingTechniques != null && plantState.TrainingTechniques.Count > 0) confidence += 0.1f;
+
+            // Adjust for plant health
+            confidence *= plantState.OverallHealth;
+
+            // Adjust for data completeness
+            if (plantState.TotalDaysGrown > 30) confidence += 0.1f; // More historical data
+
+            return Mathf.Clamp01(confidence);
+        }
+
+        /// <summary>
+        /// Generates yield breakdown explanation
+        /// </summary>
+        private static string[] GenerateYieldBreakdown(YieldPrediction prediction)
+        {
+            var breakdown = new System.Collections.Generic.List<string>();
+
+            breakdown.Add($"Genetic Potential: {prediction.Factors.GeneticFactor:F2} ({prediction.Factors.GeneticFactor * 100:F0}%)");
+            breakdown.Add($"Environmental Factor: {prediction.Factors.EnvironmentalFactor:F2} ({prediction.Factors.EnvironmentalFactor * 100:F0}%)");
+            breakdown.Add($"Cultivation Factor: {prediction.Factors.CultivationFactor:F2} ({prediction.Factors.CultivationFactor * 100:F0}%)");
+
+            float totalFactor = prediction.Factors.GeneticFactor * prediction.Factors.EnvironmentalFactor * prediction.Factors.CultivationFactor;
+            breakdown.Add($"Combined Factor: {totalFactor:F2} ({totalFactor * 100:F0}%)");
+
+            return breakdown.ToArray();
+        }
+
+        /// <summary>
+        /// Calculates yield per square foot efficiency
+        /// </summary>
+        public static float CalculateYieldPerSqFt(PlantStateData plantState, float actualYield, float plantAreaSqFt)
+        {
+            if (plantAreaSqFt <= 0)
+                return 0f;
+
+            return actualYield / plantAreaSqFt;
+        }
+
+        /// <summary>
+        /// Compares actual yield to predicted yield
+        /// </summary>
+        public static YieldComparison CompareToPrediction(YieldPrediction prediction, float actualYield)
+        {
+            var comparison = new YieldComparison
+            {
+                PredictedYield = prediction.PredictedYieldGrams,
+                ActualYield = actualYield,
+                Difference = actualYield - prediction.PredictedYieldGrams,
+                Accuracy = prediction.PredictedYieldGrams > 0 ? (actualYield / prediction.PredictedYieldGrams) : 0f
+            };
+
+            // Determine performance rating
+            if (comparison.Accuracy >= 1.1f)
+            {
+                comparison.PerformanceRating = "Exceeded Expectations";
+                comparison.RatingColor = Color.green;
+            }
+            else if (comparison.Accuracy >= 0.9f)
+            {
+                comparison.PerformanceRating = "Met Expectations";
+                comparison.RatingColor = Color.yellow;
+            }
+            else if (comparison.Accuracy >= 0.7f)
+            {
+                comparison.PerformanceRating = "Below Expectations";
+                comparison.RatingColor = new Color(1f, 0.5f, 0f); // Orange
+            }
+            else
+            {
+                comparison.PerformanceRating = "Significantly Below";
+                comparison.RatingColor = Color.red;
+            }
+
+            return comparison;
+        }
+    }
+}

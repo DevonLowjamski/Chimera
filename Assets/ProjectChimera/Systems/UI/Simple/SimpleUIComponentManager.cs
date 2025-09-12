@@ -1,0 +1,359 @@
+using UnityEngine;
+using UnityEngine.UIElements;
+using ProjectChimera.Core.Logging;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Systems.UI.Simple
+{
+    /// <summary>
+    /// Simple UI Component Manager - Aligned with Project Chimera's vision
+    /// Provides basic UI component management for the contextual menu system
+    /// Focuses on clean, intuitive interface as described in gameplay document
+    /// </summary>
+    [CreateAssetMenu(fileName = "New Simple UI Manager", menuName = "Project Chimera/UI/Simple UI Manager")]
+    public class SimpleUIComponentManager : ScriptableObject
+    {
+        [Header("UI Documents")]
+        [SerializeField] private VisualTreeAsset _contextualMenuTemplate;
+        [SerializeField] private VisualTreeAsset _modeIndicatorTemplate;
+        [SerializeField] private VisualTreeAsset _statusPanelTemplate;
+
+        [Header("UI Colors")]
+        [SerializeField] private Color _constructionModeColor = new Color(0.8f, 0.9f, 1f);
+        [SerializeField] private Color _cultivationModeColor = new Color(0.9f, 1f, 0.8f);
+        [SerializeField] private Color _geneticsModeColor = new Color(1f, 0.9f, 0.8f);
+
+        [Header("UI Settings")]
+        [SerializeField] private float _animationDuration = 0.3f;
+        [SerializeField] private bool _enableTooltips = true;
+        [SerializeField] private bool _enableVisualFeedback = true;
+
+        // Cached UI elements
+        private Dictionary<string, VisualElement> _uiElements = new Dictionary<string, VisualElement>();
+        private string _currentMode = "cultivation";
+
+        /// <summary>
+        /// Creates a contextual menu for the specified mode
+        /// </summary>
+        public VisualElement CreateContextualMenu(string mode, UIDocument uiDocument)
+        {
+            if (_contextualMenuTemplate == null || uiDocument == null)
+            {
+                ChimeraLogger.LogWarning("[SimpleUIComponentManager] Missing UI template or document");
+                return null;
+            }
+
+            var root = uiDocument.rootVisualElement;
+            var menuContainer = _contextualMenuTemplate.Instantiate();
+
+            // Configure menu based on mode
+            ConfigureMenuForMode(menuContainer, mode);
+            menuContainer.name = $"contextual-menu-{mode}";
+
+            _uiElements[$"menu-{mode}"] = menuContainer;
+            root.Add(menuContainer);
+
+            ChimeraLogger.Log($"[SimpleUIComponentManager] Created contextual menu for {mode} mode");
+            return menuContainer;
+        }
+
+        /// <summary>
+        /// Creates a mode indicator in the top corner
+        /// </summary>
+        public VisualElement CreateModeIndicator(string mode, UIDocument uiDocument)
+        {
+            if (_modeIndicatorTemplate == null || uiDocument == null)
+            {
+                ChimeraLogger.LogWarning("[SimpleUIComponentManager] Missing mode indicator template or document");
+                return null;
+            }
+
+            var root = uiDocument.rootVisualElement;
+            var indicator = _modeIndicatorTemplate.Instantiate();
+
+            // Configure indicator appearance
+            ConfigureModeIndicator(indicator, mode);
+            indicator.name = $"mode-indicator-{mode}";
+
+            _uiElements[$"indicator-{mode}"] = indicator;
+            root.Add(indicator);
+
+            return indicator;
+        }
+
+        /// <summary>
+        /// Creates a simple status panel
+        /// </summary>
+        public VisualElement CreateStatusPanel(UIDocument uiDocument)
+        {
+            if (_statusPanelTemplate == null || uiDocument == null)
+            {
+                ChimeraLogger.LogWarning("[SimpleUIComponentManager] Missing status panel template or document");
+                return null;
+            }
+
+            var root = uiDocument.rootVisualElement;
+            var statusPanel = _statusPanelTemplate.Instantiate();
+
+            statusPanel.name = "status-panel";
+            _uiElements["status-panel"] = statusPanel;
+            root.Add(statusPanel);
+
+            return statusPanel;
+        }
+
+        /// <summary>
+        /// Switches the active UI mode
+        /// </summary>
+        public void SwitchMode(string newMode, UIDocument uiDocument)
+        {
+            if (_currentMode == newMode) return;
+
+            // Hide current mode elements
+            HideModeElements(_currentMode);
+
+            // Show new mode elements
+            ShowModeElements(newMode, uiDocument);
+
+            _currentMode = newMode;
+
+            ChimeraLogger.Log($"[SimpleUIComponentManager] Switched to {newMode} mode");
+        }
+
+        /// <summary>
+        /// Updates the status panel with current information
+        /// </summary>
+        public void UpdateStatusPanel(string statusText, Color statusColor)
+        {
+            if (!_uiElements.TryGetValue("status-panel", out var statusPanel))
+                return;
+
+            var statusLabel = statusPanel.Q<Label>("status-text");
+            if (statusLabel != null)
+            {
+                statusLabel.text = statusText;
+                statusLabel.style.color = new StyleColor(statusColor);
+            }
+        }
+
+        /// <summary>
+        /// Shows a tooltip for a UI element
+        /// </summary>
+        public void ShowTooltip(VisualElement element, string tooltipText)
+        {
+            if (!element.HasPointerCapture() || !_enableTooltips)
+                return;
+
+            // Simple tooltip implementation
+            var tooltip = new Label(tooltipText);
+            tooltip.AddToClassList("tooltip");
+            tooltip.style.position = Position.Absolute;
+
+            // Position tooltip near element
+            tooltip.style.left = element.worldBound.x + element.worldBound.width / 2;
+            tooltip.style.top = element.worldBound.y - 30;
+
+            element.parent.Add(tooltip);
+
+            // Auto-hide after delay
+            StartCoroutine(HideTooltipAfterDelay(tooltip, 2f));
+        }
+
+        /// <summary>
+        /// Provides visual feedback for button interactions
+        /// </summary>
+        public void ProvideVisualFeedback(VisualElement element, string feedbackType)
+        {
+            if (!_enableVisualFeedback) return;
+
+            switch (feedbackType.ToLower())
+            {
+                case "hover":
+                    element.style.opacity = 0.8f;
+                    break;
+                case "click":
+                    element.style.scale = new StyleScale(new Vector2(0.95f, 0.95f));
+                    // Reset after animation
+                    StartCoroutine(ResetScaleAfterDelay(element, _animationDuration));
+                    break;
+                case "success":
+                    element.style.backgroundColor = new StyleColor(Color.green);
+                    StartCoroutine(ResetColorAfterDelay(element, _animationDuration));
+                    break;
+                case "error":
+                    element.style.backgroundColor = new StyleColor(Color.red);
+                    StartCoroutine(ResetColorAfterDelay(element, _animationDuration));
+                    break;
+            }
+        }
+
+        // Private helper methods
+
+        private void ConfigureMenuForMode(VisualElement menu, string mode)
+        {
+            var modeColor = GetModeColor(mode);
+            menu.style.backgroundColor = new StyleColor(modeColor);
+
+            // Configure tabs based on mode
+            ConfigureMenuTabs(menu, mode);
+        }
+
+        private void ConfigureMenuTabs(VisualElement menu, string mode)
+        {
+            // This would configure the appropriate tabs for each mode
+            // as described in the gameplay document
+            switch (mode.ToLower())
+            {
+                case "construction":
+                    // Add tabs: Rooms, Equipment, Utilities, Schematics
+                    AddMenuTab(menu, "Rooms", "Structural components");
+                    AddMenuTab(menu, "Equipment", "Lights, HVAC, irrigation");
+                    AddMenuTab(menu, "Utilities", "Electrical, plumbing");
+                    AddMenuTab(menu, "Schematics", "Facility layouts");
+                    break;
+
+                case "cultivation":
+                    // Add tabs: Tools, Environmental Controls, Plant Care
+                    AddMenuTab(menu, "Tools", "Watering, pruning tools");
+                    AddMenuTab(menu, "Environmental", "Temperature, humidity");
+                    AddMenuTab(menu, "Plant Care", "Fertilizer, pest control");
+                    break;
+
+                case "genetics":
+                    // Add tabs: Seed Bank, Tissue Culture, Micropropagation
+                    AddMenuTab(menu, "Seed Bank", "Genetic strains");
+                    AddMenuTab(menu, "Tissue Culture", "Preserve genetics");
+                    AddMenuTab(menu, "Micropropagation", "Clone production");
+                    break;
+            }
+        }
+
+        private void AddMenuTab(VisualElement menu, string tabName, string description)
+        {
+            var tab = new Button();
+            tab.text = tabName;
+            tab.tooltip = description;
+            tab.AddToClassList("menu-tab");
+
+            // Add click handler
+            tab.clicked += () => OnTabSelected(tabName);
+
+            menu.Add(tab);
+        }
+
+        private void ConfigureModeIndicator(VisualElement indicator, string mode)
+        {
+            var modeColor = GetModeColor(mode);
+
+            var indicatorIcon = indicator.Q<VisualElement>("mode-icon");
+            if (indicatorIcon != null)
+            {
+                indicatorIcon.style.backgroundColor = new StyleColor(modeColor);
+            }
+
+            var modeLabel = indicator.Q<Label>("mode-label");
+            if (modeLabel != null)
+            {
+                modeLabel.text = mode.ToUpper();
+                modeLabel.style.color = new StyleColor(modeColor);
+            }
+        }
+
+        private Color GetModeColor(string mode)
+        {
+            switch (mode.ToLower())
+            {
+                case "construction": return _constructionModeColor;
+                case "cultivation": return _cultivationModeColor;
+                case "genetics": return _geneticsModeColor;
+                default: return Color.white;
+            }
+        }
+
+        private void HideModeElements(string mode)
+        {
+            // Hide menu
+            if (_uiElements.TryGetValue($"menu-{mode}", out var menu))
+            {
+                menu.style.display = DisplayStyle.None;
+            }
+
+            // Hide indicator
+            if (_uiElements.TryGetValue($"indicator-{mode}", out var indicator))
+            {
+                indicator.style.display = DisplayStyle.None;
+            }
+        }
+
+        private void ShowModeElements(string mode, UIDocument uiDocument)
+        {
+            // Show or create menu
+            if (!_uiElements.TryGetValue($"menu-{mode}", out var menu))
+            {
+                menu = CreateContextualMenu(mode, uiDocument);
+            }
+            if (menu != null)
+            {
+                menu.style.display = DisplayStyle.Flex;
+            }
+
+            // Show or create indicator
+            if (!_uiElements.TryGetValue($"indicator-{mode}", out var indicator))
+            {
+                indicator = CreateModeIndicator(mode, uiDocument);
+            }
+            if (indicator != null)
+            {
+                indicator.style.display = DisplayStyle.Flex;
+            }
+        }
+
+        private void OnTabSelected(string tabName)
+        {
+            ChimeraLogger.Log($"[SimpleUIComponentManager] Selected tab: {tabName}");
+            // Handle tab selection logic here
+        }
+
+        private System.Collections.IEnumerator HideTooltipAfterDelay(VisualElement tooltip, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            if (tooltip != null && tooltip.parent != null)
+            {
+                tooltip.parent.Remove(tooltip);
+            }
+        }
+
+        private System.Collections.IEnumerator ResetScaleAfterDelay(VisualElement element, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            if (element != null)
+            {
+                element.style.scale = new StyleScale(Vector2.one);
+            }
+        }
+
+        private System.Collections.IEnumerator ResetColorAfterDelay(VisualElement element, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            if (element != null)
+            {
+                element.style.backgroundColor = new StyleColor(Color.clear);
+            }
+        }
+
+        /// <summary>
+        /// Cleans up all managed UI elements
+        /// </summary>
+        public void Cleanup()
+        {
+            foreach (var element in _uiElements.Values)
+            {
+                if (element != null && element.parent != null)
+                {
+                    element.parent.Remove(element);
+                }
+            }
+            _uiElements.Clear();
+        }
+    }
+}

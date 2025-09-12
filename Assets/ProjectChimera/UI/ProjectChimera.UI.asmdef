@@ -17,7 +17,6 @@
         "ProjectChimera.Systems.Gameplay",
         "ProjectChimera.Systems.Camera",
         "ProjectChimera.Systems.Economy",
-        "ProjectChimera.Systems.Analytics",
         "ProjectChimera.Data.Economy",
         "ProjectChimera.Systems.Addressables",
         "Unity.TextMeshPro",

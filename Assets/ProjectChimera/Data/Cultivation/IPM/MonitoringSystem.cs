@@ -1,0 +1,128 @@
+using UnityEngine;
+using ProjectChimera.Shared;
+using ProjectChimera.Data.Shared;
+using ProjectChimera.Data.Cultivation.Plant;
+using System;
+using System.Collections.Generic;
+using PestMonitoringData = ProjectChimera.Data.Cultivation.IPM.IPMDataStructures.PestMonitoringData;
+
+namespace ProjectChimera.Data.Cultivation.IPM
+{
+    /// <summary>
+    /// Specialized module for pest monitoring and early detection in IPM systems.
+    /// Implements visual inspection, trapping protocols, and threshold-based monitoring.
+    /// </summary>
+    public static class MonitoringSystem
+    {
+        /// <summary>
+        /// Default monitoring protocols for common cannabis pests
+        /// </summary>
+        public static readonly MonitoringProtocol[] DefaultMonitoringProtocols = new MonitoringProtocol[]
+        {
+            new MonitoringProtocol
+            {
+                PestType = PestType.Spider_Mites,
+                PestName = "Spider Mites",
+                InspectionFrequency = InspectionFrequency.Daily,
+                EarlyDetectionMethods = new[] { "Visual inspection", "Sticky traps" },
+                ActionThreshold = 1f,
+                CriticalThreshold = 5f
+            },
+            new MonitoringProtocol
+            {
+                PestType = PestType.Thrips,
+                PestName = "Thrips",
+                InspectionFrequency = InspectionFrequency.Every_Other_Day,
+                EarlyDetectionMethods = new[] { "Blue sticky traps", "Leaf inspection" },
+                ActionThreshold = 3f,
+                CriticalThreshold = 15f
+            }
+        };
+
+        /// <summary>
+        /// Analyzes current pest levels from monitoring data
+        /// </summary>
+        public static PestDetectionResult[] AnalyzePestLevels(PestMonitoringData[] monitoringData)
+        {
+            if (monitoringData == null || monitoringData.Length == 0)
+                return new PestDetectionResult[0];
+
+            var results = new Dictionary<PestType, PestDetectionResult>();
+
+            foreach (var data in monitoringData)
+            {
+                if (!results.ContainsKey(data.Pest))
+                {
+                    results[data.Pest] = new PestDetectionResult
+                    {
+                        PestType = data.Pest,
+                        PopulationLevel = 0f,
+                        Locations = new List<string>()
+                    };
+                }
+
+                var result = results[data.Pest];
+                result.PopulationLevel += data.Population;
+                if (!result.Locations.Contains(data.Location))
+                {
+                    result.Locations.Add(data.Location);
+                }
+            }
+
+            return new List<PestDetectionResult>(results.Values).ToArray();
+        }
+
+        /// <summary>
+        /// Creates inspection schedule based on plant growth stages and risk factors
+        /// </summary>
+        public static InspectionSchedule CreateInspectionSchedule(
+            PlantInstanceSO[] plants,
+            EnvironmentalConditions environment)
+        {
+            return new InspectionSchedule
+            {
+                TotalInspectionsPerWeek = 5,
+                InspectionSlots = new InspectionSlot[0]
+            };
+        }
+    }
+
+    // Core data structures for monitoring
+    [System.Serializable]
+    public class MonitoringProtocol
+    {
+        public PestType PestType;
+        public string PestName;
+        public InspectionFrequency InspectionFrequency;
+        public string[] EarlyDetectionMethods;
+        public float ActionThreshold = 1f;
+        public float CriticalThreshold = 5f;
+    }
+
+    public class PestDetectionResult
+    {
+        public PestType PestType;
+        public float PopulationLevel;
+        public List<string> Locations;
+    }
+
+    public class InspectionSchedule
+    {
+        public int TotalInspectionsPerWeek;
+        public InspectionSlot[] InspectionSlots;
+    }
+
+    public class InspectionSlot
+    {
+        public DayOfWeek DayOfWeek;
+        public InspectionTime[] InspectionTimes;
+    }
+
+    public class InspectionTime
+    {
+        public TimeOfDay Time;
+        public float Duration;
+    }
+
+    // InspectionFrequency and TimeOfDay enums moved to IPMEnums.cs to avoid duplicates
+}

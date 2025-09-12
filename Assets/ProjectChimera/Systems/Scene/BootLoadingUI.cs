@@ -1,6 +1,6 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.UI;
+// using UnityEngine.UI; // Disabled due to assembly reference issues
 using ProjectChimera.Core;
 using ProjectChimera.Core.Logging;
 
@@ -14,43 +14,47 @@ namespace ProjectChimera.Systems.Scene
     public class BootLoadingUI : MonoBehaviour
     {
         [Header("UI Components")]
-        [SerializeField] private Text _statusText;
-        [SerializeField] private Slider _progressSlider;
-        [SerializeField] private Image _backgroundImage;
+        // Temporarily disabled due to UnityEngine.UI assembly reference issues
+        // [SerializeField] private UnityEngine.UI.Text _statusText;
+        // [SerializeField] private UnityEngine.UI.Slider _progressSlider;
+        // [SerializeField] private UnityEngine.UI.Image _backgroundImage;
+        [System.NonSerialized] private object _statusText;
+        [System.NonSerialized] private object _progressSlider;
+        [System.NonSerialized] private object _backgroundImage;
 
         [Header("Configuration")]
         [SerializeField] private bool _fadeBackground = true;
         [SerializeField] private float _fadeSpeed = 2.0f;
         [SerializeField] private bool _enableProgressAnimation = true;
 
-        private DIGameManager _diGameManager;
+        private GameManager _gameManager;
         private Coroutine _statusUpdateCoroutine;
 
         private void Start()
         {
-            // Wait a moment for DIGameManager to be created by BootManager
-            StartCoroutine(FindDIGameManager());
+            // Wait a moment for GameManager to be created by BootManager
+            StartCoroutine(FindGameManager());
         }
 
-        private IEnumerator FindDIGameManager()
+        private IEnumerator FindGameManager()
         {
-            // Wait for DIGameManager to be created
+            // Wait for GameManager to be created
             float timeout = 10f;
             float elapsed = 0f;
-            
-            while (_diGameManager == null && elapsed < timeout)
+
+            while (_gameManager == null && elapsed < timeout)
             {
-                _diGameManager = ServiceContainerFactory.Instance.TryResolve<DIGameManager>();
-                if (_diGameManager == null)
+                _gameManager = GameManager.Instance;
+                if (_gameManager == null)
                 {
                     yield return new WaitForSeconds(0.1f);
                     elapsed += 0.1f;
                 }
             }
-            
-            if (_diGameManager == null)
+
+            if (_gameManager == null)
             {
-                ChimeraLogger.LogError("[BootLoadingUI] DIGameManager not found in scene!");
+                ChimeraLogger.LogError("[BootLoadingUI] GameManager not found in scene!");
                 yield break;
             }
 
@@ -60,7 +64,9 @@ namespace ProjectChimera.Systems.Scene
 
         private void InitializeUI()
         {
+            // UI components temporarily disabled due to assembly reference issues
             // Set initial UI state
+            /*
             if (_statusText != null)
             {
                 _statusText.text = "Initializing Project Chimera...";
@@ -78,39 +84,44 @@ namespace ProjectChimera.Systems.Scene
                 color.a = 1f;
                 _backgroundImage.color = color;
             }
+            */
+            ChimeraLogger.LogVerbose("BootLoadingUI initialized (UI components temporarily disabled)");
         }
 
         private IEnumerator UpdateBootStatus()
         {
             float bootStartTime = Time.time;
-            
-            while (_diGameManager.CurrentGameState != GameState.Running)
+
+            while (_gameManager == null || !_gameManager.gameObject.activeInHierarchy)
             {
                 float elapsed = Time.time - bootStartTime;
-                
+
+                // UI components temporarily disabled due to assembly reference issues
                 // Update status text based on elapsed time and game state
-                UpdateStatusText(elapsed);
-                
+                // UpdateStatusText(elapsed);
+
                 // Update progress slider
-                if (_progressSlider != null && _enableProgressAnimation)
+                // if (_progressSlider != null && _enableProgressAnimation)
+                // {
+                //     UpdateProgressSlider(elapsed);
+                // }
+
+                // Check for timeout (simplified error detection)
+                if (elapsed > 30f)
                 {
-                    UpdateProgressSlider(elapsed);
-                }
-                
-                // Check for error state
-                if (_diGameManager.CurrentGameState == GameState.Error)
-                {
-                    if (_statusText != null)
-                    {
-                        _statusText.text = "Boot Error - Check Console";
-                    }
+                    // if (_statusText != null)
+                    // {
+                    //     _statusText.text = "Boot Error - Check Console";
+                    // }
+                    ChimeraLogger.LogError("Boot Error - Check Console");
                     yield break;
                 }
-                
+
                 yield return new WaitForSeconds(0.1f);
             }
 
-            // Boot complete - final UI updates
+            // Boot complete - final UI updates (disabled due to assembly issues)
+            /*
             if (_statusText != null)
             {
                 _statusText.text = "Loading Main Menu...";
@@ -126,14 +137,19 @@ namespace ProjectChimera.Systems.Scene
             {
                 yield return StartCoroutine(FadeBackgroundOut());
             }
+            */
+
+            ChimeraLogger.LogVerbose("Boot sequence completed - transitioning to main menu");
         }
 
+        // Temporarily disabled due to assembly reference issues
+        /*
         private void UpdateStatusText(float elapsed)
         {
             if (_statusText == null) return;
 
             string statusMessage;
-            
+
             if (elapsed < 1.0f)
             {
                 statusMessage = "Initializing Project Chimera...";
@@ -153,37 +169,44 @@ namespace ProjectChimera.Systems.Scene
 
             _statusText.text = statusMessage;
         }
+        */
 
+        // Temporarily disabled due to assembly reference issues
+        /*
         private void UpdateProgressSlider(float elapsed)
         {
             // Estimate progress based on typical boot phases
             float estimatedTotalTime = 5.0f; // Assume 5 second total boot time
             float progress = Mathf.Clamp01(elapsed / estimatedTotalTime);
-            
+
             // Smooth the progress animation
             _progressSlider.value = Mathf.Lerp(_progressSlider.value, progress, Time.deltaTime * 2f);
         }
+        */
 
+        // Temporarily disabled due to assembly reference issues
+        /*
         private IEnumerator FadeBackgroundOut()
         {
             var startColor = _backgroundImage.color;
             var targetColor = new Color(startColor.r, startColor.g, startColor.b, 0f);
-            
+
             float elapsed = 0f;
             float fadeDuration = 1f / _fadeSpeed;
-            
+
             while (elapsed < fadeDuration)
             {
                 elapsed += Time.deltaTime;
                 float t = elapsed / fadeDuration;
-                
+
                 _backgroundImage.color = Color.Lerp(startColor, targetColor, t);
-                
+
                 yield return null;
             }
-            
+
             _backgroundImage.color = targetColor;
         }
+        */
 
         private void OnDestroy()
         {

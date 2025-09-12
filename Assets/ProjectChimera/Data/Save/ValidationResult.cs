@@ -10,6 +10,7 @@ namespace ProjectChimera.Data.Save
         public bool IsValid { get; set; }
         public string Message { get; set; }
         public string ErrorMessage { get; set; }
+        public string ErrorCode { get; set; }
         public string ValidationDetails { get; set; }
         public List<string> Errors { get; set; } = new List<string>();
         public List<string> Warnings { get; set; } = new List<string>();

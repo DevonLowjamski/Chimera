@@ -4,9 +4,7 @@
     "references": [
         "ProjectChimera.Core",
         "ProjectChimera.Systems.Events",
-        "ProjectChimera.Systems.Registry",
         "ProjectChimera.Systems.Diagnostics",
-        "ProjectChimera.Systems.Analytics",
         "ProjectChimera.Shared",
         "ProjectChimera.Data.Shared",
         "ProjectChimera.Data.Construction",

@@ -23,7 +23,6 @@
         "ProjectChimera.Systems.Environment",
         "ProjectChimera.Systems.Facilities",
         "ProjectChimera.Systems.Addressables",
-        "ProjectChimera.Systems.Analytics",
         "ProjectChimera.Systems.Save",
         "ProjectChimera.Systems.Events",
         "ProjectChimera.Systems.Scene",

@@ -1,646 +1,273 @@
 using ProjectChimera.Core.Logging;
 using UnityEngine;
-using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Linq;
 using ProjectChimera.Data.Save;
 using ProjectChimera.Core;
 
 namespace ProjectChimera.Systems.Save
 {
     /// <summary>
-    /// Domain-specific save provider for the cultivation system.
-    /// Handles plant instances, genetics, strains, environmental data, and cultivation metrics.
-    /// Implements comprehensive validation, migration, and state management.
+    /// SIMPLE: Basic cultivation save provider aligned with Project Chimera's save system vision.
+    /// Focuses on essential plant data saving and loading without complex validation.
     /// </summary>
-    public class CultivationSaveProvider : MonoBehaviour, ISaveSectionProvider
+    public class CultivationSaveProvider : MonoBehaviour
     {
-        [Header("Provider Configuration")]
-        [SerializeField] private string _sectionVersion = "1.2.0";
-        [SerializeField] private int _priority = (int)SaveSectionPriority.High;
-        [SerializeField] private bool _enableIncrementalSave = true;
-        [SerializeField] private int _maxPlantsPerSave = 1000;
+        [Header("Basic Save Settings")]
+        [SerializeField] private bool _enableSaving = true;
+        [SerializeField] private bool _enableLoading = true;
+        [SerializeField] private bool _enableLogging = true;
 
-        [Header("Data Sources")]
-        [SerializeField] private bool _autoDetectSystems = true;
-        [SerializeField] private Transform _cultivationSystemRoot;
-        [SerializeField] private string[] _plantManagerTags = { "PlantManager", "CultivationManager" };
+        // Basic state tracking
+        private CultivationStateDTO _currentState;
+        private bool _isInitialized = false;
 
-        [Header("Validation Settings")]
-        [SerializeField] private bool _enableDataValidation = true;
-        [SerializeField] private bool _validateGeneticConsistency = true;
-        [SerializeField] private float _maxAllowedDataCorruption = 0.05f; // 5%
-        [SerializeField] private bool _enableAutoRepair = true;
-
-        // System references
-        private ICultivationSystem _cultivationSystem;
-        private IGeneticsSystem _geneticsSystem;
-        private IPlantManager _plantManager;
-        private bool _systemsInitialized = false;
-
-        // State tracking
-        private CultivationStateDTO _lastSavedState;
-        private DateTime _lastSaveTime;
-        private bool _hasChanges = true;
-        private long _estimatedDataSize = 0;
-
-        // Dependencies
-        private readonly string[] _dependencies = { 
-            SaveSectionKeys.PLAYER, 
-            SaveSectionKeys.SETTINGS, 
-            SaveSectionKeys.TIME, 
-            SaveSectionKeys.ECONOMY 
-        };
-
-        #region ISaveSectionProvider Implementation
-
-        public string SectionKey => SaveSectionKeys.CULTIVATION;
-        public string SectionName => "Plant Cultivation System";
-        public string SectionVersion => _sectionVersion;
-        public int Priority => _priority;
-        public bool IsRequired => false;
-        public bool SupportsIncrementalSave => _enableIncrementalSave;
-        public long EstimatedDataSize => _estimatedDataSize;
-        public IReadOnlyList<string> Dependencies => _dependencies;
-
-        public async Task<ISaveSectionData> GatherSectionDataAsync()
+        /// <summary>
+        /// Initialize the basic save provider
+        /// </summary>
+        public void Initialize()
         {
-            await InitializeSystemsIfNeeded();
+            if (_isInitialized) return;
 
-            var cultivationData = new CultivationSectionData
+            _isInitialized = true;
+
+            if (_enableLogging)
             {
-                SectionKey = SectionKey,
-                DataVersion = SectionVersion,
-                Timestamp = DateTime.Now
-            };
+                ChimeraLogger.Log("[CultivationSaveProvider] Initialized successfully");
+            }
+        }
+
+        /// <summary>
+        /// Save cultivation state
+        /// </summary>
+        public bool SaveState(string saveSlot)
+        {
+            if (!_enableSaving) return false;
 
             try
             {
-                // Gather core cultivation state
-                cultivationData.CultivationState = await GatherCultivationStateAsync();
-                
-                // Calculate data size and hash
-                cultivationData.EstimatedSize = CalculateDataSize(cultivationData.CultivationState);
-                cultivationData.DataHash = GenerateDataHash(cultivationData);
-
-                _estimatedDataSize = cultivationData.EstimatedSize;
-                _lastSavedState = cultivationData.CultivationState;
-                _lastSaveTime = DateTime.Now;
-                _hasChanges = false;
-
-                LogInfo($"Cultivation data gathered: {cultivationData.CultivationState?.ActivePlants?.Count ?? 0} plants, " +
-                       $"{cultivationData.CultivationState?.AvailableStrains?.Count ?? 0} strains, " +
-                       $"Data size: {cultivationData.EstimatedSize} bytes");
-
-                return cultivationData;
-            }
-            catch (Exception ex)
-            {
-                LogError($"Failed to gather cultivation data: {ex.Message}");
-                return CreateEmptySectionData();
-            }
-        }
-
-        public async Task<SaveSectionResult> ApplySectionDataAsync(ISaveSectionData sectionData)
-        {
-            var startTime = DateTime.Now;
-            
-            try
-            {
-                if (!(sectionData is CultivationSectionData cultivationData))
+                // Create basic cultivation state
+                var state = new CultivationStateDTO
                 {
-                    return SaveSectionResult.CreateFailure("Invalid section data type");
+                    Plants = GatherPlantData(),
+                    Zones = GatherZoneData(),
+                    SaveVersion = "1.0"
+                };
+
+                // Simple save operation - could be expanded to use PlayerPrefs, file system, etc.
+                // For now, just store in memory
+                _currentState = state;
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log($"[CultivationSaveProvider] Saved state to slot: {saveSlot} ({state.Plants.Count} plants, {state.Zones.Count} zones)");
                 }
 
-                await InitializeSystemsIfNeeded();
-
-                var result = await ApplyCultivationStateAsync(cultivationData.CultivationState);
-                
-                if (result.Success)
-                {
-                    _lastSavedState = cultivationData.CultivationState;
-                    _hasChanges = false;
-
-                    LogInfo($"Cultivation state applied successfully: {cultivationData.CultivationState?.ActivePlants?.Count ?? 0} plants restored");
-                }
-
-                var duration = DateTime.Now - startTime;
-                return SaveSectionResult.CreateSuccess(duration, cultivationData.EstimatedSize, new Dictionary<string, object>
-                {
-                    { "plants_loaded", cultivationData.CultivationState?.ActivePlants?.Count ?? 0 },
-                    { "strains_loaded", cultivationData.CultivationState?.AvailableStrains?.Count ?? 0 }
-                });
-            }
-            catch (Exception ex)
-            {
-                LogError($"Failed to apply cultivation data: {ex.Message}");
-                return SaveSectionResult.CreateFailure($"Application failed: {ex.Message}", ex);
-            }
-        }
-
-        public async Task<SaveSectionValidation> ValidateSectionDataAsync(ISaveSectionData sectionData)
-        {
-            if (!_enableDataValidation)
-            {
-                return SaveSectionValidation.CreateValid();
-            }
-
-            try
-            {
-                if (!(sectionData is CultivationSectionData cultivationData))
-                {
-                    return SaveSectionValidation.CreateInvalid(new List<string> { "Invalid section data type" });
-                }
-
-                var errors = new List<string>();
-                var warnings = new List<string>();
-
-                // Validate cultivation state
-                if (cultivationData.CultivationState == null)
-                {
-                    errors.Add("Cultivation state is null");
-                    return SaveSectionValidation.CreateInvalid(errors);
-                }
-
-                var validationResult = await ValidateCultivationStateAsync(cultivationData.CultivationState);
-                
-                errors.AddRange(validationResult.Errors);
-                warnings.AddRange(validationResult.Warnings);
-
-                // Check data corruption level
-                float corruptionLevel = CalculateDataCorruption(cultivationData.CultivationState);
-                if (corruptionLevel > _maxAllowedDataCorruption)
-                {
-                    errors.Add($"Data corruption level ({corruptionLevel:P2}) exceeds maximum allowed ({_maxAllowedDataCorruption:P2})");
-                }
-                else if (corruptionLevel > 0)
-                {
-                    warnings.Add($"Minor data corruption detected ({corruptionLevel:P2})");
-                }
-
-                return errors.Any()
-                    ? SaveSectionValidation.CreateInvalid(errors, warnings, _enableAutoRepair, SectionVersion)
-                    : SaveSectionValidation.CreateValid();
-            }
-            catch (Exception ex)
-            {
-                LogError($"Validation failed: {ex.Message}");
-                return SaveSectionValidation.CreateInvalid(new List<string> { $"Validation error: {ex.Message}" });
-            }
-        }
-
-        public async Task<ISaveSectionData> MigrateSectionDataAsync(ISaveSectionData oldData, string fromVersion)
-        {
-            try
-            {
-                if (!(oldData is CultivationSectionData cultivationData))
-                {
-                    throw new ArgumentException("Invalid data type for migration");
-                }
-
-                var migrator = GetVersionMigrator(fromVersion, SectionVersion);
-                if (migrator != null)
-                {
-                    var migratedState = await migrator.MigrateCultivationStateAsync(cultivationData.CultivationState);
-                    
-                    var migratedData = new CultivationSectionData
-                    {
-                        SectionKey = SectionKey,
-                        DataVersion = SectionVersion,
-                        Timestamp = DateTime.Now,
-                        CultivationState = migratedState,
-                        DataHash = GenerateDataHash(cultivationData)
-                    };
-
-                    migratedData.EstimatedSize = CalculateDataSize(migratedState);
-
-                    LogInfo($"Cultivation data migrated from {fromVersion} to {SectionVersion}");
-                    return migratedData;
-                }
-
-                LogWarning($"No migration path found from {fromVersion} to {SectionVersion}");
-                return oldData; // Return unchanged if no migration needed
-            }
-            catch (Exception ex)
-            {
-                LogError($"Migration failed: {ex.Message}");
-                throw;
-            }
-        }
-
-        public SaveSectionSummary GetSectionSummary()
-        {
-            var state = _lastSavedState ?? GetCurrentCultivationState();
-            
-            return new SaveSectionSummary
-            {
-                SectionKey = SectionKey,
-                SectionName = SectionName,
-                StatusDescription = GetStatusDescription(state),
-                ItemCount = state?.ActivePlants?.Count ?? 0,
-                DataSize = _estimatedDataSize,
-                LastUpdated = _lastSaveTime,
-                KeyValuePairs = new Dictionary<string, string>
-                {
-                    { "Active Plants", (state?.ActivePlants?.Count ?? 0).ToString() },
-                    { "Available Strains", (state?.AvailableStrains?.Count ?? 0).ToString() },
-                    { "Cultivation Zones", (state?.CultivationZones?.Count ?? 0).ToString() },
-                    { "Total Harvests", (state?.HarvestState?.TotalHarvests ?? 0).ToString() },
-                    { "System Status", _systemsInitialized ? "Initialized" : "Not Initialized" }
-                },
-                HasErrors = !_systemsInitialized,
-                ErrorMessages = _systemsInitialized ? new List<string>() : new List<string> { "Cultivation systems not initialized" }
-            };
-        }
-
-        public bool HasChanges()
-        {
-            if (!_systemsInitialized || _lastSavedState == null)
                 return true;
-
-            // Quick change detection
-            var currentState = GetCurrentCultivationState();
-            if (currentState == null)
-                return false;
-
-            return _hasChanges || 
-                   currentState.ActivePlants?.Count != _lastSavedState.ActivePlants?.Count ||
-                   currentState.AvailableStrains?.Count != _lastSavedState.AvailableStrains?.Count ||
-                   DateTime.Now.Subtract(_lastSaveTime).TotalMinutes > 5; // Force save every 5 minutes
-        }
-
-        public void MarkClean()
-        {
-            _hasChanges = false;
-            _lastSaveTime = DateTime.Now;
-        }
-
-        public async Task ResetToDefaultStateAsync()
-        {
-            await InitializeSystemsIfNeeded();
-
-            // Reset cultivation system to defaults
-            if (_cultivationSystem != null)
-            {
-                await _cultivationSystem.ResetToDefaultsAsync();
             }
-
-            _lastSavedState = null;
-            _hasChanges = true;
-            
-            LogInfo("Cultivation system reset to default state");
-        }
-
-        public IReadOnlyDictionary<string, IReadOnlyList<string>> GetSupportedMigrations()
-        {
-            return new Dictionary<string, IReadOnlyList<string>>
+            catch (System.Exception ex)
             {
-                { "1.0.0", new List<string> { "1.1.0", "1.2.0" } },
-                { "1.1.0", new List<string> { "1.2.0" } }
-            };
-        }
-
-        public async Task PreSaveCleanupAsync()
-        {
-            await InitializeSystemsIfNeeded();
-
-            // Clean up temporary data, expired health events, etc.
-            if (_cultivationSystem != null)
-            {
-                await _cultivationSystem.CleanupTemporaryDataAsync();
-            }
-
-            // Mark that changes occurred due to cleanup
-            _hasChanges = true;
-        }
-
-        public async Task PostLoadInitializationAsync()
-        {
-            await InitializeSystemsIfNeeded();
-
-            // Rebuild caches, recalculate derived data
-            if (_cultivationSystem != null)
-            {
-                await _cultivationSystem.RebuildCachesAsync();
-            }
-
-            if (_geneticsSystem != null)
-            {
-                await _geneticsSystem.RecalculateGeneticDataAsync();
-            }
-
-            LogInfo("Cultivation system post-load initialization completed");
-        }
-
-        #endregion
-
-        #region System Integration
-
-        private async Task InitializeSystemsIfNeeded()
-        {
-            if (_systemsInitialized)
-                return;
-
-            await Task.Run(() =>
-            {
-                // Auto-detect systems if enabled
-                if (_autoDetectSystems)
+                if (_enableLogging)
                 {
-                    _cultivationSystem = ServiceContainerFactory.Instance?.TryResolve<ICultivationSystem>();
-                    
-                    _geneticsSystem = ServiceContainerFactory.Instance?.TryResolve<IGeneticsSystem>();
-                    
-                    _plantManager = ServiceContainerFactory.Instance?.TryResolve<IPlantManager>();
+                    ChimeraLogger.LogError($"[CultivationSaveProvider] Save failed: {ex.Message}");
                 }
-
-                _systemsInitialized = true;
-            });
-
-            LogInfo($"Cultivation save provider initialized. Systems found: " +
-                   $"Cultivation={_cultivationSystem != null}, " +
-                   $"Genetics={_geneticsSystem != null}, " +
-                   $"PlantManager={_plantManager != null}");
+                return false;
+            }
         }
 
-        #endregion
-
-        #region Data Gathering and Application
-
-        private async Task<CultivationStateDTO> GatherCultivationStateAsync()
+        /// <summary>
+        /// Load cultivation state
+        /// </summary>
+        public bool LoadState(string saveSlot)
         {
-            var state = new CultivationStateDTO
-            {
-                SaveTimestamp = DateTime.Now,
-                SaveVersion = SectionVersion,
-                EnableCultivationSystem = true
-            };
+            if (!_enableLoading) return false;
 
-            // Gather plant data
-            if (_plantManager != null)
-            {
-                state.ActivePlants = await GatherActivePlantsAsync();
-                state.PlantPositions = await GatherPlantPositionsAsync();
-                state.PlantZoneAssignments = await GatherPlantZoneAssignmentsAsync();
-            }
-
-            // Gather genetic data
-            if (_geneticsSystem != null)
-            {
-                state.AvailableStrains = await GatherAvailableStrainsAsync();
-                state.StoredGenotypes = await GatherStoredGenotypesAsync();
-                state.GeneticLibrary = await GatherGeneticLibraryStateAsync();
-            }
-
-            // Gather cultivation zones
-            if (_cultivationSystem != null)
-            {
-                state.CultivationZones = await GatherCultivationZonesAsync();
-                state.LifecycleState = await GatherLifecycleStateAsync();
-                state.HarvestState = await GatherHarvestStateAsync();
-                state.EnvironmentalState = await GatherEnvironmentalStateAsync();
-                state.PlantCareState = await GatherPlantCareStateAsync();
-                state.Metrics = await GatherCultivationMetricsAsync();
-                state.Performance = await GatherCultivationPerformanceAsync();
-            }
-
-            return state;
-        }
-
-        private async Task<SaveSectionResult> ApplyCultivationStateAsync(CultivationStateDTO state)
-        {
             try
             {
-                // Apply plant data
-                if (_plantManager != null && state.ActivePlants != null)
+                if (_currentState == null)
                 {
-                    await _plantManager.LoadPlantsAsync(state.ActivePlants);
-                    await _plantManager.SetPlantPositionsAsync(state.PlantPositions);
-                    await _plantManager.SetPlantZoneAssignmentsAsync(state.PlantZoneAssignments);
+                    if (_enableLogging)
+                    {
+                        ChimeraLogger.LogWarning("[CultivationSaveProvider] No saved state found");
+                    }
+                    return false;
                 }
 
-                // Apply genetic data
-                if (_geneticsSystem != null)
+                // Simple load operation - apply the saved state
+                ApplyPlantData(_currentState.Plants);
+                ApplyZoneData(_currentState.Zones);
+
+                if (_enableLogging)
                 {
-                    if (state.AvailableStrains != null)
-                        await _geneticsSystem.LoadStrainsAsync(state.AvailableStrains);
-                    
-                    if (state.StoredGenotypes != null)
-                        await _geneticsSystem.LoadGenotypesAsync(state.StoredGenotypes);
-                    
-                    if (state.GeneticLibrary != null)
-                        await _geneticsSystem.LoadGeneticLibraryAsync(state.GeneticLibrary);
+                    ChimeraLogger.Log($"[CultivationSaveProvider] Loaded state from slot: {saveSlot}");
                 }
 
-                // Apply cultivation system data
-                if (_cultivationSystem != null)
-                {
-                    if (state.CultivationZones != null)
-                        await _cultivationSystem.LoadCultivationZonesAsync(state.CultivationZones);
-                    
-                    if (state.LifecycleState != null)
-                        await _cultivationSystem.LoadLifecycleStateAsync(state.LifecycleState);
-                    
-                    if (state.HarvestState != null)
-                        await _cultivationSystem.LoadHarvestStateAsync(state.HarvestState);
-                    
-                    if (state.EnvironmentalState != null)
-                        await _cultivationSystem.LoadEnvironmentalStateAsync(state.EnvironmentalState);
-                    
-                    if (state.PlantCareState != null)
-                        await _cultivationSystem.LoadPlantCareStateAsync(state.PlantCareState);
-                }
-
-                return SaveSectionResult.CreateSuccess();
+                return true;
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
-                LogError($"Failed to apply cultivation state: {ex.Message}");
-                return SaveSectionResult.CreateFailure($"Application failed: {ex.Message}", ex);
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogError($"[CultivationSaveProvider] Load failed: {ex.Message}");
+                }
+                return false;
             }
         }
 
-        #endregion
-
-        #region Helper Methods
-
-        private CultivationStateDTO GetCurrentCultivationState()
+        /// <summary>
+        /// Get current cultivation state
+        /// </summary>
+        public CultivationStateDTO GetCurrentState()
         {
-            // Quick state snapshot for change detection
-            if (!_systemsInitialized)
-                return null;
+            return _currentState;
+        }
 
-            return new CultivationStateDTO
+        /// <summary>
+        /// Check if save data exists
+        /// </summary>
+        public bool HasSaveData(string saveSlot)
+        {
+            return _currentState != null;
+        }
+
+        /// <summary>
+        /// Clear save data
+        /// </summary>
+        public void ClearSaveData(string saveSlot)
+        {
+            _currentState = null;
+
+            if (_enableLogging)
             {
-                ActivePlants = _plantManager?.GetActivePlants()?.Select(ConvertToPlantInstanceDTO).ToList(),
-                AvailableStrains = _geneticsSystem?.GetAvailableStrains()?.Select(ConvertToPlantStrainDTO).ToList(),
-                CultivationZones = _cultivationSystem?.GetCultivationZones()?.Select(ConvertToCultivationZoneDTO).ToList(),
-                SaveTimestamp = DateTime.Now
+                ChimeraLogger.Log($"[CultivationSaveProvider] Cleared save data for slot: {saveSlot}");
+            }
+        }
+
+        /// <summary>
+        /// Get save statistics
+        /// </summary>
+        public SaveStatistics GetSaveStatistics()
+        {
+            return new SaveStatistics
+            {
+                HasData = _currentState != null,
+                PlantCount = _currentState?.Plants?.Count ?? 0,
+                ZoneCount = _currentState?.Zones?.Count ?? 0,
+                SaveVersion = _currentState?.SaveVersion ?? "None"
             };
         }
 
-        private ISaveSectionData CreateEmptySectionData()
+        /// <summary>
+        /// Set saving enabled/disabled
+        /// </summary>
+        public void SetSavingEnabled(bool enabled)
         {
-            return new CultivationSectionData
+            _enableSaving = enabled;
+
+            if (_enableLogging)
             {
-                SectionKey = SectionKey,
-                DataVersion = SectionVersion,
-                Timestamp = DateTime.Now,
-                CultivationState = new CultivationStateDTO
-                {
-                    SaveTimestamp = DateTime.Now,
-                    SaveVersion = SectionVersion,
-                    ActivePlants = new List<PlantInstanceDTO>(),
-                    AvailableStrains = new List<PlantStrainDTO>(),
-                    CultivationZones = new List<CultivationZoneDTO>()
-                },
-                EstimatedSize = 1024 // Minimal size
-            };
+                ChimeraLogger.Log($"[CultivationSaveProvider] Saving {(enabled ? "enabled" : "disabled")}");
+            }
         }
 
-        private long CalculateDataSize(CultivationStateDTO state)
+        /// <summary>
+        /// Set loading enabled/disabled
+        /// </summary>
+        public void SetLoadingEnabled(bool enabled)
         {
-            if (state == null) return 0;
+            _enableLoading = enabled;
 
-            // Estimate based on content
-            long size = 1024; // Base overhead
-            size += (state.ActivePlants?.Count ?? 0) * 2048; // ~2KB per plant
-            size += (state.AvailableStrains?.Count ?? 0) * 1024; // ~1KB per strain
-            size += (state.CultivationZones?.Count ?? 0) * 512; // ~0.5KB per zone
-
-            return size;
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log($"[CultivationSaveProvider] Loading {(enabled ? "enabled" : "disabled")}");
+            }
         }
 
-        private string GenerateDataHash(CultivationSectionData data)
+        #region Private Methods
+
+        private List<PlantSaveData> GatherPlantData()
         {
-            // Simple hash based on key data points
-            var hashSource = $"{data.Timestamp:yyyy-MM-dd-HH-mm-ss}" +
-                           $"{data.CultivationState?.ActivePlants?.Count ?? 0}" +
-                           $"{data.CultivationState?.AvailableStrains?.Count ?? 0}" +
-                           $"{data.EstimatedSize}";
-            
-            return hashSource.GetHashCode().ToString("X8");
+            // Simple implementation - gather from current plants
+            // In a real implementation, this would collect data from plant managers
+            return new List<PlantSaveData>();
         }
 
-        private string GetStatusDescription(CultivationStateDTO state)
+        private List<ZoneSaveData> GatherZoneData()
         {
-            if (state == null)
-                return "No cultivation data";
-
-            int plants = state.ActivePlants?.Count ?? 0;
-            int strains = state.AvailableStrains?.Count ?? 0;
-            
-            if (plants == 0 && strains == 0)
-                return "Empty cultivation system";
-            
-            if (plants == 0)
-                return $"{strains} strains available, no active plants";
-            
-            return $"{plants} active plants, {strains} strains available";
+            // Simple implementation - gather from current zones
+            // In a real implementation, this would collect data from zone managers
+            return new List<ZoneSaveData>();
         }
 
-        // Placeholder conversion methods - would be implemented with actual conversion logic
-        private PlantInstanceDTO ConvertToPlantInstanceDTO(object plant) => new PlantInstanceDTO();
-        private PlantStrainDTO ConvertToPlantStrainDTO(object strain) => new PlantStrainDTO();
-        private CultivationZoneDTO ConvertToCultivationZoneDTO(object zone) => new CultivationZoneDTO();
-
-        // Placeholder async methods - would be implemented with actual system integration
-        private async Task<List<PlantInstanceDTO>> GatherActivePlantsAsync() => new List<PlantInstanceDTO>();
-        private async Task<Dictionary<string, Vector3>> GatherPlantPositionsAsync() => new Dictionary<string, Vector3>();
-        private async Task<Dictionary<string, string>> GatherPlantZoneAssignmentsAsync() => new Dictionary<string, string>();
-        private async Task<List<PlantStrainDTO>> GatherAvailableStrainsAsync() => new List<PlantStrainDTO>();
-        private async Task<List<GenotypeDTO>> GatherStoredGenotypesAsync() => new List<GenotypeDTO>();
-        private async Task<GeneticLibraryStateDTO> GatherGeneticLibraryStateAsync() => new GeneticLibraryStateDTO();
-        private async Task<List<CultivationZoneDTO>> GatherCultivationZonesAsync() => new List<CultivationZoneDTO>();
-        private async Task<PlantLifecycleStateDTO> GatherLifecycleStateAsync() => new PlantLifecycleStateDTO();
-        private async Task<HarvestStateDTO> GatherHarvestStateAsync() => new HarvestStateDTO();
-        private async Task<CultivationEnvironmentalStateDTO> GatherEnvironmentalStateAsync() => new CultivationEnvironmentalStateDTO();
-        private async Task<PlantCareStateDTO> GatherPlantCareStateAsync() => new PlantCareStateDTO();
-        private async Task<CultivationMetricsDTO> GatherCultivationMetricsAsync() => new CultivationMetricsDTO();
-        private async Task<CultivationPerformanceDTO> GatherCultivationPerformanceAsync() => new CultivationPerformanceDTO();
-
-        private async Task<CultivationValidationResult> ValidateCultivationStateAsync(CultivationStateDTO state)
+        private void ApplyPlantData(List<PlantSaveData> plants)
         {
-            // Comprehensive validation - placeholder implementation
-            await Task.Delay(1);
-            return new CultivationValidationResult { IsValid = true };
+            // Simple implementation - apply plant data
+            // In a real implementation, this would restore plants to their managers
+            if (_enableLogging && plants.Count > 0)
+            {
+                ChimeraLogger.Log($"[CultivationSaveProvider] Applied data for {plants.Count} plants");
+            }
         }
 
-        private float CalculateDataCorruption(CultivationStateDTO state) => 0.0f; // Placeholder
-
-        private ICultivationMigrator GetVersionMigrator(string fromVersion, string toVersion) => null; // Placeholder
-
-        private void LogInfo(string message) => ChimeraLogger.Log($"[CultivationSaveProvider] {message}");
-        private void LogWarning(string message) => ChimeraLogger.LogWarning($"[CultivationSaveProvider] {message}");
-        private void LogError(string message) => ChimeraLogger.LogError($"[CultivationSaveProvider] {message}");
+        private void ApplyZoneData(List<ZoneSaveData> zones)
+        {
+            // Simple implementation - apply zone data
+            // In a real implementation, this would restore zones to their managers
+            if (_enableLogging && zones.Count > 0)
+            {
+                ChimeraLogger.Log($"[CultivationSaveProvider] Applied data for {zones.Count} zones");
+            }
+        }
 
         #endregion
     }
 
     /// <summary>
-    /// Cultivation-specific save section data container
+    /// Basic cultivation state data
     /// </summary>
     [System.Serializable]
-    public class CultivationSectionData : ISaveSectionData
+    public class CultivationStateDTO
     {
-        public string SectionKey { get; set; }
-        public string DataVersion { get; set; }
-        public DateTime Timestamp { get; set; }
-        public long EstimatedSize { get; set; }
-        public string DataHash { get; set; }
-
-        public CultivationStateDTO CultivationState;
-
-        public bool IsValid()
-        {
-            return !string.IsNullOrEmpty(SectionKey) && 
-                   !string.IsNullOrEmpty(DataVersion) && 
-                   CultivationState != null;
-        }
-
-        public string GetSummary()
-        {
-            var plants = CultivationState?.ActivePlants?.Count ?? 0;
-            var strains = CultivationState?.AvailableStrains?.Count ?? 0;
-            return $"Cultivation: {plants} plants, {strains} strains";
-        }
+        public List<PlantSaveData> Plants = new List<PlantSaveData>();
+        public List<ZoneSaveData> Zones = new List<ZoneSaveData>();
+        public string SaveVersion = "1.0";
     }
 
     /// <summary>
-    /// Interfaces for system integration (would be implemented by actual systems)
+    /// Basic plant save data
     /// </summary>
-    public interface ICultivationSystem
+    [System.Serializable]
+    public class PlantSaveData
     {
-        Task ResetToDefaultsAsync();
-        Task CleanupTemporaryDataAsync();
-        Task RebuildCachesAsync();
-        Task LoadCultivationZonesAsync(List<CultivationZoneDTO> zones);
-        Task LoadLifecycleStateAsync(PlantLifecycleStateDTO state);
-        Task LoadHarvestStateAsync(HarvestStateDTO state);
-        Task LoadEnvironmentalStateAsync(CultivationEnvironmentalStateDTO state);
-        Task LoadPlantCareStateAsync(PlantCareStateDTO state);
-        List<object> GetCultivationZones();
+        public string PlantId;
+        public string PlantType;
+        public Vector3 Position;
+        public float Age;
+        public float Health;
+        public string GeneticsId;
     }
 
-    public interface IGeneticsSystem
+    /// <summary>
+    /// Basic zone save data
+    /// </summary>
+    [System.Serializable]
+    public class ZoneSaveData
     {
-        Task RecalculateGeneticDataAsync();
-        Task LoadStrainsAsync(List<PlantStrainDTO> strains);
-        Task LoadGenotypesAsync(List<GenotypeDTO> genotypes);
-        Task LoadGeneticLibraryAsync(GeneticLibraryStateDTO library);
-        List<object> GetAvailableStrains();
+        public string ZoneId;
+        public string ZoneType;
+        public List<Vector3Int> Positions = new List<Vector3Int>();
+        public float Temperature;
+        public float Humidity;
     }
 
-    public interface IPlantManager
+    /// <summary>
+    /// Save statistics
+    /// </summary>
+    [System.Serializable]
+    public class SaveStatistics
     {
-        Task LoadPlantsAsync(List<PlantInstanceDTO> plants);
-        Task SetPlantPositionsAsync(Dictionary<string, Vector3> positions);
-        Task SetPlantZoneAssignmentsAsync(Dictionary<string, string> assignments);
-        List<object> GetActivePlants();
-    }
-
-    public interface ICultivationMigrator
-    {
-        Task<CultivationStateDTO> MigrateCultivationStateAsync(CultivationStateDTO oldState);
+        public bool HasData;
+        public int PlantCount;
+        public int ZoneCount;
+        public string SaveVersion;
     }
 }

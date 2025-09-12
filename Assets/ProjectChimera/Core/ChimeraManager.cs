@@ -14,18 +14,9 @@ namespace ProjectChimera.Core
         public int ManagedItems { get; set; } = 0;
         public float Uptime { get; set; } = 0f;
         public string LastActivity { get; set; } = "Initialized";
+        public string Status { get; set; } = "Active";
     }
 
-    /// <summary>
-    /// Priority levels for manager initialization and update ordering.
-    /// </summary>
-    public enum ManagerPriority
-    {
-        Low = 0,
-        Normal = 1,
-        High = 2,
-        Critical = 3
-    }
 
     /// <summary>
     /// Base class for all Project Chimera manager components.

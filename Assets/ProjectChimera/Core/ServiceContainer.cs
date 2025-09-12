@@ -1,320 +1,394 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-using ProjectChimera.Core.DependencyInjection;
 using ProjectChimera.Core.Logging;
-using ContainerVerificationResult = ProjectChimera.Core.DependencyInjection.ContainerVerificationResult;
-using AdvancedServiceDescriptor = ProjectChimera.Core.DependencyInjection.AdvancedServiceDescriptor;
 
 namespace ProjectChimera.Core
 {
     /// <summary>
-    /// Concrete implementation of IServiceContainer for Project Chimera.
-    /// Simplified core focusing on basic registration and resolution with advanced features delegated to specialized components.
+    /// SIMPLE: Basic service container aligned with Project Chimera's service architecture vision.
+    /// Focuses on essential service registration and resolution without complex dependency injection.
     /// </summary>
-    public class ServiceContainer : IServiceContainer, IDisposable
+    public class ServiceContainer : IServiceContainer
     {
-        private readonly Dictionary<Type, ServiceRegistration> _services = new Dictionary<Type, ServiceRegistration>();
-        private readonly Dictionary<Type, object> _singletonInstances = new Dictionary<Type, object>();
-        private readonly Dictionary<Type, object> _scopedInstances = new Dictionary<Type, object>();
+        private readonly Dictionary<Type, object> _services = new Dictionary<Type, object>();
         private readonly object _lock = new object();
         private bool _disposed = false;
 
-        // Specialized components for advanced features
-        private readonly Lazy<ServiceContainerAdvancedFeatures> _advancedFeatures;
-        private readonly Lazy<ServiceContainerValidator> _validator;
-
-        public ServiceContainer()
-        {
-            _advancedFeatures = new Lazy<ServiceContainerAdvancedFeatures>(() => new ServiceContainerAdvancedFeatures(this));
-            _validator = new Lazy<ServiceContainerValidator>(() => new ServiceContainerValidator(this));
-        }
-
-        public bool IsDisposed => _disposed;
-        public ServiceContainerAdvancedFeatures Advanced => _advancedFeatures.Value;
-        public ServiceContainerValidator Validator => _validator.Value;
-
-        public event Action<ServiceRegistration> ServiceRegistered;
+        // Events
+        public event Action<Type, object> ServiceRegistered;
         public event Action<Type, object> ServiceResolved;
-        public event Action<Type, Exception> ResolutionFailed;
 
-        #region Registration Methods
 
-        public void RegisterSingleton<TInterface, TImplementation>()
-            where TImplementation : class, TInterface, new()
+        /// <summary>
+        /// IServiceContainer interface implementation
+        /// </summary>
+        public void RegisterSingleton<TInterface>(Func<IServiceContainer, TInterface> factory) where TInterface : class
         {
-            var registration = new ServiceRegistration(typeof(TInterface), typeof(TImplementation), ServiceLifetime.Singleton, null, null);
-            _services[typeof(TInterface)] = registration;
-            ServiceRegistered?.Invoke(registration);
+            var instance = factory(this);
+            RegisterInstance<TInterface>(instance);
         }
 
-        public void RegisterSingleton<TInterface>(Func<IServiceContainer, TInterface> factory)
+        public void RegisterTransient<TInterface>(Func<IServiceContainer, TInterface> factory) where TInterface : class
         {
-            var registration = new ServiceRegistration(typeof(TInterface), null, ServiceLifetime.Singleton, null, container => factory((IServiceContainer)container));
-            _services[typeof(TInterface)] = registration;
-            ServiceRegistered?.Invoke(registration);
+            // For simplicity, treat transient as singleton in this basic implementation
+            var instance = factory(this);
+            RegisterInstance<TInterface>(instance);
         }
 
-        public void RegisterSingleton<TInterface>(TInterface instance)
+        public void RegisterScoped<TInterface, TImplementation>() where TImplementation : class, TInterface, new()
         {
-            var registration = new ServiceRegistration(typeof(TInterface), instance.GetType(), ServiceLifetime.Singleton, instance, null);
-            _services[typeof(TInterface)] = registration;
-            _singletonInstances[typeof(TInterface)] = instance;
-            ServiceRegistered?.Invoke(registration);
+            // For simplicity, treat scoped as singleton in this basic implementation
+            RegisterInstance<TInterface>(new TImplementation());
         }
 
-        public void RegisterInstance<TInterface>(TInterface instance) where TInterface : class
+        public void RegisterScoped<TInterface>(Func<IServiceContainer, TInterface> factory) where TInterface : class
         {
-            RegisterSingleton<TInterface>(instance);
-        }
-
-        public void RegisterTransient<TInterface, TImplementation>()
-            where TImplementation : class, TInterface, new()
-        {
-            var registration = new ServiceRegistration(typeof(TInterface), typeof(TImplementation), ServiceLifetime.Transient, null, null);
-            _services[typeof(TInterface)] = registration;
-            ServiceRegistered?.Invoke(registration);
-        }
-
-        public void RegisterTransient<TInterface>(Func<IServiceContainer, TInterface> factory)
-        {
-            var registration = new ServiceRegistration(typeof(TInterface), null, ServiceLifetime.Transient, null, container => factory((IServiceContainer)container));
-            _services[typeof(TInterface)] = registration;
-            ServiceRegistered?.Invoke(registration);
-        }
-
-        public void RegisterScoped<TInterface, TImplementation>()
-            where TImplementation : class, TInterface, new()
-        {
-            var registration = new ServiceRegistration(typeof(TInterface), typeof(TImplementation), ServiceLifetime.Scoped, null, null);
-            _services[typeof(TInterface)] = registration;
-            ServiceRegistered?.Invoke(registration);
-        }
-
-        public void RegisterScoped<TInterface>(Func<IServiceContainer, TInterface> factory)
-        {
-            var registration = new ServiceRegistration(typeof(TInterface), null, ServiceLifetime.Scoped, null, container => factory((IServiceContainer)container));
-            _services[typeof(TInterface)] = registration;
-            ServiceRegistered?.Invoke(registration);
-        }
-
-        #endregion
-
-        #region Resolution Methods
-
-        public T Resolve<T>()
-        {
-            return (T)Resolve(typeof(T));
+            var instance = factory(this);
+            RegisterInstance<TInterface>(instance);
         }
 
         public object Resolve(Type serviceType)
         {
-            try
-            {
-                var instance = ResolveInternal(serviceType);
-                ServiceResolved?.Invoke(serviceType, instance);
-                return instance;
-            }
-            catch (Exception ex)
-            {
-                ResolutionFailed?.Invoke(serviceType, ex);
-                throw;
-            }
-        }
-
-        public T TryResolve<T>() where T : class
-        {
-            return TryResolve(typeof(T)) as T;
-        }
-
-        public object TryResolve(Type serviceType)
-        {
-            try
-            {
-                return ResolveInternal(serviceType);
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        private object ResolveInternal(Type serviceType)
-        {
-            if (!_services.TryGetValue(serviceType, out var registration))
-            {
-                throw new InvalidOperationException($"Service of type {serviceType.Name} is not registered");
-            }
+            if (_disposed) return null;
 
             lock (_lock)
             {
-                switch (registration.Lifetime)
+                if (_services.TryGetValue(serviceType, out var service))
                 {
-                    case ServiceLifetime.Singleton:
-                        if (registration.Instance != null)
-                            return registration.Instance;
+                    ServiceResolved?.Invoke(serviceType, service);
+                    return service;
+                }
+            }
+            return null;
+        }
 
-                        if (_singletonInstances.TryGetValue(serviceType, out var singletonInstance))
-                            return singletonInstance;
+        public bool TryResolve<T>(out T service) where T : class
+        {
+            service = default;
+            if (_disposed) return false;
 
-                        var newInstance = CreateInstance(registration);
-                        _singletonInstances[serviceType] = newInstance;
-                        return newInstance;
+            lock (_lock)
+            {
+                if (_services.TryGetValue(typeof(T), out var obj) && obj is T typedService)
+                {
+                    service = typedService;
+                    ServiceResolved?.Invoke(typeof(T), service);
+                    return true;
+                }
+            }
+            return false;
+        }
 
-                    case ServiceLifetime.Transient:
-                        return CreateInstance(registration);
+        public bool TryResolve(Type serviceType, out object service)
+        {
+            service = null;
+            if (_disposed) return false;
 
-                    case ServiceLifetime.Scoped:
-                        if (_scopedInstances.TryGetValue(serviceType, out var scopedInstance))
-                            return scopedInstance;
+            lock (_lock)
+            {
+                if (_services.TryGetValue(serviceType, out service))
+                {
+                    ServiceResolved?.Invoke(serviceType, service);
+                    return true;
+                }
+            }
+            return false;
+        }
 
-                        var newScopedInstance = CreateInstance(registration);
-                        _scopedInstances[serviceType] = newScopedInstance;
-                        return newScopedInstance;
+        public bool IsRegistered<T>() where T : class
+        {
+            if (_disposed) return false;
 
-                    default:
-                        throw new ArgumentOutOfRangeException();
+            lock (_lock)
+            {
+                return _services.ContainsKey(typeof(T));
+            }
+        }
+
+        public bool IsRegistered(Type serviceType)
+        {
+            if (_disposed) return false;
+
+            lock (_lock)
+            {
+                return _services.ContainsKey(serviceType);
+            }
+        }
+
+        public IEnumerable<Type> GetRegisteredTypes<T>() where T : class
+        {
+            if (_disposed) yield break;
+
+            lock (_lock)
+            {
+                foreach (var kvp in _services)
+                {
+                    if (typeof(T).IsAssignableFrom(kvp.Key))
+                    {
+                        yield return kvp.Key;
+                    }
                 }
             }
         }
 
-        private object CreateInstance(ServiceRegistration registration)
+        public IEnumerable<Type> GetRegisteredTypes(Type serviceType)
         {
-            if (registration.Factory != null)
+            if (_disposed) yield break;
+
+            lock (_lock)
             {
-                return registration.Factory(new ServiceLocatorAdapter(this));
+                foreach (var kvp in _services)
+                {
+                    if (serviceType.IsAssignableFrom(kvp.Key))
+                    {
+                        yield return kvp.Key;
+                    }
+                }
             }
+        }
 
-            if (registration.ImplementationType != null)
+        public IEnumerable<T> ResolveAll<T>() where T : class
+        {
+            if (_disposed) yield break;
+
+            lock (_lock)
             {
-                return Activator.CreateInstance(registration.ImplementationType);
+                foreach (var kvp in _services)
+                {
+                    if (kvp.Value is T service)
+                    {
+                        ServiceResolved?.Invoke(typeof(T), service);
+                        yield return service;
+                    }
+                }
             }
-
-            throw new InvalidOperationException($"Cannot create instance for service {registration.ServiceType.Name}");
         }
 
-        #endregion
-
-        #region Query Methods
-
-        public bool IsRegistered<T>()
+        public IServiceContainer CreateScope()
         {
-            return IsRegistered(typeof(T));
-        }
-
-        public bool IsRegistered(Type serviceType)
-            {
-                return _services.ContainsKey(serviceType);
-        }
-
-        public IEnumerable<Type> GetRegisteredTypes<T>()
-        {
-            return GetRegisteredTypes(typeof(T));
-        }
-
-        public IEnumerable<Type> GetRegisteredTypes(Type interfaceType)
-            {
-                return _services.Values
-                .Where(r => interfaceType.IsAssignableFrom(r.ServiceType))
-                .Select(r => r.ServiceType);
-        }
-
-        public IEnumerable<T> ResolveAll<T>()
-        {
-            return GetRegisteredTypes<T>().Select(Resolve).Cast<T>();
-        }
-
-        public IServiceScope CreateScope()
-        {
-            return new ServiceScope(this);
+            // For simplicity, return this same container
+            return this;
         }
 
         public void ValidateServices()
         {
-            foreach (var registration in _services.Values)
+            // Basic validation - could be enhanced
+            lock (_lock)
             {
-                try
+                foreach (var kvp in _services)
                 {
-                    if (registration.Lifetime != ServiceLifetime.Singleton || registration.Instance == null)
+                    if (kvp.Value == null)
                     {
-                        ResolveInternal(registration.ServiceType);
+                        ChimeraLogger.LogWarning("CORE", $"Service {kvp.Key.Name} is null", this);
                     }
-                    }
-                    catch (Exception ex)
-                    {
-                    throw new InvalidOperationException($"Service validation failed for {registration.ServiceType.Name}: {ex.Message}", ex);
                 }
             }
         }
 
-        public IEnumerable<ServiceRegistrationInfo> GetRegistrationInfo()
+        public IEnumerable<KeyValuePair<Type, object>> GetRegistrations()
         {
-            return _services.Values.Select(r => new ServiceRegistrationInfo
-            {
-                ServiceType = r.ServiceType,
-                ImplementationType = r.ImplementationType,
-                Lifetime = r.Lifetime,
-                HasFactory = r.Factory != null,
-                HasInstance = r.Instance != null,
-                RegistrationTime = DateTime.Now
-            });
-        }
+            if (_disposed) return new List<KeyValuePair<Type, object>>();
 
-        public void Clear()
-        {
             lock (_lock)
             {
-                _services.Clear();
-                _singletonInstances.Clear();
-                _scopedInstances.Clear();
+                return new List<KeyValuePair<Type, object>>(_services);
             }
         }
 
-        public IServiceContainer CreateChildContainer()
-        {
-            var childContainer = new ServiceContainer();
-            // Copy registrations from parent
-            foreach (var registration in _services.Values)
-            {
-                childContainer._services[registration.ServiceType] = registration;
-            }
-            return childContainer;
-        }
-
+        // Additional IServiceContainer methods (simplified implementations)
         public void RegisterFactory<TInterface>(Func<IServiceLocator, TInterface> factory) where TInterface : class
         {
-            var registration = new ServiceRegistration(typeof(TInterface), null, ServiceLifetime.Transient, null, container => factory(new ServiceLocatorAdapter(container)));
-            _services[typeof(TInterface)] = registration;
-            ServiceRegistered?.Invoke(registration);
+            // Simplified implementation
+            var instance = factory(this);
+            RegisterInstance<TInterface>(instance);
         }
 
-        public IDictionary<Type, ServiceRegistration> GetRegistrations()
+        public void RegisterConditional<TInterface, TImplementation>(Func<IServiceLocator, bool> condition) where TInterface : class where TImplementation : class, TInterface, new()
         {
-            return new Dictionary<Type, ServiceRegistration>(_services);
+            if (condition(this))
+            {
+                RegisterInstance<TInterface>(new TImplementation());
+            }
         }
 
-        // Additional interface methods
+        public void RegisterDecorator<TInterface, TDecorator>() where TDecorator : class, TInterface, new()
+        {
+            // Simplified decorator implementation
+            RegisterInstance<TInterface>(new TDecorator());
+        }
+
+        public void RegisterWithCallback<TInterface, TImplementation>(Action<TImplementation> callback) where TImplementation : class, TInterface, new()
+        {
+            var instance = new TImplementation();
+            callback(instance);
+            RegisterInstance<TInterface>(instance);
+        }
+
+        public void RegisterOpenGeneric(Type serviceType, Type implementationType)
+        {
+            // Simplified - not fully implemented for this basic container
+            ChimeraLogger.LogWarning("CORE", "RegisterOpenGeneric not fully implemented", this);
+        }
+
+        public T ResolveNamed<T>(string name) where T : class
+        {
+            // Simplified - name-based resolution not implemented
+            return Resolve<T>();
+        }
+
+        public IEnumerable<T> ResolveWhere<T>(Func<T, bool> predicate) where T : class
+        {
+            foreach (var service in ResolveAll<T>())
+            {
+                if (predicate(service))
+                {
+                    yield return service;
+                }
+            }
+        }
+
+        public T ResolveOrCreate<T>(Func<T> factory) where T : class
+        {
+            if (TryResolve<T>(out var service))
+            {
+                return service;
+            }
+            service = factory();
+            RegisterInstance<T>(service);
+            return service;
+        }
+
+        public T ResolveLast<T>() where T : class
+        {
+            // Simplified - return first match
+            return Resolve<T>();
+        }
+
+        public T ResolveWithLifetime<T>(ServiceLifetime lifetime) where T : class
+        {
+            // Simplified - ignore lifetime for this basic implementation
+            return Resolve<T>();
+        }
+
+        public void Verify()
+        {
+            ValidateServices();
+        }
+
+        public IEnumerable<ServiceDescriptor> GetServiceDescriptors()
+        {
+            // Simplified - return basic descriptors
+            if (_disposed) return new List<ServiceDescriptor>();
+
+            lock (_lock)
+            {
+                var descriptors = new List<ServiceDescriptor>();
+                foreach (var kvp in _services)
+                {
+                    descriptors.Add(new ServiceDescriptor
+                    {
+                        ServiceType = kvp.Key,
+                        ImplementationType = kvp.Value?.GetType(),
+                        Lifetime = ServiceLifetime.Singleton
+                    });
+                }
+                return descriptors;
+            }
+        }
+
+        public void Replace<TInterface, TImplementation>() where TImplementation : class, TInterface, new()
+        {
+            RegisterInstance<TInterface>(new TImplementation());
+        }
+
+        public bool Unregister<T>() where T : class
+        {
+            if (_disposed) return false;
+
+            lock (_lock)
+            {
+                return _services.Remove(typeof(T));
+            }
+        }
+
+        // IServiceLocator interface implementation
         public T GetService<T>() where T : class
         {
-            return TryResolve<T>();
+            return Resolve<T>();
         }
 
         public object GetService(Type serviceType)
         {
-            return TryResolve(serviceType);
+            return Resolve(serviceType);
         }
 
         public bool TryGetService<T>(out T service) where T : class
         {
-            service = TryResolve<T>();
-            return service != null;
+            return TryResolve<T>(out service);
         }
 
         public bool TryGetService(Type serviceType, out object service)
         {
-            service = TryResolve(serviceType);
-            return service != null;
+            return TryResolve(serviceType, out service);
+        }
+
+        public IEnumerable<T> GetServices<T>() where T : class
+        {
+            return ResolveAll<T>();
+        }
+
+        public IEnumerable<object> GetServices(Type serviceType)
+        {
+            if (_disposed) return new List<object>();
+
+            lock (_lock)
+            {
+                var services = new List<object>();
+                foreach (var kvp in _services)
+                {
+                    if (serviceType.IsAssignableFrom(kvp.Key))
+                    {
+                        services.Add(kvp.Value);
+                    }
+                }
+                return services;
+            }
+        }
+
+        // Additional properties and events
+        public bool IsDisposed => _disposed;
+
+        public Action<ServiceRegistration> ServiceRegistered { get; set; }
+        public Action<Type> ResolutionFailed { get; set; }
+
+        public void RegisterSingleton(Type serviceType, object instance)
+        {
+            if (_disposed) return;
+
+            lock (_lock)
+            {
+                _services[serviceType] = instance;
+                ServiceResolved?.Invoke(serviceType, instance);
+            }
+        }
+
+        public void RegisterCollection<TInterface>(params Type[] implementationTypes)
+        {
+            // Simplified implementation
+            foreach (var implType in implementationTypes)
+            {
+                if (typeof(TInterface).IsAssignableFrom(implType))
+                {
+                    var instance = Activator.CreateInstance(implType);
+                    RegisterInstance<TInterface>((TInterface)instance);
+                }
+            }
+        }
+
+        public void RegisterNamed<TInterface, TImplementation>(string name) where TImplementation : class, TInterface, new()
+        {
+            // Simplified - name not used in basic implementation
+            RegisterInstance<TInterface>(new TImplementation());
         }
 
         public bool ContainsService<T>() where T : class
@@ -326,362 +400,27 @@ namespace ProjectChimera.Core
         {
             return IsRegistered(serviceType);
         }
-
-        public void RegisterSingleton(Type serviceType, object instance)
-        {
-            var registration = new ServiceRegistration(serviceType, instance.GetType(), ServiceLifetime.Singleton, instance, null);
-            _services[serviceType] = registration;
-            _singletonInstances[serviceType] = instance;
-            ServiceRegistered?.Invoke(registration);
-        }
-
-        // Advanced features delegated to specialized components
-        public void RegisterCollection<TInterface>(params Type[] implementations) where TInterface : class
-        {
-            Advanced.RegisterCollection<TInterface>(implementations);
-        }
-
-        public void RegisterNamed<TInterface, TImplementation>(string name)
-            where TInterface : class
-            where TImplementation : class, TInterface, new()
-        {
-            Advanced.RegisterNamed<TInterface, TImplementation>(name);
-        }
-
-        public void RegisterConditional<TInterface, TImplementation>(Func<IServiceLocator, bool> condition)
-            where TInterface : class
-            where TImplementation : class, TInterface, new()
-        {
-            Advanced.RegisterConditional<TInterface, TImplementation>(condition);
-        }
-
-        public void RegisterDecorator<TInterface, TDecorator>()
-            where TInterface : class
-            where TDecorator : class, TInterface, new()
-        {
-            Advanced.RegisterDecorator<TInterface, TDecorator>();
-        }
-
-        public void RegisterWithCallback<TInterface, TImplementation>(Action<TImplementation> initializer)
-            where TInterface : class
-            where TImplementation : class, TInterface, new()
-        {
-            Advanced.RegisterWithCallback<TInterface, TImplementation>(initializer);
-        }
-
-        public void RegisterOpenGeneric(Type serviceType, Type implementationType)
-        {
-            Advanced.RegisterOpenGeneric(serviceType, implementationType);
-        }
-
-        public T ResolveNamed<T>(string name) where T : class
-        {
-            return Advanced.ResolveNamed<T>(name);
-        }
-
-        public IEnumerable<T> ResolveWhere<T>(Func<T, bool> predicate) where T : class
-        {
-            return Advanced.ResolveWhere<T>(predicate);
-        }
-
-        public T ResolveOrCreate<T>(Func<T> factory) where T : class
-        {
-            return Advanced.ResolveOrCreate<T>(factory);
-        }
-
-        public T ResolveLast<T>() where T : class
-        {
-            return Advanced.ResolveLast<T>();
-        }
-
-        public T ResolveWithLifetime<T>(ServiceLifetime lifetime) where T : class
-        {
-            return Advanced.ResolveWithLifetime<T>(lifetime);
-        }
-
-        public ContainerVerificationResult Verify()
-        {
-            return Validator.Verify();
-        }
-
-        public IEnumerable<AdvancedServiceDescriptor> GetServiceDescriptors()
-        {
-            return _services.Values.Select(r => new AdvancedServiceDescriptor
-            {
-                ServiceType = r.ServiceType,
-                ImplementationType = r.ImplementationType,
-                Lifetime = r.Lifetime,
-                Instance = r.Instance
-            });
-        }
-
-        public void Replace<TInterface, TImplementation>()
-            where TInterface : class
-            where TImplementation : class, TInterface, new()
-        {
-            // Remove existing registration
-            _services.Remove(typeof(TInterface));
-            _singletonInstances.Remove(typeof(TInterface));
-            // Re-register
-            RegisterTransient<TInterface, TImplementation>();
-        }
-
-        public bool Unregister<T>() where T : class
-        {
-            var removed = _services.Remove(typeof(T));
-            _singletonInstances.Remove(typeof(T));
-            _scopedInstances.Remove(typeof(T));
-            return removed;
-        }
-
-        #endregion
-
-        #region IDisposable
-
-        public void Dispose()
-        {
-            if (_disposed) return;
-
-            lock (_lock)
-            {
-                DisposeInstances(_singletonInstances.Values, "singleton");
-                DisposeInstances(_scopedInstances.Values, "scoped");
-
-                Clear();
-                _disposed = true;
-            }
-        }
-
-        #endregion
-
-        #region Private Helper Methods
-
-        private void DisposeInstances(IEnumerable<object> instances, string instanceType)
-        {
-            foreach (var instance in instances.OfType<IDisposable>())
-            {
-                try
-                {
-                    instance.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    ChimeraLogger.LogError($"Error disposing {instanceType} service: {ex.Message}");
-                }
-            }
-        }
-
-        #endregion
     }
 
     /// <summary>
-    /// Basic service scope implementation
+    /// Service descriptor for IServiceContainer
     /// </summary>
-    public class ServiceScope : IServiceScope
+    public class ServiceDescriptor
     {
-        private readonly ProjectChimera.Core.DependencyInjection.IServiceProvider _serviceProvider;
-        private bool _disposed = false;
-
-        public ServiceScope(IServiceContainer serviceContainer)
-        {
-            _serviceProvider = ProjectChimera.Core.DependencyInjection.ServiceContainerIntegration.ToServiceProvider(serviceContainer);
-        }
-
-        public ProjectChimera.Core.DependencyInjection.IServiceProvider ServiceProvider => _serviceProvider;
-
-        public void Dispose()
-        {
-            if (_disposed) return;
-            _disposed = true;
-        }
+        public Type ServiceType { get; set; }
+        public Type ImplementationType { get; set; }
+        public ServiceLifetime Lifetime { get; set; }
     }
 
     /// <summary>
-    /// Adapter to convert IServiceContainer to IServiceLocator
+    /// Service registration info
     /// </summary>
-    public class ServiceLocatorAdapter : IServiceLocator
+    public class ServiceRegistration
     {
-        private readonly object _container;
-
-        public ServiceLocatorAdapter(object container)
-        {
-            _container = container;
-        }
-
-        // Registration Methods
-        public void RegisterSingleton<TInterface, TImplementation>() where TImplementation : class, TInterface, new()
-        {
-            if (_container is IServiceContainer serviceContainer)
-            {
-                serviceContainer.RegisterSingleton<TInterface, TImplementation>();
-            }
-        }
-
-        public void RegisterSingleton<TInterface>(TInterface instance) where TInterface : class
-        {
-            if (_container is IServiceContainer serviceContainer)
-            {
-                serviceContainer.RegisterSingleton(instance);
-            }
-        }
-
-        public void RegisterSingleton(Type serviceType, object instance)
-        {
-            // Not directly supported by IServiceContainer, use generic version
-            if (_container is IServiceContainer serviceContainer)
-            {
-                var method = typeof(IServiceContainer).GetMethod("RegisterSingleton", new[] { typeof(object) });
-                var genericMethod = method?.MakeGenericMethod(serviceType);
-                genericMethod?.Invoke(serviceContainer, new[] { instance });
-            }
-        }
-
-        public void RegisterTransient<TInterface, TImplementation>() where TImplementation : class, TInterface, new()
-        {
-            if (_container is IServiceContainer serviceContainer)
-            {
-                serviceContainer.RegisterTransient<TInterface, TImplementation>();
-            }
-        }
-
-        public void RegisterScoped<TInterface, TImplementation>() where TImplementation : class, TInterface, new()
-        {
-            if (_container is IServiceContainer serviceContainer)
-            {
-                serviceContainer.RegisterScoped<TInterface, TImplementation>();
-            }
-        }
-
-        public void RegisterFactory<TInterface>(Func<IServiceLocator, TInterface> factory) where TInterface : class
-        {
-            if (_container is IServiceContainer serviceContainer)
-            {
-                serviceContainer.RegisterFactory(factory);
-            }
-        }
-
-        // Service Resolution Methods
-        public T GetService<T>() where T : class
-        {
-            if (_container is IServiceContainer serviceContainer)
-            {
-                return serviceContainer.TryResolve<T>();
-            }
-            return null;
-        }
-
-        public object GetService(Type serviceType)
-        {
-            if (_container is IServiceContainer serviceContainer)
-            {
-                return serviceContainer.TryResolve(serviceType);
-            }
-            return null;
-        }
-
-        public bool TryGetService<T>(out T service) where T : class
-        {
-            service = GetService<T>();
-            return service != null;
-        }
-
-        public bool TryGetService(Type serviceType, out object service)
-        {
-            service = GetService(serviceType);
-            return service != null;
-        }
-
-        public bool ContainsService<T>() where T : class
-        {
-            if (_container is IServiceContainer serviceContainer)
-            {
-                return serviceContainer.IsRegistered<T>();
-            }
-            return false;
-        }
-
-        public bool ContainsService(Type serviceType)
-        {
-            if (_container is IServiceContainer serviceContainer)
-            {
-                return serviceContainer.IsRegistered(serviceType);
-            }
-            return false;
-        }
-
-        public T Resolve<T>() where T : class
-        {
-            if (_container is IServiceContainer serviceContainer)
-            {
-                return serviceContainer.Resolve<T>();
-            }
-            return null;
-        }
-
-        public T TryResolve<T>() where T : class
-        {
-            if (_container is IServiceContainer serviceContainer)
-            {
-                return serviceContainer.TryResolve<T>();
-            }
-            return null;
-        }
-
-        public IEnumerable<T> ResolveAll<T>() where T : class
-        {
-            if (_container is IServiceContainer serviceContainer)
-            {
-                return serviceContainer.ResolveAll<T>();
-            }
-            return Enumerable.Empty<T>();
-        }
-
-        // Additional IServiceProvider compatibility methods
-        public T GetRequiredService<T>() where T : class
-        {
-            if (_container is IServiceContainer serviceContainer)
-            {
-                return serviceContainer.Resolve<T>();
-            }
-            throw new InvalidOperationException($"Required service of type {typeof(T).Name} could not be resolved");
-        }
-
-        public object GetRequiredService(Type serviceType)
-        {
-            if (_container is IServiceContainer serviceContainer)
-            {
-                return serviceContainer.Resolve(serviceType);
-            }
-            throw new InvalidOperationException($"Required service of type {serviceType.Name} could not be resolved");
-        }
-
-        public IEnumerable<object> GetServices(Type serviceType)
-        {
-            if (_container is IServiceContainer serviceContainer)
-            {
-                try
-                {
-                    // Try to resolve all services of the given type
-                    var method = typeof(IServiceContainer).GetMethod("ResolveAll");
-                    var genericMethod = method?.MakeGenericMethod(serviceType);
-                    var result = genericMethod?.Invoke(serviceContainer, null);
-                    return result as IEnumerable<object> ?? Enumerable.Empty<object>();
-                }
-                catch
-                {
-                    return Enumerable.Empty<object>();
-                }
-            }
-            return Enumerable.Empty<object>();
-        }
-
-        public IEnumerable<T> GetServices<T>() where T : class
-        {
-            if (_container is IServiceContainer serviceContainer)
-            {
-                return serviceContainer.ResolveAll<T>();
-            }
-            return Enumerable.Empty<T>();
-        }
+        public Type ServiceType { get; set; }
+        public Type ImplementationType { get; set; }
+        public ServiceLifetime Lifetime { get; set; }
+        public object Instance { get; set; }
+        public Func<IServiceContainer, object> Factory { get; set; }
     }
 }

@@ -9,7 +9,6 @@
         "ProjectChimera.Data.Events",
         "ProjectChimera.Data.Economy",
         "ProjectChimera.Systems.Events",
-        "ProjectChimera.Systems.Registry",
         "ProjectChimera.Systems.Scene",
         "UnityEngine.UI"
     ],

@@ -1,0 +1,392 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using System;
+using System.Linq;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Testing
+{
+    /// <summary>
+    /// Validates manager registration system and service discovery mechanisms.
+    /// Tests manager registration, auto-discovery, and interface-based discovery.
+    /// </summary>
+    public class ManagerRegistryValidator : BaseValidator
+    {
+        [Header("Registry Validation Settings")]
+        [SerializeField] private bool _testManagerRegistration = true;
+        [SerializeField] private bool _testAutoDiscovery = true;
+        [SerializeField] private bool _testInterfaceDiscovery = true;
+        [SerializeField] private bool _testRegistryAccess = true;
+
+        private DIGameManager _gameManager;
+        private ProjectChimera.Core.ManagerRegistry _managerRegistry;
+        private IChimeraServiceContainer _serviceContainer;
+
+        public override void Initialize(TestCore testCore)
+        {
+            base.Initialize(testCore);
+            
+            _gameManager = DIGameManager.Instance ?? ServiceContainerFactory.Instance?.TryResolve<DIGameManager>();
+            if (_gameManager != null)
+            {
+                _managerRegistry = _gameManager.ManagerRegistry;
+                _serviceContainer = _gameManager.GlobalServiceContainer;
+            }
+        }
+
+        public override IEnumerator RunValidation()
+        {
+            LogValidation("Starting manager registry validation...");
+            
+            yield return StartCoroutine(ValidateRegistryAccess());
+            yield return StartCoroutine(ValidateManagerRegistration());
+            yield return StartCoroutine(ValidateServiceDiscoveryMechanisms());
+            yield return StartCoroutine(ValidateManagerRetrieval());
+            yield return StartCoroutine(ValidateInterfaceBasedDiscovery());
+            yield return StartCoroutine(ValidateServiceContainerIntegration());
+            
+            LogValidation("Manager registry validation completed");
+        }
+
+        private IEnumerator ValidateRegistryAccess()
+        {
+            var result = new ValidationResult { ValidationName = "Registry Access" };
+            
+            try
+            {
+                if (_gameManager == null)
+                {
+                    result.AddError("DIGameManager not available for testing");
+                }
+                else if (_managerRegistry == null)
+                {
+                    result.AddError("ManagerRegistry not accessible");
+                }
+                else
+                {
+                    var registeredCount = _managerRegistry.RegisteredManagerCount;
+                    LogValidation($"Manager registry accessible with {registeredCount} registered managers");
+                }
+                
+                result.MarkSuccess();
+            }
+            catch (Exception ex)
+            {
+                result.AddError($"Exception during registry access validation: {ex.Message}");
+            }
+            
+            _results.Add(result);
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        private IEnumerator ValidateManagerRegistration()
+        {
+            if (!_testManagerRegistration || _gameManager == null)
+            {
+                yield break;
+            }
+
+            var result = new ValidationResult { ValidationName = "Manager Registration" };
+            
+            var testManager1 = _testCore.CreateTestManager("RegistryTestManager1");
+            var testManager2 = _testCore.CreateTestManager("RegistryTestManager2");
+            bool registrationSuccessful = false;
+            
+            try
+            {
+                // Test manager registration through DIGameManager
+                _gameManager.RegisterManager(testManager1);
+                _gameManager.RegisterManager(testManager2);
+                
+                registrationSuccessful = true;
+                yield return new WaitForSeconds(0.1f);
+
+                // Validate registration through GetManager
+                var retrievedManager1 = _gameManager.GetManager<TestManager>();
+                if (retrievedManager1 == null)
+                {
+                    result.AddError("Manager registration failed - GetManager returned null");
+                }
+                else if (retrievedManager1 != testManager1 && retrievedManager1 != testManager2)
+                {
+                    result.AddError("Manager registration failed - GetManager returned unexpected instance");
+                }
+
+                // Validate registration through GetAllManagers
+                var allManagers = _gameManager.GetAllManagers().ToList();
+                bool foundTestManager = allManagers.Any(m => m is TestManager);
+                if (!foundTestManager)
+                {
+                    result.AddError("Registered manager not found in GetAllManagers");
+                }
+
+                // Test registry access directly
+                if (_managerRegistry != null)
+                {
+                    var registeredCount = _managerRegistry.RegisteredManagerCount;
+                    LogValidation($"Manager registry has {registeredCount} registered managers");
+                    
+                    var isRegistered = _managerRegistry.IsManagerRegistered<TestManager>();
+                    if (!isRegistered)
+                    {
+                        result.AddError("Manager not registered in ManagerRegistry");
+                    }
+                }
+                
+                result.MarkSuccess();
+            }
+            catch (Exception ex)
+            {
+                result.AddError($"Exception during manager registration validation: {ex.Message}");
+            }
+            finally
+            {
+                // Cleanup test managers
+                if (testManager1 != null) DestroyImmediate(testManager1.gameObject);
+                if (testManager2 != null) DestroyImmediate(testManager2.gameObject);
+            }
+            
+            _results.Add(result);
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        private IEnumerator ValidateServiceDiscoveryMechanisms()
+        {
+            if (!_testAutoDiscovery || _managerRegistry == null)
+            {
+                yield break;
+            }
+
+            var result = new ValidationResult { ValidationName = "Service Discovery Mechanisms" };
+            
+            int initialCount = 0;
+            int finalCount = 0;
+            bool discoverySuccessful = false;
+            
+            try
+            {
+                initialCount = _managerRegistry.RegisteredManagerCount;
+                
+                // Trigger auto-discovery
+                _managerRegistry.DiscoverAndRegisterAllManagers();
+                discoverySuccessful = true;
+                
+                yield return new WaitForSeconds(0.1f);
+                
+                finalCount = _managerRegistry.RegisteredManagerCount;
+                LogValidation($"Auto-discovery: {initialCount} → {finalCount} managers");
+                
+                // Validate that DIGameManager discovered itself
+                var diGameManagerRegistered = _managerRegistry.IsManagerRegistered(_gameManager);
+                if (!diGameManagerRegistered)
+                {
+                    result.AddWarning("DIGameManager not auto-discovered by ManagerRegistry");
+                }
+                
+                result.MarkSuccess();
+            }
+            catch (Exception ex)
+            {
+                result.AddError($"Exception during service discovery validation: {ex.Message}");
+            }
+            
+            _results.Add(result);
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        private IEnumerator ValidateManagerRetrieval()
+        {
+            if (_gameManager == null)
+            {
+                yield break;
+            }
+
+            var result = new ValidationResult { ValidationName = "Manager Retrieval" };
+            
+            try
+            {
+                // Test retrieval of existing manager
+                var gameManagerByType = _gameManager.GetManager<DIGameManager>();
+                if (gameManagerByType == null)
+                {
+                    result.AddError("GetManager failed to retrieve DIGameManager");
+                }
+                else if (gameManagerByType != _gameManager)
+                {
+                    result.AddError("GetManager returned wrong DIGameManager instance");
+                }
+
+                // Test retrieval of non-existent manager
+                var nonExistentManager = _gameManager.GetManager<NonExistentTestManager>();
+                if (nonExistentManager != null)
+                {
+                    result.AddError("GetManager returned non-null for non-existent manager type");
+                }
+
+                // Test GetAllManagers
+                var allManagers = _gameManager.GetAllManagers().ToList();
+                if (allManagers == null)
+                {
+                    result.AddError("GetAllManagers returned null");
+                }
+                else
+                {
+                    LogValidation($"GetAllManagers returned {allManagers.Count} managers");
+                    
+                    bool foundDIGameManager = allManagers.Contains(_gameManager);
+                    if (!foundDIGameManager)
+                    {
+                        result.AddWarning("DIGameManager not found in GetAllManagers");
+                    }
+                }
+                
+                result.MarkSuccess();
+            }
+            catch (Exception ex)
+            {
+                result.AddError($"Exception during manager retrieval validation: {ex.Message}");
+            }
+            
+            _results.Add(result);
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        private IEnumerator ValidateInterfaceBasedDiscovery()
+        {
+            if (!_testInterfaceDiscovery || _managerRegistry == null)
+            {
+                yield break;
+            }
+
+            var result = new ValidationResult { ValidationName = "Interface-Based Discovery" };
+            
+            try
+            {
+                var gameManagerByInterface = _managerRegistry.GetManagerByInterface<IGameManager>();
+                if (gameManagerByInterface == null)
+                {
+                    result.AddWarning("Interface-based manager discovery failed");
+                }
+                else if (gameManagerByInterface != _gameManager)
+                {
+                    result.AddError("Interface-based discovery returned wrong instance");
+                }
+                else
+                {
+                    LogValidation("Interface-based discovery working correctly");
+                }
+                
+                result.MarkSuccess();
+            }
+            catch (Exception ex)
+            {
+                result.AddWarning($"Interface-based discovery not supported or failed: {ex.Message}");
+            }
+            
+            _results.Add(result);
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        private IEnumerator ValidateServiceContainerIntegration()
+        {
+            if (!_testRegistryAccess || _serviceContainer == null)
+            {
+                yield break;
+            }
+
+            var result = new ValidationResult { ValidationName = "Service Container Integration" };
+            
+            var testManager = _testCore.CreateTestManager("ContainerIntegrationTest");
+            
+            try
+            {
+                // Register manager and check if it's available through service container
+                _gameManager.RegisterManager(testManager);
+                yield return new WaitForSeconds(0.1f);
+
+                var managerFromContainer = _serviceContainer.TryResolve<TestManager>();
+                if (managerFromContainer == null)
+                {
+                    result.AddWarning("Registered manager not available through service container");
+                }
+                else if (managerFromContainer != testManager)
+                {
+                    result.AddWarning("Service container returned different manager instance");
+                }
+                else
+                {
+                    LogValidation("Service container integration working correctly");
+                }
+                
+                result.MarkSuccess();
+            }
+            catch (Exception ex)
+            {
+                result.AddWarning($"Service container manager resolution failed: {ex.Message}");
+            }
+            finally
+            {
+                if (testManager != null) DestroyImmediate(testManager.gameObject);
+            }
+            
+            _results.Add(result);
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        /// <summary>
+        /// Get current manager count
+        /// </summary>
+        public int GetRegisteredManagerCount()
+        {
+            return _managerRegistry?.RegisteredManagerCount ?? 0;
+        }
+
+        /// <summary>
+        /// Check if specific manager type is registered
+        /// </summary>
+        public bool IsManagerTypeRegistered<T>() where T : ChimeraManager
+        {
+            return _managerRegistry?.IsManagerRegistered<T>() ?? false;
+        }
+
+        /// <summary>
+        /// Get all registered manager types
+        /// </summary>
+        public List<string> GetRegisteredManagerTypes()
+        {
+            var types = new List<string>();
+            
+            try
+            {
+                if (_gameManager != null)
+                {
+                    var allManagers = _gameManager.GetAllManagers();
+                    foreach (var manager in allManagers)
+                    {
+                        types.Add(manager.GetType().Name);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogValidation($"Error getting manager types: {ex.Message}");
+            }
+            
+            return types;
+        }
+
+        /// <summary>
+        /// Non-existent manager for error testing
+        /// </summary>
+        private class NonExistentTestManager : ChimeraManager
+        {
+            public override string ManagerName => "NonExistentTest";
+            public override ManagerPriority Priority => ManagerPriority.Low;
+            
+            protected override void OnManagerInitialize() { }
+            protected override void OnManagerShutdown() { }
+        }
+    }
+}

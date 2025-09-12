@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectChimera.Data.Shared;
+using ProjectChimera.Data.Cultivation.Plant;
 using System;
 using System.Collections.Generic;
 using System.Linq;

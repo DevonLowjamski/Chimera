@@ -1,527 +1,309 @@
-using ProjectChimera.Core.Logging;
-using ProjectChimera.Data.Shared;
-using ProjectChimera.Data.Cultivation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
-namespace ProjectChimera.Systems.Cultivation
+namespace ProjectChimera.Systems.Cultivation.Components
 {
     /// <summary>
-    /// Implementation for plant care operations and maintenance
+    /// BASIC: Simple plant care component for Project Chimera's cultivation system.
+    /// Focuses on essential plant care operations without complex lifecycle management and training.
     /// </summary>
-    public class PlantCare : IPlantCare
+    public class PlantCare : MonoBehaviour
     {
-        private IPlantLifecycle _plantLifecycle;
-        private IEnvironmentControl _environmentControl;
+        [Header("Basic Plant Care Settings")]
+        [SerializeField] private bool _enableBasicCare = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _defaultWaterAmount = 0.5f;
+        [SerializeField] private float _defaultNutrientAmount = 0.4f;
+
+        // Basic plant care tracking
+        private readonly Dictionary<string, PlantCareState> _plantCareStates = new Dictionary<string, PlantCareState>();
         private bool _isInitialized = false;
 
-        public Action<string, float> OnPlantWatered { get; set; }
-        public Action<string, float> OnPlantFed { get; set; }
-        public Action<string, string> OnPlantTrained { get; set; }
-        public Action<string, string> OnMaintenanceRequired { get; set; }
+        /// <summary>
+        /// Events for plant care operations
+        /// </summary>
+        public event System.Action<string, float> OnPlantWatered;
+        public event System.Action<string, float> OnPlantFed;
+        public event System.Action<string> OnCareNeeded;
 
-        public PlantCare(IPlantLifecycle plantLifecycle = null, IEnvironmentControl environmentControl = null)
+        /// <summary>
+        /// Initialize basic plant care
+        /// </summary>
+        public void Initialize()
         {
-            _plantLifecycle = plantLifecycle;
-            _environmentControl = environmentControl;
-        }
-
-        public void Initialize(IPlantLifecycle plantLifecycle = null)
-        {
-            if (plantLifecycle != null)
-            {
-                _plantLifecycle = plantLifecycle;
-            }
+            if (_isInitialized) return;
 
             _isInitialized = true;
-            ChimeraLogger.Log("[PlantCare] Plant care system initialized");
-        }
 
-        public void Shutdown()
-        {
-            _isInitialized = false;
-            ChimeraLogger.Log("[PlantCare] Plant care system shutdown");
-        }
-
-        public bool WaterPlant(string plantId, float waterAmount = 0.5f)
-        {
-            if (!_isInitialized || _plantLifecycle == null)
+            if (_enableLogging)
             {
-                ChimeraLogger.LogWarning("[PlantCare] Cannot water plant - system not initialized");
-                return false;
-            }
-
-            var plant = _plantLifecycle.GetPlant(plantId);
-            if (plant == null)
-            {
-                ChimeraLogger.LogWarning($"[PlantCare] Plant {plantId} not found for watering");
-                return false;
-            }
-
-            try
-            {
-                // Apply water with diminishing returns for overwatering
-                float currentWater = plant.WaterLevel;
-                float newWaterLevel = Mathf.Min(1.0f, currentWater + waterAmount);
-
-                // Check for overwatering
-                if (currentWater > 0.9f)
-                {
-                    ChimeraLogger.LogWarning($"[PlantCare] Plant {plantId} may be overwatered (current: {currentWater:P0})");
-                    newWaterLevel = Mathf.Min(1.0f, currentWater + waterAmount * 0.5f); // Reduced effectiveness when overwatering
-                }
-
-                plant.WaterLevel = newWaterLevel;
-
-                // Slight health improvement from proper watering
-                if (currentWater < 0.5f)
-                {
-                    plant.CurrentHealth = Mathf.Min(1.0f, plant.CurrentHealth + 0.02f);
-                }
-
-                OnPlantWatered?.Invoke(plantId, waterAmount);
-
-                ChimeraLogger.Log($"[PlantCare] Watered plant {plantId} with {waterAmount:F2}L - New level: {newWaterLevel:P0}");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogError($"[PlantCare] Error watering plant {plantId}: {ex.Message}");
-                return false;
+                ChimeraLogger.Log("[PlantCare] Initialized successfully");
             }
         }
 
-        public bool FeedPlant(string plantId, float nutrientAmount = 0.4f)
+        /// <summary>
+        /// Add plant to care tracking
+        /// </summary>
+        public void AddPlant(string plantId)
         {
-            if (!_isInitialized || _plantLifecycle == null)
+            if (!_plantCareStates.ContainsKey(plantId))
             {
-                ChimeraLogger.LogWarning("[PlantCare] Cannot feed plant - system not initialized");
-                return false;
-            }
-
-            var plant = _plantLifecycle.GetPlant(plantId);
-            if (plant == null)
-            {
-                ChimeraLogger.LogWarning($"[PlantCare] Plant {plantId} not found for feeding");
-                return false;
-            }
-
-            try
-            {
-                // Apply nutrients with growth stage considerations
-                float stageMultiplier = plant.CurrentGrowthStage switch
+                _plantCareStates[plantId] = new PlantCareState
                 {
-                    PlantGrowthStage.Vegetative => 1.2f, // Veg stage needs more nutrients
-                    PlantGrowthStage.Flowering => 1.0f,  // Normal feeding during flowering
-                    PlantGrowthStage.Seedling => 0.6f,   // Less nutrients for seedlings
-                    _ => 0.8f
+                    PlantId = plantId,
+                    WaterLevel = 1.0f,
+                    NutrientLevel = 1.0f,
+                    Health = 1.0f,
+                    LastWatered = Time.time,
+                    LastFed = Time.time,
+                    NeedsCare = false
                 };
 
-                float effectiveNutrients = nutrientAmount * stageMultiplier;
-                float currentNutrients = plant.NutrientLevel;
-                float newNutrientLevel = Mathf.Min(1.0f, currentNutrients + effectiveNutrients);
-
-                // Check for nutrient burn
-                if (currentNutrients > 0.8f)
+                if (_enableLogging)
                 {
-                    ChimeraLogger.LogWarning($"[PlantCare] Plant {plantId} may have nutrient burn (current: {currentNutrients:P0})");
-                    newNutrientLevel = Mathf.Min(1.0f, currentNutrients + effectiveNutrients * 0.3f);
-                }
-
-                plant.NutrientLevel = newNutrientLevel;
-
-                // Health improvement from proper feeding
-                if (currentNutrients < 0.4f)
-                {
-                    plant.CurrentHealth = Mathf.Min(1.0f, plant.CurrentHealth + 0.03f);
-                }
-
-                OnPlantFed?.Invoke(plantId, nutrientAmount);
-
-                ChimeraLogger.Log($"[PlantCare] Fed plant {plantId} with {nutrientAmount:F2}L nutrients - New level: {newNutrientLevel:P0}");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogError($"[PlantCare] Error feeding plant {plantId}: {ex.Message}");
-                return false;
-            }
-        }
-
-        public bool TrainPlant(string plantId, string trainingType)
-        {
-            if (!_isInitialized || _plantLifecycle == null)
-            {
-                ChimeraLogger.LogWarning("[PlantCare] Cannot train plant - system not initialized");
-                return false;
-            }
-
-            var plant = _plantLifecycle.GetPlant(plantId);
-            if (plant == null)
-            {
-                ChimeraLogger.LogWarning($"[PlantCare] Plant {plantId} not found for training");
-                return false;
-            }
-
-            try
-            {
-                bool success = trainingType.ToLower() switch
-                {
-                    "lst" or "low_stress" => ApplyLowStressTraining(plantId),
-                    "hst" or "high_stress" => ApplyHighStressTraining(plantId),
-                    "defoliation" => ApplyDefoliation(plantId),
-                    _ => false
-                };
-
-                if (success)
-                {
-                    OnPlantTrained?.Invoke(plantId, trainingType);
-                    ChimeraLogger.Log($"[PlantCare] Applied {trainingType} training to plant {plantId}");
-                }
-
-                return success;
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogError($"[PlantCare] Error training plant {plantId}: {ex.Message}");
-                return false;
-            }
-        }
-
-        public void WaterAllPlants(float waterAmount = 0.5f)
-        {
-            if (!_isInitialized || _plantLifecycle == null)
-            {
-                return;
-            }
-
-            var plants = _plantLifecycle.GetAllPlants();
-            int wateredCount = 0;
-
-            foreach (var plant in plants)
-            {
-                if (plant.WaterLevel < 0.8f) // Only water if needed
-                {
-                    if (WaterPlant(plant.PlantId, waterAmount))
-                    {
-                        wateredCount++;
-                    }
+                    ChimeraLogger.Log($"[PlantCare] Added plant {plantId} to care tracking");
                 }
             }
-
-            ChimeraLogger.Log($"[PlantCare] Watered {wateredCount} plants with {waterAmount:F2}L each");
         }
 
-        public void FeedAllPlants(float nutrientAmount = 0.4f)
+        /// <summary>
+        /// Remove plant from care tracking
+        /// </summary>
+        public void RemovePlant(string plantId)
         {
-            if (!_isInitialized || _plantLifecycle == null)
+            if (_plantCareStates.Remove(plantId))
             {
-                return;
-            }
-
-            var plants = _plantLifecycle.GetAllPlants();
-            int fedCount = 0;
-
-            foreach (var plant in plants)
-            {
-                if (plant.NutrientLevel < 0.7f) // Only feed if needed
+                if (_enableLogging)
                 {
-                    if (FeedPlant(plant.PlantId, nutrientAmount))
-                    {
-                        fedCount++;
-                    }
+                    ChimeraLogger.Log($"[PlantCare] Removed plant {plantId} from care tracking");
                 }
             }
-
-            ChimeraLogger.Log($"[PlantCare] Fed {fedCount} plants with {nutrientAmount:F2}L nutrients each");
         }
 
-        public OfflineCareResult ProcessOfflinePlantCare(PlantInstanceSO plant, float offlineHours)
+        /// <summary>
+        /// Water a plant
+        /// </summary>
+        public bool WaterPlant(string plantId, float waterAmount = 0f)
         {
-            if (plant == null || offlineHours <= 0f)
-            {
-                return OfflineCareResult.None;
-            }
-
-            var result = new OfflineCareResult();
-
-            try
-            {
-                bool needsWater = CheckPlantNeedsWater(plant, offlineHours);
-                bool needsNutrients = CheckPlantNeedsNutrients(plant, offlineHours);
-
-                // Check if automation systems can handle care
-                bool autoWateringAvailable = _environmentControl?.IsAutoWateringEnabled() ?? false;
-                bool autoFeedingAvailable = _environmentControl?.IsAutoFeedingEnabled() ?? false;
-
-                if (needsWater && autoWateringAvailable)
-                {
-                    float waterRequired = CalculateWaterRequirement(plant, offlineHours);
-                    plant.WaterLevel = Mathf.Min(1.0f, plant.WaterLevel + 0.8f); // Auto-watering to 80%
-                    result.WaterUsed = waterRequired;
-                    result.WasAutoCareApplied = true;
-                }
-
-                if (needsNutrients && autoFeedingAvailable)
-                {
-                    float nutrientsRequired = CalculateNutrientRequirement(plant, offlineHours);
-                    plant.NutrientLevel = Mathf.Min(1.0f, plant.NutrientLevel + 0.7f); // Auto-feeding to 70%
-                    result.NutrientsUsed = nutrientsRequired;
-                    result.WasAutoCareApplied = true;
-                }
-
-                // Check for maintenance needs
-                if (CheckPlantMaintenanceNeeds(plant, offlineHours))
-                {
-                    result.MaintenanceRequired = true;
-                    result.MaintenanceNotes = GenerateMaintenanceNotes(plant);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogError($"[PlantCare] Error processing offline care for plant {plant.PlantId}: {ex.Message}");
-                return OfflineCareResult.None;
-            }
-        }
-
-        public void ProcessAllPlantsOfflineCare(float offlineHours)
-        {
-            if (!_isInitialized || _plantLifecycle == null || offlineHours <= 0f)
-            {
-                return;
-            }
-
-            var plants = _plantLifecycle.GetAllPlants();
-            int plantsProcessed = 0;
-            float totalWaterUsed = 0f;
-            float totalNutrientsUsed = 0f;
-
-            foreach (var plant in plants)
-            {
-                try
-                {
-                    var careResult = ProcessOfflinePlantCare(plant, offlineHours);
-                    totalWaterUsed += careResult.WaterUsed;
-                    totalNutrientsUsed += careResult.NutrientsUsed;
-
-                    if (careResult.MaintenanceRequired)
-                    {
-                        OnMaintenanceRequired?.Invoke(plant.PlantId, careResult.MaintenanceNotes);
-                    }
-
-                    plantsProcessed++;
-                }
-                catch (Exception ex)
-                {
-                    ChimeraLogger.LogError($"[PlantCare] Error processing offline care for plant {plant.PlantId}: {ex.Message}");
-                }
-            }
-
-            ChimeraLogger.Log($"[PlantCare] Processed offline care for {plantsProcessed} plants - Water: {totalWaterUsed:F1}L, Nutrients: {totalNutrientsUsed:F1}L");
-        }
-
-        public bool CheckPlantNeedsWater(PlantInstanceSO plant, float offlineHours = 0f)
-        {
-            if (plant == null) return false;
-
-            // Calculate water depletion rate based on plant size and environmental conditions
-            float depletionRate = CalculateWaterDepletionRate(plant);
-            float hoursUntilDry = plant.WaterLevel / depletionRate;
-
-            // Plant needs water if it would run dry during offline period or is currently low
-            return offlineHours > 0f ? offlineHours >= (hoursUntilDry * 0.8f) : plant.WaterLevel < 0.3f;
-        }
-
-        public bool CheckPlantNeedsNutrients(PlantInstanceSO plant, float offlineHours = 0f)
-        {
-            if (plant == null) return false;
-
-            // Different growth stages have different nutrient consumption rates
-            float consumptionRate = plant.CurrentGrowthStage switch
-            {
-                PlantGrowthStage.Vegetative => 0.02f, // High consumption during veg
-                PlantGrowthStage.Flowering => 0.015f, // Moderate during flowering
-                PlantGrowthStage.Seedling => 0.005f, // Low during seedling
-                _ => 0.01f // Default rate
-            };
-
-            float hoursUntilDeficient = plant.NutrientLevel / consumptionRate;
-
-            return offlineHours > 0f ? offlineHours >= (hoursUntilDeficient * 0.7f) : plant.NutrientLevel < 0.3f;
-        }
-
-        public bool CheckPlantMaintenanceNeeds(PlantInstanceSO plant, float offlineHours = 0f)
-        {
-            if (plant == null) return false;
-
-            // Check for various maintenance needs
-            bool needsPruning = plant.AgeInDays > 30 && plant.CurrentGrowthStage == PlantGrowthStage.Vegetative;
-            bool hasHealthIssues = plant.CurrentHealth < 0.8f;
-            bool needsTraining = plant.CurrentHeight > 60f && plant.CurrentGrowthStage == PlantGrowthStage.Vegetative;
-
-            return needsPruning || hasHealthIssues || needsTraining;
-        }
-
-        public float CalculateWaterDepletionRate(PlantInstanceSO plant)
-        {
-            // Base rate varies by growth stage and plant size
-            float baseRate = 0.01f; // 1% per hour base rate
-
-            // Adjust for plant size (larger plants use more water)
-            float sizeModifier = (plant.CurrentHeight / 100f) * 0.5f + 0.5f; // 0.5x to 1.5x based on height
-
-            // Adjust for growth stage
-            float stageModifier = plant.CurrentGrowthStage switch
-            {
-                PlantGrowthStage.Vegetative => 1.5f, // High water use during veg
-                PlantGrowthStage.Flowering => 1.2f, // Moderate during flowering
-                PlantGrowthStage.Seedling => 0.5f, // Low during seedling
-                _ => 1.0f
-            };
-
-            return baseRate * sizeModifier * stageModifier;
-        }
-
-        public float CalculateWaterRequirement(PlantInstanceSO plant, float offlineHours)
-        {
-            float depletionRate = CalculateWaterDepletionRate(plant);
-            return depletionRate * offlineHours * 2.0f; // 2L per depletion unit
-        }
-
-        public float CalculateNutrientRequirement(PlantInstanceSO plant, float offlineHours)
-        {
-            float consumptionRate = plant.CurrentGrowthStage switch
-            {
-                PlantGrowthStage.Vegetative => 0.02f,
-                PlantGrowthStage.Flowering => 0.015f,
-                PlantGrowthStage.Seedling => 0.005f,
-                _ => 0.01f
-            };
-
-            return consumptionRate * offlineHours * 1.5f; // 1.5L per consumption unit
-        }
-
-        public float CalculateOverallPlantHealth(PlantInstanceSO plant)
-        {
-            if (plant == null) return 0f;
-
-            float waterHealth = plant.WaterLevel > 0.2f ? 1.0f : plant.WaterLevel * 5f; // Penalty below 20%
-            float nutrientHealth = plant.NutrientLevel > 0.2f ? 1.0f : plant.NutrientLevel * 5f; // Penalty below 20%
-            float baseHealth = plant.CurrentHealth;
-
-            return (waterHealth + nutrientHealth + baseHealth) / 3f;
-        }
-
-        public void UpdatePlantHealthBasedOnCare(PlantInstanceSO plant)
-        {
-            if (plant == null) return;
-
-            float overallHealth = CalculateOverallPlantHealth(plant);
-            plant.CurrentHealth = Mathf.Lerp(plant.CurrentHealth, overallHealth, 0.1f); // Gradual health changes
-        }
-
-        public List<string> GetPlantCareRecommendations(PlantInstanceSO plant)
-        {
-            var recommendations = new List<string>();
-
-            if (plant == null) return recommendations;
-
-            if (plant.WaterLevel < 0.3f)
-                recommendations.Add("Water the plant - water level is low");
-
-            if (plant.NutrientLevel < 0.3f)
-                recommendations.Add("Feed the plant - nutrient level is low");
-
-            if (plant.CurrentHealth < 0.7f)
-                recommendations.Add("Check for health issues - plant health is declining");
-
-            if (plant.CurrentHeight > 60f && plant.CurrentGrowthStage == PlantGrowthStage.Vegetative)
-                recommendations.Add("Consider training - plant is getting tall");
-
-            if (plant.AgeInDays > 30 && plant.CurrentGrowthStage == PlantGrowthStage.Vegetative)
-                recommendations.Add("Pruning may be beneficial - mature vegetative plant");
-
-            return recommendations;
-        }
-
-        public bool ApplyLowStressTraining(string plantId)
-        {
-            var plant = _plantLifecycle?.GetPlant(plantId);
-            if (plant == null || plant.CurrentGrowthStage != PlantGrowthStage.Vegetative)
+            if (!_enableBasicCare || !_isInitialized || !_plantCareStates.ContainsKey(plantId))
             {
                 return false;
             }
 
-            // LST increases yield potential but requires ongoing maintenance
-            // plant.RequiresTraining = false; // Training completed - property not available
-            // In a real implementation, this would modify yield potential
+            if (waterAmount <= 0f)
+            {
+                waterAmount = _defaultWaterAmount;
+            }
 
-            ChimeraLogger.Log($"[PlantCare] Applied Low Stress Training to plant {plantId}");
+            var state = _plantCareStates[plantId];
+
+            // Apply water with diminishing returns for overwatering
+            float currentWater = state.WaterLevel;
+            float newWaterLevel = Mathf.Min(1.0f, currentWater + waterAmount);
+
+            // Reduced effectiveness if already well-watered
+            if (currentWater > 0.8f)
+            {
+                newWaterLevel = Mathf.Min(1.0f, currentWater + waterAmount * 0.7f);
+            }
+
+            state.WaterLevel = newWaterLevel;
+            state.LastWatered = Time.time;
+
+            // Small health boost from proper watering
+            if (currentWater < 0.3f)
+            {
+                state.Health = Mathf.Min(1.0f, state.Health + 0.05f);
+            }
+
+            OnPlantWatered?.Invoke(plantId, waterAmount);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log($"[PlantCare] Watered plant {plantId} - Level: {newWaterLevel:F2}");
+            }
+
             return true;
         }
 
-        public bool ApplyHighStressTraining(string plantId)
+        /// <summary>
+        /// Feed a plant nutrients
+        /// </summary>
+        public bool FeedPlant(string plantId, float nutrientAmount = 0f)
         {
-            var plant = _plantLifecycle?.GetPlant(plantId);
-            if (plant == null || plant.CurrentGrowthStage != PlantGrowthStage.Vegetative)
+            if (!_enableBasicCare || !_isInitialized || !_plantCareStates.ContainsKey(plantId))
             {
                 return false;
             }
 
-            // HST can stress the plant but increases yield if done correctly
-            plant.CurrentHealth = Mathf.Max(0.5f, plant.CurrentHealth - 0.1f); // Temporary health reduction
-            // plant.RequiresTraining = false; // Property not available
+            if (nutrientAmount <= 0f)
+            {
+                nutrientAmount = _defaultNutrientAmount;
+            }
 
-            ChimeraLogger.Log($"[PlantCare] Applied High Stress Training to plant {plantId}");
+            var state = _plantCareStates[plantId];
+
+            // Apply nutrients with diminishing returns for over-fertilizing
+            float currentNutrients = state.NutrientLevel;
+            float newNutrientLevel = Mathf.Min(1.0f, currentNutrients + nutrientAmount);
+
+            // Reduced effectiveness if already well-fed
+            if (currentNutrients > 0.8f)
+            {
+                newNutrientLevel = Mathf.Min(1.0f, currentNutrients + nutrientAmount * 0.7f);
+            }
+
+            state.NutrientLevel = newNutrientLevel;
+            state.LastFed = Time.time;
+
+            // Small health boost from proper feeding
+            if (currentNutrients < 0.3f)
+            {
+                state.Health = Mathf.Min(1.0f, state.Health + 0.05f);
+            }
+
+            OnPlantFed?.Invoke(plantId, nutrientAmount);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log($"[PlantCare] Fed plant {plantId} - Level: {newNutrientLevel:F2}");
+            }
+
             return true;
         }
 
-        public bool ApplyDefoliation(string plantId)
+        /// <summary>
+        /// Update plant care needs
+        /// </summary>
+        private void Update()
         {
-            var plant = _plantLifecycle?.GetPlant(plantId);
-            if (plant == null)
+            if (!_enableBasicCare || !_isInitialized) return;
+
+            // Simple decay over time
+            float deltaTime = Time.deltaTime;
+            float decayRate = 0.01f * deltaTime; // Slow decay
+
+            foreach (var kvp in _plantCareStates)
             {
-                return false;
-            }
+                var state = kvp.Value;
 
-            // Defoliation can be done in veg or early flower
-            if (plant.CurrentGrowthStage != PlantGrowthStage.Vegetative && plant.CurrentGrowthStage != PlantGrowthStage.Flowering)
+                // Decay water and nutrients over time
+                state.WaterLevel = Mathf.Max(0f, state.WaterLevel - decayRate);
+                state.NutrientLevel = Mathf.Max(0f, state.NutrientLevel - decayRate * 0.7f); // Nutrients decay slower
+
+                // Health affected by care levels
+                if (state.WaterLevel < 0.2f || state.NutrientLevel < 0.2f)
+                {
+                    state.Health = Mathf.Max(0f, state.Health - decayRate * 2f);
+                }
+
+                // Check if care is needed
+                bool needsCare = state.WaterLevel < 0.3f || state.NutrientLevel < 0.3f;
+                if (needsCare != state.NeedsCare)
+                {
+                    state.NeedsCare = needsCare;
+                    if (needsCare)
+                    {
+                        OnCareNeeded?.Invoke(state.PlantId);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get plant care state
+        /// </summary>
+        public PlantCareState GetPlantState(string plantId)
+        {
+            return _plantCareStates.TryGetValue(plantId, out var state) ? state : null;
+        }
+
+        /// <summary>
+        /// Get all plant IDs being cared for
+        /// </summary>
+        public List<string> GetAllPlantIds()
+        {
+            return new List<string>(_plantCareStates.Keys);
+        }
+
+        /// <summary>
+        /// Get plants that need care
+        /// </summary>
+        public List<string> GetPlantsNeedingCare()
+        {
+            var needingCare = new List<string>();
+            foreach (var state in _plantCareStates.Values)
             {
-                return false;
+                if (state.NeedsCare)
+                {
+                    needingCare.Add(state.PlantId);
+                }
             }
-
-            // Defoliation temporarily stresses the plant but can improve light penetration
-            plant.CurrentHealth = Mathf.Max(0.6f, plant.CurrentHealth - 0.05f);
-
-            ChimeraLogger.Log($"[PlantCare] Applied defoliation to plant {plantId}");
-            return true;
+            return needingCare;
         }
 
-        public void SetDependencies(IPlantLifecycle plantLifecycle, IEnvironmentControl environmentControl)
+        /// <summary>
+        /// Get plant care statistics
+        /// </summary>
+        public PlantCareStats GetStats()
         {
-            _plantLifecycle = plantLifecycle;
-            _environmentControl = environmentControl;
+            int totalPlants = _plantCareStates.Count;
+            int plantsNeedingCare = GetPlantsNeedingCare().Count;
+            int healthyPlants = _plantCareStates.Count(s => s.Value.Health > 0.8f);
+            int unhealthyPlants = _plantCareStates.Count(s => s.Value.Health < 0.5f);
+
+            return new PlantCareStats
+            {
+                TotalPlants = totalPlants,
+                PlantsNeedingCare = plantsNeedingCare,
+                HealthyPlants = healthyPlants,
+                UnhealthyPlants = unhealthyPlants,
+                IsCareEnabled = _enableBasicCare,
+                IsInitialized = _isInitialized
+            };
         }
 
-        private string GenerateMaintenanceNotes(PlantInstanceSO plant)
+        /// <summary>
+        /// Clear all plant care data
+        /// </summary>
+        public void ClearAllPlants()
         {
-            var notes = new List<string>();
+            _plantCareStates.Clear();
 
-            if (plant.CurrentHealth < 0.8f)
-                notes.Add("Low health detected");
-
-            if (plant.AgeInDays > 30 && plant.CurrentGrowthStage == PlantGrowthStage.Vegetative)
-                notes.Add("Pruning recommended");
-
-            if (plant.CurrentHeight > 60f)
-                notes.Add("Training recommended");
-
-            return string.Join(", ", notes);
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("[PlantCare] Cleared all plant care data");
+            }
         }
+    }
+
+    /// <summary>
+    /// Plant care state
+    /// </summary>
+    [System.Serializable]
+    public class PlantCareState
+    {
+        public string PlantId;
+        public float WaterLevel; // 0-1
+        public float NutrientLevel; // 0-1
+        public float Health; // 0-1
+        public float LastWatered;
+        public float LastFed;
+        public bool NeedsCare;
+    }
+
+    /// <summary>
+    /// Plant care statistics
+    /// </summary>
+    [System.Serializable]
+    public struct PlantCareStats
+    {
+        public int TotalPlants;
+        public int PlantsNeedingCare;
+        public int HealthyPlants;
+        public int UnhealthyPlants;
+        public bool IsCareEnabled;
+        public bool IsInitialized;
     }
 }

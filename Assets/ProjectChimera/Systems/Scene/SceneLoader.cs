@@ -9,7 +9,7 @@ using ProjectChimera.Core.DependencyInjection;
 
 namespace ProjectChimera.Systems.Scene
 {
-    public class SceneLoader : DIChimeraManager, ISceneLoader
+    public class SceneLoader : ChimeraManager, ISceneLoader
     {
         [Header("Scene Loading Configuration")]
         [SerializeField] private float _sceneTransitionDelay = 0.5f;
@@ -301,6 +301,7 @@ namespace ProjectChimera.Systems.Scene
             Resources.UnloadUnusedAssets();
             System.GC.Collect();
         }
+
     }
 
     public interface ISceneLoader : IChimeraManager

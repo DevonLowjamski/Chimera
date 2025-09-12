@@ -1,518 +1,245 @@
-using ProjectChimera.Core.Logging;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using ProjectChimera.Core;
-using ProjectChimera.Data.Shared;
-// using ProjectChimera.Systems.Genetics; // Invalid namespace - genetics in ProjectChimera.Data.Genetics
-using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Cultivation
 {
     /// <summary>
-    /// PC-013-3: Plant Processing Service - Handles plant updates, batch processing, and performance optimization
-    /// Extracted from monolithic PlantManager for Single Responsibility Principle
-    /// Focuses solely on plant processing, growth calculations, and performance optimization
+    /// BASIC: Simple plant processing service for Project Chimera's cultivation system.
+    /// Focuses on essential plant updates without complex processors and batch systems.
     /// </summary>
-    public class PlantProcessingService : object
+    public class PlantProcessingService : MonoBehaviour
     {
-        [Header("Processing Configuration")]
-        [SerializeField] private float _plantUpdateInterval = 1f;
-        [SerializeField] private int _maxPlantsPerUpdate = 10;
-        [SerializeField] private bool _enableDetailedLogging = false;
+        [Header("Basic Processing Settings")]
+        [SerializeField] private bool _enableBasicProcessing = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _updateInterval = 1.0f;
+        [SerializeField] private int _maxPlantsPerUpdate = 50;
 
-        [Header("Growth Configuration")]
-        [SerializeField] private AnimationCurve _defaultGrowthCurve;
-        [SerializeField] private float _globalGrowthModifier = 1f;
-        [SerializeField] private bool _enableStressSystem = true;
-        [SerializeField] private bool _enableGxEInteractions = true;
-
-        [Header("Advanced Processing")]
-        [SerializeField] private bool _enableAdvancedGenetics = true;
-        [SerializeField] private float _traitExpressionCacheCleanupInterval = 60f;
-
-        // Processing state
-        private IPlantLifecycleService _plantLifecycleService;
-        private PlantUpdateProcessor _updateProcessor;
-        private List<PlantInstance> _plantsToUpdate = new List<PlantInstance>();
-        private int _currentUpdateIndex = 0;
+        // Basic processing state
+        private readonly List<BasicPlantData> _plantsToProcess = new List<BasicPlantData>();
         private float _lastUpdateTime = 0f;
-        private float _lastCacheCleanupTime = 0f;
-        private int _plantsProcessedThisFrame = 0;
+        private bool _isInitialized = false;
 
-        public bool IsInitialized { get; private set; }
+        /// <summary>
+        /// Events for plant processing
+        /// </summary>
+        public event System.Action<string> OnPlantProcessed;
+        public event System.Action<int> OnBatchProcessed;
 
-        public float GlobalGrowthModifier
-        {
-            get => _globalGrowthModifier;
-            set => _globalGrowthModifier = Mathf.Clamp(value, 0.1f, 10f);
-        }
-
-        public PlantProcessingService() : this(null)
-        {
-        }
-
-        public PlantProcessingService(IPlantLifecycleService plantLifecycleService)
-        {
-            _plantLifecycleService = plantLifecycleService;
-        }
-
+        /// <summary>
+        /// Initialize basic plant processing
+        /// </summary>
         public void Initialize()
         {
-            if (IsInitialized) return;
-
-            ChimeraLogger.Log("[PlantProcessingService] Initializing plant processing system...");
-
-            // Initialize enhanced update processor with advanced genetics support
-            _updateProcessor = new PlantUpdateProcessor(_enableStressSystem, _enableGxEInteractions, _enableAdvancedGenetics);
-
-            // Initialize default growth curve if not set
-            if (_defaultGrowthCurve == null || _defaultGrowthCurve.keys.Length == 0)
-            {
-                InitializeDefaultGrowthCurve();
-            }
-
-            // Subscribe to plant lifecycle events
-            if (_plantLifecycleService != null)
-            {
-                // _plantLifecycleService.OnPlantAdded += OnPlantAdded; // Event not available on interface
-            }
+            if (_isInitialized) return;
 
             _lastUpdateTime = Time.time;
-            _lastCacheCleanupTime = Time.time;
+            _isInitialized = true;
 
-            IsInitialized = true;
-            ChimeraLogger.Log($"[PlantProcessingService] Plant processing initialized (Advanced Genetics: {_enableAdvancedGenetics})");
-        }
-
-        public void Shutdown()
-        {
-            if (!IsInitialized) return;
-
-            ChimeraLogger.Log("[PlantProcessingService] Shutting down plant processing system...");
-
-            // Unsubscribe from events
-            if (_plantLifecycleService != null)
+            if (_enableLogging)
             {
-                // _plantLifecycleService.OnPlantAdded -= OnPlantAdded; // Event not available on interface
-            }
-
-            _plantsToUpdate.Clear();
-            _updateProcessor = null;
-
-            IsInitialized = false;
-        }
-
-        /// <summary>
-        /// Main update method - processes plants in batches for optimal performance.
-        /// </summary>
-        public void UpdatePlants()
-        {
-            if (!IsInitialized) return;
-
-            // Check if it's time for plant updates
-            if (Time.time - _lastUpdateTime < _plantUpdateInterval)
-                return;
-
-            // Update plants list from lifecycle service
-            UpdatePlantsToProcessList();
-
-            if (_plantsToUpdate.Count == 0)
-            {
-                _lastUpdateTime = Time.time;
-                return;
-            }
-
-            var timeManager = GameManager.Instance?.GetManager<TimeManager>();
-            float deltaTime = timeManager?.GetScaledDeltaTime() ?? Time.deltaTime;
-
-            // Determine optimal batch size based on plant count and performance
-            int optimalBatchSize = CalculateOptimalBatchSize();
-            int plantsToProcess = Mathf.Min(optimalBatchSize, _plantsToUpdate.Count);
-
-            // Get the next batch of plants to process
-            var plantsToProcessThisFrame = GetNextPlantsToProcess(plantsToProcess);
-
-            if (plantsToProcessThisFrame.Count == 0)
-            {
-                _lastUpdateTime = Time.time;
-                return;
-            }
-
-            // Use batch processing for improved performance if advanced genetics is enabled
-            if (_enableAdvancedGenetics && plantsToProcessThisFrame.Count > 10)
-            {
-                ProcessPlantsBatch(plantsToProcessThisFrame, deltaTime);
-            }
-            else
-            {
-                ProcessPlantsIndividually(plantsToProcessThisFrame, deltaTime);
-            }
-
-            // Advance update index
-            _currentUpdateIndex += plantsToProcess;
-
-            // Reset index when we've processed all plants
-            if (_currentUpdateIndex >= _plantsToUpdate.Count)
-            {
-                _currentUpdateIndex = 0;
-                ValidateAndCleanupPlants();
-            }
-
-            _lastUpdateTime = Time.time;
-
-            // Periodic cache cleanup
-            if (_enableAdvancedGenetics && Time.time - _lastCacheCleanupTime >= _traitExpressionCacheCleanupInterval)
-            {
-                PerformCacheCleanup();
+                ChimeraLogger.Log("[PlantProcessingService] Initialized successfully");
             }
         }
 
         /// <summary>
-        /// Sets the global growth modifier for all plants.
+        /// Update plant processing
         /// </summary>
-        public void SetGlobalGrowthModifier(float modifier)
+        private void Update()
         {
-            GlobalGrowthModifier = modifier;
-            ChimeraLogger.Log($"[PlantProcessingService] Global growth modifier set to {_globalGrowthModifier:F2}");
+            if (!_enableBasicProcessing || !_isInitialized) return;
+
+            float currentTime = Time.time;
+            if (currentTime - _lastUpdateTime >= _updateInterval)
+            {
+                ProcessPlantBatch();
+                _lastUpdateTime = currentTime;
+            }
         }
 
         /// <summary>
-        /// Calculates optimal batch size based on performance metrics and system resources.
+        /// Add plant to processing queue
         /// </summary>
-        public int CalculateOptimalBatchSize()
+        public void AddPlant(string plantId, Vector3 position, float health, float growthStage)
         {
-            int baseBatchSize = _maxPlantsPerUpdate;
-
-            // Consider system capabilities
-            if (_enableAdvancedGenetics && SystemInfo.supportsComputeShaders && SystemInfo.systemMemorySize > 8192)
+            if (!_plantsToProcess.Exists(p => p.PlantId == plantId))
             {
-                baseBatchSize = Mathf.Min(100, baseBatchSize * 2); // Larger batches for powerful systems
-            }
-
-            // Adjust based on current plant count
-            int totalPlants = _plantsToUpdate.Count;
-            if (totalPlants > 1000)
-            {
-                baseBatchSize = Mathf.Max(5, baseBatchSize / 2); // Smaller batches for very large populations
-            }
-            else if (totalPlants < 50)
-            {
-                baseBatchSize = Mathf.Min(totalPlants, baseBatchSize * 2); // Larger batches for small populations
-            }
-
-            return baseBatchSize;
-        }
-
-        /// <summary>
-        /// Gets the next batch of plants to process in this frame.
-        /// </summary>
-        public List<PlantInstance> GetNextPlantsToProcess(int count)
-        {
-            var plantsToProcess = new List<PlantInstance>();
-            int endIndex = Mathf.Min(_currentUpdateIndex + count, _plantsToUpdate.Count);
-
-            for (int i = _currentUpdateIndex; i < endIndex; i++)
-            {
-                var plant = _plantsToUpdate[i];
-                if (plant != null && plant.IsActive)
+                _plantsToProcess.Add(new BasicPlantData
                 {
-                    plantsToProcess.Add(plant);
+                    PlantId = plantId,
+                    Position = position,
+                    Health = health,
+                    GrowthStage = growthStage,
+                    LastProcessed = Time.time
+                });
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log($"[PlantProcessingService] Added plant {plantId} to processing queue");
                 }
             }
-
-            return plantsToProcess;
         }
 
         /// <summary>
-        /// Performs cache cleanup and performance optimization.
+        /// Remove plant from processing
         /// </summary>
-        public void PerformCacheCleanup()
+        public void RemovePlant(string plantId)
         {
-            if (!IsInitialized) return;
+            _plantsToProcess.RemoveAll(p => p.PlantId == plantId);
 
-            if (_updateProcessor != null)
+            if (_enableLogging)
             {
-                _updateProcessor.ClearTraitExpressionCache();
-            }
-
-            _lastCacheCleanupTime = Time.time;
-
-            if (_enableDetailedLogging)
-            {
-                ChimeraLogger.Log("[PlantProcessingService] Performed cache cleanup for genetic calculations");
+                ChimeraLogger.Log($"[PlantProcessingService] Removed plant {plantId} from processing");
             }
         }
 
         /// <summary>
-        /// Performs comprehensive performance optimization.
+        /// Process a batch of plants
         /// </summary>
-        public void PerformPerformanceOptimization()
+        private void ProcessPlantBatch()
         {
-            if (!IsInitialized) return;
+            int plantsToProcess = Mathf.Min(_maxPlantsPerUpdate, _plantsToProcess.Count);
+            int plantsProcessed = 0;
 
-            if (_updateProcessor != null)
+            for (int i = 0; i < plantsToProcess; i++)
             {
-                _updateProcessor.OptimizePerformance();
+                var plant = _plantsToProcess[i];
+                ProcessSinglePlant(plant);
+                plantsProcessed++;
             }
 
-            // Clean up inactive plants
-            ValidateAndCleanupPlants();
-
-            if (_enableDetailedLogging)
+            if (plantsProcessed > 0)
             {
-                ChimeraLogger.Log("[PlantProcessingService] Performed performance optimization");
-            }
-        }
+                OnBatchProcessed?.Invoke(plantsProcessed);
 
-        /// <summary>
-        /// Forces an immediate update of all plants (for testing/debugging).
-        /// </summary>
-        public void ForceUpdateAllPlants()
-        {
-            if (!IsInitialized) return;
-
-            UpdatePlantsToProcessList();
-
-            if (_plantsToUpdate.Count == 0) return;
-
-            var timeManager = GameManager.Instance?.GetManager<TimeManager>();
-            float deltaTime = timeManager?.GetScaledDeltaTime() ?? Time.deltaTime;
-
-            ChimeraLogger.Log($"[PlantProcessingService] Force updating {_plantsToUpdate.Count} plants");
-
-            if (_enableAdvancedGenetics && _plantsToUpdate.Count > 10)
-            {
-                ProcessPlantsBatch(_plantsToUpdate, deltaTime);
-            }
-            else
-            {
-                ProcessPlantsIndividually(_plantsToUpdate, deltaTime);
-            }
-        }
-
-        /// <summary>
-        /// Gets processing statistics.
-        /// </summary>
-        public (int totalPlants, int currentBatch, float lastUpdateTime, int optimalBatchSize) GetProcessingStats()
-        {
-            return (
-                _plantsToUpdate.Count,
-                _currentUpdateIndex,
-                Time.time - _lastUpdateTime,
-                CalculateOptimalBatchSize()
-            );
-        }
-
-        /// <summary>
-        /// Enables or disables advanced genetics processing.
-        /// </summary>
-        public void SetAdvancedGeneticsEnabled(bool enabled)
-        {
-            if (_enableAdvancedGenetics != enabled)
-            {
-                _enableAdvancedGenetics = enabled;
-
-                // Reinitialize update processor with new setting
-                if (_updateProcessor != null)
+                if (_enableLogging)
                 {
-                    _updateProcessor = new PlantUpdateProcessor(_enableStressSystem, _enableGxEInteractions, _enableAdvancedGenetics);
-                }
-
-                ChimeraLogger.Log($"[PlantProcessingService] Advanced genetics {(enabled ? "enabled" : "disabled")}");
-            }
-        }
-
-        /// <summary>
-        /// Process comprehensive plant data for a specific plant
-        /// </summary>
-        public PlantProcessingResult ProcessPlantData(PlantInstance plant)
-        {
-            if (!IsInitialized || plant == null)
-            {
-                return new PlantProcessingResult
-                {
-                    PlantID = plant?.PlantID ?? "Unknown",
-                    ProcessingSuccess = false,
-                    ProcessingTimeMs = 0f,
-                    ErrorMessage = "Service not initialized or plant is null"
-                };
-            }
-
-            var startTime = System.DateTime.Now;
-
-            try
-            {
-                // Get current time delta
-                var timeManager = GameManager.Instance?.GetManager<TimeManager>();
-                float deltaTime = timeManager?.GetScaledDeltaTime() ?? Time.deltaTime;
-
-                // Process the plant using the update processor
-                if (_updateProcessor != null)
-                {
-                    _updateProcessor.UpdatePlant(plant, deltaTime, _globalGrowthModifier);
-                }
-
-                // Calculate processing statistics
-                var processingTime = (System.DateTime.Now - startTime).TotalMilliseconds;
-
-                // Update processing counters
-                _plantsProcessedThisFrame++;
-                _lastUpdateTime = Time.time;
-
-                return new PlantProcessingResult
-                {
-                    PlantID = plant.PlantID,
-                    ProcessingSuccess = true,
-                    ProcessingTimeMs = (float)processingTime,
-                    HealthAfterProcessing = plant.CurrentHealth,
-                    StressAfterProcessing = plant.StressLevel,
-                    GrowthStageAfterProcessing = plant.CurrentGrowthStage,
-                    DeltaTimeUsed = deltaTime,
-                    GrowthModifierApplied = _globalGrowthModifier
-                };
-            }
-            catch (System.Exception ex)
-            {
-                var processingTime = (System.DateTime.Now - startTime).TotalMilliseconds;
-
-                ChimeraLogger.LogError($"[PlantProcessingService] Error processing plant {plant.PlantID}: {ex.Message}");
-
-                return new PlantProcessingResult
-                {
-                    PlantID = plant.PlantID,
-                    ProcessingSuccess = false,
-                    ProcessingTimeMs = (float)processingTime,
-                    ErrorMessage = ex.Message
-                };
-            }
-        }
-
-        /// <summary>
-        /// Updates the list of plants to process from the lifecycle service.
-        /// </summary>
-        private void UpdatePlantsToProcessList()
-        {
-            if (_plantLifecycleService == null) return;
-
-            var trackedPlants = _plantLifecycleService.GetTrackedPlants();
-            _plantsToUpdate = trackedPlants.Where(p => p != null && p.IsActive).ToList();
-        }
-
-        /// <summary>
-        /// Processes plants using batch processing for optimal performance.
-        /// </summary>
-        private void ProcessPlantsBatch(List<PlantInstance> plants, float deltaTime)
-        {
-            if (_updateProcessor == null) return;
-
-            try
-            {
-                _updateProcessor.UpdatePlantsBatch(plants, deltaTime, _globalGrowthModifier);
-
-                if (_enableDetailedLogging)
-                {
-                    ChimeraLogger.Log($"[PlantProcessingService] Batch processed {plants.Count} plants");
+                    ChimeraLogger.Log($"[PlantProcessingService] Processed {plantsProcessed} plants in batch");
                 }
             }
-            catch (System.Exception ex)
+        }
+
+        /// <summary>
+        /// Process a single plant
+        /// </summary>
+        private void ProcessSinglePlant(BasicPlantData plant)
+        {
+            // Simple plant processing logic
+            float deltaTime = Time.time - plant.LastProcessed;
+
+            // Basic health decay over time
+            plant.Health = Mathf.Max(0f, plant.Health - deltaTime * 0.01f);
+
+            // Basic growth progression
+            plant.GrowthStage = Mathf.Min(1.0f, plant.GrowthStage + deltaTime * 0.001f);
+
+            plant.LastProcessed = Time.time;
+
+            OnPlantProcessed?.Invoke(plant.PlantId);
+        }
+
+        /// <summary>
+        /// Get plant data
+        /// </summary>
+        public BasicPlantData GetPlantData(string plantId)
+        {
+            return _plantsToProcess.Find(p => p.PlantId == plantId);
+        }
+
+        /// <summary>
+        /// Get all plant IDs
+        /// </summary>
+        public List<string> GetAllPlantIds()
+        {
+            return _plantsToProcess.ConvertAll(p => p.PlantId);
+        }
+
+        /// <summary>
+        /// Get plants needing attention
+        /// </summary>
+        public List<string> GetPlantsNeedingAttention()
+        {
+            return _plantsToProcess.FindAll(p => p.Health < 0.5f).ConvertAll(p => p.PlantId);
+        }
+
+        /// <summary>
+        /// Get processing statistics
+        /// </summary>
+        public ProcessingStats GetStats()
+        {
+            int totalPlants = _plantsToProcess.Count;
+            int healthyPlants = _plantsToProcess.Count(p => p.Health > 0.8f);
+            int unhealthyPlants = _plantsToProcess.Count(p => p.Health < 0.5f);
+            int maturePlants = _plantsToProcess.Count(p => p.GrowthStage > 0.9f);
+
+            return new ProcessingStats
             {
-                ChimeraLogger.LogError($"[PlantProcessingService] Error in batch processing: {ex.Message}");
-                // Fallback to individual processing
-                ProcessPlantsIndividually(plants, deltaTime);
+                TotalPlants = totalPlants,
+                HealthyPlants = healthyPlants,
+                UnhealthyPlants = unhealthyPlants,
+                MaturePlants = maturePlants,
+                IsProcessingEnabled = _enableBasicProcessing,
+                IsInitialized = _isInitialized
+            };
+        }
+
+        /// <summary>
+        /// Clear all plants
+        /// </summary>
+        public void ClearAllPlants()
+        {
+            _plantsToProcess.Clear();
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("[PlantProcessingService] Cleared all plants from processing");
             }
         }
 
         /// <summary>
-        /// Processes plants individually for smaller batches or as fallback.
+        /// Set processing enabled state
         /// </summary>
-        private void ProcessPlantsIndividually(List<PlantInstance> plants, float deltaTime)
+        public void SetProcessingEnabled(bool enabled)
         {
-            if (_updateProcessor == null) return;
+            _enableBasicProcessing = enabled;
 
-            foreach (var plant in plants)
+            if (!enabled)
             {
-                if (plant != null && plant.IsActive)
-                {
-                    try
-                    {
-                        _updateProcessor.UpdatePlant(plant, deltaTime, _globalGrowthModifier);
-                    }
-                    catch (System.Exception ex)
-                    {
-                        ChimeraLogger.LogError($"[PlantProcessingService] Error processing plant {plant.PlantID}: {ex.Message}");
-                    }
-                }
+                // Could pause processing or clear queue
             }
 
-            if (_enableDetailedLogging)
+            if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantProcessingService] Individually processed {plants.Count} plants");
-            }
-        }
-
-        /// <summary>
-        /// Validates and cleans up inactive plants from the processing list.
-        /// </summary>
-        private void ValidateAndCleanupPlants()
-        {
-            int removedCount = _plantsToUpdate.RemoveAll(p => p == null || !p.IsActive);
-
-            if (removedCount > 0 && _enableDetailedLogging)
-            {
-                ChimeraLogger.Log($"[PlantProcessingService] Cleaned up {removedCount} inactive plants");
-            }
-        }
-
-        /// <summary>
-        /// Initializes the default growth curve if none is provided.
-        /// </summary>
-        private void InitializeDefaultGrowthCurve()
-        {
-            _defaultGrowthCurve = new AnimationCurve();
-            _defaultGrowthCurve.AddKey(0f, 0f);      // Start
-            _defaultGrowthCurve.AddKey(0.25f, 0.1f); // Slow initial growth
-            _defaultGrowthCurve.AddKey(0.5f, 0.4f);  // Accelerating growth
-            _defaultGrowthCurve.AddKey(0.75f, 0.8f); // Peak growth
-            _defaultGrowthCurve.AddKey(1f, 1f);      // Mature
-
-            ChimeraLogger.Log("[PlantProcessingService] Initialized default growth curve");
-        }
-
-        /// <summary>
-        /// Handles new plants added to the lifecycle service.
-        /// </summary>
-        private void OnPlantAdded(PlantInstance plant)
-        {
-            if (plant != null && plant.IsActive)
-            {
-                if (!_plantsToUpdate.Contains(plant))
-                {
-                    _plantsToUpdate.Add(plant);
-
-                    if (_enableDetailedLogging)
-                    {
-                        ChimeraLogger.Log($"[PlantProcessingService] Added plant {plant.PlantID} to processing queue");
-                    }
-                }
+                ChimeraLogger.Log($"[PlantProcessingService] Processing {(enabled ? "enabled" : "disabled")}");
             }
         }
     }
 
     /// <summary>
-    /// Plant processing result data structure
+    /// Basic plant data for processing
     /// </summary>
     [System.Serializable]
-    public class PlantProcessingResult
+    public class BasicPlantData
     {
-        public string PlantID;
-        public bool ProcessingSuccess;
-        public float ProcessingTimeMs;
-        public float HealthAfterProcessing;
-        public float StressAfterProcessing;
-        public PlantGrowthStage GrowthStageAfterProcessing;
-        public float DeltaTimeUsed;
-        public float GrowthModifierApplied;
-        public string ErrorMessage;
+        public string PlantId;
+        public Vector3 Position;
+        public float Health; // 0-1
+        public float GrowthStage; // 0-1
+        public float LastProcessed;
+    }
+
+    /// <summary>
+    /// Processing statistics
+    /// </summary>
+    [System.Serializable]
+    public struct ProcessingStats
+    {
+        public int TotalPlants;
+        public int HealthyPlants;
+        public int UnhealthyPlants;
+        public int MaturePlants;
+        public bool IsProcessingEnabled;
+        public bool IsInitialized;
     }
 }

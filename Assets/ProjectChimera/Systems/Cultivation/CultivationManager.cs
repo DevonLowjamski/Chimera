@@ -8,6 +8,7 @@ using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Environment;
 using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Cultivation.Plant;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
 

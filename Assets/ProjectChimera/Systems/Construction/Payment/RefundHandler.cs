@@ -1,509 +1,237 @@
-using ProjectChimera.Core.Logging;
-using ProjectChimera.Data.Construction;
-using ProjectChimera.Data.Economy;
-using ProjectChimera.Systems.Analytics;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
-namespace ProjectChimera.Systems.Construction
+namespace ProjectChimera.Systems.Construction.Payment
 {
     /// <summary>
-    /// Implementation for refund processing and resource reservation management
+    /// BASIC: Simple refund handler for Project Chimera's construction payment system.
+    /// Focuses on essential refund operations without complex reservation systems.
     /// </summary>
-    public class RefundHandler : IRefundHandler
+    public class RefundHandler : MonoBehaviour
     {
-        private bool _enableRefunds = true;
-        private float _refundPercentage = 0.8f;
-        private bool _enableResourceReservation = true;
-        private float _reservationDuration = 30f;
-        private bool _autoReleaseReservations = true;
-        private int _maxSimultaneousReservations = 10;
+        [Header("Basic Refund Settings")]
+        [SerializeField] private bool _enableBasicRefunds = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _refundPercentage = 0.8f; // 80% refund
+        [SerializeField] private float _maxRefundTimeHours = 24f; // 24 hours to refund
+
+        // Basic refund tracking
+        private readonly Dictionary<string, RefundRecord> _pendingRefunds = new Dictionary<string, RefundRecord>();
+        private float _totalRefunded = 0f;
         private bool _isInitialized = false;
 
-        // Resource reservation
-        private Dictionary<string, ResourceReservation> _activeReservations = new Dictionary<string, ResourceReservation>();
-        private Dictionary<Vector3Int, List<string>> _positionReservations = new Dictionary<Vector3Int, List<string>>();
+        /// <summary>
+        /// Events for refund operations
+        /// </summary>
+        public event System.Action<string, float> OnRefundProcessed;
+        public event System.Action<string> OnRefundExpired;
 
-        // External dependencies
-        private ICurrencyManager _currencyManager;
-        private MonoBehaviour _tradingManager;
-        private IPaymentProcessor _paymentProcessor;
-        private ICostCalculator _costCalculator;
-
-        public bool EnableRefunds
+        /// <summary>
+        /// Initialize basic refund handler
+        /// </summary>
+        public void Initialize()
         {
-            get => _enableRefunds;
-            set => _enableRefunds = value;
-        }
+            if (_isInitialized) return;
 
-        public float RefundPercentage
-        {
-            get => _refundPercentage;
-            set => _refundPercentage = Mathf.Clamp01(value);
-        }
-
-        public bool EnableResourceReservation
-        {
-            get => _enableResourceReservation;
-            set => _enableResourceReservation = value;
-        }
-
-        public float ReservationDuration
-        {
-            get => _reservationDuration;
-            set => _reservationDuration = value;
-        }
-
-        public bool AutoReleaseReservations
-        {
-            get => _autoReleaseReservations;
-            set => _autoReleaseReservations = value;
-        }
-
-        public int MaxSimultaneousReservations
-        {
-            get => _maxSimultaneousReservations;
-            set => _maxSimultaneousReservations = value;
-        }
-
-        public Dictionary<string, ResourceReservation> ActiveReservations => new Dictionary<string, ResourceReservation>(_activeReservations);
-        public Dictionary<Vector3Int, List<string>> PositionReservations => new Dictionary<Vector3Int, List<string>>(_positionReservations);
-
-        public Action<string, ResourceReservation> OnResourceReserved { get; set; }
-        public Action<string> OnReservationReleased { get; set; }
-
-        public RefundHandler(ICurrencyManager currencyManager = null, MonoBehaviour tradingManager = null,
-                           IPaymentProcessor paymentProcessor = null, ICostCalculator costCalculator = null)
-        {
-            _currencyManager = currencyManager;
-            _tradingManager = tradingManager;
-            _paymentProcessor = paymentProcessor;
-            _costCalculator = costCalculator;
-        }
-
-        public void Initialize(bool enableRefunds, float refundPercentage, bool enableResourceReservation,
-                             float reservationDuration, bool autoReleaseReservations, int maxSimultaneousReservations)
-        {
-            _enableRefunds = enableRefunds;
-            _refundPercentage = Mathf.Clamp01(refundPercentage);
-            _enableResourceReservation = enableResourceReservation;
-            _reservationDuration = reservationDuration;
-            _autoReleaseReservations = autoReleaseReservations;
-            _maxSimultaneousReservations = maxSimultaneousReservations;
             _isInitialized = true;
 
-            ChimeraLogger.Log("[RefundHandler] Refund handler initialized");
-        }
-
-        public void Shutdown()
-        {
-            _activeReservations.Clear();
-            _positionReservations.Clear();
-            _isInitialized = false;
-
-            ChimeraLogger.Log("[RefundHandler] Refund handler shutdown");
-        }
-
-        public RefundResult ProcessRefund(Vector3Int gridPosition, string reason = "")
-        {
-            var result = new RefundResult();
-
-            if (!_enableRefunds)
+            if (_enableLogging)
             {
-                result.Success = false;
-                result.ErrorMessage = "Refunds are disabled";
-                return result;
-            }
-
-            if (_paymentProcessor == null)
-            {
-                result.Success = false;
-                result.ErrorMessage = "Payment processor not available";
-                return result;
-            }
-
-            try
-            {
-                var placementTransactions = _paymentProcessor.PlacementTransactions;
-                if (!placementTransactions.ContainsKey(gridPosition))
-                {
-                    result.Success = false;
-                    result.ErrorMessage = "No transaction record found for this position";
-                    return result;
-                }
-
-                string transactionId = placementTransactions[gridPosition];
-                var originalTransaction = _paymentProcessor.GetTransactionById(transactionId);
-
-                if (string.IsNullOrEmpty(originalTransaction.TransactionId))
-                {
-                    result.Success = false;
-                    result.ErrorMessage = "Original transaction not found";
-                    return result;
-                }
-
-                // Calculate refund amount
-                float refundAmount = originalTransaction.TotalCost * _refundPercentage;
-
-                // Process refund
-                bool refundProcessed = ProcessCurrencyRefund(refundAmount);
-                if (!refundProcessed)
-                {
-                    result.Success = false;
-                    result.ErrorMessage = "Failed to process currency refund";
-                    return result;
-                }
-
-                // Refund resources (partial)
-                var refundedResources = CalculateResourceRefund(originalTransaction.ResourceCosts);
-                RefundResources(refundedResources);
-
-                // Record refund transaction
-                var refundTransaction = new PaymentTransaction
-                {
-                    TransactionId = System.Guid.NewGuid().ToString(),
-                    Position = gridPosition,
-                    TotalCost = refundAmount,
-                    ResourceCosts = refundedResources,
-                    Timestamp = Time.time,
-                    Type = TransactionType.Refund,
-                    Status = TransactionStatus.Completed,
-                    Description = $"Refund for object at {gridPosition}: {reason}"
-                };
-
-                _paymentProcessor.RecordTransaction(refundTransaction);
-
-                result.Success = true;
-                result.RefundAmount = refundAmount;
-                result.RefundedResources = refundedResources;
-
-                ChimeraLogger.Log($"[RefundHandler] Refund processed: {refundAmount:F2} at {gridPosition}");
-                return result;
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogError($"[RefundHandler] Error processing refund: {ex.Message}");
-                result.Success = false;
-                result.ErrorMessage = $"Refund processing error: {ex.Message}";
-                return result;
+                ChimeraLogger.Log("[RefundHandler] Initialized successfully");
             }
         }
 
-        public List<ResourceCost> CalculateResourceRefund(List<ResourceCost> originalCosts)
+        /// <summary>
+        /// Process a refund request
+        /// </summary>
+        public bool ProcessRefund(string transactionId, float originalAmount, System.DateTime transactionTime)
         {
-            var refundedResources = new List<ResourceCost>();
+            if (!_enableBasicRefunds || !_isInitialized) return false;
 
-            foreach (var originalCost in originalCosts)
+            // Check if within refund window
+            float hoursSinceTransaction = (float)(System.DateTime.Now - transactionTime).TotalHours;
+            if (hoursSinceTransaction > _maxRefundTimeHours)
             {
-                // Refund a percentage of resources (e.g., 60% to account for wear/processing loss)
-                int refundQuantity = Mathf.FloorToInt(originalCost.quantity * 0.6f);
-
-                if (refundQuantity > 0)
+                if (_enableLogging)
                 {
-                    refundedResources.Add(new ResourceCost
-                    {
-                        resourceId = originalCost.resourceId,
-                        quantity = refundQuantity,
-                        isRequired = false // Refunds are not required to succeed
-                    });
+                    ChimeraLogger.Log($"[RefundHandler] Refund expired for transaction {transactionId} ({hoursSinceTransaction:F1} hours old)");
                 }
-            }
-
-            return refundedResources;
-        }
-
-        public ResourceReservationResult CreateReservation(GridPlaceable placeable, Vector3Int gridPosition)
-        {
-            var result = new ResourceReservationResult();
-
-            if (!_enableResourceReservation)
-            {
-                result.Success = false;
-                result.ErrorMessage = "Resource reservation is disabled";
-                return result;
-            }
-
-            // Check reservation limits
-            if (_activeReservations.Count >= _maxSimultaneousReservations)
-            {
-                result.Success = false;
-                result.ErrorMessage = "Maximum concurrent reservations reached";
-                return result;
-            }
-
-            if (_costCalculator == null)
-            {
-                result.Success = false;
-                result.ErrorMessage = "Cost calculator not available";
-                return result;
-            }
-
-            try
-            {
-                // Calculate cost
-                var costBreakdown = _costCalculator.CalculatePlacementCost(placeable, gridPosition);
-
-                // Validate resource availability (done through validation component)
-                // For now, assume resources are available
-
-                // Create reservation
-                string reservationId = System.Guid.NewGuid().ToString();
-                var reservation = new ResourceReservation
-                {
-                    ReservationId = reservationId,
-                    Position = gridPosition,
-                    ReservedResources = costBreakdown.ResourceCosts,
-                    ReservationTime = Time.time,
-                    ExpiryTime = Time.time + _reservationDuration,
-                    IsActive = true,
-                    PlayerId = GetPlayerID()
-                };
-
-                // Reserve resources
-                if (ReserveResources(reservation.ReservedResources))
-                {
-                    _activeReservations[reservationId] = reservation;
-
-                    if (!_positionReservations.ContainsKey(gridPosition))
-                        _positionReservations[gridPosition] = new List<string>();
-                    _positionReservations[gridPosition].Add(reservationId);
-
-                    result.Success = true;
-                    result.ReservationId = reservationId;
-                    result.ExpiryTime = reservation.ExpiryTime;
-
-                    OnResourceReserved?.Invoke(reservationId, reservation);
-
-                    ChimeraLogger.Log($"[RefundHandler] Reservation created: {reservationId} for {placeable.name} at {gridPosition}");
-                    return result;
-                }
-                else
-                {
-                    result.Success = false;
-                    result.ErrorMessage = "Failed to reserve resources";
-                    return result;
-                }
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogError($"[RefundHandler] Error creating reservation: {ex.Message}");
-                result.Success = false;
-                result.ErrorMessage = $"Reservation creation error: {ex.Message}";
-                return result;
-            }
-        }
-
-        public bool ReleaseReservation(string reservationId)
-        {
-            if (!_activeReservations.TryGetValue(reservationId, out var reservation))
-            {
-                ChimeraLogger.LogWarning($"[RefundHandler] Reservation not found: {reservationId}");
+                OnRefundExpired?.Invoke(transactionId);
                 return false;
             }
 
-            try
+            // Calculate refund amount
+            float refundAmount = originalAmount * _refundPercentage;
+
+            // Record the refund
+            var refundRecord = new RefundRecord
             {
-                // Release reserved resources
-                ReleaseReservedResources(reservation.ReservedResources);
+                TransactionId = transactionId,
+                OriginalAmount = originalAmount,
+                RefundAmount = refundAmount,
+                TransactionTime = transactionTime,
+                RefundTime = System.DateTime.Now,
+                Processed = true
+            };
 
-                // Remove from tracking
-                _activeReservations.Remove(reservationId);
+            _pendingRefunds[transactionId] = refundRecord;
+            _totalRefunded += refundAmount;
 
-                if (_positionReservations.TryGetValue(reservation.Position, out var positionReservations))
-                {
-                    positionReservations.Remove(reservationId);
-                    if (positionReservations.Count == 0)
-                    {
-                        _positionReservations.Remove(reservation.Position);
-                    }
-                }
+            OnRefundProcessed?.Invoke(transactionId, refundAmount);
 
-                OnReservationReleased?.Invoke(reservationId);
-
-                ChimeraLogger.Log($"[RefundHandler] Reservation released: {reservationId}");
-                return true;
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log($"[RefundHandler] Processed refund for {transactionId}: {refundAmount:F2} ({_refundPercentage:P0} of {originalAmount:F2})");
             }
-            catch (Exception ex)
+
+            return true;
+        }
+
+        /// <summary>
+        /// Check if transaction can be refunded
+        /// </summary>
+        public bool CanRefund(string transactionId, System.DateTime transactionTime)
+        {
+            if (!_enableBasicRefunds || !_isInitialized) return false;
+
+            // Check if already refunded
+            if (_pendingRefunds.ContainsKey(transactionId))
             {
-                ChimeraLogger.LogError($"[RefundHandler] Error releasing reservation: {ex.Message}");
                 return false;
             }
+
+            // Check time window
+            float hoursSinceTransaction = (float)(System.DateTime.Now - transactionTime).TotalHours;
+            return hoursSinceTransaction <= _maxRefundTimeHours;
         }
 
-        public void ProcessExpiredReservations()
+        /// <summary>
+        /// Get refund amount for transaction
+        /// </summary>
+        public float GetRefundAmount(float originalAmount)
         {
-            if (!_autoReleaseReservations) return;
-
-            var expiredReservations = _activeReservations.Values
-                .Where(r => r.IsActive && Time.time > r.ExpiryTime)
-                .ToList();
-
-            foreach (var reservation in expiredReservations)
-            {
-                ChimeraLogger.Log($"[RefundHandler] Processing expired reservation: {reservation.ReservationId}");
-                ReleaseReservation(reservation.ReservationId);
-            }
+            return originalAmount * _refundPercentage;
         }
 
-        public bool ReserveResources(List<ResourceCost> resources)
+        /// <summary>
+        /// Get refund record
+        /// </summary>
+        public RefundRecord GetRefundRecord(string transactionId)
         {
-            if (_tradingManager == null)
-            {
-                ChimeraLogger.LogWarning("[RefundHandler] Trading manager not available for resource reservation");
-                return true; // Allow if we can't check
-            }
+            return _pendingRefunds.TryGetValue(transactionId, out var record) ? record : null;
+        }
 
-            try
+        /// <summary>
+        /// Get all refund records
+        /// </summary>
+        public List<RefundRecord> GetAllRefundRecords()
+        {
+            return new List<RefundRecord>(_pendingRefunds.Values);
+        }
+
+        /// <summary>
+        /// Get refund statistics
+        /// </summary>
+        public RefundStats GetStats()
+        {
+            int totalRefunds = _pendingRefunds.Count;
+            float averageRefundAmount = totalRefunds > 0 ? _totalRefunded / totalRefunds : 0f;
+
+            return new RefundStats
             {
-                foreach (var resourceCost in resources)
+                TotalRefundsProcessed = totalRefunds,
+                TotalAmountRefunded = _totalRefunded,
+                AverageRefundAmount = averageRefundAmount,
+                RefundPercentage = _refundPercentage,
+                MaxRefundTimeHours = _maxRefundTimeHours,
+                IsRefundsEnabled = _enableBasicRefunds,
+                IsInitialized = _isInitialized
+            };
+        }
+
+        /// <summary>
+        /// Clear old refund records (older than retention period)
+        /// </summary>
+        public void ClearOldRecords(float retentionDays = 30f)
+        {
+            var cutoffTime = System.DateTime.Now.AddDays(-retentionDays);
+            var keysToRemove = new List<string>();
+
+            foreach (var kvp in _pendingRefunds)
+            {
+                if (kvp.Value.RefundTime < cutoffTime)
                 {
-                    if (!resourceCost.isRequired) continue;
-
-                    bool reserved = ReserveResourceFromInventory(resourceCost.resourceId, resourceCost.quantity);
-                    if (!reserved)
-                    {
-                        ChimeraLogger.LogWarning($"[RefundHandler] Failed to reserve resource: {resourceCost.resourceId} x{resourceCost.quantity}");
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogError($"[RefundHandler] Error reserving resources: {ex.Message}");
-                return false;
-            }
-        }
-
-        public void ReleaseReservedResources(List<ResourceCost> resources)
-        {
-            if (_tradingManager == null) return;
-
-            try
-            {
-                foreach (var resourceCost in resources)
-                {
-                    ReleaseReservedResourceFromInventory(resourceCost.resourceId, resourceCost.quantity);
-                }
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogError($"[RefundHandler] Error releasing reserved resources: {ex.Message}");
-            }
-        }
-
-        public void RefundResources(List<ResourceCost> resources)
-        {
-            if (_tradingManager == null) return;
-
-            try
-            {
-                foreach (var resourceCost in resources)
-                {
-                    AddResourceToInventory(resourceCost.resourceId, resourceCost.quantity);
+                    keysToRemove.Add(kvp.Key);
                 }
             }
-            catch (Exception ex)
+
+            foreach (string key in keysToRemove)
             {
-                ChimeraLogger.LogError($"[RefundHandler] Error refunding resources: {ex.Message}");
+                _pendingRefunds.Remove(key);
+            }
+
+            if (_enableLogging && keysToRemove.Count > 0)
+            {
+                ChimeraLogger.Log($"[RefundHandler] Cleared {keysToRemove.Count} old refund records");
             }
         }
 
-        public bool ReserveResourceFromInventory(string resourceId, int quantity)
+        /// <summary>
+        /// Set refund settings
+        /// </summary>
+        public void SetRefundSettings(float refundPercentage, float maxRefundTimeHours)
         {
-            if (_tradingManager == null) return true;
+            _refundPercentage = Mathf.Clamp01(refundPercentage);
+            _maxRefundTimeHours = Mathf.Max(0f, maxRefundTimeHours);
 
-            try
+            if (_enableLogging)
             {
-                // TODO: Replace with proper interface method call when TradingInventoryManager is integrated
-                // For now, return true as resource reservation is not yet implemented
-                ChimeraLogger.Log($"[RefundHandler] Resource reservation requested: {resourceId} x{quantity} - Inventory system not yet integrated");
-                return true; // Allow if we can't check
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogError($"[RefundHandler] Error reserving resource from inventory: {ex.Message}");
-                return false;
+                ChimeraLogger.Log($"[RefundHandler] Updated settings - Refund: {_refundPercentage:P0}, Max Time: {_maxRefundTimeHours:F1} hours");
             }
         }
 
-        public void ReleaseReservedResourceFromInventory(string resourceId, int quantity)
+        /// <summary>
+        /// Reset refund handler
+        /// </summary>
+        public void Reset()
         {
-            if (_tradingManager == null) return;
+            _pendingRefunds.Clear();
+            _totalRefunded = 0f;
 
-            try
+            if (_enableLogging)
             {
-                // TODO: Replace with proper interface method call when TradingInventoryManager is integrated
-                // For now, do nothing as resource reservation release is not yet implemented
-                ChimeraLogger.Log($"[RefundHandler] Resource reservation release requested: {resourceId} x{quantity} - Inventory system not yet integrated");
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogError($"[RefundHandler] Error releasing reserved resource from inventory: {ex.Message}");
+                ChimeraLogger.Log("[RefundHandler] Reset all refund data");
             }
         }
+    }
 
-        public void AddResourceToInventory(string resourceId, int quantity)
-        {
-            if (_tradingManager == null) return;
+    /// <summary>
+    /// Refund record data
+    /// </summary>
+    [System.Serializable]
+    public class RefundRecord
+    {
+        public string TransactionId;
+        public float OriginalAmount;
+        public float RefundAmount;
+        public System.DateTime TransactionTime;
+        public System.DateTime RefundTime;
+        public bool Processed;
+    }
 
-            try
-            {
-                // TODO: Replace with proper interface method call when TradingInventoryManager is integrated
-                // For now, do nothing as resource addition is not yet implemented
-                ChimeraLogger.Log($"[RefundHandler] Resource addition requested: {resourceId} x{quantity} - Inventory system not yet integrated");
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogError($"[RefundHandler] Error adding resource to inventory: {ex.Message}");
-            }
-        }
-
-        public string GetPlayerID()
-        {
-            // Simple player ID generation - in a real system this would come from player management
-            return "Player1";
-        }
-
-        public void Tick(float deltaTime)
-        {
-            if (_autoReleaseReservations)
-            {
-                ProcessExpiredReservations();
-            }
-        }
-
-        public void SetDependencies(ICurrencyManager currencyManager, MonoBehaviour tradingManager,
-                                   IPaymentProcessor paymentProcessor, ICostCalculator costCalculator)
-        {
-            _currencyManager = currencyManager;
-            _tradingManager = tradingManager;
-            _paymentProcessor = paymentProcessor;
-            _costCalculator = costCalculator;
-        }
-
-        private bool ProcessCurrencyRefund(float amount)
-        {
-            if (_currencyManager == null)
-            {
-                ChimeraLogger.LogWarning("[RefundHandler] Currency manager not available for refund");
-                return true; // Allow if we can't check
-            }
-
-            try
-            {
-                // Use proper interface method instead of reflection
-                _currencyManager.AddCurrency(0, amount, "Construction Refund"); // 0 = CurrencyType.Cash
-                return true;
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogError($"[RefundHandler] Error processing currency refund: {ex.Message}");
-                return false;
-            }
-        }
+    /// <summary>
+    /// Refund statistics
+    /// </summary>
+    [System.Serializable]
+    public struct RefundStats
+    {
+        public int TotalRefundsProcessed;
+        public float TotalAmountRefunded;
+        public float AverageRefundAmount;
+        public float RefundPercentage;
+        public float MaxRefundTimeHours;
+        public bool IsRefundsEnabled;
+        public bool IsInitialized;
     }
 }

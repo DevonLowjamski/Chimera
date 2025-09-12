@@ -1,551 +1,292 @@
-using ProjectChimera.Core.Logging;
 using UnityEngine;
-using ProjectChimera.Data.Shared;
-using ProjectChimera.Data.Genetics;
-// using ProjectChimera.Systems.Genetics; // Invalid namespace - genetics in ProjectChimera.Data.Genetics
 using System.Collections.Generic;
-using System.Linq;
-using ProjectChimera.Core.Events;
-using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Data.Shared;
 
 namespace ProjectChimera.Systems.Cultivation
 {
     /// <summary>
-    /// PC013-4a: Plant Growth Service - Handles growth calculations and stage transitions
-    /// Extracted from monolithic PlantManager for Single Responsibility Principle
-    /// Focuses solely on plant growth, stage progression, and growth-related calculations
+    /// BASIC: Simple plant growth service for Project Chimera's cultivation system.
+    /// Focuses on essential plant growth without complex calculators and genetic factors.
     /// </summary>
-    public class PlantGrowthService : object
+    public class PlantGrowthService : MonoBehaviour
     {
-        [Header("Growth Configuration")]
+        [Header("Basic Growth Settings")]
+        [SerializeField] private bool _enableBasicGrowth = true;
+        [SerializeField] private bool _enableLogging = true;
         [SerializeField] private float _baseGrowthRate = 1.0f;
-        [SerializeField] private float _globalGrowthModifier = 1.0f;
-        [SerializeField] private bool _enableGeneticGrowthFactors = true;
-        [SerializeField] private bool _enableEnvironmentalGrowthFactors = true;
-        [SerializeField] private bool _enableDetailedLogging = false;
+        [SerializeField] private float _updateInterval = 1.0f;
 
-        [Header("Growth Timing")]
-        [SerializeField] private float _growthUpdateInterval = 1.0f; // Update every second
-        [SerializeField] private float _stageProgressionThreshold = 0.1f; // Minimum progress needed for stage change
+        // Basic growth tracking
+        private readonly Dictionary<string, PlantGrowthData> _plantGrowthData = new Dictionary<string, PlantGrowthData>();
+        private float _lastUpdateTime = 0f;
+        private bool _isInitialized = false;
 
-        // Dependencies
-        private object _environmentalService;
-        private object _traitExpressionEngine; // stubbed to remove dependency
-        private PlantGrowthCalculator _growthCalculator;
+        /// <summary>
+        /// Events for growth operations
+        /// </summary>
+        public event System.Action<string, PlantGrowthStage> OnGrowthStageChanged;
+        public event System.Action<string, float> OnGrowthProgressUpdated;
 
-        // Growth tracking
-        private float _lastGrowthUpdate = 0f;
-        private Dictionary<string, float> _plantGrowthProgress = new Dictionary<string, float>();
-        private Dictionary<string, PlantGrowthStage> _previousStages = new Dictionary<string, PlantGrowthStage>();
-        private int _growthCalculationsPerformed = 0;
-        private float _totalGrowthTimeProcessed = 0f;
-
-        public bool IsInitialized { get; private set; }
-
-        public float GlobalGrowthModifier
-        {
-            get => _globalGrowthModifier;
-            set => _globalGrowthModifier = Mathf.Max(0f, value);
-        }
-
-        public float BaseGrowthRate
-        {
-            get => _baseGrowthRate;
-            set => _baseGrowthRate = Mathf.Max(0f, value);
-        }
-
-        public PlantGrowthService(object environmentalService = null)
-        {
-            _environmentalService = environmentalService;
-        }
-
+        /// <summary>
+        /// Initialize basic growth service
+        /// </summary>
         public void Initialize()
         {
-            if (IsInitialized)
-            {
-                ChimeraLogger.LogWarning("[PlantGrowthService] Already initialized");
-                return;
-            }
+            if (_isInitialized) return;
 
-            // Initialize growth calculator
-            _growthCalculator = new PlantGrowthCalculator();
+            _isInitialized = true;
+            _lastUpdateTime = Time.time;
 
-            // Initialize trait expression engine if genetics are enabled
-            if (_enableGeneticGrowthFactors) { _traitExpressionEngine = new object(); }
-
-            IsInitialized = true;
-
-            if (_enableDetailedLogging)
+            if (_enableLogging)
             {
                 ChimeraLogger.Log("[PlantGrowthService] Initialized successfully");
             }
         }
 
-        public void Shutdown()
+        /// <summary>
+        /// Update plant growth
+        /// </summary>
+        private void Update()
         {
-            if (!IsInitialized) return;
+            if (!_enableBasicGrowth || !_isInitialized) return;
 
-            _plantGrowthProgress.Clear();
-            _previousStages.Clear();
-            _traitExpressionEngine = null;
-            _growthCalculator = null;
-
-            IsInitialized = false;
-
-            if (_enableDetailedLogging)
+            float currentTime = Time.time;
+            if (currentTime - _lastUpdateTime >= _updateInterval)
             {
-                ChimeraLogger.Log("[PlantGrowthService] Shutdown completed");
+                UpdateAllPlantGrowth(currentTime - _lastUpdateTime);
+                _lastUpdateTime = currentTime;
             }
         }
 
         /// <summary>
-        /// Updates growth for a single plant instance.
+        /// Add plant to growth tracking
         /// </summary>
-        public void UpdatePlantGrowth(PlantInstance plant, float deltaTime)
+        public void AddPlant(string plantId, PlantGrowthStage initialStage = PlantGrowthStage.Seedling)
         {
-            if (!IsInitialized || plant == null || !plant.IsActive)
-                return;
+            if (!_plantGrowthData.ContainsKey(plantId))
+            {
+                _plantGrowthData[plantId] = new PlantGrowthData
+                {
+                    PlantId = plantId,
+                    CurrentStage = initialStage,
+                    GrowthProgress = 0f,
+                    Age = 0f,
+                    LastUpdateTime = Time.time
+                };
 
-            var startTime = Time.realtimeSinceStartup;
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log($"[PlantGrowthService] Added plant {plantId} in {initialStage} stage");
+                }
+            }
+        }
 
-            // Calculate growth rate based on multiple factors
-            float growthRate = CalculateGrowthRate(plant, deltaTime);
+        /// <summary>
+        /// Remove plant from growth tracking
+        /// </summary>
+        public void RemovePlant(string plantId)
+        {
+            if (_plantGrowthData.Remove(plantId))
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log($"[PlantGrowthService] Removed plant {plantId}");
+                }
+            }
+        }
 
-            // Apply growth to the plant
-            ApplyGrowthToPlant(plant, growthRate, deltaTime);
+        /// <summary>
+        /// Update specific plant growth
+        /// </summary>
+        public void UpdatePlantGrowth(string plantId, float deltaTime)
+        {
+            if (!_plantGrowthData.ContainsKey(plantId)) return;
+
+            var data = _plantGrowthData[plantId];
+            var previousStage = data.CurrentStage;
+
+            // Simple growth calculation
+            float growthAmount = _baseGrowthRate * deltaTime * GetStageMultiplier(data.CurrentStage);
+            data.GrowthProgress += growthAmount;
+            data.Age += deltaTime;
 
             // Check for stage progression
-            CheckAndProgressStage(plant);
-
-            // Update tracking data
-            UpdateGrowthTracking(plant, deltaTime);
-
-            // Performance tracking
-            _growthCalculationsPerformed++;
-            _totalGrowthTimeProcessed += Time.realtimeSinceStartup - startTime;
-
-            if (_enableDetailedLogging)
+            if (data.GrowthProgress >= 1.0f)
             {
-                ChimeraLogger.Log($"[PlantGrowthService] Updated growth for plant {plant.PlantID}: Rate={growthRate:F4}, Stage={plant.CurrentGrowthStage}");
-            }
-        }
+                data.GrowthProgress = 0f;
+                data.CurrentStage = GetNextStage(data.CurrentStage);
 
-        /// <summary>
-        /// Updates growth for multiple plants in a batch for performance optimization.
-        /// </summary>
-        public void UpdatePlantGrowthBatch(List<PlantInstance> plants, float deltaTime)
-        {
-            if (!IsInitialized || plants == null || plants.Count == 0)
-                return;
-
-            var startTime = Time.realtimeSinceStartup;
-
-            // Batch process growth calculations for better performance
-            foreach (var plant in plants.Where(p => p != null && p.IsActive))
-            {
-                UpdatePlantGrowth(plant, deltaTime);
-            }
-
-            if (_enableDetailedLogging)
-            {
-                var processingTime = Time.realtimeSinceStartup - startTime;
-                ChimeraLogger.Log($"[PlantGrowthService] Batch updated {plants.Count} plants in {processingTime:F4}s");
-            }
-        }
-
-        /// <summary>
-        /// Calculates the growth rate for a plant based on genetics, environment, and health.
-        /// </summary>
-        public float CalculateGrowthRate(PlantInstance plant, float deltaTime)
-        {
-            if (plant == null) return 0f;
-
-            // Start with base growth rate
-            float growthRate = _baseGrowthRate;
-
-            // Apply global growth modifier
-            growthRate *= _globalGrowthModifier;
-
-            // Apply stage-specific growth rate
-            growthRate *= GetStageGrowthMultiplier(plant.CurrentGrowthStage);
-
-            // Apply health-based modifier
-            growthRate *= CalculateHealthGrowthModifier(plant);
-
-            // Apply environmental factors if enabled
-            if (_enableEnvironmentalGrowthFactors && _environmentalService != null)
-            {
-                growthRate *= CalculateEnvironmentalGrowthModifier(plant);
-            }
-
-            // Apply genetic factors if enabled
-            if (_enableGeneticGrowthFactors)
-            {
-                growthRate *= CalculateGeneticGrowthModifier(plant);
-            }
-
-            return Mathf.Max(0f, growthRate);
-        }
-
-        /// <summary>
-        /// Forces a plant to advance to the next growth stage.
-        /// </summary>
-        public bool ForceStageProgression(PlantInstance plant)
-        {
-            if (!IsInitialized || plant == null) return false;
-
-            var currentStage = (PlantGrowthStage)plant.CurrentGrowthStage;
-            var nextStage = GetNextGrowthStage(currentStage);
-
-            if (nextStage != currentStage)
-            {
-                SetPlantGrowthStage(plant, nextStage);
-
-                if (_enableDetailedLogging)
+                if (data.CurrentStage != previousStage)
                 {
-                    ChimeraLogger.Log($"[PlantGrowthService] Forced stage progression for plant {plant.PlantID}: {currentStage} -> {nextStage}");
-                }
+                    OnGrowthStageChanged?.Invoke(plantId, data.CurrentStage);
 
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Gets the optimal growth conditions for a specific growth stage.
-        /// </summary>
-        public GrowthStageRequirements GetStageRequirements(PlantGrowthStage stage)
-        {
-            return stage switch
-            {
-                PlantGrowthStage.Seed => new GrowthStageRequirements
-                {
-                    OptimalTemperature = 22f,
-                    OptimalHumidity = 65f,
-                    OptimalLightHours = 0f,
-                    MinimumDuration = 1f,
-                    NutrientNeeds = NutrientLevel.Low
-                },
-                PlantGrowthStage.Germination => new GrowthStageRequirements
-                {
-                    OptimalTemperature = 24f,
-                    OptimalHumidity = 70f,
-                    OptimalLightHours = 18f,
-                    MinimumDuration = 3f,
-                    NutrientNeeds = NutrientLevel.Low
-                },
-                PlantGrowthStage.Seedling => new GrowthStageRequirements
-                {
-                    OptimalTemperature = 23f,
-                    OptimalHumidity = 65f,
-                    OptimalLightHours = 18f,
-                    MinimumDuration = 7f,
-                    NutrientNeeds = NutrientLevel.Medium
-                },
-                PlantGrowthStage.Vegetative => new GrowthStageRequirements
-                {
-                    OptimalTemperature = 25f,
-                    OptimalHumidity = 60f,
-                    OptimalLightHours = 18f,
-                    MinimumDuration = 21f,
-                    NutrientNeeds = NutrientLevel.High
-                },
-                PlantGrowthStage.PreFlowering => new GrowthStageRequirements
-                {
-                    OptimalTemperature = 24f,
-                    OptimalHumidity = 55f,
-                    OptimalLightHours = 12f,
-                    MinimumDuration = 7f,
-                    NutrientNeeds = NutrientLevel.High
-                },
-                PlantGrowthStage.Flowering => new GrowthStageRequirements
-                {
-                    OptimalTemperature = 22f,
-                    OptimalHumidity = 50f,
-                    OptimalLightHours = 12f,
-                    MinimumDuration = 49f,
-                    NutrientNeeds = NutrientLevel.Medium
-                },
-                PlantGrowthStage.Ripening => new GrowthStageRequirements
-                {
-                    OptimalTemperature = 20f,
-                    OptimalHumidity = 45f,
-                    OptimalLightHours = 12f,
-                    MinimumDuration = 7f,
-                    NutrientNeeds = NutrientLevel.Low
-                },
-                _ => new GrowthStageRequirements
-                {
-                    OptimalTemperature = 22f,
-                    OptimalHumidity = 55f,
-                    OptimalLightHours = 12f,
-                    MinimumDuration = 1f,
-                    NutrientNeeds = NutrientLevel.Medium
-                }
-            };
-        }
-
-        /// <summary>
-        /// Gets comprehensive growth statistics for monitoring and optimization.
-        /// </summary>
-        public GrowthServiceStatistics GetGrowthStatistics()
-        {
-            return new GrowthServiceStatistics
-            {
-                TotalGrowthCalculations = _growthCalculationsPerformed,
-                AverageCalculationTime = _growthCalculationsPerformed > 0 ? (_totalGrowthTimeProcessed / _growthCalculationsPerformed) * 1000f : 0f,
-                TrackedPlants = _plantGrowthProgress.Count,
-                GlobalGrowthModifier = _globalGrowthModifier,
-                BaseGrowthRate = _baseGrowthRate,
-                GeneticFactorsEnabled = _enableGeneticGrowthFactors,
-                EnvironmentalFactorsEnabled = _enableEnvironmentalGrowthFactors
-            };
-        }
-
-        #region Private Helper Methods
-
-        private void ApplyGrowthToPlant(PlantInstance plant, float growthRate, float deltaTime)
-        {
-            // Apply the calculated growth rate to the plant using its existing update method
-            plant.UpdatePlant(deltaTime, growthRate);
-
-            // Update our tracking
-            var plantId = plant.PlantID;
-            if (!_plantGrowthProgress.ContainsKey(plantId))
-            {
-                _plantGrowthProgress[plantId] = 0f;
-            }
-            _plantGrowthProgress[plantId] += growthRate * deltaTime;
-        }
-
-        private void CheckAndProgressStage(PlantInstance plant)
-        {
-            var currentStage = plant.CurrentGrowthStage;
-            var stageRequirements = GetStageRequirements(currentStage);
-
-            // Check if plant has met the minimum duration and growth requirements for stage progression
-            // Note: Using simplified time check - would need to track stage duration internally
-            if (true) // Placeholder - would implement proper stage duration tracking
-            {
-                var plantId = plant.PlantID;
-                var growthProgress = _plantGrowthProgress.GetValueOrDefault(plantId, 0f);
-
-                if (growthProgress >= _stageProgressionThreshold)
-                {
-                    var nextStage = GetNextGrowthStage(currentStage);
-                    if (nextStage != currentStage)
+                    if (_enableLogging)
                     {
-                        // Use the existing AdvanceGrowthStage method
-                        if (plant.AdvanceGrowthStage())
-                        {
-                            _plantGrowthProgress[plantId] = 0f; // Reset progress for new stage
-                        }
+                        ChimeraLogger.Log($"[PlantGrowthService] Plant {plantId} progressed to {data.CurrentStage}");
+                    }
+                }
+            }
+
+            OnGrowthProgressUpdated?.Invoke(plantId, data.GrowthProgress);
+        }
+
+        /// <summary>
+        /// Get plant growth data
+        /// </summary>
+        public PlantGrowthData GetPlantData(string plantId)
+        {
+            return _plantGrowthData.TryGetValue(plantId, out var data) ? data : null;
+        }
+
+        /// <summary>
+        /// Get plant growth stage
+        /// </summary>
+        public PlantGrowthStage GetPlantStage(string plantId)
+        {
+            var data = GetPlantData(plantId);
+            return data != null ? data.CurrentStage : PlantGrowthStage.Seedling;
+        }
+
+        /// <summary>
+        /// Get plant growth progress (0-1)
+        /// </summary>
+        public float GetPlantProgress(string plantId)
+        {
+            var data = GetPlantData(plantId);
+            return data != null ? data.GrowthProgress : 0f;
+        }
+
+        /// <summary>
+        /// Manually advance plant stage
+        /// </summary>
+        public void AdvancePlantStage(string plantId)
+        {
+            if (_plantGrowthData.ContainsKey(plantId))
+            {
+                var data = _plantGrowthData[plantId];
+                var nextStage = GetNextStage(data.CurrentStage);
+
+                if (nextStage != data.CurrentStage)
+                {
+                    data.CurrentStage = nextStage;
+                    data.GrowthProgress = 0f;
+
+                    OnGrowthStageChanged?.Invoke(plantId, data.CurrentStage);
+
+                    if (_enableLogging)
+                    {
+                        ChimeraLogger.Log($"[PlantGrowthService] Manually advanced {plantId} to {data.CurrentStage}");
                     }
                 }
             }
         }
 
-        private void SetPlantGrowthStage(PlantInstance plant, PlantGrowthStage newStage)
+        /// <summary>
+        /// Get all plant IDs
+        /// </summary>
+        public List<string> GetAllPlantIds()
         {
-            var oldStage = plant.CurrentGrowthStage;
-
-            // Use the existing AdvanceGrowthStage method instead of direct setting
-            if (plant.AdvanceGrowthStage())
-            {
-                // Update tracking
-                _previousStages[plant.PlantID] = oldStage;
-
-                if (_enableDetailedLogging)
-                {
-                    ChimeraLogger.Log($"[PlantGrowthService] Plant {plant.PlantID} progressed from {oldStage} to {plant.CurrentGrowthStage}");
-                }
-            }
-        }
-
-        private void UpdateGrowthTracking(PlantInstance plant, float deltaTime)
-        {
-            // Update any additional tracking data as needed
-            // This could include stage duration tracking, growth rate history, etc.
-        }
-
-        private float GetStageGrowthMultiplier(PlantGrowthStage stage)
-        {
-            return stage switch
-            {
-                PlantGrowthStage.Seed => 0.1f,
-                PlantGrowthStage.Germination => 0.3f,
-                PlantGrowthStage.Seedling => 0.5f,
-                PlantGrowthStage.Vegetative => 1.0f, // Peak growth
-                PlantGrowthStage.PreFlowering => 0.8f,
-                PlantGrowthStage.Flowering => 0.6f,
-                PlantGrowthStage.Ripening => 0.2f,
-                PlantGrowthStage.Harvest => 0f,
-                PlantGrowthStage.Harvestable => 0f,
-                _ => 0.5f
-            };
-        }
-
-        private float CalculateHealthGrowthModifier(PlantInstance plant)
-        {
-            // Healthy plants grow faster
-            float health = plant.CurrentHealth;
-            return Mathf.Lerp(0.1f, 1.2f, health / 100f);
-        }
-
-        private float CalculateEnvironmentalGrowthModifier(PlantInstance plant)
-        {
-            if (_environmentalService == null) return 1f;
-
-            // Get environmental fitness from the environmental service
-            // This would integrate with the existing environmental system
-            return 1f; // Placeholder - would call _environmentalService.GetEnvironmentalFitness(plant)
-        }
-
-        private float CalculateGeneticGrowthModifier(PlantInstance plant)
-        {
-            if (_traitExpressionEngine == null || plant.Genotype == null) return 1f;
-
-            // TODO: The TraitExpressionEngine expects PlantGenotype but PlantInstance.Genotype returns GenotypeDataSO
-            // For now, we'll skip genetic calculations and return a default modifier
-            // This needs to be resolved by either:
-            // 1. Adding a conversion method from GenotypeDataSO to PlantGenotype
-            // 2. Updating TraitExpressionEngine to accept GenotypeDataSO
-            // 3. Using the strain data from plant.GeneticProfile instead
-
-            // Use strain data as a fallback for genetic influence
-            if (plant.GeneticProfile != null)
-            {
-                // Simple genetic modifier based on strain characteristics
-                float strainGrowthModifier = 1f; // TODO: Add GeneticYieldModifier when genetic profile structure is available
-                return Mathf.Clamp(strainGrowthModifier, 0.5f, 2.0f);
-            }
-
-            return 1f;
-        }
-
-        private PlantGrowthStage GetNextGrowthStage(PlantGrowthStage currentStage)
-        {
-            return currentStage switch
-            {
-                PlantGrowthStage.Seed => PlantGrowthStage.Germination,
-                PlantGrowthStage.Germination => PlantGrowthStage.Seedling,
-                PlantGrowthStage.Seedling => PlantGrowthStage.Vegetative,
-                PlantGrowthStage.Vegetative => PlantGrowthStage.PreFlowering,
-                PlantGrowthStage.PreFlowering => PlantGrowthStage.Flowering,
-                PlantGrowthStage.Flowering => PlantGrowthStage.Ripening,
-                PlantGrowthStage.Ripening => PlantGrowthStage.Harvest,
-                PlantGrowthStage.Harvest => PlantGrowthStage.Harvestable,
-                _ => currentStage // No progression available
-            };
+            return new List<string>(_plantGrowthData.Keys);
         }
 
         /// <summary>
-        /// Process plant growth and return growth result data
+        /// Clear all plant data
         /// </summary>
-        public PlantGrowthResult ProcessPlantGrowth(PlantInstance plant, float deltaTime)
+        public void ClearAllPlants()
         {
-            if (!IsInitialized || plant == null)
+            _plantGrowthData.Clear();
+
+            if (_enableLogging)
             {
-                return new PlantGrowthResult { GrowthRate = 0f, StageChanged = false };
+                ChimeraLogger.Log("[PlantGrowthService] Cleared all plant data");
             }
-
-            var initialStage = plant.CurrentGrowthStage;
-            var growthRate = CalculateGrowthRate(plant, deltaTime);
-
-            // Apply growth
-            ApplyGrowthToPlant(plant, growthRate, deltaTime);
-            CheckAndProgressStage(plant);
-
-            var stageChanged = plant.CurrentGrowthStage != initialStage;
-
-            return new PlantGrowthResult
-            {
-                GrowthRate = growthRate,
-                StageChanged = stageChanged,
-                NewStage = plant.CurrentGrowthStage,
-                ProgressPercent = _plantGrowthProgress.GetValueOrDefault(plant.PlantID, 0f)
-            };
         }
 
         /// <summary>
-        /// Calculate what the next stage transition should be
+        /// Get growth service statistics
         /// </summary>
-        public PlantGrowthStage CalculateStageTransition(PlantInstance plant, float deltaTime)
+        public GrowthServiceStats GetStats()
         {
-            if (plant == null) return PlantGrowthStage.Seed;
+            int totalPlants = _plantGrowthData.Count;
+            int seedlings = _plantGrowthData.Count(p => p.Value.CurrentStage == PlantGrowthStage.Seedling);
+            int vegetative = _plantGrowthData.Count(p => p.Value.CurrentStage == PlantGrowthStage.Vegetative);
+            int flowering = _plantGrowthData.Count(p => p.Value.CurrentStage == PlantGrowthStage.Flowering);
+            int mature = _plantGrowthData.Count(p => p.Value.CurrentStage == PlantGrowthStage.Mature);
 
-            var currentStage = plant.CurrentGrowthStage;
-            var stageRequirements = GetStageRequirements(currentStage);
-            var plantId = plant.PlantID;
-            var growthProgress = _plantGrowthProgress.GetValueOrDefault(plantId, 0f);
-
-            // Check if ready for next stage
-            if (growthProgress >= _stageProgressionThreshold)
+            return new GrowthServiceStats
             {
-                return GetNextGrowthStage(currentStage);
-            }
+                TotalPlants = totalPlants,
+                Seedlings = seedlings,
+                Vegetative = vegetative,
+                Flowering = flowering,
+                Mature = mature,
+                IsGrowthEnabled = _enableBasicGrowth
+            };
+        }
 
-            return currentStage;
+        #region Private Methods
+
+        private void UpdateAllPlantGrowth(float deltaTime)
+        {
+            foreach (var plantId in new List<string>(_plantGrowthData.Keys))
+            {
+                UpdatePlantGrowth(plantId, deltaTime);
+            }
+        }
+
+        private float GetStageMultiplier(PlantGrowthStage stage)
+        {
+            // Different stages have different growth rates
+            switch (stage)
+            {
+                case PlantGrowthStage.Seedling: return 0.5f;
+                case PlantGrowthStage.Vegetative: return 1.0f;
+                case PlantGrowthStage.Flowering: return 0.8f;
+                case PlantGrowthStage.Mature: return 0.2f;
+                default: return 1.0f;
+            }
+        }
+
+        private PlantGrowthStage GetNextStage(PlantGrowthStage currentStage)
+        {
+            switch (currentStage)
+            {
+                case PlantGrowthStage.Seedling: return PlantGrowthStage.Vegetative;
+                case PlantGrowthStage.Vegetative: return PlantGrowthStage.Flowering;
+                case PlantGrowthStage.Flowering: return PlantGrowthStage.Mature;
+                case PlantGrowthStage.Mature: return PlantGrowthStage.Mature;
+                default: return currentStage;
+            }
         }
 
         #endregion
     }
 
     /// <summary>
-    /// Result data structure for plant growth processing
+    /// Plant growth data
     /// </summary>
     [System.Serializable]
-    public class PlantGrowthResult
+    public class PlantGrowthData
     {
-        public float GrowthRate;
-        public bool StageChanged;
-        public PlantGrowthStage NewStage;
-        public float ProgressPercent;
+        public string PlantId;
+        public PlantGrowthStage CurrentStage;
+        public float GrowthProgress; // 0-1 within current stage
+        public float Age; // total age in seconds
+        public float LastUpdateTime;
     }
 
     /// <summary>
-    /// Growth stage requirements data structure.
+    /// Growth service statistics
     /// </summary>
     [System.Serializable]
-    public class GrowthStageRequirements
+    public struct GrowthServiceStats
     {
-        public float OptimalTemperature;
-        public float OptimalHumidity;
-        public float OptimalLightHours;
-        public float MinimumDuration; // Days
-        public NutrientLevel NutrientNeeds;
-    }
-
-    /// <summary>
-    /// Nutrient level enumeration.
-    /// </summary>
-    public enum NutrientLevel
-    {
-        None,
-        Low,
-        Medium,
-        High,
-        Maximum
-    }
-
-    /// <summary>
-    /// Growth service statistics structure.
-    /// </summary>
-    [System.Serializable]
-    public class GrowthServiceStatistics
-    {
-        public int TotalGrowthCalculations;
-        public float AverageCalculationTime; // milliseconds
-        public int TrackedPlants;
-        public float GlobalGrowthModifier;
-        public float BaseGrowthRate;
-        public bool GeneticFactorsEnabled;
-        public bool EnvironmentalFactorsEnabled;
-
-        public override string ToString()
-        {
-            return $"Growth Stats: {TotalGrowthCalculations} calcs, {AverageCalculationTime:F2}ms avg, {TrackedPlants} plants";
-        }
+        public int TotalPlants;
+        public int Seedlings;
+        public int Vegetative;
+        public int Flowering;
+        public int Mature;
+        public bool IsGrowthEnabled;
     }
 }

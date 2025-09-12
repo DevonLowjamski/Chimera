@@ -1,6 +1,7 @@
 using UnityEngine;
 using ProjectChimera.Shared;
 using ProjectChimera.Data.Shared;
+using ProjectChimera.Data.Cultivation.Plant;
 using System;
 
 namespace ProjectChimera.Data.Cultivation

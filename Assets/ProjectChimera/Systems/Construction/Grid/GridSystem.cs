@@ -1,0 +1,324 @@
+using ProjectChimera.Core.Logging;
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
+
+namespace ProjectChimera.Systems.Construction.Grid
+{
+    /// <summary>
+    /// Central grid system for snap-to-grid construction placement in Project Chimera.
+    /// Provides grid-based spatial organization, snap-to-grid functionality, and visual grid rendering.
+    /// Designed to replace the complex legacy construction system with a simple, robust grid-based approach.
+    ///
+    /// REFACTORED: Previously 870-line monolithic file with 4 classes/enums
+    /// Now: Modular orchestrator coordinating focused subsystems
+    /// </summary>
+    public class GridSystem : MonoBehaviour, ITickable
+    {
+        [Header("Grid Configuration")]
+        [SerializeField] private Material _gridMaterial;
+
+        // Modular subsystems
+        private GridSettings _settings;
+        private GridCalculations _calculations;
+        private GridVisualization _visualization;
+        private GridPlacement _placement;
+
+        // Grid update state
+        private bool _gridNeedsUpdate = true;
+
+        // Events
+        public System.Action<Vector3, Vector3Int> OnGridPositionChanged;
+
+        #region Initialization
+
+        private void Awake()
+        {
+            InitializeGrid();
+        }
+
+        private void Start()
+        {
+            UpdateGridVisibility();
+
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+        }
+
+        /// <summary>
+        /// Initialize the grid system and all subsystems
+        /// </summary>
+        private void InitializeGrid()
+        {
+            // Initialize subsystems
+            _settings = new GridSettings();
+            _calculations = new GridCalculations();
+            _visualization = new GridVisualization();
+            _placement = new GridPlacement();
+
+            // Initialize settings first
+            _settings.Initialize();
+
+            // Initialize other systems with settings
+            _calculations.Initialize(
+                _settings.GridOrigin,
+                _settings.GridSettings.GridSize,
+                _settings.GridSettings.SnapToGrid
+            );
+
+            _visualization.Initialize(
+                _settings.GridOrigin,
+                _settings.GridDimensions,
+                _gridMaterial
+            );
+
+            _placement.Initialize(
+                _settings.GridOrigin,
+                _settings.GridSettings.GridSize
+            );
+
+            // Wire up events
+            WireEvents();
+
+            ChimeraLogger.LogVerbose("Grid system initialized with modular subsystems");
+        }
+
+        /// <summary>
+        /// Wire up events between subsystems
+        /// </summary>
+        private void WireEvents()
+        {
+            _settings.OnSettingsChanged += OnSettingsChanged;
+            _visualization.OnGridVisibilityChanged += OnGridVisibilityChanged;
+            _placement.OnObjectPlaced += OnObjectPlacedHandler;
+            _placement.OnObjectRemoved += OnObjectRemovedHandler;
+        }
+
+        #endregion
+
+        #region ITickable Implementation
+
+        public int Priority => TickPriority.ConstructionSystem;
+        public bool Enabled => enabled && _calculations != null;
+
+        public void Tick(float deltaTime)
+        {
+            if (_gridNeedsUpdate)
+            {
+                UpdateGrid();
+                _gridNeedsUpdate = false;
+            }
+        }
+
+        #endregion
+
+        #region Grid Operations
+
+        /// <summary>
+        /// Update the grid system
+        /// </summary>
+        private void UpdateGrid()
+        {
+            // Update calculations with current settings
+            _calculations.UpdateParameters(
+                _settings.GridOrigin,
+                _settings.GridSettings.GridSize,
+                _settings.GridSettings.SnapToGrid
+            );
+
+            // Update visualization
+            _visualization.UpdateGridDimensions(_settings.GridDimensions);
+            _visualization.UpdateGridColor(_settings.GridSettings.GridColor);
+        }
+
+        /// <summary>
+        /// Convert world position to grid coordinates
+        /// </summary>
+        public Vector3Int WorldToGridPosition(Vector3 worldPosition)
+        {
+            return _calculations.WorldToGridPosition(worldPosition);
+        }
+
+        /// <summary>
+        /// Convert grid coordinates to world position
+        /// </summary>
+        public Vector3 GridToWorldPosition(Vector3Int gridPosition)
+        {
+            return _calculations.GridToWorldPosition(gridPosition);
+        }
+
+        /// <summary>
+        /// Snap a world position to the nearest grid point
+        /// </summary>
+        public Vector3 SnapToGrid(Vector3 worldPosition)
+        {
+            return _calculations.SnapToGrid(worldPosition);
+        }
+
+        #endregion
+
+        #region Object Placement
+
+        /// <summary>
+        /// Place an object at the specified grid position
+        /// </summary>
+        public bool PlaceObject(GridPlaceable placeable, Vector3Int gridPosition)
+        {
+            return _placement.PlaceObject(placeable, gridPosition);
+        }
+
+        /// <summary>
+        /// Remove an object from the grid
+        /// </summary>
+        public bool RemoveObject(GridPlaceable placeable)
+        {
+            return _placement.RemoveObject(placeable);
+        }
+
+        /// <summary>
+        /// Check if a position is occupied
+        /// </summary>
+        public bool IsPositionOccupied(Vector3Int gridPosition)
+        {
+            return _placement.IsPositionOccupied(gridPosition);
+        }
+
+        /// <summary>
+        /// Find the nearest valid placement position
+        /// </summary>
+        public Vector3Int FindNearestValidPosition(Vector3 worldPosition)
+        {
+            return _placement.FindNearestValidPosition(worldPosition);
+        }
+
+        /// <summary>
+        /// Get objects near a position
+        /// </summary>
+        public List<GridPlaceable> GetObjectsNearPosition(Vector3 worldPosition, float radius)
+        {
+            return _placement.GetObjectsNearPosition(worldPosition, radius);
+        }
+
+        /// <summary>
+        /// Clear all objects from the grid
+        /// </summary>
+        public void ClearAllObjects()
+        {
+            _placement.ClearAllObjects();
+        }
+
+        #endregion
+
+        #region Visualization
+
+        /// <summary>
+        /// Update grid visibility
+        /// </summary>
+        public void UpdateGridVisibility()
+        {
+            _visualization.UpdateGridVisibility();
+        }
+
+        /// <summary>
+        /// Set visible height level
+        /// </summary>
+        public void SetVisibleHeightLevel(int level)
+        {
+            _visualization.SetVisibleHeightLevel(level);
+        }
+
+        #endregion
+
+        #region Settings
+
+        /// <summary>
+        /// Save current settings
+        /// </summary>
+        public void SaveSettings()
+        {
+            _settings.SaveSettings();
+        }
+
+        /// <summary>
+        /// Reset settings to defaults
+        /// </summary>
+        public void ResetToDefaults()
+        {
+            _settings.ResetToDefaults();
+        }
+
+        /// <summary>
+        /// Update grid snap settings
+        /// </summary>
+        public void UpdateGridSnapSettings(GridSnapSettings settings)
+        {
+            _settings.UpdateGridSnapSettings(settings);
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        private void OnSettingsChanged()
+        {
+            _gridNeedsUpdate = true;
+            ChimeraLogger.LogVerbose("Grid settings changed, marking for update");
+        }
+
+        private void OnGridVisibilityChanged(bool visible)
+        {
+            ChimeraLogger.LogVerbose($"Grid visibility changed: {visible}");
+        }
+
+        private void OnObjectPlacedHandler(GridPlaceable placeable)
+        {
+            // Forward placement events
+            if (placeable != null)
+            {
+                Vector3 worldPos = GridToWorldPosition(placeable.GridPosition);
+                OnGridPositionChanged?.Invoke(worldPos, placeable.GridPosition);
+            }
+        }
+
+        private void OnObjectRemovedHandler(GridPlaceable placeable)
+        {
+            ChimeraLogger.LogVerbose("Object removed from grid system");
+        }
+
+        #endregion
+
+        #region Properties
+
+        public GridSnapSettings GridSettings => _settings.GridSettings;
+        public Vector3 GridOrigin => _settings.GridOrigin;
+        public Vector3 GridDimensions => _settings.GridDimensions;
+        public float GridSize => _settings.GridSettings.GridSize;
+        public bool SnapEnabled => _settings.GridSettings.SnapToGrid;
+        public bool GridVisible => _settings.GridSettings.ShowGrid;
+        public int PlacedObjectCount => _placement.PlacedObjectCount;
+        public Dictionary<Vector3Int, GridCell> GridCells => _placement.GridCells;
+        public int MaxHeightLevels => _settings.MaxHeightLevels;
+        public float HeightLevelSpacing => _settings.HeightLevelSpacing;
+        public int CurrentVisibleHeightLevel => _visualization.CurrentVisibleHeightLevel;
+
+        #endregion
+
+        #region Cleanup
+
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+
+            // Cleanup subsystems
+            _visualization?.Cleanup();
+            _placement?.ClearAllObjects();
+        }
+
+        #endregion
+    }
+}

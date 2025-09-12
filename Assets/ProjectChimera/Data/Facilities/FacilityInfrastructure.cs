@@ -1,0 +1,225 @@
+using System;
+using UnityEngine;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.Facilities
+{
+    /// <summary>
+    /// Infrastructure data for facilities
+    /// Manages electrical, plumbing, and structural systems
+    /// </summary>
+    [System.Serializable]
+    public class FacilityInfrastructure
+    {
+        [Header("Electrical System")]
+        public ElectricalSystem ElectricalSystem;
+        public float TotalPowerCapacity;
+        public float CurrentPowerUsage;
+        public bool HasBackupGenerator;
+
+        [Header("Plumbing System")]
+        public PlumbingSystem PlumbingSystem;
+        public float TotalWaterCapacity;
+        public float CurrentWaterUsage;
+
+        [Header("Structural Elements")]
+        public StructuralSystem StructuralSystem;
+        public float StructuralIntegrity;
+        public bool HasInsulation;
+
+        [Header("Environmental Systems")]
+        public EnvironmentalSystem EnvironmentalSystem;
+        public float TemperatureRating;
+        public float HumidityRating;
+
+        /// <summary>
+        /// Check if infrastructure is operational
+        /// </summary>
+        public bool IsOperational()
+        {
+            return ElectricalSystem.IsOperational &&
+                   PlumbingSystem.IsOperational &&
+                   StructuralSystem.IsOperational &&
+                   EnvironmentalSystem.IsOperational;
+        }
+
+        /// <summary>
+        /// Get infrastructure efficiency rating
+        /// </summary>
+        public float GetEfficiencyRating()
+        {
+            float electricalEff = ElectricalSystem.Efficiency;
+            float plumbingEff = PlumbingSystem.Efficiency;
+            float structuralEff = StructuralSystem.IntegrityRating;
+            float environmentalEff = EnvironmentalSystem.Efficiency;
+
+            return (electricalEff + plumbingEff + structuralEff + environmentalEff) / 4f;
+        }
+    }
+
+    /// <summary>
+    /// Electrical system infrastructure
+    /// </summary>
+    [System.Serializable]
+    public class ElectricalSystem
+    {
+        public float VoltageRating;
+        public float AmperageRating;
+        public float Efficiency;
+        public bool HasGrounding;
+        public bool HasSurgeProtection;
+        public int CircuitBreakerCount;
+        public List<ElectricalCircuit> Circuits = new List<ElectricalCircuit>();
+
+        public bool IsOperational => Efficiency > 0.8f && HasGrounding;
+    }
+
+    /// <summary>
+    /// Individual electrical circuit
+    /// </summary>
+    [System.Serializable]
+    public class ElectricalCircuit
+    {
+        public string CircuitId;
+        public string Description;
+        public float MaxLoad;
+        public float CurrentLoad;
+        public bool IsActive;
+        public CircuitType Type;
+
+        public enum CircuitType
+        {
+            Lighting,
+            Equipment,
+            HVAC,
+            Outlet,
+            Emergency
+        }
+    }
+
+    /// <summary>
+    /// Plumbing system infrastructure
+    /// </summary>
+    [System.Serializable]
+    public class PlumbingSystem
+    {
+        public float PipeDiameter;
+        public float WaterPressure;
+        public float Efficiency;
+        public bool HasBackflowPrevention;
+        public bool HasFiltration;
+        public int FixtureCount;
+        public List<PlumbingFixture> Fixtures = new List<PlumbingFixture>();
+
+        public bool IsOperational => Efficiency > 0.8f && WaterPressure > 20f;
+    }
+
+    /// <summary>
+    /// Individual plumbing fixture
+    /// </summary>
+    [System.Serializable]
+    public class PlumbingFixture
+    {
+        public string FixtureId;
+        public string Description;
+        public FixtureType Type;
+        public float FlowRate;
+        public bool IsActive;
+
+        public enum FixtureType
+        {
+            Sink,
+            Toilet,
+            Shower,
+            Irrigation,
+            Drain,
+            Pump
+        }
+    }
+
+    /// <summary>
+    /// Structural system infrastructure
+    /// </summary>
+    [System.Serializable]
+    public class StructuralSystem
+    {
+        public float LoadBearingCapacity;
+        public float IntegrityRating;
+        public bool HasReinforcement;
+        public bool HasMoistureProtection;
+        public StructuralMaterialType MaterialType;
+        public List<StructuralElement> Elements = new List<StructuralElement>();
+
+        public bool IsOperational => IntegrityRating > 0.8f;
+
+        public enum StructuralMaterialType
+        {
+            Wood,
+            Metal,
+            Concrete,
+            Composite
+        }
+    }
+
+    /// <summary>
+    /// Individual structural element
+    /// </summary>
+    [System.Serializable]
+    public class StructuralElement
+    {
+        public string ElementId;
+        public string Description;
+        public ElementType Type;
+        public float StrengthRating;
+        public bool IsLoadBearing;
+
+        public enum ElementType
+        {
+            Wall,
+            Floor,
+            Roof,
+            Beam,
+            Column,
+            Foundation
+        }
+    }
+
+    /// <summary>
+    /// Environmental control system
+    /// </summary>
+    [System.Serializable]
+    public class EnvironmentalSystem
+    {
+        public float Efficiency;
+        public bool HasHVAC;
+        public bool HasVentilation;
+        public bool HasAirFiltration;
+        public float AirExchangeRate;
+        public List<EnvironmentalControl> Controls = new List<EnvironmentalControl>();
+
+        public bool IsOperational => Efficiency > 0.8f && HasHVAC;
+    }
+
+    /// <summary>
+    /// Individual environmental control
+    /// </summary>
+    [System.Serializable]
+    public class EnvironmentalControl
+    {
+        public string ControlId;
+        public string Description;
+        public ControlType Type;
+        public float Capacity;
+        public bool IsActive;
+
+        public enum ControlType
+        {
+            Heater,
+            Cooler,
+            Humidifier,
+            Dehumidifier,
+            Fan,
+            Filter
+        }
+    }
+}

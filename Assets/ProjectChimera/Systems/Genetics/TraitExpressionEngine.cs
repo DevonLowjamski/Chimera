@@ -1,518 +1,192 @@
-using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
-using ProjectChimera.Data.Genetics;
-using ProjectChimera.Data.Shared;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Genetics
 {
     /// <summary>
-    /// Phase 2.2.1: Concrete Trait Expression Engine Implementation
-    /// Implements sophisticated GxE interactions with research-calibrated response curves
-    /// Supports both CPU and GPU compute shader acceleration for performance
+    /// BASIC: Simple trait expression engine for Project Chimera's genetics system.
+    /// Focuses on essential trait calculations without complex GxE interactions and compute shaders.
     /// </summary>
-    public class TraitExpressionEngine : MonoBehaviour, ITraitExpressionEngine
+    public class TraitExpressionEngine : MonoBehaviour
     {
-        [Header("Engine Configuration")]
-        [SerializeField] private TraitExpressionConfig _config;
-        [SerializeField] private ComputeShader _traitExpressionCompute;
-        [SerializeField] private bool _enableDebugLogging = false;
+        [Header("Basic Expression Settings")]
+        [SerializeField] private bool _enableBasicExpression = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _baseThcMultiplier = 1.0f;
+        [SerializeField] private float _baseYieldMultiplier = 1.0f;
 
-        [Header("GxE Profiles")]
-        [SerializeField] private List<GxE_ProfileSO> _gxeProfiles = new List<GxE_ProfileSO>();
+        // Basic trait tracking
+        private readonly Dictionary<string, TraitResult> _expressionCache = new Dictionary<string, TraitResult>();
+        private bool _isInitialized = false;
 
-        [Header("Response Curves Database")]
-        [SerializeField] private List<EnvironmentalResponseCurve> _responseCurves = new List<EnvironmentalResponseCurve>();
+        /// <summary>
+        /// Events for trait expression
+        /// </summary>
+        public event System.Action<string, TraitResult> OnTraitEvaluated;
 
-        // Performance optimization
-        private Dictionary<string, TraitExpressionResult> _expressionCache;
-        private Dictionary<TraitType, Dictionary<EnvironmentalFactorType, EnvironmentalResponseCurve>> _responseCurveCache;
-
-        // Compute shader integration
-        private ComputeBuffer _genotypeBuffer;
-        private ComputeBuffer _environmentBuffer;
-        private ComputeBuffer _resultBuffer;
-        private int _computeKernel;
-
-        public bool IsInitialized { get; private set; }
-        public bool UseComputeShader { get; set; } = true;
-
-        private void Awake()
+        /// <summary>
+        /// Initialize basic trait expression engine
+        /// </summary>
+        public void Initialize()
         {
-            Initialize(_config ?? new TraitExpressionConfig());
-        }
+            if (_isInitialized) return;
 
-        public void Initialize(TraitExpressionConfig config)
-        {
-            _config = config;
+            _isInitialized = true;
 
-            // Initialize caching system
-            if (_config.EnableCaching)
+            if (_enableLogging)
             {
-                _expressionCache = new Dictionary<string, TraitExpressionResult>();
-                _responseCurveCache = new Dictionary<TraitType, Dictionary<EnvironmentalFactorType, EnvironmentalResponseCurve>>();
-            }
-
-            // Initialize compute shader if enabled and available
-            if (_config.EnableComputeShader && _traitExpressionCompute != null)
-            {
-                InitializeComputeShader();
-            }
-
-            // Build response curve cache
-            BuildResponseCurveCache();
-
-            IsInitialized = true;
-
-            if (_enableDebugLogging)
-            {
-                ChimeraLogger.Log("[TraitExpressionEngine] Initialized with compute shader: " + UseComputeShader);
+                ChimeraLogger.Log("[TraitExpressionEngine] Initialized successfully");
             }
         }
 
-        public TraitExpressionResult Evaluate(PlantGenotype genotype, EnvironmentSnapshot environment)
+        /// <summary>
+        /// Evaluate basic traits for a strain
+        /// </summary>
+        public TraitResult EvaluateTraits(string strainId, float baseThc, float baseYield, float environmentFactor = 1.0f)
         {
-            if (!IsInitialized)
-            {
-                ChimeraLogger.LogError("[TraitExpressionEngine] Engine not initialized!");
-                return new TraitExpressionResult();
-            }
+            if (!_enableBasicExpression || !_isInitialized) return new TraitResult();
 
             // Check cache first
-            string cacheKey = GenerateCacheKey(genotype.GenotypeID, environment);
-            if (_config.EnableCaching && _expressionCache.ContainsKey(cacheKey))
+            string cacheKey = $"{strainId}_{baseThc:F2}_{baseYield:F2}_{environmentFactor:F2}";
+            if (_expressionCache.TryGetValue(cacheKey, out var cachedResult))
             {
-                return _expressionCache[cacheKey];
+                return cachedResult;
             }
 
-            TraitExpressionResult result;
+            // Simple trait calculation
+            float finalThc = baseThc * _baseThcMultiplier * environmentFactor;
+            float finalYield = baseYield * _baseYieldMultiplier * environmentFactor;
 
-            // Use compute shader for performance if available
-            if (UseComputeShader && _traitExpressionCompute != null)
+            // Add some genetic variation (±10%)
+            float thcVariation = Random.Range(0.9f, 1.1f);
+            float yieldVariation = Random.Range(0.9f, 1.1f);
+
+            finalThc *= thcVariation;
+            finalYield *= yieldVariation;
+
+            var result = new TraitResult
             {
-                result = EvaluateWithComputeShader(genotype, environment);
-            }
-            else
-            {
-                result = EvaluateWithCPU(genotype, environment);
-            }
+                StrainId = strainId,
+                FinalThc = Mathf.Clamp(finalThc, 0f, 35f), // Cap at 35%
+                FinalYield = Mathf.Max(finalYield, 0f),
+                EnvironmentFactor = environmentFactor,
+                CalculatedTime = System.DateTime.Now
+            };
 
             // Cache result
-            if (_config.EnableCaching)
+            _expressionCache[cacheKey] = result;
+            OnTraitEvaluated?.Invoke(strainId, result);
+
+            if (_enableLogging)
             {
-                _expressionCache[cacheKey] = result;
+                ChimeraLogger.Log($"[TraitExpressionEngine] Evaluated traits for {strainId}: THC={result.FinalThc:F1}%, Yield={result.FinalYield:F1}");
             }
 
             return result;
         }
 
-        public TraitExpressionResult Evaluate(GenotypeDataSO genotypeData, EnvironmentSnapshot environment)
+        /// <summary>
+        /// Evaluate traits for a genetic data object
+        /// </summary>
+        public TraitResult EvaluateTraits(GeneticData geneticData, float environmentFactor = 1.0f)
         {
-            // Convert GenotypeDataSO to PlantGenotype for unified processing
-            var plantGenotype = ConvertToPlantGenotype(genotypeData);
-            return Evaluate(plantGenotype, environment);
-        }
+            if (geneticData == null) return new TraitResult();
 
-        public float EvaluateSpecificTrait(PlantGenotype genotype, EnvironmentSnapshot environment, TraitType trait)
-        {
-            var fullResult = Evaluate(genotype, environment);
-            return fullResult.GetTraitValue(trait);
-        }
-
-        public EnvironmentalResponseCurve GetResponseCurve(TraitType trait, EnvironmentalFactorType environmentalFactor)
-        {
-            if (_responseCurveCache.ContainsKey(trait) && _responseCurveCache[trait].ContainsKey(environmentalFactor))
-            {
-                return _responseCurveCache[trait][environmentalFactor];
-            }
-
-            return GetDefaultResponseCurve(trait, environmentalFactor);
-        }
-
-        public float CalculateEnvironmentalStress(EnvironmentSnapshot environment, OptimalEnvironmentalRanges optimalRanges)
-        {
-            float totalStress = 0f;
-            int factorCount = 0;
-
-            // Temperature stress
-            float tempStress = CalculateFactorStress(environment.Temperature, optimalRanges.TemperatureRange);
-            totalStress += tempStress;
-            factorCount++;
-
-            // Humidity stress
-            float humidityStress = CalculateFactorStress(environment.Humidity, optimalRanges.HumidityRange);
-            totalStress += humidityStress;
-            factorCount++;
-
-            // Light stress
-            float lightStress = CalculateFactorStress(environment.LightIntensity, optimalRanges.LightIntensityRange);
-            totalStress += lightStress;
-            factorCount++;
-
-            // CO2 stress
-            float co2Stress = CalculateFactorStress(environment.CO2Level, optimalRanges.CO2Range);
-            totalStress += co2Stress;
-            factorCount++;
-
-            // VPD stress
-            float vpdStress = CalculateFactorStress(environment.VPD, optimalRanges.VPDRange);
-            totalStress += vpdStress;
-            factorCount++;
-
-            return 1f - (totalStress / factorCount); // Return stress-free multiplier (1 = no stress)
-        }
-
-        public float ApplyGxEModification(float baseExpression, EnvironmentSnapshot environment, GxE_ProfileSO gxeProfile)
-        {
-            if (gxeProfile == null) return baseExpression;
-
-            float modifiedExpression = baseExpression;
-
-            // Apply each response curve in the profile
-            foreach (var responseCurve in gxeProfile.ResponseCurves)
-            {
-                float environmentalValue = GetEnvironmentalValue(environment, responseCurve.EnvironmentalFactor);
-                float modifier = responseCurve.ResponseCurve.Evaluate(environmentalValue);
-
-                // Apply modification based on interaction type
-                switch (gxeProfile.InteractionType)
-                {
-                    case GxEInteractionType.Multiplicative:
-                        modifiedExpression *= modifier;
-                        break;
-                    case GxEInteractionType.Additive:
-                        modifiedExpression += (modifier - 1f) * baseExpression;
-                        break;
-                    case GxEInteractionType.Threshold:
-                        if (modifier > 0.5f)
-                            modifiedExpression *= modifier;
-                        break;
-                }
-            }
-
-            // Apply genetic sensitivity
-            float sensitivityModifier = Mathf.Lerp(1f, modifiedExpression / baseExpression, gxeProfile.GeneticSensitivity);
-            modifiedExpression = baseExpression * sensitivityModifier;
-
-            // Apply phenotypic plasticity
-            float plasticityEffect = (modifiedExpression - baseExpression) * gxeProfile.PhenotypicPlasticity;
-            modifiedExpression = baseExpression + plasticityEffect;
-
-            return Mathf.Clamp01(modifiedExpression);
+            return EvaluateTraits(geneticData.StrainId, geneticData.ThcContent, geneticData.Yield, environmentFactor);
         }
 
         /// <summary>
-        /// CPU-based trait expression evaluation
+        /// Get cached trait result
         /// </summary>
-        private TraitExpressionResult EvaluateWithCPU(PlantGenotype genotype, EnvironmentSnapshot environment)
+        public TraitResult GetCachedResult(string cacheKey)
         {
-            var result = new TraitExpressionResult
-            {
-                GenotypeID = genotype.GenotypeID,
-                PlantId = genotype.GenotypeID,
-                CalculationTime = System.DateTime.Now
-            };
-
-            // Get optimal ranges for this genotype
-            var optimalRanges = GetOptimalRanges(genotype);
-
-            // Calculate environmental stress
-            float environmentalStress = 1f - CalculateEnvironmentalStress(environment, optimalRanges);
-            result.EnvironmentalStress = environmentalStress;
-
-            // Evaluate each trait
-            var traitsToEvaluate = GetTraitsToEvaluate();
-
-            foreach (var trait in traitsToEvaluate)
-            {
-                float baseExpression = GetBaseGeneticExpression(genotype, trait);
-                float environmentalModifier = CalculateEnvironmentalModifier(trait, environment, optimalRanges);
-                float gxeModifier = CalculateGxEModifier(trait, baseExpression, environment);
-
-                // Combine all factors
-                float finalExpression = baseExpression * environmentalModifier * gxeModifier;
-
-                // Apply stress effects
-                if (_config.EnableStressResponse && environmentalStress > 0.1f)
-                {
-                    finalExpression *= (1f - environmentalStress * 0.5f); // Stress reduces expression
-                }
-
-                // Apply mutation effects if enabled
-                if (_config.EnableMutationEffects && genotype.Mutations.Count > 0)
-                {
-                    finalExpression *= CalculateMutationModifier(genotype, trait);
-                }
-
-                result.SetTraitValue(trait, Mathf.Clamp01(finalExpression));
-            }
-
-            // Calculate overall fitness
-            result.OverallFitness = CalculateOverallFitness(result);
-
-            return result;
+            return _expressionCache.TryGetValue(cacheKey, out var result) ? result : null;
         }
 
         /// <summary>
-        /// GPU compute shader-based evaluation for performance
+        /// Clear expression cache
         /// </summary>
-        private TraitExpressionResult EvaluateWithComputeShader(PlantGenotype genotype, EnvironmentSnapshot environment)
+        public void ClearCache()
         {
-            // For now, fall back to CPU implementation
-            // In a full implementation, this would use the compute shader
-            return EvaluateWithCPU(genotype, environment);
+            _expressionCache.Clear();
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("[TraitExpressionEngine] Expression cache cleared");
+            }
         }
 
         /// <summary>
-        /// Convert GenotypeDataSO to PlantGenotype for unified processing
-        /// Phase 2.2.2: Addresses genotype type normalization
+        /// Get cache statistics
         /// </summary>
-        private PlantGenotype ConvertToPlantGenotype(GenotypeDataSO genotypeData)
+        public CacheStats GetCacheStats()
         {
-            var plantGenotype = new PlantGenotype();
-
-            // Map basic properties
-            plantGenotype.GenotypeID = genotypeData.name;
-            plantGenotype.StrainOrigin = genotypeData.ParentStrain;
-            plantGenotype.Generation = genotypeData.Generation;
-            plantGenotype.IsFounder = genotypeData.Generation == 1;
-            plantGenotype.CreationDate = System.DateTime.Now;
-            plantGenotype.OverallFitness = genotypeData.OverallFitness;
-
-            // Convert gene pairs to allele couples
-            foreach (var genePair in genotypeData.GenePairs)
+            return new CacheStats
             {
-                var alleleCouple = new ProjectChimera.Data.Genetics.AlleleCouple(genePair.Allele1?.name ?? "unknown", genePair.Allele2?.name ?? "unknown");
-
-                plantGenotype.Genotype[genePair.Gene.name] = alleleCouple;
-            }
-
-            // Convert mutations
-            plantGenotype.Mutations = genotypeData.MutationHistory.Select(m => (object)new ProjectChimera.Data.Genetics.MutationRecord
-            {
-                MutationId = System.Guid.NewGuid().ToString(),
-                AffectedGene = m.Gene?.name ?? "Unknown",
-                MutationType = "PointMutation", // Default since MutationEvent doesn't have MutationType
-                EffectMagnitude = 0f, // Default since MutationEvent doesn't have Effect
-                OccurrenceDate = System.DateTime.Now,
-                IsBeneficial = false
-            }).ToList();
-
-            return plantGenotype;
-        }
-
-        // Helper methods for trait evaluation
-        private OptimalEnvironmentalRanges GetOptimalRanges(PlantGenotype genotype)
-        {
-            // In a full implementation, this would be based on the specific genotype
-            // For now, return cannabis defaults
-            return OptimalEnvironmentalRanges.GetDefaultCannabis();
-        }
-
-        private List<TraitType> GetTraitsToEvaluate()
-        {
-            return new List<TraitType>
-            {
-                TraitType.PlantHeight,
-                TraitType.Yield,
-                TraitType.THCContent,
-                TraitType.CBDContent,
-                TraitType.TerpeneProduction,
-                TraitType.FloweringTime,
-                TraitType.StressResistance,
-                TraitType.GrowthRate
+                CachedResults = _expressionCache.Count,
+                IsCacheEnabled = true,
+                IsInitialized = _isInitialized
             };
         }
 
-        private float GetBaseGeneticExpression(PlantGenotype genotype, TraitType trait)
+        /// <summary>
+        /// Set expression enabled state
+        /// </summary>
+        public void SetExpressionEnabled(bool enabled)
         {
-            // Simplified genetic expression calculation
-            // In a full implementation, this would involve complex allele interaction calculations
-            return Random.Range(0.3f, 1.0f); // Placeholder
-        }
+            _enableBasicExpression = enabled;
 
-        private float CalculateEnvironmentalModifier(TraitType trait, EnvironmentSnapshot environment, OptimalEnvironmentalRanges optimalRanges)
-        {
-            var responseCurve = GetResponseCurve(trait, EnvironmentalFactorType.Temperature);
-            return responseCurve?.ResponseCurve?.Evaluate(environment.Temperature) ?? 1f;
-        }
-
-        private float CalculateGxEModifier(TraitType trait, float baseExpression, EnvironmentSnapshot environment)
-        {
-            // Find applicable GxE profiles
-            var applicableProfiles = _gxeProfiles.Where(p => p.AppliesToAllTraits || p.TargetTraits.Contains(trait));
-
-            float modifier = 1f;
-            foreach (var profile in applicableProfiles)
+            if (!enabled)
             {
-                modifier *= ApplyGxEModification(1f, environment, profile);
+                ClearCache();
             }
 
-            return modifier;
-        }
-
-        private float CalculateMutationModifier(PlantGenotype genotype, TraitType trait)
-        {
-            // Simplified mutation effect calculation
-            float modifier = 1f;
-            foreach (var mutation in genotype.Mutations)
+            if (_enableLogging)
             {
-                if (mutation is ProjectChimera.Data.Genetics.MutationRecord mutationRecord)
-                {
-                    modifier += mutationRecord.EffectMagnitude * _config.MutationExpressionModifier;
-                }
-            }
-            return Mathf.Clamp(modifier, 0.1f, 2f);
-        }
-
-        private float CalculateOverallFitness(TraitExpressionResult result)
-        {
-            // Weighted average of key traits
-            float fitness = 0f;
-            fitness += result.GetTraitValue(TraitType.Yield) * 0.3f;
-            fitness += result.GetTraitValue(TraitType.StressResistance) * 0.2f;
-            fitness += result.GetTraitValue(TraitType.GrowthRate) * 0.2f;
-            fitness += result.GetTraitValue(TraitType.THCContent) * 0.15f;
-            fitness += result.GetTraitValue(TraitType.TerpeneProduction) * 0.15f;
-
-            return Mathf.Clamp01(fitness);
-        }
-
-        private float CalculateFactorStress(float value, Vector2 optimalRange)
-        {
-            if (value >= optimalRange.x && value <= optimalRange.y)
-                return 0f; // No stress
-
-            float stress = Mathf.Min(
-                Mathf.Abs(value - optimalRange.x) / optimalRange.x,
-                Mathf.Abs(value - optimalRange.y) / optimalRange.y
-            );
-
-            return Mathf.Clamp01(stress);
-        }
-
-        private float GetEnvironmentalValue(EnvironmentSnapshot environment, EnvironmentalFactor factor)
-        {
-            switch (factor)
-            {
-                case EnvironmentalFactor.Temperature: return environment.Temperature;
-                case EnvironmentalFactor.Humidity: return environment.Humidity;
-                case EnvironmentalFactor.Light: return environment.LightIntensity;
-                case EnvironmentalFactor.CO2: return environment.CO2Level;
-                default: return 1f;
+                ChimeraLogger.Log($"[TraitExpressionEngine] Expression {(enabled ? "enabled" : "disabled")}");
             }
         }
 
-        private EnvironmentalResponseCurve GetDefaultResponseCurve(TraitType trait, EnvironmentalFactorType factor)
+        /// <summary>
+        /// Update multipliers
+        /// </summary>
+        public void UpdateMultipliers(float thcMultiplier, float yieldMultiplier)
         {
-            // Create default response curves based on cannabis research
-            var curve = new AnimationCurve();
+            _baseThcMultiplier = Mathf.Max(0.1f, thcMultiplier);
+            _baseYieldMultiplier = Mathf.Max(0.1f, yieldMultiplier);
 
-            switch (factor)
+            // Clear cache when multipliers change
+            ClearCache();
+
+            if (_enableLogging)
             {
-                case EnvironmentalFactorType.Temperature:
-                    // Optimal around 25°C, declining at extremes
-                    curve.AddKey(0f, 0.1f);
-                    curve.AddKey(15f, 0.6f);
-                    curve.AddKey(25f, 1f);
-                    curve.AddKey(35f, 0.4f);
-                    curve.AddKey(45f, 0f);
-                    break;
-
-                default:
-                    // Default linear response
-                    curve.AddKey(0f, 0f);
-                    curve.AddKey(1f, 1f);
-                    break;
+                ChimeraLogger.Log($"[TraitExpressionEngine] Multipliers updated: THC={_baseThcMultiplier:F2}, Yield={_baseYieldMultiplier:F2}");
             }
-
-            return new EnvironmentalResponseCurve
-            {
-                Trait = trait,
-                EnvironmentalFactor = ConvertEnvironmentalFactorTypeToFactor(factor),
-                ResponseCurve = curve,
-                Weight = 1f
-            };
-        }
-
-        private void BuildResponseCurveCache()
-        {
-            if (!_config.EnableCaching) return;
-
-            // Build cache from response curve database
-            if (_responseCurves != null)
-            {
-                foreach (var entry in _responseCurves)
-                {
-                    if (!_responseCurveCache.ContainsKey(entry.Trait))
-                    {
-                        _responseCurveCache[entry.Trait] = new Dictionary<EnvironmentalFactorType, EnvironmentalResponseCurve>();
-                    }
-
-                    // Convert EnvironmentalFactor to EnvironmentalFactorType for caching
-                    var factorType = ConvertEnvironmentalFactorToType(entry.EnvironmentalFactor);
-                    _responseCurveCache[entry.Trait][factorType] = entry;
-                }
-            }
-        }
-
-        private void InitializeComputeShader()
-        {
-            if (_traitExpressionCompute == null) return;
-
-            _computeKernel = _traitExpressionCompute.FindKernel("TraitExpressionKernel");
-
-            // Initialize buffers for compute shader
-            // In a full implementation, these would be properly sized and managed
-        }
-
-        private string GenerateCacheKey(string genotypeId, EnvironmentSnapshot environment)
-        {
-            return $"{genotypeId}_{environment.Temperature:F1}_{environment.Humidity:F1}_{environment.LightIntensity:F0}";
-        }
-
-        private EnvironmentalFactorType ConvertEnvironmentalFactorToType(EnvironmentalFactor factor)
-        {
-            return factor switch
-            {
-                EnvironmentalFactor.Temperature => EnvironmentalFactorType.Temperature,
-                EnvironmentalFactor.Humidity => EnvironmentalFactorType.Humidity,
-                EnvironmentalFactor.Light => EnvironmentalFactorType.LightIntensity,
-                EnvironmentalFactor.CO2 => EnvironmentalFactorType.CO2Level,
-                EnvironmentalFactor.Nutrients => EnvironmentalFactorType.NutrientLevel,
-                EnvironmentalFactor.pH => EnvironmentalFactorType.pH,
-                EnvironmentalFactor.Airflow => EnvironmentalFactorType.AirFlow,
-                EnvironmentalFactor.WaterLevel => EnvironmentalFactorType.WaterLevel,
-                EnvironmentalFactor.Pressure => EnvironmentalFactorType.StressLevel, // Map Pressure to closest equivalent
-                _ => EnvironmentalFactorType.Temperature // Default fallback
-            };
-        }
-
-        private EnvironmentalFactor ConvertEnvironmentalFactorTypeToFactor(EnvironmentalFactorType factorType)
-        {
-            return factorType switch
-            {
-                EnvironmentalFactorType.Temperature => EnvironmentalFactor.Temperature,
-                EnvironmentalFactorType.Humidity => EnvironmentalFactor.Humidity,
-                EnvironmentalFactorType.LightIntensity => EnvironmentalFactor.Light,
-                EnvironmentalFactorType.CO2Level => EnvironmentalFactor.CO2,
-                EnvironmentalFactorType.NutrientLevel => EnvironmentalFactor.Nutrients,
-                EnvironmentalFactorType.pH => EnvironmentalFactor.pH,
-                EnvironmentalFactorType.AirFlow => EnvironmentalFactor.Airflow,
-                EnvironmentalFactorType.WaterLevel => EnvironmentalFactor.WaterLevel,
-                // Note: Some EnvironmentalFactorType values (VPD, DLI, WindSpeed, StressLevel) don't have direct EnvironmentalFactor equivalents
-                _ => EnvironmentalFactor.Temperature // Default fallback for unmapped types
-            };
-        }
-
-        private void OnDestroy()
-        {
-            // Cleanup compute buffers
-            _genotypeBuffer?.Release();
-            _environmentBuffer?.Release();
-            _resultBuffer?.Release();
         }
     }
 
+    /// <summary>
+    /// Basic trait result
+    /// </summary>
+    [System.Serializable]
+    public class TraitResult
+    {
+        public string StrainId;
+        public float FinalThc;
+        public float FinalYield;
+        public float EnvironmentFactor;
+        public System.DateTime CalculatedTime;
+    }
+
+    /// <summary>
+    /// Cache statistics
+    /// </summary>
+    [System.Serializable]
+    public struct CacheStats
+    {
+        public int CachedResults;
+        public bool IsCacheEnabled;
+        public bool IsInitialized;
+    }
 }

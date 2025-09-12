@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using ProjectChimera.Core;
-using ProjectChimera.Systems.Registry;
 
 namespace ProjectChimera.Systems.Services.SpeedTree
 {
@@ -19,6 +18,8 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         #region Properties
 
         public bool IsInitialized { get; private set; }
+        public int Priority => TickPriority.SpeedTreeServices;
+        public bool Enabled => _enableGrowthAnimation && gameObject.activeInHierarchy;
 
         #endregion
 
@@ -341,8 +342,6 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         #endregion
 
         // ITickable implementation
-        public int Priority => 0;
-        public bool Enabled => enabled && gameObject.activeInHierarchy;
 
         public virtual void OnRegistered()
         {
@@ -352,6 +351,37 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         public virtual void OnUnregistered()
         {
             // Override in derived classes if needed
+        }
+
+        // ICannabisGeneticsService implementation
+        public void UpdateGenetics(float deltaTime)
+        {
+            // Stub implementation
+        }
+
+        public void ProcessGeneticVariation(int plantId, GeneticProfile profile)
+        {
+            // Stub implementation
+        }
+
+        public void UpdateGrowthStage(int plantId, GrowthStage stage)
+        {
+            // Stub implementation
+        }
+
+        public void ApplyTraitExpression(int plantId, string[] traits)
+        {
+            // Stub implementation
+        }
+
+        public GeneticProfile GetGeneticProfile(int plantId)
+        {
+            return new GeneticProfile();
+        }
+
+        public GrowthStage GetCurrentGrowthStage(int plantId)
+        {
+            return GrowthStage.Seedling;
         }
     }
 

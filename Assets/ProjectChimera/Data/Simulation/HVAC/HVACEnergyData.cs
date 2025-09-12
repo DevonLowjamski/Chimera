@@ -36,6 +36,18 @@ namespace ProjectChimera.Data.Simulation.HVAC
 
 
     [System.Serializable]
+    public class ZoneEnergyReport
+    {
+        public string ZoneId;
+        public string ZoneName;
+        public float TotalEnergyConsumption;
+        public Dictionary<string, float> EquipmentConsumption = new Dictionary<string, float>();
+        public float EnergyEfficiency;
+        public float TemperatureEfficiency;
+        public List<string> OptimizationOpportunities = new List<string>();
+    }
+
+    [System.Serializable]
     public class EnergyConsumptionReport
     {
         public System.DateTime ReportDate;
@@ -44,5 +56,14 @@ namespace ProjectChimera.Data.Simulation.HVAC
         public float TotalEnergyConsumption;
         public float TotalEnergyCost;
         public float AverageEfficiency;
+    }
+
+    [System.Serializable]
+    public class EquipmentOptimization
+    {
+        public string EquipmentId;
+        public string OptimizationType;
+        public float PotentialSavings;
+        public string Description;
     }
 }

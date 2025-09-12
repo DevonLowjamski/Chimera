@@ -13,7 +13,6 @@
         "ProjectChimera.Systems.Cultivation",
         "ProjectChimera.Systems.Environment",
         "ProjectChimera.Systems.Economy",
-        "ProjectChimera.Systems.Analytics",
         "ProjectChimera.Systems.Progression",
         "ProjectChimera.Systems.Facilities",
         "UnityEngine.UI"

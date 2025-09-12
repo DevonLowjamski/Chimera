@@ -1,0 +1,216 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.Save
+{
+    /// <summary>
+    /// Construction Project Data Transfer Object
+    /// Handles construction project data for save/load operations
+    /// Includes project status, progress, and resource tracking
+    /// </summary>
+    [Serializable]
+    public class ConstructionProjectDTO
+    {
+        [Header("Project Identity")]
+        public string ProjectID;
+        public string ProjectName;
+        public string TemplateID;
+        public ProjectType ProjectType;
+
+        [Header("Location and Size")]
+        public Vector3Int GridPosition;
+        public Vector3Int GridSize;
+        public int Rotation;
+
+        [Header("Progress Tracking")]
+        public ProjectStatus Status;
+        public float ProgressPercentage; // 0-1
+        public DateTime StartDate;
+        public DateTime? CompletionDate;
+        public DateTime LastUpdateDate;
+
+        [Header("Resource Tracking")]
+        public List<ResourceRequirementDTO> RequiredResources = new List<ResourceRequirementDTO>();
+        public List<ResourceRequirementDTO> ConsumedResources = new List<ResourceRequirementDTO>();
+        public float TotalCost;
+        public float CostSoFar;
+
+        [Header("Work Tracking")]
+        public List<WorkStepDTO> WorkSteps = new List<WorkStepDTO>();
+        public int CurrentWorkStepIndex;
+        public float WorkStepProgress; // 0-1
+
+        [Header("Quality and Issues")]
+        public float QualityScore; // 0-1
+        public List<string> Issues = new List<string>();
+        public List<string> ResolvedIssues = new List<string>();
+
+        /// <summary>
+        /// Gets the project's age in days
+        /// </summary>
+        public int GetAgeInDays()
+        {
+            return (int)(DateTime.Now - StartDate).TotalDays;
+        }
+
+        /// <summary>
+        /// Gets the days since last update
+        /// </summary>
+        public int GetDaysSinceLastUpdate()
+        {
+            return (int)(DateTime.Now - LastUpdateDate).TotalDays;
+        }
+
+        /// <summary>
+        /// Checks if the project is completed
+        /// </summary>
+        public bool IsCompleted()
+        {
+            return Status == ProjectStatus.Completed;
+        }
+
+        /// <summary>
+        /// Checks if the project is in progress
+        /// </summary>
+        public bool IsInProgress()
+        {
+            return Status == ProjectStatus.InProgress;
+        }
+
+        /// <summary>
+        /// Gets the remaining cost
+        /// </summary>
+        public float GetRemainingCost()
+        {
+            return TotalCost - CostSoFar;
+        }
+
+        /// <summary>
+        /// Gets the budget utilization percentage
+        /// </summary>
+        public float GetBudgetUtilization()
+        {
+            if (TotalCost == 0) return 0f;
+            return CostSoFar / TotalCost;
+        }
+
+        /// <summary>
+        /// Gets the current work step
+        /// </summary>
+        public WorkStepDTO GetCurrentWorkStep()
+        {
+            if (WorkSteps.Count == 0 || CurrentWorkStepIndex >= WorkSteps.Count)
+                return null;
+
+            return WorkSteps[CurrentWorkStepIndex];
+        }
+
+        /// <summary>
+        /// Gets the number of completed work steps
+        /// </summary>
+        public int GetCompletedWorkSteps()
+        {
+            return Mathf.Min(CurrentWorkStepIndex, WorkSteps.Count);
+        }
+
+        /// <summary>
+        /// Checks if all required resources are available
+        /// </summary>
+        public bool AreResourcesAvailable(Dictionary<string, int> availableResources)
+        {
+            foreach (var requirement in RequiredResources)
+            {
+                if (!availableResources.ContainsKey(requirement.ResourceName) ||
+                    availableResources[requirement.ResourceName] < requirement.Quantity)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Gets a summary of the project's current state
+        /// </summary>
+        public string GetProjectSummary()
+        {
+            string summary = $"{ProjectName} ({ProjectType}) - {Status}";
+            summary += $"\nProgress: {(ProgressPercentage * 100):F1}%";
+            summary += $"\nCost: {CostSoFar:F0}/{TotalCost:F0} ({(GetBudgetUtilization() * 100):F1}%)";
+
+            if (Issues.Count > 0)
+            {
+                summary += $"\nIssues: {Issues.Count}";
+            }
+
+            return summary;
+        }
+    }
+
+    /// <summary>
+    /// Resource requirement data structure
+    /// </summary>
+    [Serializable]
+    public class ResourceRequirementDTO
+    {
+        public string ResourceName;
+        public int Quantity;
+        public int ConsumedQuantity;
+        public float UnitCost;
+    }
+
+    /// <summary>
+    /// Work step data structure
+    /// </summary>
+    [Serializable]
+    public class WorkStepDTO
+    {
+        public string StepName;
+        public string Description;
+        public float DurationHours;
+        public WorkStepStatus Status;
+        public DateTime? StartDate;
+        public DateTime? CompletionDate;
+        public List<string> RequiredSkills = new List<string>();
+        public List<ResourceRequirementDTO> RequiredResources = new List<ResourceRequirementDTO>();
+    }
+
+    /// <summary>
+    /// Project type enumeration
+    /// </summary>
+    public enum ProjectType
+    {
+        Room,
+        Equipment,
+        Utility,
+        Facility,
+        Custom
+    }
+
+    /// <summary>
+    /// Project status enumeration
+    /// </summary>
+    public enum ProjectStatus
+    {
+        Planned,
+        InProgress,
+        Paused,
+        Completed,
+        Cancelled,
+        Failed
+    }
+
+    /// <summary>
+    /// Work step status enumeration
+    /// </summary>
+    public enum WorkStepStatus
+    {
+        Pending,
+        InProgress,
+        Completed,
+        Skipped,
+        Failed
+    }
+}
+

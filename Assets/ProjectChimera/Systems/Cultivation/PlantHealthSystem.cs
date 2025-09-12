@@ -1,482 +1,213 @@
 using UnityEngine;
 using System.Collections.Generic;
-using ProjectChimera.Data.Cultivation;
-using ProjectChimera.Data.Shared;
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
 
 namespace ProjectChimera.Systems.Cultivation
 {
     /// <summary>
-    /// Manages plant health, stress responses, and disease resistance.
-    /// Handles health updates, stress calculations, and recovery mechanisms.
+    /// SIMPLE: Basic plant health system aligned with Project Chimera's cultivation vision.
+    /// Focuses on essential plant health tracking for basic plant care mechanics.
     /// </summary>
-    public class PlantHealthSystem
+    public class PlantHealthSystem : MonoBehaviour
     {
-        private object _strain;
-        private float _currentHealth = 1f;
-        private float _maxHealth = 1f;
-        private float _stressLevel = 0f;
-        private float _diseaseResistance = 1f;
-        private float _recoveryRate = 0.1f;
+        [Header("Basic Health Settings")]
+        [SerializeField] private bool _enableBasicHealth = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _maxHealth = 100f;
+        [SerializeField] private float _healthDecayRate = 1f; // Health lost per day without care
 
-        // Health tracking
-        private float _lastHealthCheckTime;
-        private List<HealthEvent> _healthHistory = new List<HealthEvent>();
-        private Dictionary<string, float> _activeStressFactors = new Dictionary<string, float>();
-
-        // Configuration
-        private PlantUpdateConfiguration _configuration;
-        private const int MAX_HEALTH_HISTORY = 100;
+        // Basic health tracking
+        private float _currentHealth = 100f;
+        private float _lastCareTime = 0f;
+        private bool _isInitialized = false;
 
         /// <summary>
-        /// Initialize the health system with strain and resistance data
+        /// Events for health changes
         /// </summary>
-        public void Initialize(object strain, float diseaseResistance, PlantUpdateConfiguration configuration = null)
-        {
-            _strain = strain;
-            _configuration = configuration ?? PlantUpdateConfiguration.CreateDefault();
+        public event System.Action<float> OnHealthChanged;
+        public event System.Action OnPlantDied;
 
-            // Extract health parameters from strain
-            ExtractStrainHealthParameters(strain);
+        /// <summary>
+        /// Initialize the basic health system
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
 
             _currentHealth = _maxHealth;
-            _diseaseResistance = Mathf.Clamp01(diseaseResistance);
-            _lastHealthCheckTime = Time.time;
+            _lastCareTime = Time.time;
+            _isInitialized = true;
 
-            // Record initialization
-            RecordHealthEvent("System Initialized", _currentHealth);
-
-            ChimeraLogger.Log($"[PlantHealthSystem] Initialized - Max Health: {_maxHealth:F2}, Disease Resistance: {_diseaseResistance:F2}");
-        }
-
-        /// <summary>
-        /// Updates health based on stressors and environmental conditions
-        /// </summary>
-        public void UpdateHealth(float deltaTime, List<ActiveStressor> stressors, float environmentalFitness)
-        {
-            float previousHealth = _currentHealth;
-
-            // Calculate stress damage
-            float stressDamage = CalculateStressDamage(stressors, deltaTime);
-
-            // Calculate environmental health effects
-            float environmentalEffect = CalculateEnvironmentalHealthEffect(environmentalFitness, deltaTime);
-
-            // Apply natural recovery
-            float naturalRecovery = CalculateNaturalRecovery(deltaTime);
-
-            // Apply regenerative effects from good conditions
-            float regenerativeEffect = CalculateRegenerativeEffects(environmentalFitness, deltaTime);
-
-            // Update health with all factors
-            float healthChange = environmentalEffect + naturalRecovery + regenerativeEffect - stressDamage;
-            _currentHealth = Mathf.Clamp(_currentHealth + healthChange, 0f, _maxHealth);
-
-            // Update stress level
-            UpdateStressLevel(stressors);
-
-            // Track significant health changes
-            if (Mathf.Abs(_currentHealth - previousHealth) > 0.01f)
+            if (_enableLogging)
             {
-                string changeDescription = healthChange > 0 ? "Health Improved" : "Health Declined";
-                RecordHealthEvent(changeDescription, _currentHealth, healthChange);
+                ChimeraLogger.Log("[PlantHealthSystem] Initialized successfully");
             }
-
-            // Check for critical health conditions
-            CheckCriticalHealthConditions();
-
-            _lastHealthCheckTime = Time.time;
         }
 
         /// <summary>
-        /// Apply immediate health change (for external effects)
+        /// Update plant health
         /// </summary>
-        public void ApplyHealthChange(float change, string reason = "External Effect")
+        public void UpdateHealth(float deltaTime)
         {
-            float previousHealth = _currentHealth;
-            _currentHealth = Mathf.Clamp(_currentHealth + change, 0f, _maxHealth);
+            if (!_enableBasicHealth || !_isInitialized) return;
 
-            if (change != 0f)
+            // Simple health decay over time
+            float timeSinceCare = Time.time - _lastCareTime;
+            float healthLoss = (timeSinceCare / 86400f) * _healthDecayRate; // Convert to days
+
+            _currentHealth = Mathf.Max(0f, _currentHealth - healthLoss);
+
+            if (_currentHealth <= 0f)
             {
-                RecordHealthEvent(reason, _currentHealth, change);
-
-                if (_configuration.EnablePerformanceOptimization)
+                OnPlantDied?.Invoke();
+                if (_enableLogging)
                 {
-                    ChimeraLogger.LogVerbose($"[PlantHealthSystem] {reason}: {change:F3} (Health: {previousHealth:F2} → {_currentHealth:F2})");
+                    ChimeraLogger.Log("[PlantHealthSystem] Plant has died");
                 }
             }
         }
 
         /// <summary>
-        /// Apply specific stress effects to the plant
+        /// Apply care to the plant
         /// </summary>
-        public void ApplyStressEffect(StressFactor stressFactor, float deltaTime)
+        public void ApplyCare(float careAmount)
         {
-            if (stressFactor == null) return;
+            if (!_enableBasicHealth || !_isInitialized) return;
 
-            string stressTypeName = stressFactor.GetStressTypeName();
-            float damage = CalculateStressSpecificDamage(stressFactor, deltaTime);
+            _currentHealth = Mathf.Min(_maxHealth, _currentHealth + careAmount);
+            _lastCareTime = Time.time;
 
-            // Track active stress factors
-            _activeStressFactors[stressTypeName] = stressFactor.Severity;
+            OnHealthChanged?.Invoke(_currentHealth);
 
-            // Apply the damage
-            ApplyHealthChange(-damage, $"Stress: {stressTypeName}");
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log($"[PlantHealthSystem] Applied care: +{careAmount:F1}, Health: {_currentHealth:F1}/{_maxHealth:F1}");
+            }
         }
 
         /// <summary>
-        /// Process recovery from stress removal
+        /// Water the plant
         /// </summary>
-        public void ProcessStressRecovery(string stressType, float recoveryRate, float deltaTime)
+        public void WaterPlant(float waterAmount)
         {
-            if (_activeStressFactors.ContainsKey(stressType))
+            ApplyCare(waterAmount * 10f); // Water provides care
+
+            if (_enableLogging)
             {
-                _activeStressFactors.Remove(stressType);
-
-                // Apply recovery bonus when stress is removed
-                float recoveryBonus = recoveryRate * deltaTime * 2f; // 2x bonus for removing stress
-                ApplyHealthChange(recoveryBonus, $"Recovery from {stressType}");
+                ChimeraLogger.Log($"[PlantHealthSystem] Plant watered: {waterAmount:F1}");
             }
-        }
-
-        #region Public Properties and Getters
-
-        public float GetCurrentHealth() => _currentHealth;
-        public float GetMaxHealth() => _maxHealth;
-        public float GetStressLevel() => _stressLevel;
-        public float GetHealthPercentage() => _currentHealth / _maxHealth;
-        public float GetDiseaseResistance() => _diseaseResistance;
-        public float GetRecoveryRate() => _recoveryRate;
-
-        /// <summary>
-        /// Get health status classification
-        /// </summary>
-        public HealthStatus GetHealthStatus()
-        {
-            float percentage = GetHealthPercentage();
-
-            if (percentage >= 0.8f) return HealthStatus.Excellent;
-            if (percentage >= 0.6f) return HealthStatus.Good;
-            if (percentage >= 0.4f) return HealthStatus.Fair;
-            if (percentage >= 0.2f) return HealthStatus.Poor;
-            return HealthStatus.Critical;
         }
 
         /// <summary>
-        /// Get current active stress factors
+        /// Feed the plant nutrients
         /// </summary>
-        public Dictionary<string, float> GetActiveStressFactors()
+        public void FeedPlant(float nutrientAmount)
         {
-            return new Dictionary<string, float>(_activeStressFactors);
+            ApplyCare(nutrientAmount * 15f); // Nutrients provide more care
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log($"[PlantHealthSystem] Plant fed: {nutrientAmount:F1}");
+            }
         }
 
         /// <summary>
-        /// Get health trend over time
+        /// Get current health
         /// </summary>
-        public HealthTrend GetHealthTrend(int sampleCount = 10)
+        public float GetCurrentHealth()
         {
-            if (_healthHistory.Count < 2) return HealthTrend.Stable;
-
-            int samples = Mathf.Min(sampleCount, _healthHistory.Count);
-            float startHealth = _healthHistory[_healthHistory.Count - samples].Health;
-            float endHealth = _healthHistory[_healthHistory.Count - 1].Health;
-
-            float difference = endHealth - startHealth;
-
-            if (difference > 0.05f) return HealthTrend.Improving;
-            if (difference < -0.05f) return HealthTrend.Declining;
-            return HealthTrend.Stable;
+            return _currentHealth;
         }
 
-        #endregion
-
-        #region Private Health Calculation Methods
-
-        private float CalculateStressDamage(List<ActiveStressor> stressors, float deltaTime)
+        /// <summary>
+        /// Get health percentage (0-1)
+        /// </summary>
+        public float GetHealthPercentage()
         {
-            float totalDamage = 0f;
-
-            foreach (var stressor in stressors)
-            {
-                if (!stressor.IsActive)
-                    continue;
-
-                totalDamage += CalculateStressSpecificDamage(stressor, deltaTime);
-            }
-
-            return totalDamage;
+            return _currentHealth / _maxHealth;
         }
 
-        private float CalculateStressSpecificDamage(ActiveStressor stressor, float deltaTime)
+        /// <summary>
+        /// Check if plant is alive
+        /// </summary>
+        public bool IsAlive()
         {
-            float damagePerSecond = 0.01f; // Default damage per second
-            bool isBiotic = false;
-
-            // Try to get properties from different possible types
-            if (stressor.StressSource is ProjectChimera.Data.Simulation.EnvironmentalStressSO environmentalStress)
-            {
-                damagePerSecond = environmentalStress.DamagePerSecond;
-                isBiotic = environmentalStress.StressType == ProjectChimera.Data.Simulation.StressType.Biotic;
-            }
-            else if (stressor.StressSource is StressFactor stressFactor)
-            {
-                damagePerSecond = stressFactor.DamagePerSecond;
-                isBiotic = stressFactor.IsBiotic();
-            }
-
-            float baseDamage = stressor.Intensity * damagePerSecond * deltaTime;
-
-            // Apply disease resistance for biotic stress
-            if (isBiotic)
-            {
-                baseDamage *= (1f - _diseaseResistance);
-            }
-
-            // Apply chronic stress multiplier
-            if (stressor.IsChronic)
-            {
-                baseDamage *= 1.3f; // 30% more damage for chronic stress
-            }
-
-            return baseDamage;
+            return _currentHealth > 0f;
         }
 
-        private float CalculateStressSpecificDamage(StressFactor stressFactor, float deltaTime)
+        /// <summary>
+        /// Check if plant is healthy
+        /// </summary>
+        public bool IsHealthy()
         {
-            float baseDamage = stressFactor.Severity * 0.01f * deltaTime; // Base damage rate
-
-            // Apply disease resistance for biotic stress
-            string stressTypeName = stressFactor.GetStressTypeName();
-            if (stressTypeName.Contains("Biotic") || stressTypeName.Contains("Disease"))
-            {
-                baseDamage *= (1f - _diseaseResistance);
-            }
-
-            // Apply severity multipliers
-            if (stressFactor.IsCritical)
-            {
-                baseDamage *= 2f; // Double damage for critical stress
-            }
-
-            return baseDamage;
+            return GetHealthPercentage() > 0.7f;
         }
 
-        private float CalculateEnvironmentalHealthEffect(float environmentalFitness, float deltaTime)
+        /// <summary>
+        /// Get time since last care
+        /// </summary>
+        public float GetTimeSinceCare()
         {
-            // Good environmental conditions promote health recovery
-            if (environmentalFitness > 0.8f)
-            {
-                float bonus = (environmentalFitness - 0.8f) * 0.5f * deltaTime;
-                return bonus * (1f + _recoveryRate); // Recovery rate affects environmental bonus
-            }
-            // Poor conditions cause slow health decline
-            else if (environmentalFitness < 0.4f)
-            {
-                float penalty = (environmentalFitness - 0.4f) * 0.2f * deltaTime;
-                return penalty * (2f - _diseaseResistance); // Disease resistance helps with poor conditions
-            }
-
-            return 0f;
+            return Time.time - _lastCareTime;
         }
 
-        private float CalculateNaturalRecovery(float deltaTime)
+        /// <summary>
+        /// Reset plant health
+        /// </summary>
+        public void ResetHealth()
         {
-            // Natural recovery is reduced when health is very low (plant is struggling)
-            float healthFactor = Mathf.Lerp(0.3f, 1f, GetHealthPercentage());
+            _currentHealth = _maxHealth;
+            _lastCareTime = Time.time;
+            OnHealthChanged?.Invoke(_currentHealth);
 
-            // Recovery is faster when not under significant stress
-            float stressFactor = Mathf.Lerp(1.2f, 0.5f, _stressLevel);
-
-            return _recoveryRate * deltaTime * healthFactor * stressFactor;
-        }
-
-        private float CalculateRegenerativeEffects(float environmentalFitness, float deltaTime)
-        {
-            // Only apply regenerative effects under excellent conditions
-            if (environmentalFitness < 0.9f) return 0f;
-
-            // Regenerative bonus for excellent conditions
-            float regenerativeRate = 0.05f; // Base regenerative rate
-            float bonus = (environmentalFitness - 0.9f) * 10f; // Scale the bonus
-
-            return regenerativeRate * bonus * deltaTime;
-        }
-
-        private void UpdateStressLevel(List<ActiveStressor> stressors)
-        {
-            _stressLevel = 0f;
-
-            foreach (var stressor in stressors)
+            if (_enableLogging)
             {
-                if (stressor.IsActive)
-                {
-                    float stressContribution = stressor.GetCurrentSeverity();
-                    _stressLevel += stressContribution;
-                }
-            }
-
-            _stressLevel = Mathf.Clamp01(_stressLevel);
-        }
-
-        #endregion
-
-        #region Private Helper Methods
-
-        private void ExtractStrainHealthParameters(object strain)
-        {
-            try
-            {
-                if (strain is PlantStrainSO strainSO)
-                {
-                    // _maxHealth = strainSO.BaseHealthModifier; // Property doesn't exist yet
-                    // _recoveryRate = strainSO.HealthRecoveryRate; // Property doesn't exist yet
-                    _maxHealth = 1f; // Default until property is implemented
-                    _recoveryRate = 0.1f; // Default until property is implemented
-                }
-                else
-                {
-                    _maxHealth = 1f;
-                    _recoveryRate = 0.1f;
-                }
-            }
-            catch
-            {
-                _maxHealth = 1f;
-                _recoveryRate = 0.1f;
-                ChimeraLogger.LogWarning("[PlantHealthSystem] Could not extract strain health parameters, using defaults");
+                ChimeraLogger.Log("[PlantHealthSystem] Health reset to maximum");
             }
         }
 
-        private void RecordHealthEvent(string description, float currentHealth, float change = 0f)
+        /// <summary>
+        /// Set maximum health
+        /// </summary>
+        public void SetMaxHealth(float maxHealth)
         {
-            var healthEvent = new HealthEvent
+            _maxHealth = Mathf.Max(1f, maxHealth);
+
+            if (_enableLogging)
             {
-                Timestamp = Time.time,
-                Description = description,
-                Health = currentHealth,
-                Change = change,
-                StressLevel = _stressLevel
+                ChimeraLogger.Log($"[PlantHealthSystem] Max health set to {_maxHealth:F1}");
+            }
+        }
+
+        /// <summary>
+        /// Get health statistics
+        /// </summary>
+        public HealthStatistics GetHealthStatistics()
+        {
+            return new HealthStatistics
+            {
+                CurrentHealth = _currentHealth,
+                MaxHealth = _maxHealth,
+                HealthPercentage = GetHealthPercentage(),
+                TimeSinceCare = GetTimeSinceCare(),
+                IsAlive = IsAlive(),
+                IsHealthy = IsHealthy()
             };
-
-            _healthHistory.Add(healthEvent);
-
-            // Limit history size for performance
-            if (_healthHistory.Count > MAX_HEALTH_HISTORY)
-            {
-                _healthHistory.RemoveAt(0);
-            }
         }
-
-        private void CheckCriticalHealthConditions()
-        {
-            float healthPercentage = GetHealthPercentage();
-
-            if (healthPercentage <= 0.1f && _currentHealth > 0f)
-            {
-                ChimeraLogger.LogWarning($"[PlantHealthSystem] Critical health condition detected: {healthPercentage:P1}");
-            }
-
-            if (_stressLevel >= 0.8f)
-            {
-                ChimeraLogger.LogWarning($"[PlantHealthSystem] High stress level detected: {_stressLevel:P1}");
-            }
-        }
-
-        #endregion
-
-        #region Public Utility Methods
-
-        /// <summary>
-        /// Get health recovery estimate for given conditions
-        /// </summary>
-        public float EstimateRecoveryTime(float targetHealthPercentage, float environmentalFitness)
-        {
-            if (targetHealthPercentage <= GetHealthPercentage()) return 0f;
-
-            float healthNeeded = _maxHealth * targetHealthPercentage - _currentHealth;
-            float recoveryRate = CalculateNaturalRecovery(1f) + CalculateEnvironmentalHealthEffect(environmentalFitness, 1f);
-
-            if (recoveryRate <= 0f) return float.MaxValue; // Cannot recover under current conditions
-
-            return healthNeeded / recoveryRate; // Time in seconds
-        }
-
-        /// <summary>
-        /// Get recommended actions for current health status
-        /// </summary>
-        public List<string> GetHealthRecommendations()
-        {
-            var recommendations = new List<string>();
-
-            float healthPercentage = GetHealthPercentage();
-
-            if (healthPercentage < 0.3f)
-            {
-                recommendations.Add("Critical: Immediate intervention required");
-                recommendations.Add("Remove all stress factors if possible");
-                recommendations.Add("Optimize environmental conditions");
-            }
-            else if (healthPercentage < 0.6f)
-            {
-                recommendations.Add("Monitor plant closely");
-                recommendations.Add("Address active stress factors");
-            }
-
-            if (_stressLevel > 0.6f)
-            {
-                recommendations.Add("High stress detected - investigate causes");
-            }
-
-            if (_activeStressFactors.Count > 3)
-            {
-                recommendations.Add("Multiple stress factors active - prioritize mitigation");
-            }
-
-            return recommendations;
-        }
-
-        /// <summary>
-        /// Reset health system (for testing or plant revival)
-        /// </summary>
-        public void ResetHealth(float healthPercentage = 1f)
-        {
-            _currentHealth = _maxHealth * Mathf.Clamp01(healthPercentage);
-            _stressLevel = 0f;
-            _activeStressFactors.Clear();
-            _healthHistory.Clear();
-
-            RecordHealthEvent("Health System Reset", _currentHealth);
-
-            ChimeraLogger.Log($"[PlantHealthSystem] Health reset to {healthPercentage:P1}");
-        }
-
-        #endregion
-    }
-
-    #region Supporting Data Structures
-
-    /// <summary>
-    /// Health status classification
-    /// </summary>
-    public enum HealthStatus
-    {
-        Critical,
-        Poor,
-        Fair,
-        Good,
-        Excellent
     }
 
     /// <summary>
-    /// Health trend analysis
+    /// Health statistics
     /// </summary>
-    public enum HealthTrend
+    [System.Serializable]
+    public class HealthStatistics
     {
-        Declining,
-        Stable,
-        Improving
+        public float CurrentHealth;
+        public float MaxHealth;
+        public float HealthPercentage;
+        public float TimeSinceCare;
+        public bool IsAlive;
+        public bool IsHealthy;
     }
-
-
-    #endregion
 }

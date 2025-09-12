@@ -1,526 +1,244 @@
 using UnityEngine;
-using UnityEngine.UIElements;
-using System;
-using ProjectChimera.Core;
-using ProjectChimera.Core.Updates;
-using ProjectChimera.UI.Core;
+using UnityEngine.UI;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Components
 {
     /// <summary>
-    /// Advanced time display component with penalty signaling for Project Chimera.
-    /// Displays game time, real time, time acceleration, and provides visual/audio feedback
-    /// for time-sensitive events, penalties, and deadlines.
+    /// BASIC: Simple time display component for Project Chimera's UI.
+    /// Focuses on essential time display without complex penalty signaling and audio alerts.
     /// </summary>
-    public class TimeDisplayComponent : MonoBehaviour, ITickable
+    public class TimeDisplayComponent : MonoBehaviour
     {
-        [Header("Time Display Configuration")]
+        [Header("Basic Time Display Settings")]
+        [SerializeField] private bool _enableBasicDisplay = true;
+        [SerializeField] private bool _enableLogging = true;
         [SerializeField] private bool _showGameTime = true;
         [SerializeField] private bool _showRealTime = false;
-        [SerializeField] private bool _showTimeAcceleration = true;
-        [SerializeField] private bool _show24HourFormat = true;
-        [SerializeField] private bool _enablePenaltySignaling = true;
-        
-        [Header("Penalty Signaling")]
-        [SerializeField] private Color _normalTimeColor = new Color(0.8f, 0.8f, 0.8f, 1f);
-        [SerializeField] private Color _warningTimeColor = new Color(0.9f, 0.7f, 0.2f, 1f);
-        [SerializeField] private Color _penaltyTimeColor = new Color(0.8f, 0.2f, 0.2f, 1f);
-        [SerializeField] private Color _criticalTimeColor = new Color(1f, 0.1f, 0.1f, 1f);
-        [SerializeField] private float _warningBlinkRate = 0.5f;
-        [SerializeField] private float _penaltyBlinkRate = 0.25f;
-        [SerializeField] private float _criticalBlinkRate = 0.1f;
-        
-        [Header("Audio Configuration")]
-        [SerializeField] private AudioClip _warningBeep;
-        [SerializeField] private AudioClip _penaltyAlarm;
-        [SerializeField] private AudioClip _criticalSiren;
-        [SerializeField] private bool _enableAudioAlerts = true;
-        [SerializeField] private float _audioVolume = 0.7f;
-        
-        [Header("Time Format Configuration")]
-        [SerializeField] private string _gameTimePrefix = "Day ";
-        [SerializeField] private string _timeFormat24 = "HH:mm:ss";
-        [SerializeField] private string _timeFormat12 = "h:mm:ss tt";
-        [SerializeField] private string _accelerationFormat = "x{0:F1}";
-        
-        // UI Elements
-        private UIDocument _uiDocument;
-        private VisualElement _rootElement;
-        private VisualElement _timeContainer;
-        private Label _gameTimeLabel;
-        private Label _realTimeLabel;
-        private Label _timeAccelerationLabel;
-        private VisualElement _penaltyIndicator;
-        private VisualElement _warningFlash;
-        
-        // Time tracking
+        [SerializeField] private bool _showTimeScale = true;
+        [SerializeField] private string _timeFormat = "HH:mm:ss";
+        [SerializeField] private string _dayPrefix = "Day ";
+
+        // Basic UI components
+        [Header("UI Components")]
+        [SerializeField] private Text _gameTimeText;
+        [SerializeField] private Text _realTimeText;
+        [SerializeField] private Text _timeScaleText;
+        [SerializeField] private Image _backgroundImage;
+
+        // Basic time tracking
         private float _gameTime = 0f;
-        private float _timeAcceleration = 1f;
-        private int _currentGameDay = 1;
-        private bool _isTimePaused = false;
-        
-        // Penalty state
-        private TimePenaltyLevel _currentPenaltyLevel = TimePenaltyLevel.None;
-        private float _penaltyStartTime = 0f;
-        private float _lastBlinkTime = 0f;
-        private bool _isBlinking = false;
-        private bool _blinkState = false;
-        
-        // Audio
-        private AudioSource _audioSource;
-        private float _lastAudioAlert = 0f;
-        private float _audioAlertCooldown = 2f;
-        
-        // Events
-        public Action<float> OnGameTimeChanged;
-        public Action<int> OnGameDayChanged;
-        public Action<float> OnTimeAccelerationChanged;
-        public Action<TimePenaltyLevel> OnPenaltyLevelChanged;
-        public Action<string> OnTimeEventTriggered;
-        
-        // Properties
-        public float GameTime => _gameTime;
-        public int CurrentGameDay => _currentGameDay;
-        public float TimeAcceleration => _timeAcceleration;
-        public bool IsTimePaused => _isTimePaused;
-        public TimePenaltyLevel CurrentPenaltyLevel => _currentPenaltyLevel;
-        
-        private void Awake()
+        private int _currentDay = 1;
+        private bool _isInitialized = false;
+
+        /// <summary>
+        /// Events for time display
+        /// </summary>
+        public event System.Action<float> OnGameTimeUpdated;
+        public event System.Action<int> OnDayChanged;
+
+        /// <summary>
+        /// Initialize basic time display
+        /// </summary>
+        public void Initialize()
         {
-            InitializeTimeDisplay();
-        }
-        
-        private void Start()
-        {
-            SetupTimeUI();
-            UpdateTimeDisplay();
-            
-            // Register with UpdateOrchestrator
-            UpdateOrchestrator.Instance.RegisterTickable(this);
-        }
-        
-        #region ITickable Implementation
-        
-        public int Priority => TickPriority.UIManager;
-        public bool Enabled => enabled;
-        
-        public void Tick(float deltaTime)
-        {
-            if (!_isTimePaused)
+            if (_isInitialized) return;
+
+            // Auto-find text components if not assigned
+            if (_gameTimeText == null)
+                _gameTimeText = GetComponentInChildren<Text>();
+
+            _isInitialized = true;
+
+            if (_enableLogging)
             {
-                UpdateGameTime();
-            }
-            
-            UpdateTimeDisplay();
-            UpdatePenaltyEffects();
-        }
-        
-        #endregion
-        
-        private void InitializeTimeDisplay()
-        {
-            // Setup audio source
-            _audioSource = GetComponent<AudioSource>();
-            if (_audioSource == null)
-            {
-                _audioSource = gameObject.AddComponent<AudioSource>();
-                _audioSource.playOnAwake = false;
-                _audioSource.volume = _audioVolume;
-            }
-            
-            // Initialize time values
-            _gameTime = 0f;
-            _currentGameDay = 1;
-            _timeAcceleration = 1f;
-            _currentPenaltyLevel = TimePenaltyLevel.None;
-        }
-        
-        private void SetupTimeUI()
-        {
-            // Get or create UI Document
-            _uiDocument = GetComponent<UIDocument>();
-            if (_uiDocument == null)
-            {
-                _uiDocument = gameObject.AddComponent<UIDocument>();
-            }
-            
-            // Create root container
-            _rootElement = new VisualElement();
-            _rootElement.name = "time-display-root";
-            _rootElement.style.position = Position.Absolute;
-            _rootElement.style.top = 20;
-            _rootElement.style.right = 20;
-            _rootElement.style.minWidth = 200;
-            
-            // Create time container
-            _timeContainer = new VisualElement();
-            _timeContainer.name = "time-container";
-            _timeContainer.style.backgroundColor = new Color(0.1f, 0.1f, 0.1f, 0.8f);
-            _timeContainer.style.borderTopLeftRadius = 8;
-            _timeContainer.style.borderTopRightRadius = 8;
-            _timeContainer.style.borderBottomLeftRadius = 8;
-            _timeContainer.style.borderBottomRightRadius = 8;
-            _timeContainer.style.paddingTop = 12;
-            _timeContainer.style.paddingBottom = 12;
-            _timeContainer.style.paddingLeft = 16;
-            _timeContainer.style.paddingRight = 16;
-            _timeContainer.style.borderTopWidth = 2;
-            _timeContainer.style.borderRightWidth = 2;
-            _timeContainer.style.borderBottomWidth = 2;
-            _timeContainer.style.borderLeftWidth = 2;
-            _timeContainer.style.borderTopColor = _normalTimeColor;
-            _timeContainer.style.borderRightColor = _normalTimeColor;
-            _timeContainer.style.borderBottomColor = _normalTimeColor;
-            _timeContainer.style.borderLeftColor = _normalTimeColor;
-            _rootElement.Add(_timeContainer);
-            
-            // Create warning flash overlay
-            _warningFlash = new VisualElement();
-            _warningFlash.name = "warning-flash";
-            _warningFlash.style.position = Position.Absolute;
-            _warningFlash.style.top = 0;
-            _warningFlash.style.left = 0;
-            _warningFlash.style.right = 0;
-            _warningFlash.style.bottom = 0;
-            _warningFlash.style.backgroundColor = new Color(1f, 0f, 0f, 0.3f);
-            _warningFlash.style.borderTopLeftRadius = 8;
-            _warningFlash.style.borderTopRightRadius = 8;
-            _warningFlash.style.borderBottomLeftRadius = 8;
-            _warningFlash.style.borderBottomRightRadius = 8;
-            _warningFlash.style.display = DisplayStyle.None;
-            _timeContainer.Add(_warningFlash);
-            
-            // Create game time label
-            if (_showGameTime)
-            {
-                _gameTimeLabel = new Label();
-                _gameTimeLabel.name = "game-time-label";
-                _gameTimeLabel.style.fontSize = 16;
-                _gameTimeLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
-                _gameTimeLabel.style.color = _normalTimeColor;
-                _gameTimeLabel.style.marginBottom = 4;
-                _timeContainer.Add(_gameTimeLabel);
-            }
-            
-            // Create real time label
-            if (_showRealTime)
-            {
-                _realTimeLabel = new Label();
-                _realTimeLabel.name = "real-time-label";
-                _realTimeLabel.style.fontSize = 12;
-                _realTimeLabel.style.color = new Color(0.7f, 0.7f, 0.7f, 1f);
-                _realTimeLabel.style.marginBottom = 4;
-                _timeContainer.Add(_realTimeLabel);
-            }
-            
-            // Create time acceleration label
-            if (_showTimeAcceleration)
-            {
-                _timeAccelerationLabel = new Label();
-                _timeAccelerationLabel.name = "time-acceleration-label";
-                _timeAccelerationLabel.style.fontSize = 11;
-                _timeAccelerationLabel.style.color = new Color(0.6f, 0.8f, 0.9f, 1f);
-                _timeAccelerationLabel.style.marginTop = 4;
-                _timeContainer.Add(_timeAccelerationLabel);
-            }
-            
-            // Create penalty indicator
-            _penaltyIndicator = new VisualElement();
-            _penaltyIndicator.name = "penalty-indicator";
-            _penaltyIndicator.style.height = 4;
-            _penaltyIndicator.style.backgroundColor = _normalTimeColor;
-            _penaltyIndicator.style.marginTop = 8;
-            _penaltyIndicator.style.borderTopLeftRadius = 2;
-            _penaltyIndicator.style.borderTopRightRadius = 2;
-            _penaltyIndicator.style.borderBottomLeftRadius = 2;
-            _penaltyIndicator.style.borderBottomRightRadius = 2;
-            _timeContainer.Add(_penaltyIndicator);
-            
-            // Add to UI document
-            if (_uiDocument.rootVisualElement != null)
-            {
-                _uiDocument.rootVisualElement.Add(_rootElement);
+                ChimeraLogger.Log("[TimeDisplayComponent] Initialized successfully");
             }
         }
-        
-        private void UpdateGameTime()
+
+        /// <summary>
+        /// Update time display
+        /// </summary>
+        private void Update()
         {
-            float deltaTime = Time.deltaTime * _timeAcceleration;
-            _gameTime += deltaTime;
-            
-            // Calculate current day (assuming 24 game hours = 1 day)
-            int newGameDay = Mathf.FloorToInt(_gameTime / (24f * 3600f)) + 1;
-            if (newGameDay != _currentGameDay)
+            if (!_enableBasicDisplay || !_isInitialized) return;
+
+            // Update game time (simulated)
+            _gameTime += Time.deltaTime;
+
+            // Check for day change (simple 24-hour days)
+            int newDay = Mathf.FloorToInt(_gameTime / 86400f) + 1;
+            if (newDay != _currentDay)
             {
-                _currentGameDay = newGameDay;
-                OnGameDayChanged?.Invoke(_currentGameDay);
-                OnTimeEventTriggered?.Invoke($"Day {_currentGameDay} began");
-            }
-            
-            OnGameTimeChanged?.Invoke(_gameTime);
-        }
-        
-        private void UpdateTimeDisplay()
-        {
-            // Update game time display
-            if (_gameTimeLabel != null && _showGameTime)
-            {
-                var timeOfDay = TimeSpan.FromSeconds(_gameTime % (24f * 3600f));
-                string timeFormat = _show24HourFormat ? _timeFormat24 : _timeFormat12;
-                string formattedTime = DateTime.Today.Add(timeOfDay).ToString(timeFormat);
-                _gameTimeLabel.text = $"{_gameTimePrefix}{_currentGameDay}\n{formattedTime}";
-            }
-            
-            // Update real time display
-            if (_realTimeLabel != null && _showRealTime)
-            {
-                string timeFormat = _show24HourFormat ? _timeFormat24 : _timeFormat12;
-                _realTimeLabel.text = $"Real: {DateTime.Now.ToString(timeFormat)}";
-            }
-            
-            // Update time acceleration display
-            if (_timeAccelerationLabel != null && _showTimeAcceleration)
-            {
-                string accelerationText = _isTimePaused ? "PAUSED" : string.Format(_accelerationFormat, _timeAcceleration);
-                _timeAccelerationLabel.text = accelerationText;
-            }
-        }
-        
-        private void UpdatePenaltyEffects()
-        {
-            if (!_enablePenaltySignaling) return;
-            
-            float currentTime = Time.time;
-            Color currentColor = GetPenaltyColor(_currentPenaltyLevel);
-            float blinkRate = GetBlinkRate(_currentPenaltyLevel);
-            
-            // Update border color
-            _timeContainer.style.borderTopColor = currentColor;
-            _timeContainer.style.borderRightColor = currentColor;
-            _timeContainer.style.borderBottomColor = currentColor;
-            _timeContainer.style.borderLeftColor = currentColor;
-            
-            // Update penalty indicator
-            _penaltyIndicator.style.backgroundColor = currentColor;
-            
-            // Handle blinking effects
-            if (_currentPenaltyLevel != TimePenaltyLevel.None && blinkRate > 0)
-            {
-                if (currentTime - _lastBlinkTime >= blinkRate)
+                _currentDay = newDay;
+                OnDayChanged?.Invoke(_currentDay);
+
+                if (_enableLogging)
                 {
-                    _blinkState = !_blinkState;
-                    _lastBlinkTime = currentTime;
-                    
-                    // Apply blinking to game time label
-                    if (_gameTimeLabel != null)
-                    {
-                        _gameTimeLabel.style.color = _blinkState ? currentColor : _normalTimeColor;
-                    }
-                    
-                    // Show/hide warning flash for critical penalties
-                    if (_currentPenaltyLevel == TimePenaltyLevel.Critical)
-                    {
-                        _warningFlash.style.display = _blinkState ? DisplayStyle.Flex : DisplayStyle.None;
-                    }
+                    ChimeraLogger.Log($"[TimeDisplayComponent] New day: {_currentDay}");
                 }
             }
-            else
+
+            UpdateDisplay();
+            OnGameTimeUpdated?.Invoke(_gameTime);
+        }
+
+        /// <summary>
+        /// Set game time manually
+        /// </summary>
+        public void SetGameTime(float gameTime)
+        {
+            _gameTime = gameTime;
+            _currentDay = Mathf.FloorToInt(_gameTime / 86400f) + 1;
+            UpdateDisplay();
+
+            if (_enableLogging)
             {
-                // Reset to normal color when no penalty
-                if (_gameTimeLabel != null)
-                {
-                    _gameTimeLabel.style.color = currentColor;
-                }
-                _warningFlash.style.display = DisplayStyle.None;
+                ChimeraLogger.Log($"[TimeDisplayComponent] Game time set to {_gameTime:F0} seconds (Day {_currentDay})");
             }
         }
-        
-        private Color GetPenaltyColor(TimePenaltyLevel level)
+
+        /// <summary>
+        /// Set current day
+        /// </summary>
+        public void SetCurrentDay(int day)
         {
-            return level switch
+            _currentDay = Mathf.Max(1, day);
+            UpdateDisplay();
+
+            if (_enableLogging)
             {
-                TimePenaltyLevel.Warning => _warningTimeColor,
-                TimePenaltyLevel.Penalty => _penaltyTimeColor,
-                TimePenaltyLevel.Critical => _criticalTimeColor,
-                _ => _normalTimeColor
-            };
-        }
-        
-        private float GetBlinkRate(TimePenaltyLevel level)
-        {
-            return level switch
-            {
-                TimePenaltyLevel.Warning => _warningBlinkRate,
-                TimePenaltyLevel.Penalty => _penaltyBlinkRate,
-                TimePenaltyLevel.Critical => _criticalBlinkRate,
-                _ => 0f
-            };
-        }
-        
-        private void PlayPenaltyAudio(TimePenaltyLevel level)
-        {
-            if (!_enableAudioAlerts || _audioSource == null) return;
-            
-            float currentTime = Time.time;
-            if (currentTime - _lastAudioAlert < _audioAlertCooldown) return;
-            
-            AudioClip clipToPlay = level switch
-            {
-                TimePenaltyLevel.Warning => _warningBeep,
-                TimePenaltyLevel.Penalty => _penaltyAlarm,
-                TimePenaltyLevel.Critical => _criticalSiren,
-                _ => null
-            };
-            
-            if (clipToPlay != null)
-            {
-                _audioSource.PlayOneShot(clipToPlay, _audioVolume);
-                _lastAudioAlert = currentTime;
+                ChimeraLogger.Log($"[TimeDisplayComponent] Day set to {_currentDay}");
             }
         }
-        
-        #region Public API
-        
+
         /// <summary>
-        /// Set the current game time in seconds
+        /// Get current game time
         /// </summary>
-        public void SetGameTime(float timeInSeconds)
+        public float GetGameTime()
         {
-            _gameTime = timeInSeconds;
-            _currentGameDay = Mathf.FloorToInt(_gameTime / (24f * 3600f)) + 1;
-            OnGameTimeChanged?.Invoke(_gameTime);
+            return _gameTime;
         }
-        
+
         /// <summary>
-        /// Set time acceleration multiplier
+        /// Get current day
         /// </summary>
-        public void SetTimeAcceleration(float acceleration)
+        public int GetCurrentDay()
         {
-            _timeAcceleration = Mathf.Max(0f, acceleration);
-            OnTimeAccelerationChanged?.Invoke(_timeAcceleration);
+            return _currentDay;
         }
-        
-        /// <summary>
-        /// Pause or resume time
-        /// </summary>
-        public void SetTimePaused(bool paused)
-        {
-            _isTimePaused = paused;
-            OnTimeEventTriggered?.Invoke(paused ? "Time paused" : "Time resumed");
-        }
-        
-        /// <summary>
-        /// Set penalty level with optional audio alert
-        /// </summary>
-        public void SetPenaltyLevel(TimePenaltyLevel level, bool playAudio = true)
-        {
-            if (_currentPenaltyLevel != level)
-            {
-                _currentPenaltyLevel = level;
-                _penaltyStartTime = Time.time;
-                
-                if (playAudio && level != TimePenaltyLevel.None)
-                {
-                    PlayPenaltyAudio(level);
-                }
-                
-                OnPenaltyLevelChanged?.Invoke(level);
-                OnTimeEventTriggered?.Invoke($"Penalty level changed to: {level}");
-            }
-        }
-        
-        /// <summary>
-        /// Clear all penalties
-        /// </summary>
-        public void ClearPenalties()
-        {
-            SetPenaltyLevel(TimePenaltyLevel.None, false);
-        }
-        
+
         /// <summary>
         /// Get formatted time string
         /// </summary>
-        public string GetFormattedGameTime()
+        public string GetFormattedTime()
         {
-            var timeOfDay = TimeSpan.FromSeconds(_gameTime % (24f * 3600f));
-            string timeFormat = _show24HourFormat ? _timeFormat24 : _timeFormat12;
-            return DateTime.Today.Add(timeOfDay).ToString(timeFormat);
+            // Convert game time to hours/minutes/seconds
+            int totalSeconds = Mathf.FloorToInt(_gameTime);
+            int hours = (totalSeconds / 3600) % 24;
+            int minutes = (totalSeconds / 60) % 60;
+            int seconds = totalSeconds % 60;
+
+            return string.Format("{0:D2}:{1:D2}:{2:D2}", hours, minutes, seconds);
         }
-        
+
         /// <summary>
-        /// Get game time as TimeSpan
+        /// Set display options
         /// </summary>
-        public TimeSpan GetGameTimeSpan()
-        {
-            return TimeSpan.FromSeconds(_gameTime);
-        }
-        
-        /// <summary>
-        /// Advance game time by specified amount
-        /// </summary>
-        public void AdvanceTime(float seconds)
-        {
-            _gameTime += seconds;
-            int newGameDay = Mathf.FloorToInt(_gameTime / (24f * 3600f)) + 1;
-            if (newGameDay != _currentGameDay)
-            {
-                _currentGameDay = newGameDay;
-                OnGameDayChanged?.Invoke(_currentGameDay);
-            }
-            OnGameTimeChanged?.Invoke(_gameTime);
-        }
-        
-        /// <summary>
-        /// Toggle time display format between 12h and 24h
-        /// </summary>
-        public void ToggleTimeFormat()
-        {
-            _show24HourFormat = !_show24HourFormat;
-        }
-        
-        /// <summary>
-        /// Enable/disable specific display elements
-        /// </summary>
-        public void SetDisplayOptions(bool showGameTime, bool showRealTime, bool showAcceleration)
+        public void SetDisplayOptions(bool showGameTime, bool showRealTime, bool showTimeScale)
         {
             _showGameTime = showGameTime;
             _showRealTime = showRealTime;
-            _showTimeAcceleration = showAcceleration;
-            
-            if (_gameTimeLabel != null)
-                _gameTimeLabel.style.display = showGameTime ? DisplayStyle.Flex : DisplayStyle.None;
-            if (_realTimeLabel != null)
-                _realTimeLabel.style.display = showRealTime ? DisplayStyle.Flex : DisplayStyle.None;
-            if (_timeAccelerationLabel != null)
-                _timeAccelerationLabel.style.display = showAcceleration ? DisplayStyle.Flex : DisplayStyle.None;
-        }
-        
-        #endregion
-        
-        private void OnDestroy()
-        {
-            if (UpdateOrchestrator.Instance != null)
+            _showTimeScale = showTimeScale;
+            UpdateDisplay();
+
+            if (_enableLogging)
             {
-                UpdateOrchestrator.Instance.UnregisterTickable(this);
+                ChimeraLogger.Log("[TimeDisplayComponent] Display options updated");
             }
-            
-            // Clean up events
-            OnGameTimeChanged = null;
-            OnGameDayChanged = null;
-            OnTimeAccelerationChanged = null;
-            OnPenaltyLevelChanged = null;
-            OnTimeEventTriggered = null;
         }
+
+        /// <summary>
+        /// Set time format
+        /// </summary>
+        public void SetTimeFormat(string format)
+        {
+            _timeFormat = format;
+            UpdateDisplay();
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log($"[TimeDisplayComponent] Time format set to {format}");
+            }
+        }
+
+        /// <summary>
+        /// Get display statistics
+        /// </summary>
+        public TimeDisplayStats GetStats()
+        {
+            return new TimeDisplayStats
+            {
+                CurrentGameTime = _gameTime,
+                CurrentDay = _currentDay,
+                IsDisplayEnabled = _enableBasicDisplay,
+                IsInitialized = _isInitialized,
+                ShowsGameTime = _showGameTime,
+                ShowsRealTime = _showRealTime,
+                ShowsTimeScale = _showTimeScale
+            };
+        }
+
+        #region Private Methods
+
+        private void UpdateDisplay()
+        {
+            if (!_isInitialized) return;
+
+            string displayText = "";
+
+            // Game time
+            if (_showGameTime)
+            {
+                displayText += $"{_dayPrefix}{_currentDay} - {GetFormattedTime()}";
+            }
+
+            // Real time
+            if (_showRealTime)
+            {
+                if (!string.IsNullOrEmpty(displayText)) displayText += "\n";
+                displayText += $"Real: {System.DateTime.Now.ToString(_timeFormat)}";
+            }
+
+            // Time scale
+            if (_showTimeScale)
+            {
+                if (!string.IsNullOrEmpty(displayText)) displayText += "\n";
+                displayText += $"Speed: {Time.timeScale:F1}x";
+            }
+
+            // Update UI
+            if (_gameTimeText != null)
+            {
+                _gameTimeText.text = displayText;
+            }
+        }
+
+        #endregion
     }
-    
+
     /// <summary>
-    /// Time penalty levels for visual/audio signaling
+    /// Time display statistics
     /// </summary>
-    public enum TimePenaltyLevel
+    [System.Serializable]
+    public struct TimeDisplayStats
     {
-        None = 0,       // Normal operation
-        Warning = 1,    // Minor time pressure
-        Penalty = 2,    // Active penalty state
-        Critical = 3    // Critical time violation
+        public float CurrentGameTime;
+        public int CurrentDay;
+        public bool IsDisplayEnabled;
+        public bool IsInitialized;
+        public bool ShowsGameTime;
+        public bool ShowsRealTime;
+        public bool ShowsTimeScale;
     }
 }

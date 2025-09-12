@@ -1,0 +1,495 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Data.Cultivation.IPM
+{
+    /// <summary>
+    /// Core enums and essential data structures for the IPM system.
+    /// Shared across all IPM modules for consistency.
+    /// </summary>
+    public static class IPMDataStructures
+    {
+        // Core IPM enums
+        public enum IPMApproach
+        {
+            Biological_First,
+            Cultural_Emphasis,
+            Integrated_Balanced,
+            Conventional_Backup,
+            Organic_Only
+        }
+
+        public enum IPMComplexityLevel
+        {
+            Basic,
+            Intermediate,
+            Advanced,
+            Professional,
+            Research_Grade
+        }
+
+        public enum PestType
+        {
+            Spider_Mites,
+            Thrips,
+            Aphids,
+            Whiteflies,
+            Fungus_Gnats,
+            Root_Aphids,
+            Powdery_Mildew,
+            Botrytis,
+            Downy_Mildew,
+            Fusarium,
+            Pythium,
+            Spider_Mites_Broad,
+            Russet_Mites,
+            Hemp_Russet_Mites
+        }
+
+        public enum BeneficialType
+        {
+            Predator,
+            Parasitoid,
+            Pathogen,
+            Competitor,
+            Pollinator
+        }
+
+        public enum InspectionFrequency
+        {
+            Daily,
+            Every_Other_Day,
+            Twice_Weekly,
+            Weekly,
+            Bi_Weekly,
+            As_Needed
+        }
+
+        public enum TimeOfDay
+        {
+            Early_Morning,
+            Morning,
+            Midday,
+            Afternoon,
+            Evening,
+            Night
+        }
+
+        public enum PracticeFrequency
+        {
+            Continuous,
+            Daily,
+            Weekly,
+            Bi_Weekly,
+            Monthly,
+            Seasonally,
+            As_Needed
+        }
+
+        public enum TreatmentType
+        {
+            Biological,
+            Cultural,
+            Mechanical,
+            Organic,
+            Chemical,
+            Pheromone,
+            Physical
+        }
+
+        public enum ResistanceRisk
+        {
+            None,
+            Low,
+            Medium,
+            High,
+            Very_High
+        }
+
+        public enum InterventionPriority
+        {
+            None,
+            Low,
+            Medium,
+            High,
+            Critical,
+            Emergency
+        }
+
+        public enum RiskLevel
+        {
+            Very_Low,
+            Low,
+            Medium,
+            High,
+            Very_High,
+            Critical
+        }
+
+        public enum PopulationTrend
+        {
+            Decreasing,
+            Stable,
+            Increasing,
+            Unknown
+        }
+
+        public enum InfestationSeverity
+        {
+            None,
+            Low,
+            Medium,
+            High,
+            Critical
+        }
+
+        // Core assessment structures
+        public class IPMAssessment
+        {
+            public DateTime AssessmentTimestamp;
+            public string ZoneID;
+            public int PlantCount;
+            public IPMApproach IPMApproach;
+            public PestDetectionResult[] DetectedPests;
+            public EnvironmentalRiskFactor[] EnvironmentalRiskFactors;
+            public float PlantVulnerabilityScore;
+            public InterventionPriority InterventionPriority;
+            public IPMRecommendation[] RecommendedActions;
+            public RiskLevel OverallRiskLevel;
+
+            // Additional properties for compatibility
+            public string[] BeneficialOrganismStatus => new string[] { "Present", "Active" };
+            public PreventativeRecommendation[] PreventativeRecommendations => new PreventativeRecommendation[0];
+        }
+
+        public class PreventativeRecommendation
+        {
+            public string Practice;
+            public string Implementation;
+            public float Effectiveness;
+            public string Category;
+            public string Recommendation;
+            public float PotentialImprovement;
+        }
+
+        public class ImprovementRecommendation
+        {
+            public string Category;
+            public string Recommendation;
+            public float PotentialImprovement;
+        }
+
+        public class PestDetectionResult
+        {
+            public PestType PestType;
+            public float PopulationLevel;
+            public PopulationTrend Trend;
+            public InfestationSeverity Severity;
+        }
+
+        public class EnvironmentalRiskFactor
+        {
+            public string Factor;
+            public RiskLevel RiskLevel;
+            public string Description;
+        }
+
+        public class IPMRecommendation
+        {
+            public string Action;
+            public InterventionPriority Priority;
+            public string Justification;
+        }
+
+        // Biological control structures
+        public class BiologicalControlPlan
+        {
+            public PestType TargetPest;
+            public string ZoneID;
+            public DateTime CreationTimestamp;
+            public float PestPressureLevel;
+            public BeneficialOrganism[] SelectedBeneficials;
+            public ReleaseStrategy ReleaseStrategy;
+            public float SuccessProbability;
+            public float CostEstimate;
+
+            // Additional properties for compatibility
+            public BeneficialOrganism[] RecommendedBeneficials => SelectedBeneficials;
+            public MonitoringRequirements MonitoringRequirements { get; set; }
+        }
+
+        public class ReleaseStrategy
+        {
+            public DateTime ReleaseDate;
+            public float Quantity;
+        }
+
+        public class MonitoringRequirements
+        {
+            public string Protocol;
+            public MonitoringStation[] Stations;
+            public string Schedule;
+            public float[] AlertThresholds;
+        }
+
+        public class MonitoringStation
+        {
+            public string StationID;
+            public string Location;
+            public string Equipment;
+            public string[] TargetPests;
+        }
+
+        public class MonitoringProtocol
+        {
+            public string ProtocolID;
+            public string Name;
+            public string Description;
+            public float[] ActionThresholds;
+        }
+
+        // Monitoring structures
+        public class MonitoringPlan
+        {
+            public string ZoneID;
+            public DateTime PlanCreationDate;
+            public float MonitoringDuration;
+            public int PlantCount;
+            public InspectionSchedule InspectionSchedule;
+
+            // Additional properties for compatibility
+            public string Protocol => InspectionSchedule?.ProtocolName ?? "Standard";
+            public MonitoringStation[] Stations => new MonitoringStation[0];
+            public string Schedule => InspectionSchedule?.ScheduleType ?? "Daily";
+            public float[] AlertThresholds => InspectionSchedule?.AlertThresholds ?? new float[0];
+        }
+
+        public class InspectionSchedule
+        {
+            public int TotalInspectionsPerWeek;
+            public InspectionSlot[] InspectionSlots;
+
+            // Additional properties for compatibility
+            public string ProtocolName => "Standard Monitoring";
+            public string ScheduleType => "Weekly";
+            public float[] AlertThresholds => new float[] { 0.1f, 0.5f, 0.8f };
+            public string[] InspectionTimes => new string[] { "Morning", "Afternoon" };
+            public string[] InspectionTypes => new string[] { "Visual", "Sticky Traps" };
+        }
+
+        public class InspectionSlot
+        {
+            public DayOfWeek DayOfWeek;
+            public InspectionTime[] InspectionTimes;
+        }
+
+        public class InspectionTime
+        {
+            public TimeOfDay Time;
+            public float Duration;
+        }
+
+        // Treatment structures
+        public class IntegratedTreatmentPlan
+        {
+            public string ZoneID;
+            public DateTime PlanCreationDate;
+            public PestInfestation[] TargetInfestations;
+            public TreatmentHierarchy TreatmentHierarchy;
+
+            // Additional properties for compatibility
+            public string[] BiologicalInterventions => new string[] { "Beneficial insects", "Microbial agents" };
+        }
+
+        public class TreatmentHierarchy
+        {
+            public TreatmentType[] PrimaryTreatments;
+            public string[] Justifications;
+        }
+
+        public class PestInfestation
+        {
+            public PestType Pest;
+            public float Severity;
+            public string[] AffectedAreas;
+        }
+
+        // BeneficialOrganism is defined in BeneficialOrganisms.cs to avoid duplication
+
+        public class TreatmentProtocol
+        {
+            public string TreatmentName;
+            public TreatmentType TreatmentType;
+            public string[] TargetPests;
+            public string ApplicationMethod;
+            public float EffectivenessRating;
+        }
+
+        public class MonitoringProtocol
+        {
+            public PestType PestType;
+            public InspectionFrequency InspectionFrequency;
+            public string[] EarlyDetectionMethods;
+            public float ActionThreshold;
+        }
+
+        public class CulturalPractice
+        {
+            public string PracticeName;
+            public string[] TargetIssues;
+            public PracticeFrequency Frequency;
+            public float EffectivenessRating;
+        }
+
+        public enum RecommendationPriority
+        {
+            Low,
+            Medium,
+            High,
+            Critical
+        }
+
+        // Supporting data structures
+        public class PestMonitoringData
+        {
+            public PestType Pest;
+            public float Population;
+            public DateTime Date;
+            public string Location;
+        }
+
+        public class IPMTreatmentHistory
+        {
+            public string Treatment;
+            public DateTime Date;
+            public float Effectiveness;
+        }
+
+
+        public class MonitoringStation
+        {
+            public string StationId;
+            public Vector3 Location;
+            public List<PestMonitoringData> Readings;
+        }
+
+        public class ImprovementRecommendation
+        {
+            public string RecommendationType;
+            public string Description;
+            public float ExpectedImprovement;
+        }
+
+        /// <summary>
+        /// IPM effectiveness report structure
+        /// </summary>
+        public class IPMEffectivenessReport
+        {
+            public string ZoneID;
+            public DateTime ReportDate;
+            public float OverallEffectiveness;
+            public PestType[] ControlledPests;
+            public float CostEfficiency;
+            public string RecommendedImprovements;
+
+            // Additional properties for compatibility
+            public DateTime EvaluationTimestamp => ReportDate;
+            public float EvaluationPeriodDays => 30f; // Default 30 days
+            public int TotalTreatments => ControlledPests?.Length ?? 0;
+            public float TreatmentEffectiveness => OverallEffectiveness;
+            public string OverallEffectivenessRating => OverallEffectiveness > 0.8f ? "Excellent" : OverallEffectiveness > 0.6f ? "Good" : "Needs Improvement";
+            public float PestReduction => OverallEffectiveness;
+            public float CostEffectiveness => CostEfficiency;
+            public float EnvironmentalImpact => 0.1f; // Default low impact
+            public string[] Recommendations => new string[] { RecommendedImprovements };
+        }
+
+        /// <summary>
+        /// Date range structure
+        /// </summary>
+        public class DateRange
+        {
+            public DateTime StartDate;
+            public DateTime EndDate;
+            public float DurationDays;
+            
+            // Compatibility aliases
+            public DateTime Start 
+            {
+                get => StartDate;
+                set => StartDate = value;
+            }
+            
+            public DateTime End 
+            {
+                get => EndDate;
+                set => EndDate = value;
+            }
+        }
+
+        /// <summary>
+        /// Environmental optimization plan structure
+        /// </summary>
+        public class EnvironmentalOptimizationPlan
+        {
+            public string PlanID;
+            public string ZoneID;
+            public DateTime CreationDate;
+            public EnvironmentalModification[] Modifications;
+            public float ExpectedImprovement;
+
+            // Additional properties for compatibility
+            public DateTime OptimizationTimestamp => CreationDate;
+            public string[] CurrentConditions => new string[] { "Temperature", "Humidity", "Light" };
+            public string[] ActiveBeneficials => new string[] { "Ladybugs", "Predatory Mites" };
+            public string[] TargetPests => new string[] { "Aphids", "Spider Mites" };
+        }
+
+        /// <summary>
+        /// Environmental modification structure
+        /// </summary>
+        public class EnvironmentalModification
+        {
+            public string Parameter;
+            public float CurrentValue;
+            public float TargetValue;
+            public string Justification;
+        }
+
+        /// <summary>
+        /// Preventative recommendation structure
+        /// </summary>
+        public class PreventativeRecommendation
+        {
+            public string RecommendationID;
+            public PestType TargetPest;
+            public string Action;
+            public string Frequency;
+            public float Priority;
+        }
+
+        /// <summary>
+        /// Yield comparison structure
+        /// </summary>
+        public class YieldComparison
+        {
+            public string PlantID;
+            public float BaselineYield;
+            public float CurrentYield;
+            public float ImprovementPercentage;
+            public DateTime ComparisonDate;
+
+            // Additional properties for compatibility
+            public float PredictedYield => BaselineYield;
+            public float ActualYield => CurrentYield;
+            public float Difference => CurrentYield - BaselineYield;
+            public float Accuracy => BaselineYield > 0 ? (CurrentYield / BaselineYield) * 100f : 0f;
+            public string PerformanceRating => ImprovementPercentage > 10 ? "Excellent" : ImprovementPercentage > 0 ? "Good" : "Needs Improvement";
+            public string RatingColor => ImprovementPercentage > 10 ? "Green" : ImprovementPercentage > 0 ? "Yellow" : "Red";
+            public float ScoreDifference => Difference;
+            public string ImprovementDirection => Difference > 0 ? "Positive" : Difference < 0 ? "Negative" : "Neutral";
+            public string ImprovementColor => Difference > 0 ? "Green" : Difference < 0 ? "Red" : "Gray";
+        }
+    }
+}

@@ -25,12 +25,16 @@ namespace ProjectChimera.Data.Cultivation
         [Header("Growth Properties")]
         public float growthRate = 1.0f;
         public float yieldMultiplier = 1.0f;
+        public float AverageHeight = 120.0f;
         public PlantGrowthStage preferredStage = PlantGrowthStage.Vegetative;
 
         [Header("Quality Metrics")]
         public float thcContent = 15.0f;
         public float cbdContent = 1.0f;
         public float harvestQuality = 80.0f;
+        
+        // Properties for compatibility
+        public float AverageTHC => thcContent;
 
         [Header("Yield Range")]
         public float minYield = 50.0f;

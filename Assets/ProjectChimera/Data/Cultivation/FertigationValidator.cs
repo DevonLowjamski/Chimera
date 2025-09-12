@@ -1,596 +1,270 @@
 using UnityEngine;
-using ProjectChimera.Data.Shared;
-using ProjectChimera.Data.Genetics;
-using ProjectChimera.Shared;
-using System;
 using System.Collections.Generic;
-using System.Linq;
+using ProjectChimera.Data.Shared;
 
 namespace ProjectChimera.Data.Cultivation
 {
     /// <summary>
-    /// Handles validation, monitoring, and correction methods for the fertigation system.
-    /// Implements professional cultivation monitoring and correction protocols.
+    /// SIMPLE: Basic fertigation validation aligned with Project Chimera's cultivation needs.
+    /// Focuses on essential validation for watering and nutrient management.
     /// </summary>
     public static class FertigationValidator
     {
         /// <summary>
-        /// Monitors real-time fertigation system performance and makes automated adjustments.
-        /// Implements closed-loop control for professional cultivation.
+        /// Basic pH validation
         /// </summary>
-        public static FertigationSystemStatus MonitorSystemPerformance(
-            FertigationConfig config,
-            FertigationSensorData[] sensorData,
-            CultivationZoneSO zone,
-            PlantInstanceSO[] plants)
+        public const float OptimalPhMin = 5.5f;
+        public const float OptimalPhMax = 6.5f;
+
+        /// <summary>
+        /// Basic EC validation (nutrient concentration)
+        /// </summary>
+        public const float OptimalEcMin = 1.0f;
+        public const float OptimalEcMax = 2.5f;
+
+        /// <summary>
+        /// Validate pH level
+        /// </summary>
+        public static PhValidationResult ValidatePh(float phLevel)
         {
-            var status = new FertigationSystemStatus
+            var result = new PhValidationResult
             {
-                Timestamp = DateTime.Now,
-                ZoneID = zone?.ZoneID ?? "Default",
-                SystemMode = config.SystemMode
+                CurrentPh = phLevel,
+                IsValid = phLevel >= OptimalPhMin && phLevel <= OptimalPhMax
             };
-            
-            // Process sensor data
-            var currentConditions = ProcessSensorData(sensorData);
-            status.CurrentNutrientConditions = currentConditions;
-            
-            // Check target vs actual parameters
-            var targetSolution = FertigationCalculator.CalculateOptimalNutrientSolution(
-                config, plants, zone.DefaultConditions, zone, currentConditions.WaterQuality);
-            status.TargetNutrientConditions = targetSolution;
-            
-            // Calculate deviations and required corrections
-            var corrections = CalculateRequiredCorrections(currentConditions, targetSolution);
-            status.RequiredCorrections = corrections;
-            
-            // Evaluate system health
-            status.SystemHealth = EvaluateSystemHealth(sensorData, corrections);
-            
-            // Check equipment status
-            status.EquipmentStatus = MonitorEquipmentHealth(config);
-            
-            // Analyze nutrient trends
-            if (config.EnableNutrientTrending)
+
+            if (phLevel < OptimalPhMin)
             {
-                status.NutrientTrends = AnalyzeNutrientTrends(currentConditions, zone);
+                result.Status = "Too acidic - add base";
+                result.AdjustmentNeeded = OptimalPhMin - phLevel;
             }
-            
-            // Generate automated actions if needed
-            if (config.SystemMode == FertigationMode.FullyAutomated)
+            else if (phLevel > OptimalPhMax)
             {
-                status.AutomatedActions = GenerateAutomatedActions(corrections, status.SystemHealth);
-            }
-            
-            // Calculate efficiency metrics
-            status.EfficiencyMetrics = CalculateEfficiencyMetrics(currentConditions, targetSolution);
-            
-            return status;
-        }
-        
-        /// <summary>
-        /// Performs automated pH correction using professional cultivation protocols.
-        /// </summary>
-        public static pHCorrectionAction PerformpHCorrection(
-            FertigationConfig config,
-            float currentpH,
-            float targetpH,
-            float solutionVolume,
-            WaterQualityData waterQuality)
-        {
-            var correction = new pHCorrectionAction
-            {
-                Timestamp = DateTime.Now,
-                CurrentpH = currentpH,
-                TargetpH = targetpH,
-                SolutionVolume = solutionVolume
-            };
-            
-            float pHDifference = targetpH - currentpH;
-            correction.pHDeviation = pHDifference;
-            
-            if (Mathf.Abs(pHDifference) < config.PHControl.pHDeadband)
-            {
-                correction.ActionRequired = false;
-                correction.CorrectionAmount = 0f;
-                return correction;
-            }
-            
-            correction.ActionRequired = true;
-            
-            if (pHDifference > 0) // Need to increase pH
-            {
-                correction.CorrectionType = pHCorrectionType.pHUp;
-                correction.CorrectionAmount = CalculatepHUpDosage(pHDifference, solutionVolume, waterQuality, config.PHControl);
-            }
-            else // Need to decrease pH
-            {
-                correction.CorrectionType = pHCorrectionType.pHDown;
-                correction.CorrectionAmount = CalculatepHDownDosage(-pHDifference, solutionVolume, waterQuality, config.PHControl);
-            }
-            
-            // Safety limits
-            correction.CorrectionAmount = Mathf.Clamp(correction.CorrectionAmount, 0f, config.PHControl.MaxCorrectionPerDose);
-            
-            // Calculate expected result
-            correction.ExpectedResultingpH = PredictResultingpH(currentpH, correction.CorrectionAmount, correction.CorrectionType, solutionVolume);
-            
-            // Estimate correction time
-            correction.EstimatedCorrectionTime = config.CorrectionResponseTime;
-            
-            return correction;
-        }
-        
-        /// <summary>
-        /// Performs automated EC correction for optimal nutrient concentration.
-        /// </summary>
-        public static ECCorrectionAction PerformECCorrection(
-            FertigationConfig config,
-            float currentEC,
-            float targetEC,
-            float solutionVolume,
-            NutrientProfile activeProfile)
-        {
-            var correction = new ECCorrectionAction
-            {
-                Timestamp = DateTime.Now,
-                CurrentEC = currentEC,
-                TargetEC = targetEC,
-                SolutionVolume = solutionVolume
-            };
-            
-            float ecDifference = targetEC - currentEC;
-            correction.ECDeviation = ecDifference;
-            
-            if (Mathf.Abs(ecDifference) < config.ECControl.ECDeadband)
-            {
-                correction.ActionRequired = false;
-                correction.CorrectionAmount = 0f;
-                return correction;
-            }
-            
-            correction.ActionRequired = true;
-            
-            if (ecDifference > 0) // Need to increase EC (add nutrients)
-            {
-                correction.CorrectionType = ECCorrectionType.AddNutrients;
-                correction.CorrectionAmount = CalculateNutrientAddition(ecDifference, solutionVolume, activeProfile, config.ECControl);
-            }
-            else // Need to decrease EC (dilute)
-            {
-                correction.CorrectionType = ECCorrectionType.Dilute;
-                correction.CorrectionAmount = CalculateDilutionAmount(-ecDifference, solutionVolume, config.ECControl);
-            }
-            
-            // Safety limits
-            correction.CorrectionAmount = Mathf.Clamp(correction.CorrectionAmount, 0f, config.ECControl.MaxCorrectionPerDose);
-            
-            // Calculate expected result
-            correction.ExpectedResultingEC = PredictResultingEC(currentEC, correction.CorrectionAmount, correction.CorrectionType, solutionVolume);
-            
-            // Estimate correction time
-            correction.EstimatedCorrectionTime = config.CorrectionResponseTime;
-            
-            return correction;
-        }
-        
-        /// <summary>
-        /// Analyzes runoff water to optimize nutrient uptake and reduce waste.
-        /// </summary>
-        public static RunoffAnalysis AnalyzeRunoff(
-            FertigationConfig config,
-            WaterQualityData runoffData,
-            NutrientSolution appliedSolution,
-            PlantInstanceSO[] plants)
-        {
-            var analysis = new RunoffAnalysis
-            {
-                Timestamp = DateTime.Now,
-                RunoffVolume = runoffData.Volume,
-                AppliedSolution = appliedSolution
-            };
-            
-            // Calculate nutrient uptake efficiency
-            analysis.NutrientUptakeEfficiency = CalculateNutrientUptake(runoffData, appliedSolution);
-            
-            // Analyze water use efficiency
-            analysis.WaterUseEfficiency = CalculateWaterUseEfficiency(runoffData.Volume, appliedSolution.TotalVolume);
-            
-            // Check for potential deficiencies or toxicities
-            analysis.NutrientImbalances = DetectNutrientImbalances(runoffData, appliedSolution);
-            
-            // Calculate environmental impact
-            analysis.EnvironmentalImpact = CalculateEnvironmentalImpact(runoffData, config);
-            
-            // Generate optimization recommendations
-            analysis.OptimizationRecommendations = GenerateOptimizationRecommendations(analysis, config);
-            
-            // Calculate cost implications
-            analysis.CostImplications = CalculateCostImplications(analysis, appliedSolution, config);
-            
-            return analysis;
-        }
-        
-        /// <summary>
-        /// Validates the nutrient solution for safety and effectiveness.
-        /// </summary>
-        public static ValidationResults ValidateNutrientSolution(NutrientSolution solution, FertigationConfig config)
-        {
-            var results = new ValidationResults();
-            var warnings = new List<string>();
-            var errors = new List<string>();
-            
-            // Validate pH range
-            if (solution.TargetpH < 4f || solution.TargetpH > 8f)
-            {
-                errors.Add($"pH value {solution.TargetpH:F2} is outside safe range (4.0-8.0)");
-            }
-            else if (solution.TargetpH < 5.5f || solution.TargetpH > 6.5f)
-            {
-                warnings.Add($"pH value {solution.TargetpH:F2} is outside optimal range (5.5-6.5)");
-            }
-            
-            // Validate EC range
-            if (solution.TargetEC < 0.1f || solution.TargetEC > 3f)
-            {
-                errors.Add($"EC value {solution.TargetEC:F2} is outside safe range (0.1-3.0 mS/cm)");
-            }
-            else if (solution.TargetEC > 2.5f)
-            {
-                warnings.Add($"EC value {solution.TargetEC:F2} is very high, monitor for nutrient burn");
-            }
-            
-            // Validate NPK ratios
-            if (solution.NPKRatio.x <= 0 || solution.NPKRatio.y <= 0 || solution.NPKRatio.z <= 0)
-            {
-                errors.Add("NPK ratio contains zero or negative values");
-            }
-            
-            // Validate nutrient concentrations
-            if (solution.NutrientConcentrations != null)
-            {
-                foreach (var nutrient in solution.NutrientConcentrations)
-                {
-                    if (nutrient.Value < 0)
-                    {
-                        errors.Add($"Negative concentration for {nutrient.Key}: {nutrient.Value}");
-                    }
-                    else if (nutrient.Value > GetMaxSafeConcentration(nutrient.Key))
-                    {
-                        warnings.Add($"High concentration for {nutrient.Key}: {nutrient.Value} ppm");
-                    }
-                }
-            }
-            
-            // Validate total volume
-            if (solution.TotalVolume <= 0)
-            {
-                errors.Add("Solution volume must be positive");
-            }
-            
-            results.IsValid = errors.Count == 0;
-            results.Errors = errors.ToArray();
-            results.Warnings = warnings.ToArray();
-            
-            return results;
-        }
-        
-        /// <summary>
-        /// Validates system configuration for consistency and safety.
-        /// </summary>
-        public static bool ValidateSystemConfiguration(FertigationConfig config)
-        {
-            bool isValid = true;
-            var validationErrors = new List<string>();
-            
-            // Validate basic parameters
-            if (config.MaxZoneCount <= 0 || config.MaxZoneCount > 32)
-            {
-                validationErrors.Add("Max zone count must be between 1 and 32");
-                isValid = false;
-            }
-            
-            if (config.WaterTemperatureTarget < 10f || config.WaterTemperatureTarget > 35f)
-            {
-                validationErrors.Add("Water temperature target should be between 10°C and 35°C");
-                isValid = false;
-            }
-            
-            if (config.DissolvedOxygenTarget < 3f || config.DissolvedOxygenTarget > 15f)
-            {
-                validationErrors.Add("Dissolved oxygen target should be between 3ppm and 15ppm");
-                isValid = false;
-            }
-            
-            // Validate nutrient lines
-            if (config.NutrientLines == null || config.NutrientLines.Length == 0)
-            {
-                validationErrors.Add("At least one nutrient line must be configured");
-                isValid = false;
+                result.Status = "Too alkaline - add acid";
+                result.AdjustmentNeeded = phLevel - OptimalPhMax;
             }
             else
             {
-                for (int i = 0; i < config.NutrientLines.Length; i++)
-                {
-                    var line = config.NutrientLines[i];
-                    if (string.IsNullOrEmpty(line.LineName))
-                    {
-                        validationErrors.Add($"Nutrient line {i} must have a valid name");
-                        isValid = false;
-                    }
-                    
-                    if (line.Concentration <= 0f || line.Concentration > 500f)
-                    {
-                        validationErrors.Add($"Nutrient line {i} concentration must be between 0 and 500");
-                        isValid = false;
-                    }
-                }
+                result.Status = "Optimal pH";
+                result.AdjustmentNeeded = 0f;
             }
-            
-            // Validate growth stage profiles
-            if (config.StageNutrientProfiles == null || config.StageNutrientProfiles.Length == 0)
+
+            return result;
+        }
+
+        /// <summary>
+        /// Validate EC level
+        /// </summary>
+        public static EcValidationResult ValidateEc(float ecLevel)
+        {
+            var result = new EcValidationResult
             {
-                validationErrors.Add("At least one nutrient profile must be configured");
-                isValid = false;
+                CurrentEc = ecLevel,
+                IsValid = ecLevel >= OptimalEcMin && ecLevel <= OptimalEcMax
+            };
+
+            if (ecLevel < OptimalEcMin)
+            {
+                result.Status = "Nutrients too low - add fertilizer";
+                result.AdjustmentNeeded = OptimalEcMin - ecLevel;
+            }
+            else if (ecLevel > OptimalEcMax)
+            {
+                result.Status = "Nutrients too high - add water";
+                result.AdjustmentNeeded = ecLevel - OptimalEcMax;
             }
             else
             {
-                foreach (var profile in config.StageNutrientProfiles)
-                {
-                    if (profile.TargetEC < 0.1f || profile.TargetEC > 4f)
-                    {
-                        validationErrors.Add($"Profile for {profile.GrowthStage}: EC must be between 0.1 and 4.0 mS/cm");
-                        isValid = false;
-                    }
-                    
-                    if (profile.TargetpH < 4f || profile.TargetpH > 8f)
-                    {
-                        validationErrors.Add($"Profile for {profile.GrowthStage}: pH must be between 4.0 and 8.0");
-                        isValid = false;
-                    }
-                }
+                result.Status = "Optimal nutrient level";
+                result.AdjustmentNeeded = 0f;
             }
-            
-            // Log validation results
-            if (!isValid)
-            {
-                UnityEngine.Debug.LogError($"FertigationConfig validation failed:\n{string.Join("\n", validationErrors)}");
-            }
-            
-            return isValid;
+
+            return result;
         }
-        
-        #region Private Helper Methods
-        
-        private static NutrientConditions ProcessSensorData(FertigationSensorData[] sensorData)
+
+        /// <summary>
+        /// Validate watering schedule
+        /// </summary>
+        public static WateringValidationResult ValidateWatering(float hoursSinceLastWatering, float wateringFrequencyHours)
         {
-            var conditions = new NutrientConditions
+            var result = new WateringValidationResult
             {
-                WaterQuality = new WaterQualityData()
+                HoursSinceLastWatering = hoursSinceLastWatering,
+                WateringFrequencyHours = wateringFrequencyHours,
+                NeedsWatering = hoursSinceLastWatering >= wateringFrequencyHours
             };
-            
-            foreach (var sensor in sensorData)
+
+            if (result.NeedsWatering)
             {
-                switch (sensor.Type)
-                {
-                    case SensorType.pH:
-                        conditions.pH = sensor.Value;
-                        break;
-                    case SensorType.EC:
-                        conditions.EC = sensor.Value;
-                        break;
-                    case SensorType.Temperature:
-                        conditions.Temperature = sensor.Value;
-                        conditions.WaterQuality.Temperature = sensor.Value;
-                        break;
-                }
+                result.Status = "Plants need watering";
+                result.HoursOverdue = hoursSinceLastWatering - wateringFrequencyHours;
             }
-            
-            return conditions;
-        }
-        
-        private static CorrectionRequirements CalculateRequiredCorrections(NutrientConditions current, NutrientSolution target)
-        {
-            return new CorrectionRequirements
+            else
             {
-                RequiresPHCorrection = Mathf.Abs(current.pH - target.TargetpH) > 0.2f,
-                RequiresECCorrection = Mathf.Abs(current.EC - target.TargetEC) > 0.1f
+                result.Status = "Watering schedule OK";
+                result.HoursUntilNext = wateringFrequencyHours - hoursSinceLastWatering;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Validate nutrient schedule
+        /// </summary>
+        public static NutrientValidationResult ValidateNutrients(float hoursSinceLastNutrients, float nutrientFrequencyHours)
+        {
+            var result = new NutrientValidationResult
+            {
+                HoursSinceLastNutrients = hoursSinceLastNutrients,
+                NutrientFrequencyHours = nutrientFrequencyHours,
+                NeedsNutrients = hoursSinceLastNutrients >= nutrientFrequencyHours
             };
-        }
-        
-        private static float EvaluateSystemHealth(FertigationSensorData[] sensorData, CorrectionRequirements corrections)
-        {
-            float health = 1f;
-            
-            if (corrections.RequiresPHCorrection) health -= 0.2f;
-            if (corrections.RequiresECCorrection) health -= 0.2f;
-            
-            // Check sensor data freshness
-            var oldestData = sensorData.Min(s => s.Timestamp);
-            var dataAge = (DateTime.Now - oldestData).TotalMinutes;
-            if (dataAge > 10) health -= 0.1f;
-            
-            return Mathf.Clamp01(health);
-        }
-        
-        private static EquipmentHealthStatus MonitorEquipmentHealth(FertigationConfig config)
-        {
-            var status = new EquipmentHealthStatus
+
+            if (result.NeedsNutrients)
             {
-                OverallHealth = 0.95f,
-                Issues = new string[0]
+                result.Status = "Plants need nutrients";
+                result.HoursOverdue = hoursSinceLastNutrients - nutrientFrequencyHours;
+            }
+            else
+            {
+                result.Status = "Nutrient schedule OK";
+                result.HoursUntilNext = nutrientFrequencyHours - hoursSinceLastNutrients;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Get overall system validation
+        /// </summary>
+        public static SystemValidationResult ValidateSystem(float phLevel, float ecLevel, float hoursSinceWatering, float hoursSinceNutrients, float wateringFrequency, float nutrientFrequency)
+        {
+            var phResult = ValidatePh(phLevel);
+            var ecResult = ValidateEc(ecLevel);
+            var waterResult = ValidateWatering(hoursSinceWatering, wateringFrequency);
+            var nutrientResult = ValidateNutrients(hoursSinceNutrients, nutrientFrequency);
+
+            var result = new SystemValidationResult
+            {
+                PhValidation = phResult,
+                EcValidation = ecResult,
+                WateringValidation = waterResult,
+                NutrientValidation = nutrientResult,
+                IsSystemHealthy = phResult.IsValid && ecResult.IsValid,
+                NeedsAttention = waterResult.NeedsWatering || nutrientResult.NeedsNutrients
             };
-            
-            // This would contain actual equipment monitoring logic
-            return status;
+
+            // Count issues
+            int issueCount = 0;
+            if (!phResult.IsValid) issueCount++;
+            if (!ecResult.IsValid) issueCount++;
+            if (waterResult.NeedsWatering) issueCount++;
+            if (nutrientResult.NeedsNutrients) issueCount++;
+
+            result.IssueCount = issueCount;
+            result.SystemStatus = issueCount == 0 ? "All systems optimal" :
+                                issueCount == 1 ? "Minor issue detected" :
+                                $"{issueCount} issues need attention";
+
+            return result;
         }
-        
-        private static NutrientTrends AnalyzeNutrientTrends(NutrientConditions current, CultivationZoneSO zone)
+
+        /// <summary>
+        /// Get recommended actions
+        /// </summary>
+        public static List<string> GetRecommendedActions(SystemValidationResult validation)
         {
-            return new NutrientTrends
+            var actions = new List<string>();
+
+            if (validation.PhValidation.AdjustmentNeeded != 0)
             {
-                TrendDescriptions = new string[]
-                {
-                    "pH stable within target range",
-                    "EC showing slight upward trend",
-                    "Temperature consistent with targets"
-                }
-            };
-        }
-        
-        private static AutomatedAction[] GenerateAutomatedActions(CorrectionRequirements corrections, float systemHealth)
-        {
-            var actions = new List<AutomatedAction>();
-            
-            if (corrections.RequiresPHCorrection)
-            {
-                actions.Add(new AutomatedAction { ActionType = "pH Correction", Target = "pH", Value = 6.0f });
+                actions.Add(validation.PhValidation.Status);
             }
-            
-            if (corrections.RequiresECCorrection)
+
+            if (validation.EcValidation.AdjustmentNeeded != 0)
             {
-                actions.Add(new AutomatedAction { ActionType = "EC Correction", Target = "EC", Value = 1.2f });
+                actions.Add(validation.EcValidation.Status);
             }
-            
-            return actions.ToArray();
-        }
-        
-        private static EfficiencyMetrics CalculateEfficiencyMetrics(NutrientConditions current, NutrientSolution target)
-        {
-            return new EfficiencyMetrics
+
+            if (validation.WateringValidation.NeedsWatering)
             {
-                NutrientEfficiency = 0.85f,
-                WaterEfficiency = 0.90f,
-                EnergyEfficiency = 0.88f
-            };
-        }
-        
-        private static float CalculatepHUpDosage(float pHDifference, float volume, WaterQualityData waterQuality, pHControlSystem pHControl)
-        {
-            float baseDosage = pHDifference * volume * 0.1f; // Base calculation
-            float effectiveness = pHControl.pHUpSolution.EffectivenessFactor;
-            return baseDosage / effectiveness;
-        }
-        
-        private static float CalculatepHDownDosage(float pHDifference, float volume, WaterQualityData waterQuality, pHControlSystem pHControl)
-        {
-            float baseDosage = pHDifference * volume * 0.1f;
-            float effectiveness = pHControl.pHDownSolution.EffectivenessFactor;
-            return baseDosage / effectiveness;
-        }
-        
-        private static float PredictResultingpH(float currentpH, float dosage, pHCorrectionType type, float volume)
-        {
-            float change = dosage / volume * 0.1f; // Simplified calculation
-            return type == pHCorrectionType.pHUp ? currentpH + change : currentpH - change;
-        }
-        
-        private static float CalculateNutrientAddition(float ecDifference, float volume, NutrientProfile profile, ECControlSystem ecControl)
-        {
-            return ecDifference * volume * 10f; // Simplified calculation
-        }
-        
-        private static float CalculateDilutionAmount(float ecDifference, float volume, ECControlSystem ecControl)
-        {
-            return ecDifference * volume * 5f; // Simplified calculation
-        }
-        
-        private static float PredictResultingEC(float currentEC, float correction, ECCorrectionType type, float volume)
-        {
-            float change = correction / volume * 0.01f;
-            return type == ECCorrectionType.AddNutrients ? currentEC + change : currentEC - change;
-        }
-        
-        private static Dictionary<NutrientType, float> CalculateNutrientUptake(WaterQualityData runoff, NutrientSolution applied)
-        {
-            var uptake = new Dictionary<NutrientType, float>();
-            
-            foreach (var nutrient in applied.NutrientConcentrations)
-            {
-                float assumedUptake = 0.70f; // 70% uptake efficiency
-                uptake[nutrient.Key] = assumedUptake;
+                actions.Add($"Water plants - {validation.WateringValidation.HoursOverdue:F1} hours overdue");
             }
-            
-            return uptake;
-        }
-        
-        private static float CalculateWaterUseEfficiency(float runoffVolume, float appliedVolume)
-        {
-            if (appliedVolume <= 0) return 0f;
-            return 1f - (runoffVolume / appliedVolume);
-        }
-        
-        private static NutrientImbalance[] DetectNutrientImbalances(WaterQualityData runoff, NutrientSolution applied)
-        {
-            var imbalances = new List<NutrientImbalance>();
-            
-            // This would contain logic to detect actual imbalances
-            // For now, return empty array
-            return imbalances.ToArray();
-        }
-        
-        private static FertigationEnvironmentalImpact CalculateEnvironmentalImpact(WaterQualityData runoff, FertigationConfig config)
-        {
-            return new FertigationEnvironmentalImpact
+
+            if (validation.NutrientValidation.NeedsNutrients)
             {
-                NitrogenRunoff = runoff.TDS * 0.1f,
-                PhosphorusRunoff = runoff.TDS * 0.05f,
-                OverallImpact = runoff.Volume * 0.01f
-            };
-        }
-        
-        private static FertigationOptimizationRecommendation[] GenerateOptimizationRecommendations(RunoffAnalysis analysis, FertigationConfig config)
-        {
-            var recommendations = new List<FertigationOptimizationRecommendation>();
-            
-            if (analysis.WaterUseEfficiency < 0.8f)
-            {
-                recommendations.Add(new FertigationOptimizationRecommendation
-                {
-                    Category = "Water Efficiency",
-                    Recommendation = "Reduce irrigation volume by 10%",
-                    PotentialImprovement = 0.1f
-                });
+                actions.Add($"Apply nutrients - {validation.NutrientValidation.HoursOverdue:F1} hours overdue");
             }
-            
-            return recommendations.ToArray();
+
+            return actions;
         }
-        
-        private static CostImplication[] CalculateCostImplications(RunoffAnalysis analysis, NutrientSolution solution, FertigationConfig config)
-        {
-            var implications = new List<CostImplication>();
-            
-            if (analysis.WaterUseEfficiency < 0.85f)
-            {
-                implications.Add(new CostImplication
-                {
-                    Category = "Water Waste",
-                    CostChange = analysis.RunoffVolume * 0.01f,
-                    Description = "Water waste cost"
-                });
-            }
-            
-            return implications.ToArray();
-        }
-        
-        private static float GetMaxSafeConcentration(NutrientType nutrientType)
-        {
-            switch (nutrientType)
-            {
-                case NutrientType.MacronutrientA:
-                case NutrientType.MacronutrientB:
-                    return 400f; // ppm
-                case NutrientType.CalciumMagnesium:
-                    return 300f; // ppm
-                case NutrientType.BloomEnhancer:
-                    return 200f; // ppm
-                case NutrientType.Micronutrients:
-                    return 50f; // ppm
-                default:
-                    return 100f; // ppm default
-            }
-        }
-        
-        #endregion
+    }
+
+    /// <summary>
+    /// pH validation result
+    /// </summary>
+    [System.Serializable]
+    public struct PhValidationResult
+    {
+        public float CurrentPh;
+        public bool IsValid;
+        public string Status;
+        public float AdjustmentNeeded;
+    }
+
+    /// <summary>
+    /// EC validation result
+    /// </summary>
+    [System.Serializable]
+    public struct EcValidationResult
+    {
+        public float CurrentEc;
+        public bool IsValid;
+        public string Status;
+        public float AdjustmentNeeded;
+    }
+
+    /// <summary>
+    /// Watering validation result
+    /// </summary>
+    [System.Serializable]
+    public struct WateringValidationResult
+    {
+        public float HoursSinceLastWatering;
+        public float WateringFrequencyHours;
+        public bool NeedsWatering;
+        public string Status;
+        public float HoursOverdue;
+        public float HoursUntilNext;
+    }
+
+    /// <summary>
+    /// Nutrient validation result
+    /// </summary>
+    [System.Serializable]
+    public struct NutrientValidationResult
+    {
+        public float HoursSinceLastNutrients;
+        public float NutrientFrequencyHours;
+        public bool NeedsNutrients;
+        public string Status;
+        public float HoursOverdue;
+        public float HoursUntilNext;
+    }
+
+    /// <summary>
+    /// System validation result
+    /// </summary>
+    [System.Serializable]
+    public struct SystemValidationResult
+    {
+        public PhValidationResult PhValidation;
+        public EcValidationResult EcValidation;
+        public WateringValidationResult WateringValidation;
+        public NutrientValidationResult NutrientValidation;
+        public bool IsSystemHealthy;
+        public bool NeedsAttention;
+        public int IssueCount;
+        public string SystemStatus;
     }
 }

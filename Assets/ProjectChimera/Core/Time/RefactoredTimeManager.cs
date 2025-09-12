@@ -13,7 +13,7 @@ namespace ProjectChimera.Core
     /// Maintains original interface while using modular components
     /// Refactored from monolithic 1,066-line class into focused components
     /// </summary>
-    public class RefactoredTimeManager : DIChimeraManager, IGameStateListener, IPausable, ITickable
+    public class RefactoredTimeManager : ChimeraManager, IGameStateListener, IPausable, ITickable
     {
         [Header("Time Configuration")]
         [SerializeField] private TimeConfigSO _timeConfig;

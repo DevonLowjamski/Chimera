@@ -14,7 +14,7 @@ namespace ProjectChimera.Data.Genetics
         [Header("General Plant Properties")]
         public string PlantSpecies = "Cannabis";
         public string Cultivar;
-        public PlantType Type = PlantType.Annual;
+        public PlantLifecycleType Type = PlantLifecycleType.Annual;
         
         [Header("Additional Plant Traits")]
         public float RootSystemDepth = 1.0f;
@@ -37,6 +37,8 @@ namespace ProjectChimera.Data.Genetics
         public int Generation { get; set; } // Settable property for PlantInstanceSO
         public bool IsFounder { get; set; } // Missing property for PlantInstanceSO
         public System.DateTime CreationDate { get; set; } // Settable property for PlantInstanceSO
+        public float InbreedingCoefficient { get; set; } = 0f; // Missing property for InheritanceCalculator
+        public List<string> ParentIDs { get; set; } = new List<string>(); // Missing property for InheritanceCalculator
         public Dictionary<string, object> Genotype { get; set; } = new Dictionary<string, object>(); // Missing property for PlantInstanceSO
         public new List<object> Mutations { get; set; } = new List<object>(); // Intentional shadow
         
@@ -51,6 +53,19 @@ namespace ProjectChimera.Data.Genetics
             PlantSpecies = species;
             Cultivar = cultivar;
             InitializePlantSpecificTraits();
+        }
+        
+        /// <summary>
+        /// Adds a trait with the specified name and value to the genotype
+        /// </summary>
+        /// <param name="traitName">Name of the trait</param>
+        /// <param name="value">Value of the trait</param>
+        private void AddTrait(string traitName, float value)
+        {
+            if (Genotype == null)
+                Genotype = new Dictionary<string, object>();
+                
+            Genotype[traitName] = value;
         }
         
         private void InitializePlantSpecificTraits()
@@ -77,7 +92,7 @@ namespace ProjectChimera.Data.Genetics
         public List<string> LinkedMarkers = new List<string>();
     }
     
-    public enum PlantType
+    public enum PlantLifecycleType
     {
         Annual,
         Biennial,

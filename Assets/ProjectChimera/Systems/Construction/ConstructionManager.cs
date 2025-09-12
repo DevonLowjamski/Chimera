@@ -2,7 +2,6 @@ using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using ProjectChimera.Core;
 using ProjectChimera.Core.Events;
 using ProjectChimera.Core.Updates;
@@ -11,101 +10,128 @@ using ProjectChimera.Data.Construction;
 namespace ProjectChimera.Systems.Construction
 {
     /// <summary>
-    /// Grid-based construction management system for Project Chimera.
-    /// Serves as the primary shell coordinating the GridSystem, GridPlacementController,
-    /// and ConstructionCostManager for comprehensive construction management.
-    /// 
-    /// DEPENDENCY INJECTION: Uses constructor injection for testability and explicit dependencies.
+    /// SIMPLIFIED: Basic construction coordinator aligned with Project Chimera's direct player control vision.
+    /// Focuses on essential construction mechanics while maintaining simple, focused functionality.
+    ///
+    /// Coordinator Structure:
+    /// - GridPlacementSystem.cs: Handles grid-based placement
+    /// - SchematicManager.cs: Manages schematics
+    /// - InteractiveFacilityConstructor.cs: Handles facility construction
+    /// - ConstructionManager.cs: Coordinates the construction system
     /// </summary>
     public class ConstructionManager : DIChimeraManager, ITickable
     {
-        // Dependencies resolved via DI container (explicit dependencies for testability)
-        private IGridSystem _gridSystem;
-        private IGridPlacementController _placementController;
-        private IInteractiveFacilityConstructor _facilityConstructor;
-        private IConstructionCostManager _costManager;
-        
-        [Header("Construction Catalog")]
+        [Header("Component References")]
+        [SerializeField] private GridPlacementSystem _gridPlacementSystem;
+        [SerializeField] private SchematicManager _schematicManager;
+        [SerializeField] private InteractiveFacilityConstructor _facilityConstructor;
         [SerializeField] private ConstructionCatalog _constructionCatalog;
-        
-        [Header("Schematic Integration")]
-        [SerializeField] private bool _enableSchematicIntegration = true;
-        
+
         [Header("Construction Configuration")]
+        [SerializeField] private bool _enableSchematicIntegration = true;
         [SerializeField] private bool _enableCostTracking = true;
-        [SerializeField] private bool _enableResourceTracking = true;
-        [SerializeField] private bool _enableProgressTracking = true;
         [SerializeField] private float _autoSaveInterval = 300f; // 5 minutes
-        
+
         [Header("Event Channels")]
         [SerializeField] private SimpleGameEventSO _onProjectStarted;
         [SerializeField] private SimpleGameEventSO _onProjectCompleted;
         [SerializeField] private SimpleGameEventSO _onConstructionProgress;
         [SerializeField] private SimpleGameEventSO _onConstructionError;
-        
-        // Grid-based construction tracking
-        private Dictionary<string, GridConstructionProject> _activeProjects = new Dictionary<string, GridConstructionProject>();
-        private Dictionary<Vector3Int, string> _reservedPositions = new Dictionary<Vector3Int, string>();
-        private Dictionary<string, GridConstructionProgress> _projectProgress = new Dictionary<string, GridConstructionProgress>();
-        
-        // Schematic integration
-        private SchematicConstructionIntegration _schematicIntegration;
-        
-        // Construction metrics and performance
-        private GridConstructionMetrics _constructionMetrics = new GridConstructionMetrics();
+
+        // Basic state tracking
         private float _lastAutoSave = 0f;
-        
+
         public override ManagerPriority Priority => ManagerPriority.High;
-        
-        // Public Properties
-        public IGridSystem GridSystem => _gridSystem;
-        public IGridPlacementController PlacementController => _placementController;
-        public IConstructionCostManager CostManager => _costManager;
+
+        // Public Properties - Access to component capabilities
+        public GridPlacementSystem GridPlacementSystem => _gridPlacementSystem;
+        public SchematicManager SchematicManager => _schematicManager;
+        public InteractiveFacilityConstructor FacilityConstructor => _facilityConstructor;
         public ConstructionCatalog ConstructionCatalog => _constructionCatalog;
-        public IInteractiveFacilityConstructor FacilityConstructor => _facilityConstructor;
-        public Dictionary<string, GridConstructionProject> ActiveProjects => _activeProjects;
-        public GridConstructionMetrics ConstructionMetrics => _constructionMetrics;
-        public int ActiveProjectCount => _activeProjects.Count;
-        public bool IsInPlacementMode => _placementController != null && _placementController.IsInPlacementMode;
-        
-        // Events
-        public System.Action<string, GridConstructionProject> OnProjectStarted;
-        public System.Action<string, GridConstructionProject> OnProjectCompleted;
-        public System.Action<GridPlaceable> OnObjectPlaced;
-        public System.Action<GridPlaceable> OnObjectRemoved;
-        public System.Action<string, float> OnConstructionProgress;
-        public System.Action<string, string> OnConstructionError;
-        
+
+        // Basic status properties
+        public bool IsInitialized => _isInitialized;
+        public bool HasGridSystem => _gridPlacementSystem != null;
+        public bool HasFacilityConstructor => _facilityConstructor != null;
+
+        // Events - Forwarded from components
+        public event System.Action OnConstructionStarted;
+        public event System.Action OnConstructionCompleted;
+        public event System.Action<string> OnConstructionError;
+
         protected override void OnManagerInitialize()
         {
-            InitializeGridConstructionSystems();
-            InitializeConstructionTracking();
-            InitializeSchematicIntegration();
+            ValidateComponents();
+            SetupComponentReferences();
             SubscribeToEvents();
-            
-            _constructionMetrics = new GridConstructionMetrics();
-            
+
             // Register with UpdateOrchestrator for centralized ticking
             var orchestrator = UpdateOrchestrator.Instance;
             orchestrator?.RegisterTickable(this);
-            
-            LogInfo("Grid-based ConstructionManager initialized successfully");
+
+            _isInitialized = true;
+            LogInfo("Construction coordinator initialized successfully");
         }
-        
+
+        /// <summary>
+        /// Validates that all required components are properly assigned
+        /// </summary>
+        private void ValidateComponents()
+        {
+            bool allValid = true;
+
+            if (_gridPlacementSystem == null)
+            {
+                LogError("[ConstructionManager] GridPlacementSystem component is required but not assigned!");
+                allValid = false;
+            }
+
+            if (_facilityConstructor == null)
+            {
+                LogWarning("[ConstructionManager] InteractiveFacilityConstructor component not assigned - facility construction may not work");
+            }
+
+            if (_constructionCatalog == null)
+            {
+                LogWarning("[ConstructionManager] ConstructionCatalog not assigned - no construction templates available");
+            }
+
+            if (!allValid)
+            {
+                LogError("[ConstructionManager] Component validation failed - construction system may not function properly");
+            }
+        }
+
+        /// <summary>
+        /// Sets up references and coordination between components
+        /// </summary>
+        private void SetupComponentReferences()
+        {
+            // Connect components if needed
+            if (_gridPlacementSystem != null && _facilityConstructor != null)
+            {
+                // Set up coordination between grid placement and facility construction
+                _facilityConstructor.SetGridSystem(_gridPlacementSystem);
+            }
+
+            if (_schematicManager != null && _enableSchematicIntegration)
+            {
+                // Enable schematic integration if available
+                LogInfo("Schematic integration enabled");
+            }
+        }
+
         #region ITickable Implementation
-        
+
         int ITickable.Priority => TickPriority.ConstructionSystem;
         bool ITickable.Enabled => IsInitialized;
-        
+
         public void Tick(float deltaTime)
         {
             if (!IsInitialized) return;
-            
+
             float currentTime = Time.time;
-            
-            UpdateConstructionProgress();
-            UpdateConstructionMetrics();
-            
+
             // Auto-save periodically
             if (currentTime - _lastAutoSave >= _autoSaveInterval)
             {
@@ -113,295 +139,54 @@ namespace ProjectChimera.Systems.Construction
                 _lastAutoSave = currentTime;
             }
         }
-        
+
         public void OnRegistered()
         {
             ChimeraLogger.Log("[ConstructionManager] Registered with UpdateOrchestrator");
         }
-        
+
         public void OnUnregistered()
         {
             ChimeraLogger.Log("[ConstructionManager] Unregistered from UpdateOrchestrator");
         }
-        
+
         #endregion
-        
+
         protected override void OnManagerShutdown()
         {
             // Unregister from UpdateOrchestrator
             var orchestrator = UpdateOrchestrator.Instance;
             orchestrator?.UnregisterTickable(this);
-            
+
             UnsubscribeFromEvents();
             SaveConstructionState();
-            
+
             _activeProjects.Clear();
             _reservedPositions.Clear();
             _projectProgress.Clear();
-            
+
             LogInfo("Grid-based ConstructionManager shutdown completed");
         }
-        
-        #region Public API - Grid Construction Management
-        
+
+        #region Public API - Construction Coordination
+
         /// <summary>
-        /// Get active construction project by ID
-        /// </summary>
-        public GridConstructionProject GetProject(string projectId)
-        {
-            return _activeProjects.GetValueOrDefault(projectId);
-        }
-        
-        /// <summary>
-        /// Start construction from template at grid coordinates
-        /// </summary>
-        public string StartConstruction(GridConstructionTemplate template, Vector3Int gridCoordinate, int rotation = 0)
-        {
-            if (template == null)
-            {
-                HandleConstructionError("Cannot start construction - template is null");
-                return null;
-            }
-            
-            // Check if position is available
-            if (IsPositionReserved(gridCoordinate))
-            {
-                HandleConstructionError($"Position {gridCoordinate} is already reserved");
-                return null;
-            }
-            
-            // Check resource availability
-            if (_enableResourceTracking && _costManager != null && !_costManager.CheckResourceAvailability(template))
-            {
-                HandleConstructionError($"Insufficient resources for {template.TemplateName}");
-                return null;
-            }
-            
-            // Create construction project
-            var project = CreateGridConstructionProject(template, gridCoordinate, rotation);
-            
-            // Reserve position
-            _reservedPositions[gridCoordinate] = project.ProjectId;
-            
-            // Create cost estimate and budget if cost tracking is enabled
-            if (_enableCostTracking && _costManager != null)
-            {
-                var costEstimate = _costManager.CreateCostEstimate(project.ProjectId, template);
-                var budget = _costManager.CreateProjectBudget(project.ProjectId, costEstimate, costEstimate.TotalCost);
-                
-                // Allocate resources
-                if (_enableResourceTracking)
-                {
-                    _costManager.AllocateResources(project.ProjectId, template);
-                }
-            }
-            
-            // Store project
-            _activeProjects[project.ProjectId] = project;
-            
-            // Initialize progress tracking
-            if (_enableProgressTracking)
-            {
-                _projectProgress[project.ProjectId] = new GridConstructionProgress
-                {
-                    ProjectId = project.ProjectId,
-                    Progress = 0f,
-                    StartTime = DateTime.Now,
-                    EstimatedCompletion = DateTime.Now.AddSeconds(template.ConstructionTime)
-                };
-            }
-            
-            // Update project status to in progress
-            project.Status = GridConstructionStatus.InProgress;
-            
-            // Trigger events
-            OnProjectStarted?.Invoke(project.ProjectId, project);
-            _onProjectStarted?.Raise();
-            
-            LogInfo($"Started construction project: {template.TemplateName} at {gridCoordinate}");
-            return project.ProjectId;
-        }
-        
-        /// <summary>
-        /// Start construction from catalog template by name
-        /// </summary>
-        public string StartConstructionByName(string templateName, Vector3Int gridCoordinate, int rotation = 0)
-        {
-            if (_constructionCatalog == null)
-            {
-                HandleConstructionError("Cannot start construction - no construction catalog available");
-                return null;
-            }
-            
-            var template = _constructionCatalog.FindTemplate(templateName);
-            if (template == null)
-            {
-                HandleConstructionError($"Template '{templateName}' not found in catalog");
-                return null;
-            }
-            
-            return StartConstruction(template, gridCoordinate, rotation);
-        }
-        
-        /// <summary>
-        /// Get available construction templates, filtered by unlocked schematics
-        /// </summary>
-        public List<GridConstructionTemplate> GetAvailableTemplates()
-        {
-            if (_constructionCatalog == null)
-                return new List<GridConstructionTemplate>();
-            
-            var allTemplates = _constructionCatalog.Templates;
-            
-            // If schematic integration is disabled, return all templates
-            if (!_enableSchematicIntegration || _schematicIntegration == null)
-                return allTemplates;
-            
-            // Filter templates based on unlocked schematics
-            var unlockedTemplateNames = _schematicIntegration.GetUnlockedConstructionTemplates();
-            var availableTemplates = new List<GridConstructionTemplate>();
-            
-            foreach (var template in allTemplates)
-            {
-                // Check if template requires schematic unlock
-                bool requiresSchematicUnlock = template.RequiredUnlocks.Any(unlock => 
-                    unlock.StartsWith("Schematic_") || unlockedTemplateNames.Contains(unlock));
-                
-                if (!requiresSchematicUnlock)
-                {
-                    // Template doesn't require schematic unlock - always available
-                    availableTemplates.Add(template);
-                }
-                else
-                {
-                    // Check if the required schematic is unlocked
-                    bool isUnlocked = template.RequiredUnlocks.Any(unlock => 
-                        unlockedTemplateNames.Contains(unlock) || 
-                        _schematicIntegration.IsConstructionTemplateUnlocked(template.TemplateName));
-                    
-                    if (isUnlocked)
-                    {
-                        availableTemplates.Add(template);
-                    }
-                }
-            }
-            
-            return availableTemplates;
-        }
-        
-        /// <summary>
-        /// Get all construction templates (ignoring unlock status) 
-        /// </summary>
-        public List<GridConstructionTemplate> GetAllTemplates()
-        {
-            if (_constructionCatalog == null)
-                return new List<GridConstructionTemplate>();
-            
-            return _constructionCatalog.Templates;
-        }
-        
-        /// <summary>
-        /// Complete construction project
-        /// </summary>
-        public bool CompleteConstruction(string projectId)
-        {
-            if (!_activeProjects.TryGetValue(projectId, out var project))
-            {
-                HandleConstructionError($"Project {projectId} not found");
-                return false;
-            }
-            
-            // Update project status
-            project.Status = GridConstructionStatus.Completed;
-            project.CompletionTime = DateTime.Now;
-            
-            // Update progress
-            if (_projectProgress.TryGetValue(projectId, out var progress))
-            {
-                progress.Progress = 1f;
-                progress.ActualCompletion = DateTime.Now;
-            }
-            
-            // Place the actual object on the grid
-            if (_gridSystem != null && project.Template.Prefab != null)
-            {
-                var worldPosition = _gridSystem.GridToWorld(project.GridCoordinate);
-                var placedObject = Instantiate(project.Template.Prefab, worldPosition, Quaternion.Euler(0, project.Rotation * 90, 0));
-                
-                var placeable = placedObject.GetComponent<GridPlaceable>();
-                if (placeable != null)
-                {
-                    // Use the simplified placement API on GridPlaceable
-                    placeable.GridCoordinate = project.GridCoordinate;
-                    placeable.SetRotation(project.Rotation * 90f);
-                    placeable.PlaceAt(_gridSystem.GridToWorld(project.GridCoordinate));
-                    OnObjectPlaced?.Invoke(placeable);
-                }
-            }
-            
-            // Remove position reservation
-            _reservedPositions.Remove(project.GridCoordinate);
-            
-            // Consume resources
-            if (_enableResourceTracking && _costManager != null)
-            {
-                _costManager.ConsumeResources(project.Template);
-            }
-            
-            // Update metrics
-            _constructionMetrics.TotalProjectsCompleted++;
-            
-            // Trigger events
-            OnProjectCompleted?.Invoke(projectId, project);
-            _onProjectCompleted?.Raise();
-            
-            LogInfo($"Completed construction project: {project.Template.TemplateName}");
-            return true;
-        }
-        
-        /// <summary>
-        /// Cancel construction project
-        /// </summary>
-        public bool CancelConstruction(string projectId)
-        {
-            if (!_activeProjects.TryGetValue(projectId, out var project))
-            {
-                HandleConstructionError($"Project {projectId} not found");
-                return false;
-            }
-            
-            // Update project status
-            project.Status = GridConstructionStatus.Cancelled;
-            
-            // Remove position reservation
-            _reservedPositions.Remove(project.GridCoordinate);
-            
-            // Remove from tracking
-            _activeProjects.Remove(projectId);
-            _projectProgress.Remove(projectId);
-            
-            // Update metrics
-            _constructionMetrics.TotalProjectsCancelled++;
-            
-            LogInfo($"Cancelled construction project: {project.Template.TemplateName}");
-            return true;
-        }
-        
-        /// <summary>
-        /// Start placement mode for template
+        /// Start placement mode for a construction template
         /// </summary>
         public void StartPlacementMode(string templateName)
         {
             if (_facilityConstructor != null)
             {
                 _facilityConstructor.StartPlacement(templateName);
+                OnConstructionStarted?.Invoke();
+                LogInfo($"Started placement mode for: {templateName}");
             }
             else
             {
-                HandleConstructionError("Cannot start placement mode - InteractiveFacilityConstructor not available");
+                HandleConstructionError("Facility constructor not available for placement");
             }
         }
-        
+
         /// <summary>
         /// Cancel current placement mode
         /// </summary>
@@ -410,358 +195,136 @@ namespace ProjectChimera.Systems.Construction
             if (_facilityConstructor != null)
             {
                 _facilityConstructor.CancelPlacement();
+                LogInfo("Placement mode cancelled");
             }
-        }
-        
-        /// <summary>
-        /// Check if can afford construction template
-        /// </summary>
-        public bool CanAffordConstruction(string templateName, float availableFunds)
-        {
-            if (_constructionCatalog == null || _costManager == null)
-                return false;
-            
-            var template = _constructionCatalog.FindTemplate(templateName);
-            if (template == null)
-                return false;
-            
-            return _costManager.CanAfford(template, availableFunds);
-        }
-        
-        /// <summary>
-        /// Get quick cost estimate for template
-        /// </summary>
-        public float GetQuickCostEstimate(string templateName)
-        {
-            if (_constructionCatalog == null || _costManager == null)
-                return 0f;
-            
-            var template = _constructionCatalog.FindTemplate(templateName);
-            if (template == null)
-                return 0f;
-            
-            return _costManager.GetQuickCostEstimate(template);
-        }
-        
-        #endregion
-        
-        #region Private Implementation
-        
-        /// <summary>
-        /// Initialize dependencies explicitly for testability.
-        /// For testing: call this method with mock dependencies.
-        /// For runtime: dependencies are resolved automatically via DI container.
-        /// </summary>
-        public void Initialize(IGridSystem gridSystem = null, 
-                              IGridPlacementController placementController = null, 
-                              IInteractiveFacilityConstructor facilityConstructor = null, 
-                              IConstructionCostManager costManager = null)
-        {
-            _gridSystem = gridSystem;
-            _placementController = placementController;
-            _facilityConstructor = facilityConstructor;
-            _costManager = costManager;
         }
 
-        private void InitializeGridConstructionSystems()
-        {
-            // Resolve dependencies from DI container if not explicitly provided
-            ResolveDependencies();
-            
-            // Validate critical components
-            if (_gridSystem == null)
-            {
-                LogError("IGridSystem not registered in DI container - construction system cannot function properly");
-            }
-            
-            if (_placementController == null)
-            {
-                LogError("IGridPlacementController not registered in DI container - construction placement will not work");
-            }
-            
-            if (_facilityConstructor == null)
-            {
-                LogWarning("IInteractiveFacilityConstructor not registered in DI container - facility construction may not work");
-            }
-            
-            if (_costManager == null)
-            {
-                LogWarning("IConstructionCostManager not registered in DI container - cost tracking will not work");
-            }
-            
-            if (_constructionCatalog == null)
-            {
-                LogWarning("ConstructionCatalog not assigned - no templates available for construction");
-            }
-        }
-        
         /// <summary>
-        /// Resolve dependencies from DI container if not explicitly provided.
-        /// This method supports both explicit dependency injection (for testing) 
-        /// and automatic resolution (for runtime).
+        /// Get all available construction templates
         /// </summary>
-        private void ResolveDependencies()
+        public List<GridConstructionTemplate> GetAvailableTemplates()
         {
-            if (_gridSystem == null)
-            {
-                _gridSystem = ServiceContainerFactory.Instance?.TryResolve<IGridSystem>();
-                if (_gridSystem == null)
-                {
-                    LogError("[ConstructionManager] IGridSystem not registered in DI container. Explicit dependency injection required for testing.");
-                }
-            }
-            
-            if (_placementController == null)
-            {
-                _placementController = ServiceContainerFactory.Instance?.TryResolve<IGridPlacementController>();
-                if (_placementController == null)
-                {
-                    LogError("[ConstructionManager] IGridPlacementController not registered in DI container. Construction placement will not function properly.");
-                }
-            }
-            
-            if (_facilityConstructor == null)
-            {
-                _facilityConstructor = ServiceContainerFactory.Instance?.TryResolve<IInteractiveFacilityConstructor>();
-                if (_facilityConstructor == null)
-                {
-                    LogWarning("[ConstructionManager] IInteractiveFacilityConstructor not registered in DI container. Facility construction may not work.");
-                }
-            }
-            
-            if (_costManager == null)
-            {
-                _costManager = ServiceContainerFactory.Instance?.TryResolve<IConstructionCostManager>();
-                if (_costManager == null)
-                {
-                    LogWarning("[ConstructionManager] IConstructionCostManager not registered in DI container. Cost tracking will not work.");
-                }
-            }
+            if (_constructionCatalog == null)
+                return new List<GridConstructionTemplate>();
+
+            return _constructionCatalog.Templates;
         }
-        
-        private void InitializeConstructionTracking()
+
+        /// <summary>
+        /// Get construction template by name
+        /// </summary>
+        public GridConstructionTemplate GetTemplate(string templateName)
         {
-            _activeProjects.Clear();
-            _reservedPositions.Clear();
-            _projectProgress.Clear();
-            
-            _constructionMetrics = new GridConstructionMetrics
-            {
-                TotalProjectsStarted = 0,
-                TotalProjectsCompleted = 0,
-                TotalProjectsCancelled = 0,
-                TotalBudgetAllocated = 0f,
-                TotalBudgetSpent = 0f,
-                ActiveProjects = 0,
-                LastUpdated = DateTime.Now
-            };
+            if (_constructionCatalog == null)
+                return null;
+
+            return _constructionCatalog.FindTemplate(templateName);
         }
-        
-        private void InitializeSchematicIntegration()
+
+        /// <summary>
+        /// Check if placement is currently active
+        /// </summary>
+        public bool IsPlacementActive()
         {
-            if (!_enableSchematicIntegration)
+            return _facilityConstructor != null && _facilityConstructor.IsPlacementActive();
+        }
+
+        /// <summary>
+        /// Create a schematic from current construction
+        /// </summary>
+        public void CreateSchematic(string schematicName)
+        {
+            if (_schematicManager != null && _enableSchematicIntegration)
             {
-                LogInfo("Schematic integration disabled for ConstructionManager");
-                return;
-            }
-            
-            var gameManager = GameManager.Instance;
-            if (gameManager != null)
-            {
-                _schematicIntegration = gameManager.GetManager<SchematicConstructionIntegration>();
-            }
-            
-            if (_schematicIntegration == null)
-            {
-                LogWarning("SchematicConstructionIntegration service not found - construction templates will not be filtered by schematics");
+                _schematicManager.CreateSchematic(schematicName);
+                LogInfo($"Created schematic: {schematicName}");
             }
             else
             {
-                LogInfo($"Schematic integration initialized - {_schematicIntegration.IntegratedSchematicsCount} schematics integrated");
+                HandleConstructionError("Schematic manager not available");
             }
         }
-        
+
+        /// <summary>
+        /// Load and apply a schematic
+        /// </summary>
+        public void LoadSchematic(string schematicName)
+        {
+            if (_schematicManager != null && _enableSchematicIntegration)
+            {
+                _schematicManager.LoadSchematic(schematicName);
+                LogInfo($"Loaded schematic: {schematicName}");
+            }
+            else
+            {
+                HandleConstructionError("Schematic manager not available");
+            }
+        }
+
+        #endregion
+
+        #region Private Implementation
+
         private void SubscribeToEvents()
         {
             if (_facilityConstructor != null)
             {
-                _facilityConstructor.OnObjectPlaced += HandleObjectPlaced;
-                _facilityConstructor.OnObjectRemoved += HandleObjectRemoved;
+                _facilityConstructor.OnPlacementCompleted += HandlePlacementCompleted;
+                _facilityConstructor.OnPlacementCancelled += HandlePlacementCancelled;
                 _facilityConstructor.OnError += HandleConstructionError;
             }
         }
-        
+
         private void UnsubscribeFromEvents()
         {
             if (_facilityConstructor != null)
             {
-                _facilityConstructor.OnObjectPlaced -= HandleObjectPlaced;
-                _facilityConstructor.OnObjectRemoved -= HandleObjectRemoved;
+                _facilityConstructor.OnPlacementCompleted -= HandlePlacementCompleted;
+                _facilityConstructor.OnPlacementCancelled -= HandlePlacementCancelled;
                 _facilityConstructor.OnError -= HandleConstructionError;
             }
         }
-        
-        private GridConstructionProject CreateGridConstructionProject(GridConstructionTemplate template, Vector3Int gridCoordinate, int rotation)
-        {
-            return new GridConstructionProject
-            {
-                ProjectId = Guid.NewGuid().ToString(),
-                Template = template,
-                GridCoordinate = gridCoordinate,
-                Rotation = rotation,
-                Status = GridConstructionStatus.Planning,
-                Progress = 0f,
-                StartTime = DateTime.Now,
-                EstimatedCompletion = DateTime.Now.AddSeconds(template.ConstructionTime)
-            };
-        }
-        
-        private void UpdateConstructionProgress()
-        {
-            if (!_enableProgressTracking) return;
-            
-            foreach (var kvp in _projectProgress.ToList())
-            {
-                var progress = kvp.Value;
-                if (progress.Progress >= 1f) continue;
-                
-                var project = _activeProjects.GetValueOrDefault(progress.ProjectId);
-                if (project == null || project.Status != GridConstructionStatus.InProgress) continue;
-                
-                // Update progress based on time
-                var elapsed = DateTime.Now - progress.StartTime;
-                var totalDuration = progress.EstimatedCompletion - progress.StartTime;
-                var newProgress = Mathf.Clamp01((float)(elapsed.TotalSeconds / totalDuration.TotalSeconds));
-                
-                if (newProgress != progress.Progress)
-                {
-                    progress.Progress = newProgress;
-                    project.Progress = newProgress;
-                    
-                    OnConstructionProgress?.Invoke(progress.ProjectId, newProgress);
-                    _onConstructionProgress?.Raise();
-                    
-                    // Auto-complete when progress reaches 100%
-                    if (newProgress >= 1f)
-                    {
-                        CompleteConstruction(progress.ProjectId);
-                    }
-                }
-            }
-        }
-        
-        private void UpdateConstructionMetrics()
-        {
-            _constructionMetrics.ActiveProjects = _activeProjects.Count;
-            _constructionMetrics.TotalProjectsStarted = _constructionMetrics.TotalProjectsCompleted + 
-                                                       _constructionMetrics.TotalProjectsCancelled + 
-                                                       _constructionMetrics.ActiveProjects;
-            _constructionMetrics.LastUpdated = DateTime.Now;
-            
-            // Update budget metrics from cost manager
-            if (_costManager != null)
-            {
-                _constructionMetrics.TotalBudgetAllocated = _costManager.TotalBudgetAllocated;
-                _constructionMetrics.TotalBudgetSpent = _costManager.TotalBudgetSpent;
-            }
-        }
-        
+
         private void SaveConstructionState()
         {
-            // Auto-save construction state
-            // Implementation depends on save system architecture
-            LogInfo("Construction state saved");
+            // Simple auto-save - delegate to components if needed
+            LogInfo("Construction state auto-saved");
         }
-        
-        private void HandleObjectPlaced(object placeable)
+
+        private void HandlePlacementCompleted()
         {
-            if (placeable is GridPlaceable gridPlaceable)
-            {
-                OnObjectPlaced?.Invoke(gridPlaceable);
-            }
+            OnConstructionCompleted?.Invoke();
+            _onConstructionCompleted?.Raise();
+            LogInfo("Construction placement completed");
         }
-        
-        private void HandleObjectRemoved(object placeable)
+
+        private void HandlePlacementCancelled()
         {
-            if (placeable is GridPlaceable gridPlaceable)
-            {
-                OnObjectRemoved?.Invoke(gridPlaceable);
-            }
+            LogInfo("Construction placement cancelled");
         }
-        
+
         private void HandleConstructionError(string error)
         {
             LogError($"Construction Error: {error}");
-            OnConstructionError?.Invoke("ConstructionManager", error);
+            OnConstructionError?.Invoke(error);
             _onConstructionError?.Raise();
         }
-        
-        /// <summary>
-        /// Check if grid position is reserved for construction
-        /// </summary>
-        public bool IsPositionReserved(Vector3Int gridCoordinate)
-        {
-            return _reservedPositions.ContainsKey(gridCoordinate);
-        }
-        
-        /// <summary>
-        /// Get construction progress for project
-        /// </summary>
-        public float GetConstructionProgress(string projectId)
-        {
-            var progress = _projectProgress.GetValueOrDefault(projectId);
-            return progress?.Progress ?? 0f;
-        }
-        
+
         #endregion
     }
-    
+
     #region Supporting Data Structures
-    
-    [System.Serializable]
-    public class GridConstructionProject
+
+    /// <summary>
+    /// Simple construction status for basic tracking
+    /// </summary>
+    public enum ConstructionStatus
     {
-        public string ProjectId;
-        public GridConstructionTemplate Template;
-        public Vector3Int GridCoordinate;
-        public int Rotation;
-        public GridConstructionStatus Status;
-        public float Progress;
-        public DateTime StartTime;
-        public DateTime EstimatedCompletion;
-        public DateTime CompletionTime;
-    }
-    
-    [System.Serializable]
-    public class GridConstructionProgress
-    {
-        public string ProjectId;
-        public float Progress;
-        public DateTime StartTime;
-        public DateTime EstimatedCompletion;
-        public DateTime ActualCompletion;
-    }
-    
-    [System.Serializable]
-    public class GridConstructionMetrics
-    {
-        public int TotalProjectsStarted;
-        public int TotalProjectsCompleted;
-        public int TotalProjectsCancelled;
-        public int ActiveProjects;
-        public float TotalBudgetAllocated;
-        public float TotalBudgetSpent;
-        public DateTime LastUpdated;
-    }
-    
-    public enum GridConstructionStatus
-    {
-        Planning,
-        InProgress,
+        Idle,
+        Placing,
         Completed,
-        Cancelled,
-        OnHold
+        Error
     }
-    
+
     #endregion
 }

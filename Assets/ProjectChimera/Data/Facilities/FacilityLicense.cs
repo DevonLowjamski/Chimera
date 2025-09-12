@@ -1,0 +1,121 @@
+using System;
+using UnityEngine;
+
+namespace ProjectChimera.Data.Facilities
+{
+    /// <summary>
+    /// Facility licensing and compliance data
+    /// Manages regulatory compliance and certifications
+    /// </summary>
+    [System.Serializable]
+    public class FacilityLicense
+    {
+        [Header("Basic Information")]
+        public string LicenseNumber;
+        public string FacilityName;
+        public LicenseType LicenseType;
+        public LicenseStatus Status;
+
+        [Header("Validity Period")]
+        public DateTime IssueDate;
+        public DateTime ExpirationDate;
+        public DateTime LastRenewalDate;
+
+        [Header("Issuing Authority")]
+        public string IssuingAuthority;
+        public string InspectorName;
+        public string ContactInformation;
+
+        [Header("Compliance")]
+        public ComplianceRating ComplianceRating;
+        public int ViolationCount;
+        public DateTime LastInspectionDate;
+        public string Notes;
+
+        [Header("Operational Limits")]
+        public int MaxOccupancy;
+        public float MaxPowerConsumption;
+        public float MaxWaterUsage;
+        public bool AllowsHazardousMaterials;
+
+        /// <summary>
+        /// Check if license is currently valid
+        /// </summary>
+        public bool IsValid()
+        {
+            return Status == LicenseStatus.Active &&
+                   DateTime.Now >= IssueDate &&
+                   DateTime.Now <= ExpirationDate;
+        }
+
+        /// <summary>
+        /// Check if license needs renewal
+        /// </summary>
+        public bool NeedsRenewal()
+        {
+            TimeSpan timeUntilExpiry = ExpirationDate - DateTime.Now;
+            return timeUntilExpiry.TotalDays <= 90; // 90 days warning
+        }
+
+        /// <summary>
+        /// Get days until license expires
+        /// </summary>
+        public int GetDaysUntilExpiration()
+        {
+            TimeSpan timeUntilExpiry = ExpirationDate - DateTime.Now;
+            return Mathf.Max(0, (int)timeUntilExpiry.TotalDays);
+        }
+
+        /// <summary>
+        /// Check if facility is operating within licensed limits
+        /// </summary>
+        public bool IsWithinLimits(int currentOccupancy, float currentPower, float currentWater)
+        {
+            return currentOccupancy <= MaxOccupancy &&
+                   currentPower <= MaxPowerConsumption &&
+                   currentWater <= MaxWaterUsage;
+        }
+    }
+
+    /// <summary>
+    /// Types of facility licenses
+    /// </summary>
+    public enum LicenseType
+    {
+        Cultivation,
+        Manufacturing,
+        Research,
+        Distribution,
+        Storage,
+        MixedUse,
+        Educational,
+        Commercial
+    }
+
+    /// <summary>
+    /// License status states
+    /// </summary>
+    public enum LicenseStatus
+    {
+        Pending,
+        Active,
+        Suspended,
+        Revoked,
+        Expired,
+        UnderReview,
+        Provisional
+    }
+
+    /// <summary>
+    /// Compliance rating levels
+    /// </summary>
+    public enum ComplianceRating
+    {
+        Excellent,
+        Good,
+        Satisfactory,
+        NeedsImprovement,
+        Critical,
+        NonCompliant
+    }
+}

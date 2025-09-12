@@ -10,7 +10,6 @@
         "ProjectChimera.Data.Genetics",
         "ProjectChimera.Data.UI",
         "ProjectChimera.Systems.Events",
-        "ProjectChimera.Systems.Registry",
         "ProjectChimera.Systems.Diagnostics",
         "ProjectChimera.Systems.Scene",
         "UnityEngine.UI",

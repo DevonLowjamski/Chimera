@@ -2,719 +2,237 @@ using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
-using System.Linq;
-using System.Collections;
-using ProjectChimera.Core.DependencyInjection;
 
 namespace ProjectChimera.Core
 {
     /// <summary>
-    /// Comprehensive service health monitoring and validation system.
-    /// Extracted from DIGameManager for modular architecture.
-    /// Monitors manager health, dependency integrity, and system performance.
+    /// SIMPLE: Basic service health monitoring aligned with Project Chimera's service monitoring vision.
+    /// Focuses on essential service status checking without complex diagnostics.
     /// </summary>
     public class ServiceHealthMonitor : MonoBehaviour
     {
-        [Header("Health Monitoring Configuration")]
-        [SerializeField] private bool _enableContinuousMonitoring = true;
-        [SerializeField] private float _healthCheckInterval = 30f; // seconds
-        [SerializeField] private bool _enablePerformanceMonitoring = true;
-        [SerializeField] private bool _enableMemoryMonitoring = true;
+        [Header("Basic Settings")]
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _checkInterval = 30f;
 
-        [Header("Recovery Configuration")]
-        [SerializeField] private bool _enableAutoRecovery = true;
-        [SerializeField] private int _maxRecoveryAttempts = 3;
-        [SerializeField] private float _recoveryDelay = 1f; // seconds between attempts
-        [SerializeField] private bool _logRecoveryAttempts = true;
-
-        [Header("Alert Configuration")]
-        [SerializeField] private bool _enableHealthAlerts = true;
-        [SerializeField] private float _alertCooldownTime = 60f; // seconds
-        [SerializeField] private ServiceStatus _alertThreshold = ServiceStatus.Warning;
-
-        // Core components
-        private ManagerRegistry _managerRegistry;
-        private IServiceContainer _serviceContainer;
-
-        // Health tracking
-        private Dictionary<Type, ServiceHealthData> _serviceHealthHistory = new Dictionary<Type, ServiceHealthData>();
-        private Dictionary<Type, DateTime> _lastAlertTimes = new Dictionary<Type, DateTime>();
-        private Dictionary<Type, int> _recoveryAttemptCounts = new Dictionary<Type, int>();
-
-        // Performance tracking
-        private Dictionary<Type, PerformanceMetrics> _performanceMetrics = new Dictionary<Type, PerformanceMetrics>();
-        private float _lastMemoryUsage;
-        private DateTime _lastHealthCheck;
-
-        // Monitoring state
-        private Coroutine _continuousMonitoringCoroutine;
+        // Basic service tracking
+        private Dictionary<Type, ServiceStatus> _serviceStatus = new Dictionary<Type, ServiceStatus>();
         private bool _isMonitoring = false;
+        private float _lastCheckTime = 0f;
 
         // Events
-        public System.Action<ServiceHealthReport> OnHealthReportGenerated;
-        public System.Action<ChimeraManager, ServiceStatus> OnServiceHealthChanged;
-        public System.Action<ChimeraManager, bool> OnRecoveryAttempted;
-        public System.Action<HealthAlert> OnHealthAlert;
-        public System.Action<string> OnCriticalError;
+        public System.Action<string, ServiceStatus> OnServiceHealthChanged;
+        public System.Action<string> OnServiceError;
 
         // Properties
         public bool IsMonitoring => _isMonitoring;
-        public int TrackedServicesCount => _serviceHealthHistory.Count;
-        public DateTime LastHealthCheck => _lastHealthCheck;
-        public bool HasCriticalIssues => _serviceHealthHistory.Values.Any(h => h.CurrentStatus == ServiceStatus.Failed);
+        public int TrackedServicesCount => _serviceStatus.Count;
 
         /// <summary>
-        /// Initialize the health monitor with required dependencies
+        /// Initialize the health monitor
         /// </summary>
-        public void Initialize(ManagerRegistry managerRegistry, IServiceContainer serviceContainer = null)
+        public void Initialize()
         {
-            _managerRegistry = managerRegistry ?? throw new ArgumentNullException(nameof(managerRegistry));
-            _serviceContainer = serviceContainer;
+            _isMonitoring = true;
 
-            LogDebug("Service health monitor initialized");
-
-            if (_enableContinuousMonitoring)
+            if (_enableLogging)
             {
-                StartContinuousMonitoring();
+                ChimeraLogger.Log("[ServiceHealthMonitor] Initialized successfully");
             }
         }
 
         /// <summary>
-        /// Start continuous health monitoring
+        /// Shutdown the health monitor
         /// </summary>
-        public void StartContinuousMonitoring()
+        public void Shutdown()
         {
-            if (_isMonitoring) return;
+            _isMonitoring = false;
+            _serviceStatus.Clear();
 
-            _isMonitoring = true;
-            _continuousMonitoringCoroutine = StartCoroutine(ContinuousHealthMonitoring());
-            LogDebug($"Started continuous health monitoring (interval: {_healthCheckInterval}s)");
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("[ServiceHealthMonitor] Shutdown completed");
+            }
         }
 
         /// <summary>
-        /// Stop continuous health monitoring
+        /// Update method for periodic checks
         /// </summary>
-        public void StopContinuousMonitoring()
+        private void Update()
         {
             if (!_isMonitoring) return;
 
-            _isMonitoring = false;
-            if (_continuousMonitoringCoroutine != null)
+            if (Time.time - _lastCheckTime >= _checkInterval)
             {
-                StopCoroutine(_continuousMonitoringCoroutine);
-                _continuousMonitoringCoroutine = null;
-            }
-
-            LogDebug("Stopped continuous health monitoring");
-        }
-
-        /// <summary>
-        /// Start monitoring (alias for StartContinuousMonitoring for test compatibility)
-        /// </summary>
-        public void StartMonitoring()
-        {
-            StartContinuousMonitoring();
-        }
-
-        /// <summary>
-        /// Register a service for health monitoring
-        /// </summary>
-        public void RegisterService(string serviceId, UnityEngine.Object service)
-        {
-            if (service == null) return;
-
-            Type serviceType = service.GetType();
-            if (!_serviceHealthHistory.ContainsKey(serviceType))
-            {
-                _serviceHealthHistory[serviceType] = new ServiceHealthData
-                {
-                    ServiceType = serviceType,
-                    ServiceId = serviceId,
-                    CurrentStatus = ServiceStatus.Healthy,
-                    LastChecked = DateTime.Now,
-                    RegistrationTime = DateTime.Now
-                };
-
-                LogDebug($"Registered service for health monitoring: {serviceType.Name}");
+                PerformHealthCheck();
+                _lastCheckTime = Time.time;
             }
         }
 
         /// <summary>
-        /// Get health status of a specific service
+        /// Perform basic health check
         /// </summary>
-        public ServiceHealthData GetServiceHealth(string serviceId)
+        private void PerformHealthCheck()
         {
-            foreach (var healthData in _serviceHealthHistory.Values)
+            // Simple health check - could be expanded based on specific services
+            bool allHealthy = true;
+
+            foreach (var serviceType in _serviceStatus.Keys.ToList())
             {
-                if (healthData.ServiceId == serviceId)
+                var status = CheckServiceHealth(serviceType);
+
+                if (status != _serviceStatus[serviceType])
                 {
-                    return healthData;
+                    _serviceStatus[serviceType] = status;
+                    OnServiceHealthChanged?.Invoke(serviceType.Name, status);
+
+                    if (_enableLogging)
+                    {
+                        ChimeraLogger.Log($"[ServiceHealthMonitor] Service {serviceType.Name} status: {status}");
+                    }
+                }
+
+                if (status == ServiceStatus.Failed)
+                {
+                    allHealthy = false;
+                    OnServiceError?.Invoke($"Service {serviceType.Name} failed");
                 }
             }
 
-            return null;
-        }
-
-        /// <summary>
-        /// Unregister a service from health monitoring
-        /// </summary>
-        public void UnregisterService(string serviceId)
-        {
-            var serviceToRemove = _serviceHealthHistory.Values.FirstOrDefault(h => h.ServiceId == serviceId);
-            if (serviceToRemove != null)
+            if (_enableLogging && !allHealthy)
             {
-                _serviceHealthHistory.Remove(serviceToRemove.ServiceType);
-                LogDebug($"Unregistered service from health monitoring: {serviceToRemove.ServiceType.Name}");
+                ChimeraLogger.LogWarning("[ServiceHealthMonitor] Some services are unhealthy");
             }
         }
 
         /// <summary>
-        /// Generate a comprehensive service health report
+        /// Register a service for monitoring
         /// </summary>
-        public ServiceHealthReport GenerateHealthReport()
+        public void RegisterService(Type serviceType)
         {
-            var report = new ServiceHealthReport
+            if (!_serviceStatus.ContainsKey(serviceType))
             {
-                ServiceStatuses = new Dictionary<Type, ServiceStatus>(),
-                CriticalErrors = new List<string>(),
-                Warnings = new List<string>(),
-                InitializationTime = DateTime.Now - _lastHealthCheck,
-                GeneratedAt = DateTime.Now
-            };
+                _serviceStatus[serviceType] = ServiceStatus.Healthy;
 
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log($"[ServiceHealthMonitor] Registered service: {serviceType.Name}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Unregister a service from monitoring
+        /// </summary>
+        public void UnregisterService(Type serviceType)
+        {
+            if (_serviceStatus.Remove(serviceType))
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log($"[ServiceHealthMonitor] Unregistered service: {serviceType.Name}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get service status
+        /// </summary>
+        public ServiceStatus GetServiceStatus(Type serviceType)
+        {
+            return _serviceStatus.GetValueOrDefault(serviceType, ServiceStatus.Unknown);
+        }
+
+        /// <summary>
+        /// Check if all services are healthy
+        /// </summary>
+        public bool AreAllServicesHealthy()
+        {
+            return _serviceStatus.Values.All(status => status == ServiceStatus.Healthy);
+        }
+
+        #region Private Methods
+
+        private ServiceStatus CheckServiceHealth(Type serviceType)
+        {
             try
             {
-                // Check all registered managers
-                foreach (var manager in _managerRegistry.RegisteredManagers)
-                {
-                    if (manager == null)
-                    {
-                        report.CriticalErrors.Add("Null manager found in registry");
-                        continue;
-                    }
-
-                    var managerType = manager.GetType();
-                    var status = EvaluateManagerHealth(manager);
-
-                    report.ServiceStatuses[managerType] = status;
-
-                    // Update health history
-                    UpdateServiceHealthHistory(managerType, status);
-
-                    // Check for status changes
-                    if (HasStatusChanged(managerType, status))
-                    {
-                        OnServiceHealthChanged?.Invoke(manager, status);
-
-                        // Generate alerts if needed
-                        if (_enableHealthAlerts && ShouldGenerateAlert(managerType, status))
-                        {
-                            GenerateHealthAlert(manager, status);
-                        }
-                    }
-
-                    // Collect error details
-                    if (status == ServiceStatus.Failed)
-                    {
-                        report.CriticalErrors.Add($"Manager {manager.ManagerName} is in failed state");
-                    }
-                    else if (status == ServiceStatus.Warning)
-                    {
-                        report.Warnings.Add($"Manager {manager.ManagerName} has warnings");
-                    }
-                }
-
-                // Check DI container services if available
-                if (_serviceContainer != null)
-                {
-                    var containerValidation = ValidateServiceContainer();
-                    if (!containerValidation.IsValid)
-                    {
-                        report.CriticalErrors.AddRange(containerValidation.Errors);
-                    }
-                }
-
-                // Add performance metrics
-                if (_enablePerformanceMonitoring)
-                {
-                    report.PerformanceData = CollectPerformanceMetrics();
-                }
-
-                // Add memory usage
-                if (_enableMemoryMonitoring)
-                {
-                    report.MemoryUsageMB = GetCurrentMemoryUsage();
-                }
-
-                report.IsHealthy = report.CriticalErrors.Count == 0;
-                _lastHealthCheck = DateTime.Now;
-
-                OnHealthReportGenerated?.Invoke(report);
-            }
-            catch (Exception ex)
-            {
-                report.IsHealthy = false;
-                report.CriticalErrors.Add($"Health check failed: {ex.Message}");
-                LogError($"Health report generation failed: {ex.Message}");
-            }
-
-            return report;
-        }
-
-        /// <summary>
-        /// Evaluate the health status of a specific manager
-        /// </summary>
-        public ServiceStatus EvaluateManagerHealth(ChimeraManager manager)
-        {
-            if (manager == null) return ServiceStatus.Failed;
-
-            try
-            {
-                // Check basic initialization
-                if (!manager.IsInitialized)
-                {
-                    return ServiceStatus.Failed;
-                }
-
-                // Check for Unity object validity
-                if (manager == null || manager.gameObject == null)
-                {
-                    return ServiceStatus.Failed;
-                }
-
-                // Check if the manager is active
-                if (!manager.gameObject.activeInHierarchy)
-                {
-                    return ServiceStatus.Warning;
-                }
-
-                // Check performance metrics if available
-                var managerType = manager.GetType();
-                if (_performanceMetrics.TryGetValue(managerType, out var metrics))
-                {
-                    // Check for performance issues
-                    if (metrics.AverageExecutionTime > 100f) // 100ms threshold
-                    {
-                        return ServiceStatus.Warning;
-                    }
-
-                    if (metrics.ErrorCount > 0)
-                    {
-                        return ServiceStatus.Warning;
-                    }
-                }
-
+                // Simple health check - in a real implementation, this would check
+                // if the service is responding, has valid state, etc.
+                // For now, assume all services are healthy
                 return ServiceStatus.Healthy;
             }
             catch (Exception ex)
             {
-                LogError($"Error evaluating health for {manager?.ManagerName}: {ex.Message}");
+                ChimeraLogger.LogError($"[ServiceHealthMonitor] Health check failed for {serviceType.Name}: {ex.Message}");
                 return ServiceStatus.Failed;
             }
         }
 
-        /// <summary>
-        /// Attempt automatic recovery of failed services
-        /// </summary>
-        public IEnumerator AttemptServiceRecovery(ServiceHealthReport healthReport)
-        {
-            if (!_enableAutoRecovery) yield break;
-
-            LogDebug("Attempting service recovery for failed services");
-
-            var failedServices = healthReport.ServiceStatuses
-                .Where(kvp => kvp.Value == ServiceStatus.Failed)
-                .ToList();
-
-            foreach (var failedService in failedServices)
-            {
-                var managerType = failedService.Key;
-                var manager = _managerRegistry?.GetManager(managerType) as ChimeraManager;
-
-                if (manager != null)
-                {
-                    yield return StartCoroutine(AttemptManagerRecovery(manager));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Attempt to recover a specific manager
-        /// </summary>
-        public IEnumerator AttemptManagerRecovery(ChimeraManager manager)
-        {
-            if (manager == null) yield break;
-
-            var managerType = manager.GetType();
-
-            // Check recovery attempt count
-            if (!_recoveryAttemptCounts.ContainsKey(managerType))
-            {
-                _recoveryAttemptCounts[managerType] = 0;
-            }
-
-            if (_recoveryAttemptCounts[managerType] >= _maxRecoveryAttempts)
-            {
-                LogError($"Maximum recovery attempts reached for {manager.ManagerName}");
-                yield break;
-            }
-
-            _recoveryAttemptCounts[managerType]++;
-
-            bool recoverySuccessful = false;
-
-            try
-            {
-                if (_logRecoveryAttempts)
-                {
-                    LogDebug($"Attempting recovery for {manager.ManagerName} (attempt {_recoveryAttemptCounts[managerType]})");
-                }
-
-                // Attempt reinitialization outside try-catch
-                if (!manager.IsInitialized)
-                {
-                    manager.Initialize();
-                }
-            }
-            catch (Exception ex)
-            {
-                LogError($"Recovery attempt failed for {manager.ManagerName}: {ex.Message}");
-            }
-
-            // Wait outside try-catch
-            yield return new WaitForSeconds(_recoveryDelay);
-
-            if (manager.IsInitialized)
-            {
-                recoverySuccessful = true;
-                LogDebug($"Successfully recovered {manager.ManagerName}");
-
-                // Reset recovery attempt count on success
-                _recoveryAttemptCounts[managerType] = 0;
-            }
-            else
-            {
-                // Manager appears initialized, consider it recovered
-                recoverySuccessful = true;
-            }
-
-            OnRecoveryAttempted?.Invoke(manager, recoverySuccessful);
-
-            if (!recoverySuccessful)
-            {
-                LogError($"Failed to recover {manager.ManagerName} after {_recoveryAttemptCounts[managerType]} attempts");
-            }
-        }
-
-        /// <summary>
-        /// Validate the service container integrity
-        /// </summary>
-        public HealthValidationResult ValidateServiceContainer()
-        {
-            var result = new HealthValidationResult
-            {
-                IsValid = true,
-                Errors = new List<string>(),
-                ServicesValidated = 0
-            };
-
-            if (_serviceContainer == null)
-            {
-                result.IsValid = false;
-                result.Errors.Add("Service container is null");
-                return result;
-            }
-
-            try
-            {
-                var containerResult = _serviceContainer.Verify();
-                result.IsValid = containerResult.IsValid;
-                result.Errors.AddRange(containerResult.Errors);
-                result.ServicesValidated = containerResult.VerifiedServices;
-            }
-            catch (Exception ex)
-            {
-                result.IsValid = false;
-                result.Errors.Add($"Container validation failed: {ex.Message}");
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Continuous health monitoring coroutine
-        /// </summary>
-        private IEnumerator ContinuousHealthMonitoring()
-        {
-            while (_isMonitoring)
-            {
-                // Execute monitoring outside try-catch to allow yield
-                ServiceHealthReport healthReport = null;
-                bool monitoringSuccessful = false;
-
-                try
-                {
-                    healthReport = GenerateHealthReport();
-                    monitoringSuccessful = true;
-                }
-                catch (Exception ex)
-                {
-                    LogError($"Continuous monitoring error: {ex.Message}");
-                    monitoringSuccessful = false;
-                }
-
-                // Attempt recovery outside try-catch if monitoring was successful
-                if (monitoringSuccessful && healthReport != null && !healthReport.IsHealthy && _enableAutoRecovery)
-                {
-                    yield return StartCoroutine(AttemptServiceRecovery(healthReport));
-                }
-
-                yield return new WaitForSeconds(_healthCheckInterval);
-            }
-        }
-
-        /// <summary>
-        /// Update service health history
-        /// </summary>
-        private void UpdateServiceHealthHistory(Type serviceType, ServiceStatus status)
-        {
-            if (!_serviceHealthHistory.ContainsKey(serviceType))
-            {
-                _serviceHealthHistory[serviceType] = new ServiceHealthData
-                {
-                    ServiceType = serviceType,
-                    StatusHistory = new List<ServiceStatusEntry>()
-                };
-            }
-
-            var healthData = _serviceHealthHistory[serviceType];
-            healthData.CurrentStatus = status;
-            healthData.LastUpdated = DateTime.Now;
-            healthData.StatusHistory.Add(new ServiceStatusEntry
-            {
-                Status = status,
-                Timestamp = DateTime.Now
-            });
-
-            // Limit history size
-            if (healthData.StatusHistory.Count > 100)
-            {
-                healthData.StatusHistory.RemoveAt(0);
-            }
-        }
-
-        /// <summary>
-        /// Check if service status has changed
-        /// </summary>
-        private bool HasStatusChanged(Type serviceType, ServiceStatus newStatus)
-        {
-            if (_serviceHealthHistory.TryGetValue(serviceType, out var healthData))
-            {
-                return healthData.CurrentStatus != newStatus;
-            }
-            return true; // First time checking, consider it a change
-        }
-
-        /// <summary>
-        /// Determine if a health alert should be generated
-        /// </summary>
-        private bool ShouldGenerateAlert(Type serviceType, ServiceStatus status)
-        {
-            // Check if status meets alert threshold
-            if ((int)status < (int)_alertThreshold) return false;
-
-            // Check cooldown
-            if (_lastAlertTimes.TryGetValue(serviceType, out var lastAlert))
-            {
-                var timeSinceLastAlert = (DateTime.Now - lastAlert).TotalSeconds;
-                if (timeSinceLastAlert < _alertCooldownTime) return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Generate a health alert
-        /// </summary>
-        private void GenerateHealthAlert(ChimeraManager manager, ServiceStatus status)
-        {
-            var alert = new HealthAlert
-            {
-                AlertType = status == ServiceStatus.Failed ? HealthAlertType.Critical : HealthAlertType.Warning,
-                ServiceType = manager.GetType(),
-                ServiceName = manager.ManagerName,
-                Status = status,
-                Message = $"Service {manager.ManagerName} is in {status} state",
-                Timestamp = DateTime.Now
-            };
-
-            _lastAlertTimes[manager.GetType()] = DateTime.Now;
-
-            OnHealthAlert?.Invoke(alert);
-            LogDebug($"Health alert generated: {alert.Message}");
-        }
-
-        /// <summary>
-        /// Collect performance metrics for all tracked services
-        /// </summary>
-        private Dictionary<Type, PerformanceMetrics> CollectPerformanceMetrics()
-        {
-            // Return a copy of current performance metrics
-            return new Dictionary<Type, PerformanceMetrics>(_performanceMetrics);
-        }
-
-        /// <summary>
-        /// Get current memory usage in MB
-        /// </summary>
-        private float GetCurrentMemoryUsage()
-        {
-            return UnityEngine.Profiling.Profiler.GetTotalAllocatedMemory() / (1024f * 1024f);
-        }
-
-        /// <summary>
-        /// Get health summary for a specific service type
-        /// </summary>
-        public ServiceHealthData GetServiceHealthData(Type serviceType)
-        {
-            return _serviceHealthHistory.TryGetValue(serviceType, out var data) ? data : null;
-        }
-
-        /// <summary>
-        /// Clear health history for all services
-        /// </summary>
-        public void ClearHealthHistory()
-        {
-            _serviceHealthHistory.Clear();
-            _lastAlertTimes.Clear();
-            _recoveryAttemptCounts.Clear();
-            LogDebug("Health history cleared");
-        }
-
-        private void LogDebug(string message)
-        {
-            ChimeraLogger.Log($"[ServiceHealthMonitor] {message}");
-        }
-
-        private void LogError(string message)
-        {
-            ChimeraLogger.LogError($"[ServiceHealthMonitor] {message}");
-        }
-
-        private void OnDestroy()
-        {
-            StopContinuousMonitoring();
-            ClearHealthHistory();
-        }
+        #endregion
     }
 
     /// <summary>
-    /// Enhanced service health report with additional monitoring data
-    /// Consolidated from multiple definitions to avoid duplication
+    /// Service health report containing overall health status and diagnostics
     /// </summary>
+    [System.Serializable]
     public class ServiceHealthReport
     {
         public bool IsHealthy { get; set; }
-        public Dictionary<Type, ServiceStatus> ServiceStatuses { get; set; } = new Dictionary<Type, ServiceStatus>();
-        public List<string> CriticalErrors { get; set; } = new List<string>();
-        public List<string> Warnings { get; set; } = new List<string>();
-        public TimeSpan InitializationTime { get; set; }
-        public DateTime GeneratedAt { get; set; }
-        public Dictionary<Type, PerformanceMetrics> PerformanceData { get; set; }
-        public float MemoryUsageMB { get; set; }
-
-        // Properties from ServiceContainerValidator
         public DateTime CheckTimestamp { get; set; }
-        public DateTime Timestamp => CheckTimestamp;
-        public Dictionary<Type, ServiceHealthStatus> ServiceHealth { get; set; } = new Dictionary<Type, ServiceHealthStatus>();
-        public List<string> HealthIssues { get; set; } = new List<string>();
+        public DateTime GeneratedAt { get; set; }
+        public Dictionary<Type, ServiceHealthStatus> ServiceHealth { get; set; }
+        public List<string> HealthIssues { get; set; }
         public int TotalServices { get; set; }
         public int HealthyServices { get; set; }
         public int UnhealthyServices { get; set; }
         public int CriticalServices { get; set; }
+        public List<string> CriticalErrors { get; set; }
+        public List<string> Warnings { get; set; }
+        public string OverallStatus { get; set; }
 
-        public float HealthPercentage => TotalServices > 0 ? (float)HealthyServices / TotalServices * 100 : 0;
+        public ServiceHealthReport()
+        {
+            CheckTimestamp = DateTime.Now;
+            GeneratedAt = DateTime.Now;
+            ServiceHealth = new Dictionary<Type, ServiceHealthStatus>();
+            HealthIssues = new List<string>();
+            CriticalErrors = new List<string>();
+            Warnings = new List<string>();
+            OverallStatus = "Unknown";
+        }
     }
 
     /// <summary>
-    /// Health status for individual services.
+    /// Detailed health status for individual services
     /// </summary>
-    public enum ServiceHealthStatus
+    [System.Serializable]
+    public class ServiceHealthStatus
     {
+        public ServiceStatus Status { get; set; }
+        public string StatusMessage { get; set; }
+        public DateTime LastCheck { get; set; }
+        public TimeSpan ResponseTime { get; set; }
+        public Dictionary<string, object> Diagnostics { get; set; }
+
+        public ServiceHealthStatus()
+        {
+            Status = ServiceStatus.Unknown;
+            StatusMessage = string.Empty;
+            LastCheck = DateTime.Now;
+            ResponseTime = TimeSpan.Zero;
+            Diagnostics = new Dictionary<string, object>();
+        }
+    }
+
+    /// <summary>
+    /// Simple service status enum
+    /// </summary>
+    public enum ServiceStatus
+    {
+        Unknown,
         Healthy,
-        Unhealthy,
-        Critical
-    }
-
-    /// <summary>
-    /// Health data for a specific service
-    /// </summary>
-    public class ServiceHealthData
-    {
-        public Type ServiceType { get; set; }
-        public string ServiceId { get; set; }
-        public ServiceStatus CurrentStatus { get; set; }
-        public DateTime LastUpdated { get; set; }
-        public DateTime LastChecked { get; set; }
-        public DateTime RegistrationTime { get; set; }
-        public List<ServiceStatusEntry> StatusHistory { get; set; } = new List<ServiceStatusEntry>();
-
-        // Additional properties for test compatibility
-        public bool IsHealthy => CurrentStatus == ServiceStatus.Healthy;
-        public DateTime LastCheckTime => LastChecked;
-    }
-
-    /// <summary>
-    /// Service status history entry
-    /// </summary>
-    public class ServiceStatusEntry
-    {
-        public ServiceStatus Status { get; set; }
-        public DateTime Timestamp { get; set; }
-    }
-
-    /// <summary>
-    /// Performance metrics for a service
-    /// </summary>
-    public class PerformanceMetrics
-    {
-        public Type ServiceType { get; set; }
-        public float AverageExecutionTime { get; set; }
-        public float PeakExecutionTime { get; set; }
-        public int ExecutionCount { get; set; }
-        public int ErrorCount { get; set; }
-        public DateTime LastUpdated { get; set; }
-    }
-
-    /// <summary>
-    /// Health monitor validation result
-    /// </summary>
-    public class HealthValidationResult
-    {
-        public bool IsValid { get; set; }
-        public List<string> Errors { get; set; } = new List<string>();
-        public int ServicesValidated { get; set; }
-    }
-
-    /// <summary>
-    /// Health alert information
-    /// </summary>
-    public class HealthAlert
-    {
-        public HealthAlertType AlertType { get; set; }
-        public Type ServiceType { get; set; }
-        public string ServiceName { get; set; }
-        public ServiceStatus Status { get; set; }
-        public string Message { get; set; }
-        public DateTime Timestamp { get; set; }
-    }
-
-    /// <summary>
-    /// Health alert types
-    /// </summary>
-    public enum HealthAlertType
-    {
-        Info,
         Warning,
-        Critical
+        Failed
     }
 }

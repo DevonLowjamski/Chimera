@@ -2,82 +2,47 @@ using ProjectChimera.Core.Logging;
 using ProjectChimera.Core.Updates;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using ProjectChimera.Core;
-using ProjectChimera.Systems.Registry;
-
-#if UNITY_SPEEDTREE
-using SpeedTree;
-#endif
+using ProjectChimera.Systems.Services.SpeedTree.Environmental;
+using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
 
 namespace ProjectChimera.Systems.Services.SpeedTree
 {
     /// <summary>
-    /// PC014-5c: SpeedTree Environmental Response Service
-    /// Handles environmental conditions, wind systems, stress visualization, and seasonal changes
-    /// Decomposed from AdvancedSpeedTreeManager (360 lines target)
+    /// PC014-5c: SpeedTree Environmental Service - Orchestrator
+    /// Coordinates modular environmental systems for cannabis cultivation plants.
+    /// Manages: Environmental Response, Wind System, Seasonal Changes, and Stress Visualization.
     /// </summary>
     public class SpeedTreeEnvironmentalService : MonoBehaviour, ITickable, ISpeedTreeEnvironmentalService
     {
-        #region Properties
+        #region Modular Components
 
-        public bool IsInitialized { get; private set; }
+        [Header("Modular Environmental Systems")]
+        [SerializeField] private EnvironmentalResponseSystem environmentalResponseSystem;
+        [SerializeField] private WindSystem windSystem;
+        [SerializeField] private SeasonalSystem seasonalSystem;
+        [SerializeField] private StressVisualizationSystem stressVisualizationSystem;
 
         #endregion
 
-        #region Private Fields
+        #region Properties
 
-        [Header("Environmental Configuration")]
-        [SerializeField] private bool _enableEnvironmentalResponse = true;
-        [SerializeField] private bool _enableSeasonalChanges = true;
-        [SerializeField] private bool _enableStressVisualization = true;
-        [SerializeField] private float _environmentalUpdateFrequency = 0.5f;
-
-        [Header("Wind System")]
-        [SerializeField] private ScriptableObject _windConfig;
-        [SerializeField] private bool _enableWindAnimation = true;
-        [SerializeField] private float _windStrength = 1.0f;
-        [SerializeField] private Vector3 _windDirection = Vector3.right;
-
-        [Header("Stress Visualization")]
-        [SerializeField] private Gradient _healthGradient;
-        [SerializeField] private Gradient _stressGradient;
-        [SerializeField] private float _stressVisualizationIntensity = 1.0f;
-
-        // Environmental Processing
-        private Dictionary<int, object> _plantResponses = new Dictionary<int, object>();
-        private Dictionary<int, object> _stressData = new Dictionary<int, object>();
-        private List<int> _plantsNeedingUpdate = new List<int>();
-
-        // Wind System
-        private Dictionary<WindZone, object> _windZones = new Dictionary<WindZone, object>();
-        private List<WindZone> _activeWindZones = new List<WindZone>();
-        private float _currentWindStrength = 0f;
-        private Vector3 _currentWindDirection = Vector3.zero;
-
-        // Seasonal System
-        private object _currentSeason;
-        private float _seasonalTransitionProgress = 0f;
-        private Dictionary<object, object> _seasonalEffects = new Dictionary<object, object>();
-
-        // Update Timing
-        private float _lastEnvironmentalUpdate = 0f;
-        private float _lastSeasonalUpdate = 0f;
-
-        // Shader Property IDs
-        private int _healthPropertyId;
-        private int _stressPropertyId;
-        private int _windStrengthPropertyId;
-        private int _seasonalPropertyId;
+        public bool IsInitialized { get; private set; }
+        public bool EnableEnvironmentalResponse => environmentalResponseSystem?.enabled ?? false;
+        public bool EnableWindAnimation => windSystem?.enabled ?? false;
+        public bool EnableSeasonalChanges => seasonalSystem?.enabled ?? false;
+        public bool EnableStressVisualization => stressVisualizationSystem?.enabled ?? false;
 
         #endregion
 
         #region Events
 
-        public event Action<object> OnEnvironmentalConditionsChanged;
+        public event Action<EnvironmentalConditions> OnEnvironmentalConditionsChanged;
         public event Action<float> OnWindStrengthChanged;
         public event Action<int, float> OnPlantStressChanged;
+        public event Action<Season> OnSeasonChanged;
+        public event Action<int, Season, float> OnPlantSeasonalEffect;
 
         #endregion
 
@@ -87,800 +52,400 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         {
             if (IsInitialized) return;
 
-            ChimeraLogger.Log("Initializing SpeedTreeEnvironmentalService...");
+            ChimeraLogger.Log("[SpeedTreeEnvironmentalService] Initializing environmental orchestrator...");
 
-            // Cache shader properties
-            CacheShaderProperties();
-
-            // Initialize environmental systems
-            InitializeEnvironmentalSystem();
+            // Initialize modular systems in dependency order
+            InitializeEnvironmentalResponseSystem();
             InitializeWindSystem();
             InitializeSeasonalSystem();
-            InitializeStressVisualization();
+            InitializeStressVisualizationSystem();
 
-            // Register with ServiceRegistry
-            ServiceContainerFactory.Instance.RegisterSingleton<ISpeedTreeEnvironmentalService>(this);
+            // Connect system events
+            ConnectSystemEvents();
 
             IsInitialized = true;
-            ChimeraLogger.Log("SpeedTreeEnvironmentalService initialized successfully");
+            ChimeraLogger.Log("[SpeedTreeEnvironmentalService] Environmental orchestrator initialized successfully");
         }
 
         public void Shutdown()
         {
             if (!IsInitialized) return;
 
-            ChimeraLogger.Log("Shutting down SpeedTreeEnvironmentalService...");
+            ChimeraLogger.Log("[SpeedTreeEnvironmentalService] Shutting down environmental orchestrator...");
 
-            // Clear all collections
-            _plantResponses.Clear();
-            _stressData.Clear();
-            _plantsNeedingUpdate.Clear();
-            _windZones.Clear();
-            _activeWindZones.Clear();
-            _seasonalEffects.Clear();
+            // Shutdown systems in reverse order
+            if (stressVisualizationSystem != null) stressVisualizationSystem.Shutdown();
+            if (seasonalSystem != null) seasonalSystem.Shutdown();
+            if (windSystem != null) windSystem.Shutdown();
+            if (environmentalResponseSystem != null) environmentalResponseSystem.Shutdown();
 
             IsInitialized = false;
-            ChimeraLogger.Log("SpeedTreeEnvironmentalService shutdown complete");
+            ChimeraLogger.Log("[SpeedTreeEnvironmentalService] Environmental orchestrator shutdown complete");
         }
 
-        #endregion
-
-        #region Environmental Response
-
-        public void UpdateEnvironmentalResponse(int plantId, object conditions)
+        private void InitializeEnvironmentalResponseSystem()
         {
-            if (plantId <= 0 || conditions == null || !_enableEnvironmentalResponse) return;
-
-            // Get or create response data
-            if (!_plantResponses.TryGetValue(plantId, out var responseData))
+            if (environmentalResponseSystem == null)
             {
-                responseData = new object(); // Placeholder
-                _plantResponses[plantId] = responseData;
+                environmentalResponseSystem = gameObject.AddComponent<EnvironmentalResponseSystem>();
             }
-
-            ChimeraLogger.Log($"Updated environmental response for plant {plantId}");
-        }
-
-        public void ApplyEnvironmentalConditions(int plantId, object conditions)
-        {
-            if (plantId <= 0 || conditions == null) return;
-
-            // Update the plant's environmental response
-            UpdateEnvironmentalResponse(plantId, conditions);
-
-            // Trigger environmental change event
-            OnEnvironmentalConditionsChanged?.Invoke(conditions);
-        }
-
-        public void UpdateSeasonalChanges(IEnumerable<int> plantIds)
-        {
-            if (!_enableSeasonalChanges) return;
-
-            foreach (var plantId in plantIds)
-            {
-                ApplySeasonalEffects(plantId, _currentSeason);
-            }
-        }
-
-        #endregion
-
-        #region Wind System
-
-        public void UpdateWindSystem()
-        {
-            if (!_enableWindAnimation) return;
-
-            // Update global wind parameters
-            UpdateGlobalWind();
-
-            // Update all wind zones
-            foreach (var windZone in _activeWindZones)
-            {
-                if (windZone != null)
-                {
-                    UpdateWindZone(windZone);
-                }
-            }
-
-            // Apply wind to SpeedTree renderers
-            ApplyWindToRenderers();
-        }
-
-        public void UpdateWindZone(WindZone windZone)
-        {
-            if (windZone == null) return;
-
-            // Get or create wind settings for this zone
-            if (!_windZones.TryGetValue(windZone, out var settings))
-            {
-                settings = CreateWindSettingsForZone(windZone);
-                _windZones[windZone] = settings;
-            }
-
-            // Update wind zone parameters
-            UpdateWindZoneParameters(windZone, settings);
-
-            // Update SpeedTree wind settings
-            ApplyWindSettings(settings);
-        }
-
-        public void ApplyWindSettings(object settings)
-        {
-            if (settings == null) return;
-
-#if UNITY_SPEEDTREE
-            // Apply wind settings to SpeedTree system
-            if (_windConfig != null)
-            {
-                ApplyWindConfiguration(settings);
-            }
-
-            // Update current wind state
-            _currentWindStrength = _windStrength;
-            _currentWindDirection = _windDirection;
-
-            OnWindStrengthChanged?.Invoke(_currentWindStrength);
-#endif
-        }
-
-        public void SetWindEnabled(bool enabled)
-        {
-            _enableWindAnimation = enabled;
-
-            if (!enabled)
-            {
-                // Disable wind on all renderers
-#if UNITY_SPEEDTREE
-                SetGlobalWindStrength(0f);
-#else
-                ChimeraLogger.Log("Wind disabled - SpeedTree not available");
-#endif
-            }
-        }
-
-        #endregion
-
-        #region Stress Management
-
-        public void UpdateStressVisualization(IEnumerable<int> plantIds)
-        {
-            if (!_enableStressVisualization) return;
-
-            foreach (var plantId in plantIds)
-            {
-                if (_plantResponses.TryGetValue(plantId, out var responseData))
-                {
-                    UpdatePlantHealthVisualization(plantId, 1f);
-                }
-            }
-        }
-
-        public void UpdatePlantHealthVisualization(int plantId, float health)
-        {
-            if (plantId <= 0) return;
-
-            // Get or create stress data
-            if (!_stressData.TryGetValue(plantId, out var stressData))
-            {
-                stressData = new object(); // Placeholder
-                _stressData[plantId] = stressData;
-            }
-
-            var healthLevel = Mathf.Clamp01(health);
-            var stressLevel = 1f - healthLevel;
-
-            // Apply visualization to renderer
-            var stressFactor = stressLevel * _stressVisualizationIntensity;
-            ApplyHealthVisualization(plantId, healthLevel, stressFactor);
-
-            OnPlantStressChanged?.Invoke(plantId, stressLevel);
-        }
-
-        public void ApplyHealthVisualization(int plantId, float healthFactor, float stressFactor)
-        {
-            if (plantId <= 0) return;
-
-            // Find the SpeedTree renderer for this instance
-            var renderer = FindRendererForInstance(plantId);
-            if (renderer == null) return;
-
-            var materials = renderer.GetComponent<Renderer>()?.materials;
-            if (materials == null) return;
-
-            foreach (var material in materials)
-            {
-                // Apply health color
-                if (material.HasProperty(_healthPropertyId))
-                {
-                    var healthColor = _healthGradient.Evaluate(healthFactor);
-                    material.SetColor(_healthPropertyId, healthColor);
-                }
-
-                // Apply stress effects
-                if (material.HasProperty(_stressPropertyId))
-                {
-                    var stressColor = _stressGradient.Evaluate(stressFactor);
-                    material.SetColor(_stressPropertyId, stressColor);
-                }
-            }
-        }
-
-        #endregion
-
-        #region Lighting System
-
-        public void UpdatePlantLighting(int plantId, float intensity, Color color)
-        {
-            if (plantId <= 0) return;
-
-            var renderer = FindRendererForInstance(plantId);
-            if (renderer == null) return;
-
-            var materials = renderer.GetComponent<Renderer>()?.materials;
-            if (materials == null) return;
-
-            foreach (var material in materials)
-            {
-                // Update lighting parameters
-                if (material.HasProperty("_LightIntensity"))
-                {
-                    material.SetFloat("_LightIntensity", intensity);
-                }
-
-                if (material.HasProperty("_LightColor"))
-                {
-                    material.SetColor("_LightColor", color);
-                }
-            }
-        }
-
-        public void HandleLightingChange(object lightingConditions)
-        {
-            if (lightingConditions == null) return;
-
-            // Update all plants with new lighting conditions
-            foreach (var kvp in _plantResponses)
-            {
-                var plantId = kvp.Key;
-
-                UpdatePlantLighting(plantId, 1.0f, Color.white);
-            }
-        }
-
-        #endregion
-
-        #region Private Helper Methods
-
-        private void CacheShaderProperties()
-        {
-            _healthPropertyId = Shader.PropertyToID("_HealthColor");
-            _stressPropertyId = Shader.PropertyToID("_StressColor");
-            _windStrengthPropertyId = Shader.PropertyToID("_WindStrength");
-            _seasonalPropertyId = Shader.PropertyToID("_SeasonalEffect");
-        }
-
-        private void InitializeEnvironmentalSystem()
-        {
-            _plantResponses.Clear();
-            _plantsNeedingUpdate.Clear();
-
-            // Initialize default gradients if not set
-            if (_healthGradient == null)
-            {
-                _healthGradient = CreateDefaultHealthGradient();
-            }
-
-            if (_stressGradient == null)
-            {
-                _stressGradient = CreateDefaultStressGradient();
-            }
-
-            ChimeraLogger.Log("Environmental system initialized");
+            environmentalResponseSystem.Initialize();
         }
 
         private void InitializeWindSystem()
         {
-            _windZones.Clear();
-            _activeWindZones.Clear();
-
-            // Find all wind zones in the scene
-            var windZones = /* TODO: ServiceContainer.GetAll<WindZone>() */ new WindZone[0];
-            foreach (var windZone in windZones)
+            if (windSystem == null)
             {
-                RegisterWindZone(windZone);
+                windSystem = gameObject.AddComponent<WindSystem>();
             }
-
-            _currentWindStrength = _windStrength;
-            _currentWindDirection = _windDirection;
-
-            ChimeraLogger.Log($"Wind system initialized with {_windZones.Count} wind zones");
+            windSystem.Initialize();
         }
 
         private void InitializeSeasonalSystem()
         {
-            _seasonalEffects.Clear();
-
-            // Initialize seasonal effects
-            CreateSeasonalEffects();
-
-            _currentSeason = Season.Spring;
-            _seasonalTransitionProgress = 0f;
-
-            ChimeraLogger.Log("Seasonal system initialized");
+            if (seasonalSystem == null)
+            {
+                seasonalSystem = gameObject.AddComponent<SeasonalSystem>();
+            }
+            seasonalSystem.Initialize();
         }
 
-        private void InitializeStressVisualization()
+        private void InitializeStressVisualizationSystem()
         {
-            _stressData.Clear();
-            ChimeraLogger.Log("Stress visualization system initialized");
+            if (stressVisualizationSystem == null)
+            {
+                stressVisualizationSystem = gameObject.AddComponent<StressVisualizationSystem>();
+            }
+            stressVisualizationSystem.Initialize();
         }
 
-        private void UpdateTemperatureResponse(object data, float temperature)
+        private void ConnectSystemEvents()
         {
-            // Calculate temperature stress (optimal range 20-26°C for cannabis)
-            var optimalMin = 20f;
-            var optimalMax = 26f;
-
-            float temperatureStress;
-            if (temperature < optimalMin)
+            // Connect wind system events
+            if (windSystem != null)
             {
-                temperatureStress = (optimalMin - temperature) / optimalMin;
-            }
-            else if (temperature > optimalMax)
-            {
-                temperatureStress = (temperature - optimalMax) / (40f - optimalMax);
-            }
-            else
-            {
-                temperatureStress = 0f;
+                windSystem.OnWindStrengthChanged += (strength) => OnWindStrengthChanged?.Invoke(strength);
             }
 
-            temperatureStress = Mathf.Clamp01(temperatureStress);
-            ChimeraLogger.Log($"Temperature stress calculated: {temperatureStress}");
-        }
-
-        private void UpdateHumidityResponse(object data, float humidity)
-        {
-            // Calculate humidity stress (optimal range 40-60% for cannabis)
-            var optimalMin = 40f;
-            var optimalMax = 60f;
-
-            float humidityStress;
-            if (humidity < optimalMin)
+            // Connect seasonal system events
+            if (seasonalSystem != null)
             {
-                humidityStress = (optimalMin - humidity) / optimalMin;
-            }
-            else if (humidity > optimalMax)
-            {
-                humidityStress = (humidity - optimalMax) / (100f - optimalMax);
-            }
-            else
-            {
-                humidityStress = 0f;
+                seasonalSystem.OnSeasonChanged += (season) => OnSeasonChanged?.Invoke(season);
+                seasonalSystem.OnPlantSeasonalEffect += (plantId, season, effect) =>
+                    OnPlantSeasonalEffect?.Invoke(plantId, season, effect);
             }
 
-            humidityStress = Mathf.Clamp01(humidityStress);
-            ChimeraLogger.Log($"Humidity stress calculated: {humidityStress}");
-        }
-
-        private void UpdateLightResponse(object data, float lightIntensity)
-        {
-            // Calculate light stress (optimal PPFD 400-700 for cannabis)
-            var optimalMin = 400f;
-            var optimalMax = 700f;
-
-            float lightStress;
-            if (lightIntensity < optimalMin)
+            // Connect stress visualization events
+            if (stressVisualizationSystem != null)
             {
-                lightStress = (optimalMin - lightIntensity) / optimalMin;
-            }
-            else if (lightIntensity > optimalMax)
-            {
-                lightStress = (lightIntensity - optimalMax) / (1200f - optimalMax);
-            }
-            else
-            {
-                lightStress = 0f;
+                stressVisualizationSystem.OnPlantStressVisualizationChanged += (plantId, stress) =>
+                    OnPlantStressChanged?.Invoke(plantId, stress);
             }
 
-            lightStress = Mathf.Clamp01(lightStress);
-            ChimeraLogger.Log($"Light stress calculated: {lightStress}");
-        }
-
-        private void UpdateNutrientResponse(object data, float nutrientLevel)
-        {
-            // Calculate nutrient stress
-            var nutrientStress = Mathf.Clamp01(1f - (nutrientLevel / 100f));
-            ChimeraLogger.Log($"Nutrient stress calculated: {nutrientStress}");
-        }
-
-        private void UpdateCO2Response(object data, float co2Level)
-        {
-            // Calculate CO2 stress (optimal 800-1200 ppm for cannabis)
-            var optimalMin = 800f;
-            var optimalMax = 1200f;
-
-            float co2Stress;
-            if (co2Level < optimalMin)
+            // Connect environmental response events
+            if (environmentalResponseSystem != null)
             {
-                co2Stress = (optimalMin - co2Level) / optimalMin;
-            }
-            else if (co2Level > optimalMax)
-            {
-                co2Stress = (co2Level - optimalMax) / (2000f - optimalMax);
-            }
-            else
-            {
-                co2Stress = 0f;
-            }
-
-            co2Stress = Mathf.Clamp01(co2Stress);
-            ChimeraLogger.Log($"CO2 stress calculated: {co2Stress}");
-        }
-
-        private float CalculateEnvironmentalStress(object data, object conditions)
-        {
-            // Weighted average of all stress factors - placeholder implementation
-            var totalStress = 0.1f; // Default low stress
-            return Mathf.Clamp01(totalStress);
-        }
-
-        private void UpdatePlantStress(int plantId, float stressLevel)
-        {
-            if (!_stressData.TryGetValue(plantId, out var stressData))
-            {
-                stressData = new object(); // Placeholder
-                _stressData[plantId] = stressData;
-            }
-
-            ChimeraLogger.Log($"Updated stress level for plant {plantId}: {stressLevel}");
-        }
-
-        private void ApplyEnvironmentalEffects(int plantId, object data)
-        {
-            var renderer = FindRendererForInstance(plantId);
-            if (renderer == null) return;
-
-            // Apply environmental effects to materials
-            var materials = renderer.GetComponent<Renderer>()?.materials;
-            if (materials == null) return;
-
-            foreach (var material in materials)
-            {
-                // Apply environmental effects - placeholder implementation
-                ApplyTemperatureEffects(material, 0.1f);
-                ApplyHumidityEffects(material, 0.1f);
-                ApplyLightEffects(material, 0.1f);
+                environmentalResponseSystem.OnPlantEnvironmentalResponse += (plantId, conditions) =>
+                    OnEnvironmentalConditionsChanged?.Invoke(conditions);
             }
         }
 
-        private void ApplySeasonalEffects(int plantId, object season)
+        #endregion
+
+        #region Core Environmental Operations
+
+        /// <summary>
+        /// Updates environmental response for a plant
+        /// </summary>
+        public void UpdateEnvironmentalResponse(int plantId, EnvironmentalConditions conditions)
         {
-            if (!_seasonalEffects.TryGetValue(season, out var effects)) return;
+            if (!ValidateInitialization()) return;
 
-            var renderer = FindRendererForInstance(plantId);
-            if (renderer == null) return;
-
-            var materials = renderer.GetComponent<Renderer>()?.materials;
-            if (materials == null) return;
-
-            foreach (var material in materials)
+            try
             {
-                if (material.HasProperty(_seasonalPropertyId))
-                {
-                    material.SetFloat(_seasonalPropertyId, 1.0f);
-                }
-
-                if (material.HasProperty("_SeasonalColor"))
-                {
-                    material.SetColor("_SeasonalColor", Color.white);
-                }
+                environmentalResponseSystem?.UpdatePlantEnvironmentalResponse(plantId, conditions);
+            }
+            catch (Exception ex)
+            {
+                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to update environmental response for plant {plantId}: {ex.Message}");
             }
         }
 
-        private void UpdateGlobalWind()
+        /// <summary>
+        /// Applies environmental conditions to a plant
+        /// </summary>
+        public void ApplyEnvironmentalConditions(int plantId, EnvironmentalConditions conditions)
         {
-            // Update global wind parameters based on environmental conditions
-            var windVariation = Mathf.Sin(Time.time * 0.5f) * 0.3f;
-            _currentWindStrength = _windStrength + windVariation;
+            if (!ValidateInitialization()) return;
 
-            // Slight direction variation
-            var directionVariation = Mathf.Sin(Time.time * 0.2f) * 15f; // ±15 degrees
-            var currentAngle = Mathf.Atan2(_windDirection.z, _windDirection.x) * Mathf.Rad2Deg + directionVariation;
-            _currentWindDirection = new Vector3(
-                Mathf.Cos(currentAngle * Mathf.Deg2Rad),
-                0f,
-                Mathf.Sin(currentAngle * Mathf.Deg2Rad)
-            );
-        }
-
-        private void ApplyWindToRenderers()
-        {
-#if UNITY_SPEEDTREE
-            // Apply current wind settings to all SpeedTree renderers
-            SetGlobalWindStrength(_currentWindStrength);
-            SetGlobalWindDirection(_currentWindDirection);
-#endif
-        }
-
-        private object CreateWindSettingsForZone(WindZone windZone)
-        {
-            // Create wind settings - placeholder implementation
-            return new object();
-        }
-
-        private void UpdateWindZoneParameters(WindZone windZone, object settings)
-        {
-            if (windZone == null || settings == null) return;
-
-            ChimeraLogger.Log($"Updated wind zone parameters for: {windZone.name}");
-        }
-
-        private void RegisterWindZone(WindZone windZone)
-        {
-            if (!_activeWindZones.Contains(windZone))
+            try
             {
-                _activeWindZones.Add(windZone);
-
-                var settings = CreateWindSettingsForZone(windZone);
-                _windZones[windZone] = settings;
+                environmentalResponseSystem?.ApplyEnvironmentalConditions(plantId, conditions);
+            }
+            catch (Exception ex)
+            {
+                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to apply conditions to plant {plantId}: {ex.Message}");
             }
         }
 
-#if UNITY_SPEEDTREE
-        private void ApplyWindConfiguration(object settings)
+        /// <summary>
+        /// Updates seasonal changes for plants
+        /// </summary>
+        public void UpdateSeasonalChanges(IEnumerable<int> plantIds)
         {
-            if (settings == null) return;
+            if (!ValidateInitialization()) return;
 
-            ChimeraLogger.Log("Applied wind configuration to SpeedTree system");
-        }
-
-        private void SetGlobalWindStrength(float strength)
-        {
-            // Set global wind strength for all SpeedTree renderers
-            Shader.SetGlobalFloat(_windStrengthPropertyId, strength);
-        }
-
-        private void SetGlobalWindDirection(Vector3 direction)
-        {
-            // Set global wind direction for all SpeedTree renderers
-            Shader.SetGlobalVector("_WindDirection", direction);
-        }
-#endif
-
-        private Gradient CreateDefaultHealthGradient()
-        {
-            var gradient = new Gradient();
-            var colorKeys = new GradientColorKey[]
+            try
             {
-                new GradientColorKey(Color.red, 0f),      // Unhealthy
-                new GradientColorKey(Color.yellow, 0.5f), // Moderate
-                new GradientColorKey(Color.green, 1f)     // Healthy
-            };
-            var alphaKeys = new GradientAlphaKey[]
+                seasonalSystem?.ApplySeasonalEffects(plantIds);
+            }
+            catch (Exception ex)
             {
-                new GradientAlphaKey(1f, 0f),
-                new GradientAlphaKey(1f, 1f)
-            };
-            gradient.SetKeys(colorKeys, alphaKeys);
-            return gradient;
-        }
-
-        private Gradient CreateDefaultStressGradient()
-        {
-            var gradient = new Gradient();
-            var colorKeys = new GradientColorKey[]
-            {
-                new GradientColorKey(Color.clear, 0f),    // No stress
-                new GradientColorKey(Color.yellow, 0.5f), // Moderate stress
-                new GradientColorKey(Color.red, 1f)       // High stress
-            };
-            var alphaKeys = new GradientAlphaKey[]
-            {
-                new GradientAlphaKey(0f, 0f),
-                new GradientAlphaKey(1f, 1f)
-            };
-            gradient.SetKeys(colorKeys, alphaKeys);
-            return gradient;
-        }
-
-        private void CreateSeasonalEffects()
-        {
-            _seasonalEffects[Season.Spring] = new SeasonalEffects
-            {
-                ColorTint = new Color(0.8f, 1f, 0.8f, 1f), // Light green tint
-                IntensityModifier = 1.1f,
-                GrowthModifier = 1.2f
-            };
-
-            _seasonalEffects[Season.Summer] = new SeasonalEffects
-            {
-                ColorTint = new Color(1f, 1f, 0.9f, 1f), // Bright, slightly yellow
-                IntensityModifier = 1.3f,
-                GrowthModifier = 1.5f
-            };
-
-            _seasonalEffects[Season.Autumn] = new SeasonalEffects
-            {
-                ColorTint = new Color(1f, 0.8f, 0.6f, 1f), // Orange/brown tint
-                IntensityModifier = 0.8f,
-                GrowthModifier = 0.7f
-            };
-
-            _seasonalEffects[Season.Winter] = new SeasonalEffects
-            {
-                ColorTint = new Color(0.7f, 0.8f, 0.9f, 1f), // Blue-ish tint
-                IntensityModifier = 0.5f,
-                GrowthModifier = 0.3f
-            };
-        }
-
-        private float CalculateOverallStress(object data)
-        {
-            // Placeholder implementation
-            return 0.1f; // Default low stress
-        }
-
-        private void ApplyTemperatureEffects(Material material, float temperatureStress)
-        {
-            if (material.HasProperty("_TemperatureStress"))
-            {
-                material.SetFloat("_TemperatureStress", temperatureStress);
+                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to update seasonal changes: {ex.Message}");
             }
         }
 
-        private void ApplyHumidityEffects(Material material, float humidityStress)
+        /// <summary>
+        /// Updates plant stress visualization
+        /// </summary>
+        public void UpdatePlantStressVisualization(int plantId, float healthLevel, float stressLevel)
         {
-            if (material.HasProperty("_HumidityStress"))
+            if (!ValidateInitialization()) return;
+
+            try
             {
-                material.SetFloat("_HumidityStress", humidityStress);
+                stressVisualizationSystem?.UpdatePlantStressVisualization(plantId, healthLevel, stressLevel);
+            }
+            catch (Exception ex)
+            {
+                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to update stress visualization for plant {plantId}: {ex.Message}");
             }
         }
 
-        private void ApplyLightEffects(Material material, float lightStress)
+        /// <summary>
+        /// Updates wind system
+        /// </summary>
+        public void UpdateWindSystem()
         {
-            if (material.HasProperty("_LightStress"))
+            if (!ValidateInitialization()) return;
+
+            try
             {
-                material.SetFloat("_LightStress", lightStress);
+                windSystem?.UpdateGlobalWind();
+            }
+            catch (Exception ex)
+            {
+                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to update wind system: {ex.Message}");
             }
         }
 
-        private GameObject FindRendererForInstance(int plantId)
+        #endregion
+
+        #region System Control Methods
+
+        /// <summary>
+        /// Sets wind strength
+        /// </summary>
+        public void SetWindStrength(float strength)
         {
-            // Find the SpeedTree renderer associated with this plant instance
-            var renderers = /* TODO: ServiceContainer.GetAll<GameObject>() */ new GameObject[0];
-            return renderers.FirstOrDefault(r =>
-                r.name.Contains($"SpeedTree_Plant_{plantId}"));
+            if (!ValidateInitialization()) return;
+
+            try
+            {
+                windSystem?.SetWindStrength(strength);
+            }
+            catch (Exception ex)
+            {
+                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to set wind strength: {ex.Message}");
+            }
         }
 
-        private object FindPlantInstance(int plantId)
+        /// <summary>
+        /// Sets wind direction
+        /// </summary>
+        public void SetWindDirection(Vector3 direction)
         {
-            // This would typically be provided by a plant management service
-            // For now, return null as a placeholder
-            return null;
+            if (!ValidateInitialization()) return;
+
+            try
+            {
+                windSystem?.SetWindDirection(direction);
+            }
+            catch (Exception ex)
+            {
+                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to set wind direction: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Forces a specific season
+        /// </summary>
+        public void SetSeason(Season season)
+        {
+            if (!ValidateInitialization()) return;
+
+            try
+            {
+                seasonalSystem?.SetSeason(season);
+            }
+            catch (Exception ex)
+            {
+                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to set season: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Sets stress visualization intensity
+        /// </summary>
+        public void SetStressVisualizationIntensity(float intensity)
+        {
+            if (!ValidateInitialization()) return;
+
+            try
+            {
+                stressVisualizationSystem?.SetVisualizationIntensity(intensity);
+            }
+            catch (Exception ex)
+            {
+                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to set visualization intensity: {ex.Message}");
+            }
+        }
+
+        #endregion
+
+        #region Query Methods
+
+        /// <summary>
+        /// Gets current season
+        /// </summary>
+        public Season GetCurrentSeason()
+        {
+            if (!ValidateInitialization()) return Season.Spring;
+            return seasonalSystem?.GetCurrentSeason() ?? Season.Spring;
+        }
+
+        /// <summary>
+        /// Gets current wind strength
+        /// </summary>
+        public float GetCurrentWindStrength()
+        {
+            if (!ValidateInitialization()) return 0f;
+            return windSystem?.GetCurrentWindStrength() ?? 0f;
+        }
+
+        /// <summary>
+        /// Gets current wind direction
+        /// </summary>
+        public Vector3 GetCurrentWindDirection()
+        {
+            if (!ValidateInitialization()) return Vector3.zero;
+            return windSystem?.GetCurrentWindDirection() ?? Vector3.zero;
+        }
+
+        /// <summary>
+        /// Gets seasonal growth multiplier
+        /// </summary>
+        public float GetSeasonalGrowthMultiplier()
+        {
+            if (!ValidateInitialization()) return 1f;
+            return seasonalSystem?.GetSeasonalGrowthMultiplier() ?? 1f;
+        }
+
+        /// <summary>
+        /// Gets seasonal stress multiplier
+        /// </summary>
+        public float GetSeasonalStressMultiplier()
+        {
+            if (!ValidateInitialization()) return 1f;
+            return seasonalSystem?.GetSeasonalStressMultiplier() ?? 1f;
         }
 
         #endregion
 
         #region Unity Lifecycle
 
-        private void Start()
+        protected virtual void Start()
         {
-        // Register with UpdateOrchestrator
-        UpdateOrchestrator.Instance?.RegisterTickable(this);
-            Initialize();
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
         }
 
-        private void OnDestroy()
+        protected virtual void OnDestroy()
         {
-        // Unregister from UpdateOrchestrator
-        UpdateOrchestrator.Instance?.UnregisterTickable(this);
-            Shutdown();
-        }
-
-        public void Tick(float deltaTime)
-        {
-            if (!IsInitialized) return;
-
-            var currentTime = Time.time;
-
-            // Update environmental systems
-            if (currentTime - _lastEnvironmentalUpdate >= _environmentalUpdateFrequency)
-            {
-                if (_plantsNeedingUpdate.Count > 0)
-                {
-                    UpdateStressVisualization(_plantsNeedingUpdate);
-                }
-                _lastEnvironmentalUpdate = currentTime;
-            }
-
-            // Update wind system
-            if (_enableWindAnimation)
-            {
-                UpdateWindSystem();
-            }
-
-            // Update seasonal effects
-            if (currentTime - _lastSeasonalUpdate >= 3600f) // Update every hour
-            {
-                if (_plantsNeedingUpdate.Count > 0)
-                {
-                    UpdateSeasonalChanges(_plantsNeedingUpdate);
-                }
-                _lastSeasonalUpdate = currentTime;
-            }
+            // Unregister from UpdateOrchestrator
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
         }
 
         #endregion
 
         #region ITickable Implementation
 
-        // ITickable implementation properties
-        public int Priority => TickPriority.SpeedTreeServices;
-        public bool Enabled => enabled && gameObject.activeInHierarchy;
-
-        public void OnRegistered()
+        public void Tick(float deltaTime)
         {
-            ChimeraLogger.LogVerbose("[SpeedTreeEnvironmentalService] Registered with UpdateOrchestrator");
+            if (!ValidateInitialization() || !enabled || !gameObject.activeInHierarchy) return;
+
+            try
+            {
+                // Update all environmental systems
+                environmentalResponseSystem?.Tick(deltaTime);
+                windSystem?.Tick(deltaTime);
+                seasonalSystem?.Tick(deltaTime);
+                stressVisualizationSystem?.Tick(deltaTime);
+            }
+            catch (Exception ex)
+            {
+                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Error during environmental update: {ex.Message}");
+            }
         }
 
-        public void OnUnregistered()
+        public int Priority => 10; // Environmental updates have medium priority
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+        public virtual void OnRegistered()
         {
-            ChimeraLogger.LogVerbose("[SpeedTreeEnvironmentalService] Unregistered from UpdateOrchestrator");
+            ChimeraLogger.Log("[SpeedTreeEnvironmentalService] Registered with UpdateOrchestrator");
+        }
+
+        public virtual void OnUnregistered()
+        {
+            ChimeraLogger.Log("[SpeedTreeEnvironmentalService] Unregistered from UpdateOrchestrator");
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        private bool ValidateInitialization()
+        {
+            if (!IsInitialized)
+            {
+                ChimeraLogger.LogWarning("[SpeedTreeEnvironmentalService] Service not initialized");
+                return false;
+            }
+            return true;
+        }
+
+        #endregion
+
+        #region Legacy Interface Support
+
+        // Support for legacy interface methods (can be removed after full migration)
+        public void UpdateEnvironmentalResponse(int plantId, object conditions)
+        {
+            if (conditions is EnvironmentalConditions envConditions)
+            {
+                UpdateEnvironmentalResponse(plantId, envConditions);
+            }
+        }
+
+        public void ApplyEnvironmentalConditions(int plantId, object conditions)
+        {
+            if (conditions is EnvironmentalConditions envConditions)
+            {
+                ApplyEnvironmentalConditions(plantId, envConditions);
+            }
         }
 
         #endregion
     }
-
-    #region Supporting Data Classes
-
-    [System.Serializable]
-    public class EnvironmentalResponseData
-    {
-        public int PlantId;
-        public float TemperatureStress;
-        public float HumidityStress;
-        public float LightStress;
-        public float NutrientStress;
-        public float CO2Stress;
-        public float LastUpdate;
-    }
-
-    [System.Serializable]
-    public class StressVisualizationData
-    {
-        public int PlantId;
-        public float HealthLevel;
-        public float StressLevel;
-        public Color CurrentHealthColor;
-        public Color CurrentStressColor;
-    }
-
-    [System.Serializable]
-    public class SpeedTreeWindSettings
-    {
-        public float Strength;
-        public Vector3 Direction;
-        public float Turbulence;
-        public float Pulsation;
-        public WindZone Zone;
-    }
-
-    [System.Serializable]
-    public class SeasonalEffects
-    {
-        public Color ColorTint;
-        public float IntensityModifier;
-        public float GrowthModifier;
-    }
-
-    public enum Season
-    {
-        Spring,
-        Summer,
-        Autumn,
-        Winter
-    }
-
-    #endregion
 }

@@ -7,7 +7,7 @@ namespace ProjectChimera.Core
     /// Base class for all Project Chimera system components.
     /// Systems handle specific gameplay functionality and can be enabled/disabled dynamically.
     /// </summary>
-    public abstract class ChimeraSystem : ChimeraMonoBehaviour, ITickable{
+    public abstract class ChimeraSystem : ChimeraMonoBehaviour, ProjectChimera.Core.Updates.ITickable{
         [Header("System Properties")]
         [SerializeField] private bool _autoStart = true;
         [SerializeField] private int _systemPriority = 100;
@@ -30,10 +30,20 @@ namespace ProjectChimera.Core
         /// </summary>
         public float UpdateInterval => _updateInterval;
 
+        /// <summary>
+        /// ITickable Priority property
+        /// </summary>
+        public virtual int Priority => _systemPriority;
+
+        /// <summary>
+        /// ITickable Enabled property
+        /// </summary>
+        public virtual bool Enabled => isActiveAndEnabled;
+
         protected override void Start()
         {
         // Register with UpdateOrchestrator
-        UpdateOrchestrator.Instance?.RegisterTickable(this);
+        ProjectChimera.Core.Updates.UpdateOrchestrator.Instance?.RegisterTickable(this);
             base.Start();
 
             if (_autoStart)
@@ -54,11 +64,11 @@ namespace ProjectChimera.Core
             }
 
             LogDebug("Starting system");
-            
+
             OnSystemStart();
             IsSystemRunning = true;
             _lastUpdateTime = Time.time;
-            
+
             LogDebug("System started successfully");
         }
 
@@ -74,10 +84,10 @@ namespace ProjectChimera.Core
             }
 
             LogDebug("Stopping system");
-            
+
             OnSystemStop();
             IsSystemRunning = false;
-            
+
             LogDebug("System stopped successfully");
         }
 
@@ -150,7 +160,7 @@ namespace ProjectChimera.Core
             {
                 if (Time.time - _lastUpdateTime < _updateInterval)
                     return;
-                
+
                 _lastUpdateTime = Time.time;
             }
 
@@ -195,17 +205,15 @@ namespace ProjectChimera.Core
             }
         }
 
-        // ITickable implementation
-        public int Priority => _systemPriority;
-        public bool Enabled => enabled && gameObject.activeInHierarchy;
-        
-        public virtual void OnRegistered() 
-        { 
+        // ITickable implementation properties are defined above
+
+        public virtual void OnRegistered()
+        {
             // Override in derived classes if needed
         }
-        
-        public virtual void OnUnregistered() 
-        { 
+
+        public virtual void OnUnregistered()
+        {
             // Override in derived classes if needed
         }
     }

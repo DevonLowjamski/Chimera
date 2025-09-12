@@ -1,581 +1,250 @@
-using ProjectChimera.Core.Logging;
 using UnityEngine;
-using ProjectChimera.Data.Genetics;
-using ProjectChimera.Data.Shared;
 using System.Collections.Generic;
-// using ProjectChimera.Systems.Genetics; // Invalid namespace - genetics in ProjectChimera.Data.Genetics // Added for advanced TraitExpressionEngine
-// Decouple from Systems.Genetics for early-phase compile
-using TraitExpressionEngine = System.Object;
-using TraitExpressionResult = ProjectChimera.Data.Genetics.TraitExpressionResult;
-using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
-using PlantGenotype = ProjectChimera.Data.Genetics.PlantGenotype;
-// using EnvironmentManager = ProjectChimera.Systems.Environment.EnvironmentManager; // Environment assembly not available
-using GxEInteractionProfile = ProjectChimera.Data.Genetics.GxEInteractionProfile; // Correct type name
-using GameManager = ProjectChimera.Core.GameManager; // Add GameManager for accessing managers
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Data.Shared;
 
 namespace ProjectChimera.Systems.Cultivation
 {
     /// <summary>
-    /// Main Plant Update Processor coordinator.
-    /// Orchestrates growth calculations, health management, environmental responses,
-    /// and genetic trait expression using specialized component systems.
-    /// Significantly reduced from original 947-line monolithic class.
+    /// BASIC: Simple plant updating for Project Chimera's cultivation system.
+    /// Focuses on essential plant updates without complex processing systems.
     /// </summary>
-    public class PlantUpdateProcessor
+    public class PlantUpdateProcessor : MonoBehaviour
     {
-        // Core processing components
-        private PlantGrowthCalculator _growthCalculator;
-        private PlantHealthSystem _healthSystem;
-        private EnvironmentalResponseSystem _environmentalSystem;
+        [Header("Basic Update Settings")]
+        [SerializeField] private bool _enableBasicUpdates = true;
+        [SerializeField] private float _updateInterval = 1f; // seconds
+        [SerializeField] private bool _enableLogging = true;
 
-        // Configuration and state
-        private PlantUpdateConfiguration _configuration;
-        private UpdateStatistics _statistics;
-        private TraitExpressionEngine _traitExpressionEngine;
-
-        // Performance optimization
-        private readonly Dictionary<string, TraitExpressionResult> _traitExpressionCache = new Dictionary<string, TraitExpressionResult>();
-        private float _lastCacheUpdate = 0f;
-        private const float CACHE_UPDATE_INTERVAL = 5f; // Update cache every 5 seconds
-
-        public PlantUpdateProcessor(PlantUpdateConfiguration configuration = null)
-        {
-            _configuration = configuration ?? new PlantUpdateConfiguration();
-            InitializeProcessor();
-        }
+        // Basic plant tracking
+        private readonly List<PlantInstance> _trackedPlants = new List<PlantInstance>();
+        private float _lastUpdateTime = 0f;
+        private bool _isInitialized = false;
 
         /// <summary>
-        /// Constructor with individual feature flags for compatibility
+        /// Events for plant updates
         /// </summary>
-        public PlantUpdateProcessor(bool enableStressSystem, bool enableGxEInteractions, bool enableAdvancedGenetics)
-        {
-            _configuration = new PlantUpdateConfiguration
-            {
-                EnableStressSystem = enableStressSystem,
-                EnableGxEInteractions = enableGxEInteractions,
-                EnableAdvancedGenetics = enableAdvancedGenetics
-            };
-            InitializeProcessor();
-        }
+        public event System.Action<PlantInstance> OnPlantUpdated;
+        public event System.Action<PlantInstance> OnPlantHealthChanged;
 
         /// <summary>
-        /// Initialize the processor with the current configuration
+        /// Initialize basic plant processor
         /// </summary>
-        private void InitializeProcessor()
+        public void Initialize()
         {
-            _statistics = new UpdateStatistics();
+            if (_isInitialized) return;
 
-            // Initialize component systems
-            _growthCalculator = new PlantGrowthCalculator();
-            _healthSystem = new PlantHealthSystem();
-            _environmentalSystem = new EnvironmentalResponseSystem();
+            _isInitialized = true;
+            _lastUpdateTime = Time.time;
 
-            // Initialize advanced trait expression engine with performance optimization
-            if (_configuration.EnableAdvancedGenetics)
+            if (_enableLogging)
             {
-                _traitExpressionEngine = new TraitExpressionEngine();
+                ChimeraLogger.Log("[PlantUpdateProcessor] Initialized successfully");
             }
-
-            ChimeraLogger.Log("[PlantUpdateProcessor] Initialized with specialized component systems");
         }
 
         /// <summary>
-        /// Initialize the processor for a specific plant strain
+        /// Update all tracked plants
         /// </summary>
-        public void InitializeForStrain(object strain, PhenotypicTraits traits)
+        public void Update()
         {
-            _growthCalculator.Initialize(strain, traits, _configuration);
-            _healthSystem.Initialize(strain, traits?.DiseaseResistance ?? 1f, _configuration);
-            _environmentalSystem.Initialize(strain, _configuration);
+            if (!_enableBasicUpdates || !_isInitialized) return;
 
-            ChimeraLogger.LogVerbose($"[PlantUpdateProcessor] Initialized for strain: {strain?.GetType().Name}");
-        }
+            // Throttle updates to avoid performance issues
+            if (Time.time - _lastUpdateTime < _updateInterval) return;
 
-        /// <summary>
-        /// Enhanced plant update with integrated component systems.
-        /// Updates a single plant's state including growth, health, environmental responses, and genetic trait expression.
-        /// </summary>
-        public void UpdatePlant(PlantInstance plant, float deltaTime, float globalGrowthModifier)
-        {
-            if (plant == null || !plant.IsActive)
-                return;
+            _lastUpdateTime = Time.time;
 
-            var startTime = Time.realtimeSinceStartup;
-            bool updateSuccessful = false;
-
-            try
+            // Update all tracked plants
+            for (int i = _trackedPlants.Count - 1; i >= 0; i--)
             {
-                // Get current environmental conditions for the plant
-                var environmentalConditions = GetPlantEnvironmentalConditions(plant);
-
-                // Update environmental response system
-                _environmentalSystem.UpdateEnvironmentalResponse(environmentalConditions, deltaTime);
-                float environmentalFitness = _environmentalSystem.GetEnvironmentalFitness();
-
-                // Get environmental stress factors
-                var environmentalStresses = _environmentalSystem.GetEnvironmentalStressFactors();
-                var activeStressors = ConvertToActiveStressors(environmentalStresses);
-
-                // Update health system with environmental effects
-                _healthSystem.UpdateHealth(deltaTime, activeStressors, environmentalFitness);
-                float currentHealth = _healthSystem.GetCurrentHealth();
-
-                // Calculate growth rate using integrated systems
-                float growthRate = _growthCalculator.CalculateGrowthRate(
-                    plant.CurrentGrowthStage,
-                    environmentalFitness,
-                    currentHealth,
-                    globalGrowthModifier);
-
-                // Calculate genetic trait expression if advanced genetics is enabled
-                TraitExpressionResult traitExpression = null;
-                if (_configuration.EnableAdvancedGenetics && plant.Genotype != null)
+                var plant = _trackedPlants[i];
+                if (plant != null && plant.IsActive)
                 {
-                    traitExpression = CalculateTraitExpression(plant, environmentalConditions);
-                }
-
-                // Update plant with integrated system data
-                if (traitExpression != null)
-                {
-                    UpdatePlantWithGeneticTraits(plant, traitExpression, growthRate, deltaTime, globalGrowthModifier);
+                    UpdatePlant(plant, _updateInterval);
                 }
                 else
                 {
-                    // Update with standard systems integration
-                    UpdatePlantWithSystems(plant, growthRate, currentHealth, environmentalFitness, deltaTime, globalGrowthModifier);
-                }
-
-                updateSuccessful = true;
-            }
-            catch (System.Exception ex)
-            {
-                ChimeraLogger.LogError($"[PlantUpdateProcessor] Error updating plant {plant.PlantID}: {ex.Message}");
-                updateSuccessful = false;
-            }
-            finally
-            {
-                // Record performance statistics
-                var updateTime = (Time.realtimeSinceStartup - startTime) * 1000.0; // Convert to milliseconds
-                _statistics.RecordUpdate(updateTime, updateSuccessful);
-            }
-        }
-
-        /// <summary>
-        /// Update plant using integrated systems data
-        /// </summary>
-        private void UpdatePlantWithSystems(PlantInstance plant, float growthRate, float currentHealth,
-            float environmentalFitness, float deltaTime, float globalGrowthModifier)
-        {
-            // Apply growth rate from growth calculator
-            plant.ApplyGrowthRate(growthRate, deltaTime);
-
-            // Apply health effects from health system
-            plant.SetCurrentHealth(currentHealth);
-
-            // Apply environmental fitness effects
-            plant.SetEnvironmentalFitness(environmentalFitness);
-
-            // Update plant's basic systems with integrated data
-            plant.UpdatePlant(deltaTime, globalGrowthModifier);
-        }
-
-        /// <summary>
-        /// Enhanced trait expression calculation with performance optimization.
-        /// Uses the high-performance TraitExpressionEngine with automatic optimization selection.
-        /// </summary>
-        private TraitExpressionResult CalculateTraitExpression(PlantInstance plant, EnvironmentalConditions environment)
-        {
-            string cacheKey = $"{plant.PlantID}_{environment.GetHashCode()}";
-
-            // Check cache first for performance optimization
-            if (_traitExpressionCache.TryGetValue(cacheKey, out var cachedResult))
-            {
-                if (Time.time - _lastCacheUpdate < CACHE_UPDATE_INTERVAL)
-                {
-                    return cachedResult;
-                }
-            }
-
-            // Calculate new trait expression using optimized engine
-            var plantGenotype = CreatePlantGenotypeFromInstance(plant);
-            if (plantGenotype == null)
-                return null;
-
-            var traitExpression = new TraitExpressionResult();
-            traitExpression.GenotypeID = plantGenotype.GenotypeID;
-            traitExpression.CalculationTime = System.DateTime.Now;
-
-            // Update cache
-            _traitExpressionCache[cacheKey] = traitExpression;
-            _lastCacheUpdate = Time.time;
-
-            return traitExpression;
-        }
-
-        /// <summary>
-        /// Batch processing for multiple plants using optimized integrated systems.
-        /// Automatically selects optimal processing method based on batch size.
-        /// </summary>
-        public void UpdatePlantsBatch(List<PlantInstance> plants, float deltaTime, float globalGrowthModifier)
-        {
-            if (plants == null || plants.Count == 0)
-                return;
-
-            var startTime = Time.realtimeSinceStartup;
-            int successfulUpdates = 0;
-
-            try
-            {
-                // Group plants by strain for more efficient processing
-                var plantsByStrain = GroupPlantsByStrain(plants);
-
-                foreach (var strainGroup in plantsByStrain)
-                {
-                    ProcessStrainBatch(strainGroup.Value, strainGroup.Key, deltaTime, globalGrowthModifier);
-                    successfulUpdates += strainGroup.Value.Count;
-                }
-
-                _statistics.ProcessedBatches++;
-                ChimeraLogger.LogVerbose($"[PlantUpdateProcessor] Batch processed {successfulUpdates} plants in {plantsByStrain.Count} strain groups");
-            }
-            catch (System.Exception ex)
-            {
-                ChimeraLogger.LogError($"[PlantUpdateProcessor] Error in batch processing: {ex.Message}");
-            }
-            finally
-            {
-                // Record batch performance
-                var batchTime = (Time.realtimeSinceStartup - startTime) * 1000.0;
-                _statistics.ActivePlants = successfulUpdates;
-            }
-        }
-
-        /// <summary>
-        /// Process a batch of plants with the same strain
-        /// </summary>
-        private void ProcessStrainBatch(List<PlantInstance> plants, object strain, float deltaTime, float globalGrowthModifier)
-        {
-            // Initialize systems for this strain if needed
-            if (plants.Count > 0)
-            {
-                var samplePlant = plants[0];
-                var traits = ExtractPhenotypicTraits(samplePlant);
-
-                // Ensure systems are initialized for this strain
-                InitializeForStrain(strain, traits);
-            }
-
-            // Process each plant in the strain group
-            foreach (var plant in plants)
-            {
-                if (plant != null && plant.IsActive)
-                {
-                    UpdatePlant(plant, deltaTime, globalGrowthModifier);
+                    // Remove inactive plants
+                    _trackedPlants.RemoveAt(i);
                 }
             }
         }
 
         /// <summary>
-        /// Update plant state using genetic trait expression results.
+        /// Update a single plant
         /// </summary>
-        private void UpdatePlantWithGeneticTraits(PlantInstance plant, TraitExpressionResult traitExpression,
-            float growthRate, float deltaTime, float globalGrowthModifier)
+        public void UpdatePlant(PlantInstance plant, float deltaTime)
         {
-            // Store the trait expression result in the plant for other systems to access
-            plant.SetLastTraitExpression(traitExpression);
+            if (plant == null) return;
 
-            // Apply genetic trait effects to plant growth
-            ApplyGeneticTraitEffects(plant, traitExpression, growthRate, deltaTime, globalGrowthModifier);
+            float previousHealth = plant.Health;
 
-            // Update plant's basic systems with trait modifications
-            plant.UpdatePlant(deltaTime, globalGrowthModifier);
+            // Basic plant growth and aging
+            plant.AgeInDays += deltaTime / 86400f; // Convert to days
+
+            // Basic health decay over time (plants need care)
+            float healthDecay = 0.001f * deltaTime; // Slow decay
+            plant.Health = Mathf.Max(0f, plant.Health - healthDecay);
+
+            // Basic growth based on health and time
+            if (plant.Health > 0.5f && plant.AgeInDays < 90f) // 90 days max growth
+            {
+                float growthRate = plant.Health * 0.01f * deltaTime;
+                plant.GrowthStage = Mathf.Min(1f, plant.GrowthStage + growthRate);
+            }
+
+            // Notify listeners
+            OnPlantUpdated?.Invoke(plant);
+
+            if (Mathf.Abs(plant.Health - previousHealth) > 0.01f)
+            {
+                OnPlantHealthChanged?.Invoke(plant);
+            }
+
+            if (_enableLogging && Random.value < 0.01f) // Log occasionally to avoid spam
+            {
+                ChimeraLogger.Log($"[PlantUpdateProcessor] Updated plant {plant.PlantID}: Health={plant.Health:F2}, Growth={plant.GrowthStage:F2}");
+            }
         }
 
         /// <summary>
-        /// Apply genetic trait effects to plant growth and development.
+        /// Add plant to tracking
         /// </summary>
-        private void ApplyGeneticTraitEffects(PlantInstance plant, TraitExpressionResult traitExpression,
-            float growthRate, float deltaTime, float globalGrowthModifier)
+        public void TrackPlant(PlantInstance plant)
         {
-            // Apply growth rate from integrated calculations
-            plant.ApplyGrowthRate(growthRate, deltaTime);
-
-            // Apply height trait effects
-            if (traitExpression.HeightExpression > 0f)
+            if (plant != null && !_trackedPlants.Contains(plant))
             {
-                float heightGrowthModifier = traitExpression.HeightExpression;
-                plant.ApplyHeightGrowthModifier(heightGrowthModifier, deltaTime);
-            }
+                _trackedPlants.Add(plant);
 
-            // Apply THC trait effects (affects potency)
-            if (traitExpression.THCExpression > 0f)
-            {
-                plant.ApplyPotencyModifier(traitExpression.THCExpression);
-            }
-
-            // Apply CBD trait effects (affects medicinal value)
-            if (traitExpression.CBDExpression > 0f)
-            {
-                plant.ApplyCBDModifier(traitExpression.CBDExpression);
-            }
-
-            // Apply yield trait effects
-            if (traitExpression.YieldExpression > 0f)
-            {
-                plant.ApplyYieldModifier(traitExpression.YieldExpression);
-            }
-
-            // Apply overall genetic fitness effects
-            plant.ApplyGeneticFitnessModifier(traitExpression.OverallFitness);
-        }
-
-        /// <summary>
-        /// Calculate harvest results using integrated systems
-        /// </summary>
-        public HarvestResults CalculateHarvestResults(PlantInstance plant)
-        {
-            if (plant == null) return new HarvestResults();
-
-            float finalHealth = _healthSystem.GetCurrentHealth();
-            float environmentalFitness = _environmentalSystem.GetEnvironmentalFitness();
-            var traits = ExtractPhenotypicTraits(plant);
-
-            // Use growth calculator for harvest calculations
-            return _growthCalculator.CalculateHarvestResults(
-                finalHealth,
-                plant.QualityPotential,
-                traits,
-                environmentalFitness,
-                plant.TotalDaysGrown
-            );
-        }
-
-        /// <summary>
-        /// Get environmental conditions for a plant
-        /// </summary>
-        private EnvironmentalConditions GetPlantEnvironmentalConditions(PlantInstance plant)
-        {
-            // Get environmental conditions directly from the plant
-            EnvironmentalConditions dataConditions = plant.GetCurrentEnvironmentalConditions();
-
-            // Validate that the conditions are initialized
-            if (dataConditions.IsInitialized())
-            {
-                return dataConditions;
-            }
-
-            // Fallback to environmental manager if plant conditions are not available
-            // var environmentalManager = GameManager.Instance?.GetManager<ProjectChimera.Systems.Environment.EnvironmentManager>(); // EnvironmentManager not available
-            // if (environmentalManager != null) // EnvironmentManager not available
-            {
-                // EnvironmentalConditions cultivationConditions = environmentalManager.GetCultivationConditions(plant.transform.position);
-                // return cultivationConditions; // EnvironmentManager not available
-            }
-
-            // Final fallback to default indoor conditions
-            return EnvironmentalConditions.CreateIndoorDefault();
-        }
-
-        /// <summary>
-        /// Group plants by strain for efficient batch processing
-        /// </summary>
-        private Dictionary<object, List<PlantInstance>> GroupPlantsByStrain(List<PlantInstance> plants)
-        {
-            var groups = new Dictionary<object, List<PlantInstance>>();
-
-            foreach (var plant in plants)
-            {
-                if (plant?.Strain != null)
+                if (_enableLogging)
                 {
-                    if (!groups.ContainsKey(plant.Strain))
-                    {
-                        groups[plant.Strain] = new List<PlantInstance>();
-                    }
-                    groups[plant.Strain].Add(plant);
+                    ChimeraLogger.Log($"[PlantUpdateProcessor] Now tracking plant {plant.PlantID}");
                 }
             }
-
-            return groups;
         }
 
         /// <summary>
-        /// Extract phenotypic traits from plant instance
+        /// Remove plant from tracking
         /// </summary>
-        private PhenotypicTraits ExtractPhenotypicTraits(PlantInstance plant)
+        public void UntrackPlant(PlantInstance plant)
         {
-            // Extract traits from plant or use defaults
-            // This would be expanded based on PlantInstance structure
-            return new PhenotypicTraits
+            if (plant != null)
             {
-                YieldMultiplier = 1f,
-                PotencyMultiplier = 1f,
-                GrowthRateMultiplier = 1f,
-                DiseaseResistance = 1f,
-                FloweringTime = 60f
-            };
-        }
+                _trackedPlants.Remove(plant);
 
-        /// <summary>
-        /// Convert environmental stress factors to active stressors
-        /// </summary>
-        private List<ActiveStressor> ConvertToActiveStressors(List<StressFactor> stressFactors)
-        {
-            var activeStressors = new List<ActiveStressor>();
-
-            foreach (var stressFactor in stressFactors)
-            {
-                activeStressors.Add(new ActiveStressor
+                if (_enableLogging)
                 {
-                    IsActive = true,
-                    Intensity = stressFactor.Severity,
-                    StressSource = new StressSource
-                    {
-                        StressType = stressFactor.StressType,
-                        DamagePerSecond = stressFactor.Severity * 0.01f,
-                        StressMultiplier = 1f
-                    },
-                    StartTime = Time.time,
-                    Duration = stressFactor.Duration
-                });
+                    ChimeraLogger.Log($"[PlantUpdateProcessor] Stopped tracking plant {plant.PlantID}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get all tracked plants
+        /// </summary>
+        public List<PlantInstance> GetTrackedPlants()
+        {
+            return new List<PlantInstance>(_trackedPlants);
+        }
+
+        /// <summary>
+        /// Get plant count
+        /// </summary>
+        public int GetPlantCount()
+        {
+            return _trackedPlants.Count;
+        }
+
+        /// <summary>
+        /// Clear all tracked plants
+        /// </summary>
+        public void ClearAllPlants()
+        {
+            _trackedPlants.Clear();
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("[PlantUpdateProcessor] Cleared all tracked plants");
+            }
+        }
+
+        /// <summary>
+        /// Apply care to a plant (watering, nutrients, etc.)
+        /// </summary>
+        public void ApplyCare(PlantInstance plant, PlantCareType careType)
+        {
+            if (plant == null) return;
+
+            switch (careType)
+            {
+                case PlantCareType.Watering:
+                    plant.LastWatering = System.DateTime.Now;
+                    plant.Health = Mathf.Min(1f, plant.Health + 0.1f);
+                    break;
+
+                case PlantCareType.Fertilizer:
+                    plant.LastFeeding = System.DateTime.Now;
+                    plant.Health = Mathf.Min(1f, plant.Health + 0.05f);
+                    break;
+
+                case PlantCareType.Pruning:
+                    // Slight health boost from pruning
+                    plant.Health = Mathf.Min(1f, plant.Health + 0.02f);
+                    break;
             }
 
-            return activeStressors;
-        }
+            OnPlantHealthChanged?.Invoke(plant);
 
-        /// <summary>
-        /// Create a PlantGenotype from a PlantInstance for trait expression calculations
-        /// </summary>
-        private PlantGenotype CreatePlantGenotypeFromInstance(PlantInstance plant)
-        {
-            if (plant.Genotype == null)
-                return null;
-
-            return new PlantGenotype
+            if (_enableLogging)
             {
-                GenotypeID = plant.PlantID,
-                StrainOrigin = plant.Strain,
-                Generation = 1, // Would be calculated from breeding history
-                IsFounder = true, // Would be determined from breeding history
-                CreationDate = System.DateTime.Now,
-                ParentIDs = new List<string>(),
-                Genotype = new Dictionary<string, object>(),
-                OverallFitness = plant.Genotype.OverallFitness,
-                InbreedingCoefficient = 0f, // Would be calculated from breeding history
-                Mutations = new List<object>()
-            };
-        }
-
-        #region Public Performance and Utility Methods
-
-        /// <summary>
-        /// Clear trait expression cache to free memory
-        /// </summary>
-        public void ClearTraitExpressionCache()
-        {
-            _traitExpressionCache.Clear();
-        }
-
-        /// <summary>
-        /// Get cache statistics for performance monitoring
-        /// </summary>
-        public (int cacheSize, float lastUpdate) GetCacheStatistics()
-        {
-            return (_traitExpressionCache.Count, _lastCacheUpdate);
-        }
-
-        /// <summary>
-        /// Get comprehensive performance metrics from integrated systems
-        /// </summary>
-        public GeneticPerformanceStats GetPerformanceMetrics()
-        {
-            return new GeneticPerformanceStats
-            {
-                TotalCalculations = _statistics.TotalUpdates,
-                AverageCalculationTimeMs = _statistics.AverageUpdateTime,
-                CacheHitRatio = CalculateCacheHitRatio(),
-                BatchCalculations = _statistics.ProcessedBatches,
-                AverageBatchTimeMs = 0.0, // Would be calculated from batch timing data
-                AverageUpdateTimeMs = _statistics.AverageUpdateTime,
-                CacheSize = _traitExpressionCache.Count,
-                LastUpdate = _statistics.LastUpdate
-            };
+                ChimeraLogger.Log($"[PlantUpdateProcessor] Applied {careType} to plant {plant.PlantID}");
+            }
         }
 
         /// <summary>
         /// Get update statistics
         /// </summary>
-        public UpdateStatistics GetUpdateStatistics()
+        public PlantUpdateStats GetUpdateStats()
         {
-            return _statistics;
-        }
+            int healthyPlants = _trackedPlants.FindAll(p => p.Health > 0.7f).Count;
+            int stressedPlants = _trackedPlants.FindAll(p => p.Health < 0.5f).Count;
+            float averageHealth = _trackedPlants.Count > 0 ?
+                _trackedPlants.Average(p => p.Health) : 0f;
 
-        /// <summary>
-        /// Get environmental recommendations from environmental system
-        /// </summary>
-        public List<EnvironmentalRecommendation> GetEnvironmentalRecommendations()
-        {
-            return _environmentalSystem.GetEnvironmentalRecommendations();
-        }
-
-        /// <summary>
-        /// Get health recommendations from health system
-        /// </summary>
-        public List<string> GetHealthRecommendations()
-        {
-            return _healthSystem.GetHealthRecommendations();
-        }
-
-        /// <summary>
-        /// Optimize performance by clearing caches and resetting metrics
-        /// </summary>
-        public void OptimizePerformance()
-        {
-            ClearTraitExpressionCache();
-
-            if (_configuration.EnableAdvancedGenetics && _traitExpressionEngine != null)
+            return new PlantUpdateStats
             {
-                // _traitExpressionEngine.ClearCache(); // Method doesn't exist on System.Object placeholder
-            }
-
-            // Reset statistics
-            _statistics.Reset();
-
-            // Force garbage collection to clean up pooled objects
-            if (_configuration.EnablePerformanceOptimization)
-            {
-                System.GC.Collect();
-                System.GC.WaitForPendingFinalizers();
-            }
-
-            ChimeraLogger.Log("[PlantUpdateProcessor] Performance optimization completed");
+                TotalPlants = _trackedPlants.Count,
+                HealthyPlants = healthyPlants,
+                StressedPlants = stressedPlants,
+                AverageHealth = averageHealth,
+                IsUpdateEnabled = _enableBasicUpdates,
+                UpdateInterval = _updateInterval
+            };
         }
+    }
 
-        /// <summary>
-        /// Reset all component systems
-        /// </summary>
-        public void ResetSystems()
-        {
-            _healthSystem.ResetHealth();
-            _environmentalSystem.ResetAdaptation();
-            _statistics.Reset();
-            ClearTraitExpressionCache();
+    /// <summary>
+    /// Plant care types
+    /// </summary>
+    public enum PlantCareType
+    {
+        Watering,
+        Fertilizer,
+        Pruning
+    }
 
-            ChimeraLogger.Log("[PlantUpdateProcessor] All systems reset");
-        }
-
-        #endregion
-
-        #region Private Helper Methods
-
-        private double CalculateCacheHitRatio()
-        {
-            // Simplified cache hit ratio calculation
-            // In a full implementation, this would track cache hits vs misses
-            return _traitExpressionCache.Count > 0 ? 0.8 : 0.0;
-        }
-
-        #endregion
-
+    /// <summary>
+    /// Plant update statistics
+    /// </summary>
+    [System.Serializable]
+    public struct PlantUpdateStats
+    {
+        public int TotalPlants;
+        public int HealthyPlants;
+        public int StressedPlants;
+        public float AverageHealth;
+        public bool IsUpdateEnabled;
+        public float UpdateInterval;
     }
 }
-

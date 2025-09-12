@@ -96,4 +96,20 @@ namespace ProjectChimera.Data.Genetics
         public float MaxValue;
         public float OptimalValue;
     }
+
+    /// <summary>
+    /// Genetic trait definition
+    /// </summary>
+    [System.Serializable]
+    public class GeneticTrait
+    {
+        public string TraitName;
+        public string TraitId;
+        public TraitType TraitType;
+        public float Value;
+        public float Weight = 1f;
+        public bool IsDominant;
+        public string Description;
+    }
+
 }

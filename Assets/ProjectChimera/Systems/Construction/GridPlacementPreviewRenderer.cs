@@ -1,407 +1,205 @@
-using ProjectChimera.Core.Logging;
-using ProjectChimera.Core.Updates;
 using UnityEngine;
-using System.Collections.Generic;
-using System.Linq;
-using ProjectChimera.Core;
-using ProjectChimera.Data.Construction;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Construction
 {
     /// <summary>
-    /// Specialized 3D preview rendering system for grid-based construction placement.
-    /// Handles ghost objects, multi-level grid visualization, height indicators, and validation feedback.
-    /// Extracted from GridPlacementController for modular architecture compliance.
+    /// BASIC: Simple grid placement preview renderer for Project Chimera's construction system.
+    /// Focuses on essential placement preview without complex ghost objects and grid visualization.
     /// </summary>
-    public class GridPlacementPreviewRenderer : MonoBehaviour, ITickable
+    public class GridPlacementPreviewRenderer : MonoBehaviour
     {
-        [Header("3D Ghost Preview Settings")]
-        [SerializeField] private Material _ghostPreviewMaterial;
-        [SerializeField] private Color _validGhostColor = new Color(0f, 1f, 0f, 0.5f);
-        [SerializeField] private Color _invalidGhostColor = new Color(1f, 0f, 0f, 0.5f);
-        [SerializeField] private Color _unaffordableGhostColor = new Color(1f, 0.5f, 0f, 0.5f);
-        [SerializeField] private bool _showGhostOutlines = true;
-        [SerializeField] private float _ghostPreviewHeight = 0.1f;
+        [Header("Basic Preview Settings")]
+        [SerializeField] private bool _enableBasicPreview = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private Color _validPlacementColor = Color.green;
+        [SerializeField] private Color _invalidPlacementColor = Color.red;
+        [SerializeField] private float _previewHeightOffset = 0.1f;
 
-        [Header("Multi-Level Grid Visualization")]
-        [SerializeField] private bool _showGridLevels = true;
-        [SerializeField] private Material _gridLineMaterial;
-        [SerializeField] private Color _gridLineColor = new Color(1f, 1f, 1f, 0.3f);
-        [SerializeField] private Color _activeHeightLevelColor = new Color(0f, 1f, 1f, 0.8f);
-        [SerializeField] private float _gridLineWidth = 0.02f;
-        [SerializeField] private int _maxVisibleLevels = 5;
-
-        [Header("Performance Settings")]
-        [SerializeField] private float _previewUpdateRate = 0.016f; // ~60 FPS
-        [SerializeField] private bool _enablePreviewCaching = true;
-        [SerializeField] private int _maxCachedPreviews = 10;
-
-        // Core references
-        private GridSystem _gridSystem;
-        private GridInputHandler _inputHandler;
-        private GridPlacementValidator _validator;
-        private HeightClearanceValidator _heightValidator;
-
-        // Ghost preview management
-        private List<GameObject> _ghostPreviewObjects = new List<GameObject>();
-        private Dictionary<GameObject, Material[]> _originalMaterials = new Dictionary<GameObject, Material[]>();
-        private Dictionary<Vector3Int, GameObject> _cachedGhostObjects = new Dictionary<Vector3Int, GameObject>();
-
-        // Grid visualization
-        private Dictionary<int, List<LineRenderer>> _gridLineRenderers = new Dictionary<int, List<LineRenderer>>();
-        private int _currentActiveHeight = 0;
-        private GameObject _gridVisualizationParent;
-
-        // Component references for specialized rendering
-        private GridHeightIndicatorRenderer _heightRenderer;
-        private GridFoundationOverlayRenderer _foundationRenderer;
-
-        // Performance tracking
-        private float _lastPreviewUpdate;
-        private bool _previewDirty = false;
-
-        // Preview events
-        public System.Action<Vector3Int, bool> OnPreviewValidityChanged;
-
-        private void Awake()
-        {
-            InitializeComponents();
-            SetupVisualizationParents();
-        }
-
-        private void Start()
-        {
-        // Register with UpdateOrchestrator
-        UpdateOrchestrator.Instance?.RegisterTickable(this);
-            InitializeGridVisualization();
-        }
-
-            public void Tick(float deltaTime)
-    {
-            UpdatePreviewRendering();
-
-    }
-
-        private void InitializeComponents()
-        {
-            _gridSystem = ServiceContainerFactory.Instance?.TryResolve<IGridSystem>() as GridSystem;
-            _inputHandler = GetComponent<GridInputHandler>();
-            _validator = GetComponent<GridPlacementValidator>();
-            _heightValidator = GetComponent<HeightClearanceValidator>();
-            _heightRenderer = GetComponent<GridHeightIndicatorRenderer>();
-            _foundationRenderer = GetComponent<GridFoundationOverlayRenderer>();
-
-            if (_gridSystem == null)
-                ChimeraLogger.LogWarning("[GridPlacementPreviewRenderer] GridSystem not found");
-        }
-
-        private void SetupVisualizationParents()
-        {
-            _gridVisualizationParent = new GameObject("GridVisualization");
-            _gridVisualizationParent.transform.SetParent(transform);
-        }
-
-        #region Public API
+        // Basic preview state
+        private GameObject _currentPreviewObject;
+        private Vector3Int _currentGridPosition;
+        private bool _isValidPlacement = false;
+        private bool _isInitialized = false;
 
         /// <summary>
-        /// Create 3D ghost preview for single object at position
+        /// Events for preview changes
         /// </summary>
-        public GameObject CreateGhostPreview(GridPlaceable placeable, Vector3Int gridPosition)
-        {
-            if (placeable?.gameObject == null) return null;
-
-            Vector3 worldPos = _gridSystem.GridToWorldPosition(gridPosition);
-            worldPos.y += _ghostPreviewHeight;
-
-            GameObject ghostObject = Instantiate(placeable.gameObject, worldPos, placeable.transform.rotation);
-            ghostObject.name = $"Ghost_{placeable.name}";
-
-            DisableInteractiveComponents(ghostObject);
-            ApplyGhostMaterial(ghostObject, _validGhostColor);
-
-            _ghostPreviewObjects.Add(ghostObject);
-
-            if (_enablePreviewCaching)
-                _cachedGhostObjects[gridPosition] = ghostObject;
-
-            return ghostObject;
-        }
+        public event System.Action<Vector3Int, bool> OnPreviewPositionChanged;
 
         /// <summary>
-        /// Create 3D ghost preview for schematic with multiple objects
+        /// Initialize basic preview renderer
         /// </summary>
-        public List<GameObject> CreateSchematicGhostPreview(SchematicSO schematic, Vector3Int basePosition, int rotation = 0)
+        public void Initialize()
         {
-            var ghosts = new List<GameObject>();
-            if (schematic?.Items == null) return ghosts;
+            if (_isInitialized) return;
 
-            foreach (var item in schematic.Items)
+            _isInitialized = true;
+
+            if (_enableLogging)
             {
-                GameObject ghost = CreateGhostPreviewForSchematicItem(item, basePosition, rotation);
-                if (ghost != null)
-                    ghosts.Add(ghost);
-            }
-
-            return ghosts;
-        }
-
-        /// <summary>
-        /// Update ghost preview position and visual state
-        /// </summary>
-        public void UpdateGhostPreview(GameObject ghostObject, Vector3Int gridPosition, bool isValid, bool isAffordable = true)
-        {
-            if (ghostObject == null || _gridSystem == null) return;
-
-            // Update position with 3D height level
-            Vector3 worldPos = _gridSystem.GridToWorldPosition(gridPosition);
-            worldPos.y += _ghostPreviewHeight;
-            ghostObject.transform.position = worldPos;
-
-            // Update visual feedback based on validation state
-            Color targetColor = GetValidationColor(isValid, isAffordable);
-            ApplyGhostMaterial(ghostObject, targetColor);
-        }
-
-        /// <summary>
-        /// Show multi-level grid visualization for height level
-        /// </summary>
-        public void ShowGridLevel(int heightLevel)
-        {
-            if (!_showGridLevels || _gridSystem == null) return;
-
-            _currentActiveHeight = heightLevel;
-            UpdateGridVisualization();
-        }
-
-        /// <summary>
-        /// Show height level indicators around position
-        /// </summary>
-        public void ShowHeightIndicators(Vector3Int gridPosition, int maxHeight)
-        {
-            if (_heightRenderer != null)
-                _heightRenderer.ShowHeightIndicators(gridPosition, maxHeight);
-        }
-
-        /// <summary>
-        /// Show foundation requirement overlays
-        /// </summary>
-        public void ShowFoundationOverlays(Vector3Int gridPosition, Vector3Int size, bool requiresFoundation)
-        {
-            if (_foundationRenderer != null)
-                _foundationRenderer.ShowFoundationOverlays(gridPosition, size, requiresFoundation);
-        }
-
-        /// <summary>
-        /// Show clearance and access path indicators
-        /// </summary>
-        public void ShowClearanceIndicators(Vector3Int gridPosition, Vector3Int size)
-        {
-            if (_foundationRenderer != null)
-            {
-                _foundationRenderer.ShowClearanceIndicators(gridPosition, size);
-                _foundationRenderer.ShowAccessPathIndicators(gridPosition, size);
+                ChimeraLogger.Log("[GridPlacementPreviewRenderer] Initialized successfully");
             }
         }
 
         /// <summary>
-        /// Clear all preview objects and overlays
+        /// Show placement preview at grid position
         /// </summary>
-        public void ClearAllPreviews()
+        public void ShowPreview(Vector3Int gridPosition, bool isValid)
         {
-            ClearGhostPreviews();
-            if (_heightRenderer != null) _heightRenderer.HideHeightIndicators();
-            if (_foundationRenderer != null) _foundationRenderer.ClearAllOverlays();
+            if (!_enableBasicPreview || !_isInitialized) return;
+
+            // Update position if changed
+            if (gridPosition != _currentGridPosition)
+            {
+                _currentGridPosition = gridPosition;
+                OnPreviewPositionChanged?.Invoke(gridPosition, isValid);
+            }
+
+            // Update validity if changed
+            if (isValid != _isValidPlacement)
+            {
+                _isValidPlacement = isValid;
+            }
+
+            // Create or update preview object
+            UpdatePreviewObject();
+
+            if (_enableLogging && Random.value < 0.01f) // Log occasionally
+            {
+                ChimeraLogger.Log($"[GridPlacementPreviewRenderer] Preview at {gridPosition}, valid: {isValid}");
+            }
         }
 
         /// <summary>
-        /// Clear ghost preview objects
+        /// Hide placement preview
         /// </summary>
-        public void ClearGhostPreviews()
+        public void HidePreview()
         {
-            foreach (var ghost in _ghostPreviewObjects)
+            if (_currentPreviewObject != null)
             {
-                if (ghost != null)
-                    DestroyImmediate(ghost);
+                _currentPreviewObject.SetActive(false);
             }
 
-            _ghostPreviewObjects.Clear();
-            _cachedGhostObjects.Clear();
-            _originalMaterials.Clear();
-        }
-
-        #endregion
-
-        #region Preview Rendering Core
-
-        private void UpdatePreviewRendering()
-        {
-            if (Time.time - _lastPreviewUpdate < _previewUpdateRate && !_previewDirty) return;
-
-            UpdateGridVisualization();
-
-            _lastPreviewUpdate = Time.time;
-            _previewDirty = false;
-        }
-
-        private void UpdateGridVisualization()
-        {
-            if (!_showGridLevels || _gridSystem == null) return;
-
-            // Update grid line visibility based on current height level
-            int minLevel = Mathf.Max(0, _currentActiveHeight - _maxVisibleLevels / 2);
-            int maxLevel = Mathf.Min(_gridSystem.MaxHeightLevels - 1, _currentActiveHeight + _maxVisibleLevels / 2);
-
-            for (int level = minLevel; level <= maxLevel; level++)
+            if (_enableLogging)
             {
-                UpdateGridLevelVisibility(level, level == _currentActiveHeight);
+                ChimeraLogger.Log("[GridPlacementPreviewRenderer] Preview hidden");
             }
         }
 
-        private void UpdateGridLevelVisibility(int level, bool isActive)
+        /// <summary>
+        /// Clear all preview objects
+        /// </summary>
+        public void ClearPreview()
         {
-            if (!_gridLineRenderers.ContainsKey(level))
+            if (_currentPreviewObject != null)
             {
-                CreateGridLevelLines(level);
+                Destroy(_currentPreviewObject);
+                _currentPreviewObject = null;
             }
 
-            var lines = _gridLineRenderers[level];
-            Color lineColor = isActive ? _activeHeightLevelColor : _gridLineColor;
+            _currentGridPosition = Vector3Int.zero;
+            _isValidPlacement = false;
 
-            foreach (var line in lines)
+            if (_enableLogging)
             {
-                if (line != null)
-                {
-                    line.material.color = lineColor;
-                    line.enabled = true;
-                }
+                ChimeraLogger.Log("[GridPlacementPreviewRenderer] Preview cleared");
             }
         }
 
-        private void CreateGridLevelLines(int level)
+        /// <summary>
+        /// Set preview enabled state
+        /// </summary>
+        public void SetPreviewEnabled(bool enabled)
         {
-            var lines = new List<LineRenderer>();
-            float worldY = _gridSystem.GetWorldYForHeightLevel(level);
+            _enableBasicPreview = enabled;
 
-            // Calculate grid dimensions once
-            int gridWidth = Mathf.RoundToInt(_gridSystem.GridDimensions.x / _gridSystem.GridSize);
-            int gridDepth = Mathf.RoundToInt(_gridSystem.GridDimensions.y / _gridSystem.GridSize);
-
-            // Create vertical grid lines (X direction)
-            for (int x = 0; x <= gridWidth; x++)
+            if (!enabled)
             {
-                GameObject lineObj = new GameObject($"GridLine_H{level}_X{x}");
-                lineObj.transform.SetParent(_gridVisualizationParent.transform);
-
-                LineRenderer line = lineObj.AddComponent<LineRenderer>();
-                line.material = _gridLineMaterial ?? CreateDefaultLineMaterial();
-                line.startWidth = _gridLineWidth;
-                line.endWidth = _gridLineWidth;
-                line.positionCount = 2;
-                line.useWorldSpace = true;
-
-                Vector3 start = new Vector3(x * _gridSystem.GridSize, worldY, 0);
-                Vector3 end = new Vector3(x * _gridSystem.GridSize, worldY, gridDepth * _gridSystem.GridSize);
-
-                line.SetPosition(0, start);
-                line.SetPosition(1, end);
-
-                lines.Add(line);
+                HidePreview();
             }
 
-            // Create horizontal grid lines (Z direction)
-            for (int z = 0; z <= gridDepth; z++)
+            if (_enableLogging)
             {
-                GameObject lineObj = new GameObject($"GridLine_H{level}_Z{z}");
-                lineObj.transform.SetParent(_gridVisualizationParent.transform);
+                ChimeraLogger.Log($"[GridPlacementPreviewRenderer] Preview {(enabled ? "enabled" : "disabled")}");
+            }
+        }
 
-                LineRenderer line = lineObj.AddComponent<LineRenderer>();
-                line.material = _gridLineMaterial ?? CreateDefaultLineMaterial();
-                line.startWidth = _gridLineWidth;
-                line.endWidth = _gridLineWidth;
-                line.positionCount = 2;
-                line.useWorldSpace = true;
+        /// <summary>
+        /// Get current preview position
+        /// </summary>
+        public Vector3Int GetCurrentPreviewPosition()
+        {
+            return _currentGridPosition;
+        }
 
-                Vector3 start = new Vector3(0, worldY, z * _gridSystem.GridSize);
-                Vector3 end = new Vector3(gridWidth * _gridSystem.GridSize, worldY, z * _gridSystem.GridSize);
+        /// <summary>
+        /// Check if current placement is valid
+        /// </summary>
+        public bool IsCurrentPlacementValid()
+        {
+            return _isValidPlacement;
+        }
 
-                line.SetPosition(0, start);
-                line.SetPosition(1, end);
+        /// <summary>
+        /// Get preview statistics
+        /// </summary>
+        public PreviewStats GetStats()
+        {
+            return new PreviewStats
+            {
+                CurrentPosition = _currentGridPosition,
+                IsValidPlacement = _isValidPlacement,
+                HasPreviewObject = _currentPreviewObject != null,
+                IsPreviewEnabled = _enableBasicPreview,
+                IsInitialized = _isInitialized
+            };
+        }
 
-                lines.Add(line);
+        #region Private Methods
+
+        private void UpdatePreviewObject()
+        {
+            if (_currentPreviewObject == null)
+            {
+                _currentPreviewObject = CreatePreviewObject();
             }
 
-            _gridLineRenderers[level] = lines;
+            // Position the preview
+            Vector3 worldPos = GridToWorld(_currentGridPosition);
+            _currentPreviewObject.transform.position = worldPos;
+
+            // Update color based on validity
+            UpdatePreviewColor();
         }
 
-        #endregion
-
-        #region Ghost Object Management
-
-        private GameObject CreateGhostPreviewForSchematicItem(SchematicItem item, Vector3Int basePosition, int rotation)
+        private GameObject CreatePreviewObject()
         {
-            GameObject prefab = GetPrefabForItem(item);
-            if (prefab == null) return null;
+            GameObject preview = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            preview.name = "PlacementPreview";
+            preview.transform.localScale = new Vector3(0.8f, 0.1f, 0.8f); // Thin cube
 
-            Vector3Int rotatedPos = RotateGridPosition(item.GridPosition, rotation);
-            Vector3Int worldPos = basePosition + rotatedPos;
+            // Add transparent material
+            var renderer = preview.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material = CreateTransparentMaterial();
+            }
 
-            Vector3 position = _gridSystem.GridToWorldPosition(worldPos);
-            position.y += item.Height + _ghostPreviewHeight;
-
-            GameObject ghost = Instantiate(prefab, position, Quaternion.Euler(0, item.Rotation + rotation, 0));
-            ghost.name = $"SchematicGhost_{item.ItemName}";
-
-            DisableInteractiveComponents(ghost);
-            ApplyGhostMaterial(ghost, _validGhostColor);
-
-            _ghostPreviewObjects.Add(ghost);
-            return ghost;
-        }
-
-        private void DisableInteractiveComponents(GameObject ghostObject)
-        {
-            var colliders = ghostObject.GetComponentsInChildren<Collider>();
-            foreach (var collider in colliders)
+            // Make it not collide
+            var collider = preview.GetComponent<Collider>();
+            if (collider != null)
+            {
                 collider.enabled = false;
-
-            var rigidbodies = ghostObject.GetComponentsInChildren<Rigidbody>();
-            foreach (var rb in rigidbodies)
-                rb.isKinematic = true;
-
-            var placeable = ghostObject.GetComponent<GridPlaceable>();
-            if (placeable != null)
-                placeable.enabled = false;
-        }
-
-        private void ApplyGhostMaterial(GameObject ghostObject, Color color)
-        {
-            var renderers = ghostObject.GetComponentsInChildren<Renderer>();
-
-            if (!_originalMaterials.ContainsKey(ghostObject))
-            {
-                var originalMats = new List<Material>();
-                foreach (var renderer in renderers)
-                {
-                    originalMats.AddRange(renderer.materials);
-                }
-                _originalMaterials[ghostObject] = originalMats.ToArray();
             }
 
-            foreach (var renderer in renderers)
-            {
-                var materials = new Material[renderer.materials.Length];
-                for (int i = 0; i < materials.Length; i++)
-                {
-                    materials[i] = _ghostPreviewMaterial ?? CreateGhostMaterial(color);
-                }
-                renderer.materials = materials;
-            }
+            return preview;
         }
 
-        private Material CreateGhostMaterial(Color color)
+        private Material CreateTransparentMaterial()
         {
-            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            material.color = color;
+            Material material = new Material(Shader.Find("Standard"));
+            material.SetFloat("_Mode", 3); // Transparent mode
             material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
             material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
             material.SetInt("_ZWrite", 0);
@@ -412,129 +210,37 @@ namespace ProjectChimera.Systems.Construction
             return material;
         }
 
-        private Color GetValidationColor(bool isValid, bool isAffordable)
+        private void UpdatePreviewColor()
         {
-            if (!isAffordable) return _unaffordableGhostColor;
-            return isValid ? _validGhostColor : _invalidGhostColor;
-        }
+            if (_currentPreviewObject == null) return;
 
-        #endregion
-
-        #region Animation and Visual Effects
-
-        private void InitializeGridVisualization()
-        {
-            if (!_showGridLevels || _gridSystem == null) return;
-            ShowGridLevel(0);
-        }
-
-        #endregion
-
-        #region Utility Methods
-
-        private Material CreateDefaultLineMaterial()
-        {
-            var material = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
-            material.color = _gridLineColor;
-            return material;
-        }
-
-        private GameObject GetPrefabForItem(SchematicItem item)
-        {
-            // This would typically retrieve from a prefab registry or resource system
-            // For now, returning null - actual implementation depends on project architecture
-            return null;
-        }
-
-        private Vector3Int RotateGridPosition(Vector3Int position, int rotation)
-        {
-            // Simple 90-degree rotation logic
-            switch ((rotation / 90) % 4)
+            var renderer = _currentPreviewObject.GetComponent<Renderer>();
+            if (renderer != null)
             {
-                case 1: return new Vector3Int(-position.y, position.x, position.z);
-                case 2: return new Vector3Int(-position.x, -position.y, position.z);
-                case 3: return new Vector3Int(position.y, -position.x, position.z);
-                default: return position;
+                Color color = _isValidPlacement ? _validPlacementColor : _invalidPlacementColor;
+                renderer.material.color = color;
             }
         }
 
-        #endregion
-
-        #region Public API for GridPlacementController
-
-        /// <summary>
-        /// Show preview for a placeable object
-        /// </summary>
-        public void ShowPreview(GridPlaceable placeable)
+        private Vector3 GridToWorld(Vector3Int gridPos)
         {
-            if (placeable == null) return;
-
-            // Implementation would show ghost preview of the placeable
-            ChimeraLogger.Log($"[GridPlacementPreviewRenderer] Showing preview for {placeable.name}");
-        }
-
-        /// <summary>
-        /// Hide the current preview
-        /// </summary>
-        public void HidePreview()
-        {
-            ClearAllPreviews();
-            ChimeraLogger.Log("[GridPlacementPreviewRenderer] Preview hidden");
-        }
-
-        /// <summary>
-        /// Update the preview display
-        /// </summary>
-        public void UpdatePreview()
-        {
-            UpdatePreviewRendering();
-        }
-
-        /// <summary>
-        /// Update preview position to a new grid coordinate
-        /// </summary>
-        public void UpdatePreviewPosition(Vector3Int newPosition)
-        {
-            ChimeraLogger.Log($"[GridPlacementPreviewRenderer] Preview position updated to {newPosition}");
-            // Implementation would move ghost preview to new position
-        }
-
-        /// <summary>
-        /// Update visual feedback based on validation results
-        /// </summary>
-        public void UpdateValidationVisuals(PlacementValidationResult result)
-        {
-            if (result == null) return;
-
-            Color feedbackColor = result.IsValid ? _validGhostColor : _invalidGhostColor;
-            ChimeraLogger.Log($"[GridPlacementPreviewRenderer] Validation visuals updated: {(result.IsValid ? "Valid" : "Invalid")}");
-            // Implementation would apply color to ghost preview
+            // Simple conversion - assuming 1 unit = 1 grid cell
+            return new Vector3(gridPos.x, gridPos.y + _previewHeightOffset, gridPos.z);
         }
 
         #endregion
-
-        private void OnDestroy()
-        {
-        // Unregister from UpdateOrchestrator
-        UpdateOrchestrator.Instance?.UnregisterTickable(this);
-            ClearAllPreviews();
-        }
-
-    #region ITickable Implementation
-
-    public int Priority => TickPriority.ConstructionSystem;
-    public bool Enabled => enabled && gameObject.activeInHierarchy;
-
-    public void OnRegistered()
-    {
-        ChimeraLogger.LogVerbose($"[{GetType().Name}] Registered with UpdateOrchestrator");
     }
 
-    public void OnUnregistered()
+    /// <summary>
+    /// Preview statistics
+    /// </summary>
+    [System.Serializable]
+    public struct PreviewStats
     {
-        ChimeraLogger.LogVerbose($"[{GetType().Name}] Unregistered from UpdateOrchestrator");
-    }
-
-    #endregion
+        public Vector3Int CurrentPosition;
+        public bool IsValidPlacement;
+        public bool HasPreviewObject;
+        public bool IsPreviewEnabled;
+        public bool IsInitialized;
     }
 }

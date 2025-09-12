@@ -10,24 +10,34 @@ namespace ProjectChimera.Core
     /// Test component for validating dependency injection service registrations
     /// Attach to a GameObject to test service validation at runtime
     /// </summary>
-    public class ServiceValidationTest : MonoBehaviour, ITickable
+    public class ServiceValidationTest : MonoBehaviour, ProjectChimera.Core.Updates.ITickable
     {
         [Header("Validation Settings")]
         [SerializeField] private bool _validateOnStart = true;
         [SerializeField] private bool _showDetailedReport = true;
-        
+
         [Header("Test Actions")]
         [SerializeField] private bool _runValidationTest = false;
 
         private void Start()
         {
         // Register with UpdateOrchestrator
-        UpdateOrchestrator.Instance?.RegisterTickable(this);
+        ProjectChimera.Core.Updates.UpdateOrchestrator.Instance?.RegisterTickable(this);
             if (_validateOnStart)
             {
                 RunValidationTest();
             }
         }
+
+        /// <summary>
+        /// ITickable Priority property
+        /// </summary>
+        public int Priority => ProjectChimera.Core.Updates.TickPriority.DebugSystems;
+
+        /// <summary>
+        /// ITickable Enabled property
+        /// </summary>
+        public bool Enabled => isActiveAndEnabled;
 
         public void Tick(float deltaTime)
         {
@@ -61,7 +71,7 @@ namespace ProjectChimera.Core
 
             // Get validation status for all services
             var validationResults = bootstrapper.GetServiceValidationStatus();
-            
+
             if (validationResults == null || validationResults.Count == 0)
             {
                 ChimeraLogger.LogError("No validation results returned - DI system may not be functioning");
@@ -105,9 +115,9 @@ namespace ProjectChimera.Core
                 var status = result.IsRegistered ? "✅" : "❌";
                 var implementation = result.IsNullImplementation ? "(Null)" : "(Concrete)";
                 var criticality = result.IsCritical ? "[CRITICAL]" : "[OPTIONAL]";
-                
+
                 ChimeraLogger.Log($"   {status} {result.ServiceName} {implementation} {criticality}");
-                
+
                 if (!string.IsNullOrEmpty(result.ErrorMessage))
                 {
                     ChimeraLogger.LogError($"      Error: {result.ErrorMessage}");
@@ -149,18 +159,16 @@ namespace ProjectChimera.Core
                 ChimeraLogger.LogError($"❌ Service resolution test failed: {ex.Message}");
             }
         }
-    
-    // ITickable implementation
-    public int Priority => 0;
-    public bool Enabled => enabled && gameObject.activeInHierarchy;
-    
-    public virtual void OnRegistered() 
-    { 
+
+    // ITickable implementation properties are defined above
+
+    public virtual void OnRegistered()
+    {
         // Override in derived classes if needed
     }
-    
-    public virtual void OnUnregistered() 
-    { 
+
+    public virtual void OnUnregistered()
+    {
         // Override in derived classes if needed
     }
 
@@ -168,6 +176,36 @@ namespace ProjectChimera.Core
     {
         // Unregister from UpdateOrchestrator
         UpdateOrchestrator.Instance?.UnregisterTickable(this);
+    }
+
+    /// <summary>
+    /// Service validation result data structure
+    /// </summary>
+    [System.Serializable]
+    public class ServiceValidationResult
+    {
+        public string ServiceName;
+        public bool IsRegistered;
+        public bool IsNullImplementation;
+        public bool IsCritical;
+        public string ErrorMessage;
+        public string ImplementationType;
+        public System.DateTime ValidationTime;
+
+        public ServiceValidationResult()
+        {
+            ValidationTime = System.DateTime.Now;
+        }
+
+        public ServiceValidationResult(string serviceName, bool isRegistered, bool isNullImplementation, bool isCritical, string errorMessage = "")
+        {
+            ServiceName = serviceName;
+            IsRegistered = isRegistered;
+            IsNullImplementation = isNullImplementation;
+            IsCritical = isCritical;
+            ErrorMessage = errorMessage;
+            ValidationTime = System.DateTime.Now;
+        }
     }
 
 }

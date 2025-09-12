@@ -7,7 +7,6 @@
         "ProjectChimera.Data",
         "ProjectChimera.Data.Shared",
         "ProjectChimera.Systems",
-        "ProjectChimera.Systems.Analytics",
         "Unity.UIToolkit",
         "UnityEngine.UI"
     ],

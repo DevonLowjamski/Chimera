@@ -3,551 +3,239 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 using System.Linq;
-using ProjectChimera.Core.DependencyInjection;
+using ProjectChimera.Core.SimpleDI;
 
 namespace ProjectChimera.Core
 {
     /// <summary>
-    /// Centralized registry for all ChimeraManager instances.
-    /// Extracted from DIGameManager for modular architecture.
-    /// Handles manager registration, discovery, and access with both DI container and legacy support.
+    /// Simplified manager registry for Project Chimera
+    /// Focused on core cultivation game managers with backward compatibility
     /// </summary>
     public class ManagerRegistry : MonoBehaviour
     {
         [Header("Registry Configuration")]
-        [SerializeField] private bool _enableRegistryLogging = false;
+        [SerializeField] private bool _enableRegistryLogging = true;
         [SerializeField] private bool _autoRegisterWithDI = true;
-        [SerializeField] private bool _enableInterfaceRegistration = true;
-        [SerializeField] private bool _validateRegistrations = true;
 
-        [Header("Discovery Settings")]
-        [SerializeField] private bool _enableAutoDiscovery = true;
-        [SerializeField] private bool _excludeSelfFromDiscovery = true;
-
-        // Core registry storage
+        // Simplified registry storage - only what we need for cultivation
         private readonly Dictionary<Type, ChimeraManager> _managerRegistry = new Dictionary<Type, ChimeraManager>();
-        private readonly Dictionary<Type, List<Type>> _interfaceToTypeMapping = new Dictionary<Type, List<Type>>();
         private readonly Dictionary<ChimeraManager, DateTime> _registrationTimes = new Dictionary<ChimeraManager, DateTime>();
 
         // Service container reference
-        private IServiceContainer _serviceContainer;
+        private SimpleDIContainer _serviceContainer;
 
-        // Events
+        // Events for backward compatibility
         public System.Action<ChimeraManager> OnManagerRegistered;
         public System.Action<ChimeraManager> OnManagerUnregistered;
         public System.Action<Type, object> OnServiceRegistered;
         public System.Action<string> OnRegistrationError;
 
-        // Properties
+        // Properties for backward compatibility
         public int RegisteredManagerCount => _managerRegistry.Count;
         public IEnumerable<ChimeraManager> RegisteredManagers => _managerRegistry.Values;
         public IEnumerable<Type> RegisteredTypes => _managerRegistry.Keys;
         public bool HasServiceContainer => _serviceContainer != null;
 
         /// <summary>
-        /// Initialize the manager registry with optional service container
+        /// Initialize the manager registry
         /// </summary>
-        public void Initialize(IServiceContainer serviceContainer = null)
+        public void Initialize(SimpleDIContainer serviceContainer = null)
         {
             _serviceContainer = serviceContainer;
-            LogDebug("Manager registry initialized");
+            ChimeraLogger.LogVerbose("Manager registry initialized");
 
-            if (_enableAutoDiscovery)
+            if (_autoRegisterWithDI && _serviceContainer != null)
             {
-                DiscoverAndRegisterAllManagers();
+                _serviceContainer.RegisterSingleton<ManagerRegistry, ManagerRegistry>(this);
             }
+
+            // Auto-discover managers in scene
+            DiscoverAndRegisterManagers();
         }
 
         /// <summary>
-        /// Register a manager with both the registry and DI container
+        /// Discover and register managers in the scene
         /// </summary>
-        public void RegisterManager<T>(T manager) where T : ChimeraManager
+        private void DiscoverAndRegisterManagers()
         {
-            if (manager == null)
+            var managers = FindObjectsOfType<ChimeraManager>();
+            foreach (var manager in managers)
             {
-                LogError("Cannot register null manager");
-                return;
+                RegisterManager(manager);
             }
 
-            try
-            {
-                var managerType = typeof(T);
-
-                // Check if already registered
-                if (_managerRegistry.ContainsKey(managerType))
-                {
-                    if (_managerRegistry[managerType] == manager)
-                    {
-                        LogDebug($"Manager {manager.ManagerName} already registered, skipping");
-                        return;
-                    }
-                    else
-                    {
-                        LogDebug($"Replacing existing registration for {managerType.Name}");
-                    }
-                }
-
-                // Register in local dictionary
-                _managerRegistry[managerType] = manager;
-                _registrationTimes[manager] = DateTime.Now;
-
-                // Register with DI container if available
-                if (_autoRegisterWithDI && _serviceContainer != null)
-                {
-                    RegisterWithDIContainer(manager, managerType);
-                }
-
-                // Register interfaces if enabled
-                if (_enableInterfaceRegistration)
-                {
-                    RegisterManagerInterfaces(manager, managerType);
-                }
-
-                LogDebug($"Successfully registered manager: {manager.ManagerName} ({managerType.Name})");
-                OnManagerRegistered?.Invoke(manager);
-            }
-            catch (Exception ex)
-            {
-                var errorMsg = $"Failed to register manager {manager?.ManagerName}: {ex.Message}";
-                LogError(errorMsg);
-                OnRegistrationError?.Invoke(errorMsg);
-            }
+            if (_enableRegistryLogging)
+                ChimeraLogger.LogVerbose($"Auto-discovered and registered {managers.Length} managers");
         }
 
         /// <summary>
-        /// Register manager with DI container
+        /// Register a manager
         /// </summary>
-        private void RegisterWithDIContainer<T>(T manager, Type managerType) where T : ChimeraManager
-        {
-            try
-            {
-                _serviceContainer.RegisterSingleton<T>(manager);
-                LogDebug($"Registered {managerType.Name} with DI container");
-            }
-            catch (Exception ex)
-            {
-                LogError($"Failed to register {managerType.Name} with DI container: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Register all interfaces implemented by the manager
-        /// </summary>
-        private void RegisterManagerInterfaces<T>(T manager, Type managerType) where T : ChimeraManager
-        {
-            var interfaces = managerType.GetInterfaces()
-                .Where(i => i != typeof(IDisposable) && i != typeof(IChimeraManager))
-                .ToList();
-
-            foreach (var interfaceType in interfaces)
-            {
-                try
-                {
-                    // Track interface to type mapping
-                    if (!_interfaceToTypeMapping.ContainsKey(interfaceType))
-                    {
-                        _interfaceToTypeMapping[interfaceType] = new List<Type>();
-                    }
-                    _interfaceToTypeMapping[interfaceType].Add(managerType);
-
-                    // Register with DI container if available
-                    if (_serviceContainer != null)
-                    {
-                        _serviceContainer.RegisterSingleton(interfaceType, manager);
-                        OnServiceRegistered?.Invoke(interfaceType, manager);
-                        LogDebug($"Registered interface {interfaceType.Name} -> {managerType.Name}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    LogError($"Failed to register interface {interfaceType.Name} for {managerType.Name}: {ex.Message}");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Unregister a manager from both registry and DI container
-        /// </summary>
-        public void UnregisterManager<T>(T manager) where T : ChimeraManager
+        public void RegisterManager(ChimeraManager manager)
         {
             if (manager == null) return;
 
-            try
+            var managerType = manager.GetType();
+
+            // Check if already registered
+            if (_managerRegistry.ContainsKey(managerType))
             {
-                var managerType = typeof(T);
-
-                if (_managerRegistry.ContainsKey(managerType) && _managerRegistry[managerType] == manager)
+                if (_managerRegistry[managerType] == manager)
                 {
-                    // Remove from registry
-                    _managerRegistry.Remove(managerType);
-                    _registrationTimes.Remove(manager);
-
-                    // Clean up interface mappings
-                    var interfacesToRemove = _interfaceToTypeMapping
-                        .Where(kvp => kvp.Value.Contains(managerType))
-                        .Select(kvp => kvp.Key)
-                        .ToList();
-
-                    foreach (var interfaceType in interfacesToRemove)
-                    {
-                        _interfaceToTypeMapping[interfaceType].Remove(managerType);
-                        if (_interfaceToTypeMapping[interfaceType].Count == 0)
-                        {
-                            _interfaceToTypeMapping.Remove(interfaceType);
-                        }
-                    }
-
-                    LogDebug($"Unregistered manager: {manager.ManagerName}");
-                    OnManagerUnregistered?.Invoke(manager);
+                    if (_enableRegistryLogging)
+                        ChimeraLogger.LogVerbose($"Manager {managerType.Name} already registered");
+                    return;
+                }
+                else
+                {
+                    if (_enableRegistryLogging)
+                        ChimeraLogger.LogWarning($"Replacing existing manager registration for {managerType.Name}");
                 }
             }
-            catch (Exception ex)
+
+            // Register the manager
+            _managerRegistry[managerType] = manager;
+            _registrationTimes[manager] = DateTime.Now;
+
+            // Register with DI container
+            if (_autoRegisterWithDI && _serviceContainer != null)
             {
-                LogError($"Failed to unregister manager {manager?.ManagerName}: {ex.Message}");
+                _serviceContainer.Register(manager);
             }
+
+            // Notify listeners
+            OnManagerRegistered?.Invoke(manager);
+
+            if (_enableRegistryLogging)
+                ChimeraLogger.LogVerbose($"Registered manager: {managerType.Name}");
         }
 
         /// <summary>
-        /// Get manager using DI container (preferred) or legacy registry
+        /// Get a manager by type
+        /// </summary>
+        public ChimeraManager GetManager(Type managerType)
+        {
+            if (_managerRegistry.TryGetValue(managerType, out var manager))
+            {
+                return manager;
+            }
+
+            if (_enableRegistryLogging)
+                ChimeraLogger.LogWarning($"Manager not found: {managerType.Name}");
+
+            return null;
+        }
+
+        /// <summary>
+        /// Get a manager by generic type
         /// </summary>
         public T GetManager<T>() where T : ChimeraManager
         {
-            try
-            {
-                // Try DI container first
-                if (_serviceContainer != null)
-                {
-                    var service = _serviceContainer.TryResolve<T>();
-                    if (service != null)
-                    {
-                        LogDebug($"Retrieved {typeof(T).Name} from DI container");
-                        return service;
-                    }
-                }
-
-                // Fallback to legacy registry
-                if (_managerRegistry.TryGetValue(typeof(T), out var manager))
-                {
-                    LogDebug($"Retrieved {typeof(T).Name} from registry");
-                    return manager as T;
-                }
-
-                LogDebug($"Manager {typeof(T).Name} not found in container or registry");
-                return null;
-            }
-            catch (Exception ex)
-            {
-                LogError($"Error retrieving manager {typeof(T).Name}: {ex.Message}");
-                return null;
-            }
+            return GetManager(typeof(T)) as T;
         }
 
         /// <summary>
-        /// Get manager by Type using DI container (preferred) or legacy registry
+        /// Try to get a manager
         /// </summary>
-        public ChimeraManager GetManager(System.Type managerType)
+        public bool TryGetManager<T>(out T manager) where T : ChimeraManager
         {
-            try
-            {
-                // Try DI container first
-                if (_serviceContainer != null)
-                {
-                    try
-                    {
-                        var service = _serviceContainer.Resolve(managerType);
-                        if (service != null)
-                        {
-                            LogDebug($"Retrieved {managerType.Name} from DI container");
-                            return service as ChimeraManager;
-                        }
-                    }
-                    catch
-                    {
-                        // Fall through to registry lookup
-                    }
-                }
-
-                // Fallback to legacy registry
-                if (_managerRegistry.TryGetValue(managerType, out var manager))
-                {
-                    LogDebug($"Retrieved {managerType.Name} from registry");
-                    return manager;
-                }
-
-                LogDebug($"Manager {managerType.Name} not found in container or registry");
-                return null;
-            }
-            catch (Exception ex)
-            {
-                LogError($"Error retrieving manager {managerType.Name}: {ex.Message}");
-                return null;
-            }
+            manager = GetManager<T>();
+            return manager != null;
         }
 
         /// <summary>
-        /// Get manager by interface type
+        /// Get all registered managers as an array
         /// </summary>
-        public T GetManagerByInterface<T>() where T : class
+        public ChimeraManager[] GetAllManagers()
         {
-            try
-            {
-                // Try DI container first
-                if (_serviceContainer != null)
-                {
-                    var service = _serviceContainer.TryResolve<T>();
-                    if (service != null)
-                    {
-                        LogDebug($"Retrieved {typeof(T).Name} interface from DI container");
-                        return service;
-                    }
-                }
-
-                // Fallback to interface mapping
-                var interfaceType = typeof(T);
-                if (_interfaceToTypeMapping.TryGetValue(interfaceType, out var implementingTypes) && implementingTypes.Count > 0)
-                {
-                    var firstImplementingType = implementingTypes[0];
-                    if (_managerRegistry.TryGetValue(firstImplementingType, out var manager))
-                    {
-                        LogDebug($"Retrieved {interfaceType.Name} interface from registry mapping");
-                        return manager as T;
-                    }
-                }
-
-                LogDebug($"Interface {typeof(T).Name} not found");
-                return null;
-            }
-            catch (Exception ex)
-            {
-                LogError($"Error retrieving interface {typeof(T).Name}: {ex.Message}");
-                return null;
-            }
+            return _managerRegistry.Values.ToArray();
         }
 
         /// <summary>
-        /// Get all managers implementing a specific interface
+        /// Check if a manager is registered
         /// </summary>
-        public IEnumerable<T> GetManagersByInterface<T>() where T : class
+        public bool IsManagerRegistered(Type managerType)
         {
-            var results = new List<T>();
-            var interfaceType = typeof(T);
-
-            if (_interfaceToTypeMapping.TryGetValue(interfaceType, out var implementingTypes))
-            {
-                foreach (var type in implementingTypes)
-                {
-                    if (_managerRegistry.TryGetValue(type, out var manager) && manager is T typedManager)
-                    {
-                        results.Add(typedManager);
-                    }
-                }
-            }
-
-            return results;
+            return _managerRegistry.ContainsKey(managerType);
         }
 
         /// <summary>
-        /// Check if a manager type is registered
+        /// Check if a manager is registered (generic)
         /// </summary>
         public bool IsManagerRegistered<T>() where T : ChimeraManager
         {
-            return _managerRegistry.ContainsKey(typeof(T));
+            return IsManagerRegistered(typeof(T));
         }
 
         /// <summary>
-        /// Check if a manager instance is registered
+        /// Unregister a manager
         /// </summary>
-        public bool IsManagerRegistered(ChimeraManager manager)
+        public void UnregisterManager(ChimeraManager manager)
         {
-            return manager != null && _managerRegistry.ContainsValue(manager);
-        }
+            if (manager == null) return;
 
-        /// <summary>
-        /// Auto-discover and register all managers in the scene
-        /// </summary>
-        public void DiscoverAndRegisterAllManagers()
-        {
-            try
+            var managerType = manager.GetType();
+
+            if (_managerRegistry.Remove(managerType))
             {
-                LogDebug("Starting auto-discovery of ChimeraManager instances");
+                _registrationTimes.Remove(manager);
 
-                // Find all ChimeraManager instances using Unity 6 API
-                var allManagers = UnityEngine.Object.FindObjectsByType<ChimeraManager>(FindObjectsSortMode.None);
+                OnManagerUnregistered?.Invoke(manager);
 
-                int registeredCount = 0;
+                if (_enableRegistryLogging)
+                    ChimeraLogger.LogVerbose($"Unregistered manager: {managerType.Name}");
+            }
+        }
 
-                foreach (var manager in allManagers)
+        /// <summary>
+        /// Unregister a manager by type
+        /// </summary>
+        public void UnregisterManager<T>() where T : ChimeraManager
+        {
+            var manager = GetManager<T>();
+            if (manager != null)
+            {
+                UnregisterManager(manager);
+            }
+        }
+
+        /// <summary>
+        /// Shutdown all managers
+        /// </summary>
+        public void ShutdownAll()
+        {
+            foreach (var manager in _managerRegistry.Values)
+            {
+                try
                 {
-                    // Skip self if enabled
-                    if (_excludeSelfFromDiscovery && manager == this) continue;
-
-                    // Skip already registered managers
-                    if (IsManagerRegistered(manager)) continue;
-
-                    // Register using reflection to call generic method
-                    var managerType = manager.GetType();
-                    var registerMethod = GetType().GetMethod(nameof(RegisterManager))?.MakeGenericMethod(managerType);
-                    registerMethod?.Invoke(this, new object[] { manager });
-
-                    registeredCount++;
+                    manager.Shutdown();
+                    if (_enableRegistryLogging)
+                        ChimeraLogger.LogVerbose($"Shut down manager: {manager.ManagerName}");
                 }
-
-                LogDebug($"Auto-discovery complete: {registeredCount} new managers registered (total: {_managerRegistry.Count})");
-            }
-            catch (Exception ex)
-            {
-                LogError($"Auto-discovery failed: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Get manager by type (alias for GetManager)
-        /// </summary>
-        public ChimeraManager GetManagerByType(Type managerType)
-        {
-            return GetManager(managerType);
-        }
-
-        /// <summary>
-        /// Get all registered managers
-        /// </summary>
-        public IEnumerable<ChimeraManager> GetAllRegisteredManagers()
-        {
-            return _managerRegistry.Values;
-        }
-
-        /// <summary>
-        /// Get all managers by interface type
-        /// </summary>
-        public IEnumerable<ChimeraManager> GetAllManagersByInterface(Type interfaceType)
-        {
-            if (_interfaceToTypeMapping.TryGetValue(interfaceType, out var types))
-            {
-                return types.Select(t => _managerRegistry.TryGetValue(t, out var manager) ? manager : null)
-                           .Where(m => m != null);
-            }
-            return Enumerable.Empty<ChimeraManager>();
-        }
-
-        /// <summary>
-        /// Get registration summary for all managers
-        /// </summary>
-        public RegistrationSummary GetRegistrationSummary()
-        {
-            var summary = new RegistrationSummary
-            {
-                TotalRegisteredManagers = _managerRegistry.Count,
-                RegisteredTypes = _managerRegistry.Keys.Select(t => t.Name).ToList(),
-                RegisteredInterfaces = _interfaceToTypeMapping.Keys.Select(t => t.Name).ToList(),
-                HasServiceContainer = _serviceContainer != null
-            };
-
-            // Calculate average registration time
-            if (_registrationTimes.Count > 0)
-            {
-                var totalTime = _registrationTimes.Values.Sum(dt => dt.Ticks);
-                summary.AverageRegistrationTime = new DateTime(totalTime / _registrationTimes.Count);
-            }
-
-            return summary;
-        }
-
-        /// <summary>
-        /// Validate all registrations are healthy
-        /// </summary>
-        public RegistrationValidationResult ValidateRegistrations()
-        {
-            var result = new RegistrationValidationResult
-            {
-                ValidatedManagers = 0,
-                InvalidManagers = new List<string>(),
-                MissingDependencies = new List<string>()
-            };
-
-            foreach (var kvp in _managerRegistry)
-            {
-                var managerType = kvp.Key;
-                var manager = kvp.Value;
-
-                if (manager == null)
+                catch (Exception ex)
                 {
-                    result.InvalidManagers.Add($"Null manager registered for type {managerType.Name}");
-                    continue;
+                    ChimeraLogger.LogError($"Error shutting down {manager.ManagerName}: {ex.Message}");
                 }
-
-                if (!manager.IsInitialized)
-                {
-                    result.InvalidManagers.Add($"Manager {manager.ManagerName} is not initialized");
-                    continue;
-                }
-
-                result.ValidatedManagers++;
             }
-
-            result.IsValid = result.InvalidManagers.Count == 0;
-            return result;
-        }
-
-        /// <summary>
-        /// Clear all registrations
-        /// </summary>
-        public void ClearAllRegistrations()
-        {
-            LogDebug($"Clearing all registrations ({_managerRegistry.Count} managers)");
 
             _managerRegistry.Clear();
-            _interfaceToTypeMapping.Clear();
             _registrationTimes.Clear();
 
-            LogDebug("All registrations cleared");
+            if (_enableRegistryLogging)
+                ChimeraLogger.LogVerbose("All managers shut down");
         }
 
         /// <summary>
-        /// Set or update the service container reference
+        /// Get manager registration info
         /// </summary>
-        public void SetServiceContainer(IServiceContainer serviceContainer)
+        public Dictionary<string, DateTime> GetRegistrationInfo()
         {
-            _serviceContainer = serviceContainer;
-            LogDebug($"Service container {(serviceContainer != null ? "set" : "cleared")}");
+            var info = new Dictionary<string, DateTime>();
+            foreach (var kvp in _registrationTimes)
+            {
+                info[kvp.Key.ManagerName] = kvp.Value;
+            }
+            return info;
         }
-
-        private void LogDebug(string message)
-        {
-            if (_enableRegistryLogging)
-                ChimeraLogger.Log($"[ManagerRegistry] {message}");
-        }
-
-        private void LogError(string message)
-        {
-            ChimeraLogger.LogError($"[ManagerRegistry] {message}");
-        }
-
-        private void OnDestroy()
-        {
-            ClearAllRegistrations();
-        }
-    }
-
-    /// <summary>
-    /// Summary of manager registration state
-    /// </summary>
-    public class RegistrationSummary
-    {
-        public int TotalRegisteredManagers { get; set; }
-        public List<string> RegisteredTypes { get; set; } = new List<string>();
-        public List<string> RegisteredInterfaces { get; set; } = new List<string>();
-        public bool HasServiceContainer { get; set; }
-        public DateTime AverageRegistrationTime { get; set; }
-    }
-
-    /// <summary>
-    /// Result of registration validation
-    /// </summary>
-    public class RegistrationValidationResult
-    {
-        public bool IsValid { get; set; }
-        public int ValidatedManagers { get; set; }
-        public List<string> InvalidManagers { get; set; } = new List<string>();
-        public List<string> MissingDependencies { get; set; } = new List<string>();
     }
 }

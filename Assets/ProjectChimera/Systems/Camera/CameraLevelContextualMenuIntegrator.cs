@@ -1,526 +1,225 @@
 using UnityEngine;
-using ProjectChimera.Core;
 using ProjectChimera.Core.Logging;
-using ProjectChimera.Data.Camera;
-using ProjectChimera.Data.Events;
-using ProjectChimera.Data.UI;
-using ProjectChimera.Systems.Gameplay;
-using System.Collections.Generic;
 
 namespace ProjectChimera.Systems.Camera
 {
     /// <summary>
-    /// Integrates camera level changes with the contextual menu system
-    /// Provides level-aware contextual menu options based on current camera level and selected targets
-    /// Phase 3 implementation following roadmap requirements
+    /// BASIC: Simple camera level contextual menu integrator for Project Chimera.
+    /// Focuses on essential camera-menu integration without complex level-based menus and target-specific actions.
     /// </summary>
     public class CameraLevelContextualMenuIntegrator : MonoBehaviour
     {
-        [Header("Integration Configuration")]
-        [SerializeField] private bool _enableLevelBasedMenus = true;
-        [SerializeField] private bool _enableTargetSpecificActions = true;
-        [SerializeField] private bool _enableLevelTransitionActions = true;
-        [SerializeField] private bool _debugMode = false;
-        
-        [Header("Component References")]
-        [SerializeField] private AdvancedCameraController _cameraController;
-        [SerializeField] private MonoBehaviour _contextualMenuComponent;
-        
-        [Header("Event Channels")]
-        [SerializeField] private CameraLevelChangedEventSO _cameraLevelChangedEvent;
-        
-        [Header("Menu Configuration")]
-        [SerializeField] private bool _showLevelInMenuTitle = true;
-        [SerializeField] private bool _addQuickZoomActions = true;
-        [SerializeField] private bool _addFocusActions = true;
-        [SerializeField] private Color _levelSpecificMenuColor = Color.cyan;
-        
-        // State tracking
-        private CameraLevel _currentCameraLevel = CameraLevel.Room;
-        private Transform _currentTarget;
+        [Header("Basic Integration Settings")]
+        [SerializeField] private bool _enableBasicIntegration = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private bool _autoUpdateOnCameraChange = true;
+
+        // Basic camera tracking
+        private Camera _mainCamera;
+        private Vector3 _currentCameraPosition;
+        private Quaternion _currentCameraRotation;
         private bool _isInitialized = false;
-        private Dictionary<CameraLevel, List<CameraLevelMenuItem>> _levelMenuItems;
-        private List<CameraLevelMenuItem> _activeMenuItems = new List<CameraLevelMenuItem>();
-        
-        // Interface reference
-        private IContextualMenuProvider _contextualMenu;
-        
-        [System.Serializable]
-        public class CameraLevelMenuItem
+
+        /// <summary>
+        /// Events for camera-menu integration
+        /// </summary>
+        public event System.Action<Vector3, Quaternion> OnCameraPositionChanged;
+        public event System.Action OnMenuIntegrationUpdated;
+
+        /// <summary>
+        /// Initialize basic camera-menu integration
+        /// </summary>
+        public void Initialize()
         {
-            public string displayName;
-            public string actionName;
-            public CameraLevel[] validLevels;
-            public bool requiresTarget;
-            public string targetTag;
-            public System.Action<Transform> action;
-            
-            public CameraLevelMenuItem(string name, string action, CameraLevel[] levels, bool needsTarget = false, string tag = "")
+            if (_isInitialized) return;
+
+            _mainCamera = Camera.main;
+            if (_mainCamera == null)
             {
-                displayName = name;
-                actionName = action;
-                validLevels = levels;
-                requiresTarget = needsTarget;
-                targetTag = tag;
+                _mainCamera = FindObjectOfType<Camera>();
+            }
+
+            if (_mainCamera != null)
+            {
+                _currentCameraPosition = _mainCamera.transform.position;
+                _currentCameraRotation = _mainCamera.transform.rotation;
+            }
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("[CameraLevelContextualMenuIntegrator] Initialized successfully");
             }
         }
-        
-        private void Start()
+
+        /// <summary>
+        /// Update camera tracking
+        /// </summary>
+        private void Update()
         {
-            InitializeIntegration();
-        }
-        
-        private void OnDestroy()
-        {
-            UnsubscribeFromEvents();
-        }
-        
-        private void InitializeIntegration()
-        {
-            try
+            if (!_enableBasicIntegration || !_isInitialized || _mainCamera == null) return;
+
+            if (!_autoUpdateOnCameraChange) return;
+
+            // Check for camera position/rotation changes
+            Vector3 newPosition = _mainCamera.transform.position;
+            Quaternion newRotation = _mainCamera.transform.rotation;
+
+            if (newPosition != _currentCameraPosition || newRotation != _currentCameraRotation)
             {
-                // Auto-find components if not assigned
-                if (_cameraController == null)
+                _currentCameraPosition = newPosition;
+                _currentCameraRotation = newRotation;
+
+                OnCameraPositionChanged?.Invoke(_currentCameraPosition, _currentCameraRotation);
+                OnMenuIntegrationUpdated?.Invoke();
+
+                if (_enableLogging)
                 {
-                    _cameraController = ServiceContainerFactory.Instance?.TryResolve<AdvancedCameraController>();
-                }
-                
-                // Get contextual menu interface from the assigned component
-                if (_contextualMenuComponent != null)
-                {
-                    _contextualMenu = _contextualMenuComponent.GetComponent<IContextualMenuProvider>();
-                    if (_contextualMenu == null)
-                    {
-                        ChimeraLogger.LogError("[CameraLevelContextualMenuIntegrator] Assigned component does not implement IContextualMenuProvider!");
-                        return;
-                    }
-                }
-                else
-                {
-                    // Try to find any component that implements the interface
-                    MonoBehaviour[] providers = /* TODO: Replace FindObjectsOfType with ServiceContainer.GetAll<MonoBehaviour>() */ new MonoBehaviour[0];
-                    foreach (var provider in providers)
-                    {
-                        if (provider is IContextualMenuProvider menuProvider)
-                        {
-                            _contextualMenu = menuProvider;
-                            _contextualMenuComponent = provider;
-                            break;
-                        }
-                    }
-                }
-                
-                if (_cameraController == null)
-                {
-                    ChimeraLogger.LogError("[CameraLevelContextualMenuIntegrator] AdvancedCameraController not found!");
-                    return;
-                }
-                
-                if (_contextualMenu == null)
-                {
-                    ChimeraLogger.LogError("[CameraLevelContextualMenuIntegrator] No IContextualMenuProvider found!");
-                    return;
-                }
-                
-                // Get current camera level
-                _currentCameraLevel = _cameraController.CurrentCameraLevel;
-                
-                // Setup level-specific menu items
-                SetupLevelMenuItems();
-                
-                // Subscribe to camera level change events
-                SubscribeToEvents();
-                
-                _isInitialized = true;
-                
-                if (_debugMode)
-                {
-                    ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Initialized at camera level: {_currentCameraLevel}");
+                    ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Camera position updated: {newPosition}");
                 }
             }
-            catch (System.Exception ex)
-            {
-                ChimeraLogger.LogError($"[CameraLevelContextualMenuIntegrator] Error during initialization: {ex.Message}");
-            }
         }
-        
-        private void SetupLevelMenuItems()
+
+        /// <summary>
+        /// Get current camera position
+        /// </summary>
+        public Vector3 GetCurrentCameraPosition()
         {
-            _levelMenuItems = new Dictionary<CameraLevel, List<CameraLevelMenuItem>>
-            {
-                { CameraLevel.Facility, CreateFacilityLevelMenuItems() },
-                { CameraLevel.Room, CreateRoomLevelMenuItems() },
-                { CameraLevel.Bench, CreateBenchLevelMenuItems() },
-                { CameraLevel.Plant, CreatePlantLevelMenuItems() }
-            };
+            return _mainCamera != null ? _mainCamera.transform.position : Vector3.zero;
         }
-        
-        private List<CameraLevelMenuItem> CreateFacilityLevelMenuItems()
+
+        /// <summary>
+        /// Get current camera rotation
+        /// </summary>
+        public Quaternion GetCurrentCameraRotation()
         {
-            var items = new List<CameraLevelMenuItem>();
-            
-            if (_enableLevelTransitionActions)
-            {
-                items.Add(new CameraLevelMenuItem("Zoom to Room Level", "ZoomToRoom", new[] { CameraLevel.Facility }));
-                items.Add(new CameraLevelMenuItem("Focus on Room", "FocusOnRoom", new[] { CameraLevel.Facility }, true, "Room"));
-            }
-            
-            // Facility-wide actions
-            items.Add(new CameraLevelMenuItem("View Facility Overview", "FacilityOverview", new[] { CameraLevel.Facility }));
-            items.Add(new CameraLevelMenuItem("Facility Statistics", "FacilityStats", new[] { CameraLevel.Facility }));
-            items.Add(new CameraLevelMenuItem("Facility Settings", "FacilitySettings", new[] { CameraLevel.Facility }));
-            items.Add(new CameraLevelMenuItem("Environmental Overview", "EnvironmentalOverview", new[] { CameraLevel.Facility }));
-            
-            return items;
+            return _mainCamera != null ? _mainCamera.transform.rotation : Quaternion.identity;
         }
-        
-        private List<CameraLevelMenuItem> CreateRoomLevelMenuItems()
+
+        /// <summary>
+        /// Get camera view direction
+        /// </summary>
+        public Vector3 GetCameraForward()
         {
-            var items = new List<CameraLevelMenuItem>();
-            
-            if (_enableLevelTransitionActions)
-            {
-                items.Add(new CameraLevelMenuItem("Zoom Out to Facility", "ZoomToFacility", new[] { CameraLevel.Room }));
-                items.Add(new CameraLevelMenuItem("Zoom to Bench Level", "ZoomToBench", new[] { CameraLevel.Room }));
-                items.Add(new CameraLevelMenuItem("Focus on Bench", "FocusOnBench", new[] { CameraLevel.Room }, true, "Bench"));
-            }
-            
-            // Room-level actions
-            items.Add(new CameraLevelMenuItem("Room Environment", "RoomEnvironment", new[] { CameraLevel.Room }));
-            items.Add(new CameraLevelMenuItem("HVAC Controls", "HVACControls", new[] { CameraLevel.Room }));
-            items.Add(new CameraLevelMenuItem("Lighting Controls", "LightingControls", new[] { CameraLevel.Room }));
-            items.Add(new CameraLevelMenuItem("Room Layout", "RoomLayout", new[] { CameraLevel.Room }));
-            items.Add(new CameraLevelMenuItem("Equipment Overview", "EquipmentOverview", new[] { CameraLevel.Room }));
-            
-            return items;
+            return _mainCamera != null ? _mainCamera.transform.forward : Vector3.forward;
         }
-        
-        private List<CameraLevelMenuItem> CreateBenchLevelMenuItems()
+
+        /// <summary>
+        /// Check if camera is looking at position
+        /// </summary>
+        public bool IsLookingAt(Vector3 worldPosition)
         {
-            var items = new List<CameraLevelMenuItem>();
-            
-            if (_enableLevelTransitionActions)
-            {
-                items.Add(new CameraLevelMenuItem("Zoom Out to Room", "ZoomToRoom", new[] { CameraLevel.Bench }));
-                items.Add(new CameraLevelMenuItem("Zoom to Plant Level", "ZoomToPlant", new[] { CameraLevel.Bench }));
-                items.Add(new CameraLevelMenuItem("Focus on Plant", "FocusOnPlant", new[] { CameraLevel.Bench }, true, "Plant"));
-            }
-            
-            // Bench-level actions
-            items.Add(new CameraLevelMenuItem("Bench Overview", "BenchOverview", new[] { CameraLevel.Bench }));
-            items.Add(new CameraLevelMenuItem("Plant Care Schedule", "PlantCareSchedule", new[] { CameraLevel.Bench }));
-            items.Add(new CameraLevelMenuItem("Bench Environment", "BenchEnvironment", new[] { CameraLevel.Bench }));
-            items.Add(new CameraLevelMenuItem("Nutrition System", "NutritionSystem", new[] { CameraLevel.Bench }));
-            items.Add(new CameraLevelMenuItem("Water System", "WaterSystem", new[] { CameraLevel.Bench }));
-            
-            return items;
+            if (_mainCamera == null) return false;
+
+            Vector3 directionToTarget = (worldPosition - _mainCamera.transform.position).normalized;
+            float dotProduct = Vector3.Dot(_mainCamera.transform.forward, directionToTarget);
+
+            return dotProduct > 0.8f; // Within ~36 degrees of center
         }
-        
-        private List<CameraLevelMenuItem> CreatePlantLevelMenuItems()
+
+        /// <summary>
+        /// Get screen position of world point
+        /// </summary>
+        public Vector3 WorldToScreenPoint(Vector3 worldPosition)
         {
-            var items = new List<CameraLevelMenuItem>();
-            
-            if (_enableLevelTransitionActions)
-            {
-                items.Add(new CameraLevelMenuItem("Zoom Out to Bench", "ZoomToBench", new[] { CameraLevel.Plant }));
-                items.Add(new CameraLevelMenuItem("Zoom Out to Room", "ZoomToRoom", new[] { CameraLevel.Plant }));
-            }
-            
-            if (_enableTargetSpecificActions)
-            {
-                items.Add(new CameraLevelMenuItem("Plant Details", "PlantDetails", new[] { CameraLevel.Plant }, true, "Plant"));
-                items.Add(new CameraLevelMenuItem("Plant Health", "PlantHealth", new[] { CameraLevel.Plant }, true, "Plant"));
-                items.Add(new CameraLevelMenuItem("Growth Progress", "GrowthProgress", new[] { CameraLevel.Plant }, true, "Plant"));
-                items.Add(new CameraLevelMenuItem("Genetics Info", "GeneticsInfo", new[] { CameraLevel.Plant }, true, "Plant"));
-                items.Add(new CameraLevelMenuItem("Care Actions", "CareActions", new[] { CameraLevel.Plant }, true, "Plant"));
-            }
-            
-            return items;
+            return _mainCamera != null ? _mainCamera.WorldToScreenPoint(worldPosition) : Vector3.zero;
         }
-        
-        private void SubscribeToEvents()
+
+        /// <summary>
+        /// Get world point from screen position
+        /// </summary>
+        public Vector3 ScreenToWorldPoint(Vector3 screenPosition)
         {
-            if (_cameraLevelChangedEvent != null)
-            {
-                _cameraLevelChangedEvent.Subscribe(OnCameraLevelChanged);
-            }
-            else
-            {
-                ChimeraLogger.LogWarning("[CameraLevelContextualMenuIntegrator] CameraLevelChangedEvent not assigned");
-            }
+            return _mainCamera != null ? _mainCamera.ScreenToWorldPoint(screenPosition) : Vector3.zero;
         }
-        
-        private void UnsubscribeFromEvents()
+
+        /// <summary>
+        /// Cast ray from camera through screen point
+        /// </summary>
+        public bool ScreenPointToRay(Vector3 screenPoint, out Ray ray)
         {
-            if (_cameraLevelChangedEvent != null)
-            {
-                _cameraLevelChangedEvent.Unsubscribe(OnCameraLevelChanged);
-            }
-        }
-        
-        private void OnCameraLevelChanged(CameraLevelChangeEventData eventData)
-        {
-            if (_debugMode)
-            {
-                ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Camera level changed: {eventData.PreviousLevel} → {eventData.NewLevel}");
-            }
-            
-            _currentCameraLevel = eventData.NewLevel;
-            _currentTarget = eventData.TargetObject;
-            
-            // Update active menu items for new level
-            UpdateActiveMenuItems();
-            
-            // If menu is currently visible, refresh it with new level context
-            if (_contextualMenu != null && _contextualMenu.IsMenuVisible)
-            {
-                RefreshContextualMenu();
-            }
-        }
-        
-        private void UpdateActiveMenuItems()
-        {
-            _activeMenuItems.Clear();
-            
-            if (_levelMenuItems.TryGetValue(_currentCameraLevel, out var levelItems))
-            {
-                foreach (var item in levelItems)
-                {
-                    if (IsMenuItemValidForCurrentContext(item))
-                    {
-                        _activeMenuItems.Add(item);
-                    }
-                }
-            }
-            
-            if (_debugMode)
-            {
-                ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Updated menu items for level {_currentCameraLevel}: {_activeMenuItems.Count} items available");
-            }
-        }
-        
-        private bool IsMenuItemValidForCurrentContext(CameraLevelMenuItem item)
-        {
-            // Check if current level is valid for this item
-            bool levelValid = false;
-            foreach (var validLevel in item.validLevels)
-            {
-                if (validLevel == _currentCameraLevel)
-                {
-                    levelValid = true;
-                    break;
-                }
-            }
-            if (!levelValid) return false;
-            
-            // Check if item requires target and we have appropriate target
-            if (item.requiresTarget)
-            {
-                if (_currentTarget == null) return false;
-                
-                if (!string.IsNullOrEmpty(item.targetTag) && !_currentTarget.CompareTag(item.targetTag))
-                {
-                    return false;
-                }
-            }
-            
+            ray = new Ray();
+            if (_mainCamera == null) return false;
+
+            ray = _mainCamera.ScreenPointToRay(screenPoint);
             return true;
         }
-        
-        private void RefreshContextualMenu()
+
+        /// <summary>
+        /// Get camera view frustum
+        /// </summary>
+        public bool IsPointInViewFrustum(Vector3 worldPoint)
         {
-            // Hide current menu and show updated one
-            if (_contextualMenu != null)
+            if (_mainCamera == null) return false;
+
+            Vector3 screenPoint = _mainCamera.WorldToViewportPoint(worldPoint);
+            return screenPoint.x >= 0 && screenPoint.x <= 1 &&
+                   screenPoint.y >= 0 && screenPoint.y <= 1 &&
+                   screenPoint.z > 0;
+        }
+
+        /// <summary>
+        /// Set integration enabled state
+        /// </summary>
+        public void SetIntegrationEnabled(bool enabled)
+        {
+            _enableBasicIntegration = enabled;
+
+            if (_enableLogging)
             {
-                Vector3 lastMenuPosition = Input.mousePosition; // Use current mouse position
-                _contextualMenu.HideMenu();
-                
-                // Small delay to allow menu to hide before showing new one
-                Invoke(nameof(ShowUpdatedMenu), 0.1f);
+                ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Integration {(enabled ? "enabled" : "disabled")}");
             }
         }
-        
-        private void ShowUpdatedMenu()
+
+        /// <summary>
+        /// Force camera position update
+        /// </summary>
+        public void ForceCameraUpdate()
         {
-            if (_contextualMenu != null)
+            if (_mainCamera != null)
             {
-                _contextualMenu.ShowContextMenu(Input.mousePosition, _currentTarget ? _currentTarget.gameObject : null);
-            }
-        }
-        
-        /// <summary>
-        /// Execute camera level specific menu action
-        /// </summary>
-        public void ExecuteCameraLevelAction(string actionName, Transform target = null)
-        {
-            if (_debugMode)
-            {
-                string targetName = target ? target.name : "None";
-                ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Executing camera level action '{actionName}' with target: {targetName}");
-            }
-            
-            switch (actionName)
-            {
-                // Level transition actions
-                case "ZoomToFacility":
-                    _cameraController?.ZoomTo(CameraLevel.Facility);
-                    break;
-                case "ZoomToRoom":
-                    _cameraController?.ZoomTo(CameraLevel.Room);
-                    break;
-                case "ZoomToBench":
-                    _cameraController?.ZoomTo(CameraLevel.Bench);
-                    break;
-                case "ZoomToPlant":
-                    _cameraController?.ZoomTo(CameraLevel.Plant);
-                    break;
-                    
-                // Focus actions
-                case "FocusOnRoom":
-                case "FocusOnBench":
-                case "FocusOnPlant":
-                    if (target != null)
-                    {
-                        var targetLevel = GetTargetCameraLevel(target);
-                        _cameraController?.ZoomTo(targetLevel, target);
-                    }
-                    break;
-                    
-                // Level-specific information actions
-                case "FacilityOverview":
-                case "FacilityStats":
-                case "FacilitySettings":
-                case "EnvironmentalOverview":
-                case "RoomEnvironment":
-                case "HVACControls":
-                case "LightingControls":
-                case "RoomLayout":
-                case "EquipmentOverview":
-                case "BenchOverview":
-                case "PlantCareSchedule":
-                case "BenchEnvironment":
-                case "NutritionSystem":
-                case "WaterSystem":
-                case "PlantDetails":
-                case "PlantHealth":
-                case "GrowthProgress":
-                case "GeneticsInfo":
-                case "CareActions":
-                    ExecuteInformationAction(actionName, target);
-                    break;
-                    
-                default:
-                    if (_debugMode)
-                    {
-                        ChimeraLogger.LogWarning($"[CameraLevelContextualMenuIntegrator] Unknown camera level action: {actionName}");
-                    }
-                    break;
-            }
-        }
-        
-        private void ExecuteInformationAction(string actionName, Transform target)
-        {
-            // This would integrate with actual UI panels and information systems
-            // For now, provide debug feedback
-            
-            if (_debugMode)
-            {
-                string targetInfo = target ? $" for {target.name}" : "";
-                string levelInfo = _showLevelInMenuTitle ? $" (Level: {_currentCameraLevel})" : "";
-                ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Would show {actionName} panel{targetInfo}{levelInfo}");
-            }
-            
-            // TODO: Integration with actual UI panels
-            // Example: UIManager.ShowPanel(actionName, target, _currentCameraLevel);
-        }
-        
-        private CameraLevel GetTargetCameraLevel(Transform target)
-        {
-            if (target.CompareTag("Plant")) return CameraLevel.Plant;
-            if (target.CompareTag("Bench")) return CameraLevel.Bench;
-            if (target.CompareTag("Room")) return CameraLevel.Room;
-            if (target.CompareTag("Facility")) return CameraLevel.Facility;
-            
-            // Default based on target type inference
-            if (target.name.ToLower().Contains("plant")) return CameraLevel.Plant;
-            if (target.name.ToLower().Contains("bench") || target.name.ToLower().Contains("table")) return CameraLevel.Bench;
-            if (target.name.ToLower().Contains("room")) return CameraLevel.Room;
-            
-            return CameraLevel.Room; // Default fallback
-        }
-        
-        #region Public Interface
-        
-        /// <summary>
-        /// Get menu items valid for current camera level
-        /// </summary>
-        public List<CameraLevelMenuItem> GetActiveMenuItems()
-        {
-            return new List<CameraLevelMenuItem>(_activeMenuItems);
-        }
-        
-        /// <summary>
-        /// Check if level-based menus are enabled
-        /// </summary>
-        public bool AreLevelBasedMenusEnabled => _enableLevelBasedMenus && _isInitialized;
-        
-        /// <summary>
-        /// Get current camera level for menu context
-        /// </summary>
-        public CameraLevel CurrentCameraLevel => _currentCameraLevel;
-        
-        /// <summary>
-        /// Get current selected target
-        /// </summary>
-        public Transform CurrentTarget => _currentTarget;
-        
-        /// <summary>
-        /// Enable/disable debug mode at runtime
-        /// </summary>
-        public void SetDebugMode(bool enabled)
-        {
-            _debugMode = enabled;
-            ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Debug mode {(enabled ? "enabled" : "disabled")}");
-        }
-        
-        /// <summary>
-        /// Manually refresh the contextual menu with current level context
-        /// </summary>
-        public void RefreshMenu()
-        {
-            UpdateActiveMenuItems();
-            
-            if (_contextualMenu != null && _contextualMenu.IsMenuVisible)
-            {
-                RefreshContextualMenu();
-            }
-        }
-        
-        #endregion
-        
-        #if UNITY_EDITOR
-        
-        /// <summary>
-        /// Editor-only method for testing camera level menu integration
-        /// </summary>
-        [ContextMenu("Test Camera Level Menu")]
-        private void TestCameraLevelMenu()
-        {
-            if (Application.isPlaying && _isInitialized)
-            {
-                ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Testing menu for level: {_currentCameraLevel}");
-                ChimeraLogger.Log($"Available menu items: {_activeMenuItems.Count}");
-                foreach (var item in _activeMenuItems)
+                _currentCameraPosition = _mainCamera.transform.position;
+                _currentCameraRotation = _mainCamera.transform.rotation;
+
+                OnCameraPositionChanged?.Invoke(_currentCameraPosition, _currentCameraRotation);
+                OnMenuIntegrationUpdated?.Invoke();
+
+                if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"  - {item.displayName} ({item.actionName})");
+                    ChimeraLogger.Log("[CameraLevelContextualMenuIntegrator] Camera update forced");
                 }
             }
-            else
-            {
-                ChimeraLogger.Log("[CameraLevelContextualMenuIntegrator] Test only works during play mode after initialization");
-            }
         }
-        
-        #endif
+
+        /// <summary>
+        /// Get integration statistics
+        /// </summary>
+        public CameraIntegrationStats GetStats()
+        {
+            return new CameraIntegrationStats
+            {
+                CurrentPosition = _currentCameraPosition,
+                CurrentRotation = _currentCameraRotation,
+                IsIntegrationEnabled = _enableBasicIntegration,
+                IsInitialized = _isInitialized,
+                CameraFound = _mainCamera != null,
+                AutoUpdateEnabled = _autoUpdateOnCameraChange
+            };
+        }
+    }
+
+    /// <summary>
+    /// Camera integration statistics
+    /// </summary>
+    [System.Serializable]
+    public struct CameraIntegrationStats
+    {
+        public Vector3 CurrentPosition;
+        public Quaternion CurrentRotation;
+        public bool IsIntegrationEnabled;
+        public bool IsInitialized;
+        public bool CameraFound;
+        public bool AutoUpdateEnabled;
     }
 }

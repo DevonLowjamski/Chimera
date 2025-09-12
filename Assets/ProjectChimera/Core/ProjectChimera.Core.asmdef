@@ -5,6 +5,10 @@
         "ProjectChimera.Shared",
         "ProjectChimera.Data.Shared",
         "ProjectChimera.Data.Environment",
+        "ProjectChimera.Data.Equipment",
+        "ProjectChimera.Data.UI",
+        "ProjectChimera.Data.Construction",
+        "ProjectChimera.Data.Genetics",
         "UnityEngine.UI"
     ],
     "includePlatforms": [],

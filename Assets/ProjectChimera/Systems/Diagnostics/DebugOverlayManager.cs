@@ -1,0 +1,340 @@
+using UnityEngine;
+using UnityEngine.UIElements;
+using ProjectChimera.Core.Logging;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Systems.Diagnostics
+{
+    /// <summary>
+    /// Debug Overlay Manager - Manages debug overlays and visual indicators
+    /// Provides development-time debug information overlays and visual debugging tools
+    /// Only active in development builds (#if DEVELOPMENT_BUILD || UNITY_EDITOR)
+    /// </summary>
+    public class DebugOverlayManager : MonoBehaviour
+    {
+        [Header("UI Documents")]
+        [SerializeField] private UIDocument _debugUIDocument;
+
+        [Header("Overlay Settings")]
+        [SerializeField] private KeyCode _toggleOverlayKey = KeyCode.F12;
+        [SerializeField] private bool _showFPSCounter = true;
+        [SerializeField] private bool _showMemoryUsage = true;
+        [SerializeField] private bool _showSystemStatus = true;
+        [SerializeField] private bool _showCultivationMetrics = true;
+        [SerializeField] private bool _showConstructionMetrics = true;
+
+        [Header("Visual Settings")]
+        [SerializeField] private Color _normalColor = Color.white;
+        [SerializeField] private Color _warningColor = Color.yellow;
+        [SerializeField] private Color _criticalColor = Color.red;
+        [SerializeField] private float _updateInterval = 0.5f;
+
+        // UI elements
+        private VisualElement _debugOverlay;
+        private Label _fpsLabel;
+        private Label _memoryLabel;
+        private Label _systemStatusLabel;
+        private Label _cultivationMetricsLabel;
+        private Label _constructionMetricsLabel;
+
+        // State
+        private bool _overlayVisible = false;
+        private float _lastUpdateTime;
+
+        private void Awake()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            InitializeOverlay();
+#endif
+        }
+
+        private void Update()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            HandleInput();
+            UpdateOverlay();
+#endif
+        }
+
+        private void OnDestroy()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            CleanupOverlay();
+#endif
+        }
+
+        /// <summary>
+        /// Initializes the debug overlay
+        /// </summary>
+        private void InitializeOverlay()
+        {
+            if (_debugUIDocument == null)
+            {
+                ChimeraLogger.LogWarning("[DebugOverlayManager] No UI document assigned for debug overlay");
+                return;
+            }
+
+            var root = _debugUIDocument.rootVisualElement;
+
+            // Create debug overlay container
+            _debugOverlay = new VisualElement();
+            _debugOverlay.name = "debug-overlay";
+            _debugOverlay.AddToClassList("debug-overlay");
+
+            // Position in top-left corner
+            _debugOverlay.style.position = Position.Absolute;
+            _debugOverlay.style.top = 10;
+            _debugOverlay.style.left = 10;
+            _debugOverlay.style.width = 300;
+            _debugOverlay.style.backgroundColor = new StyleColor(new Color(0, 0, 0, 0.8f));
+            _debugOverlay.style.paddingTop = 5;
+            _debugOverlay.style.paddingBottom = 5;
+            _debugOverlay.style.paddingLeft = 10;
+            _debugOverlay.style.paddingRight = 10;
+
+            // Create debug labels
+            if (_showFPSCounter)
+            {
+                _fpsLabel = CreateDebugLabel("FPS: --");
+                _debugOverlay.Add(_fpsLabel);
+            }
+
+            if (_showMemoryUsage)
+            {
+                _memoryLabel = CreateDebugLabel("Memory: --");
+                _debugOverlay.Add(_memoryLabel);
+            }
+
+            if (_showSystemStatus)
+            {
+                _systemStatusLabel = CreateDebugLabel("System: --");
+                _debugOverlay.Add(_systemStatusLabel);
+            }
+
+            if (_showCultivationMetrics)
+            {
+                _cultivationMetricsLabel = CreateDebugLabel("Cultivation: --");
+                _debugOverlay.Add(_cultivationMetricsLabel);
+            }
+
+            if (_showConstructionMetrics)
+            {
+                _constructionMetricsLabel = CreateDebugLabel("Construction: --");
+                _debugOverlay.Add(_constructionMetricsLabel);
+            }
+
+            root.Add(_debugOverlay);
+
+            // Initially hide overlay
+            SetOverlayVisibility(false);
+
+            ChimeraLogger.Log("[DebugOverlayManager] Debug overlay initialized");
+        }
+
+        /// <summary>
+        /// Creates a debug label
+        /// </summary>
+        private Label CreateDebugLabel(string initialText)
+        {
+            var label = new Label(initialText);
+            label.AddToClassList("debug-label");
+            label.style.color = new StyleColor(_normalColor);
+            label.style.fontSize = 12;
+            label.style.marginBottom = 2;
+            return label;
+        }
+
+        /// <summary>
+        /// Handles input for toggling overlay
+        /// </summary>
+        private void HandleInput()
+        {
+            if (Input.GetKeyDown(_toggleOverlayKey))
+            {
+                SetOverlayVisibility(!_overlayVisible);
+            }
+        }
+
+        /// <summary>
+        /// Updates the debug overlay with current information
+        /// </summary>
+        private void UpdateOverlay()
+        {
+            if (!_overlayVisible || Time.time - _lastUpdateTime < _updateInterval)
+                return;
+
+            _lastUpdateTime = Time.time;
+
+            // Update FPS
+            if (_fpsLabel != null)
+            {
+                float fps = 1f / Time.deltaTime;
+                _fpsLabel.text = $"FPS: {fps:F1}";
+                _fpsLabel.style.color = new StyleColor(GetColorForValue(fps, 60f, 30f, 15f));
+            }
+
+            // Update memory usage
+            if (_memoryLabel != null)
+            {
+                long memoryMB = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / (1024 * 1024);
+                _memoryLabel.text = $"Memory: {memoryMB}MB";
+                _memoryLabel.style.color = new StyleColor(GetColorForValue(memoryMB, 256, 512, 1024));
+            }
+
+            // Update system status
+            if (_systemStatusLabel != null)
+            {
+                // Placeholder system status
+                _systemStatusLabel.text = "System: OK";
+                _systemStatusLabel.style.color = new StyleColor(_normalColor);
+            }
+
+            // Update cultivation metrics
+            if (_cultivationMetricsLabel != null)
+            {
+                // Placeholder cultivation metrics
+                int plantCount = GetPlantCount();
+                _cultivationMetricsLabel.text = $"Plants: {plantCount}";
+                _cultivationMetricsLabel.style.color = new StyleColor(_normalColor);
+            }
+
+            // Update construction metrics
+            if (_constructionMetricsLabel != null)
+            {
+                // Placeholder construction metrics
+                int equipmentCount = GetEquipmentCount();
+                _constructionMetricsLabel.text = $"Equipment: {equipmentCount}";
+                _constructionMetricsLabel.style.color = new StyleColor(_normalColor);
+            }
+        }
+
+        /// <summary>
+        /// Gets color based on value thresholds
+        /// </summary>
+        private Color GetColorForValue(float value, float goodThreshold, float warningThreshold, float criticalThreshold)
+        {
+            if (value >= goodThreshold) return _normalColor;
+            if (value >= warningThreshold) return _warningColor;
+            return _criticalColor;
+        }
+
+        /// <summary>
+        /// Sets the overlay visibility
+        /// </summary>
+        public void SetOverlayVisibility(bool visible)
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            _overlayVisible = visible;
+            if (_debugOverlay != null)
+            {
+                _debugOverlay.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+            ChimeraLogger.Log($"[DebugOverlayManager] Debug overlay {(visible ? "shown" : "hidden")}");
+#endif
+        }
+
+        /// <summary>
+        /// Gets placeholder plant count (would integrate with cultivation system)
+        /// </summary>
+        private int GetPlantCount()
+        {
+            // Placeholder - would integrate with actual cultivation system
+            var plants = GameObject.FindGameObjectsWithTag("Plant");
+            return plants.Length;
+        }
+
+        /// <summary>
+        /// Gets placeholder equipment count (would integrate with construction system)
+        /// </summary>
+        private int GetEquipmentCount()
+        {
+            // Placeholder - would integrate with actual construction system
+            return 0; // Would count actual equipment
+        }
+
+        /// <summary>
+        /// Adds a custom debug message to the overlay
+        /// </summary>
+        public void AddDebugMessage(string message, DebugMessageType type = DebugMessageType.Info)
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (_debugOverlay == null) return;
+
+            var messageLabel = new Label($"[{type}] {message}");
+            messageLabel.AddToClassList("debug-message");
+            messageLabel.style.color = new StyleColor(GetColorForMessageType(type));
+            messageLabel.style.fontSize = 10;
+            messageLabel.style.marginBottom = 1;
+
+            _debugOverlay.Add(messageLabel);
+
+            // Auto-remove after 5 seconds
+            StartCoroutine(RemoveMessageAfterDelay(messageLabel, 5f));
+#endif
+        }
+
+        /// <summary>
+        /// Gets color for debug message type
+        /// </summary>
+        private Color GetColorForMessageType(DebugMessageType type)
+        {
+            switch (type)
+            {
+                case DebugMessageType.Warning: return _warningColor;
+                case DebugMessageType.Error: return _criticalColor;
+                case DebugMessageType.Success: return Color.green;
+                default: return _normalColor;
+            }
+        }
+
+        /// <summary>
+        /// Removes a debug message after delay
+        /// </summary>
+        private System.Collections.IEnumerator RemoveMessageAfterDelay(VisualElement message, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            if (message != null && message.parent != null)
+            {
+                message.parent.Remove(message);
+            }
+        }
+
+        /// <summary>
+        /// Cleans up the debug overlay
+        /// </summary>
+        private void CleanupOverlay()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (_debugOverlay != null && _debugOverlay.parent != null)
+            {
+                _debugOverlay.parent.Remove(_debugOverlay);
+            }
+            ChimeraLogger.Log("[DebugOverlayManager] Debug overlay cleaned up");
+#endif
+        }
+
+        /// <summary>
+        /// Checks if the debug overlay is visible
+        /// </summary>
+        public bool IsOverlayVisible()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            return _overlayVisible;
+#else
+            return false;
+#endif
+        }
+    }
+
+    /// <summary>
+    /// Debug message types
+    /// </summary>
+    public enum DebugMessageType
+    {
+        Info,
+        Warning,
+        Error,
+        Success
+    }
+}
+

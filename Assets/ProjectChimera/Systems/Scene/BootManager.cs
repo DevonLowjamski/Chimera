@@ -25,18 +25,18 @@ namespace ProjectChimera.Systems.Scene
                 return;
             }
 
-            // 2. Create or ensure DIGameManager exists
-            var diGameManager = ServiceContainerFactory.Instance?.TryResolve<DIGameManager>();
-            if (diGameManager == null)
+            // 2. Create or ensure GameManager exists
+            var gameManager = ServiceContainerFactory.Instance?.TryResolve<GameManager>();
+            if (gameManager == null)
             {
-                var gameManagerObject = new GameObject("DIGameManager");
-                diGameManager = gameManagerObject.AddComponent<DIGameManager>();
+                var gameManagerObject = new GameObject("GameManager");
+                gameManager = gameManagerObject.AddComponent<GameManager>();
                 DontDestroyOnLoad(gameManagerObject);
             }
 
-            // 3. DIGameManager handles all subsequent initialization
+            // 3. GameManager handles all subsequent initialization
             if (_enableDetailedLogging)
-                ChimeraLogger.Log("[BootManager] Handoff to DIGameManager complete");
+                ChimeraLogger.Log("[BootManager] Handoff to GameManager complete");
 
             // Boot manager's job is done - DIGameManager takes over
         }
