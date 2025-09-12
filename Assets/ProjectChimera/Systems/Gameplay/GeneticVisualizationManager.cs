@@ -59,8 +59,28 @@ namespace ProjectChimera.Systems.Gameplay
         /// </summary>
         private void InitializeVisualizations()
         {
-            // Find all plants in the scene and set up visualizations
-            var plants = GameObject.FindGameObjectsWithTag("Plant");
+            // Primary: Try ServiceContainer resolution for registered plant GameObjects
+            var plants = ServiceContainerFactory.Instance.ResolveAll<GameObject>()
+                ?.Where(go => go.CompareTag("Plant")).ToArray();
+                
+            if (plants?.Any() != true)
+            {
+                // Fallback: Find all plants in the scene and set up visualizations
+                plants = GameObject.FindGameObjectsWithTag("Plant");
+                
+                // Auto-register discovered plants in ServiceContainer for future use
+                foreach (var plant in plants)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<GameObject>(plant);
+                }
+                
+                ChimeraLogger.Log($"[GeneticVisualizationManager] Registered {plants.Length} plant GameObjects in ServiceContainer");
+            }
+            else
+            {
+                ChimeraLogger.Log("[GeneticVisualizationManager] Using plant GameObjects from ServiceContainer");
+            }
+            
             foreach (var plant in plants)
             {
                 RegisterPlantForVisualization(plant);
