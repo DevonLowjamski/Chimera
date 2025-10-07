@@ -568,16 +568,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
 
     // Additional data structures for PlantInstanceSO functionality
     [System.Serializable]
-    public class TrainingResult
-    {
-        public string TrainingType;
-        public bool Success;
-        public float StressIncrease;
-        public DateTime TrainingDate;
-        public float EnergyCost;
-    }
-
-    [System.Serializable]
     public class YieldCalculation
     {
         public float EstimatedYield;

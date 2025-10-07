@@ -517,49 +517,4 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Cache
     /// <summary>
     /// Cache eviction policies
     /// </summary>
-    public enum CacheEvictionPolicy
-    {
-        LRU,    // Least Recently Used
-        LFU,    // Least Frequently Used
-        FIFO,   // First In First Out
-        Random  // Random eviction
     }
-
-    /// <summary>
-    /// Memory pressure levels
-    /// </summary>
-    public enum MemoryPressureLevel
-    {
-        Normal,
-        Medium,
-        High,
-        Critical
-    }
-
-    /// <summary>
-    /// Optimization result information
-    /// </summary>
-    [System.Serializable]
-    public struct OptimizationResult
-    {
-        public bool Success;
-        public DateTime StartTime;
-        public float ExecutionTime;
-        public int ExpiredItemsRemoved;
-        public int ItemsEvicted;
-        public string ErrorMessage;
-    }
-
-    /// <summary>
-    /// Optimization statistics tracking
-    /// </summary>
-    [System.Serializable]
-    public class OptimizationStatistics
-    {
-        public int TotalOptimizations = 0;
-        public int TotalItemsEvicted = 0;
-        public int TotalExpiredItemsRemoved = 0;
-        public DateTime LastOptimizationTime = DateTime.MinValue;
-        public float CurrentCacheUtilization = 0f;
-    }
-}

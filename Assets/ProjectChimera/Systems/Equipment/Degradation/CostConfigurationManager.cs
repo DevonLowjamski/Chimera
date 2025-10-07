@@ -589,27 +589,4 @@ namespace ProjectChimera.Systems.Equipment.Degradation
     /// General configuration statistics
     /// </summary>
     [System.Serializable]
-    public class ConfigurationStats
-    {
-        public int ParameterRetrievals = 0;
-        public int ParameterUpdates = 0;
-        public int ParameterMisses = 0;
-        public int ParameterErrors = 0;
-        public int ParameterValidationFailures = 0;
-        public DateTime LastParameterAccess = DateTime.MinValue;
     }
-
-    /// <summary>
-    /// Comprehensive configuration statistics
-    /// </summary>
-    [System.Serializable]
-    public struct ConfigurationStatistics
-    {
-        public ProfileStatistics ProfileStats;
-        public ValidationStatistics ValidationStats;
-        public PersistenceStatistics PersistenceStats;
-        public ConfigurationStats GeneralStats;
-    }
-
-    #endregion
-}
