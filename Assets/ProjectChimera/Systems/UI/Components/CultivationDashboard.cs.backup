@@ -1,0 +1,469 @@
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using ProjectChimera.Core.Memory;
+using ProjectChimera.Systems.Cultivation;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.UI
+{
+    /// <summary>
+    /// PERFORMANCE: Optimized cultivation dashboard for system overview
+    /// Displays key metrics with efficient updates and minimal allocations
+    /// Week 12: Input & UI Performance
+    /// </summary>
+    public class CultivationDashboard : MonoBehaviour, IUIUpdatable
+    {
+        [Header("Dashboard Components")]
+        [SerializeField] private TextMeshProUGUI _totalPlantsText;
+        [SerializeField] private TextMeshProUGUI _healthyPlantsText;
+        [SerializeField] private TextMeshProUGUI _averageHealthText;
+        [SerializeField] private TextMeshProUGUI _totalYieldText;
+        [SerializeField] private TextMeshProUGUI _systemStatusText;
+        [SerializeField] private Image _systemStatusIcon;
+        [SerializeField] private Slider _resourceBar;
+        [SerializeField] private Image _resourceFill;
+
+        [Header("Performance Settings")]
+        [SerializeField] private float _updateInterval = 1f;
+        [SerializeField] private bool _enableResourceMonitoring = true;
+        [SerializeField] private bool _enablePerformanceMetrics = true;
+
+        [Header("Visual Settings")]
+        [SerializeField] private Color _healthyColor = Color.green;
+        [SerializeField] private Color _warningColor = Color.yellow;
+        [SerializeField] private Color _criticalColor = Color.red;
+        [SerializeField] private Sprite _healthyIcon;
+        [SerializeField] private Sprite _warningIcon;
+        [SerializeField] private Sprite _criticalIcon;
+
+        // Dashboard state
+        private CultivationDashboardData _currentData;
+        private CultivationDashboardData _lastData;
+        private float _lastUpdateTime;
+        private bool _isDirty = true;
+
+        // String caching for performance
+        private string _cachedTotalPlantsText;
+        private string _cachedHealthyPlantsText;
+        private string _cachedAverageHealthText;
+        private string _cachedTotalYieldText;
+        private string _cachedSystemStatusText;
+
+        // Performance metrics
+        private float _updateExecutionTime;
+        private int _updateCount;
+
+        // System references
+        private CultivationManager _cultivationManager;
+
+        public bool IsVisible { get; private set; } = true;
+        public CultivationDashboardData CurrentData => _currentData;
+
+        private void Awake()
+        {
+            InitializeComponents();
+        }
+
+        private void Start()
+        {
+            _cultivationManager = CultivationManager.Instance;
+            if (_cultivationManager == null)
+            {
+                _cultivationManager = FindObjectOfType<CultivationManager>();
+            }
+        }
+
+        /// <summary>
+        /// Update dashboard data
+        /// </summary>
+        public void UpdateDashboardData(CultivationDashboardData data)
+        {
+            _lastData = _currentData;
+            _currentData = data;
+            _isDirty = true;
+        }
+
+        /// <summary>
+        /// Set dashboard visibility
+        /// </summary>
+        public void SetVisible(bool visible)
+        {
+            if (IsVisible != visible)
+            {
+                IsVisible = visible;
+                gameObject.SetActive(visible);
+            }
+        }
+
+        /// <summary>
+        /// Check if should update
+        /// </summary>
+        public bool ShouldUpdate()
+        {
+            float currentTime = Time.unscaledTime;
+            return IsVisible && _isDirty && (currentTime - _lastUpdateTime) >= _updateInterval;
+        }
+
+        /// <summary>
+        /// Update UI display
+        /// </summary>
+        public void UpdateUI()
+        {
+            if (!IsVisible) return;
+
+            float startTime = Time.unscaledTime;
+
+            RefreshDashboardData();
+            UpdatePlantStatistics();
+            UpdateSystemStatus();
+            UpdateResourceDisplay();
+            
+            _isDirty = false;
+            _lastUpdateTime = Time.unscaledTime;
+            _updateCount++;
+            _updateExecutionTime = Time.unscaledTime - startTime;
+        }
+
+        /// <summary>
+        /// Force dashboard refresh
+        /// </summary>
+        public void ForceRefresh()
+        {
+            _isDirty = true;
+            UpdateUI();
+        }
+
+        /// <summary>
+        /// Get dashboard performance metrics
+        /// </summary>
+        public DashboardPerformanceMetrics GetPerformanceMetrics()
+        {
+            return new DashboardPerformanceMetrics
+            {
+                UpdateCount = _updateCount,
+                AverageUpdateTime = _updateExecutionTime,
+                LastUpdateTime = _lastUpdateTime,
+                IsOptimized = _updateExecutionTime < 0.001f // Target <1ms per update
+            };
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Initialize UI components
+        /// </summary>
+        private void InitializeComponents()
+        {
+            // Find or create total plants text
+            if (_totalPlantsText == null)
+            {
+                _totalPlantsText = transform.Find("TotalPlantsText")?.GetComponent<TextMeshProUGUI>();
+                if (_totalPlantsText == null)
+                {
+                    _totalPlantsText = CreateTextComponent("TotalPlantsText", "Total Plants: 0", 16);
+                }
+            }
+
+            // Find or create healthy plants text
+            if (_healthyPlantsText == null)
+            {
+                _healthyPlantsText = transform.Find("HealthyPlantsText")?.GetComponent<TextMeshProUGUI>();
+                if (_healthyPlantsText == null)
+                {
+                    _healthyPlantsText = CreateTextComponent("HealthyPlantsText", "Healthy: 0", 14);
+                }
+            }
+
+            // Find or create average health text
+            if (_averageHealthText == null)
+            {
+                _averageHealthText = transform.Find("AverageHealthText")?.GetComponent<TextMeshProUGUI>();
+                if (_averageHealthText == null)
+                {
+                    _averageHealthText = CreateTextComponent("AverageHealthText", "Avg Health: 0%", 14);
+                }
+            }
+
+            // Find or create total yield text
+            if (_totalYieldText == null)
+            {
+                _totalYieldText = transform.Find("TotalYieldText")?.GetComponent<TextMeshProUGUI>();
+                if (_totalYieldText == null)
+                {
+                    _totalYieldText = CreateTextComponent("TotalYieldText", "Expected Yield: 0kg", 14);
+                }
+            }
+
+            // Find or create system status text
+            if (_systemStatusText == null)
+            {
+                _systemStatusText = transform.Find("SystemStatusText")?.GetComponent<TextMeshProUGUI>();
+                if (_systemStatusText == null)
+                {
+                    _systemStatusText = CreateTextComponent("SystemStatusText", "System: OK", 14);
+                }
+            }
+
+            // Find or create resource bar
+            if (_resourceBar == null)
+            {
+                _resourceBar = transform.Find("ResourceBar")?.GetComponent<Slider>();
+                if (_resourceBar == null)
+                {
+                    _resourceBar = CreateResourceBar();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Create text component
+        /// </summary>
+        private TextMeshProUGUI CreateTextComponent(string name, string defaultText, int fontSize)
+        {
+            var textGO = new GameObject(name);
+            textGO.transform.SetParent(transform, false);
+
+            var rectTransform = textGO.AddComponent<RectTransform>();
+            rectTransform.sizeDelta = new Vector2(150, 30);
+
+            var textComponent = textGO.AddComponent<TextMeshProUGUI>();
+            textComponent.text = defaultText;
+            textComponent.fontSize = fontSize;
+            textComponent.alignment = TextAlignmentOptions.CenterLeft;
+            textComponent.color = Color.white;
+
+            return textComponent;
+        }
+
+        /// <summary>
+        /// Create resource bar component
+        /// </summary>
+        private Slider CreateResourceBar()
+        {
+            var sliderGO = new GameObject("ResourceBar");
+            sliderGO.transform.SetParent(transform, false);
+
+            var rectTransform = sliderGO.AddComponent<RectTransform>();
+            rectTransform.sizeDelta = new Vector2(200, 20);
+
+            var slider = sliderGO.AddComponent<Slider>();
+            slider.minValue = 0f;
+            slider.maxValue = 1f;
+
+            // Create background
+            var bgGO = new GameObject("Background");
+            bgGO.transform.SetParent(sliderGO.transform, false);
+            var bgRT = bgGO.AddComponent<RectTransform>();
+            bgRT.anchorMin = Vector2.zero;
+            bgRT.anchorMax = Vector2.one;
+            bgRT.sizeDelta = Vector2.zero;
+
+            var bgImage = bgGO.AddComponent<Image>();
+            bgImage.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+            slider.targetGraphic = bgImage;
+
+            // Create fill area
+            var fillAreaGO = new GameObject("Fill Area");
+            fillAreaGO.transform.SetParent(sliderGO.transform, false);
+            var fillAreaRT = fillAreaGO.AddComponent<RectTransform>();
+            fillAreaRT.anchorMin = Vector2.zero;
+            fillAreaRT.anchorMax = Vector2.one;
+            fillAreaRT.sizeDelta = Vector2.zero;
+
+            // Create fill
+            var fillGO = new GameObject("Fill");
+            fillGO.transform.SetParent(fillAreaGO.transform, false);
+            var fillRT = fillGO.AddComponent<RectTransform>();
+            fillRT.anchorMin = Vector2.zero;
+            fillRT.anchorMax = new Vector2(1, 1);
+            fillRT.sizeDelta = Vector2.zero;
+
+            _resourceFill = fillGO.AddComponent<Image>();
+            _resourceFill.color = Color.green;
+            _resourceFill.type = Image.Type.Filled;
+
+            slider.fillRect = fillRT;
+
+            return slider;
+        }
+
+        /// <summary>
+        /// Refresh dashboard data from cultivation manager
+        /// </summary>
+        private void RefreshDashboardData()
+        {
+            if (_cultivationManager == null) return;
+
+            _currentData = new CultivationDashboardData
+            {
+                TotalPlants = _cultivationManager.GetTotalPlantCount(),
+                HealthyPlants = _cultivationManager.GetHealthyPlantCount(),
+                AverageHealth = _cultivationManager.GetAverageHealth(),
+                TotalYield = _cultivationManager.GetExpectedYield(),
+                SystemStatus = _cultivationManager.GetSystemStatus(),
+                ResourceUsage = _cultivationManager.GetResourceUsage(),
+                Timestamp = Time.unscaledTime
+            };
+        }
+
+        /// <summary>
+        /// Update plant statistics display
+        /// </summary>
+        private void UpdatePlantStatistics()
+        {
+            // Update total plants with caching
+            string totalPlantsText = StringOptimizer.Format("Total Plants: {0}", _currentData.TotalPlants);
+            if (_cachedTotalPlantsText != totalPlantsText)
+            {
+                _totalPlantsText.text = totalPlantsText;
+                _cachedTotalPlantsText = totalPlantsText;
+            }
+
+            // Update healthy plants with caching
+            string healthyPlantsText = StringOptimizer.Format("Healthy: {0}", _currentData.HealthyPlants);
+            if (_cachedHealthyPlantsText != healthyPlantsText)
+            {
+                _healthyPlantsText.text = healthyPlantsText;
+                _cachedHealthyPlantsText = healthyPlantsText;
+            }
+
+            // Update average health with caching
+            string averageHealthText = StringOptimizer.Format("Avg Health: {0:F1}%", _currentData.AverageHealth * 100f);
+            if (_cachedAverageHealthText != averageHealthText)
+            {
+                _averageHealthText.text = averageHealthText;
+                _cachedAverageHealthText = averageHealthText;
+            }
+
+            // Update total yield with caching
+            string totalYieldText = StringOptimizer.Format("Expected Yield: {0:F1}kg", _currentData.TotalYield);
+            if (_cachedTotalYieldText != totalYieldText)
+            {
+                _totalYieldText.text = totalYieldText;
+                _cachedTotalYieldText = totalYieldText;
+            }
+        }
+
+        /// <summary>
+        /// Update system status display
+        /// </summary>
+        private void UpdateSystemStatus()
+        {
+            string statusText = StringOptimizer.Format("System: {0}", _currentData.SystemStatus);
+            if (_cachedSystemStatusText != statusText)
+            {
+                _systemStatusText.text = statusText;
+                _cachedSystemStatusText = statusText;
+
+                // Update status color and icon
+                UpdateSystemStatusVisuals(_currentData.SystemStatus);
+            }
+        }
+
+        /// <summary>
+        /// Update system status visuals
+        /// </summary>
+        private void UpdateSystemStatusVisuals(CultivationSystemStatus status)
+        {
+            Color statusColor;
+            Sprite statusIcon;
+
+            switch (status)
+            {
+                case CultivationSystemStatus.Healthy:
+                    statusColor = _healthyColor;
+                    statusIcon = _healthyIcon;
+                    break;
+                case CultivationSystemStatus.Warning:
+                    statusColor = _warningColor;
+                    statusIcon = _warningIcon;
+                    break;
+                case CultivationSystemStatus.Critical:
+                    statusColor = _criticalColor;
+                    statusIcon = _criticalIcon;
+                    break;
+                default:
+                    statusColor = _healthyColor;
+                    statusIcon = _healthyIcon;
+                    break;
+            }
+
+            _systemStatusText.color = statusColor;
+            
+            if (_systemStatusIcon != null && statusIcon != null)
+            {
+                _systemStatusIcon.sprite = statusIcon;
+                _systemStatusIcon.color = statusColor;
+            }
+        }
+
+        /// <summary>
+        /// Update resource display
+        /// </summary>
+        private void UpdateResourceDisplay()
+        {
+            if (_resourceBar != null && _enableResourceMonitoring)
+            {
+                _resourceBar.value = _currentData.ResourceUsage;
+
+                // Update resource bar color based on usage
+                if (_resourceFill != null)
+                {
+                    Color resourceColor = _currentData.ResourceUsage > 0.8f ? _criticalColor :
+                                         _currentData.ResourceUsage > 0.6f ? _warningColor : _healthyColor;
+                    _resourceFill.color = resourceColor;
+                }
+            }
+        }
+
+        #endregion
+
+        private void OnDestroy()
+        {
+            _cultivationManager = null;
+        }
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// Cultivation system status
+    /// </summary>
+    public enum CultivationSystemStatus
+    {
+        Healthy,
+        Warning,
+        Critical
+    }
+
+    /// <summary>
+    /// Dashboard data structure
+    /// </summary>
+    [System.Serializable]
+    public struct CultivationDashboardData
+    {
+        public int TotalPlants;
+        public int HealthyPlants;
+        public float AverageHealth;
+        public float TotalYield;
+        public CultivationSystemStatus SystemStatus;
+        public float ResourceUsage;
+        public float Timestamp;
+    }
+
+    /// <summary>
+    /// Dashboard performance metrics
+    /// </summary>
+    [System.Serializable]
+    public struct DashboardPerformanceMetrics
+    {
+        public int UpdateCount;
+        public float AverageUpdateTime;
+        public float LastUpdateTime;
+        public bool IsOptimized;
+    }
+
+    #endregion
+}

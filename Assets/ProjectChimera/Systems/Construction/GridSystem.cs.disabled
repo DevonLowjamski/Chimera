@@ -1,0 +1,694 @@
+using ProjectChimera.Core.Logging;
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Core.Interfaces;
+using ProjectChimera.Data.Construction;
+using ProjectChimera.Systems.Construction.Grid;
+
+namespace ProjectChimera.Systems.Construction
+{
+    /// <summary>
+    /// Central grid system orchestrator for snap-to-grid construction placement in Project Chimera.
+    /// Coordinates modular components for grid-based spatial organization, snap-to-grid functionality,
+    /// and visual grid rendering. Uses SRP principles with focused, single-responsibility modules.
+    /// </summary>
+    public class GridSystem : MonoBehaviour, ITickable, IGridSystem
+    {
+        [Header("Grid Configuration")]
+        [SerializeField] private Grid.GridTypes.GridSnapSettings _gridSettings = new Grid.GridTypes.GridSnapSettings
+        {
+            GridSize = 1.0f,
+            SnapToGrid = true,
+            ShowGrid = true,
+            GridColor = new Color(0.5f, 0.5f, 0.5f, 0.3f)
+        };
+
+        [Header("Grid Bounds")]
+        [SerializeField] private Vector3 _gridOrigin = Vector3.zero;
+        [SerializeField] private Vector3 _gridDimensions = new Vector3(100f, 100f, 50f);
+        [SerializeField] private int _maxHeightLevels = 50;
+        [SerializeField] private float _heightLevelSpacing = 1f;
+
+        [Header("Visual Settings")]
+        [SerializeField] private Material _gridMaterial;
+        [SerializeField] private bool _showGridLines = true;
+        [SerializeField] private bool _showGridBounds = true;
+        [SerializeField] private LayerMask _snapLayers = -1;
+
+        [Header("Placement Settings")]
+        [SerializeField] private float _placementTolerance = 0.1f;
+        [SerializeField] private bool _validatePlacement = true;
+        [SerializeField] private bool _preventOverlap = true;
+
+        // Modular components
+        private Grid.GridInitialization _initialization;
+        private Grid.GridCalculations _calculations;
+        private Grid.GridPlacement _placement;
+        private Grid.GridVisualization _visualization;
+        private Grid.GridUtility _utility;
+        private Grid.HeightLevelManager _heightManager;
+        private Grid.GridDebugSystem _debugSystem;
+
+        // Core data (accessed through modules)
+        private Dictionary<Vector3Int, Grid.GridTypes.GridCell> _gridCells;
+        private List<GridPlaceable> _placedObjects;
+        private Grid.GridTypes.GridBounds _bounds;
+        private bool _isInitialized = false;
+
+        // Events (delegated to modules)
+        public System.Action<Vector3, Vector3Int> OnGridPositionChanged;
+        public System.Action<GridPlaceable> OnObjectPlaced;
+        public System.Action<GridPlaceable> OnObjectRemoved;
+        public System.Action<bool> OnGridVisibilityChanged;
+
+        // Public properties (delegated to modules)
+        public Grid.GridTypes.GridSnapSettings GridSettings => _gridSettings;
+        public Vector3 GridOrigin => _bounds.Origin;
+        public Vector3 GridDimensions => _bounds.Dimensions;
+        public float GridSizeFloat => _gridSettings.GridSize; // Renamed to avoid conflict with IGridSystem.GridSize
+        public bool SnapEnabled => _gridSettings.SnapToGrid;
+        public bool GridVisible => _gridSettings.ShowGrid;
+        public int PlacedObjectCount => _placedObjects.Count;
+        public Dictionary<Vector3Int, Grid.GridTypes.GridCell> GridCells => _gridCells;
+        public int MaxHeightLevels => _bounds.MaxHeightLevels;
+        public float HeightLevelSpacing => _bounds.HeightLevelSpacing;
+
+        // IGridSystem interface properties
+        public bool IsInitialized => _isInitialized;
+        public Vector3Int GridSize => new Vector3Int(
+            Mathf.RoundToInt(_gridDimensions.x / _gridSettings.GridSize),
+            Mathf.RoundToInt(_gridDimensions.y / _gridSettings.GridSize),
+            Mathf.RoundToInt(_gridDimensions.z / _gridSettings.GridSize)
+        );
+        public int CurrentVisibleHeightLevel => _heightManager?.CurrentVisibleHeightLevel ?? 0;
+
+        private void Awake()
+        {
+            InitializeModularSystem();
+        }
+
+        private void Start()
+        {
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+        }
+
+        /// <summary>
+        /// Initialize the modular grid system
+        /// </summary>
+        private void InitializeModularSystem()
+        {
+            // Initialize core data structures
+            _gridCells = new Dictionary<Vector3Int, Grid.GridTypes.GridCell>();
+            _placedObjects = new List<GridPlaceable>();
+            _bounds = new Grid.GridTypes.GridBounds
+            {
+                Origin = _gridOrigin,
+                Dimensions = _gridDimensions,
+                MaxHeightLevels = _maxHeightLevels,
+                HeightLevelSpacing = _heightLevelSpacing
+            };
+
+            // Create modular components
+            _initialization = new Grid.GridInitialization(_gridCells, _bounds, _gridSettings);
+            _calculations = new Grid.GridCalculations(_bounds, _gridSettings);
+            _placement = new Grid.GridPlacement(_gridCells, _calculations, _placedObjects, _placementTolerance);
+            _visualization = new Grid.GridVisualization(_bounds, _gridSettings, transform);
+            _utility = new Grid.GridUtility(_gridCells, _calculations, _placedObjects);
+            _heightManager = new Grid.HeightLevelManager(_gridCells, _bounds, _calculations);
+            _debugSystem = new Grid.GridDebugSystem(_gridCells, _bounds, _gridSettings, _calculations);
+
+            // Initialize grid through initialization module
+            _initialization.Initialize(() =>
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            });
+
+            // Wire up event handlers
+            WireUpEvents();
+
+            // Mark as initialized
+            _isInitialized = true;
+        }
+
+        /// <summary>
+        /// Wire up events between modules
+        /// </summary>
+        private void WireUpEvents()
+        {
+            // Forward events from modules to public events
+            _placement.OnObjectPlaced += obj => OnObjectPlaced?.Invoke(obj);
+            _placement.OnObjectRemoved += obj => OnObjectRemoved?.Invoke(obj);
+            _placement.OnAreaOccupied += (coord, size) => ChimeraLogger.Log("OTHER", "$1", this);
+            _placement.OnAreaFreed += (coord, size) => ChimeraLogger.Log("OTHER", "$1", this);
+
+            _visualization.OnVisibilityChanged += visible => OnGridVisibilityChanged?.Invoke(visible);
+
+            _heightManager.OnVisibleHeightLevelChanged += level => ChimeraLogger.Log("OTHER", "$1", this);
+            _heightManager.OnFoundationRequirementChanged += (coord, required) =>
+                ChimeraLogger.Log("OTHER", "$1", this);
+        }
+
+        /// <summary>
+        /// Public Initialize method required by IGridSystem interface
+        /// </summary>
+        public void Initialize()
+        {
+            if (!_isInitialized)
+            {
+                InitializeModularSystem();
+            }
+        }
+
+        #region ITickable Implementation
+
+        public int TickPriority => TickPriority.ConstructionSystem;
+        public bool IsTickable => enabled && _gridCells?.Count > 0;
+
+        public void Tick(float deltaTime)
+        {
+            // Delegate to visualization module for updates
+            _visualization?.UpdateVisualization();
+        }
+
+        #endregion
+
+        #region Public API - Delegated to Modules
+
+        /// <summary>
+        /// Snap world position to nearest grid point
+        /// </summary>
+        public Vector3 SnapToGrid(Vector3 worldPosition)
+        {
+            return _calculations.SnapToGrid(worldPosition);
+        }
+
+        /// <summary>
+        /// Convert world position to 3D grid coordinate
+        /// </summary>
+        public Vector3Int WorldToGridPosition(Vector3 worldPosition)
+        {
+            return _calculations.WorldToGridPosition(worldPosition);
+        }
+
+        /// <summary>
+        /// Convert 3D grid coordinate to world position
+        /// </summary>
+        public Vector3 GridToWorldPosition(Vector3Int gridCoordinate)
+        {
+            return _calculations.GridToWorldPosition(gridCoordinate);
+        }
+
+        /// <summary>
+        /// Check if 3D grid coordinate is valid
+        /// </summary>
+        public bool IsValidGridPosition(Vector3Int gridCoordinate)
+        {
+            return _calculations.IsValidGridPosition(gridCoordinate);
+        }
+
+        /// <summary>
+        /// Check if 3D grid position is available for placement
+        /// </summary>
+        public bool IsGridPositionAvailable(Vector3Int gridCoordinate)
+        {
+            if (!_calculations.IsValidGridPosition(gridCoordinate))
+                return false;
+
+            if (_gridCells.TryGetValue(gridCoordinate, out Grid.GridTypes.GridCell cell))
+            {
+                return !cell.IsOccupied && cell.IsValid && Grid.GridTypes.GridTypeUtils.AllowsPlacement(cell.CellType);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Get the grid cell at a specific coordinate
+        /// </summary>
+        public Grid.GridTypes.GridCell GetGridCell(Vector3Int gridCoordinate)
+        {
+            if (_gridCells.TryGetValue(gridCoordinate, out Grid.GridTypes.GridCell cell))
+            {
+                return cell;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Check if a 3D area is available for placement
+        /// </summary>
+        public bool IsAreaAvailable(Vector3Int gridCoordinate, Vector3Int size)
+        {
+            return _placement.IsAreaAvailable(gridCoordinate, size);
+        }
+
+        /// <summary>
+        /// Place an object on the grid
+        /// </summary>
+        public bool PlaceObject(GridPlaceable placeable, Vector3 worldPosition)
+        {
+            return _placement.PlaceObject(placeable, worldPosition);
+        }
+
+        /// <summary>
+        /// Place an object at a specific grid coordinate
+        /// </summary>
+        public bool PlaceObjectAtGridCoordinate(GridPlaceable placeable, Vector3Int gridCoordinate)
+        {
+            return _placement.PlaceObjectAtGridCoordinate(placeable, gridCoordinate);
+        }
+
+        /// <summary>
+        /// Remove an object from the grid
+        /// </summary>
+        public bool RemoveObject(GridPlaceable placeable)
+        {
+            return _placement.RemoveObject(placeable);
+        }
+
+        /// <summary>
+        /// Update grid visibility
+        /// </summary>
+        public void SetGridVisibility(bool visible)
+        {
+            _gridSettings.ShowGrid = visible;
+            _visualization?.SetVisibility(visible);
+        }
+
+        /// <summary>
+        /// Update grid settings
+        /// </summary>
+        public void UpdateGridSettings(Grid.GridTypes.GridSnapSettings newSettings)
+        {
+            _gridSettings = newSettings;
+            _visualization?.UpdateSettings(newSettings);
+        }
+
+        /// <summary>
+        /// Set the visible height level for grid visualization
+        /// </summary>
+        public void SetVisibleHeightLevel(int heightLevel)
+        {
+            _heightManager?.SetVisibleHeightLevel(heightLevel);
+        }
+
+        /// <summary>
+        /// Check if foundation is required at given grid position
+        /// </summary>
+        public bool RequiresFoundation(Vector3Int gridPosition)
+        {
+            return _heightManager?.RequiresFoundation(gridPosition) ?? false;
+        }
+
+        /// <summary>
+        /// Clear all objects from grid
+        /// </summary>
+        public void ClearGrid()
+        {
+            _placement?.ClearAllObjects();
+        }
+
+        /// <summary>
+        /// Get all objects in a 3D area
+        /// </summary>
+        public List<GridPlaceable> GetObjectsInArea(Vector3Int gridCoordinate, Vector3Int size)
+        {
+            return _utility?.GetObjectsInArea(gridCoordinate, size) ?? new List<GridPlaceable>();
+        }
+
+        /// <summary>
+        /// Get nearest valid 3D placement position
+        /// </summary>
+        public Vector3Int GetNearestValidPosition(Vector3Int preferredPosition, Vector3Int objectSize)
+        {
+            return _utility?.FindNearestValidPosition(preferredPosition, objectSize) ?? preferredPosition;
+        }
+
+        #endregion
+
+        #region IGridSystem Implementation
+
+        /// <summary>
+        /// Check if a schematic can be placed at the specified grid position
+        /// </summary>
+        public bool CanPlace(ProjectChimera.Core.Interfaces.SchematicSO schematic, Vector3Int position)
+        {
+            if (schematic == null) return false;
+
+            // Try to get size information from the schematic
+            Vector3Int size = Vector3Int.one; // Default to 1x1x1
+
+            // If schematic has size information, extract it
+            if (schematic is GridPlaceable placeable)
+            {
+                size = placeable.Size;
+            }
+            else if (schematic.GetType().GetProperty("Size") != null)
+            {
+                var sizeProperty = schematic.GetType().GetProperty("Size");
+                if (sizeProperty.PropertyType == typeof(Vector3Int))
+                {
+                    size = (Vector3Int)sizeProperty.GetValue(schematic);
+                }
+            }
+
+            return IsAreaAvailable(position, size);
+        }
+
+        /// <summary>
+        /// Check if a grid position is occupied
+        /// </summary>
+        public bool IsOccupied(Vector3Int position)
+        {
+            if (_gridCells.TryGetValue(position, out Grid.GridTypes.GridCell cell))
+            {
+                return cell.IsOccupied;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Get the item at a specific grid position
+        /// </summary>
+        public GridItem GetItemAt(Vector3Int position)
+        {
+            if (_gridCells.TryGetValue(position, out Grid.GridTypes.GridCell cell))
+            {
+                return cell.OccupyingObject as GridItem;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Place an item at a specific grid position
+        /// </summary>
+        public void PlaceItem(Vector3Int position, object item)
+        {
+            if (item is GridPlaceable placeable)
+            {
+                PlaceObjectAtGridCoordinate(placeable, position);
+            }
+            else
+            {
+                // For non-GridPlaceable objects, just mark the cell as occupied
+                if (_gridCells.TryGetValue(position, out Grid.GridTypes.GridCell cell))
+                {
+                    cell.IsOccupied = true;
+                    cell.OccupyingObject = item as GridPlaceable; // Will be null for non-GridPlaceable items
+                    _gridCells[position] = cell;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Remove an item from a specific grid position
+        /// </summary>
+        public void RemoveItem(Vector3Int position)
+        {
+            if (_gridCells.TryGetValue(position, out Grid.GridTypes.GridCell cell))
+            {
+                if (cell.OccupyingObject != null)
+                {
+                    RemoveObject(cell.OccupyingObject);
+                }
+                else
+                {
+                    // Manually clear the cell if no GridPlaceable object
+                    cell.IsOccupied = false;
+                    cell.OccupyingObject = null;
+                    _gridCells[position] = cell;
+                }
+            }
+        }
+
+        #region IGridSystem Interface Methods
+
+        /// <summary>
+        /// Interface method to check if position is valid - delegates to existing method
+        /// </summary>
+        public bool IsValidPosition(Vector3Int position)
+        {
+            return _calculations?.IsValidGridPosition(position) ?? false;
+        }
+
+        /// <summary>
+        /// Interface method to set a position as occupied
+        /// </summary>
+        public void SetOccupied(Vector3Int position, GridItem item)
+        {
+            if (_gridCells == null) _gridCells = new Dictionary<Vector3Int, Grid.GridTypes.GridCell>();
+
+            _gridCells[position] = new Grid.GridTypes.GridCell
+            {
+                Position = position,
+                IsOccupied = true,
+                OccupyingObject = item
+            };
+        }
+
+        /// <summary>
+        /// Interface method to set a position as empty
+        /// </summary>
+        public void SetEmpty(Vector3Int position)
+        {
+            if (_gridCells?.TryGetValue(position, out Grid.GridTypes.GridCell cell) == true)
+            {
+                cell.IsOccupied = false;
+                cell.OccupyingObject = null;
+                _gridCells[position] = cell;
+            }
+        }
+
+        /// <summary>
+        /// Interface method to convert grid to world coordinates - delegates to existing method
+        /// </summary>
+        public Vector3 GridToWorld(Vector3Int gridPosition)
+        {
+            return GridToWorldPosition(gridPosition);
+        }
+
+        /// <summary>
+        /// Interface method to convert world to grid coordinates - delegates to existing method
+        /// </summary>
+        public Vector3Int WorldToGrid(Vector3 worldPosition)
+        {
+            return WorldToGridPosition(worldPosition);
+        }
+
+
+        #endregion
+
+        #endregion
+
+        #region Debug and Utility Methods
+
+        /// <summary>
+        /// Get all objects within a specified radius of a world position
+        /// </summary>
+        public List<GridPlaceable> GetObjectsNearPosition(Vector3 worldPosition, float radius)
+        {
+            return _utility?.GetObjectsNearPosition(worldPosition, radius) ?? new List<GridPlaceable>();
+        }
+
+        /// <summary>
+        /// Log comprehensive grid statistics
+        /// </summary>
+        public void LogGridStatistics()
+        {
+            _debugSystem?.LogGridStatistics();
+        }
+
+        /// <summary>
+        /// Validate grid integrity and log issues
+        /// </summary>
+        public void ValidateAndLogIntegrity()
+        {
+            _debugSystem?.ValidateAndLogIntegrity();
+        }
+
+        /// <summary>
+        /// Set debug visualization options
+        /// </summary>
+        public void SetDebugOptions(bool showOccupied, bool showBounds, bool showCellTypes, bool showFoundations)
+        {
+            _debugSystem?.SetDebugOptions(showOccupied, showBounds, showCellTypes, showFoundations);
+        }
+
+        /// <summary>
+        /// Draw debug gizmos for the grid system
+        /// </summary>
+        private void OnDrawGizmos()
+        {
+            _debugSystem?.DrawGizmos();
+        }
+
+
+        /// <summary>
+        /// Cleanup when destroyed
+        /// </summary>
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+
+            // Cleanup modules
+            _visualization?.Cleanup();
+        }
+
+        #endregion
+
+        #region Legacy Compatibility
+
+        /// <summary>
+        /// Legacy method for 2D grid coordinates (backward compatibility)
+        /// </summary>
+        [System.Obsolete("Use WorldToGridPosition(Vector3) for 3D coordinates")]
+        public Vector2Int WorldToGridPosition2D(Vector3 worldPosition)
+        {
+            return _calculations?.WorldToGridPosition2D(worldPosition) ?? Vector2Int.zero;
+        }
+
+        /// <summary>
+        /// Legacy method for 2D grid coordinates (backward compatibility)
+        /// </summary>
+        [System.Obsolete("Use GridToWorldPosition(Vector3Int) for 3D coordinates")]
+        public Vector3 GridToWorldPosition2D(Vector2Int gridCoordinate)
+        {
+            return _calculations?.GridToWorldPosition2D(gridCoordinate) ?? Vector3.zero;
+        }
+
+        /// <summary>
+        /// Legacy method for 2D grid validation (backward compatibility)
+        /// </summary>
+        [System.Obsolete("Use IsValidGridPosition(Vector3Int) for 3D coordinates")]
+        public bool IsValidGridPosition2D(Vector2Int gridCoordinate)
+        {
+            return _calculations?.IsValidGridPosition2D(gridCoordinate) ?? false;
+        }
+
+        /// <summary>
+        /// Legacy method for 2D area availability (backward compatibility)
+        /// </summary>
+        [System.Obsolete("Use IsAreaAvailable(Vector3Int, Vector3Int) for 3D coordinates")]
+        public bool IsAreaAvailable2D(Vector2Int gridCoordinate, Vector2Int size)
+        {
+            return _placement?.IsAreaAvailable(new Vector3Int(gridCoordinate.x, gridCoordinate.y, 0),
+                                             new Vector3Int(size.x, size.y, 1)) ?? false;
+        }
+
+        /// <summary>
+        /// Legacy method for 2D object placement (backward compatibility)
+        /// </summary>
+        [System.Obsolete("Use PlaceObjectAtGridCoordinate(GridPlaceable, Vector3Int) for 3D coordinates")]
+        public bool PlaceObject(GridPlaceable placeable, Vector2Int gridCoordinate)
+        {
+            return _placement?.PlaceObjectAtGridCoordinate(placeable,
+                                                         new Vector3Int(gridCoordinate.x, gridCoordinate.y, 0)) ?? false;
+        }
+
+        /// <summary>
+        /// Legacy method for 2D objects in area (backward compatibility)
+        /// </summary>
+        [System.Obsolete("Use GetObjectsInArea(Vector3Int, Vector3Int) for 3D coordinates")]
+        public List<GridPlaceable> GetObjectsInArea2D(Vector2Int gridCoordinate, Vector2Int size)
+        {
+            return _utility?.GetObjectsInArea2D(gridCoordinate, size) ?? new List<GridPlaceable>();
+        }
+
+        /// <summary>
+        /// Legacy method for 2D nearest valid position (backward compatibility)
+        /// </summary>
+        [System.Obsolete("Use GetNearestValidPosition(Vector3Int, Vector3Int) for 3D coordinates")]
+        public Vector2Int GetNearestValidPosition2D(Vector2Int preferredPosition, Vector2Int objectSize)
+        {
+            return _utility?.FindNearestValidPosition2D(preferredPosition, objectSize) ?? preferredPosition;
+        }
+
+        #endregion
+    }
+
+    #region Legacy Supporting Data Structures
+
+    /// <summary>
+    /// Legacy GridCell class for backward compatibility
+    /// </summary>
+    [System.Serializable]
+    [System.Obsolete("Use Grid.GridTypes.GridCell instead")]
+    public class GridCell
+    {
+        public Vector3Int GridCoordinate;
+        public Vector3 WorldPosition;
+        public bool IsOccupied;
+        public GridPlaceable OccupyingObject;
+        public GridCellType CellType;
+        public bool IsValid;
+        public float MovementCost = 1f;
+        public bool RequiresFoundation;
+        public int HeightLevel => GridCoordinate.z;
+
+        /// <summary>
+        /// Convert legacy GridCell to new GridTypes.GridCell
+        /// </summary>
+        public static implicit operator Grid.GridTypes.GridCell(GridCell legacy)
+        {
+            return new Grid.GridTypes.GridCell
+            {
+                GridCoordinate = legacy.GridCoordinate,
+                WorldPosition = legacy.WorldPosition,
+                IsOccupied = legacy.IsOccupied,
+                OccupyingObject = legacy.OccupyingObject,
+                CellType = (Grid.GridTypes.GridCellType)legacy.CellType,
+                IsValid = legacy.IsValid,
+                MovementCost = legacy.MovementCost,
+                RequiresFoundation = legacy.RequiresFoundation
+            };
+        }
+    }
+
+    /// <summary>
+    /// Legacy GridCellType enum for backward compatibility
+    /// </summary>
+    [System.Obsolete("Use Grid.GridTypes.GridCellType instead")]
+    public enum GridCellType
+    {
+        Standard,
+        Blocked,
+        Special,
+        Reserved
+    }
+
+    /// <summary>
+    /// Legacy GridSnapSettings struct for backward compatibility
+    /// </summary>
+    [System.Serializable]
+    [System.Obsolete("Use Grid.GridTypes.GridSnapSettings instead")]
+    public struct GridSnapSettings
+    {
+        public float GridSize;
+        public bool SnapToGrid;
+        public bool ShowGrid;
+        public Color GridColor;
+
+        /// <summary>
+        /// Convert legacy GridSnapSettings to new GridTypes.GridSnapSettings
+        /// </summary>
+        public static implicit operator Grid.GridTypes.GridSnapSettings(GridSnapSettings legacy)
+        {
+            return new Grid.GridTypes.GridSnapSettings
+            {
+                GridSize = legacy.GridSize,
+                SnapToGrid = legacy.SnapToGrid,
+                ShowGrid = legacy.ShowGrid,
+                GridColor = legacy.GridColor
+            };
+        }
+    }
+
+    #endregion
+}

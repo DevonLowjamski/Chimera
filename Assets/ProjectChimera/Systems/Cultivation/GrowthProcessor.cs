@@ -56,20 +56,20 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (IsInitialized) return;
 
-            ChimeraLogger.Log("[GrowthProcessor] Initializing growth processing...");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
 
             _lastGrowthUpdate = Time.time;
             _averagePlantHealth = 0f;
 
             IsInitialized = true;
-            ChimeraLogger.Log($"[GrowthProcessor] Initialized. Auto-growth: {_enableAutoGrowth}, Time acceleration: {_timeAcceleration}x");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         public void Shutdown()
         {
             if (!IsInitialized) return;
 
-            ChimeraLogger.Log("[GrowthProcessor] Shutting down growth processing...");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             IsInitialized = false;
         }
 
@@ -99,14 +99,14 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                ChimeraLogger.LogError("[GrowthProcessor] Cannot process growth: Manager not initialized.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return;
             }
 
             var allPlants = _plantLifecycleManager.GetAllPlants();
             int plantCount = _plantLifecycleManager.ActivePlantCount;
 
-            ChimeraLogger.Log($"[GrowthProcessor] Processing daily growth for {plantCount} plants...");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
 
             List<string> plantsToRemove = new List<string>();
             float totalHealth = 0f;
@@ -125,13 +125,13 @@ namespace ProjectChimera.Systems.Cultivation
                 // Track health before growth
                 PlantGrowthStage previousStage = (PlantGrowthStage)plant.CurrentGrowthStage;
 
-                // Process daily growth
-                plant.ProcessDailyGrowth(environment, _timeAcceleration);
+                // Process daily growth (environment handling to be implemented)
+                plant.ProcessDailyGrowth();
 
                 // Check for stage transition
                 if ((PlantGrowthStage)plant.CurrentGrowthStage != previousStage)
                 {
-                    ChimeraLogger.Log($"[GrowthProcessor] Plant '{plantId}' transitioned from {previousStage} to {plant.CurrentGrowthStage}");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
 
                     // Use PlantLifecycleManager to trigger event
                     if (_plantLifecycleManager is PlantLifecycleManager lifecycleManager)
@@ -143,7 +143,7 @@ namespace ProjectChimera.Systems.Cultivation
                 // Check for critical health
                 if (plant.OverallHealth < 0.2f)
                 {
-                    ChimeraLogger.LogWarning($"[GrowthProcessor] Plant '{plantId}' has critical health: {plant.OverallHealth:F2}");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
 
                     // Use PlantLifecycleManager to trigger event
                     if (_plantLifecycleManager is PlantLifecycleManager lifecycleManager)
@@ -155,13 +155,13 @@ namespace ProjectChimera.Systems.Cultivation
                 // Check if plant died
                 if (plant.OverallHealth <= 0f)
                 {
-                    ChimeraLogger.LogWarning($"[GrowthProcessor] Plant '{plantId}' has died.");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                     plantsToRemove.Add(plantId);
                 }
                 // Check if plant is ready for harvest
                 else if ((PlantGrowthStage)plant.CurrentGrowthStage == PlantGrowthStage.Harvest)
                 {
-                    ChimeraLogger.Log($"[GrowthProcessor] Plant '{plantId}' is ready for harvest!");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 }
                 else
                 {
@@ -179,7 +179,7 @@ namespace ProjectChimera.Systems.Cultivation
             // Update average health
             _averagePlantHealth = healthyPlants > 0 ? totalHealth / healthyPlants : 0f;
 
-            ChimeraLogger.Log($"[GrowthProcessor] Growth processed. Average health: {_averagePlantHealth:F2}, Dead plants removed: {plantsToRemove.Count}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         /// <summary>
@@ -189,7 +189,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                ChimeraLogger.LogError("[GrowthProcessor] Cannot force growth update: Manager not initialized.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return;
             }
 
@@ -233,7 +233,7 @@ namespace ProjectChimera.Systems.Cultivation
             TimeAcceleration = timeAcceleration;
             EnableAutoGrowth = enableAutoGrowth;
 
-            ChimeraLogger.Log($"[GrowthProcessor] Updated growth parameters: Time acceleration: {_timeAcceleration}x, Auto-growth: {_enableAutoGrowth}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         /// <summary>
@@ -242,7 +242,7 @@ namespace ProjectChimera.Systems.Cultivation
         public void ResetGrowthTiming()
         {
             _lastGrowthUpdate = Time.time;
-            ChimeraLogger.Log("[GrowthProcessor] Reset growth timing.");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         /// <summary>
@@ -278,19 +278,19 @@ namespace ProjectChimera.Systems.Cultivation
             return cultivationEnv;
         }
         // ITickable implementation
-        public int Priority => 0;
-        public bool Enabled => _enableAutoGrowth;
+        public int TickPriority => ProjectChimera.Core.Updates.TickPriority.PlantLifecycle;
+        public bool IsTickable => _enableAutoGrowth;
 
         // NOTE: ITickable Tick method implementation - original Tick method exists above
 
         public virtual void OnRegistered()
         {
-            ChimeraLogger.LogVerbose("[GrowthProcessor] Registered with UpdateOrchestrator");
+            ChimeraLogger.Log("OTHER", "GrowthProcessor registered with UpdateOrchestrator", null);
         }
 
         public virtual void OnUnregistered()
         {
-            ChimeraLogger.LogVerbose("[GrowthProcessor] Unregistered from UpdateOrchestrator");
+            ChimeraLogger.Log("OTHER", "GrowthProcessor unregistered from UpdateOrchestrator", null);
         }
     }
 }

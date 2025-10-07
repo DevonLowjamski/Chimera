@@ -1,3 +1,4 @@
+using ProjectChimera.Core.Logging;
 namespace ProjectChimera.Core
 {
     public interface IPausable

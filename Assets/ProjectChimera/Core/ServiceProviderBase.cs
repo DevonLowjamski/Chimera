@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core
 {
@@ -10,7 +11,7 @@ namespace ProjectChimera.Core
     /// </summary>
     public abstract class ServiceProviderBase : IServiceProvider, IDisposable
     {
-        protected readonly Dictionary<Type, ServiceRegistration> _registrations = new();
+        protected readonly Dictionary<Type, ServiceRegistrationInfo> _registrations = new();
         protected readonly Dictionary<Type, object> _instances = new();
         protected bool _isDisposed;
 
@@ -25,7 +26,7 @@ namespace ProjectChimera.Core
             var serviceType = typeof(TInterface);
             _instances[serviceType] = instance;
 
-            var registration = new ServiceRegistration(
+            var registration = new ServiceRegistrationInfo(
                 serviceType,
                 instance.GetType(),
                 ServiceLifetime.Singleton,
@@ -46,7 +47,7 @@ namespace ProjectChimera.Core
 
             var serviceType = typeof(TInterface);
 
-            var registration = new ServiceRegistration(
+            var registration = new ServiceRegistrationInfo(
                 serviceType,
                 typeof(TInterface),
                 ServiceLifetime.Transient,
@@ -86,6 +87,39 @@ namespace ProjectChimera.Core
             }
 
             return null;
+        }
+
+        // Required IServiceProvider members
+        public virtual T GetService<T>() where T : class
+        {
+            return (T)GetService(typeof(T));
+        }
+
+        public virtual object GetRequiredService(Type serviceType)
+        {
+            var service = GetService(serviceType);
+            if (service == null)
+            {
+                throw new InvalidOperationException($"Required service of type {serviceType.Name} could not be resolved");
+            }
+            return service;
+        }
+
+        public virtual T GetRequiredService<T>() where T : class
+        {
+            return (T)GetRequiredService(typeof(T));
+        }
+
+        public virtual IEnumerable<object> GetServices(Type serviceType)
+        {
+            // This simple provider does not track multiple registrations by default
+            var single = GetService(serviceType);
+            return single != null ? new[] { single } : Enumerable.Empty<object>();
+        }
+
+        public virtual IEnumerable<T> GetServices<T>() where T : class
+        {
+            return GetServices(typeof(T)).OfType<T>();
         }
 
         /// <summary>
@@ -189,7 +223,7 @@ namespace ProjectChimera.Core
         /// <summary>
         /// Service registration information
         /// </summary>
-        protected class ServiceRegistration
+        protected class ServiceRegistrationInfo
         {
             public Type ServiceType { get; }
             public Type ImplementationType { get; }
@@ -197,7 +231,7 @@ namespace ProjectChimera.Core
             public object Instance { get; }
             public Func<IServiceProvider, object> Factory { get; }
 
-            public ServiceRegistration(
+            public ServiceRegistrationInfo(
                 Type serviceType,
                 Type implementationType,
                 ServiceLifetime lifetime,
@@ -211,15 +245,5 @@ namespace ProjectChimera.Core
                 Factory = factory;
             }
         }
-    }
-
-    /// <summary>
-    /// Service lifetime options
-    /// </summary>
-    public enum ServiceLifetime
-    {
-        Transient,
-        Singleton,
-        Scoped
     }
 }

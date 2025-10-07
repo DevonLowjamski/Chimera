@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 
+
 namespace ProjectChimera.Data.Save
 {
     /// <summary>
@@ -12,9 +13,40 @@ namespace ProjectChimera.Data.Save
     public class ConstructionStateDTO
     {
         [Header("Basic Construction State")]
+        public System.DateTime SaveTimestamp;
+        public GridSystemStateDTO GridSystem;
         public List<PlacedObjectDTO> PlacedObjects = new List<PlacedObjectDTO>();
         public List<RoomDTO> Rooms = new List<RoomDTO>();
+        public ConstructionMetricsDTO Metrics;
         public bool EnableConstructionSystem = true;
+        public string SaveVersion = "1.0";
+    }
+
+    [System.Serializable]
+    public class ConstructionMetricsDTO
+    {
+        public int TotalObjectsPlaced;
+        public int TotalRoomsCreated;
+        public float TotalConstructionCost;
+        public int TotalObjectsBuilt;
+        public int TotalRoomsBuilt;
+        public System.DateTime LastConstructionDate;
+        public float ConstructionExperience;
+    }
+
+    /// <summary>
+    /// Grid system state data
+    /// </summary>
+    [System.Serializable]
+    public class GridSystemStateDTO
+    {
+        public Vector3Int GridSize;
+        public int GridSizeX;
+        public int GridSizeY;
+        public float CellSize = 1f;
+        public Vector3 GridOffset = Vector3.zero;
+        public bool IsGridVisible = true;
+        public List<PlacedObjectDTO> GridItems = new List<PlacedObjectDTO>();
         public string SaveVersion = "1.0";
     }
 
@@ -26,11 +58,28 @@ namespace ProjectChimera.Data.Save
     public class RoomDTO
     {
         public string RoomId;
+        public string RoomName;
         public string RoomType;
         public List<Vector3Int> Positions = new List<Vector3Int>();
+        public Vector3Int RoomSize;
+        public int MaxCapacity;
+        public int CurrentOccupancy;
+        public float PowerRequirement;
         public bool IsSealed = false;
         public string EnvironmentType;
+        public ConstructionEnvironmentalConditionsDTO EnvironmentalConditions;
         public bool IsActive = true;
+    }
+
+    [System.Serializable]
+    public class ConstructionEnvironmentalConditionsDTO
+    {
+        public float Temperature;
+        public float Humidity;
+        public float CO2Level;
+        public float LightLevel;
+        public float LightIntensity;
+        public float AirCirculation;
     }
 
     /// <summary>

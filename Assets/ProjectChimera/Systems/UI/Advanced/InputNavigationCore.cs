@@ -1,4 +1,3 @@
-using ProjectChimera.Core.Logging;
 using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
@@ -45,7 +44,7 @@ namespace ProjectChimera.Systems.UI.Advanced
         
         private void InitializeNavigation()
         {
-            ChimeraLogger.Log("[InputNavigationCore] Navigation core initialized");
+            ChimeraLogger.LogInfo("InputNavigationCore", "$1");
         }
         
         /// <summary>
@@ -80,7 +79,7 @@ namespace ProjectChimera.Systems.UI.Advanced
             // Setup element for navigation
             SetupElementForNavigation(element);
             
-            ChimeraLogger.Log($"[InputNavigationCore] Registered navigable element: {element.name}");
+            ChimeraLogger.LogInfo("InputNavigationCore", "$1");
         }
         
         /// <summary>
@@ -96,7 +95,7 @@ namespace ProjectChimera.Systems.UI.Advanced
                 ClearCurrentFocus();
             }
             
-            ChimeraLogger.Log($"[InputNavigationCore] Unregistered navigable element: {element.name}");
+            ChimeraLogger.LogInfo("InputNavigationCore", "$1");
         }
         
         /// <summary>
@@ -218,7 +217,7 @@ namespace ProjectChimera.Systems.UI.Advanced
         {
             ClearCurrentFocus();
             _navigableElements.Clear();
-            ChimeraLogger.Log("[InputNavigationCore] Navigation cleared");
+            ChimeraLogger.LogInfo("InputNavigationCore", "$1");
         }
         
         /// <summary>
@@ -235,7 +234,7 @@ namespace ProjectChimera.Systems.UI.Advanced
                 FindNavigableElements(root);
             }
             
-            ChimeraLogger.Log($"[InputNavigationCore] Refreshed navigation, found {_navigableElements.Count} elements");
+            ChimeraLogger.LogInfo("InputNavigationCore", "$1");
         }
         
         /// <summary>

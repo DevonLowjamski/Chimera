@@ -20,19 +20,20 @@ namespace ProjectChimera.Core
         /// </summary>
         public static T GetService<T>(this MonoBehaviour component) where T : class
         {
-            if (ServiceContainerBootstrapper.Container == null)
+            var container = ServiceContainerFactory.Instance as ServiceContainer;
+            if (container == null)
             {
-                ChimeraLogger.LogError($"[ServiceExtensions] Service container not initialized. Cannot resolve {typeof(T).Name}");
+                ChimeraLogger.LogInfo("ServiceExtensions", "$1");
                 return default(T);
             }
 
             try
             {
-                return ServiceContainerBootstrapper.Container.Resolve<T>();
+                return container.Resolve<T>();
             }
             catch (ServiceResolutionException ex)
             {
-                ChimeraLogger.LogError($"[ServiceExtensions] Failed to resolve service {typeof(T).Name} for {component.name}: {ex.Message}");
+                ChimeraLogger.LogInfo("ServiceExtensions", "$1");
                 return default(T);
             }
         }
@@ -42,12 +43,12 @@ namespace ProjectChimera.Core
         /// </summary>
         public static T TryGetService<T>(this MonoBehaviour component) where T : class
         {
-            if (ServiceContainerBootstrapper.Container == null)
+            var container = ServiceContainerFactory.Instance as ServiceContainer;
+            if (container == null)
             {
                 return null;
             }
-
-            return ServiceContainerBootstrapper.Container.TryResolve<T>();
+            return container.TryResolve<T>();
         }
 
         /// <summary>
@@ -55,7 +56,8 @@ namespace ProjectChimera.Core
         /// </summary>
         public static bool HasService<T>(this MonoBehaviour component) where T : class
         {
-            return ServiceContainerBootstrapper.Container?.IsRegistered<T>() ?? false;
+            var container = ServiceContainerFactory.Instance as ServiceContainer;
+            return container?.IsRegistered<T>() ?? false;
         }
 
         /// <summary>
@@ -63,19 +65,20 @@ namespace ProjectChimera.Core
         /// </summary>
         public static T GetService<T>() where T : class
         {
-            if (ServiceContainerBootstrapper.Container == null)
+            var container = ServiceContainerFactory.Instance as ServiceContainer;
+            if (container == null)
             {
-                ChimeraLogger.LogError($"[ServiceExtensions] Service container not initialized. Cannot resolve {typeof(T).Name}");
+                ChimeraLogger.LogInfo("ServiceExtensions", "$1");
                 return default(T);
             }
 
             try
             {
-                return ServiceContainerBootstrapper.Container.Resolve<T>();
+                return container.Resolve<T>();
             }
             catch (ServiceResolutionException ex)
             {
-                ChimeraLogger.LogError($"[ServiceExtensions] Failed to resolve service {typeof(T).Name}: {ex.Message}");
+                ChimeraLogger.LogInfo("ServiceExtensions", "$1");
                 return default(T);
             }
         }
@@ -85,7 +88,8 @@ namespace ProjectChimera.Core
         /// </summary>
         public static T TryGetService<T>() where T : class
         {
-            return ServiceContainerBootstrapper.Container?.TryResolve<T>();
+            var container = ServiceContainerFactory.Instance as ServiceContainer;
+            return container?.TryResolve<T>();
         }
 
         /// <summary>
@@ -93,7 +97,8 @@ namespace ProjectChimera.Core
         /// </summary>
         public static bool HasService<T>() where T : class
         {
-            return ServiceContainerBootstrapper.Container?.IsRegistered<T>() ?? false;
+            var container = ServiceContainerFactory.Instance as ServiceContainer;
+            return container?.IsRegistered<T>() ?? false;
         }
 
         /// <summary>
@@ -101,19 +106,20 @@ namespace ProjectChimera.Core
         /// </summary>
         public static object GetService(Type serviceType)
         {
-            if (ServiceContainerBootstrapper.Container == null)
+            var container = ServiceContainerFactory.Instance as ServiceContainer;
+            if (container == null)
             {
-                ChimeraLogger.LogError($"[ServiceExtensions] Service container not initialized. Cannot resolve {serviceType.Name}");
+                ChimeraLogger.LogInfo("ServiceExtensions", "$1");
                 return null;
             }
 
             try
             {
-                return ServiceContainerBootstrapper.Container.Resolve(serviceType);
+                return container.Resolve(serviceType);
             }
             catch (ServiceResolutionException ex)
             {
-                ChimeraLogger.LogError($"[ServiceExtensions] Failed to resolve service {serviceType.Name}: {ex.Message}");
+                ChimeraLogger.LogInfo("ServiceExtensions", "$1");
                 return null;
             }
         }
@@ -125,7 +131,8 @@ namespace ProjectChimera.Core
         {
             try
             {
-                return ServiceContainerBootstrapper.Container?.Resolve(serviceType);
+                var container = ServiceContainerFactory.Instance as ServiceContainer;
+                return container?.Resolve(serviceType);
             }
             catch
             {
@@ -138,7 +145,8 @@ namespace ProjectChimera.Core
         /// </summary>
         public static bool HasService(Type serviceType)
         {
-            return ServiceContainerBootstrapper.Container?.IsRegistered(serviceType) ?? false;
+            var container = ServiceContainerFactory.Instance as ServiceContainer;
+            return container?.IsRegistered(serviceType) ?? false;
         }
     }
 
@@ -208,25 +216,28 @@ namespace ProjectChimera.Core
         public void InjectDependencies()
         {
             var components = GetComponents<MonoBehaviour>();
-            
+
             foreach (var component in components)
             {
                 if (component == this) continue; // Skip self
-                
+
                 InjectDependencies(component);
             }
         }
 
         /// <summary>
-        /// Performs dependency injection on a specific component
+        /// DEPRECATED: Performs dependency injection on a specific component
+        /// PHASE 0 MIGRATION: Use IDependencyInjectable interface instead (zero-reflection)
+        /// This method uses reflection and violates Phase 0 zero-tolerance policy
         /// </summary>
+        [Obsolete("Use IDependencyInjectable interface instead. This reflection-based injection will be removed in Phase 1.")]
         public void InjectDependencies(MonoBehaviour target)
         {
             if (target == null) return;
 
             var targetType = target.GetType();
-            var fields = targetType.GetFields(System.Reflection.BindingFlags.NonPublic | 
-                                            System.Reflection.BindingFlags.Public | 
+            var fields = targetType.GetFields(System.Reflection.BindingFlags.NonPublic |
+                                            System.Reflection.BindingFlags.Public |
                                             System.Reflection.BindingFlags.Instance);
 
             int injectedCount = 0;
@@ -246,18 +257,18 @@ namespace ProjectChimera.Core
 
                     if (_enableDetailedLogging)
                     {
-                        ChimeraLogger.Log($"[ServiceInjector] Injected {serviceType.Name} into {targetType.Name}.{field.Name}");
+                        ChimeraLogger.LogInfo("ServiceExtensions", "$1");
                     }
                 }
                 else if (!injectAttribute.Optional)
                 {
-                    ChimeraLogger.LogWarning($"[ServiceInjector] Failed to inject required service {serviceType.Name} into {targetType.Name}.{field.Name}");
+                    ChimeraLogger.LogInfo("ServiceExtensions", "$1");
                 }
             }
 
             // Also handle properties
-            var properties = targetType.GetProperties(System.Reflection.BindingFlags.NonPublic | 
-                                                    System.Reflection.BindingFlags.Public | 
+            var properties = targetType.GetProperties(System.Reflection.BindingFlags.NonPublic |
+                                                    System.Reflection.BindingFlags.Public |
                                                     System.Reflection.BindingFlags.Instance);
 
             foreach (var property in properties)
@@ -276,31 +287,34 @@ namespace ProjectChimera.Core
 
                     if (_enableDetailedLogging)
                     {
-                        ChimeraLogger.Log($"[ServiceInjector] Injected {serviceType.Name} into {targetType.Name}.{property.Name}");
+                        ChimeraLogger.LogInfo("ServiceExtensions", "$1");
                     }
                 }
                 else if (!injectAttribute.Optional)
                 {
-                    ChimeraLogger.LogWarning($"[ServiceInjector] Failed to inject required service {serviceType.Name} into {targetType.Name}.{property.Name}");
+                    ChimeraLogger.LogInfo("ServiceExtensions", "$1");
                 }
             }
 
             if (_enableDetailedLogging && injectedCount > 0)
             {
-                ChimeraLogger.Log($"[ServiceInjector] Completed dependency injection for {targetType.Name}: {injectedCount} services injected");
+                ChimeraLogger.LogInfo("ServiceExtensions", "$1");
             }
         }
 
         /// <summary>
-        /// Manual dependency injection for any object
+        /// DEPRECATED: Manual dependency injection for any object
+        /// PHASE 0 MIGRATION: Use IDependencyInjectable interface instead (zero-reflection)
+        /// This method uses reflection and violates Phase 0 zero-tolerance policy
         /// </summary>
+        [Obsolete("Use IDependencyInjectable interface instead. This reflection-based injection will be removed in Phase 1.")]
         public static void InjectDependencies(object target)
         {
             if (target == null) return;
 
             var targetType = target.GetType();
-            var fields = targetType.GetFields(System.Reflection.BindingFlags.NonPublic | 
-                                            System.Reflection.BindingFlags.Public | 
+            var fields = targetType.GetFields(System.Reflection.BindingFlags.NonPublic |
+                                            System.Reflection.BindingFlags.Public |
                                             System.Reflection.BindingFlags.Instance);
 
             foreach (var field in fields)
@@ -317,12 +331,12 @@ namespace ProjectChimera.Core
                 }
                 else if (!injectAttribute.Optional)
                 {
-                    ChimeraLogger.LogWarning($"[ServiceInjector] Failed to inject required service {serviceType.Name} into {targetType.Name}.{field.Name}");
+                    ChimeraLogger.LogInfo("ServiceExtensions", "$1");
                 }
             }
 
-            var properties = targetType.GetProperties(System.Reflection.BindingFlags.NonPublic | 
-                                                    System.Reflection.BindingFlags.Public | 
+            var properties = targetType.GetProperties(System.Reflection.BindingFlags.NonPublic |
+                                                    System.Reflection.BindingFlags.Public |
                                                     System.Reflection.BindingFlags.Instance);
 
             foreach (var property in properties)
@@ -340,7 +354,7 @@ namespace ProjectChimera.Core
                 }
                 else if (!injectAttribute.Optional)
                 {
-                    ChimeraLogger.LogWarning($"[ServiceInjector] Failed to inject required service {serviceType.Name} into {targetType.Name}.{property.Name}");
+                    ChimeraLogger.LogInfo("ServiceExtensions", "$1");
                 }
             }
         }

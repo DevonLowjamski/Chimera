@@ -1,0 +1,261 @@
+using ProjectChimera.Core.Logging;
+using System.Collections.Generic;
+using UnityEngine;
+using ProjectChimera.Core;
+// Migrated to unified ServiceContainer architecture
+using ProjectChimera.Data.Shared;
+using ProjectChimera.Data.Environment;
+
+namespace ProjectChimera.Systems.Cultivation
+{
+    /// <summary>
+    /// PC-013-2: Plant Care Manager - Handles plant watering, feeding, and training
+    /// Extracted from monolithic CultivationManager for Single Responsibility Principle
+    /// </summary>
+    public class PlantCareManager : IPlantCareManager
+    {
+        // Dependencies
+        private IPlantLifecycleManager _plantLifecycleManager;
+        
+        public bool IsInitialized { get; private set; }
+        
+        public PlantCareManager(IPlantLifecycleManager plantLifecycleManager)
+        {
+            _plantLifecycleManager = plantLifecycleManager;
+        }
+        
+        public void Initialize()
+        {
+            if (IsInitialized) return;
+            
+            UnityEngine.Debug.Log("Operation completed");
+            
+            // Register with ServiceContainer for dependency injection
+            try
+            {
+                var serviceContainer = ServiceContainerFactory.Instance;
+                serviceContainer?.RegisterSingleton<IPlantCareManager>(this);
+                UnityEngine.Debug.Log("Operation completed");
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+            
+            IsInitialized = true;
+        }
+        
+        public void Shutdown()
+        {
+            if (!IsInitialized) return;
+            
+            UnityEngine.Debug.Log("Operation completed");
+            IsInitialized = false;
+        }
+        
+        /// <summary>
+        /// Waters a specific plant.
+        /// </summary>
+        public bool WaterPlant(string plantId, float waterAmount = 0.5f)
+        {
+            if (!IsInitialized)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return false;
+            }
+            
+            var plant = _plantLifecycleManager.GetPlant(plantId);
+            if (plant == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return false;
+            }
+            
+            // Validate water amount
+            waterAmount = Mathf.Clamp01(waterAmount);
+            
+            plant.Water(waterAmount, System.DateTime.Now);
+            UnityEngine.Debug.Log("Operation completed");
+            
+            return true;
+        }
+        
+        /// <summary>
+        /// Feeds nutrients to a specific plant.
+        /// </summary>
+        public bool FeedPlant(string plantId, float nutrientAmount = 0.4f)
+        {
+            if (!IsInitialized)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return false;
+            }
+            
+            var plant = _plantLifecycleManager.GetPlant(plantId);
+            if (plant == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return false;
+            }
+            
+            // Validate nutrient amount
+            nutrientAmount = Mathf.Clamp01(nutrientAmount);
+            
+            plant.Feed(nutrientAmount, System.DateTime.Now);
+            UnityEngine.Debug.Log("Operation completed");
+            
+            return true;
+        }
+        
+        /// <summary>
+        /// Applies training to a specific plant.
+        /// </summary>
+        public bool TrainPlant(string plantId, string trainingType)
+        {
+            if (!IsInitialized)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return false;
+            }
+            
+            var plant = _plantLifecycleManager.GetPlant(plantId);
+            if (plant == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return false;
+            }
+            
+            if (string.IsNullOrEmpty(trainingType))
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return false;
+            }
+            
+            plant.ApplyTraining(trainingType, System.DateTime.Now);
+            UnityEngine.Debug.Log("Operation completed");
+            
+            return true;
+        }
+        
+        /// <summary>
+        /// Waters all plants in the cultivation system.
+        /// </summary>
+        public void WaterAllPlants(float waterAmount = 0.5f)
+        {
+            if (!IsInitialized)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return;
+            }
+            
+            // Validate water amount
+            waterAmount = Mathf.Clamp01(waterAmount);
+            
+            int wateredCount = 0;
+            var allPlants = _plantLifecycleManager.GetAllPlants();
+            
+            foreach (var plant in allPlants)
+            {
+                if (plant.WaterLevel < 0.8f) // Only water if needed
+                {
+                    plant.Water(waterAmount, System.DateTime.Now);
+                    wateredCount++;
+                }
+            }
+            
+            UnityEngine.Debug.Log("Operation completed");
+        }
+        
+        /// <summary>
+        /// Feeds all plants in the cultivation system.
+        /// </summary>
+        public void FeedAllPlants(float nutrientAmount = 0.4f)
+        {
+            if (!IsInitialized)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return;
+            }
+            
+            // Validate nutrient amount
+            nutrientAmount = Mathf.Clamp01(nutrientAmount);
+            
+            int fedCount = 0;
+            var allPlants = _plantLifecycleManager.GetAllPlants();
+            
+            foreach (var plant in allPlants)
+            {
+                if (plant.NutrientLevel < 0.7f) // Only feed if needed
+                {
+                    plant.Feed(nutrientAmount, System.DateTime.Now);
+                    fedCount++;
+                }
+            }
+            
+            UnityEngine.Debug.Log("Operation completed");
+        }
+        
+        /// <summary>
+        /// Performs comprehensive care for plants needing attention
+        /// </summary>
+        public void CareForPlantsNeedingAttention()
+        {
+            if (!IsInitialized)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return;
+            }
+            
+            var plantsNeedingAttention = _plantLifecycleManager.GetPlantsNeedingAttention();
+            int caredForCount = 0;
+            
+            foreach (var plant in plantsNeedingAttention)
+            {
+                bool careProvided = false;
+                
+                // Water if needed
+                if (plant.WaterLevel < 0.3f)
+                {
+                    WaterPlant(plant.PlantID, 0.6f);
+                    careProvided = true;
+                }
+                
+                // Feed if needed
+                if (plant.NutrientLevel < 0.3f)
+                {
+                    FeedPlant(plant.PlantID, 0.5f);
+                    careProvided = true;
+                }
+                
+                if (careProvided)
+                {
+                    caredForCount++;
+                }
+            }
+            
+            UnityEngine.Debug.Log("Operation completed");
+        }
+        
+        /// <summary>
+        /// Gets care statistics for all plants
+        /// </summary>
+        public (int needsWater, int needsNutrients, int needsTraining) GetCareStatistics()
+        {
+            if (!IsInitialized) return (0, 0, 0);
+            
+            var allPlants = _plantLifecycleManager.GetAllPlants();
+            int needsWater = 0;
+            int needsNutrients = 0;
+            int needsTraining = 0;
+            
+            foreach (var plant in allPlants)
+            {
+                if (plant.WaterLevel < 0.3f) needsWater++;
+                if (plant.NutrientLevel < 0.3f) needsNutrients++;
+                if (plant.StressLevel > 0.7f) needsTraining++;
+            }
+            
+            return (needsWater, needsNutrients, needsTraining);
+        }
+    }
+}

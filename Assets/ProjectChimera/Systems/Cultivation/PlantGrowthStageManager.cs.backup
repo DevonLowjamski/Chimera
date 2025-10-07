@@ -1,0 +1,237 @@
+using ProjectChimera.Core.Logging;
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Data.Shared;
+using ProjectChimera.Core;
+
+namespace ProjectChimera.Systems.Cultivation
+{
+    /// <summary>
+    /// SIMPLE: Basic plant growth stage manager aligned with Project Chimera's cultivation vision.
+    /// Focuses on essential plant stage progression for basic cultivation mechanics.
+    /// </summary>
+    public class PlantGrowthStageManager : MonoBehaviour
+    {
+        [Header("Basic Settings")]
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _stageTransitionTimeHours = 24f; // Time per stage in hours
+
+        // Basic plant stage tracking
+        private readonly Dictionary<string, PlantStageData> _plantStages = new Dictionary<string, PlantStageData>();
+        private bool _isInitialized = false;
+
+        /// <summary>
+        /// Initialize the plant growth stage manager
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Update plant growth stages
+        /// </summary>
+        public void UpdatePlantStages(float deltaTime)
+        {
+            if (!_isInitialized) return;
+
+            // Update all plant stages
+            foreach (var kvp in _plantStages)
+            {
+                UpdatePlantStage(kvp.Key, deltaTime);
+            }
+        }
+
+        /// <summary>
+        /// Register a plant for stage tracking
+        /// </summary>
+        public void RegisterPlant(string plantId)
+        {
+            if (!_plantStages.ContainsKey(plantId))
+            {
+                _plantStages[plantId] = new PlantStageData
+                {
+                    PlantId = plantId,
+                    CurrentStage = PlantGrowthStage.Seedling,
+                    StageStartTime = Time.time,
+                    TimeInCurrentStage = 0f
+                };
+
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Unregister a plant from stage tracking
+        /// </summary>
+        public void UnregisterPlant(string plantId)
+        {
+            if (_plantStages.Remove(plantId))
+            {
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get current stage of a plant
+        /// </summary>
+        public PlantGrowthStage GetPlantStage(string plantId)
+        {
+            return _plantStages.TryGetValue(plantId, out var data) ? data.CurrentStage : PlantGrowthStage.Seedling;
+        }
+
+        /// <summary>
+        /// Get time in current stage for a plant
+        /// </summary>
+        public float GetTimeInStage(string plantId)
+        {
+            return _plantStages.TryGetValue(plantId, out var data) ? data.TimeInCurrentStage : 0f;
+        }
+
+        /// <summary>
+        /// Force stage transition for a plant
+        /// </summary>
+        public void ForceStageTransition(string plantId, PlantGrowthStage newStage)
+        {
+            if (_plantStages.TryGetValue(plantId, out var data))
+            {
+                var oldStage = data.CurrentStage;
+                data.CurrentStage = newStage;
+                data.StageStartTime = Time.time;
+                data.TimeInCurrentStage = 0f;
+
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get all registered plants
+        /// </summary>
+        public List<string> GetRegisteredPlants()
+        {
+            return new List<string>(_plantStages.Keys);
+        }
+
+        /// <summary>
+        /// Get stage statistics
+        /// </summary>
+        public PlantStageStatistics GetStageStatistics()
+        {
+            var statistics = new PlantStageStatistics();
+            var stageCounts = new Dictionary<PlantGrowthStage, int>();
+
+            foreach (var data in _plantStages.Values)
+            {
+                if (!stageCounts.ContainsKey(data.CurrentStage))
+                {
+                    stageCounts[data.CurrentStage] = 0;
+                }
+                stageCounts[data.CurrentStage]++;
+            }
+
+            statistics.TotalPlants = _plantStages.Count;
+            statistics.PlantsByStage = stageCounts;
+
+            return statistics;
+        }
+
+        /// <summary>
+        /// Check if plant is ready for harvest
+        /// </summary>
+        public bool IsPlantReadyForHarvest(string plantId)
+        {
+            var stage = GetPlantStage(plantId);
+            return stage == PlantGrowthStage.Flowering;
+        }
+
+        #region Private Methods
+
+        private void UpdatePlantStage(string plantId, float deltaTime)
+        {
+            if (!_plantStages.TryGetValue(plantId, out var data))
+                return;
+
+            data.TimeInCurrentStage += deltaTime;
+
+            // Simple automatic stage progression
+            float stageTimeSeconds = _stageTransitionTimeHours * 3600f; // Convert hours to seconds
+
+            if (data.TimeInCurrentStage >= stageTimeSeconds)
+            {
+                ProgressToNextStage(data);
+            }
+        }
+
+        private void ProgressToNextStage(PlantStageData data)
+        {
+            var nextStage = GetNextStage(data.CurrentStage);
+            if (nextStage != data.CurrentStage)
+            {
+                var oldStage = data.CurrentStage;
+                data.CurrentStage = nextStage;
+                data.StageStartTime = Time.time;
+                data.TimeInCurrentStage = 0f;
+
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        private PlantGrowthStage GetNextStage(PlantGrowthStage currentStage)
+        {
+            switch (currentStage)
+            {
+                case PlantGrowthStage.Seedling:
+                    return PlantGrowthStage.Vegetative;
+                case PlantGrowthStage.Vegetative:
+                    return PlantGrowthStage.Flowering;
+                case PlantGrowthStage.Flowering:
+                    return PlantGrowthStage.Flowering; // Stay in flowering until harvested
+                default:
+                    return currentStage;
+            }
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Basic plant stage data
+    /// </summary>
+    [System.Serializable]
+    public class PlantStageData
+    {
+        public string PlantId;
+        public PlantGrowthStage CurrentStage;
+        public float StageStartTime;
+        public float TimeInCurrentStage;
+    }
+
+    /// <summary>
+    /// Plant stage statistics
+    /// </summary>
+    [System.Serializable]
+    public class PlantStageStatistics
+    {
+        public int TotalPlants;
+        public Dictionary<PlantGrowthStage, int> PlantsByStage;
+    }
+}

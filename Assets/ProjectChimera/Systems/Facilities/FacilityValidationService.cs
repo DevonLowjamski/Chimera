@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Data.Facilities;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Systems.Facilities
 {
@@ -17,131 +18,131 @@ namespace ProjectChimera.Systems.Facilities
         [SerializeField] private bool _enableValidationLogging = false;
         [SerializeField] private bool _strictValidation = true;
         [SerializeField] private float _validationCacheTime = 5f;
-        
+
         // Dependencies
         private FacilityRegistry _facilityRegistry;
-        private FacilityProgressionData _progressionData;
-        
+        private ProjectChimera.Data.Facilities.FacilityProgressionData _progressionData;
+
         // Validation cache
         private Dictionary<string, ValidationCacheEntry> _validationCache = new Dictionary<string, ValidationCacheEntry>();
-        
+
         // Events
         public System.Action<SystemValidationResult> OnValidationCompleted;
         public System.Action<string> OnValidationError;
         public System.Action<string> OnConstraintViolation;
-        
+
         /// <summary>
         /// Initialize validation service with dependencies
         /// </summary>
-        public void Initialize(FacilityRegistry facilityRegistry, FacilityProgressionData progressionData)
+        public void Initialize(FacilityRegistry facilityRegistry, ProjectChimera.Data.Facilities.FacilityProgressionData progressionData)
         {
             _facilityRegistry = facilityRegistry;
             _progressionData = progressionData;
-            LogDebug("Facility validation service initialized");
+            if (_enableValidationLogging) Logger.Log("FACILITY", "FacilityValidationService initialized", this);
         }
-        
+
         #region Facility Operations Validation
-        
+
         /// <summary>
         /// Validate facility purchase operation
         /// </summary>
         public FacilityOperationValidation ValidateFacilityPurchase(FacilityTierSO tier, float cost)
         {
             var validation = new FacilityOperationValidation { OperationType = "Purchase" };
-            
+
             if (tier == null)
             {
                 validation.AddError("Cannot purchase null tier");
                 return validation;
             }
-            
+
             // Check tier unlock status
             var tierIndex = GetTierIndex(tier);
             if (tierIndex > _progressionData.UnlockedTiers - 1)
             {
                 validation.AddError($"Tier {tier.TierName} not yet unlocked");
             }
-            
+
             // Validate affordability
             if (_progressionData.Capital < cost)
             {
                 validation.AddError($"Insufficient capital: Need ${cost:F0}, have ${_progressionData.Capital:F0}");
             }
-            
+
             // Check facility limits
             if (!ValidateFacilityLimits(tier))
             {
                 validation.AddError($"Maximum facilities of tier {tier.TierName} already owned");
             }
-            
+
             validation.IsValid = validation.Errors.Count == 0;
             LogValidationResult("Purchase", validation);
             return validation;
         }
-        
+
         /// <summary>
         /// Validate facility sale operation
         /// </summary>
         public FacilityOperationValidation ValidateFacilitySale(string facilityId)
         {
             var validation = new FacilityOperationValidation { OperationType = "Sale" };
-            
+
             if (string.IsNullOrEmpty(facilityId))
             {
                 validation.AddError("Facility ID cannot be null or empty");
                 return validation;
             }
-            
+
             var facility = _facilityRegistry.GetFacilityById(facilityId);
             if (facility.FacilityId == null)
             {
                 validation.AddError($"Facility {facilityId} not found");
                 return validation;
             }
-            
+
             // Check if current facility
             if (facilityId == _facilityRegistry.CurrentFacilityId)
             {
                 validation.AddError("Cannot sell currently active facility");
             }
-            
+
             // Check minimum facility requirement
             if (_facilityRegistry.OwnedFacilitiesCount <= 1)
             {
                 validation.AddError("Cannot sell last remaining facility");
             }
-            
+
             // Check facility state constraints
             if (facility.IsActive && HasActiveOperations(facility))
             {
                 validation.AddWarning("Facility has active operations that will be interrupted");
             }
-            
+
             validation.IsValid = validation.Errors.Count == 0;
             LogValidationResult("Sale", validation);
             return validation;
         }
-        
+
         /// <summary>
         /// Validate facility switching operation
         /// </summary>
         public FacilityOperationValidation ValidateFacilitySwitch(string targetFacilityId)
         {
             var validation = new FacilityOperationValidation { OperationType = "Switch" };
-            
+
             if (string.IsNullOrEmpty(targetFacilityId))
             {
                 validation.AddError("Target facility ID cannot be null or empty");
                 return validation;
             }
-            
+
             var facility = _facilityRegistry.GetFacilityById(targetFacilityId);
             if (facility.FacilityId == null)
             {
                 validation.AddError($"Target facility {targetFacilityId} not found");
                 return validation;
             }
-            
+
             // Check if already current
             if (targetFacilityId == _facilityRegistry.CurrentFacilityId)
             {
@@ -149,28 +150,28 @@ namespace ProjectChimera.Systems.Facilities
                 validation.IsValid = true;
                 return validation;
             }
-            
+
             // Check operational status
             if (!facility.IsOperational)
             {
                 validation.AddError("Target facility is not operational");
             }
-            
+
             // Check maintenance level
             if (facility.MaintenanceLevel < 0.1f)
             {
                 validation.AddError("Target facility requires maintenance before use");
             }
-            
+
             validation.IsValid = validation.Errors.Count == 0;
             LogValidationResult("Switch", validation);
             return validation;
         }
-        
+
         #endregion
-        
+
         #region Business Rules Validation
-        
+
         /// <summary>
         /// Validate facility limits based on tier and progression
         /// </summary>
@@ -178,10 +179,10 @@ namespace ProjectChimera.Systems.Facilities
         {
             var currentCount = _facilityRegistry.GetFacilityCountForTier(tier);
             var maxAllowed = GetMaxFacilitiesForTier(tier);
-            
+
             return currentCount < maxAllowed;
         }
-        
+
         /// <summary>
         /// Get maximum allowed facilities for tier
         /// </summary>
@@ -198,7 +199,7 @@ namespace ProjectChimera.Systems.Facilities
                 default: return 1;
             }
         }
-        
+
         /// <summary>
         /// Check if facility has active operations
         /// </summary>
@@ -207,7 +208,7 @@ namespace ProjectChimera.Systems.Facilities
             // Check for active plants, ongoing processes, etc.
             return facility.TotalPlantsGrown > 0 && facility.IsActive;
         }
-        
+
         /// <summary>
         /// Get tier index for validation
         /// </summary>
@@ -217,18 +218,18 @@ namespace ProjectChimera.Systems.Facilities
             // For now, use tier level as index
             return tier.TierLevel - 1;
         }
-        
+
         #endregion
-        
+
         #region Comprehensive Validation
-        
+
         /// <summary>
         /// Perform comprehensive facility system validation
         /// </summary>
         public SystemValidationResult ValidateFacilitySystem()
         {
             var result = new SystemValidationResult { ValidationTime = System.DateTime.Now };
-            
+
             try
             {
                 // Validate registry integrity
@@ -236,22 +237,22 @@ namespace ProjectChimera.Systems.Facilities
                 result.RegistryValid = registryValidation.IsValid;
                 result.AddErrors(registryValidation.Errors);
                 result.AddWarnings(registryValidation.Warnings);
-                
+
                 // Validate facility states
                 ValidateFacilityStates(result);
-                
+
                 // Validate progression data consistency
                 ValidateProgressionConsistency(result);
-                
+
                 // Validate business rules compliance
                 ValidateBusinessRulesCompliance(result);
-                
+
                 result.IsValid = result.Errors.Count == 0;
                 result.ValidationCompleted = System.DateTime.Now;
-                
+
                 LogDebug($"System validation completed: {result.IsValid} (Errors: {result.Errors.Count}, Warnings: {result.Warnings.Count})");
                 OnValidationCompleted?.Invoke(result);
-                
+
                 return result;
             }
             catch (System.Exception ex)
@@ -261,7 +262,7 @@ namespace ProjectChimera.Systems.Facilities
                 return result;
             }
         }
-        
+
         /// <summary>
         /// Validate facility states consistency
         /// </summary>
@@ -274,19 +275,19 @@ namespace ProjectChimera.Systems.Facilities
                 {
                     result.AddWarning($"Facility {facility.FacilityId} has no name");
                 }
-                
+
                 // Check value consistency
                 if (facility.CurrentValue < 0)
                 {
                     result.AddError($"Facility {facility.FacilityName} has negative value");
                 }
-                
+
                 // Check maintenance consistency
                 if (facility.MaintenanceLevel < 0 || facility.MaintenanceLevel > 1)
                 {
                     result.AddError($"Facility {facility.FacilityName} has invalid maintenance level");
                 }
-                
+
                 // Check operational consistency
                 if (facility.IsActive && !facility.IsOperational)
                 {
@@ -294,7 +295,7 @@ namespace ProjectChimera.Systems.Facilities
                 }
             }
         }
-        
+
         /// <summary>
         /// Validate progression data consistency
         /// </summary>
@@ -304,18 +305,18 @@ namespace ProjectChimera.Systems.Facilities
             {
                 result.AddError("Progression data has negative capital");
             }
-            
+
             if (_progressionData.TotalPlants < 0)
             {
                 result.AddError("Progression data has negative plant count");
             }
-            
+
             if (_progressionData.UnlockedTiers < 1)
             {
                 result.AddError("Progression data has invalid unlocked tiers");
             }
         }
-        
+
         /// <summary>
         /// Validate business rules compliance
         /// </summary>
@@ -328,14 +329,14 @@ namespace ProjectChimera.Systems.Facilities
                 var tierLevel = group.Key;
                 var count = group.Count();
                 var maxAllowed = GetMaxFacilitiesForTier(group.First().Tier);
-                
+
                 if (count > maxAllowed)
                 {
                     result.AddError($"Tier {tierLevel} facility limit exceeded: {count}/{maxAllowed}");
                     OnConstraintViolation?.Invoke($"Tier {tierLevel} limit exceeded");
                 }
             }
-            
+
             // Check current facility validity
             var currentFacilityId = _facilityRegistry.CurrentFacilityId;
             if (!string.IsNullOrEmpty(currentFacilityId))
@@ -347,11 +348,11 @@ namespace ProjectChimera.Systems.Facilities
                 }
             }
         }
-        
+
         #endregion
-        
+
         #region Validation Caching
-        
+
         /// <summary>
         /// Get cached validation result if available
         /// </summary>
@@ -370,7 +371,7 @@ namespace ProjectChimera.Systems.Facilities
             }
             return null;
         }
-        
+
         /// <summary>
         /// Cache validation result
         /// </summary>
@@ -382,7 +383,7 @@ namespace ProjectChimera.Systems.Facilities
                 Timestamp = Time.time
             };
         }
-        
+
         /// <summary>
         /// Clear validation cache
         /// </summary>
@@ -391,9 +392,9 @@ namespace ProjectChimera.Systems.Facilities
             _validationCache.Clear();
             LogDebug("Validation cache cleared");
         }
-        
+
         #endregion
-        
+
         private void LogValidationResult(string operation, FacilityOperationValidation validation)
         {
             if (_enableValidationLogging)
@@ -402,19 +403,18 @@ namespace ProjectChimera.Systems.Facilities
                 LogDebug($"{operation} validation {status}: {validation.Errors.Count} errors, {validation.Warnings.Count} warnings");
             }
         }
-        
+
         private void LogDebug(string message)
         {
-            if (_enableValidationLogging)
-                ChimeraLogger.Log($"[FacilityValidationService] {message}");
+            if (_enableValidationLogging) Logger.Log("FACILITY", message, this);
         }
-        
+
         private void OnDestroy()
         {
             ClearValidationCache();
         }
     }
-    
+
     /// <summary>
     /// Result of facility operation validation
     /// </summary>
@@ -425,14 +425,14 @@ namespace ProjectChimera.Systems.Facilities
         public bool IsValid;
         public List<string> Errors = new List<string>();
         public List<string> Warnings = new List<string>();
-        
+
         public void AddError(string error) => Errors.Add(error);
         public void AddWarning(string warning) => Warnings.Add(warning);
-        
+
         public string GetErrorsSummary() => string.Join("\n", Errors);
         public string GetWarningsSummary() => string.Join("\n", Warnings);
     }
-    
+
     /// <summary>
     /// Result of comprehensive system validation
     /// </summary>
@@ -445,13 +445,13 @@ namespace ProjectChimera.Systems.Facilities
         public System.DateTime ValidationCompleted;
         public List<string> Errors = new List<string>();
         public List<string> Warnings = new List<string>();
-        
+
         public void AddError(string error) => Errors.Add(error);
         public void AddWarning(string warning) => Warnings.Add(warning);
         public void AddErrors(IEnumerable<string> errors) => Errors.AddRange(errors);
         public void AddWarnings(IEnumerable<string> warnings) => Warnings.AddRange(warnings);
     }
-    
+
     /// <summary>
     /// Validation cache entry
     /// </summary>

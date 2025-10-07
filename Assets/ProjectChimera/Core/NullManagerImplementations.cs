@@ -20,13 +20,13 @@ namespace ProjectChimera.Core
         public virtual void Initialize()
         {
             IsInitialized = true;
-            ChimeraLogger.LogVerbose($"[{ManagerName}] Initialized (null implementation)");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
         }
 
         public virtual void Shutdown()
         {
             IsInitialized = false;
-            ChimeraLogger.LogVerbose($"[{ManagerName}] Shutdown (null implementation)");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
         }
 
         public virtual ManagerMetrics GetMetrics()
@@ -58,13 +58,13 @@ namespace ProjectChimera.Core
 
         public bool SaveData(string key, object data)
         {
-            ChimeraLogger.LogVerbose($"[NullDataManager] SaveData: {key}");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
             return false; // Null implementation always returns false
         }
 
         public T LoadData<T>(string key)
         {
-            ChimeraLogger.LogVerbose($"[NullDataManager] LoadData: {key}");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
             return default;
         }
 
@@ -72,24 +72,24 @@ namespace ProjectChimera.Core
 
         public bool DeleteData(string key)
         {
-            ChimeraLogger.LogVerbose($"[NullDataManager] DeleteData: {key}");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
             return false; // Null implementation always returns false
         }
 
         public List<string> GetAllKeys()
         {
-            ChimeraLogger.LogVerbose("[NullDataManager] GetAllKeys");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
             return new List<string>(); // Return empty list
         }
 
         public void ClearAll()
         {
-            ChimeraLogger.LogVerbose("[NullDataManager] ClearAll");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
         }
 
         public void ClearAllData()
         {
-            ChimeraLogger.LogVerbose("[NullDataManager] ClearAllData");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
         }
 
         public bool HasSaveData => false;
@@ -97,22 +97,22 @@ namespace ProjectChimera.Core
 
         public void SaveGame(string saveName)
         {
-            ChimeraLogger.LogVerbose($"[NullDataManager] SaveGame: {saveName}");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
         }
 
         public void LoadGame(string saveName)
         {
-            ChimeraLogger.LogVerbose($"[NullDataManager] LoadGame: {saveName}");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
         }
 
         public void AutoSave()
         {
-            ChimeraLogger.LogVerbose("[NullDataManager] AutoSave");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
         }
 
         public void DeleteSave(string saveName)
         {
-            ChimeraLogger.LogVerbose($"[NullDataManager] DeleteSave: {saveName}");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
         }
 
         public IEnumerable<string> GetSaveFiles() => new string[0];
@@ -127,17 +127,17 @@ namespace ProjectChimera.Core
 
         public void Subscribe<T>(Action<T> callback) where T : class
         {
-            ChimeraLogger.LogVerbose($"[NullEventManager] Subscribe: {typeof(T).Name}");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
         }
 
         public void Unsubscribe<T>(Action<T> callback) where T : class
         {
-            ChimeraLogger.LogVerbose($"[NullEventManager] Unsubscribe: {typeof(T).Name}");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
         }
 
         public void Publish<T>(T eventData) where T : class
         {
-            ChimeraLogger.LogVerbose($"[NullEventManager] Publish: {typeof(T).Name}");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
         }
 
         public void PublishImmediate<T>(T eventData) where T : class
@@ -152,7 +152,7 @@ namespace ProjectChimera.Core
 
         public void ClearAll()
         {
-            ChimeraLogger.LogVerbose("[NullEventManager] ClearAll");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
         }
     }
 
@@ -165,18 +165,18 @@ namespace ProjectChimera.Core
 
         public void LoadScene(string sceneName)
         {
-            ChimeraLogger.LogVerbose($"[NullSceneManager] LoadScene: {sceneName}");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
         }
 
         public void LoadSceneAsync(string sceneName, Action onComplete = null)
         {
-            ChimeraLogger.LogVerbose($"[NullSceneManager] LoadSceneAsync: {sceneName}");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
             onComplete?.Invoke();
         }
 
         public void UnloadScene(string sceneName)
         {
-            ChimeraLogger.LogVerbose($"[NullSceneManager] UnloadScene: {sceneName}");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
         }
 
         public string GetActiveSceneName()
@@ -210,14 +210,14 @@ namespace ProjectChimera.Core
                 return factory() as T;
             }
 
-            ChimeraLogger.LogWarning($"[NullManagerFactory] No null implementation for: {type.Name}");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
             return null;
         }
 
         public static void RegisterNullManager<T>(Func<IChimeraManager> factory) where T : class, IChimeraManager
         {
             _factories[typeof(T)] = factory;
-            ChimeraLogger.LogVerbose($"[NullManagerFactory] Registered null manager: {typeof(T).Name}");
+            ChimeraLogger.LogInfo("NullManagerImplementations", "$1");
         }
     }
 }

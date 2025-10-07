@@ -5,6 +5,7 @@ using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Cultivation;
 // using ProjectChimera.Data.Events; // Removed - namespace deleted during cleanup
 using CultivationTaskType = ProjectChimera.Data.Cultivation.CultivationTaskType;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Cultivation
 {

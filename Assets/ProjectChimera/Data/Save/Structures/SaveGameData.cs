@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+
 namespace ProjectChimera.Data.Save.Structures
 {
     /// <summary>
@@ -14,6 +15,7 @@ namespace ProjectChimera.Data.Save.Structures
         public string SaveName = "Game Save";
         public string SlotName = "Slot 1";
         public string PlayerName = "Player";
+        public string Description = "";
         public System.DateTime SaveTime;
         public System.DateTime SaveTimestamp;
         public string GameVersion = "1.0";
@@ -116,24 +118,6 @@ namespace ProjectChimera.Data.Save.Structures
             return !string.IsNullOrEmpty(SaveName) &&
                    !string.IsNullOrEmpty(PlayerName) &&
                    SaveSystemVersion > 0;
-        }
-
-        /// <summary>
-        /// Plant state DTO for offline progression calculations
-        /// </summary>
-        [System.Serializable]
-        public class PlantStateDTO
-        {
-            public string PlantId;
-            public string StrainName;
-            public Vector3 Position;
-            public float Age;
-            public float Health;
-            public float GrowthStage;
-            public float NutrientLevel = 1f;
-            public float WaterLevel = 1f;
-            public bool IsHealthy = true;
-            public System.DateTime LastUpdate;
         }
 
         /// <summary>
@@ -273,56 +257,18 @@ namespace ProjectChimera.Data.Save.Structures
         }
 
         /// <summary>
-        /// Facility state DTO
-        /// </summary>
-        [System.Serializable]
-        public class FacilityStateDTO
-        {
-            public string FacilityId;
-            public string FacilityName;
-            public Vector3 Position;
-            public Vector3 Size;
-            public bool IsOperational;
-            public int RoomCount;
-            public int EquipmentCount;
-            public float PowerConsumption;
-            public System.DateTime LastUpdate;
-        }
-
-        /// <summary>
-        /// Cultivation state DTO
-        /// </summary>
-        [System.Serializable]
-        public class CultivationStateDTO
-        {
-            public int TotalPlants;
-            public int HealthyPlants;
-            public int FloweringPlants;
-            public float AverageHealth;
-            public float Temperature;
-            public float Humidity;
-            public System.DateTime LastUpdate;
-        }
-
-        /// <summary>
-        /// Economy state DTO
-        /// </summary>
-        [System.Serializable]
-        public class EconomyStateDTO
-        {
-            public float Currency;
-            public float IncomeRate;
-            public float ExpenseRate;
-            public int ItemCount;
-            public System.DateTime LastUpdate;
-        }
-
-        /// <summary>
         /// Progression state DTO
         /// </summary>
         [System.Serializable]
         public class ProgressionStateDTO
         {
+            public System.DateTime SaveTimestamp;
+            public string SaveVersion;
+            public bool EnableProgressionTracking;
+            public PlayerProgressDTO PlayerProgress;
+            public UnlockSystemDTO UnlockSystem;
+            public SkillSystemDTO SkillSystem;
+            public AchievementSystemDTO AchievementSystem;
             public int PlayerLevel;
             public float Experience;
             public int SkillPoints;
@@ -331,16 +277,24 @@ namespace ProjectChimera.Data.Save.Structures
         }
 
         /// <summary>
-        /// UI state DTO
+        /// Player progress data
         /// </summary>
         [System.Serializable]
-        public class UIStateDTO
+        public class PlayerProgressDTO
         {
-            public Vector3 CameraPosition;
-            public Vector3 CameraRotation;
-            public float ZoomLevel;
-            public bool IsPaused;
-            public System.DateTime LastUpdate;
+            public int PlayerLevel;
+            public float TotalExperience;
+            public float ExperienceToNextLevel;
+        }
+
+        /// <summary>
+        /// Unlock system data
+        /// </summary>
+        [System.Serializable]
+        public class UnlockSystemDTO
+        {
+            public List<string> UnlockedFeatures = new List<string>();
+            public List<string> UnlockedSchematics = new List<string>();
         }
 
         /// <summary>
@@ -355,5 +309,26 @@ namespace ProjectChimera.Data.Save.Structures
             public List<string> CompletedQuests = new List<string>();
             public System.DateTime LastProgressionUpdate;
         }
+
+        /// <summary>
+        /// Skill system data
+        /// </summary>
+        [System.Serializable]
+        public class SkillSystemDTO
+        {
+            public List<string> UnlockedSkills = new List<string>();
+            public int SkillPoints;
+        }
+
+        /// <summary>
+        /// Achievement system data
+        /// </summary>
+        [System.Serializable]
+        public class AchievementSystemDTO
+        {
+            public List<string> UnlockedAchievements = new List<string>();
+            public int CompletedCount;
+        }
+
 
 }

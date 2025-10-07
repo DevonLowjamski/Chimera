@@ -2,6 +2,7 @@ using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Cultivation.Plant;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -51,21 +52,21 @@ namespace ProjectChimera.Systems.Cultivation
         public void Initialize()
         {
             _isInitialized = true;
-            ChimeraLogger.Log("[PlantLifecycle] Plant lifecycle system initialized");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         public void Shutdown()
         {
             _activePlants.Clear();
             _isInitialized = false;
-            ChimeraLogger.Log("[PlantLifecycle] Plant lifecycle system shutdown");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         public string AddPlant(object species, Vector3 position, string zoneId = "")
         {
             if (!_isInitialized || species == null)
             {
-                ChimeraLogger.LogWarning("[PlantLifecycle] Cannot add plant - system not initialized or invalid species");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return null;
             }
 
@@ -73,7 +74,7 @@ namespace ProjectChimera.Systems.Cultivation
             {
                 // Create new plant instance
                 var plantInstance = ScriptableObject.CreateInstance<PlantInstanceSO>();
-                plantInstance.InitializeFromStrain(species as ProjectChimera.Data.Cultivation.PlantStrainSO);
+                plantInstance.InitializeFromStrain(species as ProjectChimera.Data.Cultivation.Plant.PlantStrainSO);
 
                 string plantId = plantInstance.PlantInstanceId;
                 _activePlants[plantId] = plantInstance;
@@ -81,12 +82,12 @@ namespace ProjectChimera.Systems.Cultivation
 
                 OnPlantAdded?.Invoke(plantId, plantInstance);
 
-                ChimeraLogger.Log($"[PlantLifecycle] Added plant {(species as UnityEngine.Object)?.name ?? "Unknown"} with ID {plantId} at position {position}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return plantId;
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[PlantLifecycle] Failed to add plant: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return null;
             }
         }
@@ -117,16 +118,16 @@ namespace ProjectChimera.Systems.Cultivation
                         ScriptableObject.DestroyImmediate(plant);
                     }
 
-                    ChimeraLogger.Log($"[PlantLifecycle] Removed plant {plantId} (harvest: {isHarvest})");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                     return true;
                 }
 
-                ChimeraLogger.LogWarning($"[PlantLifecycle] Plant {plantId} not found for removal");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return false;
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[PlantLifecycle] Failed to remove plant {plantId}: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return false;
             }
         }
@@ -174,13 +175,13 @@ namespace ProjectChimera.Systems.Cultivation
                 ProcessPlantDailyGrowth(plant);
             }
 
-            ChimeraLogger.Log($"[PlantLifecycle] Processed daily growth for {_activePlants.Count} plants");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         public void ForceGrowthUpdate()
         {
             ProcessDailyGrowthForAllPlants();
-            ChimeraLogger.Log("[PlantLifecycle] Forced growth update completed");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         public void ProcessOfflineGrowth(float offlineHours)
@@ -221,11 +222,11 @@ namespace ProjectChimera.Systems.Cultivation
                 }
                 catch (Exception ex)
                 {
-                    ChimeraLogger.LogError($"[PlantLifecycle] Error processing offline growth for plant {plant.PlantId}: {ex.Message}");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 }
             }
 
-            ChimeraLogger.Log($"[PlantLifecycle] Processed offline growth for {plantsProcessed} plants over {offlineHours:F1} hours");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         public float CalculateGrowthRate(PlantInstanceSO plant)
@@ -277,7 +278,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             OnPlantStageChanged?.Invoke(plantId, nextStage);
 
-            ChimeraLogger.Log($"[PlantLifecycle] Plant {plantId} advanced from {previousStage} to {nextStage}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             return true;
         }
 
@@ -325,7 +326,7 @@ namespace ProjectChimera.Systems.Cultivation
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[PlantLifecycle] Error processing daily growth for plant {plant.PlantId}: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 

@@ -1,0 +1,712 @@
+using UnityEngine;
+using ProjectChimera.Core.Streaming;
+using ProjectChimera.Data.Cultivation.Plant;
+using ProjectChimera.Systems.Cultivation.Pooling;
+using System.Collections.Generic;
+using System.Collections;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Cultivation
+{
+    /// <summary>
+    /// STREAMING: Integration of streaming and LOD systems with cultivation
+    /// Optimizes plant rendering and asset loading for large-scale farms
+    /// Week 11: Asset Streaming & LOD System
+    /// </summary>
+    public class PlantStreamingLODIntegration : MonoBehaviour
+    {
+        [Header("Plant Streaming Settings")]
+        [SerializeField] private bool _enablePlantStreaming = true;
+        [SerializeField] private bool _enablePlantLOD = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _plantStreamingRadius = 75f;
+        [SerializeField] private float _plantUnloadRadius = 125f;
+
+        [Header("Plant LOD Configuration")]
+        [SerializeField] private PlantLODSettings[] _plantLODSettings;
+        [SerializeField] private float _plantLODUpdateInterval = 0.3f;
+
+        [Header("Performance Settings")]
+        [SerializeField] private int _maxPlantsPerFrame = 20;
+        [SerializeField] private int _maxLODUpdatesPerFrame = 10;
+        [SerializeField] private float _memoryPressureThreshold = 0.8f;
+
+        // Plant tracking
+        private readonly Dictionary<string, StreamedPlant> _streamedPlants = new Dictionary<string, StreamedPlant>();
+        private readonly Dictionary<PlantGrowthStage, string[]> _plantAssetsByStage = new Dictionary<PlantGrowthStage, string[]>();
+        private readonly Queue<PlantStreamingRequest> _plantStreamingQueue = new Queue<PlantStreamingRequest>();
+
+        // Performance tracking
+        private float _lastLODUpdate;
+        private int _plantsStreamedThisFrame;
+        private int _lodUpdatesThisFrame;
+        private PlantStreamingStats _stats = new PlantStreamingStats();
+
+        // References
+        private Transform _viewerTransform;
+        private PlantObjectPool _plantPool;
+        private Camera _mainCamera;
+
+        public bool IsInitialized { get; private set; }
+        public PlantStreamingStats Stats => _stats;
+
+        /// <summary>
+        /// Initialize plant streaming and LOD integration
+        /// </summary>
+        public void Initialize()
+        {
+            if (IsInitialized) return;
+
+            InitializeReferences();
+            InitializePlantAssets();
+            InitializeLODSettings();
+            RegisterWithManagers();
+
+            IsInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+
+        /// <summary>
+        /// Register plant for streaming and LOD
+        /// </summary>
+        public void RegisterPlant(PlantInstance plantData, Vector3 position)
+        {
+            if (!IsInitialized || plantData == null) return;
+
+            string plantId = plantData.PlantId;
+            if (_streamedPlants.ContainsKey(plantId))
+            {
+                UpdatePlantPosition(plantId, position);
+                return;
+            }
+
+            var streamedPlant = new StreamedPlant
+            {
+                PlantData = plantData,
+                Position = position,
+                IsLoaded = false,
+                IsVisible = false,
+                CurrentLODLevel = -1,
+                LastUpdateTime = Time.time,
+                DistanceFromViewer = float.MaxValue,
+                StreamingPriority = CalculateStreamingPriority(plantData, position)
+            };
+
+            _streamedPlants[plantId] = streamedPlant;
+            
+            // Register with asset streaming manager
+            if (_enablePlantStreaming && AssetStreamingManager.Instance != null)
+            {
+                string assetKey = GetPlantAssetKey(plantData);
+                AssetStreamingManager.Instance.RegisterAsset(
+                    assetKey, 
+                    position, 
+                    streamedPlant.StreamingPriority
+                );
+            }
+
+            _stats.RegisteredPlants++;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", $1, this);
+            }
+        }
+
+        /// <summary>
+        /// Unregister plant from streaming and LOD
+        /// </summary>
+        public void UnregisterPlant(string plantId)
+        {
+            if (!_streamedPlants.ContainsKey(plantId)) return;
+
+            var streamedPlant = _streamedPlants[plantId];
+
+            // Unload if loaded
+            if (streamedPlant.IsLoaded && streamedPlant.PlantGameObject != null)
+            {
+                UnloadPlant(streamedPlant);
+            }
+
+            // Unregister from asset streaming
+            if (_enablePlantStreaming && AssetStreamingManager.Instance != null)
+            {
+                string assetKey = GetPlantAssetKey(streamedPlant.PlantData);
+                AssetStreamingManager.Instance.UnregisterAsset(assetKey);
+            }
+
+            // Unregister from LOD system
+            if (streamedPlant.LODObjectId >= 0 && LODManager.Instance != null)
+            {
+                LODManager.Instance.UnregisterLODObject(streamedPlant.LODObjectId);
+            }
+
+            _streamedPlants.Remove(plantId);
+            _stats.RegisteredPlants--;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", $1, this);
+            }
+        }
+
+        /// <summary>
+        /// Update plant position for streaming calculations
+        /// </summary>
+        public void UpdatePlantPosition(string plantId, Vector3 newPosition)
+        {
+            if (_streamedPlants.TryGetValue(plantId, out var streamedPlant))
+            {
+                streamedPlant.Position = newPosition;
+                
+                if (streamedPlant.PlantGameObject != null)
+                {
+                    streamedPlant.PlantGameObject.transform.position = newPosition;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Update plant data (growth stage, health, etc.)
+        /// </summary>
+        public void UpdatePlantData(string plantId, PlantInstance newData)
+        {
+            if (_streamedPlants.TryGetValue(plantId, out var streamedPlant))
+            {
+                var oldStage = streamedPlant.PlantData.GrowthStage;
+                streamedPlant.PlantData = newData;
+
+                // If growth stage changed, might need different asset
+                if (oldStage != newData.GrowthStage && streamedPlant.IsLoaded)
+                {
+                    QueuePlantReload(plantId);
+                }
+
+                // Update LOD bias based on health/importance
+                if (streamedPlant.LODObjectId >= 0)
+                {
+                    float lodBias = CalculateLODBias(newData);
+                    // LOD bias update would go here if LODManager supported it
+                }
+            }
+        }
+
+        /// <summary>
+        /// Force load plants in area
+        /// </summary>
+        public void ForceLoadPlantsInArea(Vector3 center, float radius)
+        {
+            foreach (var kvp in _streamedPlants)
+            {
+                var streamedPlant = kvp.Value;
+                float distance = Vector3.Distance(center, streamedPlant.Position);
+                
+                if (distance <= radius && !streamedPlant.IsLoaded)
+                {
+                    QueuePlantLoad(kvp.Key, AssetStreamingManager.StreamingPriority.Critical);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get streaming statistics
+        /// </summary>
+        public PlantStreamingStats GetDetailedStats()
+        {
+            _stats.LoadedPlants = 0;
+            _stats.VisiblePlants = 0;
+            _stats.PlantsByLODLevel = new int[5]; // Assume max 5 LOD levels
+
+            foreach (var streamedPlant in _streamedPlants.Values)
+            {
+                if (streamedPlant.IsLoaded) _stats.LoadedPlants++;
+                if (streamedPlant.IsVisible) _stats.VisiblePlants++;
+                
+                if (streamedPlant.CurrentLODLevel >= 0 && streamedPlant.CurrentLODLevel < _stats.PlantsByLODLevel.Length)
+                {
+                    _stats.PlantsByLODLevel[streamedPlant.CurrentLODLevel]++;
+                }
+            }
+
+            return _stats;
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Initialize component references
+        /// </summary>
+        private void InitializeReferences()
+        {
+            _mainCamera = Camera.main;
+            if (_mainCamera != null)
+            {
+                _viewerTransform = _mainCamera.transform;
+            }
+            else
+            {
+                _viewerTransform = transform;
+            }
+
+            _plantPool = FindObjectOfType<PlantObjectPool>();
+            if (_plantPool != null)
+            {
+                _plantPool.Initialize();
+            }
+        }
+
+        /// <summary>
+        /// Initialize plant asset mappings
+        /// </summary>
+        private void InitializePlantAssets()
+        {
+            // Initialize plant assets by growth stage
+            _plantAssetsByStage[PlantGrowthStage.Seedling] = new string[] { "Plant_Seedling", "Plant_Seedling_Variant" };
+            _plantAssetsByStage[PlantGrowthStage.Vegetative] = new string[] { "Plant_Vegetative", "Plant_Vegetative_Variant" };
+            _plantAssetsByStage[PlantGrowthStage.Flowering] = new string[] { "Plant_Flowering", "Plant_Flowering_Variant" };
+            _plantAssetsByStage[PlantGrowthStage.Mature] = new string[] { "Plant_Mature", "Plant_Mature_Variant" };
+        }
+
+        /// <summary>
+        /// Initialize LOD settings
+        /// </summary>
+        private void InitializeLODSettings()
+        {
+            if (_plantLODSettings == null || _plantLODSettings.Length == 0)
+            {
+                _plantLODSettings = new PlantLODSettings[]
+                {
+                    new PlantLODSettings
+                    {
+                        GrowthStage = PlantGrowthStage.Seedling,
+                        LODDistances = new float[] { 10f, 25f, 50f },
+                        CullingDistance = 75f,
+                        EnableShadows = new bool[] { true, false, false },
+                        ParticleCount = new int[] { 20, 10, 0 }
+                    },
+                    new PlantLODSettings
+                    {
+                        GrowthStage = PlantGrowthStage.Vegetative,
+                        LODDistances = new float[] { 15f, 35f, 70f },
+                        CullingDistance = 100f,
+                        EnableShadows = new bool[] { true, true, false },
+                        ParticleCount = new int[] { 30, 15, 5 }
+                    },
+                    new PlantLODSettings
+                    {
+                        GrowthStage = PlantGrowthStage.Flowering,
+                        LODDistances = new float[] { 20f, 45f, 90f },
+                        CullingDistance = 125f,
+                        EnableShadows = new bool[] { true, true, false },
+                        ParticleCount = new int[] { 50, 25, 10 }
+                    },
+                    new PlantLODSettings
+                    {
+                        GrowthStage = PlantGrowthStage.Mature,
+                        LODDistances = new float[] { 25f, 50f, 100f },
+                        CullingDistance = 150f,
+                        EnableShadows = new bool[] { true, true, true },
+                        ParticleCount = new int[] { 40, 20, 8 }
+                    }
+                };
+            }
+        }
+
+        /// <summary>
+        /// Register with streaming and LOD managers
+        /// </summary>
+        private void RegisterWithManagers()
+        {
+            // Initialize managers if not already done
+            if (AssetStreamingManager.Instance != null)
+            {
+                AssetStreamingManager.Instance.Initialize();
+                AssetStreamingManager.Instance.SetStreamingCenter(_viewerTransform);
+            }
+
+            if (LODManager.Instance != null)
+            {
+                LODManager.Instance.Initialize();
+                LODManager.Instance.SetLODCenter(_viewerTransform);
+            }
+        }
+
+        /// <summary>
+        /// Calculate streaming priority for plant
+        /// </summary>
+        private AssetStreamingManager.StreamingPriority CalculateStreamingPriority(PlantInstance plantData, Vector3 position)
+        {
+            // Higher priority for mature plants and closer objects
+            if (plantData.GrowthStage == PlantGrowthStage.Flowering || plantData.GrowthStage == PlantGrowthStage.Mature)
+            {
+                return AssetStreamingManager.StreamingPriority.High;
+            }
+            else if (plantData.GrowthStage == PlantGrowthStage.Vegetative)
+            {
+                return AssetStreamingManager.StreamingPriority.Medium;
+            }
+            else
+            {
+                return AssetStreamingManager.StreamingPriority.Low;
+            }
+        }
+
+        /// <summary>
+        /// Get asset key for plant based on its current state
+        /// </summary>
+        private string GetPlantAssetKey(PlantInstance plantData)
+        {
+            if (_plantAssetsByStage.TryGetValue(plantData.GrowthStage, out var assets) && assets.Length > 0)
+            {
+                // Simple selection - could be more sophisticated
+                int index = Mathf.Abs(plantData.PlantId.GetHashCode()) % assets.Length;
+                return assets[index];
+            }
+            
+            return "Plant_Default";
+        }
+
+        /// <summary>
+        /// Calculate LOD bias for plant
+        /// </summary>
+        private float CalculateLODBias(PlantInstance plantData)
+        {
+            float bias = 1f;
+            
+            // Healthy plants get better LOD
+            bias *= plantData.Health;
+            
+            // Mature plants are more important
+            switch (plantData.GrowthStage)
+            {
+                case PlantGrowthStage.Mature:
+                    bias *= 1.5f;
+                    break;
+                case PlantGrowthStage.Flowering:
+                    bias *= 1.3f;
+                    break;
+                case PlantGrowthStage.Vegetative:
+                    bias *= 1.1f;
+                    break;
+            }
+            
+            return bias;
+        }
+
+        /// <summary>
+        /// Queue plant for loading
+        /// </summary>
+        private void QueuePlantLoad(string plantId, AssetStreamingManager.StreamingPriority priority)
+        {
+            var request = new PlantStreamingRequest
+            {
+                PlantId = plantId,
+                RequestType = PlantStreamingRequestType.Load,
+                Priority = priority,
+                RequestTime = Time.time
+            };
+            
+            _plantStreamingQueue.Enqueue(request);
+        }
+
+        /// <summary>
+        /// Queue plant for reload (different asset)
+        /// </summary>
+        private void QueuePlantReload(string plantId)
+        {
+            QueuePlantUnload(plantId);
+            QueuePlantLoad(plantId, AssetStreamingManager.StreamingPriority.Medium);
+        }
+
+        /// <summary>
+        /// Queue plant for unloading
+        /// </summary>
+        private void QueuePlantUnload(string plantId)
+        {
+            var request = new PlantStreamingRequest
+            {
+                PlantId = plantId,
+                RequestType = PlantStreamingRequestType.Unload,
+                RequestTime = Time.time
+            };
+            
+            _plantStreamingQueue.Enqueue(request);
+        }
+
+        /// <summary>
+        /// Load plant GameObject
+        /// </summary>
+        private void LoadPlant(StreamedPlant streamedPlant)
+        {
+            if (streamedPlant.IsLoaded) return;
+
+            // Use object pool if available
+            if (_plantPool != null)
+            {
+                int prefabIndex = GetPlantPrefabIndex(streamedPlant.PlantData);
+                var plantComponent = _plantPool.GetPlant(prefabIndex, streamedPlant.PlantData);
+                
+                if (plantComponent != null)
+                {
+                    streamedPlant.PlantGameObject = plantComponent.gameObject;
+                    streamedPlant.PlantComponent = plantComponent;
+                    streamedPlant.IsLoaded = true;
+                    
+                    // Set position
+                    streamedPlant.PlantGameObject.transform.position = streamedPlant.Position;
+                    
+                    // Register with LOD system
+                    if (_enablePlantLOD && LODManager.Instance != null)
+                    {
+                        float lodBias = CalculateLODBias(streamedPlant.PlantData);
+                        streamedPlant.LODObjectId = LODManager.Instance.RegisterLODObject(
+                            streamedPlant.PlantGameObject, 
+                            LODObjectType.Plant, 
+                            lodBias
+                        );
+                    }
+                    
+                    _stats.LoadOperations++;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Unload plant GameObject
+        /// </summary>
+        private void UnloadPlant(StreamedPlant streamedPlant)
+        {
+            if (!streamedPlant.IsLoaded) return;
+
+            // Unregister from LOD system
+            if (streamedPlant.LODObjectId >= 0 && LODManager.Instance != null)
+            {
+                LODManager.Instance.UnregisterLODObject(streamedPlant.LODObjectId);
+                streamedPlant.LODObjectId = -1;
+            }
+
+            // Return to pool if available
+            if (_plantPool != null && streamedPlant.PlantComponent != null)
+            {
+                _plantPool.ReturnPlant(streamedPlant.PlantComponent);
+            }
+            else if (streamedPlant.PlantGameObject != null)
+            {
+                Destroy(streamedPlant.PlantGameObject);
+            }
+
+            streamedPlant.PlantGameObject = null;
+            streamedPlant.PlantComponent = null;
+            streamedPlant.IsLoaded = false;
+            streamedPlant.IsVisible = false;
+            _stats.UnloadOperations++;
+        }
+
+        /// <summary>
+        /// Get plant prefab index for pooling
+        /// </summary>
+        private int GetPlantPrefabIndex(PlantInstance plantData)
+        {
+            // Simple mapping - could be more sophisticated
+            switch (plantData.GrowthStage)
+            {
+                case PlantGrowthStage.Seedling: return 0;
+                case PlantGrowthStage.Vegetative: return 1;
+                case PlantGrowthStage.Flowering: return 2;
+                case PlantGrowthStage.Mature: return 3;
+                default: return 0;
+            }
+        }
+
+        #endregion
+
+        private void Update()
+        {
+            if (!IsInitialized) return;
+
+            UpdatePlantStreaming();
+            ProcessPlantStreamingQueue();
+            UpdatePlantLOD();
+            
+            // Reset frame counters
+            _plantsStreamedThisFrame = 0;
+            _lodUpdatesThisFrame = 0;
+        }
+
+        /// <summary>
+        /// Update plant streaming based on distance
+        /// </summary>
+        private void UpdatePlantStreaming()
+        {
+            if (_viewerTransform == null) return;
+
+            Vector3 viewerPos = _viewerTransform.position;
+
+            foreach (var kvp in _streamedPlants)
+            {
+                var streamedPlant = kvp.Value;
+                float distance = Vector3.Distance(viewerPos, streamedPlant.Position);
+                streamedPlant.DistanceFromViewer = distance;
+
+                bool shouldBeLoaded = distance <= _plantStreamingRadius;
+                bool shouldBeUnloaded = distance > _plantUnloadRadius;
+
+                if (shouldBeLoaded && !streamedPlant.IsLoaded)
+                {
+                    QueuePlantLoad(kvp.Key, streamedPlant.StreamingPriority);
+                }
+                else if (shouldBeUnloaded && streamedPlant.IsLoaded)
+                {
+                    QueuePlantUnload(kvp.Key);
+                }
+
+                // Update visibility
+                if (streamedPlant.IsLoaded)
+                {
+                    bool shouldBeVisible = distance <= _plantStreamingRadius * 1.2f; // Slightly larger for hysteresis
+                    if (streamedPlant.IsVisible != shouldBeVisible)
+                    {
+                        streamedPlant.PlantGameObject.SetActive(shouldBeVisible);
+                        streamedPlant.IsVisible = shouldBeVisible;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Process plant streaming queue
+        /// </summary>
+        private void ProcessPlantStreamingQueue()
+        {
+            while (_plantStreamingQueue.Count > 0 && _plantsStreamedThisFrame < _maxPlantsPerFrame)
+            {
+                var request = _plantStreamingQueue.Dequeue();
+                
+                if (_streamedPlants.TryGetValue(request.PlantId, out var streamedPlant))
+                {
+                    switch (request.RequestType)
+                    {
+                        case PlantStreamingRequestType.Load:
+                            LoadPlant(streamedPlant);
+                            break;
+                        case PlantStreamingRequestType.Unload:
+                            UnloadPlant(streamedPlant);
+                            break;
+                    }
+                    
+                    _plantsStreamedThisFrame++;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Update plant LOD system
+        /// </summary>
+        private void UpdatePlantLOD()
+        {
+            if (!_enablePlantLOD || Time.time - _lastLODUpdate < _plantLODUpdateInterval)
+                return;
+
+            _lastLODUpdate = Time.time;
+            
+            // Update LOD for loaded plants
+            foreach (var streamedPlant in _streamedPlants.Values)
+            {
+                if (streamedPlant.IsLoaded && streamedPlant.LODObjectId >= 0 && _lodUpdatesThisFrame < _maxLODUpdatesPerFrame)
+                {
+                    // LOD system will handle the actual updates
+                    _lodUpdatesThisFrame++;
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            foreach (var streamedPlant in _streamedPlants.Values)
+            {
+                if (streamedPlant.IsLoaded)
+                {
+                    UnloadPlant(streamedPlant);
+                }
+            }
+            
+            _streamedPlants.Clear();
+        }
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// Streamed plant data
+    /// </summary>
+    [System.Serializable]
+    public class StreamedPlant
+    {
+        public PlantInstance PlantData;
+        public Vector3 Position;
+        public bool IsLoaded;
+        public bool IsVisible;
+        public int CurrentLODLevel;
+        public float LastUpdateTime;
+        public float DistanceFromViewer;
+        public AssetStreamingManager.StreamingPriority StreamingPriority;
+        public GameObject PlantGameObject;
+        public PlantInstanceComponent PlantComponent;
+        public int LODObjectId = -1;
+    }
+
+    /// <summary>
+    /// Plant streaming request
+    /// </summary>
+    [System.Serializable]
+    public struct PlantStreamingRequest
+    {
+        public string PlantId;
+        public PlantStreamingRequestType RequestType;
+        public AssetStreamingManager.StreamingPriority Priority;
+        public float RequestTime;
+    }
+
+    /// <summary>
+    /// Plant streaming request types
+    /// </summary>
+    public enum PlantStreamingRequestType
+    {
+        Load,
+        Unload,
+        Reload
+    }
+
+    /// <summary>
+    /// Plant LOD settings per growth stage
+    /// </summary>
+    [System.Serializable]
+    public struct PlantLODSettings
+    {
+        public PlantGrowthStage GrowthStage;
+        public float[] LODDistances;
+        public float CullingDistance;
+        public bool[] EnableShadows;
+        public int[] ParticleCount;
+    }
+
+    /// <summary>
+    /// Plant streaming statistics
+    /// </summary>
+    [System.Serializable]
+    public struct PlantStreamingStats
+    {
+        public int RegisteredPlants;
+        public int LoadedPlants;
+        public int VisiblePlants;
+        public int LoadOperations;
+        public int UnloadOperations;
+        public int[] PlantsByLODLevel;
+    }
+
+    #endregion
+}

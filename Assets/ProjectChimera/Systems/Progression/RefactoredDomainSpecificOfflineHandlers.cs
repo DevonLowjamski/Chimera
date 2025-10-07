@@ -1,9 +1,9 @@
-using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+using ChimeraLogger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Systems.Progression
 {
@@ -49,7 +49,7 @@ namespace ProjectChimera.Systems.Progression
                 InitializeProviders();
             }
 
-            ChimeraLogger.Log($"[OfflineHandlersOrchestrator] Started with {_activeProviders.Count} active providers");
+            ChimeraLogger.Log("OTHER", "$1", this);
         }
 
         private void OnDestroy()
@@ -75,11 +75,11 @@ namespace ProjectChimera.Systems.Progression
                 ValidateProviderConfiguration();
 
                 _isInitialized = true;
-                ChimeraLogger.Log($"[OfflineHandlersOrchestrator] Initialized {_activeProviders.Count} domain providers");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[OfflineHandlersOrchestrator] Failed to initialize providers: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -139,13 +139,13 @@ namespace ProjectChimera.Systems.Progression
         {
             if (_activeProviders.Count == 0)
             {
-                ChimeraLogger.LogWarning("[OfflineHandlersOrchestrator] No providers enabled - offline progression will be limited");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return;
             }
 
             if (_activeProviders.Count > _maxConcurrentProviders)
             {
-                ChimeraLogger.LogWarning($"[OfflineHandlersOrchestrator] {_activeProviders.Count} providers exceed maximum of {_maxConcurrentProviders}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
 
             // Validate provider IDs are unique
@@ -154,7 +154,7 @@ namespace ProjectChimera.Systems.Progression
 
             if (duplicateIds.Any())
             {
-                ChimeraLogger.LogError($"[OfflineHandlersOrchestrator] Duplicate provider IDs detected: {string.Join(", ", duplicateIds)}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -162,7 +162,7 @@ namespace ProjectChimera.Systems.Progression
         {
             _activeProviders.Clear();
             _isInitialized = false;
-            ChimeraLogger.Log("[OfflineHandlersOrchestrator] All providers shutdown");
+            ChimeraLogger.Log("OTHER", "$1", this);
         }
 
         #endregion
@@ -176,7 +176,7 @@ namespace ProjectChimera.Systems.Progression
         {
             if (!_isInitialized || _activeProviders.Count == 0)
             {
-                ChimeraLogger.LogWarning("[OfflineHandlersOrchestrator] Cannot process offline progression - no providers available");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return new List<OfflineProgressionCalculationResult>();
             }
 
@@ -184,7 +184,7 @@ namespace ProjectChimera.Systems.Progression
 
             try
             {
-                ChimeraLogger.Log($"[OfflineHandlersOrchestrator] Processing offline progression for {offlineTime.TotalHours:F1} hours across {_activeProviders.Count} domains");
+                ChimeraLogger.Log("OTHER", "$1", this);
 
                 // Process providers in priority order
                 foreach (var provider in _activeProviders)
@@ -199,7 +199,7 @@ namespace ProjectChimera.Systems.Progression
                     }
                     catch (Exception ex)
                     {
-                        ChimeraLogger.LogError($"[OfflineHandlersOrchestrator] Provider {provider.GetProviderId()} failed: {ex.Message}");
+                        ChimeraLogger.Log("OTHER", "$1", this);
 
                         // Create error result
                         var errorResult = new OfflineProgressionCalculationResult
@@ -211,11 +211,11 @@ namespace ProjectChimera.Systems.Progression
                     }
                 }
 
-                ChimeraLogger.Log($"[OfflineHandlersOrchestrator] Completed offline progression processing - {results.Count} results");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[OfflineHandlersOrchestrator] Critical error during offline progression: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
 
             return results;
@@ -233,7 +233,7 @@ namespace ProjectChimera.Systems.Progression
 
             try
             {
-                ChimeraLogger.Log($"[OfflineHandlersOrchestrator] Applying offline progression for {results.Count} domain results");
+                ChimeraLogger.Log("OTHER", "$1", this);
 
                 // Group results by provider ID for efficient application
                 var resultsByProvider = results.GroupBy(r => GetProviderForResult(r)).ToList();
@@ -251,16 +251,16 @@ namespace ProjectChimera.Systems.Progression
                         }
                         catch (Exception ex)
                         {
-                            ChimeraLogger.LogError($"[OfflineHandlersOrchestrator] Failed to apply result for {provider.GetProviderId()}: {ex.Message}");
+                            ChimeraLogger.Log("OTHER", "$1", this);
                         }
                     }
                 }
 
-                ChimeraLogger.Log("[OfflineHandlersOrchestrator] Completed offline progression application");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[OfflineHandlersOrchestrator] Error applying offline progression: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -324,7 +324,7 @@ namespace ProjectChimera.Systems.Progression
 
             if (completedTask == timeoutTask)
             {
-                ChimeraLogger.LogWarning($"[OfflineHandlersOrchestrator] Provider {provider.GetProviderId()} timed out after {_providerTimeoutSeconds}s");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return new OfflineProgressionCalculationResult
                 {
                     Success = false,
@@ -332,28 +332,37 @@ namespace ProjectChimera.Systems.Progression
                 };
             }
 
-            return await progressionTask;
+            var result = await progressionTask;
+            return new OfflineProgressionCalculationResult
+            {
+                Success = result.Success,
+                ErrorMessage = result.ErrorMessage,
+                DomainResults = new List<OfflineProgressionResult> { result }
+            };
         }
 
         private IOfflineProgressionProvider GetProviderForResult(OfflineProgressionResult result)
         {
+            var progressionData = result.ProgressionData as Dictionary<string, object>;
+            if (progressionData == null) return null;
+
             // Match results to providers based on progression data keys or other identifiers
-            if (result.ProgressionData.ContainsKey("plant_growth") || result.ProgressionData.ContainsKey("harvests"))
+            if (progressionData.ContainsKey("plant_growth") || progressionData.ContainsKey("harvests"))
             {
                 return _cultivationProvider;
             }
 
-            if (result.ProgressionData.ContainsKey("construction_projects") || result.ProgressionData.ContainsKey("building_completion"))
+            if (progressionData.ContainsKey("construction_projects") || progressionData.ContainsKey("building_completion"))
             {
                 return _constructionProvider;
             }
 
-            if (result.ProgressionData.ContainsKey("market_changes") || result.ProgressionData.ContainsKey("contract_fulfillment"))
+            if (progressionData.ContainsKey("market_changes") || progressionData.ContainsKey("contract_fulfillment"))
             {
                 return _economyProvider;
             }
 
-            if (result.ProgressionData.ContainsKey("equipment_degradation") || result.ProgressionData.ContainsKey("equipment_production"))
+            if (progressionData.ContainsKey("equipment_degradation") || progressionData.ContainsKey("equipment_production"))
             {
                 return _equipmentProvider;
             }
@@ -389,7 +398,7 @@ namespace ProjectChimera.Systems.Progression
         public void SetProviderTimeout(float timeoutSeconds)
         {
             _providerTimeoutSeconds = Mathf.Max(1f, timeoutSeconds);
-            ChimeraLogger.Log($"[OfflineHandlersOrchestrator] Provider timeout set to {_providerTimeoutSeconds}s");
+            ChimeraLogger.Log("OTHER", "$1", this);
         }
 
         #endregion

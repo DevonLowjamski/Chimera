@@ -1,0 +1,417 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Construction.Core
+{
+    /// <summary>
+    /// REFACTORED: Construction Validator
+    /// Focused component for validating construction placements and structural integrity
+    /// </summary>
+    public class ConstructionValidator : MonoBehaviour
+    {
+        [Header("Validation Settings")]
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private bool _enableRealTimeValidation = true;
+        [SerializeField] private bool _enableStructuralValidation = true;
+        [SerializeField] private float _structuralValidationRadius = 50f;
+        [SerializeField] private int _maxValidationsPerFrame = 20;
+
+        // Validation management
+        private readonly List<ConstructionValidation> _pendingValidations = new List<ConstructionValidation>();
+        private readonly Dictionary<string, ConstructionValidationResult> _validationCache = new Dictionary<string, ConstructionValidationResult>();
+
+        // Performance tracking
+        private int _validationsThisFrame;
+        private ValidationStats _stats = new ValidationStats();
+
+        // Validation rules
+        private readonly List<IValidationRule> _validationRules = new List<IValidationRule>();
+
+        // Properties
+        public bool IsEnabled { get; private set; } = true;
+        public int PendingValidationCount => _pendingValidations.Count;
+        public float StructuralValidationRadius => _structuralValidationRadius;
+
+        // Events
+        public System.Action<ConstructionValidation> OnValidationCompleted;
+        public System.Action<string> OnValidationFailed;
+
+        private void Start()
+        {
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            InitializeValidationRules();
+            ResetStats();
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "✅ Construction Validator initialized", this);
+        }
+
+        /// <summary>
+        /// Validate construction placement
+        /// </summary>
+        public ConstructionValidationResult ValidatePlacement(Vector3 position, ConstructionData constructionData)
+        {
+            if (!IsEnabled) return ConstructionValidationResult.Invalid("Validator disabled");
+
+            // Check cache first
+            string cacheKey = GetValidationCacheKey(position, constructionData);
+            if (_validationCache.TryGetValue(cacheKey, out var cachedResult))
+            {
+                _stats.CacheHits++;
+                return cachedResult;
+            }
+
+            // Perform validation
+            var result = PerformValidation(position, constructionData);
+
+            // Cache result
+            _validationCache[cacheKey] = result;
+            _stats.ValidationsCompleted++;
+
+            if (_enableLogging && !result.IsValid)
+                ChimeraLogger.Log("CONSTRUCTION", $"Validation failed at {position}: {string.Join(", ", result.Errors)}", this);
+
+            return result;
+        }
+
+        /// <summary>
+        /// Queue validation for asynchronous processing
+        /// </summary>
+        public string QueueValidation(Vector3 position, ConstructionData constructionData)
+        {
+            if (!IsEnabled) return null;
+
+            string validationId = System.Guid.NewGuid().ToString();
+            var validation = new ConstructionValidation
+            {
+                ValidationId = validationId,
+                Position = position,
+                Data = constructionData,
+                IsCompleted = false,
+                RequestTime = System.DateTime.Now
+            };
+
+            _pendingValidations.Add(validation);
+            _stats.QueuedValidations++;
+
+            return validationId;
+        }
+
+        /// <summary>
+        /// Process pending validations
+        /// </summary>
+        public void ProcessValidations(int maxValidations)
+        {
+            if (!IsEnabled) return;
+
+            _validationsThisFrame = 0;
+            int validationsToProcess = Mathf.Min(maxValidations, _pendingValidations.Count);
+
+            for (int i = 0; i < validationsToProcess && i < _pendingValidations.Count; i++)
+            {
+                var validation = _pendingValidations[i];
+                ProcessSingleValidation(validation);
+                _validationsThisFrame++;
+            }
+
+            // Remove completed validations
+            _pendingValidations.RemoveAll(v => v.IsCompleted);
+        }
+
+        /// <summary>
+        /// Get pending validations
+        /// </summary>
+        public ConstructionValidation[] GetPendingValidations()
+        {
+            return _pendingValidations.ToArray();
+        }
+
+        /// <summary>
+        /// Clear validation cache
+        /// </summary>
+        public void ClearValidationCache()
+        {
+            _validationCache.Clear();
+            _stats.CacheClears++;
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "Validation cache cleared", this);
+        }
+
+        /// <summary>
+        /// Add custom validation rule
+        /// </summary>
+        public void AddValidationRule(IValidationRule rule)
+        {
+            if (rule != null && !_validationRules.Contains(rule))
+            {
+                _validationRules.Add(rule);
+
+                if (_enableLogging)
+                    ChimeraLogger.Log("CONSTRUCTION", $"Added validation rule: {rule.GetType().Name}", this);
+            }
+        }
+
+        /// <summary>
+        /// Remove validation rule
+        /// </summary>
+        public void RemoveValidationRule(IValidationRule rule)
+        {
+            if (_validationRules.Remove(rule))
+            {
+                if (_enableLogging)
+                    ChimeraLogger.Log("CONSTRUCTION", $"Removed validation rule: {rule.GetType().Name}", this);
+            }
+        }
+
+        /// <summary>
+        /// Get validation statistics
+        /// </summary>
+        public ValidationStats GetStats()
+        {
+            UpdateStats();
+            return _stats;
+        }
+
+        /// <summary>
+        /// Set validator enabled/disabled
+        /// </summary>
+        public void SetEnabled(bool enabled)
+        {
+            IsEnabled = enabled;
+
+            if (!enabled)
+            {
+                _pendingValidations.Clear();
+                _validationCache.Clear();
+            }
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Construction Validator: {(enabled ? "enabled" : "disabled")}", this);
+        }
+
+        /// <summary>
+        /// Set structural validation radius
+        /// </summary>
+        public void SetStructuralValidationRadius(float radius)
+        {
+            _structuralValidationRadius = Mathf.Max(1f, radius);
+            ClearValidationCache(); // Clear cache as radius affects validation
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Structural validation radius set to: {_structuralValidationRadius}", this);
+        }
+
+        private void InitializeValidationRules()
+        {
+            // Add default validation rules
+            _validationRules.Add(new TerrainValidationRule());
+            _validationRules.Add(new CollisionValidationRule());
+            _validationRules.Add(new ResourceValidationRule());
+
+            if (_enableStructuralValidation)
+            {
+                _validationRules.Add(new StructuralIntegrityRule(_structuralValidationRadius));
+            }
+        }
+
+        private ConstructionValidationResult PerformValidation(Vector3 position, ConstructionData constructionData)
+        {
+            var errors = new List<string>();
+            var warnings = new List<string>();
+            float totalScore = 0f;
+            int ruleCount = 0;
+
+            foreach (var rule in _validationRules)
+            {
+                var ruleResult = rule.Validate(position, constructionData);
+
+                if (!ruleResult.IsValid)
+                {
+                    errors.AddRange(ruleResult.Errors);
+                }
+
+                warnings.AddRange(ruleResult.Warnings);
+                totalScore += ruleResult.ValidationScore;
+                ruleCount++;
+            }
+
+            float averageScore = ruleCount > 0 ? totalScore / ruleCount : 0f;
+            bool isValid = errors.Count == 0;
+
+            return new ConstructionValidationResult
+            {
+                IsValid = isValid,
+                Errors = errors.ToArray(),
+                Warnings = warnings.ToArray(),
+                ValidationScore = averageScore
+            };
+        }
+
+        private void ProcessSingleValidation(ConstructionValidation validation)
+        {
+            validation.Result = ValidatePlacement(validation.Position, validation.Data);
+            validation.IsCompleted = true;
+
+            OnValidationCompleted?.Invoke(validation);
+
+            if (!validation.Result.IsValid)
+            {
+                OnValidationFailed?.Invoke(validation.ValidationId);
+                _stats.FailedValidations++;
+            }
+        }
+
+        private string GetValidationCacheKey(Vector3 position, ConstructionData constructionData)
+        {
+            return $"{position}_{constructionData.BuildingType}_{constructionData.Size}";
+        }
+
+        private void UpdateStats()
+        {
+            _stats.PendingValidations = _pendingValidations.Count;
+            _stats.CachedValidations = _validationCache.Count;
+            _stats.ActiveRules = _validationRules.Count;
+            _stats.CacheHitRate = _stats.ValidationsCompleted > 0 ? (float)_stats.CacheHits / _stats.ValidationsCompleted : 0f;
+            _stats.IsPerformingWell = _stats.FailedValidations < _stats.ValidationsCompleted * 0.2f; // Less than 20% failure rate
+        }
+
+        private void ResetStats()
+        {
+            _stats = new ValidationStats
+            {
+                ValidationsCompleted = 0,
+                QueuedValidations = 0,
+                PendingValidations = 0,
+                FailedValidations = 0,
+                CacheHits = 0,
+                CacheClears = 0,
+                CachedValidations = 0,
+                ActiveRules = _validationRules.Count,
+                CacheHitRate = 0f,
+                IsPerformingWell = true
+            };
+        }
+    }
+
+    /// <summary>
+    /// Validation statistics
+    /// </summary>
+    [System.Serializable]
+    public struct ValidationStats
+    {
+        public int ValidationsCompleted;
+        public int QueuedValidations;
+        public int PendingValidations;
+        public int FailedValidations;
+        public int CacheHits;
+        public int CacheClears;
+        public int CachedValidations;
+        public int ActiveRules;
+        public float CacheHitRate;
+        public bool IsPerformingWell;
+    }
+
+    /// <summary>
+    /// Validation rule interface
+    /// </summary>
+    public interface IValidationRule
+    {
+        ConstructionValidationResult Validate(Vector3 position, ConstructionData constructionData);
+    }
+
+    /// <summary>
+    /// Terrain validation rule implementation
+    /// </summary>
+    public class TerrainValidationRule : IValidationRule
+    {
+        public ConstructionValidationResult Validate(Vector3 position, ConstructionData constructionData)
+        {
+            // Simple terrain validation - check if position is on ground
+            RaycastHit hit;
+            if (Physics.Raycast(position + Vector3.up * 100f, Vector3.down, out hit, 200f))
+            {
+                float groundDistance = Mathf.Abs(position.y - hit.point.y);
+                if (groundDistance > 1f)
+                {
+                    return ConstructionValidationResult.Invalid("Position not on solid ground");
+                }
+                return ConstructionValidationResult.Valid();
+            }
+            return ConstructionValidationResult.Invalid("No ground found at position");
+        }
+    }
+
+    /// <summary>
+    /// Collision validation rule implementation
+    /// </summary>
+    public class CollisionValidationRule : IValidationRule
+    {
+        public ConstructionValidationResult Validate(Vector3 position, ConstructionData constructionData)
+        {
+            // Check for collisions with existing structures
+            var bounds = new Bounds(position, constructionData.Size);
+            var colliders = Physics.OverlapBox(bounds.center, bounds.extents, Quaternion.identity);
+
+            if (colliders.Length > 0)
+            {
+                return ConstructionValidationResult.Invalid("Collision with existing structure");
+            }
+
+            return ConstructionValidationResult.Valid();
+        }
+    }
+
+    /// <summary>
+    /// Resource validation rule implementation
+    /// </summary>
+    public class ResourceValidationRule : IValidationRule
+    {
+        public ConstructionValidationResult Validate(Vector3 position, ConstructionData constructionData)
+        {
+            // Simple resource check (placeholder - would check actual resources)
+            if (constructionData.Cost > 1000f) // Arbitrary cost limit
+            {
+                var result = ConstructionValidationResult.Valid();
+                result.Warnings = new string[] { "High construction cost" };
+                return result;
+            }
+
+            return ConstructionValidationResult.Valid();
+        }
+    }
+
+    /// <summary>
+    /// Structural integrity validation rule
+    /// </summary>
+    public class StructuralIntegrityRule : IValidationRule
+    {
+        private readonly float _validationRadius;
+
+        public StructuralIntegrityRule(float validationRadius)
+        {
+            _validationRadius = validationRadius;
+        }
+
+        public ConstructionValidationResult Validate(Vector3 position, ConstructionData constructionData)
+        {
+            // Check structural integrity within radius
+            var nearbyStructures = Physics.OverlapSphere(position, _validationRadius);
+
+            if (nearbyStructures.Length > 10) // Too many nearby structures
+            {
+                var result = ConstructionValidationResult.Valid();
+                result.Warnings = new string[] { "High structural density in area" };
+                return result;
+            }
+
+            return ConstructionValidationResult.Valid();
+        }
+    }
+}

@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Data.Genetics;
+using ProjectChimera.Data.Shared;
 
 namespace ProjectChimera.Systems.Genetics
 {
@@ -8,7 +10,7 @@ namespace ProjectChimera.Systems.Genetics
     /// BASIC: Simple trait expression engine for Project Chimera's genetics system.
     /// Focuses on essential trait calculations without complex GxE interactions and compute shaders.
     /// </summary>
-    public class TraitExpressionEngine : MonoBehaviour
+    public class TraitExpressionEngine : MonoBehaviour, ITraitExpressionEngine
     {
         [Header("Basic Expression Settings")]
         [SerializeField] private bool _enableBasicExpression = true;
@@ -19,6 +21,11 @@ namespace ProjectChimera.Systems.Genetics
         // Basic trait tracking
         private readonly Dictionary<string, TraitResult> _expressionCache = new Dictionary<string, TraitResult>();
         private bool _isInitialized = false;
+        private TraitExpressionConfig _config;
+
+        // ITraitExpressionEngine Properties
+        public bool IsInitialized => _isInitialized;
+        public bool UseComputeShader { get; set; } = false;
 
         /// <summary>
         /// Events for trait expression
@@ -36,7 +43,7 @@ namespace ProjectChimera.Systems.Genetics
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[TraitExpressionEngine] Initialized successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -80,7 +87,7 @@ namespace ProjectChimera.Systems.Genetics
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[TraitExpressionEngine] Evaluated traits for {strainId}: THC={result.FinalThc:F1}%, Yield={result.FinalYield:F1}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
 
             return result;
@@ -93,7 +100,7 @@ namespace ProjectChimera.Systems.Genetics
         {
             if (geneticData == null) return new TraitResult();
 
-            return EvaluateTraits(geneticData.StrainId, geneticData.ThcContent, geneticData.Yield, environmentFactor);
+            return EvaluateTraits(geneticData.StrainId, geneticData.ThcContent, geneticData.YieldPotential, environmentFactor);
         }
 
         /// <summary>
@@ -113,7 +120,7 @@ namespace ProjectChimera.Systems.Genetics
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[TraitExpressionEngine] Expression cache cleared");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -144,7 +151,7 @@ namespace ProjectChimera.Systems.Genetics
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[TraitExpressionEngine] Expression {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -161,9 +168,130 @@ namespace ProjectChimera.Systems.Genetics
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[TraitExpressionEngine] Multipliers updated: THC={_baseThcMultiplier:F2}, Yield={_baseYieldMultiplier:F2}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
+
+        #region ITraitExpressionEngine Implementation
+
+        /// <summary>
+        /// Initialize with configuration (ITraitExpressionEngine interface)
+        /// </summary>
+        public void Initialize(TraitExpressionConfig config)
+        {
+            _config = config;
+            Initialize(); // Call existing initialization
+        }
+
+        /// <summary>
+        /// Evaluate trait expression based on genotype and environment
+        /// </summary>
+        public TraitExpressionResult Evaluate(PlantGenotype genotype, EnvironmentSnapshot environment)
+        {
+            if (genotype == null) return new TraitExpressionResult();
+
+            // Convert to simplified format for basic evaluation
+            var geneticData = new GeneticData
+            {
+                StrainId = genotype.GenotypeID,
+                ThcContent = 15f, // Default - would extract from genotype in full implementation
+                YieldPotential = 500f // Default - would extract from genotype in full implementation
+            };
+
+            var basicResult = EvaluateTraits(geneticData, environment.StressLevel);
+
+            var result = new TraitExpressionResult
+            {
+                GenotypeID = genotype.GenotypeID,
+                EnvironmentalStress = environment.StressLevel,
+                CalculationTime = System.DateTime.Now
+            };
+
+            result.SetTraitValue(TraitType.THCContent, basicResult.FinalThc);
+            result.SetTraitValue(TraitType.Yield, basicResult.FinalYield / 100f); // Normalize to 0-1 range
+
+            return result;
+        }
+
+        /// <summary>
+        /// Evaluate trait expression using ScriptableObject genotype data
+        /// </summary>
+        public TraitExpressionResult Evaluate(GenotypeDataSO genotypeData, EnvironmentSnapshot environment)
+        {
+            if (genotypeData == null) return new TraitExpressionResult();
+
+            // Create PlantGenotype from ScriptableObject data
+            var genotype = new PlantGenotype
+            {
+                GenotypeID = genotypeData.GenotypeID,
+                StrainName = "Unknown Strain",
+                Genotype = new Dictionary<string, object>()
+            };
+
+            return Evaluate(genotype, environment);
+        }
+
+        /// <summary>
+        /// Evaluate a specific trait
+        /// </summary>
+        public float EvaluateSpecificTrait(PlantGenotype genotype, EnvironmentSnapshot environment, TraitType trait)
+        {
+            var result = Evaluate(genotype, environment);
+            return result.GetTraitValue(trait);
+        }
+
+        /// <summary>
+        /// Get response curve (simplified implementation)
+        /// </summary>
+        public EnvironmentalResponseCurve GetResponseCurve(TraitType trait, EnvironmentalFactorType environmentalFactor)
+        {
+            // Return default response curve
+            return new EnvironmentalResponseCurve
+            {
+                Trait = trait,
+                EnvironmentalFactor = (EnvironmentalFactor)environmentalFactor,
+                ResponseCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f),
+                EffectStrength = 1f
+            };
+        }
+
+        /// <summary>
+        /// Calculate environmental stress modifier
+        /// </summary>
+        public float CalculateEnvironmentalStress(EnvironmentSnapshot environment, OptimalEnvironmentalRanges optimalRanges)
+        {
+            float stressModifier = 1.0f;
+
+            // Simple stress calculation based on temperature
+            if (environment.Temperature < optimalRanges.TemperatureRange.x ||
+                environment.Temperature > optimalRanges.TemperatureRange.y)
+            {
+                stressModifier *= 0.8f;
+            }
+
+            // Simple stress calculation based on humidity
+            if (environment.Humidity < optimalRanges.HumidityRange.x ||
+                environment.Humidity > optimalRanges.HumidityRange.y)
+            {
+                stressModifier *= 0.9f;
+            }
+
+            return Mathf.Clamp01(stressModifier);
+        }
+
+        /// <summary>
+        /// Apply GxE profile modifications
+        /// </summary>
+        public float ApplyGxEModification(float baseExpression, EnvironmentSnapshot environment, GxE_ProfileSO gxeProfile)
+        {
+            if (gxeProfile == null) return baseExpression;
+
+            // Simple environmental modifier based on stress level
+            float environmentModifier = 1.0f - (environment.StressLevel * 0.3f);
+            return baseExpression * environmentModifier;
+        }
+
+        #endregion
     }
 
     /// <summary>

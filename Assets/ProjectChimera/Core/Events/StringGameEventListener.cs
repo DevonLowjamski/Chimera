@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core.Events
 {

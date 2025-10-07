@@ -1,9 +1,9 @@
-using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+using ChimeraLogger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Systems.Progression
 {
@@ -24,52 +24,54 @@ namespace ProjectChimera.Systems.Progression
         public string GetProviderId() => "economy_offline";
         public float GetPriority() => 0.7f;
         
-        public async Task<OfflineProgressionCalculationResult> CalculateOfflineProgressionAsync(TimeSpan offlineTime)
+        public async Task<OfflineProgressionResult> CalculateOfflineProgressionAsync(TimeSpan offlineTime)
         {
             await Task.Delay(60);
-            
-            var result = new OfflineProgressionCalculationResult();
+
+            var result = new OfflineProgressionResult
+            {
+                Domain = GetProviderId(),
+                Success = true,
+                OfflineTime = offlineTime,
+                ProcessedUntil = DateTime.Now
+            };
             var hours = (float)offlineTime.TotalHours;
             
             try
             {
                 // Calculate market changes
                 var marketData = await CalculateMarketChangesAsync(hours);
-                result.ProgressionData.Add("market_changes", marketData);
-                
+                result.Market = marketData;
+
                 // Calculate contract fulfillment
                 var contractData = await CalculateContractFulfillmentAsync(hours);
-                result.ProgressionData.Add("contract_fulfillment", contractData);
-                
+                result.ContractFulfillment = contractData;
+
                 // Calculate passive income
                 var incomeData = CalculatePassiveIncome(hours, marketData);
-                result.ProgressionData.Add("passive_income", incomeData);
-                
-                // Apply economic resource changes
-                result.ResourceChanges["currency"] = incomeData.TotalIncome;
-                result.ResourceChanges["market_reputation"] = contractData.ReputationChange;
-                
-                // Add economy events
-                result.Events.AddRange(_economyEvents);
-                _economyEvents.Clear();
-                
-                // Generate notifications
+                result.PassiveIncome = incomeData;
+
+                // Calculate total gains
+                result.TotalResourcesGenerated = incomeData.TotalIncome;
+                result.NetGain = incomeData.TotalIncome;
+
+                // Generate important events
                 if (incomeData.TotalIncome > 0)
                 {
-                    result.Notifications.Add($"Earned {incomeData.TotalIncome:F0} currency from passive income while away");
+                    result.ImportantEvents.Add($"Earned {incomeData.TotalIncome:F0} currency from passive income while away");
                 }
-                
+
                 if (contractData.CompletedContracts > 0)
                 {
-                    result.Notifications.Add($"{contractData.CompletedContracts} contracts were automatically fulfilled");
+                    result.ImportantEvents.Add($"{contractData.CompletedContracts} contracts were automatically fulfilled");
                 }
-                
+
                 if (marketData.SignificantPriceChanges.Count > 0)
                 {
-                    result.Notifications.Add($"Market prices changed for {marketData.SignificantPriceChanges.Count} commodities");
+                    result.ImportantEvents.Add($"Market prices changed for {marketData.SignificantPriceChanges.Count} commodities");
                 }
-                
-                ChimeraLogger.Log($"[EconomyOfflineProvider] Processed {hours:F1} hours of economic progression");
+
+                ChimeraLogger.Log("PROGRESSION", "Economy offline progression calculated", null);
             }
             catch (Exception ex)
             {
@@ -83,18 +85,21 @@ namespace ProjectChimera.Systems.Progression
         public async Task ApplyOfflineProgressionAsync(OfflineProgressionResult result)
         {
             await Task.Delay(35);
-            
-            if (result.ProgressionData.TryGetValue("market_changes", out var marketObj) && marketObj is MarketData marketData)
+
+            var progressionData = result.ProgressionData as Dictionary<string, object>;
+            if (progressionData == null) return;
+
+            if (progressionData.TryGetValue("market_changes", out var marketObj) && marketObj is MarketData marketData)
             {
                 await ApplyMarketChangesAsync(marketData);
             }
-            
-            if (result.ProgressionData.TryGetValue("contract_fulfillment", out var contractObj) && contractObj is ContractFulfillmentData contractData)
+
+            if (progressionData.TryGetValue("contract_fulfillment", out var contractObj) && contractObj is ContractFulfillmentData contractData)
             {
                 await ApplyContractFulfillmentAsync(contractData);
             }
             
-            ChimeraLogger.Log($"[EconomyOfflineProvider] Applied economy progression for session {result.SessionId}");
+            ChimeraLogger.Log("OTHER", "$1", null);
         }
         
         private async Task<MarketData> CalculateMarketChangesAsync(float hours)

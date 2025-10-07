@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 using ProjectChimera.Core.Logging;
+using ChimeraLogger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.UI.Simple
 {
@@ -43,7 +44,7 @@ namespace ProjectChimera.UI.Simple
         {
             if (_menuDocument == null)
             {
-                ChimeraLogger.LogError("[SimpleContextualMenu] No UIDocument assigned!");
+                ChimeraLogger.LogInfo("SimpleContextualMenu", "$1");
                 return;
             }
 
@@ -58,7 +59,10 @@ namespace ProjectChimera.UI.Simple
             _menuContainer.style.width = 300;
             _menuContainer.style.height = 400;
             _menuContainer.style.backgroundColor = new Color(0, 0, 0, 0.9f);
-            _menuContainer.style.borderRadius = 10;
+            _menuContainer.style.borderTopLeftRadius = 10;
+            _menuContainer.style.borderTopRightRadius = 10;
+            _menuContainer.style.borderBottomLeftRadius = 10;
+            _menuContainer.style.borderBottomRightRadius = 10;
             _menuContainer.style.paddingTop = 10;
             _menuContainer.style.paddingBottom = 10;
             _menuContainer.style.paddingLeft = 15;
@@ -95,7 +99,7 @@ namespace ProjectChimera.UI.Simple
             _rootElement.Add(_menuContainer);
 
             _isMenuVisible = true;
-            ChimeraLogger.LogVerbose("[SimpleContextualMenu] Menu initialized");
+            ChimeraLogger.LogInfo("SimpleContextualMenu", "$1");
         }
 
         private Button CreateModeButton(string modeName, Action clickAction)
@@ -138,7 +142,7 @@ namespace ProjectChimera.UI.Simple
             }
 
             OnModeChanged?.Invoke(mode);
-            ChimeraLogger.LogVerbose($"[SimpleContextualMenu] Mode changed to: {mode}");
+            ChimeraLogger.LogInfo("SimpleContextualMenu", "$1");
         }
 
         private void UpdateModeColor()
@@ -233,7 +237,7 @@ namespace ProjectChimera.UI.Simple
             {
                 _menuActions[actionName]?.Invoke();
                 OnActionSelected?.Invoke(actionName);
-                ChimeraLogger.LogVerbose($"[SimpleContextualMenu] Executed action: {actionName}");
+                ChimeraLogger.LogInfo("SimpleContextualMenu", "$1");
             }
         }
 
@@ -248,7 +252,7 @@ namespace ProjectChimera.UI.Simple
         {
             _isMenuVisible = !_isMenuVisible;
             _menuContainer.style.display = _isMenuVisible ? DisplayStyle.Flex : DisplayStyle.None;
-            ChimeraLogger.LogVerbose($"[SimpleContextualMenu] Menu visibility: {_isMenuVisible}");
+            ChimeraLogger.LogInfo("SimpleContextualMenu", "$1");
         }
 
         /// <summary>
@@ -293,7 +297,7 @@ namespace ProjectChimera.UI.Simple
         {
             _actionList.Clear();
             _menuActions.Clear();
-            ChimeraLogger.LogVerbose("[SimpleContextualMenu] All actions cleared");
+            ChimeraLogger.LogInfo("SimpleContextualMenu", "$1");
         }
 
         #endregion

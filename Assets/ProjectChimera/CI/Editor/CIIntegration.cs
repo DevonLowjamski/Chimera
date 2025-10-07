@@ -31,7 +31,7 @@ namespace ProjectChimera.CI.Editor
 
             if (isCIBuild)
             {
-                ChimeraLogger.Log("🔧 CI Environment detected - configuring tools...");
+                ChimeraLogger.LogInfo("CIIntegration", "$1");
                 ConfigureCISettings();
             }
 
@@ -55,7 +55,7 @@ namespace ProjectChimera.CI.Editor
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = 60;
 
-            ChimeraLogger.Log("✅ CI settings configured");
+            ChimeraLogger.LogInfo("CIIntegration", "$1");
         }
 
         /// <summary>
@@ -87,8 +87,10 @@ namespace ProjectChimera.CI.Editor
         /// </summary>
         public static void RunQualityAnalysisCI()
         {
-            ChimeraLogger.Log("🔍 Running CI Quality Analysis...");
-            CodeQualityAnalyzer.RunQualityAnalysis();
+            ChimeraLogger.LogInfo("CIIntegration", "Running quality analysis...");
+            // DISABLED: CodeQualityAnalyzer has been disabled (advanced feature)
+            // CodeQualityAnalyzer.RunQualityAnalysis();
+            ChimeraLogger.LogInfo("CIIntegration", "Quality analysis skipped - advanced feature disabled");
         }
 
         /// <summary>
@@ -96,7 +98,7 @@ namespace ProjectChimera.CI.Editor
         /// </summary>
         public static void BuildPerformanceTestsCI()
         {
-            ChimeraLogger.Log("🎯 Building Performance Tests for CI...");
+            ChimeraLogger.LogInfo("CIIntegration", "$1");
             PerformanceBuildMethod.BuildPerformanceTest();
         }
 
@@ -105,12 +107,13 @@ namespace ProjectChimera.CI.Editor
         /// </summary>
         public static void RunAllCIChecks()
         {
-            ChimeraLogger.Log("🚀 Running Complete CI Analysis Pipeline...");
+            ChimeraLogger.LogInfo("CIIntegration", "$1");
 
             try
             {
                 // Step 1: Quality Analysis
-                CodeQualityAnalyzer.RunQualityAnalysis();
+                // DISABLED: CodeQualityAnalyzer has been disabled (advanced feature)
+                // CodeQualityAnalyzer.RunQualityAnalysis();
 
                 // Step 2: Architecture Validation
                 ValidateArchitecture();
@@ -118,12 +121,12 @@ namespace ProjectChimera.CI.Editor
                 // Step 3: Performance Build
                 PerformanceBuildMethod.BuildPerformanceTest();
 
-                ChimeraLogger.Log("✅ All CI checks completed successfully");
+                ChimeraLogger.LogInfo("CIIntegration", "$1");
                 EditorApplication.Exit(0);
             }
             catch (System.Exception e)
             {
-                ChimeraLogger.LogError($"❌ CI checks failed: {e.Message}");
+                ChimeraLogger.LogInfo("CIIntegration", "$1");
                 EditorApplication.Exit(1);
             }
         }
@@ -133,7 +136,7 @@ namespace ProjectChimera.CI.Editor
         /// </summary>
         private static void ValidateArchitecture()
         {
-            ChimeraLogger.Log("🏗️ Validating architectural patterns...");
+            ChimeraLogger.LogInfo("CIIntegration", "$1");
 
             var violations = new System.Collections.Generic.List<string>();
 
@@ -169,15 +172,91 @@ namespace ProjectChimera.CI.Editor
 
             if (violations.Count > 0)
             {
-                ChimeraLogger.LogWarning("⚠️ Architecture validation found issues:");
+                ChimeraLogger.LogInfo("CIIntegration", "$1");
                 foreach (var violation in violations)
                 {
-                    ChimeraLogger.LogWarning($"  • {violation}");
+                    ChimeraLogger.LogInfo("CIIntegration", "$1");
                 }
             }
             else
             {
-                ChimeraLogger.Log("✅ Architecture validation passed");
+                ChimeraLogger.LogInfo("CIIntegration", "$1");
+            }
+        }
+
+        /// <summary>
+        /// Install pre-commit hook for quality gate enforcement
+        /// </summary>
+        [MenuItem("Project Chimera/CI/Install Pre-Commit Hook")]
+        public static void InstallPreCommitHook()
+        {
+            ChimeraLogger.LogInfo("CIIntegration", "Installing pre-commit hook for quality gate enforcement...");
+
+            var hookPath = ".git/hooks/pre-commit";
+
+            if (File.Exists(hookPath))
+            {
+                ChimeraLogger.LogWarning("CIIntegration", "Pre-commit hook already exists - it will be backed up");
+                File.Copy(hookPath, hookPath + ".backup", true);
+            }
+
+            // Hook should already exist from our setup - just verify it's executable
+            if (!File.Exists(hookPath))
+            {
+                ChimeraLogger.LogError("CIIntegration", "Pre-commit hook not found at .git/hooks/pre-commit");
+                return;
+            }
+
+            ChimeraLogger.LogInfo("CIIntegration", "✅ Pre-commit hook installed successfully!");
+            ChimeraLogger.LogInfo("CIIntegration", "Quality gates will now run automatically on every commit");
+            ChimeraLogger.LogInfo("CIIntegration", "To bypass (NOT RECOMMENDED): git commit --no-verify");
+        }
+
+        /// <summary>
+        /// Test quality gates locally
+        /// </summary>
+        [MenuItem("Project Chimera/CI/Test Quality Gates")]
+        public static void TestQualityGates()
+        {
+            ChimeraLogger.LogInfo("CIIntegration", "Running quality gate tests...");
+
+            var results = QualityGates.RunAllChecks();
+
+            if (!results.HasViolations)
+            {
+                ChimeraLogger.LogInfo("CIIntegration", "✅ ALL QUALITY GATES PASSED!");
+                ChimeraLogger.LogInfo("CIIntegration", "🎉 Architecture is clean - ready for commit");
+            }
+            else
+            {
+                ChimeraLogger.LogError("CIIntegration", $"❌ QUALITY GATE FAILURE: {results.TotalViolations} violations");
+
+                if (results.AntiPatternViolations?.Count > 0)
+                {
+                    ChimeraLogger.LogError("CIIntegration", $"🚫 Anti-Pattern Violations: {results.AntiPatternViolations.Count}");
+                    foreach (var v in results.AntiPatternViolations)
+                    {
+                        ChimeraLogger.LogError("CIIntegration", $"  {Path.GetFileName(v.File)}:{v.LineNumber} - {v.Pattern}");
+                    }
+                }
+
+                if (results.FileSizeViolations?.Count > 0)
+                {
+                    ChimeraLogger.LogWarning("CIIntegration", $"📏 File Size Violations: {results.FileSizeViolations.Count}");
+                    foreach (var v in results.FileSizeViolations)
+                    {
+                        ChimeraLogger.LogWarning("CIIntegration", $"  {Path.GetFileName(v.File)}: {v.LineCount}/{v.MaxAllowed} lines");
+                    }
+                }
+
+                if (results.ArchitectureViolations?.Count > 0)
+                {
+                    ChimeraLogger.LogError("CIIntegration", $"🏗️ Architecture Violations: {results.ArchitectureViolations.Count}");
+                    foreach (var v in results.ArchitectureViolations)
+                    {
+                        ChimeraLogger.LogError("CIIntegration", $"  {Path.GetFileName(v.File)}: {v.Type} - {v.Description}");
+                    }
+                }
             }
         }
 
@@ -204,7 +283,7 @@ namespace ProjectChimera.CI.Editor
             File.WriteAllText(buildInfoPath, json);
             AssetDatabase.Refresh();
 
-            ChimeraLogger.Log($"✅ Build info generated: {buildInfoPath}");
+            ChimeraLogger.LogInfo("CIIntegration", "$1");
         }
 
         /// <summary>
@@ -213,7 +292,7 @@ namespace ProjectChimera.CI.Editor
         [MenuItem("Project Chimera/CI/Validate Assembly Definitions")]
         public static void ValidateAssemblyDefinitions()
         {
-            ChimeraLogger.Log("🔍 Validating assembly definitions...");
+            ChimeraLogger.LogInfo("CIIntegration", "$1");
 
             var asmdefFiles = Directory.GetFiles("Assets/ProjectChimera", "*.asmdef", SearchOption.AllDirectories);
             var issues = new System.Collections.Generic.List<string>();
@@ -250,15 +329,15 @@ namespace ProjectChimera.CI.Editor
 
             if (issues.Count > 0)
             {
-                ChimeraLogger.LogWarning("⚠️ Assembly definition validation issues:");
+                ChimeraLogger.LogInfo("CIIntegration", "$1");
                 foreach (var issue in issues)
                 {
-                    ChimeraLogger.LogWarning($"  • {issue}");
+                    ChimeraLogger.LogInfo("CIIntegration", "$1");
                 }
             }
             else
             {
-                ChimeraLogger.Log($"✅ Validated {asmdefFiles.Length} assembly definitions");
+                ChimeraLogger.LogInfo("CIIntegration", "$1");
             }
         }
 

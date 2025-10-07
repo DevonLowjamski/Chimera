@@ -1,0 +1,480 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Systems.Camera;
+using ProjectChimera.Data.Camera;
+using ProjectChimera.Data.Events;
+using ProjectChimera.Core.Updates;
+
+namespace ProjectChimera.Systems.Camera
+{
+    /// <summary>
+    /// Lightweight orchestrator for the advanced camera system.
+    /// Delegates all functionality to specialized camera components.
+    /// Refactored from 2,681-line monolith to modular architecture.
+    /// Maintains full API compatibility for existing camera interactions.
+    /// </summary>
+    public class AdvancedCameraController : MonoBehaviour, ITickable
+    {
+        [Header("Component References")]
+        [SerializeField] private CameraInputHandler _inputHandler;
+        [SerializeField] private CameraTransitionManager _transitionManager;
+        [SerializeField] private CameraStateManager _stateManager;
+        [SerializeField] private CameraTargetAnchorSystem _anchorSystem;
+        // CameraStatePersistence is a static utility class, no component reference needed
+        [SerializeField] private PostProcessingController _postProcessingController;
+        [SerializeField] private CameraStateHistory _stateHistory;
+        
+        [Header("Core Camera Configuration")]
+        [SerializeField] private UnityEngine.Camera _mainCamera;
+        [SerializeField] private Transform _cameraTransform;
+        [SerializeField] private bool _enableDebugLogging = false;
+        
+        [Header("Camera Level Configuration")]
+        [SerializeField] private CameraLevelConfigurationSO _cameraLevelConfiguration;
+        [SerializeField] private CameraLevel _defaultCameraLevel = CameraLevel.Facility;
+        [SerializeField] private bool _enableLevelTransitions = true;
+        
+        [Header("Event System")]
+        [SerializeField] private CameraLevelChangedEventSO _cameraLevelChangedEvent;
+        [SerializeField] private bool _enableEventSystem = true;
+        
+        // Public API - maintains compatibility with existing code
+        public System.Action<Transform> OnFocusTargetChanged;
+        public System.Action<bool> OnCinematicModeChanged;
+        public System.Action<Transform> OnTargetHover;
+        public System.Action<Transform> OnLevelAnchorChanged;
+        
+        // Properties - delegate to components
+        public Transform FocusTarget => _stateManager?.FocusTarget;
+        public bool IsTransitioning => _transitionManager?.IsTransitioning ?? false;
+        public bool UserControlActive => _stateManager?.UserControlActive ?? true;
+        public Transform CurrentLevelAnchor => _stateManager?.CurrentLevelAnchor;
+        public bool IsLevelTransitioning => _stateManager?.IsLevelTransitioning ?? false;
+        public Vector3 Position => _cameraTransform != null ? _cameraTransform.position : Vector3.zero;
+        public float FieldOfView => _mainCamera != null ? _mainCamera.fieldOfView : 60f;
+        public bool HasFocus => FocusTarget != null;
+        public float DistanceToFocus => FocusTarget != null ? Vector3.Distance(Position, FocusTarget.position) : 0f;
+        
+        private void Awake()
+        {
+            InitializeComponents();
+        }
+        
+        private void Start()
+        {
+            WireComponentEvents();
+            ValidateSystemIntegrity();
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+        }
+        
+        #region ITickable Implementation
+
+        public int Priority => TickPriority.CameraEffects;
+        public bool Enabled => enabled && _mainCamera != null && _stateManager != null;
+
+        public void Tick(float deltaTime)
+        {
+            // Let components handle their own updates
+            UpdateCameraState();
+        }
+
+        #endregion
+        
+        private void InitializeComponents()
+        {
+            // Find or create required components
+            if (_mainCamera == null) _mainCamera = GetComponent<UnityEngine.Camera>();
+            if (_cameraTransform == null) _cameraTransform = transform;
+            if (_inputHandler == null) _inputHandler = GetComponent<CameraInputHandler>();
+            if (_transitionManager == null) _transitionManager = GetComponent<CameraTransitionManager>();
+            if (_stateManager == null) _stateManager = GetComponent<CameraStateManager>();
+            if (_anchorSystem == null) _anchorSystem = GetComponent<CameraTargetAnchorSystem>();
+            // CameraStatePersistence is static, no component initialization needed
+            if (_postProcessingController == null) _postProcessingController = GetComponent<PostProcessingController>();
+            if (_stateHistory == null) _stateHistory = GetComponent<CameraStateHistory>();
+            
+            LogDebug("Advanced camera components initialized");
+        }
+        
+        private void WireComponentEvents()
+        {
+            // Wire state manager events
+            if (_stateManager != null)
+            {
+                _stateManager.OnFocusTargetChanged += HandleFocusTargetChanged;
+                _stateManager.OnLevelAnchorChanged += HandleLevelAnchorChanged;
+                _stateManager.OnUserControlChanged += HandleUserControlChanged;
+            }
+            
+            // Wire transition manager events
+            if (_transitionManager != null)
+            {
+                _transitionManager.OnTransitionStateChanged += HandleTransitionStateChanged;
+                _transitionManager.OnTransitionCompleted += HandleTransitionCompleted;
+            }
+            
+            // Wire input handler events
+            if (_inputHandler != null)
+            {
+                _inputHandler.OnFocusRequested += HandleFocusRequested;
+                _inputHandler.OnTargetHover += HandleTargetHover;
+            }
+            
+            LogDebug("Camera component events wired");
+        }
+        
+        private void UpdateCameraState()
+        {
+            // Orchestrate component updates if needed
+            if (_stateManager != null)
+            {
+                _stateManager.UpdateCameraState(_mainCamera, _cameraTransform);
+            }
+        }
+        
+        // Public API methods - delegate to appropriate components
+        public void ClearFocus()
+        {
+            _stateManager?.ClearFocus();
+            OnFocusTargetChanged?.Invoke(null);
+        }
+        
+        public void ShakeCamera(float intensity = 1f, float duration = 0.5f)
+        {
+            _postProcessingController?.ShakeCamera(intensity, duration);
+        }
+        
+        // TODO: CinematicSequence type needs to be defined
+        // public void PlayCinematicSequence(CinematicSequence sequence)
+        // {
+        //     _transitionManager?.PlayCinematicSequence(sequence);
+        // }
+        
+        // Camera level management - delegate to state manager
+        public float GetLevelDistance(CameraLevel level)
+        {
+            return _stateManager?.GetLevelDistance(level) ?? 15f;
+        }
+        
+        public float GetLevelHeight(CameraLevel level)
+        {
+            return _stateManager?.GetLevelHeight(level) ?? 10f;
+        }
+        
+        public bool IsValidLevel(CameraLevel level)
+        {
+            return _stateManager?.IsValidLevel(level) ?? false;
+        }
+        
+        public CameraLevel CurrentCameraLevel => _stateManager?.CurrentLevel ?? CameraLevel.Room;
+        
+        public bool ZoomOutOneLevel()
+        {
+            return _stateManager?.ZoomOutOneLevel() ?? false;
+        }
+        
+        public bool ZoomTo(CameraLevel targetLevel)
+        {
+            return _transitionManager?.ZoomTo(targetLevel) ?? false;
+        }
+        
+        public bool ZoomTo(CameraLevel targetLevel, Transform anchor)
+        {
+            return _transitionManager?.ZoomTo(targetLevel, anchor) ?? false;
+        }
+        
+        public bool ZoomTo(CameraLevel targetLevel, Vector3 customPosition)
+        {
+            return _transitionManager?.ZoomTo(targetLevel, customPosition) ?? false;
+        }
+        
+        public int GetLevelDistance(CameraLevel fromLevel, CameraLevel toLevel)
+        {
+            return _stateManager?.GetLevelDistance(fromLevel, toLevel) ?? 1;
+        }
+        
+        public bool IsValidLevelTransition(CameraLevel fromLevel, CameraLevel toLevel)
+        {
+            return _stateManager?.IsValidLevelTransition(fromLevel, toLevel) ?? false;
+        }
+        
+        public float GetOptimalTransitionDuration(CameraLevel fromLevel, CameraLevel toLevel)
+        {
+            return _transitionManager?.GetOptimalTransitionDuration(fromLevel, toLevel) ?? 1f;
+        }
+        
+        // Movement and positioning methods
+        public void OrbitAroundTarget(float yaw, float pitch, float duration = -1f)
+        {
+            _transitionManager?.OrbitAroundTarget(yaw, pitch, duration);
+        }
+        
+        public void SetMovementSmoothing(bool enabled, float movementSmoothTime = -1f, float rotationSmoothTime = -1f)
+        {
+            _stateManager?.SetMovementSmoothing(enabled, movementSmoothTime, rotationSmoothTime);
+        }
+        
+        public void SetCameraBounds(Vector3 min, Vector3 max, bool useSoftBounds = false)
+        {
+            _stateManager?.SetCameraBounds(min, max, useSoftBounds);
+        }
+        
+        public bool FocusOnTarget(Transform target)
+        {
+            return _transitionManager?.FocusOnTarget(target) ?? false;
+        }
+        
+        public void MoveCameraToPosition(Vector3 position, Quaternion rotation, float duration = -1f)
+        {
+            _transitionManager?.MoveCameraToPosition(position, rotation, duration);
+        }
+        
+        public void SetUserControlEnabled(bool enabled)
+        {
+            _stateManager?.SetUserControlEnabled(enabled);
+            _inputHandler?.SetInputEnabled(enabled);
+        }
+        
+        // Target and focus methods
+        public float GetSuggestedDistanceForTarget(Transform target)
+        {
+            return _anchorSystem?.GetSuggestedDistanceForTarget(target) ?? 10f;
+        }
+        
+        public bool CanFocusOnTarget(Transform target)
+        {
+            return _anchorSystem?.CanFocusOnTarget(target) ?? false;
+        }
+        
+        public Ray GetCameraRay(Vector2 screenPosition)
+        {
+            return _inputHandler?.GetCameraRay(screenPosition) ?? new Ray();
+        }
+        
+        public bool FocusOnTargetAtScreenPosition(Vector2 screenPosition)
+        {
+            return _inputHandler?.FocusOnTargetAtScreenPosition(screenPosition) ?? false;
+        }
+        
+        public Transform GetTargetAtScreenPosition(Vector2 screenPosition)
+        {
+            return _inputHandler?.GetTargetAtScreenPosition(screenPosition);
+        }
+        
+        public void SetClickToFocusEnabled(bool enabled)
+        {
+            _inputHandler?.SetClickToFocusEnabled(enabled);
+        }
+        
+        // Configuration and system management
+        public Dictionary<string, string> GetKeyboardShortcuts()
+        {
+            return _inputHandler?.GetKeyboardShortcuts() ?? new Dictionary<string, string>();
+        }
+        
+        public void SetLevelChangeEventConfiguration(CameraLevelChangedEventSO eventChannel, bool enableEvents = true)
+        {
+            _cameraLevelChangedEvent = eventChannel;
+            _enableEventSystem = enableEvents;
+        }
+        
+        public (CameraLevelChangedEventSO eventChannel, bool eventsEnabled) GetEventConfiguration()
+        {
+            return (_cameraLevelChangedEvent, _enableEventSystem);
+        }
+        
+        public bool FocusOnNearestTarget()
+        {
+            return _anchorSystem?.FocusOnNearestTarget() ?? false;
+        }
+        
+        // Level semantics and information
+        public string GetLevelSemanticName(CameraLevel level)
+        {
+            return _stateManager?.GetLevelSemanticName(level) ?? level.ToString();
+        }
+        
+        public string GetLevelDescription(CameraLevel level)
+        {
+            return _stateManager?.GetLevelDescription(level) ?? "";
+        }
+        
+        public float GetLevelFieldOfView(CameraLevel level)
+        {
+            return _stateManager?.GetLevelFieldOfView(level) ?? 60f;
+        }
+        
+        public float GetLevelTransitionSpeed(CameraLevel level)
+        {
+            return _transitionManager?.GetLevelTransitionSpeed(level) ?? 1f;
+        }
+        
+        public bool IsLevelAvailable(CameraLevel level)
+        {
+            return _stateManager?.IsLevelAvailable(level) ?? false;
+        }
+        
+        public Vector3 ApplyGlobalPositionOffset(Vector3 originalPosition)
+        {
+            return _stateManager?.ApplyGlobalPositionOffset(originalPosition) ?? originalPosition;
+        }
+        
+        public void SetCameraLevelConfiguration(CameraLevelConfigurationSO configuration)
+        {
+            _cameraLevelConfiguration = configuration;
+            _stateManager?.SetCameraLevelConfiguration(configuration);
+        }
+        
+        public void SetCameraLevel(CameraLevel level)
+        {
+            _stateManager?.SetCameraLevel(level);
+        }
+        
+        // Anchor system methods
+        public bool FocusOnTargetWithAnchor(Transform target)
+        {
+            return _anchorSystem?.FocusOnTargetWithAnchor(target) ?? false;
+        }
+        
+        public CameraLevel GetTargetCameraLevel(Transform target)
+        {
+            return _anchorSystem?.GetTargetCameraLevel(target) ?? CameraLevel.Facility;
+        }
+        
+        public Transform GetLogicalAnchor(Transform target)
+        {
+            return _anchorSystem?.GetLogicalAnchor(target);
+        }
+        
+        public bool HasValidAnchor(Transform target)
+        {
+            return _anchorSystem?.HasValidAnchor(target) ?? false;
+        }
+        
+        public CameraTransitionInfo GetTargetTransitionInfo(Transform target)
+        {
+            return _anchorSystem?.GetTargetTransitionInfo(target) ?? new CameraTransitionInfo();
+        }
+        
+        public bool FocusOnPosition(Vector3 position, Transform anchorReference = null)
+        {
+            return _transitionManager?.FocusOnPosition(position, anchorReference) ?? false;
+        }
+        
+        public List<Transform> GetAnchorsForLevel(CameraLevel level)
+        {
+            return _anchorSystem?.GetAnchorsForLevel(level) ?? new List<Transform>();
+        }
+        
+        public void RefreshAnchorMappings()
+        {
+            _anchorSystem?.RefreshAnchorMappings();
+        }
+        
+        // Event handlers - orchestrate component interactions
+        private void HandleFocusTargetChanged(Transform newTarget)
+        {
+            OnFocusTargetChanged?.Invoke(newTarget);
+            LogDebug($"Focus target changed to: {newTarget?.name ?? "null"}");
+        }
+        
+        private void HandleLevelAnchorChanged(Transform newAnchor)
+        {
+            OnLevelAnchorChanged?.Invoke(newAnchor);
+            LogDebug($"Level anchor changed to: {newAnchor?.name ?? "null"}");
+        }
+        
+        private void HandleUserControlChanged(bool enabled)
+        {
+            LogDebug($"User control changed: {enabled}");
+        }
+        
+        private void HandleTransitionStateChanged(bool isTransitioning)
+        {
+            LogDebug($"Transition state changed: {isTransitioning}");
+        }
+        
+        private void HandleTransitionCompleted(CameraTransitionManager.TransitionType transitionType)
+        {
+            LogDebug($"Transition completed: {transitionType}");
+        }
+        
+        private void HandleFocusRequested(Transform target)
+        {
+            FocusOnTarget(target);
+        }
+        
+        private void HandleTargetHover(Transform target)
+        {
+            OnTargetHover?.Invoke(target);
+        }
+        
+        private void ValidateSystemIntegrity()
+        {
+            bool isValid = true;
+            
+            if (_mainCamera == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                isValid = false;
+            }
+            
+            if (_stateManager == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                isValid = false;
+            }
+            
+            if (_transitionManager == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                isValid = false;
+            }
+            
+            if (!isValid)
+            {
+                enabled = false;
+            }
+            else
+            {
+                LogDebug("Camera system integrity validated successfully");
+            }
+        }
+        
+        private void LogDebug(string message)
+        {
+            if (_enableDebugLogging)
+                UnityEngine.Debug.Log("Operation completed");
+        }
+        
+        // Cleanup
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+            
+            if (_stateManager != null)
+            {
+                _stateManager.OnFocusTargetChanged -= HandleFocusTargetChanged;
+                _stateManager.OnLevelAnchorChanged -= HandleLevelAnchorChanged;
+                _stateManager.OnUserControlChanged -= HandleUserControlChanged;
+            }
+            
+            if (_transitionManager != null)
+            {
+                _transitionManager.OnTransitionStateChanged -= HandleTransitionStateChanged;
+                _transitionManager.OnTransitionCompleted -= HandleTransitionCompleted;
+            }
+            
+            if (_inputHandler != null)
+            {
+                _inputHandler.OnFocusRequested -= HandleFocusRequested;
+                _inputHandler.OnTargetHover -= HandleTargetHover;
+            }
+        }
+    }
+}

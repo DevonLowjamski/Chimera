@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using ProjectChimera.Core.DependencyInjection;
+
 using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core
@@ -24,17 +24,17 @@ namespace ProjectChimera.Core
         // Logging methods
         private void LogProviderAction(string action)
         {
-            ChimeraLogger.Log("CORE", $"NullImplementationProvider: {action}", this);
+            ChimeraLogger.LogInfo("NullImplementationProvider", "$1");
         }
 
         private void LogProviderError(string error)
         {
-            ChimeraLogger.LogError("CORE", $"NullImplementationProvider Error: {error}", this);
+            ChimeraLogger.LogInfo("NullImplementationProvider", "$1");
         }
 
         private void LogProviderWarning(string warning)
         {
-            ChimeraLogger.LogWarning("CORE", $"NullImplementationProvider Warning: {warning}", this);
+            ChimeraLogger.LogInfo("NullImplementationProvider", "$1");
         }
 
         // Configuration method

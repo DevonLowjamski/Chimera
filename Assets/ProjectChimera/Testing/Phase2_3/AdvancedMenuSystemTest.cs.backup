@@ -1,0 +1,65 @@
+using UnityEngine;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Systems.Services.Core;
+
+namespace ProjectChimera.Testing.Phase2_3
+{
+    /// <summary>
+    /// LEGACY: Large monolithic test file - DEPRECATED
+    /// This file has been refactored into focused test components.
+    /// Use AdvancedMenuSystemTestCoordinator instead.
+    /// 
+    /// New focused test structure:
+    /// - MenuSystemCoreTests.cs - Core menu functionality
+    /// - ContextFilteringTests.cs - Context-aware filtering
+    /// - VisualFeedbackTests.cs - Visual feedback and animations
+    /// - InputSystemTests.cs - Input system integration
+    /// - PerformanceTests.cs - Performance optimization
+    /// - SystemIntegrationTests.cs - Integration testing
+    /// - AdvancedMenuSystemTestCoordinator.cs - Test coordination
+    /// </summary>
+    [System.Obsolete("This monolithic test file has been refactored. Use AdvancedMenuSystemTestCoordinator instead.", false)]
+    public class AdvancedMenuSystemTest : MonoBehaviour
+    {
+        private AdvancedMenuSystemTestCoordinator _coordinator;
+        
+        private void Start()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+            
+            // Automatically redirect to the new coordinator
+            _coordinator = GetComponent<AdvancedMenuSystemTestCoordinator>();
+            if (_coordinator == null)
+            {
+                _coordinator = gameObject.AddComponent<AdvancedMenuSystemTestCoordinator>();
+            }
+        }
+        
+        /// <summary>
+        /// Legacy method - redirects to new test coordinator
+        /// </summary>
+        [System.Obsolete("Use AdvancedMenuSystemTestCoordinator.RunAllTests() instead")]
+        public void RunAllTests()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+            
+            if (_coordinator != null)
+            {
+                _coordinator.RunAllTests();
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+        
+        /// <summary>
+        /// Legacy methods for backward compatibility - all redirect to coordinator
+        /// </summary>
+        [System.Obsolete("Use AdvancedMenuSystemTestCoordinator instead")]
+        public void RunCoreTests() => _coordinator?.RunCoreTests();
+        
+        [System.Obsolete("Use AdvancedMenuSystemTestCoordinator instead")]
+        public void RunPerformanceTests() => _coordinator?.RunPerformanceTests();
+    }
+}

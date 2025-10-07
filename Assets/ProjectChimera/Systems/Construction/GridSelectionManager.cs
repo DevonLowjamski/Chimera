@@ -1,8 +1,10 @@
 using UnityEngine;
+using ProjectChimera.Core;
 using ProjectChimera.Core.Updates;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Data.Construction;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Construction
 {
@@ -50,6 +52,9 @@ namespace ProjectChimera.Systems.Construction
         public List<ConstructionCategory> ActiveFilterCategories => new List<ConstructionCategory>(_activeFilterCategories);
         public Dictionary<ConstructionCategory, int> CategoryCounts => GetCategoryCounts();
         public bool HasSelection => _selectedObjects.Count > 0;
+
+            public int TickPriority => 0;
+            public bool IsTickable => enabled && gameObject.activeInHierarchy;
 
             public void Tick(float deltaTime)
     {
@@ -315,32 +320,25 @@ namespace ProjectChimera.Systems.Construction
 
         private void PerformDragSelection()
         {
-            var camera = Camera.main;
+            var camera = UnityEngine.Camera.main;
             if (camera == null) return;
 
             var objectsInBounds = new List<GridPlaceable>();
-            // Primary: Try ServiceContainer resolution for registered GridPlaceable components
-            var allPlaceables = ServiceContainerFactory.Instance.ResolveAll<GridPlaceable>();
-            if (allPlaceables?.Any() != true)
+
+            // Primary: Try GameObjectRegistry for placeable tracking
+            var registry = ServiceContainerFactory.Instance?.TryResolve<ProjectChimera.Core.Performance.IGameObjectRegistry>();
+            var allPlaceables = registry?.GetAll<GridPlaceable>();
+
+            if (allPlaceables == null || !allPlaceables.Any())
             {
-                // Fallback: Scene discovery + auto-registration
-                allPlaceables = UnityEngine.Object.FindObjectsOfType<GridPlaceable>();
-                
-                // Auto-register discovered placeables in ServiceContainer for future use
-                foreach (var placeable in allPlaceables)
-                {
-                    ServiceContainerFactory.Instance.RegisterInstance<GridPlaceable>(placeable);
-                }
-                
-                Debug.Log($"[GridSelectionManager] Registered {allPlaceables.Length} GridPlaceable components in ServiceContainer");
-            }
-            else
-            {
-                Debug.Log("[GridSelectionManager] Using GridPlaceable components from ServiceContainer");
+                ChimeraLogger.LogWarning("CONSTRUCTION", "GridSelectionManager: No GridPlaceable objects found - ensure they register with GameObjectRegistry in Awake()", this);
+                return;
             }
 
             foreach (var placeable in allPlaceables)
             {
+                if (placeable == null) continue;
+
                 Vector3 screenPos = camera.WorldToScreenPoint(placeable.transform.position);
                 if (_selectionBounds.Contains(screenPos))
                 {
@@ -397,8 +395,7 @@ namespace ProjectChimera.Systems.Construction
         }
 
     // ITickable implementation
-    public int Priority => 0;
-    public bool Enabled => enabled && gameObject.activeInHierarchy;
+
 
     public virtual void OnRegistered()
     {

@@ -1,0 +1,208 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+
+namespace ProjectChimera.Data.Player
+{
+    /// <summary>
+    /// Simple badge data for player achievements
+    /// </summary>
+    [System.Serializable]
+    public class Badge
+    {
+        public string BadgeId;
+        public string BadgeName;
+        public string Description;
+        public DateTime EarnedDate;
+    }
+
+    [Serializable]
+    public class PlayerProfile
+    {
+        [Header("Player Information")]
+        public string PlayerId;
+        public string PlayerName;
+        public string DisplayName;
+        public string Bio = "";
+        public int Level = 1;
+        public int Experience = 0;
+        public int ReputationPoints = 0;
+        public DateTime LastActive = DateTime.Now;
+        public PlayerStatus Status = PlayerStatus.Online;
+        
+        [Header("Player Stats")]
+        public int TotalHarvests = 0;
+        public int ForumPosts = 0;
+        public int CultivationExperience = 0;
+        public bool IsVerified = false;
+        public List<string> Badges = new List<string>();
+        public List<string> Achievements = new List<string>();
+        public List<string> UnlockedContent = new List<string>();
+        public Dictionary<string, object> PlayerData = new Dictionary<string, object>();
+        
+        public List<Badge> EarnedBadges = new List<Badge>();
+
+        public PlayerProfile()
+        {
+            PlayerId = Guid.NewGuid().ToString();
+            PlayerName = "Player";
+            DisplayName = "Player";
+            Badges = new List<string>();
+            Achievements = new List<string>();
+            UnlockedContent = new List<string>();
+            PlayerData = new Dictionary<string, object>();
+            EarnedBadges = new List<Badge>();
+            LastActive = DateTime.Now;
+        }
+
+        public PlayerProfile(string playerId, string playerName)
+        {
+            PlayerId = playerId;
+            PlayerName = playerName;
+            DisplayName = playerName;
+            Badges = new List<string>();
+            Achievements = new List<string>();
+            UnlockedContent = new List<string>();
+            PlayerData = new Dictionary<string, object>();
+            EarnedBadges = new List<Badge>();
+            LastActive = DateTime.Now;
+        }
+
+        public bool HasAchievement(string achievement)
+        {
+            return Achievements.Contains(achievement);
+        }
+
+        public bool MeetsRequirement(string requirement)
+        {
+            var parts = requirement.Split(':');
+            if (parts.Length < 2) return true;
+            
+            var type = parts[0];
+            var value = parts[1];
+            
+            return type switch
+            {
+                "level" => int.TryParse(value, out var requiredLevel) && Level >= requiredLevel,
+                "experience" => int.TryParse(value, out var requiredExp) && Experience >= requiredExp,
+                "harvest_count" => int.TryParse(value, out var requiredHarvests) && TotalHarvests >= requiredHarvests,
+                "cultivation_experience" => int.TryParse(value, out var requiredCultExp) && CultivationExperience >= requiredCultExp,
+                "badge" => Badges.Contains(value),
+                "achievement" => HasAchievement(value),
+                "content_unlocked" => UnlockedContent.Contains(value),
+                "verified" => bool.TryParse(value, out var requireVerified) && (!requireVerified || IsVerified),
+                _ => true
+            };
+        }
+    }
+
+    public enum PlayerStatus
+    {
+        Online,
+        Away,
+        Busy,
+        Offline,
+        DoNotDisturb
+    }
+
+    [Serializable]
+    public class PlayerContribution
+    {
+        [Header("Contribution Information")]
+        public PlayerProfile PlayerProfile;
+        public string ContributionType;
+        public float Amount;
+        public DateTime Timestamp = DateTime.Now;
+        public Dictionary<string, object> ContributionData = new Dictionary<string, object>();
+
+        public PlayerContribution()
+        {
+            ContributionData = new Dictionary<string, object>();
+        }
+    }
+
+    [Serializable]
+    public class EventParticipant
+    {
+        [Header("Participant Information")]
+        public string PlayerId;
+        public string PlayerName;
+        public DateTime JoinedAt = DateTime.Now;
+        public bool IsActive = true;
+        public Dictionary<string, object> ParticipantData = new Dictionary<string, object>();
+
+        public EventParticipant()
+        {
+            ParticipantData = new Dictionary<string, object>();
+        }
+
+        public EventParticipant(string playerId, string playerName)
+        {
+            PlayerId = playerId;
+            PlayerName = playerName;
+            JoinedAt = DateTime.Now;
+            ParticipantData = new Dictionary<string, object>();
+        }
+        
+        public void UpdateScore(float score)
+        {
+            if (ParticipantData.ContainsKey("score"))
+            {
+                ParticipantData["score"] = score;
+            }
+            else
+            {
+                ParticipantData.Add("score", score);
+            }
+            ParticipantData["lastScoreUpdate"] = DateTime.Now;
+        }
+    }
+
+    [Serializable]
+    public class LeaderboardEntry
+    {
+        [Header("Leaderboard Entry")]
+        public string PlayerId;
+        public string PlayerName;
+        public float Score;
+        public int Rank;
+        public DateTime LastUpdated = DateTime.Now;
+        public Dictionary<string, object> EntryData = new Dictionary<string, object>();
+
+        public LeaderboardEntry()
+        {
+            EntryData = new Dictionary<string, object>();
+        }
+    }
+    
+    [Serializable]
+    public enum LeaderboardType
+    {
+        Overall,
+        Global,
+        Regional,
+        Friends,
+        Guild,
+        Weekly,
+        Monthly,
+        Seasonal,
+        TotalYield,
+        Cultivation,
+        Quality,
+        QualityScore,
+        THCPotency,
+        CBDContent,
+        TerpeneProfile,
+        Economic,
+        EconomicSuccess,
+        FacilityEfficiency,
+        Innovation,
+        BreedingInnovation,
+        ResearchPoints,
+        Speed,
+        SpeedRun,
+        CommunityContribution,
+        SustainabilityScore
+    }
+}

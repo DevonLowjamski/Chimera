@@ -18,22 +18,22 @@ namespace ProjectChimera.Core
         private readonly List<IOfflineProgressionListener> _offlineProgressionListeners = new List<IOfflineProgressionListener>();
         private FloatGameEventSO _onOfflineProgressionCalculated;
 
-        public bool EnableOfflineProgression 
-        { 
-            get => _enableOfflineProgression; 
-            set => _enableOfflineProgression = value; 
+        public bool EnableOfflineProgression
+        {
+            get => _enableOfflineProgression;
+            set => _enableOfflineProgression = value;
         }
 
-        public DateTime LastSaveTime 
-        { 
-            get => _lastSaveTime; 
-            set => _lastSaveTime = value; 
+        public DateTime LastSaveTime
+        {
+            get => _lastSaveTime;
+            set => _lastSaveTime = value;
         }
 
         public void Initialize()
         {
             _lastSaveTime = DateTime.Now;
-            ChimeraLogger.Log("[OfflineProgression] Offline progression system initialized");
+            ChimeraLogger.LogInfo("OfflineProgression", "$1");
         }
 
         public void Shutdown()
@@ -41,7 +41,7 @@ namespace ProjectChimera.Core
             // Record shutdown time for offline progression
             _lastSaveTime = DateTime.Now;
             _offlineProgressionListeners.Clear();
-            ChimeraLogger.Log("[OfflineProgression] Offline progression system shutdown");
+            ChimeraLogger.LogInfo("OfflineProgression", "$1");
         }
 
         public void RegisterOfflineProgressionListener(IOfflineProgressionListener listener)
@@ -49,7 +49,7 @@ namespace ProjectChimera.Core
             if (listener != null && !_offlineProgressionListeners.Contains(listener))
             {
                 _offlineProgressionListeners.Add(listener);
-                ChimeraLogger.Log($"[OfflineProgression] Registered offline progression listener: {listener.GetType().Name}");
+                ChimeraLogger.LogInfo("OfflineProgression", "$1");
             }
         }
 
@@ -57,7 +57,7 @@ namespace ProjectChimera.Core
         {
             if (_offlineProgressionListeners.Remove(listener))
             {
-                ChimeraLogger.Log($"[OfflineProgression] Unregistered offline progression listener: {listener.GetType().Name}");
+                ChimeraLogger.LogInfo("OfflineProgression", "$1");
             }
         }
 
@@ -73,19 +73,19 @@ namespace ProjectChimera.Core
 
             if (offlineTime.TotalMinutes > 1.0) // Only calculate if offline for more than 1 minute
             {
-                ChimeraLogger.Log($"[OfflineProgression] Calculating offline progression for {offlineTime.TotalHours:F2} hours");
+                ChimeraLogger.LogInfo("OfflineProgression", "$1");
 
                 float offlineHours = (float)offlineTime.TotalHours;
-                
+
                 // Notify offline progression listeners
                 NotifyOfflineProgressionListeners(offlineHours);
                 _onOfflineProgressionCalculated?.Raise(offlineHours);
 
-                ChimeraLogger.Log($"[OfflineProgression] Offline progression calculated: {offlineHours:F2} hours processed");
+                ChimeraLogger.LogInfo("OfflineProgression", "$1");
             }
             else
             {
-                ChimeraLogger.Log("[OfflineProgression] No significant offline time detected");
+                ChimeraLogger.LogInfo("OfflineProgression", "$1");
             }
         }
 
@@ -95,11 +95,11 @@ namespace ProjectChimera.Core
             {
                 try
                 {
-                    _offlineProgressionListeners[i]?.OnOfflineProgressionCalculated(offlineHours);
+                    _offlineProgressionListeners[i]?.OnOfflineProgressionStart(TimeSpan.FromHours(offlineHours));
                 }
                 catch (Exception e)
                 {
-                    ChimeraLogger.LogError($"[OfflineProgression] Error notifying offline progression listener: {e.Message}");
+                    ChimeraLogger.LogInfo("OfflineProgression", "$1");
                     _offlineProgressionListeners.RemoveAt(i);
                 }
             }
@@ -124,22 +124,22 @@ namespace ProjectChimera.Core
         {
             if (!CanTriggerOfflineEvents())
             {
-                ChimeraLogger.LogWarning("[OfflineProgression] Cannot trigger offline progression - prerequisites not met");
+                ChimeraLogger.LogInfo("OfflineProgression", "$1");
                 return;
             }
 
-            ChimeraLogger.Log($"[OfflineProgression] Triggering offline progression test for {offlineHours:F2} hours with {_offlineProgressionListeners.Count} listeners");
+            ChimeraLogger.LogInfo("OfflineProgression", "$1");
 
             foreach (var listener in _offlineProgressionListeners.ToArray()) // ToArray to avoid modification during iteration
             {
                 try
                 {
-                    listener.OnOfflineProgressionCalculated(offlineHours);
-                    ChimeraLogger.Log($"[OfflineProgression] Offline progression test processed for {listener.GetType().Name}");
+                    listener.OnOfflineProgressionStart(TimeSpan.FromHours(offlineHours));
+                    ChimeraLogger.LogInfo("OfflineProgression", "$1");
                 }
                 catch (Exception ex)
                 {
-                    ChimeraLogger.LogError($"[OfflineProgression] Error processing offline progression test for {listener.GetType().Name}: {ex.Message}");
+                    ChimeraLogger.LogInfo("OfflineProgression", "$1");
                 }
             }
 

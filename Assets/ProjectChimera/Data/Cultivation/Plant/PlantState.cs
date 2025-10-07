@@ -3,8 +3,27 @@ using System;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Genetics;
 
+
 namespace ProjectChimera.Data.Cultivation.Plant
 {
+    /// <summary>
+    /// Plant strain ScriptableObject for genetic data
+    /// </summary>
+    [System.Serializable]
+    public class PlantStrainSO
+    {
+        public string Name = "Default Strain";
+        public string Description = "Default plant strain";
+        public float THCPotential = 15f;
+        public float CBDPotential = 1f;
+        public string TerpeneProfile = "Default";
+
+        public override string ToString() => Name;
+    }
+
+    // GenotypeDataSO moved to ProjectChimera.Data.Genetics namespace
+    // Use ProjectChimera.Data.Genetics.GenotypeDataSO instead
+
     /// <summary>
     /// SIMPLE: Basic plant state management aligned with Project Chimera's cultivation vision.
     /// Focuses on essential plant information for basic cultivation mechanics.
@@ -223,6 +242,98 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public DateTime PlantedDate;
         public DateTime LastWatering;
         public DateTime LastFeeding;
+
+        // Genetics and strain information
+        public string Strain;
+        public string Genotype;
+
+        // Strain and genotype objects (for compatibility)
+        public PlantStrainSO StrainSO;
+        public GenotypeDataSO GenotypeSO;
+
+        // Detailed physical properties
+        public float RootMassPercentage;
+        public float LeafArea;
+        public float OverallHealth; // Different from basic Health
+        public float Vigor;
+        public float StressLevel;
+        public float ImmuneResponse;
+        public float MaturityLevel;
+
+        // Resource and growth tracking
+        public float EnergyReserves;
+        public float BiomassAccumulation;
+        public float RootDevelopmentRate;
+        public float GrowthProgress;
+        public float DaysSincePlanted;
+        public float CumulativeStressDays;
+        public float OptimalDays;
+        public float TotalDaysGrown;
+
+        // Training and management
+        public string TrainingTechniques;
+        public string NutrientRegimen;
+        public float PestManagementScore;
+        public float IrrigationConsistency;
+        public float NutrientConsistency; // 0-1 scale for nutrient application consistency
+
+        // Environmental data
+        public string Environment;
+        public string CurrentEnvironment;
+
+        // Timing data
+        public DateTime LastTraining;
+        public float CalculatedMaxHeight; // Max height in cm
+        public float LastTraitCalculationAge; // Age when traits were last calculated
+
+        // Additional missing properties
+        public string Generation; // Plant generation
+        public float YieldPotential; // Yield potential value
+        public float TrichomeDensity; // Trichome density value
+        public float THCPotential; // THC potential percentage
+        public float CBDPotential; // CBD potential percentage
+        public string TerpeneProfile; // Terpene profile description
+
+        // Environmental properties for YieldCalculator
+        public float Temperature; // Current temperature
+        public float Humidity; // Current humidity
+        public float LightIntensity; // Current light intensity
+        public float CO2Level; // Current CO2 level
+        public float QualityScore; // Overall quality score
+
+        // Methods
+        public void Initialize() { }
+
+        public void Initialize(string plantId, string plantName, PlantStrainSO strain, GenotypeDataSO genotype, Vector3 worldPosition)
+        {
+            PlantID = plantId;
+            PlantName = plantName;
+            WorldPosition = worldPosition;
+            StrainSO = strain;
+            GenotypeSO = genotype;
+
+            // Set string versions if objects are provided
+            if (strain != null) Strain = strain.Name;
+            if (genotype != null) Genotype = genotype.Name;
+        }
+        public void SetGrowthStage(PlantGrowthStage stage) { CurrentGrowthStage = stage; }
+        public PlantSummary GetSummary()
+        {
+            return new PlantSummary
+            {
+                PlantID = PlantID,
+                PlantName = PlantName,
+                CurrentStage = CurrentGrowthStage,
+                AgeInDays = (int)AgeInDays,
+                Height = CurrentHeight,
+                Health = Health,
+                WaterLevel = WaterLevel,
+                NutrientLevel = NutrientLevel,
+                NeedsWatering = WaterLevel < 0.3f,
+                NeedsFeeding = NutrientLevel < 0.3f,
+                IsHealthy = Health > 0.7f
+            };
+        }
     }
 
     /// <summary>

@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Cultivation.Components
 {
@@ -8,7 +10,7 @@ namespace ProjectChimera.Systems.Cultivation.Components
     /// BASIC: Simple plant care component for Project Chimera's cultivation system.
     /// Focuses on essential plant care operations without complex lifecycle management and training.
     /// </summary>
-    public class PlantCare : MonoBehaviour
+    public class PlantCare : MonoBehaviour, ITickable
     {
         [Header("Basic Plant Care Settings")]
         [SerializeField] private bool _enableBasicCare = true;
@@ -19,6 +21,15 @@ namespace ProjectChimera.Systems.Cultivation.Components
         // Basic plant care tracking
         private readonly Dictionary<string, PlantCareState> _plantCareStates = new Dictionary<string, PlantCareState>();
         private bool _isInitialized = false;
+
+        /// <summary>
+        /// Constructor for dependency injection
+        /// </summary>
+        public PlantCare(object plantLifecycle, object environmentControl)
+        {
+            // Constructor for compatibility with cultivation manager
+            // Dependencies are stored but not used in basic implementation
+        }
 
         /// <summary>
         /// Events for plant care operations
@@ -38,7 +49,20 @@ namespace ProjectChimera.Systems.Cultivation.Components
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantCare] Initialized successfully");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
+            }
+        }
+
+        /// <summary>
+        /// Set dependencies for PlantCare after creation
+        /// </summary>
+        public void SetDependencies(object plantLifecycle, object environmentControl)
+        {
+            // For basic plant care, we don't need complex dependencies
+            // This method exists for compatibility with the cultivation manager
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CULTIVATION", "PlantCare dependencies set", this);
             }
         }
 
@@ -62,7 +86,7 @@ namespace ProjectChimera.Systems.Cultivation.Components
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[PlantCare] Added plant {plantId} to care tracking");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 }
             }
         }
@@ -76,7 +100,7 @@ namespace ProjectChimera.Systems.Cultivation.Components
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[PlantCare] Removed plant {plantId} from care tracking");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 }
             }
         }
@@ -121,7 +145,7 @@ namespace ProjectChimera.Systems.Cultivation.Components
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantCare] Watered plant {plantId} - Level: {newWaterLevel:F2}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
 
             return true;
@@ -167,7 +191,7 @@ namespace ProjectChimera.Systems.Cultivation.Components
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantCare] Fed plant {plantId} - Level: {newNutrientLevel:F2}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
 
             return true;
@@ -176,40 +200,60 @@ namespace ProjectChimera.Systems.Cultivation.Components
         /// <summary>
         /// Update plant care needs
         /// </summary>
-        private void Update()
+    [SerializeField] private float _tickInterval = 0.1f; // Configurable update frequency
+    private float _lastTickTime;
+
+    public int TickPriority => 50; // Lower priority for complex updates
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
+        _lastTickTime += deltaTime;
+        if (_lastTickTime >= _tickInterval)
         {
-            if (!_enableBasicCare || !_isInitialized) return;
+            _lastTickTime = 0f;
+                if (!_enableBasicCare || !_isInitialized) return;
+    
+                // Simple decay over time
+                float decayRate = 0.01f * deltaTime; // Slow decay
 
-            // Simple decay over time
-            float deltaTime = Time.deltaTime;
-            float decayRate = 0.01f * deltaTime; // Slow decay
-
-            foreach (var kvp in _plantCareStates)
-            {
-                var state = kvp.Value;
-
-                // Decay water and nutrients over time
-                state.WaterLevel = Mathf.Max(0f, state.WaterLevel - decayRate);
-                state.NutrientLevel = Mathf.Max(0f, state.NutrientLevel - decayRate * 0.7f); // Nutrients decay slower
-
-                // Health affected by care levels
-                if (state.WaterLevel < 0.2f || state.NutrientLevel < 0.2f)
+                foreach (var kvp in _plantCareStates)
                 {
-                    state.Health = Mathf.Max(0f, state.Health - decayRate * 2f);
-                }
+                    var state = kvp.Value;
 
-                // Check if care is needed
-                bool needsCare = state.WaterLevel < 0.3f || state.NutrientLevel < 0.3f;
-                if (needsCare != state.NeedsCare)
-                {
-                    state.NeedsCare = needsCare;
-                    if (needsCare)
+                    // Decay water and nutrients over time
+                    state.WaterLevel = Mathf.Max(0f, state.WaterLevel - decayRate);
+                    state.NutrientLevel = Mathf.Max(0f, state.NutrientLevel - decayRate * 0.7f); // Nutrients decay slower
+
+                    // Health affected by care levels
+                    if (state.WaterLevel < 0.2f || state.NutrientLevel < 0.2f)
                     {
-                        OnCareNeeded?.Invoke(state.PlantId);
+                        state.Health = Mathf.Max(0f, state.Health - decayRate * 2f);
+                    }
+
+                    // Check if care is needed
+                    bool needsCare = state.WaterLevel < 0.3f || state.NutrientLevel < 0.3f;
+                    if (needsCare != state.NeedsCare)
+                    {
+                        state.NeedsCare = needsCare;
+                        if (needsCare)
+                        {
+                            OnCareNeeded?.Invoke(state.PlantId);
+                        }
                     }
                 }
-            }
         }
+    }
+
+    private void Awake()
+    {
+        UpdateOrchestrator.Instance.RegisterTickable(this);
+    }
+
+    private void OnDestroy()
+    {
+        UpdateOrchestrator.Instance.UnregisterTickable(this);
+    }
 
         /// <summary>
         /// Get plant care state
@@ -273,7 +317,7 @@ namespace ProjectChimera.Systems.Cultivation.Components
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantCare] Cleared all plant care data");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
     }

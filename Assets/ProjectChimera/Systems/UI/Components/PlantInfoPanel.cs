@@ -1,0 +1,414 @@
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using ProjectChimera.Data.Cultivation.Plant;
+using ProjectChimera.Data.Shared;
+using ProjectChimera.Core.Memory;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Systems.UI.Core;
+
+namespace ProjectChimera.Systems.UI
+{
+    /// <summary>
+    /// PERFORMANCE: Optimized plant information panel for cultivation UI
+    /// Displays plant data with minimal allocation and efficient updates
+    /// Week 12: Input & UI Performance
+    /// </summary>
+    public class PlantInfoPanel : MonoBehaviour, IUIUpdatable
+    {
+        [Header("Panel Components")]
+        [SerializeField] private CanvasGroup _canvasGroup;
+        [SerializeField] private Image _healthBar;
+        [SerializeField] private Image _growthBar;
+        [SerializeField] private TextMeshProUGUI _plantNameText;
+        [SerializeField] private TextMeshProUGUI _stageText;
+        [SerializeField] private TextMeshProUGUI _ageText;
+        [SerializeField] private Image _stageIcon;
+
+        [Header("Optimization Settings")]
+        [SerializeField] private float _updateInterval = 0.2f;
+        [SerializeField] private float _fadeDistance = 50f;
+        [SerializeField] private float _cullDistance = 100f;
+        [SerializeField] private bool _worldSpacePositioning = true;
+
+        // Panel state
+        private string _plantId;
+        private Vector3 _worldPosition;
+        private PlantInstance _cachedPlantData;
+        private UnityEngine.Camera _mainCamera;
+        private RectTransform _rectTransform;
+
+        // Performance optimization
+        private float _lastUpdateTime;
+        private float _lastDistanceCheck;
+        private bool _isVisible = true;
+        private bool _isDirty = true;
+
+        // String optimization
+        private string _cachedAgeString;
+        private string _cachedStageString;
+        private float _lastAge;
+        private PlantGrowthStage _lastStage;
+
+        public string PlantId => _plantId;
+        public bool IsVisible => _isVisible;
+        public Vector3 WorldPosition => _worldPosition;
+
+        /// <summary>
+        /// Initialize plant info panel
+        /// </summary>
+        public void Initialize(string plantId, Vector3 worldPosition)
+        {
+            _plantId = plantId;
+            _worldPosition = worldPosition;
+            _mainCamera = UnityEngine.Camera.main;
+            _rectTransform = GetComponent<RectTransform>();
+
+            if (_rectTransform == null)
+            {
+                _rectTransform = gameObject.AddComponent<RectTransform>();
+            }
+
+            SetupUIComponents();
+            UpdateWorldSpacePosition();
+
+            _lastUpdateTime = Time.unscaledTime;
+            _isDirty = true;
+        }
+
+        /// <summary>
+        /// Update plant data
+        /// </summary>
+        public void UpdatePlantData(object plantData)
+        {
+            if (plantData is PlantInstance plant)
+            {
+                _cachedPlantData = plant;
+                _isDirty = true;
+            }
+        }
+
+        /// <summary>
+        /// Check if panel should update
+        /// </summary>
+        public bool ShouldUpdate()
+        {
+            float currentTime = Time.unscaledTime;
+
+            // Distance-based update frequency
+            if (_mainCamera != null && currentTime - _lastDistanceCheck > 0.5f)
+            {
+                float distance = Vector3.Distance(_mainCamera.transform.position, _worldPosition);
+                _lastDistanceCheck = currentTime;
+
+                // Cull if too far
+                if (distance > _cullDistance)
+                {
+                    SetVisible(false);
+                    return false;
+                }
+
+                // Fade based on distance
+                if (distance > _fadeDistance)
+                {
+                    float alpha = 1f - ((distance - _fadeDistance) / (_cullDistance - _fadeDistance));
+                    SetAlpha(alpha);
+                }
+                else
+                {
+                    SetAlpha(1f);
+                }
+
+                SetVisible(true);
+            }
+
+            return _isVisible && _isDirty && (currentTime - _lastUpdateTime) >= _updateInterval;
+        }
+
+        /// <summary>
+        /// Update UI display
+        /// </summary>
+        public void UpdateUI(float deltaTime = 0f)
+        {
+            if (_cachedPlantData == null || !_isVisible) return;
+
+            UpdateHealthBar();
+            UpdateGrowthBar();
+            UpdatePlantTexts();
+            UpdateStageIcon();
+            UpdateWorldSpacePosition();
+
+            _isDirty = false;
+            _lastUpdateTime = Time.unscaledTime;
+        }
+
+        /// <summary>
+        /// Set panel visibility
+        /// </summary>
+        public void SetVisible(bool visible)
+        {
+            if (_isVisible != visible)
+            {
+                _isVisible = visible;
+                gameObject.SetActive(visible);
+            }
+        }
+
+        /// <summary>
+        /// Set panel alpha
+        /// </summary>
+        public void SetAlpha(float alpha)
+        {
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = alpha;
+            }
+        }
+
+        /// <summary>
+        /// Update world position
+        /// </summary>
+        public void SetWorldPosition(Vector3 worldPosition)
+        {
+            _worldPosition = worldPosition;
+            _isDirty = true;
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Set up UI components if not assigned
+        /// </summary>
+        private void SetupUIComponents()
+        {
+            // Create canvas group if not present
+            if (_canvasGroup == null)
+            {
+                _canvasGroup = gameObject.GetComponent<CanvasGroup>();
+                if (_canvasGroup == null)
+                {
+                    _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+                }
+            }
+
+            // Find or create health bar
+            if (_healthBar == null)
+            {
+                _healthBar = transform.Find("HealthBar")?.GetComponent<Image>();
+                if (_healthBar == null)
+                {
+                    _healthBar = CreateProgressBar("HealthBar", Color.green);
+                }
+            }
+
+            // Find or create growth bar
+            if (_growthBar == null)
+            {
+                _growthBar = transform.Find("GrowthBar")?.GetComponent<Image>();
+                if (_growthBar == null)
+                {
+                    _growthBar = CreateProgressBar("GrowthBar", Color.blue);
+                }
+            }
+
+            // Find or create plant name text
+            if (_plantNameText == null)
+            {
+                _plantNameText = transform.Find("PlantNameText")?.GetComponent<TextMeshProUGUI>();
+                if (_plantNameText == null)
+                {
+                    _plantNameText = CreateTextComponent("PlantNameText", "Plant Name", 14);
+                }
+            }
+
+            // Find or create stage text
+            if (_stageText == null)
+            {
+                _stageText = transform.Find("StageText")?.GetComponent<TextMeshProUGUI>();
+                if (_stageText == null)
+                {
+                    _stageText = CreateTextComponent("StageText", "Stage", 12);
+                }
+            }
+
+            // Find or create age text
+            if (_ageText == null)
+            {
+                _ageText = transform.Find("AgeText")?.GetComponent<TextMeshProUGUI>();
+                if (_ageText == null)
+                {
+                    _ageText = CreateTextComponent("AgeText", "Age", 12);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Create progress bar component
+        /// </summary>
+        private Image CreateProgressBar(string name, Color color)
+        {
+            var barGO = new GameObject(name);
+            barGO.transform.SetParent(transform, false);
+
+            var rectTransform = barGO.AddComponent<RectTransform>();
+            rectTransform.sizeDelta = new Vector2(80, 8);
+
+            var image = barGO.AddComponent<Image>();
+            image.color = color;
+            image.type = Image.Type.Filled;
+
+            return image;
+        }
+
+        /// <summary>
+        /// Create text component
+        /// </summary>
+        private TextMeshProUGUI CreateTextComponent(string name, string defaultText, int fontSize)
+        {
+            var textGO = new GameObject(name);
+            textGO.transform.SetParent(transform, false);
+
+            var rectTransform = textGO.AddComponent<RectTransform>();
+            rectTransform.sizeDelta = new Vector2(100, 20);
+
+            var text = textGO.AddComponent<TextMeshProUGUI>();
+            text.text = defaultText;
+            text.fontSize = fontSize;
+            text.alignment = TextAlignmentOptions.Center;
+
+            return text;
+        }
+
+        /// <summary>
+        /// Update health bar display
+        /// </summary>
+        private void UpdateHealthBar()
+        {
+            if (_healthBar != null && _cachedPlantData != null)
+            {
+                _healthBar.fillAmount = _cachedPlantData.Health;
+
+                // Color based on health
+                Color healthColor = _cachedPlantData.Health > 0.7f ? Color.green :
+                                   _cachedPlantData.Health > 0.3f ? Color.yellow : Color.red;
+                _healthBar.color = healthColor;
+            }
+        }
+
+        /// <summary>
+        /// Update growth progress bar
+        /// </summary>
+        private void UpdateGrowthBar()
+        {
+            if (_growthBar != null && _cachedPlantData != null)
+            {
+                // Calculate growth progress within current stage
+                float stageProgress = CalculateStageProgress(_cachedPlantData);
+                _growthBar.fillAmount = stageProgress;
+            }
+        }
+
+        /// <summary>
+        /// Update plant text displays with string optimization
+        /// </summary>
+        private void UpdatePlantTexts()
+        {
+            if (_cachedPlantData == null) return;
+
+            // Update plant name
+            if (_plantNameText != null)
+            {
+                _plantNameText.text = StringOptimizer.Intern(_cachedPlantData.StrainName ?? "Unknown");
+            }
+
+            // Update stage text with caching
+            if (_stageText != null && _cachedPlantData.GrowthStage != _lastStage)
+            {
+                _cachedStageString = StringOptimizer.Intern(_cachedPlantData.GrowthStage.ToString());
+                _stageText.text = _cachedStageString;
+                _lastStage = _cachedPlantData.GrowthStage;
+            }
+
+            // Update age text with caching
+            if (_ageText != null && Mathf.Abs(_cachedPlantData.Age - _lastAge) > 0.1f)
+            {
+                _cachedAgeString = StringOptimizer.Format("{0:F1} days", _cachedPlantData.Age);
+                _ageText.text = _cachedAgeString;
+                _lastAge = _cachedPlantData.Age;
+            }
+        }
+
+        /// <summary>
+        /// Update stage icon
+        /// </summary>
+        private void UpdateStageIcon()
+        {
+            if (_stageIcon != null && _cachedPlantData != null)
+            {
+                // Set sprite based on growth stage
+                Sprite stageSprite = GetStageSprite(_cachedPlantData.GrowthStage);
+                if (stageSprite != null)
+                {
+                    _stageIcon.sprite = stageSprite;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Update world space positioning
+        /// </summary>
+        private void UpdateWorldSpacePosition()
+        {
+            if (!_worldSpacePositioning || _mainCamera == null) return;
+
+            Vector3 screenPos = _mainCamera.WorldToScreenPoint(_worldPosition + Vector3.up * 2f);
+
+            if (screenPos.z > 0) // In front of camera
+            {
+                _rectTransform.position = screenPos;
+            }
+        }
+
+        /// <summary>
+        /// Calculate growth progress within current stage
+        /// </summary>
+        private float CalculateStageProgress(PlantInstance plant)
+        {
+            // Simplified stage progress calculation
+            switch (plant.GrowthStage)
+            {
+                case PlantGrowthStage.Seedling:
+                    return Mathf.Clamp01(plant.Age / 14f); // 14 days to vegetative
+                case PlantGrowthStage.Vegetative:
+                    return Mathf.Clamp01((plant.Age - 14f) / 30f); // 30 days in vegetative
+                case PlantGrowthStage.Flowering:
+                    return Mathf.Clamp01((plant.Age - 44f) / 56f); // 56 days in flowering
+                case PlantGrowthStage.Mature:
+                    return 1f;
+                default:
+                    return 0f;
+            }
+        }
+
+        /// <summary>
+        /// Get sprite for growth stage
+        /// </summary>
+        private Sprite GetStageSprite(PlantGrowthStage stage)
+        {
+            // Would load appropriate sprites for each stage
+            // For now, return null as placeholder
+            return null;
+        }
+
+        #endregion
+
+        private void OnDestroy()
+        {
+            // Cleanup when panel is destroyed
+            _cachedPlantData = null;
+            _plantNameText = null;
+            _stageText = null;
+            _ageText = null;
+        }
+    }
+}

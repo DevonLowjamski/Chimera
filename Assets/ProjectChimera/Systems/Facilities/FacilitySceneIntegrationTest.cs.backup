@@ -1,0 +1,233 @@
+using ProjectChimera.Core.Logging;
+using UnityEngine;
+using ProjectChimera.Core;
+// Migrated to unified ServiceContainer architecture
+using ProjectChimera.Systems.Scene;
+using System.Collections;
+
+namespace ProjectChimera.Systems.Facilities
+{
+    /// <summary>
+    /// Integration test for FacilityManager and SceneLoader coordination
+    /// Demonstrates facility switching and upgrade workflows
+    /// </summary>
+    public class FacilitySceneIntegrationTest : MonoBehaviour
+    {
+        [Header("Test Configuration")]
+        [SerializeField] private bool _runTestOnStart = false;
+        [SerializeField] private float _testDelayBetweenTransitions = 3f;
+
+        [Header("Test Scenes")]
+        [SerializeField] private string[] _testFacilityScenes = {
+            SceneConstants.WAREHOUSE_SMALL_BAY,
+            SceneConstants.WAREHOUSE_MEDIUM_BAY,
+            SceneConstants.WAREHOUSE_SMALL_STANDALONE
+        };
+
+        private FacilityManager _facilityManager;
+        private ISceneLoader _sceneLoader;
+
+        private void Start()
+        {
+            if (_runTestOnStart)
+            {
+                StartCoroutine(RunIntegrationTest());
+            }
+        }
+
+        /// <summary>
+        /// Run comprehensive integration test
+        /// </summary>
+        public IEnumerator RunIntegrationTest()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+
+            // Wait for services to initialize
+            yield return new WaitForSeconds(1f);
+
+            // Get services
+            _facilityManager = ServiceContainerFactory.Instance?.TryResolve<FacilityManager>();
+            _sceneLoader = ServiceContainerFactory.Instance?.TryResolve<ISceneLoader>();
+
+            if (_facilityManager == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                yield break;
+            }
+
+            if (_sceneLoader == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                yield break;
+            }
+
+            UnityEngine.Debug.Log("Operation completed");
+
+            // Test 1: Verify initial state
+            yield return StartCoroutine(TestInitialState());
+
+            // Test 2: Test facility scene switching
+            yield return StartCoroutine(TestFacilitySceneSwitching());
+
+            // Test 3: Test scene validation
+            yield return StartCoroutine(TestSceneValidation());
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        /// <summary>
+        /// Test initial facility manager state
+        /// </summary>
+        private IEnumerator TestInitialState()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+
+            if (!_facilityManager.IsInitialized)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                yield break;
+            }
+
+            var stats = _facilityManager.GetProgressionStatisticsTyped();
+            UnityEngine.Debug.Log("Operation completed");
+            UnityEngine.Debug.Log("Operation completed");
+            UnityEngine.Debug.Log("Operation completed");
+
+            var availableScenes = _facilityManager.GetAvailableFacilityScenes();
+            UnityEngine.Debug.Log("Operation completed");
+
+            yield return new WaitForSeconds(1f);
+        }
+
+        /// <summary>
+        /// Test facility scene switching
+        /// </summary>
+        private IEnumerator TestFacilitySceneSwitching()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+
+            foreach (string sceneName in _testFacilityScenes)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+
+                // Validate scene before attempting load
+                if (!SceneConstants.IsValidScene(sceneName))
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                    continue;
+                }
+
+                // Test scene loading capability
+                bool canLoad = BuildSettingsValidator.CanLoadScene(sceneName);
+                UnityEngine.Debug.Log("Operation completed");
+
+                if (canLoad)
+                {
+                    // Get facility info for this scene
+                    var facilityInfo = _facilityManager.GetFacilityInfoForScene(sceneName);
+                    if (facilityInfo != null)
+                    {
+                        UnityEngine.Debug.Log("Operation completed");
+                    }
+
+                    // Note: Not actually loading scenes in test to avoid disrupting Unity Editor
+                    // In actual gameplay, this would call:
+                    // _facilityManager.LoadFacilitySceneByName(sceneName);
+
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+
+                yield return new WaitForSeconds(_testDelayBetweenTransitions);
+            }
+        }
+
+        /// <summary>
+        /// Test scene validation integration
+        /// </summary>
+        private IEnumerator TestSceneValidation()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+
+            // Test BuildSettingsValidator integration
+            bool buildSettingsValid = BuildSettingsValidator.ValidateRuntimeBuildSettings();
+            UnityEngine.Debug.Log("Operation completed");
+
+            // Test scene constants integration
+            foreach (string sceneName in _testFacilityScenes)
+            {
+                int buildIndex = SceneConstants.GetBuildIndex(sceneName);
+                string resolvedName = SceneConstants.GetSceneName(buildIndex);
+
+                bool resolutionValid = (resolvedName == sceneName);
+                UnityEngine.Debug.Log("Operation completed");
+
+                bool isWarehouse = SceneConstants.IsWarehouseScene(sceneName);
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            yield return new WaitForSeconds(1f);
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        /// <summary>
+        /// Manual test trigger - call from Unity Inspector or other scripts
+        /// </summary>
+        [ContextMenu("Run Integration Test")]
+        public void RunIntegrationTestManual()
+        {
+            if (Application.isPlaying)
+            {
+                StartCoroutine(RunIntegrationTest());
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Get facility manager status for debugging
+        /// </summary>
+        [ContextMenu("Print Facility Status")]
+        public void PrintFacilityStatus()
+        {
+            if (_facilityManager == null)
+            {
+                _facilityManager = ServiceContainerFactory.Instance?.TryResolve<FacilityManager>();
+            }
+
+            if (_facilityManager != null && _facilityManager.IsInitialized)
+            {
+                var stats = _facilityManager.GetProgressionStatisticsTyped();
+                UnityEngine.Debug.Log("Operation completed");
+
+                var availableScenes = _facilityManager.GetAvailableFacilityScenes();
+                UnityEngine.Debug.Log("Operation completed");
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Test facility scene loading (Editor safe)
+        /// </summary>
+        [ContextMenu("Test Scene Loading Capability")]
+        public void TestSceneLoadingCapability()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+
+            foreach (string sceneName in _testFacilityScenes)
+            {
+                bool isValid = SceneConstants.IsValidScene(sceneName);
+                bool canLoad = BuildSettingsValidator.CanLoadScene(sceneName);
+                int buildIndex = SceneConstants.GetBuildIndex(sceneName);
+
+                string status = $"Scene: {sceneName} | Valid: {isValid} | Can Load: {canLoad} | Build Index: {buildIndex}";
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+    }
+}

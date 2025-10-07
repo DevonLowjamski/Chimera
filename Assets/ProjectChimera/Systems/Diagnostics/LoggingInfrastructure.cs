@@ -3,6 +3,7 @@ using UnityEngine;
 using System;
 using System.IO;
 using System.Collections.Generic;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Systems.Diagnostics
 {
@@ -119,13 +120,13 @@ namespace ProjectChimera.Systems.Diagnostics
                 switch (level)
                 {
                     case LogLevel.Error:
-                        Debug.LogError(logMessage);
+                        Logger.LogError("OTHER", logMessage, this);
                         break;
                     case LogLevel.Warning:
-                        Debug.LogWarning(logMessage);
+                        Logger.LogWarning("OTHER", logMessage, this);
                         break;
                     default:
-                        Debug.Log(logMessage);
+                        Logger.Log("OTHER", logMessage, this);
                         break;
                 }
             }
@@ -139,7 +140,7 @@ namespace ProjectChimera.Systems.Diagnostics
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"Failed to write to log file: {ex.Message}");
+                    Logger.LogError("OTHER", $"File logging failed: {ex.Message}", this);
                 }
             }
         }
@@ -166,7 +167,7 @@ namespace ProjectChimera.Systems.Diagnostics
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"Failed to clear log file: {ex.Message}");
+                    Logger.LogWarning("OTHER", "Failed to clear log file", this);
                 }
             }
         }

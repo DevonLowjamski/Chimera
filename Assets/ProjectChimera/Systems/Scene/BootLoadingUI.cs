@@ -54,7 +54,7 @@ namespace ProjectChimera.Systems.Scene
 
             if (_gameManager == null)
             {
-                ChimeraLogger.LogError("[BootLoadingUI] GameManager not found in scene!");
+                ChimeraLogger.LogError("SCENE", "BootLoadingUI could not find GameManager", this);
                 yield break;
             }
 
@@ -85,7 +85,7 @@ namespace ProjectChimera.Systems.Scene
                 _backgroundImage.color = color;
             }
             */
-            ChimeraLogger.LogVerbose("BootLoadingUI initialized (UI components temporarily disabled)");
+            ChimeraLogger.Log("SCENE", "BootLoadingUI initialized", this);
         }
 
         private IEnumerator UpdateBootStatus()
@@ -113,7 +113,7 @@ namespace ProjectChimera.Systems.Scene
                     // {
                     //     _statusText.text = "Boot Error - Check Console";
                     // }
-                    ChimeraLogger.LogError("Boot Error - Check Console");
+                    ChimeraLogger.LogError("SCENE", "Boot timeout exceeded in BootLoadingUI", this);
                     yield break;
                 }
 
@@ -139,7 +139,7 @@ namespace ProjectChimera.Systems.Scene
             }
             */
 
-            ChimeraLogger.LogVerbose("Boot sequence completed - transitioning to main menu");
+            ChimeraLogger.Log("SCENE", "Boot complete - transitioning UI", this);
         }
 
         // Temporarily disabled due to assembly reference issues

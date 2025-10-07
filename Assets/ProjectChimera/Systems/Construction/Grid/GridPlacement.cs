@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Systems.Construction.Grid;
 
@@ -50,14 +51,14 @@ namespace ProjectChimera.Systems.Construction.Grid
         {
             if (placeable == null)
             {
-                ChimeraLogger.LogWarning("[GridPlacement] Cannot place null object");
+                ChimeraLogger.Log("OTHER", "PlaceObject: Placeable object is null", null);
                 return false;
             }
 
             // Check if area is available
             if (!IsAreaAvailable(gridCoordinate, placeable.GridSize))
             {
-                ChimeraLogger.LogWarning($"[GridPlacement] Cannot place {placeable.name} - area not available at {gridCoordinate}");
+                ChimeraLogger.Log("OTHER", "PlaceObject: Area not available for placement", null);
                 return false;
             }
 
@@ -74,7 +75,7 @@ namespace ProjectChimera.Systems.Construction.Grid
             _placedObjects.Add(placeable);
 
             OnObjectPlaced?.Invoke(placeable);
-            ChimeraLogger.Log($"[GridPlacement] Placed {placeable.name} at grid {gridCoordinate} (world {worldPos})");
+            ChimeraLogger.Log("OTHER", "PlaceObject: Successfully placed object", null);
 
             return true;
         }
@@ -97,7 +98,7 @@ namespace ProjectChimera.Systems.Construction.Grid
             _placedObjects.Remove(placeable);
 
             OnObjectRemoved?.Invoke(placeable);
-            ChimeraLogger.Log($"[GridPlacement] Removed {placeable.name} from grid {placeable.GridCoordinate}");
+            ChimeraLogger.Log("OTHER", "RemoveObject: Successfully removed object", null);
 
             return true;
         }
@@ -190,14 +191,14 @@ namespace ProjectChimera.Systems.Construction.Grid
                 placeable.transform.position = worldPos;
                 placeable.GridCoordinate = newGridCoordinate;
 
-                ChimeraLogger.Log($"[GridPlacement] Moved {placeable.name} from {oldCoordinate} to {newGridCoordinate}");
+                ChimeraLogger.Log("OTHER", "MoveObject: Successfully moved object", null);
                 return true;
             }
             else
             {
                 // Restore old occupation
                 OccupyArea(oldCoordinate, placeable.GridSize, placeable);
-                ChimeraLogger.LogWarning($"[GridPlacement] Cannot move {placeable.name} to {newGridCoordinate} - area not available");
+                ChimeraLogger.Log("OTHER", "MoveObject: Move failed, restored old position", null);
                 return false;
             }
         }
@@ -275,5 +276,106 @@ namespace ProjectChimera.Systems.Construction.Grid
 
             return (totalCells, occupiedCells, occupancyRate);
         }
+
+        /// <summary>
+        /// Place an object at a grid position (overload for Vector3Int)
+        /// </summary>
+        public bool PlaceObject(GridPlaceable placeable, Vector3Int gridPosition)
+        {
+            return PlaceObjectAtGridCoordinate(placeable, gridPosition);
+        }
+
+        /// <summary>
+        /// Check if a position is occupied
+        /// </summary>
+        public bool IsPositionOccupied(Vector3Int gridPosition)
+        {
+            if (_gridCells.TryGetValue(gridPosition, out GridTypes.GridCell cell))
+            {
+                return cell.IsOccupied;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Find the nearest valid placement position
+        /// </summary>
+        public Vector3Int FindNearestValidPosition(Vector3 worldPosition)
+        {
+            Vector3Int startCoord = _calculations.WorldToGridPosition(worldPosition);
+
+            // Check if the starting position is valid
+            if (IsAreaAvailable(startCoord, Vector3Int.one))
+            {
+                return startCoord;
+            }
+
+            // Search in expanding radius
+            for (int radius = 1; radius <= 10; radius++)
+            {
+                for (int x = -radius; x <= radius; x++)
+                {
+                    for (int y = -radius; y <= radius; y++)
+                    {
+                        for (int z = -radius; z <= radius; z++)
+                        {
+                            Vector3Int testCoord = startCoord + new Vector3Int(x, y, z);
+                            if (_calculations.IsValidGridPosition(testCoord) &&
+                                IsAreaAvailable(testCoord, Vector3Int.one))
+                            {
+                                return testCoord;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return startCoord; // Return original if no valid position found
+        }
+
+        /// <summary>
+        /// Get objects near a position
+        /// </summary>
+        public List<GridPlaceable> GetObjectsNearPosition(Vector3 worldPosition, float radius)
+        {
+            var nearObjects = new List<GridPlaceable>();
+            Vector3Int centerCoord = _calculations.WorldToGridPosition(worldPosition);
+            int gridRadius = Mathf.CeilToInt(radius);
+
+            for (int x = -gridRadius; x <= gridRadius; x++)
+            {
+                for (int y = -gridRadius; y <= gridRadius; y++)
+                {
+                    for (int z = -gridRadius; z <= gridRadius; z++)
+                    {
+                        Vector3Int testCoord = centerCoord + new Vector3Int(x, y, z);
+
+                        if (_gridCells.TryGetValue(testCoord, out GridTypes.GridCell cell) &&
+                            cell.IsOccupied &&
+                            cell.OccupyingObject != null)
+                        {
+                            Vector3 objWorldPos = _calculations.GridToWorldPosition(testCoord);
+                            if (Vector3.Distance(worldPosition, objWorldPos) <= radius &&
+                                !nearObjects.Contains(cell.OccupyingObject))
+                            {
+                                nearObjects.Add(cell.OccupyingObject);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return nearObjects;
+        }
+
+        /// <summary>
+        /// Get count of placed objects
+        /// </summary>
+        public int PlacedObjectCount => _placedObjects.Count;
+
+        /// <summary>
+        /// Get grid cells dictionary
+        /// </summary>
+        public Dictionary<Vector3Int, GridTypes.GridCell> GridCells => _gridCells;
     }
 }

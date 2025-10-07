@@ -1,6 +1,7 @@
 using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Core;
 
@@ -31,7 +32,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantGrowthStageManager] Initialized successfully");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -66,7 +67,7 @@ namespace ProjectChimera.Systems.Cultivation
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[PlantGrowthStageManager] Registered plant: {plantId}");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 }
             }
         }
@@ -80,7 +81,7 @@ namespace ProjectChimera.Systems.Cultivation
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[PlantGrowthStageManager] Unregistered plant: {plantId}");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 }
             }
         }
@@ -115,7 +116,7 @@ namespace ProjectChimera.Systems.Cultivation
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[PlantGrowthStageManager] Plant {plantId} transitioned from {oldStage} to {newStage}");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 }
             }
         }
@@ -190,7 +191,7 @@ namespace ProjectChimera.Systems.Cultivation
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[PlantGrowthStageManager] Plant {data.PlantId} progressed from {oldStage} to {nextStage}");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 }
             }
         }

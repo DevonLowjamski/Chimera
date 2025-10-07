@@ -1,0 +1,248 @@
+using UnityEngine;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Camera
+{
+    /// <summary>
+    /// BASIC: Simple camera level contextual menu integrator for Project Chimera.
+    /// Focuses on essential camera-menu integration without complex level-based menus and target-specific actions.
+    /// </summary>
+    public class CameraLevelContextualMenuIntegrator : MonoBehaviour
+    {
+        [Header("Basic Integration Settings")]
+        [SerializeField] private bool _enableBasicIntegration = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private bool _autoUpdateOnCameraChange = true;
+
+        // Basic camera tracking
+        private Camera _mainCamera;
+        private Vector3 _currentCameraPosition;
+        private Quaternion _currentCameraRotation;
+        private bool _isInitialized = false;
+
+        /// <summary>
+        /// Events for camera-menu integration
+        /// </summary>
+        public event System.Action<Vector3, Quaternion> OnCameraPositionChanged;
+        public event System.Action OnMenuIntegrationUpdated;
+
+        /// <summary>
+        /// Initialize basic camera-menu integration
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            // Primary: Try ServiceContainer resolution
+            if (ServiceContainerFactory.Instance.TryResolve<Camera>(out var serviceCamera))
+            {
+                _mainCamera = serviceCamera;
+                if (_enableLogging)
+                {
+                    UnityEngine.ChimeraLogger.Log("OTHER", "$1", this);
+                }
+            }
+            else
+            {
+                // Fallback: Standard Unity camera discovery
+                _mainCamera = Camera.main;
+                if (_mainCamera == null)
+                {
+                    _mainCamera = UnityEngine.Object.FindObjectOfType<Camera>();
+                }
+
+                // Auto-register discovered camera in ServiceContainer for other systems
+                if (_mainCamera != null)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<Camera>(_mainCamera);
+                    if (_enableLogging)
+                    {
+                        UnityEngine.ChimeraLogger.Log("OTHER", "$1", this);
+                    }
+                }
+            }
+
+            if (_mainCamera != null)
+            {
+                _currentCameraPosition = _mainCamera.transform.position;
+                _currentCameraRotation = _mainCamera.transform.rotation;
+            }
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                UnityEngine.ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+
+        /// <summary>
+        /// Update camera tracking
+        /// </summary>
+        private void Update()
+        {
+            if (!_enableBasicIntegration || !_isInitialized || _mainCamera == null) return;
+
+            if (!_autoUpdateOnCameraChange) return;
+
+            // Check for camera position/rotation changes
+            Vector3 newPosition = _mainCamera.transform.position;
+            Quaternion newRotation = _mainCamera.transform.rotation;
+
+            if (newPosition != _currentCameraPosition || newRotation != _currentCameraRotation)
+            {
+                _currentCameraPosition = newPosition;
+                _currentCameraRotation = newRotation;
+
+                OnCameraPositionChanged?.Invoke(_currentCameraPosition, _currentCameraRotation);
+                OnMenuIntegrationUpdated?.Invoke();
+
+                if (_enableLogging)
+                {
+                    UnityEngine.ChimeraLogger.Log("OTHER", "$1", this);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get current camera position
+        /// </summary>
+        public Vector3 GetCurrentCameraPosition()
+        {
+            return _mainCamera != null ? _mainCamera.transform.position : Vector3.zero;
+        }
+
+        /// <summary>
+        /// Get current camera rotation
+        /// </summary>
+        public Quaternion GetCurrentCameraRotation()
+        {
+            return _mainCamera != null ? _mainCamera.transform.rotation : Quaternion.identity;
+        }
+
+        /// <summary>
+        /// Get camera view direction
+        /// </summary>
+        public Vector3 GetCameraForward()
+        {
+            return _mainCamera != null ? _mainCamera.transform.forward : Vector3.forward;
+        }
+
+        /// <summary>
+        /// Check if camera is looking at position
+        /// </summary>
+        public bool IsLookingAt(Vector3 worldPosition)
+        {
+            if (_mainCamera == null) return false;
+
+            Vector3 directionToTarget = (worldPosition - _mainCamera.transform.position).normalized;
+            float dotProduct = Vector3.Dot(_mainCamera.transform.forward, directionToTarget);
+
+            return dotProduct > 0.8f; // Within ~36 degrees of center
+        }
+
+        /// <summary>
+        /// Get screen position of world point
+        /// </summary>
+        public Vector3 WorldToScreenPoint(Vector3 worldPosition)
+        {
+            return _mainCamera != null ? _mainCamera.WorldToScreenPoint(worldPosition) : Vector3.zero;
+        }
+
+        /// <summary>
+        /// Get world point from screen position
+        /// </summary>
+        public Vector3 ScreenToWorldPoint(Vector3 screenPosition)
+        {
+            return _mainCamera != null ? _mainCamera.ScreenToWorldPoint(screenPosition) : Vector3.zero;
+        }
+
+        /// <summary>
+        /// Cast ray from camera through screen point
+        /// </summary>
+        public bool ScreenPointToRay(Vector3 screenPoint, out Ray ray)
+        {
+            ray = new Ray();
+            if (_mainCamera == null) return false;
+
+            ray = _mainCamera.ScreenPointToRay(screenPoint);
+            return true;
+        }
+
+        /// <summary>
+        /// Get camera view frustum
+        /// </summary>
+        public bool IsPointInViewFrustum(Vector3 worldPoint)
+        {
+            if (_mainCamera == null) return false;
+
+            Vector3 screenPoint = _mainCamera.WorldToViewportPoint(worldPoint);
+            return screenPoint.x >= 0 && screenPoint.x <= 1 &&
+                   screenPoint.y >= 0 && screenPoint.y <= 1 &&
+                   screenPoint.z > 0;
+        }
+
+        /// <summary>
+        /// Set integration enabled state
+        /// </summary>
+        public void SetIntegrationEnabled(bool enabled)
+        {
+            _enableBasicIntegration = enabled;
+
+            if (_enableLogging)
+            {
+                UnityEngine.ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+
+        /// <summary>
+        /// Force camera position update
+        /// </summary>
+        public void ForceCameraUpdate()
+        {
+            if (_mainCamera != null)
+            {
+                _currentCameraPosition = _mainCamera.transform.position;
+                _currentCameraRotation = _mainCamera.transform.rotation;
+
+                OnCameraPositionChanged?.Invoke(_currentCameraPosition, _currentCameraRotation);
+                OnMenuIntegrationUpdated?.Invoke();
+
+                if (_enableLogging)
+                {
+                    UnityEngine.ChimeraLogger.Log("OTHER", "$1", this);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get integration statistics
+        /// </summary>
+        public CameraIntegrationStats GetStats()
+        {
+            return new CameraIntegrationStats
+            {
+                CurrentPosition = _currentCameraPosition,
+                CurrentRotation = _currentCameraRotation,
+                IsIntegrationEnabled = _enableBasicIntegration,
+                IsInitialized = _isInitialized,
+                CameraFound = _mainCamera != null,
+                AutoUpdateEnabled = _autoUpdateOnCameraChange
+            };
+        }
+    }
+
+    /// <summary>
+    /// Camera integration statistics
+    /// </summary>
+    [System.Serializable]
+    public struct CameraIntegrationStats
+    {
+        public Vector3 CurrentPosition;
+        public Quaternion CurrentRotation;
+        public bool IsIntegrationEnabled;
+        public bool IsInitialized;
+        public bool CameraFound;
+        public bool AutoUpdateEnabled;
+    }
+}

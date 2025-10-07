@@ -59,11 +59,11 @@ namespace ProjectChimera.Systems.Save
                 _messagePackSerializer = new ProjectChimera.Data.Save.MessagePackSerializer();
 
                 _isInitialized = true;
-                ChimeraLogger.Log("[SaveSerializer] Serialization providers initialized successfully");
+                ChimeraLogger.Log("OTHER", "SaveSerializer initialized successfully", this);
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SaveSerializer] Failed to initialize providers: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "SaveSerializer initialization failed", this);
             }
         }
 
@@ -100,7 +100,7 @@ namespace ProjectChimera.Systems.Save
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SaveSerializer] Serialization failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "Serialization failed", this);
                 throw;
             }
         }
@@ -138,7 +138,7 @@ namespace ProjectChimera.Systems.Save
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SaveSerializer] Deserialization failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "Deserialization failed", this);
                 throw;
             }
         }
@@ -172,8 +172,7 @@ namespace ProjectChimera.Systems.Save
             _compressionLevel = compressionLevel;
             _serializationFormat = format;
 
-            ChimeraLogger.Log($"[SaveSerializer] Configuration updated - Compression: {enableCompression}, " +
-                             $"Encryption: {enableEncryption}, Format: {format}");
+            ChimeraLogger.Log("OTHER", "SaveSerializer configuration updated", this);
         }
     }
 

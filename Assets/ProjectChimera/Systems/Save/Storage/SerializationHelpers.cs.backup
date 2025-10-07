@@ -1,0 +1,236 @@
+using UnityEngine;
+using System.IO;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Data.Save;
+
+namespace ProjectChimera.Systems.Save.Storage
+{
+    /// <summary>
+    /// BASIC: Simple serialization helpers for Project Chimera's save system.
+    /// Focuses on essential serialization without complex compression and validation systems.
+    /// </summary>
+    public static class SerializationHelpers
+    {
+        /// <summary>
+        /// Serialize game data to JSON string
+        /// </summary>
+        public static string SerializeToJson(GameSaveData data)
+        {
+            if (data == null) return null;
+
+            try
+            {
+                string json = JsonUtility.ToJson(data, true);
+                UnityEngine.Debug.Log("Operation completed");
+                return json;
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Deserialize JSON string to game data
+        /// </summary>
+        public static GameSaveData DeserializeFromJson(string json)
+        {
+            if (string.IsNullOrEmpty(json)) return null;
+
+            try
+            {
+                GameSaveData data = JsonUtility.FromJson<GameSaveData>(json);
+                UnityEngine.Debug.Log("Operation completed");
+                return data;
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Save game data to file
+        /// </summary>
+        public static bool SaveToFile(GameSaveData data, string filePath)
+        {
+            if (data == null || string.IsNullOrEmpty(filePath)) return false;
+
+            try
+            {
+                string json = SerializeToJson(data);
+                if (json == null) return false;
+
+                // Ensure directory exists
+                string directory = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                File.WriteAllText(filePath, json);
+                UnityEngine.Debug.Log("Operation completed");
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Load game data from file
+        /// </summary>
+        public static GameSaveData LoadFromFile(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return null;
+
+            try
+            {
+                string json = File.ReadAllText(filePath);
+                GameSaveData data = DeserializeFromJson(json);
+
+                if (data != null)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+
+                return data;
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Check if save file exists
+        /// </summary>
+        public static bool SaveFileExists(string filePath)
+        {
+            return !string.IsNullOrEmpty(filePath) && File.Exists(filePath);
+        }
+
+        /// <summary>
+        /// Delete save file
+        /// </summary>
+        public static bool DeleteSaveFile(string filePath)
+        {
+            if (!SaveFileExists(filePath)) return false;
+
+            try
+            {
+                File.Delete(filePath);
+                UnityEngine.Debug.Log("Operation completed");
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Get save file info
+        /// </summary>
+        public static SaveFileInfo GetSaveFileInfo(string filePath)
+        {
+            if (!SaveFileExists(filePath)) return null;
+
+            try
+            {
+                FileInfo fileInfo = new FileInfo(filePath);
+                return new SaveFileInfo
+                {
+                    FilePath = filePath,
+                    FileSize = fileInfo.Length,
+                    LastModified = fileInfo.LastWriteTime,
+                    Exists = true
+                };
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Validate save data
+        /// </summary>
+        public static bool ValidateSaveData(GameSaveData data)
+        {
+            if (data == null) return false;
+            if (string.IsNullOrEmpty(data.SaveVersion)) return false;
+            if (data.PlayerData == null) return false;
+            if (data.CultivationData == null) return false;
+            if (data.ConstructionData == null) return false;
+            if (data.EconomyData == null) return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Create backup of save file
+        /// </summary>
+        public static bool CreateBackup(string originalPath, string backupPath)
+        {
+            if (!SaveFileExists(originalPath)) return false;
+
+            try
+            {
+                File.Copy(originalPath, backupPath, true);
+                UnityEngine.Debug.Log("Operation completed");
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Get serialization statistics
+        /// </summary>
+        public static SerializationStats GetStats()
+        {
+            return new SerializationStats
+            {
+                IsJsonSerialization = true,
+                SupportsCompression = false,
+                SupportsValidation = true,
+                LastOperation = "Unknown"
+            };
+        }
+    }
+
+    /// <summary>
+    /// Save file information
+    /// </summary>
+    [System.Serializable]
+    public class SaveFileInfo
+    {
+        public string FilePath;
+        public long FileSize;
+        public System.DateTime LastModified;
+        public bool Exists;
+    }
+
+    /// <summary>
+    /// Serialization statistics
+    /// </summary>
+    [System.Serializable]
+    public class SerializationStats
+    {
+        public bool IsJsonSerialization;
+        public bool SupportsCompression;
+        public bool SupportsValidation;
+        public string LastOperation;
+    }
+}

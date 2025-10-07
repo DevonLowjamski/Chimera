@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectChimera.Data.Camera;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Camera
 {
@@ -25,7 +26,7 @@ namespace ProjectChimera.Systems.Camera
         /// <summary>
         /// Save camera state to PlayerPrefs
         /// </summary>
-        public static void SaveState(CameraStateManager.CameraSnapshot state)
+        public static void SaveState(CameraSnapshot state)
         {
             PlayerPrefs.SetFloat(KEY_POS_X, state.position.x);
             PlayerPrefs.SetFloat(KEY_POS_Y, state.position.y);
@@ -43,14 +44,14 @@ namespace ProjectChimera.Systems.Camera
         /// <summary>
         /// Load camera state from PlayerPrefs
         /// </summary>
-        public static CameraStateManager.CameraSnapshot LoadState(Vector3 defaultPosition, Vector3 defaultRotation, float defaultFOV, CameraLevel defaultLevel)
+        public static CameraSnapshot LoadState(Vector3 defaultPosition, Vector3 defaultRotation, float defaultFOV, CameraLevel defaultLevel)
         {
             if (!HasSavedState())
             {
                 return CreateDefaultSnapshot(defaultPosition, defaultRotation, defaultFOV, defaultLevel);
             }
 
-            var state = new CameraStateManager.CameraSnapshot
+            var state = new CameraSnapshot
             {
                 position = new Vector3(
                     PlayerPrefs.GetFloat(KEY_POS_X, defaultPosition.x),
@@ -104,7 +105,7 @@ namespace ProjectChimera.Systems.Camera
         /// <summary>
         /// Validate state data for integrity
         /// </summary>
-        public static bool ValidateState(CameraStateManager.CameraSnapshot state)
+        public static bool ValidateState(CameraSnapshot state)
         {
             // Validate position
             if (float.IsNaN(state.position.x) || float.IsNaN(state.position.y) || float.IsNaN(state.position.z))
@@ -128,9 +129,9 @@ namespace ProjectChimera.Systems.Camera
         /// <summary>
         /// Create default snapshot with given parameters
         /// </summary>
-        private static CameraStateManager.CameraSnapshot CreateDefaultSnapshot(Vector3 position, Vector3 rotation, float fov, CameraLevel level)
+        private static CameraSnapshot CreateDefaultSnapshot(Vector3 position, Vector3 rotation, float fov, CameraLevel level)
         {
-            return new CameraStateManager.CameraSnapshot
+            return new CameraSnapshot
             {
                 position = position,
                 rotation = Quaternion.Euler(rotation),

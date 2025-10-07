@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
 
 namespace ProjectChimera.Systems.Services.SpeedTree
 {
@@ -38,7 +39,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[SpeedTreeAssetManagementService] Initialized successfully");
+                ChimeraLogger.Log("SPEEDTREE/ASSETS", "Initialized", this);
             }
         }
 
@@ -65,15 +66,28 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 
                     if (_enableLogging)
                     {
-                        ChimeraLogger.Log($"[SpeedTreeAssetManagementService] Loaded asset: {assetName}");
+                        ChimeraLogger.Log("SPEEDTREE/ASSETS", $"Loaded prefab: {assetName}", this);
                     }
 
                     return prefab;
                 }
             }
 
-            // Try to load from Resources
-            var loadedAsset = Resources.Load<GameObject>(assetName);
+            // Try to load from Addressables (with Resources fallback)
+            var serviceContainer = ServiceContainerFactory.Instance;
+            var assetManager = serviceContainer.TryResolve<IAssetManager>();
+            GameObject loadedAsset = null;
+
+            if (assetManager != null)
+            {
+                loadedAsset = assetManager.LoadAsset<GameObject>(assetName);
+            }
+            else
+            {
+                // No fallback to Resources.Load - log warning and fail gracefully
+                ChimeraLogger.LogWarning("SPEEDTREE", $"Asset manager not available for asset: {assetName}. Configure AddressablesAssetManager.", this);
+                loadedAsset = null;
+            }
             if (loadedAsset != null)
             {
                 _loadedAssets[assetName] = loadedAsset;
@@ -81,7 +95,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[SpeedTreeAssetManagementService] Loaded asset from Resources: {assetName}");
+                    ChimeraLogger.Log("OTHER", "Asset loaded successfully", this);
                 }
 
                 return loadedAsset;
@@ -89,7 +103,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 
             if (_enableLogging)
             {
-                ChimeraLogger.LogWarning($"[SpeedTreeAssetManagementService] Asset not found: {assetName}");
+                ChimeraLogger.LogWarning("SPEEDTREE/ASSETS", $"Asset not found: {assetName}", this);
             }
 
             return null;
@@ -106,7 +120,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[SpeedTreeAssetManagementService] Unloaded asset: {assetName}");
+                    ChimeraLogger.Log("SPEEDTREE/ASSETS", $"Unloaded asset: {assetName}", this);
                 }
             }
         }
@@ -127,7 +141,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[SpeedTreeAssetManagementService] Created instance: {instance.name}");
+                ChimeraLogger.Log("SPEEDTREE/ASSETS", $"Created instance for: {assetName}", this);
             }
 
             return instance;
@@ -144,7 +158,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[SpeedTreeAssetManagementService] Destroyed instance: {instance.name}");
+                    ChimeraLogger.Log("SPEEDTREE/ASSETS", "Destroyed instance", this);
                 }
             }
         }
@@ -193,7 +207,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[SpeedTreeAssetManagementService] Cleared all assets and instances");
+                ChimeraLogger.Log("SPEEDTREE/ASSETS", "Cleared all assets", this);
             }
         }
 
@@ -211,7 +225,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[SpeedTreeAssetManagementService] Asset management {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.Log("SPEEDTREE/ASSETS", $"Asset management {(enabled ? "enabled" : "disabled")}", this);
             }
         }
 

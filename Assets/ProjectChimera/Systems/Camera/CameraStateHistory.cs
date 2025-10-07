@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Camera
 {
@@ -9,11 +10,11 @@ namespace ProjectChimera.Systems.Camera
     /// </summary>
     public class CameraStateHistory
     {
-        private List<CameraStateManager.CameraSnapshot> _stateHistory = new List<CameraStateManager.CameraSnapshot>();
+        private List<CameraSnapshot> _stateHistory = new List<CameraSnapshot>();
         private int _currentHistoryIndex = -1;
         private int _maxHistoryEntries;
 
-        public System.Action<CameraStateManager.CameraSnapshot> OnStateRecorded;
+        public System.Action<CameraSnapshot> OnStateRecorded;
 
         public CameraStateHistory(int maxEntries = 20)
         {
@@ -23,7 +24,7 @@ namespace ProjectChimera.Systems.Camera
         /// <summary>
         /// Record a state snapshot to history
         /// </summary>
-        public void RecordState(CameraStateManager.CameraSnapshot snapshot)
+        public void RecordState(CameraSnapshot snapshot)
         {
             // Remove any history entries after current index (for redo functionality)
             if (_currentHistoryIndex < _stateHistory.Count - 1)
@@ -48,9 +49,9 @@ namespace ProjectChimera.Systems.Camera
         /// <summary>
         /// Undo to previous state
         /// </summary>
-        public bool TryUndo(out CameraStateManager.CameraSnapshot state)
+        public bool TryUndo(out CameraSnapshot state)
         {
-            state = new CameraStateManager.CameraSnapshot();
+            state = new CameraSnapshot();
 
             if (_currentHistoryIndex <= 0)
                 return false;
@@ -63,9 +64,9 @@ namespace ProjectChimera.Systems.Camera
         /// <summary>
         /// Redo to next state
         /// </summary>
-        public bool TryRedo(out CameraStateManager.CameraSnapshot state)
+        public bool TryRedo(out CameraSnapshot state)
         {
-            state = new CameraStateManager.CameraSnapshot();
+            state = new CameraSnapshot();
 
             if (_currentHistoryIndex >= _stateHistory.Count - 1)
                 return false;

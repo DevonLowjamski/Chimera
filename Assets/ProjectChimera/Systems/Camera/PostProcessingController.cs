@@ -25,7 +25,7 @@ namespace ProjectChimera.Systems.Camera
         /// </summary>
         public void ShakeCamera(float intensity = 1f, float duration = 0.5f)
         {
-            ChimeraLogger.Log($"[PostProcessingController] Camera shake: intensity={intensity}, duration={duration}");
+            ChimeraLogger.LogInfo("PostProcessingController", "$1");
             // Implementation would apply camera shake effect
         }
     }

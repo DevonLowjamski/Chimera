@@ -1,0 +1,367 @@
+using UnityEngine;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Core.Performance;
+using System.Collections.Generic;
+using ProjectChimera.Data.Construction;
+using ConstructionStatus = ProjectChimera.Data.Construction.ConstructionStatus;
+
+namespace ProjectChimera.Systems.Construction.Core
+{
+    /// <summary>
+    /// REFACTORED: Construction Core System
+    /// Central coordination for all construction subsystems with focused responsibility
+    /// </summary>
+    public class ConstructionCore : MonoBehaviour, ITickable
+    {
+        [Header("Core Construction Settings")]
+        [SerializeField] private bool _enableAdvancedConstruction = true;
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private float _updateInterval = 0.05f;
+        [SerializeField] private bool _enablePerformanceMonitoring = true;
+
+        // Construction subsystems
+        private ConstructionProjectManager _projectManager;
+        private ConstructionValidator _constructionValidator;
+        private ConstructionPlanner _constructionPlanner;
+        private ConstructionPerformanceMonitor _performanceMonitor;
+        private ConstructionLODManager _lodManager;
+
+        // Core state
+        private float _lastUpdateTime;
+        private AdvancedPerformanceMonitor _systemPerformanceMonitor;
+        private MetricsCollectionFramework _metricsFramework;
+
+        // Properties
+        public bool IsInitialized { get; private set; }
+        public ConstructionProjectManager ProjectManager => _projectManager;
+        public ConstructionValidator ConstructionValidator => _constructionValidator;
+        public ConstructionPlanner ConstructionPlanner => _constructionPlanner;
+        public ConstructionPerformanceMonitor PerformanceMonitor => _performanceMonitor;
+        public ConstructionLODManager LODManager => _lodManager;
+
+        // ITickable implementation
+        public int TickPriority => 20; // Medium priority for construction
+        public bool IsTickable => enabled && gameObject.activeInHierarchy && IsInitialized && _enableAdvancedConstruction;
+
+        // Events
+        public System.Action<ConstructionProject> OnProjectStarted;
+        public System.Action<ConstructionProject> OnProjectCompleted;
+        public System.Action<ConstructionValidation> OnValidationCompleted;
+        public System.Action<ConstructionMetrics> OnConstructionMetricsUpdated;
+
+        private void Start()
+        {
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            if (IsInitialized) return;
+
+            InitializeSystemReferences();
+            InitializeSubsystems();
+            RegisterWithMetricsFramework();
+
+            _lastUpdateTime = Time.time;
+            IsInitialized = true;
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "✅ Construction Core initialized", this);
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (!IsInitialized || !_enableAdvancedConstruction) return;
+
+            if (Time.time - _lastUpdateTime >= _updateInterval)
+            {
+                UpdateConstructionSystems();
+                _lastUpdateTime = Time.time;
+            }
+        }
+
+        /// <summary>
+        /// Start a new construction project
+        /// </summary>
+        public void StartProject(ConstructionProject project)
+        {
+            _projectManager?.StartProject(project);
+            OnProjectStarted?.Invoke(project);
+        }
+
+        /// <summary>
+        /// Complete construction project
+        /// </summary>
+        public void CompleteProject(string projectId)
+        {
+            var project = _projectManager?.GetProject(projectId);
+            if (project != null)
+            {
+                _projectManager?.CompleteProject(projectId);
+                OnProjectCompleted?.Invoke(project);
+            }
+        }
+
+        /// <summary>
+        /// Validate construction placement
+        /// </summary>
+        public ConstructionValidationResult ValidatePlacement(Vector3 position, ConstructionData constructionData)
+        {
+            return _constructionValidator?.ValidatePlacement(position, constructionData) ?? ConstructionValidationResult.Invalid("Construction validator not available");
+        }
+
+        /// <summary>
+        /// Get construction metrics
+        /// </summary>
+        public ConstructionMetrics GetConstructionMetrics()
+        {
+            return _performanceMonitor?.GetMetrics() ?? new ConstructionMetrics();
+        }
+
+        /// <summary>
+        /// Get active construction projects
+        /// </summary>
+        public ConstructionProject[] GetActiveProjects()
+        {
+            return _projectManager?.GetActiveProjects() ?? new ConstructionProject[0];
+        }
+
+        /// <summary>
+        /// Force update all construction systems
+        /// </summary>
+        public void ForceUpdate()
+        {
+            UpdateConstructionSystems();
+        }
+
+        /// <summary>
+        /// Set advanced construction enabled/disabled
+        /// </summary>
+        public void SetAdvancedConstructionEnabled(bool enabled)
+        {
+            _enableAdvancedConstruction = enabled;
+
+            _projectManager?.SetEnabled(enabled);
+            _constructionValidator?.SetEnabled(enabled);
+            _constructionPlanner?.SetEnabled(enabled);
+            _performanceMonitor?.SetEnabled(enabled);
+            _lodManager?.SetEnabled(enabled);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Advanced construction: {(enabled ? "enabled" : "disabled")}", this);
+        }
+
+        /// <summary>
+        /// Get construction system status report
+        /// </summary>
+        public ConstructionSystemReport GetSystemReport()
+        {
+            var report = new ConstructionSystemReport
+            {
+                IsEnabled = _enableAdvancedConstruction,
+                ActiveProjects = _projectManager?.GetActiveProjects()?.Length ?? 0,
+                PendingValidations = _constructionValidator?.GetPendingValidations()?.Length ?? 0,
+                PerformanceMetrics = GetConstructionMetrics(),
+                SystemsInitialized = IsInitialized
+            };
+
+            return report;
+        }
+
+        private void InitializeSystemReferences()
+        {
+            // Get performance systems via ServiceContainer
+            _systemPerformanceMonitor = ServiceContainerFactory.Instance?.TryResolve<AdvancedPerformanceMonitor>();
+            _metricsFramework = MetricsCollectionFramework.Instance;
+        }
+
+        private void InitializeSubsystems()
+        {
+            // Initialize project manager
+            var projectGO = new GameObject("ConstructionProjectManager");
+            projectGO.transform.SetParent(transform);
+            _projectManager = projectGO.AddComponent<ConstructionProjectManager>();
+
+            // Initialize validator
+            var validatorGO = new GameObject("ConstructionValidator");
+            validatorGO.transform.SetParent(transform);
+            _constructionValidator = validatorGO.AddComponent<ConstructionValidator>();
+
+            // Initialize planner
+            var plannerGO = new GameObject("ConstructionPlanner");
+            plannerGO.transform.SetParent(transform);
+            _constructionPlanner = plannerGO.AddComponent<ConstructionPlanner>();
+
+            // Initialize performance monitor
+            var performanceGO = new GameObject("ConstructionPerformanceMonitor");
+            performanceGO.transform.SetParent(transform);
+            _performanceMonitor = performanceGO.AddComponent<ConstructionPerformanceMonitor>();
+
+            // Initialize LOD manager
+            var lodGO = new GameObject("ConstructionLODManager");
+            lodGO.transform.SetParent(transform);
+            _lodManager = lodGO.AddComponent<ConstructionLODManager>();
+        }
+
+        private void RegisterWithMetricsFramework()
+        {
+            if (_metricsFramework != null && _performanceMonitor != null)
+            {
+                _metricsFramework.RegisterCollector("ConstructionCore", new ConstructionMetricCollector(_performanceMonitor));
+            }
+        }
+
+        private void UpdateConstructionSystems()
+        {
+            float frameStartTime = Time.realtimeSinceStartup * 1000f;
+
+            // Update project management
+            _projectManager?.UpdateProjects();
+
+            // Update validation system
+            _constructionValidator?.ProcessValidations(CalculateOptimalValidationCount());
+
+            // Update planning system
+            _constructionPlanner?.ProcessPlanning();
+
+            // Update LOD system
+            _lodManager?.UpdateConstructionLOD();
+
+            // Update performance monitoring
+            _performanceMonitor?.UpdateMetrics();
+
+            // Broadcast metrics update
+            var metrics = GetConstructionMetrics();
+            OnConstructionMetricsUpdated?.Invoke(metrics);
+        }
+
+        private int CalculateOptimalValidationCount()
+        {
+            int baseCount = 20; // Default max validations per frame
+
+            if (_enablePerformanceMonitoring && _systemPerformanceMonitor != null)
+            {
+                var currentMetrics = _systemPerformanceMonitor.GetCurrentMetrics();
+                if (currentMetrics != null)
+                {
+                    float frameTimeMs = currentMetrics.FrameTimeMs;
+                    float targetFrameTime = 16.67f; // 60 FPS
+
+                    if (frameTimeMs > targetFrameTime * 1.2f) // Over target by 20%
+                    {
+                        baseCount = Mathf.Max(5, baseCount / 2); // Reduce load
+                    }
+                    else if (frameTimeMs < targetFrameTime * 0.8f) // Well under target
+                    {
+                        baseCount = Mathf.Min(40, baseCount * 2); // Increase throughput
+                    }
+                }
+            }
+
+            return baseCount;
+        }
+
+        private void OnDestroy()
+        {
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "Construction Core destroyed", this);
+        }
+    }
+
+    /// <summary>
+    /// Construction system status report
+    /// </summary>
+    [System.Serializable]
+    public struct ConstructionSystemReport
+    {
+        public bool IsEnabled;
+        public int ActiveProjects;
+        public int PendingValidations;
+        public ConstructionMetrics PerformanceMetrics;
+        public bool SystemsInitialized;
+    }
+
+    /// <summary>
+    /// Construction metrics data structure
+    /// </summary>
+    [System.Serializable]
+    public struct ConstructionMetrics
+    {
+        public int ActiveProjects;
+        public int CompletedProjects;
+        public int FailedProjects;
+        public int ValidationsCompleted;
+        public int ValidationErrors;
+        public float AverageProjectDuration;
+        public float AverageValidationTime;
+        public bool IsPerformingWell;
+    }
+
+    /// <summary>
+    /// Construction project data structure
+    /// </summary>
+    [System.Serializable]
+    public struct ConstructionProject
+    {
+        public string ProjectId;
+        public string ProjectName;
+        public Vector3 Position;
+        public ConstructionData Data;
+        public ConstructionStatus Status;
+        public float Progress;
+        public System.DateTime StartTime;
+        public bool IsActive;
+        public bool NeedsUpdate;
+    }
+
+    /// <summary>
+    /// Construction validation result
+    /// </summary>
+    [System.Serializable]
+    public struct ConstructionValidationResult
+    {
+        public bool IsValid;
+        public string[] Errors;
+        public string[] Warnings;
+        public float ValidationScore;
+
+        public static ConstructionValidationResult Valid()
+        {
+            return new ConstructionValidationResult { IsValid = true, ValidationScore = 1f, Errors = new string[0], Warnings = new string[0] };
+        }
+
+        public static ConstructionValidationResult Invalid(string error)
+        {
+            return new ConstructionValidationResult { IsValid = false, ValidationScore = 0f, Errors = new string[] { error }, Warnings = new string[0] };
+        }
+    }
+
+    /// <summary>
+    /// Construction validation data
+    /// </summary>
+    [System.Serializable]
+    public struct ConstructionValidation
+    {
+        public string ValidationId;
+        public Vector3 Position;
+        public ConstructionData Data;
+        public ConstructionValidationResult Result;
+        public bool IsCompleted;
+        public System.DateTime RequestTime;
+    }
+
+    /// <summary>
+    /// Construction data placeholder
+    /// </summary>
+    [System.Serializable]
+    public struct ConstructionData
+    {
+        public string BuildingType;
+        public Vector3 Size;
+        public float Cost;
+        public string[] Requirements;
+    }
+
+}

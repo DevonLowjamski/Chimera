@@ -2,6 +2,7 @@ using ProjectChimera.Data.Construction;
 using ProjectChimera.Data.Economy;
 using System.Collections.Generic;
 using UnityEngine;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Construction
 {

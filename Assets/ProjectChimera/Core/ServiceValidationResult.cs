@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
-namespace ProjectChimera.Core.DependencyInjection
+namespace ProjectChimera.Core
 {
     /// <summary>
     /// Result of service validation operations
@@ -21,6 +22,11 @@ namespace ProjectChimera.Core.DependencyInjection
         public List<string> Warnings { get; set; } = new List<string>();
         public DateTime ValidationTime { get; set; }
         public float ValidationDuration { get; set; } // milliseconds
+
+        // Additional properties for editor compatibility
+        public bool IsRegistered => IsValid;
+        public string ErrorMessage => ValidationMessage;
+        public int Count => 1; // For compatibility with collection operations
 
         /// <summary>
         /// Create a successful validation result

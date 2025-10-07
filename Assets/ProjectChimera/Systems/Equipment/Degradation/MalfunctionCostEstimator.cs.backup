@@ -1,0 +1,782 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Data.Equipment;
+
+namespace ProjectChimera.Systems.Equipment.Degradation
+{
+    /// <summary>
+    /// REFACTORED: Malfunction Cost Estimator
+    /// Single Responsibility: Calculating repair costs and time estimates
+    /// Extracted from MalfunctionSystem for better separation of concerns
+    /// </summary>
+    public class MalfunctionCostEstimator : MonoBehaviour
+    {
+        [Header("Cost Estimation Settings")]
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private bool _useMarketPricing = true;
+        [SerializeField] private bool _includeInflation = true;
+        [SerializeField] private float _inflationRate = 0.03f; // 3% annual
+
+        [Header("Base Cost Settings")]
+        [SerializeField] private float _laborCostPerHour = 75f;
+        [SerializeField] private float _specialistCostPerHour = 150f;
+        [SerializeField] private float _emergencyMultiplier = 2f;
+        [SerializeField] private float _partsCostVariance = 0.15f;
+
+        [Header("Time Estimation Settings")]
+        [SerializeField] private bool _useRealisticTimeEstimates = true;
+        [SerializeField] private float _timeVarianceFactor = 0.2f;
+        [SerializeField] private float _complexityTimeMultiplier = 1.5f;
+
+        // Cost data and caching
+        private readonly Dictionary<MalfunctionType, BaseCostData> _baseCostDatabase = new Dictionary<MalfunctionType, BaseCostData>();
+        private readonly Dictionary<EquipmentType, float> _equipmentCostModifiers = new Dictionary<EquipmentType, float>();
+        private readonly Dictionary<string, CostEstimate> _estimateCache = new Dictionary<string, CostEstimate>();
+
+        // Statistics
+        private MalfunctionCostEstimatorStats _stats = new MalfunctionCostEstimatorStats();
+
+        // State tracking
+        private bool _isInitialized = false;
+        private float _lastInflationUpdate;
+
+        // Events
+        public event System.Action<CostEstimate> OnCostEstimateGenerated;
+        public event System.Action<string, float> OnCostDatabaseUpdated;
+
+        public bool IsInitialized => _isInitialized;
+        public MalfunctionCostEstimatorStats Stats => _stats;
+
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            InitializeBaseCostDatabase();
+            InitializeEquipmentModifiers();
+            _estimateCache.Clear();
+            ResetStats();
+
+            _lastInflationUpdate = Time.time;
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("EQUIPMENT", "Malfunction Cost Estimator initialized", this);
+            }
+        }
+
+        /// <summary>
+        /// Estimate repair cost for malfunction
+        /// </summary>
+        public float EstimateRepairCost(MalfunctionType type, MalfunctionSeverity severity, EquipmentType equipmentType, bool requiresSpecialist = false, bool isEmergency = false)
+        {
+            if (!_isInitialized)
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("EQUIPMENT", "Cannot estimate cost - estimator not initialized", this);
+                }
+                return 0f;
+            }
+
+            var estimationStartTime = Time.realtimeSinceStartup;
+
+            try
+            {
+                // Get base cost data
+                if (!_baseCostDatabase.TryGetValue(type, out var baseCostData))
+                {
+                    baseCostData = _baseCostDatabase[MalfunctionType.WearAndTear]; // Fallback
+                    _stats.EstimatesWithoutBaseData++;
+                }
+
+                // Calculate base cost
+                float baseCost = CalculateBaseCost(baseCostData, severity);
+
+                // Apply equipment modifier
+                float equipmentModifier = GetEquipmentCostModifier(equipmentType);
+                float adjustedCost = baseCost * equipmentModifier;
+
+                // Apply specialist cost
+                if (requiresSpecialist)
+                {
+                    adjustedCost *= 1.3f; // 30% increase for specialist
+                }
+
+                // Apply emergency multiplier
+                if (isEmergency)
+                {
+                    adjustedCost *= _emergencyMultiplier;
+                }
+
+                // Apply market pricing and inflation
+                if (_useMarketPricing)
+                {
+                    adjustedCost = ApplyMarketPricing(adjustedCost, type);
+                }
+
+                if (_includeInflation)
+                {
+                    adjustedCost = ApplyInflation(adjustedCost);
+                }
+
+                // Add variance
+                float variance = UnityEngine.Random.Range(-_partsCostVariance, _partsCostVariance);
+                float finalCost = adjustedCost * (1f + variance);
+
+                // Update statistics
+                var estimationTime = Time.realtimeSinceStartup - estimationStartTime;
+                UpdateCostEstimationStats(estimationTime, finalCost);
+
+                _stats.CostEstimatesGenerated++;
+
+                return Mathf.Max(0f, finalCost);
+            }
+            catch (System.Exception ex)
+            {
+                _stats.EstimationErrors++;
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogError("EQUIPMENT", $"Error estimating repair cost: {ex.Message}", this);
+                }
+
+                return 0f;
+            }
+        }
+
+        /// <summary>
+        /// Estimate repair time for malfunction
+        /// </summary>
+        public TimeSpan EstimateRepairTime(MalfunctionType type, MalfunctionSeverity severity, EquipmentType equipmentType, bool requiresSpecialist = false)
+        {
+            if (!_isInitialized)
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("EQUIPMENT", "Cannot estimate time - estimator not initialized", this);
+                }
+                return TimeSpan.Zero;
+            }
+
+            try
+            {
+                // Get base time data
+                if (!_baseCostDatabase.TryGetValue(type, out var baseCostData))
+                {
+                    baseCostData = _baseCostDatabase[MalfunctionType.WearAndTear]; // Fallback
+                }
+
+                // Calculate base time
+                int baseMinutes = CalculateBaseTime(baseCostData, severity);
+
+                // Apply severity multiplier
+                float severityMultiplier = GetSeverityTimeMultiplier(severity);
+                float adjustedMinutes = baseMinutes * severityMultiplier;
+
+                // Apply complexity modifier
+                float complexityModifier = GetComplexityTimeModifier(type, equipmentType);
+                adjustedMinutes *= complexityModifier;
+
+                // Specialist reduces time
+                if (requiresSpecialist)
+                {
+                    adjustedMinutes *= 0.8f; // 20% reduction for specialist
+                }
+
+                // Apply variance if realistic estimates enabled
+                if (_useRealisticTimeEstimates)
+                {
+                    float variance = UnityEngine.Random.Range(-_timeVarianceFactor, _timeVarianceFactor);
+                    adjustedMinutes *= (1f + variance);
+                }
+
+                _stats.TimeEstimatesGenerated++;
+
+                return TimeSpan.FromMinutes(Mathf.Max(5f, adjustedMinutes)); // Minimum 5 minutes
+            }
+            catch (System.Exception ex)
+            {
+                _stats.EstimationErrors++;
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogError("EQUIPMENT", $"Error estimating repair time: {ex.Message}", this);
+                }
+
+                return TimeSpan.FromMinutes(60); // Default 1 hour
+            }
+        }
+
+        /// <summary>
+        /// Generate comprehensive cost estimate
+        /// </summary>
+        public CostEstimate GenerateComprehensiveCostEstimate(EquipmentMalfunction malfunction, bool requiresSpecialist = false, bool isEmergency = false)
+        {
+            if (!_isInitialized || malfunction == null)
+                return null;
+
+            try
+            {
+                var equipmentType = EquipmentInstance.GetEquipment(malfunction.EquipmentId)?.Type ?? EquipmentType.Generic;
+
+                var estimate = new CostEstimate
+                {
+                    EstimateId = GenerateEstimateId(),
+                    MalfunctionId = malfunction.MalfunctionId,
+                    EquipmentId = malfunction.EquipmentId,
+                    EstimationTime = DateTime.Now,
+
+                    // Cost breakdown
+                    LaborCost = CalculateLaborCost(malfunction.Type, malfunction.Severity, requiresSpecialist),
+                    PartsCost = CalculatePartsCost(malfunction.RequiredParts, malfunction.Type),
+                    OverheadCost = CalculateOverheadCost(malfunction.Type, malfunction.Severity),
+                    EmergencySurcharge = isEmergency ? CalculateEmergencySurcharge(malfunction.Type, malfunction.Severity) : 0f,
+
+                    // Time estimates
+                    EstimatedRepairTime = EstimateRepairTime(malfunction.Type, malfunction.Severity, equipmentType, requiresSpecialist),
+                    DiagnosticTime = EstimateDiagnosticTime(malfunction.Type, malfunction.Severity),
+
+                    // Additional details
+                    RequiresSpecialist = requiresSpecialist || malfunction.RequiresSpecialist,
+                    IsEmergency = isEmergency,
+                    Confidence = CalculateEstimateConfidence(malfunction.Type, equipmentType),
+
+                    // Parts and materials
+                    RequiredParts = new List<string>(malfunction.RequiredParts),
+                    AdditionalMaterials = EstimateAdditionalMaterials(malfunction.Type, malfunction.Severity)
+                };
+
+                // Calculate total cost
+                estimate.TotalCost = estimate.LaborCost + estimate.PartsCost + estimate.OverheadCost + estimate.EmergencySurcharge;
+
+                // Cache estimate
+                _estimateCache[estimate.EstimateId] = estimate;
+
+                OnCostEstimateGenerated?.Invoke(estimate);
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("EQUIPMENT", $"Generated cost estimate {estimate.EstimateId}: ${estimate.TotalCost:F2} over {estimate.EstimatedRepairTime.TotalHours:F1}h", this);
+                }
+
+                return estimate;
+            }
+            catch (System.Exception ex)
+            {
+                _stats.EstimationErrors++;
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogError("EQUIPMENT", $"Error generating comprehensive estimate: {ex.Message}", this);
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Update cost database with actual repair data
+        /// </summary>
+        public void UpdateCostDatabase(MalfunctionType type, float actualCost, TimeSpan actualTime, MalfunctionSeverity severity)
+        {
+            if (!_baseCostDatabase.TryGetValue(type, out var costData))
+                return;
+
+            // Update running averages
+            costData.ActualCostHistory.Add(actualCost);
+            costData.ActualTimeHistory.Add((float)actualTime.TotalMinutes);
+
+            // Limit history size
+            if (costData.ActualCostHistory.Count > 100)
+            {
+                costData.ActualCostHistory.RemoveAt(0);
+                costData.ActualTimeHistory.RemoveAt(0);
+            }
+
+            // Recalculate averages
+            costData.AverageActualCost = costData.ActualCostHistory.Average();
+            costData.AverageActualTime = costData.ActualTimeHistory.Average();
+
+            OnCostDatabaseUpdated?.Invoke(type.ToString(), costData.AverageActualCost);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("EQUIPMENT", $"Updated cost database for {type}: Avg Cost=${costData.AverageActualCost:F2}, Avg Time={costData.AverageActualTime:F1}min", this);
+            }
+        }
+
+        /// <summary>
+        /// Get cached cost estimate
+        /// </summary>
+        public CostEstimate GetCachedEstimate(string estimateId)
+        {
+            return _estimateCache.TryGetValue(estimateId, out var estimate) ? estimate : null;
+        }
+
+        /// <summary>
+        /// Set cost estimation parameters
+        /// </summary>
+        public void SetCostParameters(float laborCost, float specialistCost, float emergencyMultiplier, float variance)
+        {
+            _laborCostPerHour = Mathf.Max(0f, laborCost);
+            _specialistCostPerHour = Mathf.Max(0f, specialistCost);
+            _emergencyMultiplier = Mathf.Max(1f, emergencyMultiplier);
+            _partsCostVariance = Mathf.Clamp01(variance);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("EQUIPMENT", $"Cost parameters updated: Labor=${_laborCostPerHour}/h, Specialist=${_specialistCostPerHour}/h, Emergency={_emergencyMultiplier}x", this);
+            }
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Initialize base cost database
+        /// </summary>
+        private void InitializeBaseCostDatabase()
+        {
+            _baseCostDatabase[MalfunctionType.MechanicalFailure] = new BaseCostData
+            {
+                BaseCost = 500f,
+                BaseTimeMinutes = 120,
+                PartsCostRatio = 0.4f,
+                LaborCostRatio = 0.6f,
+                ActualCostHistory = new List<float>(),
+                ActualTimeHistory = new List<float>()
+            };
+
+            _baseCostDatabase[MalfunctionType.ElectricalFailure] = new BaseCostData
+            {
+                BaseCost = 300f,
+                BaseTimeMinutes = 90,
+                PartsCostRatio = 0.3f,
+                LaborCostRatio = 0.7f,
+                ActualCostHistory = new List<float>(),
+                ActualTimeHistory = new List<float>()
+            };
+
+            _baseCostDatabase[MalfunctionType.SensorDrift] = new BaseCostData
+            {
+                BaseCost = 100f,
+                BaseTimeMinutes = 30,
+                PartsCostRatio = 0.5f,
+                LaborCostRatio = 0.5f,
+                ActualCostHistory = new List<float>(),
+                ActualTimeHistory = new List<float>()
+            };
+
+            _baseCostDatabase[MalfunctionType.OverheatingProblem] = new BaseCostData
+            {
+                BaseCost = 400f,
+                BaseTimeMinutes = 60,
+                PartsCostRatio = 0.35f,
+                LaborCostRatio = 0.65f,
+                ActualCostHistory = new List<float>(),
+                ActualTimeHistory = new List<float>()
+            };
+
+            _baseCostDatabase[MalfunctionType.SoftwareError] = new BaseCostData
+            {
+                BaseCost = 200f,
+                BaseTimeMinutes = 45,
+                PartsCostRatio = 0.1f,
+                LaborCostRatio = 0.9f,
+                ActualCostHistory = new List<float>(),
+                ActualTimeHistory = new List<float>()
+            };
+
+            _baseCostDatabase[MalfunctionType.WearAndTear] = new BaseCostData
+            {
+                BaseCost = 250f,
+                BaseTimeMinutes = 75,
+                PartsCostRatio = 0.45f,
+                LaborCostRatio = 0.55f,
+                ActualCostHistory = new List<float>(),
+                ActualTimeHistory = new List<float>()
+            };
+        }
+
+        /// <summary>
+        /// Initialize equipment cost modifiers
+        /// </summary>
+        private void InitializeEquipmentModifiers()
+        {
+            _equipmentCostModifiers[EquipmentType.Generic] = 1.0f;
+            _equipmentCostModifiers[EquipmentType.HVAC] = 1.2f;
+            _equipmentCostModifiers[EquipmentType.Lighting] = 0.8f;
+            _equipmentCostModifiers[EquipmentType.Irrigation] = 1.1f;
+            _equipmentCostModifiers[EquipmentType.Climate] = 1.3f;
+            _equipmentCostModifiers[EquipmentType.Security] = 1.5f;
+            _equipmentCostModifiers[EquipmentType.Power] = 1.4f;
+        }
+
+        /// <summary>
+        /// Calculate base cost from severity
+        /// </summary>
+        private float CalculateBaseCost(BaseCostData costData, MalfunctionSeverity severity)
+        {
+            float severityMultiplier = severity switch
+            {
+                MalfunctionSeverity.Minor => UnityEngine.Random.Range(0.8f, 1.2f),
+                MalfunctionSeverity.Moderate => UnityEngine.Random.Range(1.5f, 2.5f),
+                MalfunctionSeverity.Major => UnityEngine.Random.Range(3f, 5f),
+                MalfunctionSeverity.Critical => UnityEngine.Random.Range(6f, 10f),
+                MalfunctionSeverity.Catastrophic => UnityEngine.Random.Range(12f, 18f),
+                _ => 1f
+            };
+
+            return costData.BaseCost * severityMultiplier;
+        }
+
+        /// <summary>
+        /// Calculate base time from severity
+        /// </summary>
+        private int CalculateBaseTime(BaseCostData costData, MalfunctionSeverity severity)
+        {
+            float severityMultiplier = severity switch
+            {
+                MalfunctionSeverity.Minor => UnityEngine.Random.Range(0.8f, 1.2f),
+                MalfunctionSeverity.Moderate => UnityEngine.Random.Range(1.5f, 2.5f),
+                MalfunctionSeverity.Major => UnityEngine.Random.Range(3f, 5f),
+                MalfunctionSeverity.Critical => UnityEngine.Random.Range(6f, 10f),
+                MalfunctionSeverity.Catastrophic => UnityEngine.Random.Range(10f, 15f),
+                _ => 1f
+            };
+
+            return Mathf.RoundToInt(costData.BaseTimeMinutes * severityMultiplier);
+        }
+
+        /// <summary>
+        /// Get equipment cost modifier
+        /// </summary>
+        private float GetEquipmentCostModifier(EquipmentType equipmentType)
+        {
+            return _equipmentCostModifiers.TryGetValue(equipmentType, out var modifier) ? modifier : 1.0f;
+        }
+
+        /// <summary>
+        /// Get severity time multiplier
+        /// </summary>
+        private float GetSeverityTimeMultiplier(MalfunctionSeverity severity)
+        {
+            return severity switch
+            {
+                MalfunctionSeverity.Minor => 1f,
+                MalfunctionSeverity.Moderate => 2f,
+                MalfunctionSeverity.Major => 4f,
+                MalfunctionSeverity.Critical => 8f,
+                MalfunctionSeverity.Catastrophic => 12f,
+                _ => 1f
+            };
+        }
+
+        /// <summary>
+        /// Get complexity time modifier
+        /// </summary>
+        private float GetComplexityTimeModifier(MalfunctionType type, EquipmentType equipmentType)
+        {
+            float baseModifier = type switch
+            {
+                MalfunctionType.SoftwareError => 1.2f,
+                MalfunctionType.ElectricalFailure => 1.1f,
+                MalfunctionType.MechanicalFailure => 1.0f,
+                MalfunctionType.OverheatingProblem => 0.9f,
+                MalfunctionType.SensorDrift => 0.8f,
+                _ => 1.0f
+            };
+
+            // Equipment complexity modifier
+            float equipmentModifier = equipmentType switch
+            {
+                EquipmentType.Security => 1.3f,
+                EquipmentType.Climate => 1.2f,
+                EquipmentType.Power => 1.1f,
+                EquipmentType.HVAC => 1.1f,
+                _ => 1.0f
+            };
+
+            return baseModifier * equipmentModifier;
+        }
+
+        /// <summary>
+        /// Apply market pricing adjustments
+        /// </summary>
+        private float ApplyMarketPricing(float baseCost, MalfunctionType type)
+        {
+            // Simulate market demand fluctuations
+            float marketMultiplier = type switch
+            {
+                MalfunctionType.ElectricalFailure => UnityEngine.Random.Range(0.95f, 1.15f), // High demand variability
+                MalfunctionType.SoftwareError => UnityEngine.Random.Range(1.05f, 1.25f), // Premium pricing
+                _ => UnityEngine.Random.Range(0.98f, 1.08f) // Standard variability
+            };
+
+            return baseCost * marketMultiplier;
+        }
+
+        /// <summary>
+        /// Apply inflation to cost
+        /// </summary>
+        private float ApplyInflation(float baseCost)
+        {
+            float timeSinceStart = Time.time; // Simplified - in real system would use actual dates
+            float inflationMultiplier = Mathf.Pow(1f + _inflationRate, timeSinceStart / 31536000f); // Annual rate
+            return baseCost * inflationMultiplier;
+        }
+
+        /// <summary>
+        /// Calculate labor cost component
+        /// </summary>
+        private float CalculateLaborCost(MalfunctionType type, MalfunctionSeverity severity, bool requiresSpecialist)
+        {
+            var timeEstimate = EstimateRepairTime(type, severity, EquipmentType.Generic, requiresSpecialist);
+            float hourlyRate = requiresSpecialist ? _specialistCostPerHour : _laborCostPerHour;
+            return (float)timeEstimate.TotalHours * hourlyRate;
+        }
+
+        /// <summary>
+        /// Calculate parts cost component
+        /// </summary>
+        private float CalculatePartsCost(List<string> requiredParts, MalfunctionType type)
+        {
+            if (requiredParts == null || requiredParts.Count == 0)
+                return 0f;
+
+            float totalPartsCost = 0f;
+            foreach (var part in requiredParts)
+            {
+                totalPartsCost += EstimatePartCost(part, type);
+            }
+
+            return totalPartsCost;
+        }
+
+        /// <summary>
+        /// Estimate individual part cost
+        /// </summary>
+        private float EstimatePartCost(string partName, MalfunctionType type)
+        {
+            // Simplified part cost estimation
+            float baseCost = partName.ToLowerInvariant() switch
+            {
+                var p when p.Contains("sensor") => UnityEngine.Random.Range(50f, 200f),
+                var p when p.Contains("bearing") => UnityEngine.Random.Range(20f, 100f),
+                var p when p.Contains("seal") => UnityEngine.Random.Range(10f, 50f),
+                var p when p.Contains("fan") => UnityEngine.Random.Range(30f, 150f),
+                var p when p.Contains("fuse") => UnityEngine.Random.Range(5f, 25f),
+                var p when p.Contains("relay") => UnityEngine.Random.Range(15f, 75f),
+                var p when p.Contains("wiring") => UnityEngine.Random.Range(25f, 100f),
+                _ => UnityEngine.Random.Range(20f, 80f) // Default range
+            };
+
+            return baseCost;
+        }
+
+        /// <summary>
+        /// Calculate overhead cost
+        /// </summary>
+        private float CalculateOverheadCost(MalfunctionType type, MalfunctionSeverity severity)
+        {
+            // Overhead typically 15-25% of labor + parts
+            return 0.2f * CalculateLaborCost(type, severity, false);
+        }
+
+        /// <summary>
+        /// Calculate emergency surcharge
+        /// </summary>
+        private float CalculateEmergencySurcharge(MalfunctionType type, MalfunctionSeverity severity)
+        {
+            float baseCost = CalculateBaseCost(_baseCostDatabase[type], severity);
+            return baseCost * (_emergencyMultiplier - 1f);
+        }
+
+        /// <summary>
+        /// Estimate diagnostic time
+        /// </summary>
+        private TimeSpan EstimateDiagnosticTime(MalfunctionType type, MalfunctionSeverity severity)
+        {
+            int baseMinutes = type switch
+            {
+                MalfunctionType.SoftwareError => 30,
+                MalfunctionType.ElectricalFailure => 45,
+                MalfunctionType.SensorDrift => 15,
+                MalfunctionType.MechanicalFailure => 60,
+                MalfunctionType.OverheatingProblem => 20,
+                _ => 30
+            };
+
+            float severityMultiplier = severity switch
+            {
+                MalfunctionSeverity.Critical => 2f,
+                MalfunctionSeverity.Catastrophic => 3f,
+                _ => 1f
+            };
+
+            return TimeSpan.FromMinutes(baseMinutes * severityMultiplier);
+        }
+
+        /// <summary>
+        /// Calculate estimate confidence
+        /// </summary>
+        private float CalculateEstimateConfidence(MalfunctionType type, EquipmentType equipmentType)
+        {
+            float baseConfidence = 0.8f;
+
+            // Reduce confidence for complex types
+            if (type == MalfunctionType.SoftwareError) baseConfidence -= 0.1f;
+            if (equipmentType == EquipmentType.Security) baseConfidence -= 0.05f;
+
+            // Increase confidence if we have historical data
+            if (_baseCostDatabase.TryGetValue(type, out var costData) && costData.ActualCostHistory.Count > 10)
+            {
+                baseConfidence += 0.1f;
+            }
+
+            return Mathf.Clamp01(baseConfidence);
+        }
+
+        /// <summary>
+        /// Estimate additional materials needed
+        /// </summary>
+        private List<string> EstimateAdditionalMaterials(MalfunctionType type, MalfunctionSeverity severity)
+        {
+            var materials = new List<string>();
+
+            if (severity >= MalfunctionSeverity.Major)
+            {
+                materials.Add("Cleaning supplies");
+                materials.Add("Safety equipment");
+            }
+
+            if (type == MalfunctionType.ElectricalFailure)
+            {
+                materials.Add("Electrical tape");
+                materials.Add("Wire nuts");
+            }
+
+            if (type == MalfunctionType.MechanicalFailure)
+            {
+                materials.Add("Lubricant");
+                materials.Add("Thread locker");
+            }
+
+            return materials;
+        }
+
+        /// <summary>
+        /// Generate unique estimate ID
+        /// </summary>
+        private string GenerateEstimateId()
+        {
+            return $"EST_{DateTime.Now:yyyyMMdd}_{Guid.NewGuid().ToString("N")[..8]}";
+        }
+
+        /// <summary>
+        /// Update cost estimation statistics
+        /// </summary>
+        private void UpdateCostEstimationStats(float estimationTime, float estimatedCost)
+        {
+            _stats.TotalEstimationTime += estimationTime;
+            _stats.AverageEstimationTime = _stats.CostEstimatesGenerated > 0 ? _stats.TotalEstimationTime / _stats.CostEstimatesGenerated : 0f;
+
+            if (estimationTime > _stats.MaxEstimationTime)
+                _stats.MaxEstimationTime = estimationTime;
+
+            _stats.TotalEstimatedCost += estimatedCost;
+            _stats.AverageEstimatedCost = _stats.CostEstimatesGenerated > 0 ? _stats.TotalEstimatedCost / _stats.CostEstimatesGenerated : 0f;
+        }
+
+        /// <summary>
+        /// Reset statistics
+        /// </summary>
+        private void ResetStats()
+        {
+            _stats = new MalfunctionCostEstimatorStats
+            {
+                CostEstimatesGenerated = 0,
+                TimeEstimatesGenerated = 0,
+                EstimatesWithoutBaseData = 0,
+                EstimationErrors = 0,
+                TotalEstimationTime = 0f,
+                AverageEstimationTime = 0f,
+                MaxEstimationTime = 0f,
+                TotalEstimatedCost = 0f,
+                AverageEstimatedCost = 0f
+            };
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Base cost data for malfunction types
+    /// </summary>
+    [System.Serializable]
+    public class BaseCostData
+    {
+        public float BaseCost;
+        public int BaseTimeMinutes;
+        public float PartsCostRatio;
+        public float LaborCostRatio;
+        public float AverageActualCost;
+        public float AverageActualTime;
+        public List<float> ActualCostHistory;
+        public List<float> ActualTimeHistory;
+    }
+
+    /// <summary>
+    /// Comprehensive cost estimate
+    /// </summary>
+    [System.Serializable]
+    public class CostEstimate
+    {
+        public string EstimateId;
+        public string MalfunctionId;
+        public string EquipmentId;
+        public DateTime EstimationTime;
+
+        // Cost breakdown
+        public float LaborCost;
+        public float PartsCost;
+        public float OverheadCost;
+        public float EmergencySurcharge;
+        public float TotalCost;
+
+        // Time estimates
+        public TimeSpan EstimatedRepairTime;
+        public TimeSpan DiagnosticTime;
+
+        // Additional details
+        public bool RequiresSpecialist;
+        public bool IsEmergency;
+        public float Confidence;
+
+        // Parts and materials
+        public List<string> RequiredParts;
+        public List<string> AdditionalMaterials;
+    }
+
+    /// <summary>
+    /// Cost estimator statistics
+    /// </summary>
+    [System.Serializable]
+    public struct MalfunctionCostEstimatorStats
+    {
+        public int CostEstimatesGenerated;
+        public int TimeEstimatesGenerated;
+        public int EstimatesWithoutBaseData;
+        public int EstimationErrors;
+
+        public float TotalEstimationTime;
+        public float AverageEstimationTime;
+        public float MaxEstimationTime;
+
+        public float TotalEstimatedCost;
+        public float AverageEstimatedCost;
+    }
+}

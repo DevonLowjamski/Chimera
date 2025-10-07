@@ -1,0 +1,814 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Testing
+{
+    /// <summary>
+    /// REFACTORED: Test Report Generator
+    /// Single Responsibility: Comprehensive test report generation and analysis
+    /// Extracted from Phase1IntegrationTester for better separation of concerns
+    /// </summary>
+    public class TestReportGenerator : MonoBehaviour
+    {
+        [Header("Report Generation Settings")]
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private bool _generateDetailedReports = true;
+        [SerializeField] private bool _includePerformanceMetrics = true;
+        [SerializeField] private bool _includeStatistics = true;
+
+        [Header("Report Configuration")]
+        [SerializeField] private float _successThreshold = 80f; // Percentage
+        [SerializeField] private bool _exportToFile = false;
+        [SerializeField] private string _reportOutputPath = "TestReports";
+        [SerializeField] private bool _includeTimestamps = true;
+
+        // Report data
+        private List<TestSuiteReport> _testSuiteReports = new List<TestSuiteReport>();
+        private Dictionary<string, TestCategoryStats> _categoryStats = new Dictionary<string, TestCategoryStats>();
+
+        // State tracking
+        private bool _isInitialized = false;
+        private TestReportStats _stats = new TestReportStats();
+
+        // Events
+        public event System.Action<TestSuiteReport> OnTestSuiteReportGenerated;
+        public event System.Action<ComprehensiveTestReport> OnComprehensiveReportGenerated;
+        public event System.Action<string> OnReportExported; // file path
+
+        public bool IsInitialized => _isInitialized;
+        public TestReportStats Stats => _stats;
+        public int GeneratedReports => _testSuiteReports.Count;
+
+        private void Awake()
+        {
+            Initialize();
+        }
+
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _testSuiteReports.Clear();
+            _categoryStats.Clear();
+            ResetStats();
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("TESTING", "Test Report Generator initialized");
+            }
+        }
+
+        /// <summary>
+        /// Generate comprehensive test report from all test results
+        /// </summary>
+        public ComprehensiveTestReport GenerateComprehensiveReport(
+            FoundationTestResult foundationResult = null,
+            PerformanceTestResult performanceResult = null,
+            CultivationTestResult cultivationResult = null,
+            LoadTestResult loadResult = null)
+        {
+            if (!_isInitialized) Initialize();
+
+            var report = new ComprehensiveTestReport
+            {
+                ReportName = "Phase 1 Integration Test Comprehensive Report",
+                GenerationTime = System.DateTime.Now,
+                TestCategories = new Dictionary<string, TestCategoryReport>(),
+                OverallSummary = new TestOverallSummary(),
+                ReportSections = new List<string>()
+            };
+
+            _stats.ReportsGenerated++;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("TESTING", "Generating comprehensive test report...");
+            }
+
+            // Process individual test results
+            if (foundationResult != null)
+            {
+                ProcessFoundationTestResult(report, foundationResult);
+            }
+
+            if (performanceResult != null)
+            {
+                ProcessPerformanceTestResult(report, performanceResult);
+            }
+
+            if (cultivationResult != null)
+            {
+                ProcessCultivationTestResult(report, cultivationResult);
+            }
+
+            if (loadResult != null)
+            {
+                ProcessLoadTestResult(report, loadResult);
+            }
+
+            // Generate overall summary
+            GenerateOverallSummary(report);
+
+            // Generate report content
+            GenerateReportContent(report);
+
+            OnComprehensiveReportGenerated?.Invoke(report);
+
+            if (_enableLogging)
+            {
+                LogComprehensiveReport(report);
+            }
+
+            if (_exportToFile)
+            {
+                ExportReportToFile(report);
+            }
+
+            return report;
+        }
+
+        /// <summary>
+        /// Generate test suite report
+        /// </summary>
+        public TestSuiteReport GenerateTestSuiteReport(string suiteName, List<object> testResults)
+        {
+            if (!_isInitialized) Initialize();
+
+            var report = new TestSuiteReport
+            {
+                SuiteName = suiteName,
+                GenerationTime = System.DateTime.Now,
+                TestResults = new List<TestResultSummary>(),
+                SummaryStats = new TestSuiteStats()
+            };
+
+            foreach (var result in testResults)
+            {
+                var summary = CreateTestResultSummary(result);
+                if (summary != null)
+                {
+                    report.TestResults.Add(summary);
+                }
+            }
+
+            // Calculate suite statistics
+            CalculateSuiteStatistics(report);
+
+            _testSuiteReports.Add(report);
+            OnTestSuiteReportGenerated?.Invoke(report);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("TESTING", $"Generated test suite report: {suiteName}");
+            }
+
+            return report;
+        }
+
+        /// <summary>
+        /// Process foundation test result
+        /// </summary>
+        private void ProcessFoundationTestResult(ComprehensiveTestReport report, FoundationTestResult result)
+        {
+            var categoryReport = new TestCategoryReport
+            {
+                CategoryName = "Foundation",
+                TestCount = 1,
+                PassedTests = result.Success ? 1 : 0,
+                FailedTests = result.Success ? 0 : 1,
+                TestDuration = result.TestDuration,
+                ValidationResults = result.ValidationResults,
+                TestSteps = result.TestSteps,
+                HasErrors = result.Exception != null
+            };
+
+            if (result.Exception != null)
+            {
+                categoryReport.ErrorMessages = new List<string> { result.Exception.Message };
+            }
+
+            report.TestCategories["Foundation"] = categoryReport;
+            UpdateCategoryStats("Foundation", result.Success, result.TestDuration);
+
+            if (_generateDetailedReports)
+            {
+                report.ReportSections.Add($"=== FOUNDATION TEST DETAILS ===");
+                report.ReportSections.Add($"Duration: {result.TestDuration:F2}s");
+                report.ReportSections.Add($"Result: {(result.Success ? "PASS" : "FAIL")}");
+
+                foreach (var step in result.TestSteps)
+                {
+                    report.ReportSections.Add($"  {step}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Process performance test result
+        /// </summary>
+        private void ProcessPerformanceTestResult(ComprehensiveTestReport report, PerformanceTestResult result)
+        {
+            var categoryReport = new TestCategoryReport
+            {
+                CategoryName = "Performance",
+                TestCount = 1,
+                PassedTests = result.Success ? 1 : 0,
+                FailedTests = result.Success ? 0 : 1,
+                TestDuration = result.TestDuration,
+                ValidationResults = result.ValidationResults,
+                TestSteps = result.TestSteps,
+                HasErrors = result.Exception != null
+            };
+
+            if (_includePerformanceMetrics && result.BaselineMetrics.HasValue)
+            {
+                var baseline = result.BaselineMetrics.Value;
+                categoryReport.PerformanceData = new Dictionary<string, float>
+                {
+                    ["AverageFPS"] = baseline.AverageFPS,
+                    ["MaxFrameTime"] = baseline.MaxFrameTime,
+                    ["MinFrameTime"] = baseline.MinFrameTime,
+                    ["FrameCount"] = baseline.FrameCount
+                };
+            }
+
+            if (result.Exception != null)
+            {
+                categoryReport.ErrorMessages = new List<string> { result.Exception.Message };
+            }
+
+            report.TestCategories["Performance"] = categoryReport;
+            UpdateCategoryStats("Performance", result.Success, result.TestDuration);
+
+            if (_generateDetailedReports)
+            {
+                report.ReportSections.Add($"=== PERFORMANCE TEST DETAILS ===");
+                report.ReportSections.Add($"Duration: {result.TestDuration:F2}s");
+                report.ReportSections.Add($"Result: {(result.Success ? "PASS" : "FAIL")}");
+
+                if (result.BaselineMetrics.HasValue)
+                {
+                    var baseline = result.BaselineMetrics.Value;
+                    report.ReportSections.Add($"Performance Baseline:");
+                    report.ReportSections.Add($"  Average FPS: {baseline.AverageFPS:F1}");
+                    report.ReportSections.Add($"  Max Frame Time: {baseline.MaxFrameTime:F2}ms");
+                    report.ReportSections.Add($"  Frames Tested: {baseline.FrameCount}");
+                }
+
+                foreach (var step in result.TestSteps)
+                {
+                    report.ReportSections.Add($"  {step}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Process cultivation test result
+        /// </summary>
+        private void ProcessCultivationTestResult(ComprehensiveTestReport report, CultivationTestResult result)
+        {
+            var categoryReport = new TestCategoryReport
+            {
+                CategoryName = "Cultivation",
+                TestCount = 1,
+                PassedTests = result.Success ? 1 : 0,
+                FailedTests = result.Success ? 0 : 1,
+                TestDuration = result.TestDuration,
+                ValidationResults = result.ValidationResults,
+                TestSteps = result.TestSteps,
+                HasErrors = result.Exception != null
+            };
+
+            if (result.PlantTestResults?.Count > 0)
+            {
+                categoryReport.SubTestCount = result.PlantTestResults.Count;
+                categoryReport.PassedSubTests = result.PlantTestResults.Count(pt => pt.Success);
+                categoryReport.FailedSubTests = result.PlantTestResults.Count(pt => !pt.Success);
+            }
+
+            if (result.Exception != null)
+            {
+                categoryReport.ErrorMessages = new List<string> { result.Exception.Message };
+            }
+
+            report.TestCategories["Cultivation"] = categoryReport;
+            UpdateCategoryStats("Cultivation", result.Success, result.TestDuration);
+
+            if (_generateDetailedReports)
+            {
+                report.ReportSections.Add($"=== CULTIVATION TEST DETAILS ===");
+                report.ReportSections.Add($"Duration: {result.TestDuration:F2}s");
+                report.ReportSections.Add($"Result: {(result.Success ? "PASS" : "FAIL")}");
+
+                if (result.PlantTestResults?.Count > 0)
+                {
+                    report.ReportSections.Add($"Plant Tests: {categoryReport.PassedSubTests}/{categoryReport.SubTestCount} passed");
+                }
+
+                foreach (var step in result.TestSteps)
+                {
+                    report.ReportSections.Add($"  {step}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Process load test result
+        /// </summary>
+        private void ProcessLoadTestResult(ComprehensiveTestReport report, LoadTestResult result)
+        {
+            var categoryReport = new TestCategoryReport
+            {
+                CategoryName = "Load",
+                TestCount = 1,
+                PassedTests = result.Success ? 1 : 0,
+                FailedTests = result.Success ? 0 : 1,
+                TestDuration = result.TestDuration,
+                ValidationResults = result.ValidationResults,
+                TestSteps = result.TestSteps,
+                HasErrors = result.Exception != null
+            };
+
+            if (_includePerformanceMetrics && result.PhaseResults?.Count > 0)
+            {
+                categoryReport.PerformanceData = new Dictionary<string, float>();
+                foreach (var phase in result.PhaseResults)
+                {
+                    categoryReport.PerformanceData[$"{phase.Key}_AvgFrameTime"] = phase.Value.AverageFrameTime;
+                    categoryReport.PerformanceData[$"{phase.Key}_MaxFrameTime"] = phase.Value.MaxFrameTime;
+                }
+
+                categoryReport.PerformanceData["BaselineFrameTime"] = result.BaselineFrameTime;
+            }
+
+            if (result.Exception != null)
+            {
+                categoryReport.ErrorMessages = new List<string> { result.Exception.Message };
+            }
+
+            report.TestCategories["Load"] = categoryReport;
+            UpdateCategoryStats("Load", result.Success, result.TestDuration);
+
+            if (_generateDetailedReports)
+            {
+                report.ReportSections.Add($"=== LOAD TEST DETAILS ===");
+                report.ReportSections.Add($"Duration: {result.TestDuration:F2}s");
+                report.ReportSections.Add($"Result: {(result.Success ? "PASS" : "FAIL")}");
+                report.ReportSections.Add($"Baseline: {result.BaselineFrameTime:F2}ms");
+
+                if (result.PhaseResults?.Count > 0)
+                {
+                    foreach (var phase in result.PhaseResults)
+                    {
+                        report.ReportSections.Add($"  {phase.Key}: {phase.Value.AverageFrameTime:F2}ms avg, {(phase.Value.Success ? "✅" : "❌")}");
+                    }
+                }
+
+                foreach (var step in result.TestSteps)
+                {
+                    report.ReportSections.Add($"  {step}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generate overall summary
+        /// </summary>
+        private void GenerateOverallSummary(ComprehensiveTestReport report)
+        {
+            var summary = new TestOverallSummary();
+
+            summary.TotalCategories = report.TestCategories.Count;
+            summary.TotalTests = report.TestCategories.Values.Sum(c => c.TestCount);
+            summary.PassedTests = report.TestCategories.Values.Sum(c => c.PassedTests);
+            summary.FailedTests = report.TestCategories.Values.Sum(c => c.FailedTests);
+            summary.TotalDuration = report.TestCategories.Values.Sum(c => c.TestDuration);
+            summary.SuccessRate = summary.TotalTests > 0 ? (float)summary.PassedTests / summary.TotalTests * 100f : 0f;
+            summary.HasErrors = report.TestCategories.Values.Any(c => c.HasErrors);
+            summary.OverallSuccess = summary.SuccessRate >= _successThreshold;
+
+            // Category breakdown
+            summary.CategoryResults = new Dictionary<string, bool>();
+            foreach (var category in report.TestCategories)
+            {
+                summary.CategoryResults[category.Key] = category.Value.PassedTests > 0 && category.Value.FailedTests == 0;
+            }
+
+            report.OverallSummary = summary;
+        }
+
+        /// <summary>
+        /// Generate report content sections
+        /// </summary>
+        private void GenerateReportContent(ComprehensiveTestReport report)
+        {
+            var content = new List<string>();
+
+            // Header
+            content.Add("=" + new string('=', 60));
+            content.Add($"PHASE 1 INTEGRATION TEST COMPREHENSIVE REPORT");
+            content.Add("=" + new string('=', 60));
+
+            if (_includeTimestamps)
+            {
+                content.Add($"Generated: {report.GenerationTime:yyyy-MM-dd HH:mm:ss}");
+            }
+
+            content.Add("");
+
+            // Overall summary
+            var summary = report.OverallSummary;
+            content.Add("OVERALL SUMMARY");
+            content.Add("-" + new string('-', 20));
+            content.Add($"Total Tests: {summary.TotalTests}");
+            content.Add($"Passed: {summary.PassedTests}");
+            content.Add($"Failed: {summary.FailedTests}");
+            content.Add($"Success Rate: {summary.SuccessRate:F1}%");
+            content.Add($"Total Duration: {summary.TotalDuration:F2}s");
+            content.Add($"Overall Result: {(summary.OverallSuccess ? "✅ PASS" : "❌ FAIL")}");
+            content.Add("");
+
+            // Category breakdown
+            content.Add("CATEGORY BREAKDOWN");
+            content.Add("-" + new string('-', 20));
+            foreach (var category in report.TestCategories)
+            {
+                var cat = category.Value;
+                var status = cat.PassedTests > 0 && cat.FailedTests == 0 ? "✅ PASS" : "❌ FAIL";
+                content.Add($"{category.Key}: {status} ({cat.TestDuration:F2}s)");
+
+                if (cat.SubTestCount > 0)
+                {
+                    content.Add($"  Sub-tests: {cat.PassedSubTests}/{cat.SubTestCount} passed");
+                }
+            }
+            content.Add("");
+
+            // Add existing report sections
+            if (report.ReportSections?.Count > 0)
+            {
+                content.AddRange(report.ReportSections);
+            }
+
+            // Statistics
+            if (_includeStatistics && _categoryStats.Count > 0)
+            {
+                content.Add("CATEGORY STATISTICS");
+                content.Add("-" + new string('-', 20));
+                foreach (var stat in _categoryStats)
+                {
+                    content.Add($"{stat.Key}: {stat.Value.TotalTests} tests, {stat.Value.AverageSuccessRate:F1}% success rate");
+                }
+                content.Add("");
+            }
+
+            // Footer
+            if (summary.HasErrors)
+            {
+                content.Add("⚠️ ERRORS DETECTED - Check individual test details");
+            }
+            else if (summary.OverallSuccess)
+            {
+                content.Add("🎉 ALL TESTS PASSED SUCCESSFULLY!");
+            }
+            else
+            {
+                content.Add("⚠️ SOME TESTS FAILED - Review failed categories");
+            }
+
+            content.Add("=" + new string('=', 60));
+
+            report.ReportContent = content;
+        }
+
+        /// <summary>
+        /// Create test result summary from any test result object
+        /// </summary>
+        private TestResultSummary CreateTestResultSummary(object testResult)
+        {
+            var summary = new TestResultSummary();
+
+            switch (testResult)
+            {
+                case FoundationTestResult foundation:
+                    summary.TestName = foundation.TestName;
+                    summary.Category = foundation.TestCategory;
+                    summary.Success = foundation.Success;
+                    summary.Duration = foundation.TestDuration;
+                    summary.Message = foundation.ResultMessage;
+                    break;
+
+                case PerformanceTestResult performance:
+                    summary.TestName = performance.TestName;
+                    summary.Category = performance.TestCategory;
+                    summary.Success = performance.Success;
+                    summary.Duration = performance.TestDuration;
+                    summary.Message = performance.ResultMessage;
+                    break;
+
+                case CultivationTestResult cultivation:
+                    summary.TestName = cultivation.TestName;
+                    summary.Category = cultivation.TestCategory;
+                    summary.Success = cultivation.Success;
+                    summary.Duration = cultivation.TestDuration;
+                    summary.Message = cultivation.ResultMessage;
+                    break;
+
+                case LoadTestResult load:
+                    summary.TestName = load.TestName;
+                    summary.Category = load.TestCategory;
+                    summary.Success = load.Success;
+                    summary.Duration = load.TestDuration;
+                    summary.Message = load.ResultMessage;
+                    break;
+
+                default:
+                    return null; // Unsupported test result type
+            }
+
+            return summary;
+        }
+
+        /// <summary>
+        /// Calculate suite statistics
+        /// </summary>
+        private void CalculateSuiteStatistics(TestSuiteReport report)
+        {
+            var stats = new TestSuiteStats();
+
+            stats.TotalTests = report.TestResults.Count;
+            stats.PassedTests = report.TestResults.Count(r => r.Success);
+            stats.FailedTests = report.TestResults.Count(r => !r.Success);
+            stats.TotalDuration = report.TestResults.Sum(r => r.Duration);
+            stats.SuccessRate = stats.TotalTests > 0 ? (float)stats.PassedTests / stats.TotalTests * 100f : 0f;
+            stats.AverageDuration = stats.TotalTests > 0 ? stats.TotalDuration / stats.TotalTests : 0f;
+
+            report.SummaryStats = stats;
+        }
+
+        /// <summary>
+        /// Update category statistics
+        /// </summary>
+        private void UpdateCategoryStats(string category, bool success, float duration)
+        {
+            if (!_categoryStats.ContainsKey(category))
+            {
+                _categoryStats[category] = new TestCategoryStats();
+            }
+
+            var stats = _categoryStats[category];
+            stats.TotalTests++;
+            if (success) stats.SuccessfulTests++;
+            stats.TotalDuration += duration;
+            stats.AverageSuccessRate = (float)stats.SuccessfulTests / stats.TotalTests * 100f;
+            stats.AverageDuration = stats.TotalDuration / stats.TotalTests;
+
+            _categoryStats[category] = stats;
+        }
+
+        /// <summary>
+        /// Log comprehensive report
+        /// </summary>
+        private void LogComprehensiveReport(ComprehensiveTestReport report)
+        {
+            if (report.ReportContent?.Count > 0)
+            {
+                foreach (var line in report.ReportContent)
+                {
+                    ChimeraLogger.Log("TESTING", line);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Export report to file
+        /// </summary>
+        private void ExportReportToFile(ComprehensiveTestReport report)
+        {
+            try
+            {
+                if (!System.IO.Directory.Exists(_reportOutputPath))
+                {
+                    System.IO.Directory.CreateDirectory(_reportOutputPath);
+                }
+
+                var timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                var fileName = $"TestReport_{timestamp}.txt";
+                var filePath = System.IO.Path.Combine(_reportOutputPath, fileName);
+
+                var content = new StringBuilder();
+                if (report.ReportContent?.Count > 0)
+                {
+                    foreach (var line in report.ReportContent)
+                    {
+                        content.AppendLine(line);
+                    }
+                }
+
+                System.IO.File.WriteAllText(filePath, content.ToString());
+
+                _stats.ReportsExported++;
+                OnReportExported?.Invoke(filePath);
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("TESTING", $"Test report exported to: {filePath}");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogError("TESTING", $"Failed to export report: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get report generation summary
+        /// </summary>
+        public TestReportSummary GetReportSummary()
+        {
+            return new TestReportSummary
+            {
+                ReportsGenerated = _stats.ReportsGenerated,
+                ReportsExported = _stats.ReportsExported,
+                CategoriesTracked = _categoryStats.Count,
+                TotalTestSuites = _testSuiteReports.Count,
+                LastReportSuccess = _testSuiteReports.LastOrDefault()?.SummaryStats.SuccessRate >= _successThreshold
+            };
+        }
+
+        /// <summary>
+        /// Reset statistics
+        /// </summary>
+        private void ResetStats()
+        {
+            _stats = new TestReportStats();
+        }
+
+        /// <summary>
+        /// Set report generation parameters
+        /// </summary>
+        public void SetReportParameters(bool enableLogging, bool detailedReports, bool includeMetrics, float successThreshold)
+        {
+            _enableLogging = enableLogging;
+            _generateDetailedReports = detailedReports;
+            _includePerformanceMetrics = includeMetrics;
+            _successThreshold = Mathf.Clamp(successThreshold, 0f, 100f);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("TESTING", $"Report parameters updated: Detailed={detailedReports}, Metrics={includeMetrics}, Threshold={successThreshold:F1}%");
+            }
+        }
+
+        /// <summary>
+        /// Clear all report data
+        /// </summary>
+        [ContextMenu("Clear Report Data")]
+        public void ClearReportData()
+        {
+            _testSuiteReports.Clear();
+            _categoryStats.Clear();
+            ResetStats();
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("TESTING", "Report data cleared");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Test report statistics
+    /// </summary>
+    [System.Serializable]
+    public struct TestReportStats
+    {
+        public int ReportsGenerated;
+        public int ReportsExported;
+    }
+
+    /// <summary>
+    /// Test category statistics
+    /// </summary>
+    [System.Serializable]
+    public struct TestCategoryStats
+    {
+        public int TotalTests;
+        public int SuccessfulTests;
+        public float TotalDuration;
+        public float AverageSuccessRate;
+        public float AverageDuration;
+    }
+
+    /// <summary>
+    /// Test result summary
+    /// </summary>
+    [System.Serializable]
+    public class TestResultSummary
+    {
+        public string TestName;
+        public string Category;
+        public bool Success;
+        public float Duration;
+        public string Message;
+    }
+
+    /// <summary>
+    /// Test suite statistics
+    /// </summary>
+    [System.Serializable]
+    public struct TestSuiteStats
+    {
+        public int TotalTests;
+        public int PassedTests;
+        public int FailedTests;
+        public float TotalDuration;
+        public float SuccessRate;
+        public float AverageDuration;
+    }
+
+    /// <summary>
+    /// Test suite report
+    /// </summary>
+    [System.Serializable]
+    public class TestSuiteReport
+    {
+        public string SuiteName;
+        public System.DateTime GenerationTime;
+        public List<TestResultSummary> TestResults;
+        public TestSuiteStats SummaryStats;
+    }
+
+    /// <summary>
+    /// Test category report
+    /// </summary>
+    [System.Serializable]
+    public class TestCategoryReport
+    {
+        public string CategoryName;
+        public int TestCount;
+        public int PassedTests;
+        public int FailedTests;
+        public float TestDuration;
+        public Dictionary<string, bool> ValidationResults;
+        public List<string> TestSteps;
+        public bool HasErrors;
+        public List<string> ErrorMessages;
+        public int SubTestCount;
+        public int PassedSubTests;
+        public int FailedSubTests;
+        public Dictionary<string, float> PerformanceData;
+    }
+
+    /// <summary>
+    /// Overall test summary
+    /// </summary>
+    [System.Serializable]
+    public class TestOverallSummary
+    {
+        public int TotalCategories;
+        public int TotalTests;
+        public int PassedTests;
+        public int FailedTests;
+        public float TotalDuration;
+        public float SuccessRate;
+        public bool HasErrors;
+        public bool OverallSuccess;
+        public Dictionary<string, bool> CategoryResults;
+    }
+
+    /// <summary>
+    /// Comprehensive test report
+    /// </summary>
+    [System.Serializable]
+    public class ComprehensiveTestReport
+    {
+        public string ReportName;
+        public System.DateTime GenerationTime;
+        public Dictionary<string, TestCategoryReport> TestCategories;
+        public TestOverallSummary OverallSummary;
+        public List<string> ReportSections;
+        public List<string> ReportContent;
+    }
+
+    /// <summary>
+    /// Test report summary
+    /// </summary>
+    [System.Serializable]
+    public struct TestReportSummary
+    {
+        public int ReportsGenerated;
+        public int ReportsExported;
+        public int CategoriesTracked;
+        public int TotalTestSuites;
+        public bool LastReportSuccess;
+    }
+}

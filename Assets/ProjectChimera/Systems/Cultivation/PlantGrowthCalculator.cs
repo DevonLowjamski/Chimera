@@ -3,7 +3,9 @@ using ProjectChimera.Data.Cultivation;
 using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Core.Logging;
-using PlantStrainSO = ProjectChimera.Data.Genetics.PlantStrainSO;
+using GeneticPlantStrainSO = ProjectChimera.Data.Genetics.GeneticPlantStrainSO;
+using CultivationPlantStrainSO = ProjectChimera.Data.Cultivation.PlantStrainSO;
+// HarvestResults class is defined in CultivationSystemTypes.cs within the same namespace
 
 namespace ProjectChimera.Systems.Cultivation
 {
@@ -34,7 +36,7 @@ namespace ProjectChimera.Systems.Cultivation
             // Extract strain growth modifier
             ExtractStrainModifiers(strain);
 
-            ChimeraLogger.LogVerbose($"[PlantGrowthCalculator] Initialized for strain: {strain?.GetType().Name}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         /// <summary>
@@ -70,7 +72,7 @@ namespace ProjectChimera.Systems.Cultivation
             // Log significant growth rate changes for debugging
             if (_configuration.EnablePerformanceOptimization && clampedRate != finalRate)
             {
-                ChimeraLogger.LogVerbose($"[PlantGrowthCalculator] Growth rate clamped from {finalRate:F4} to {clampedRate:F4}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
 
             return clampedRate;
@@ -131,7 +133,7 @@ namespace ProjectChimera.Systems.Cultivation
             // Calculate market value based on quality and yield
             results.EstimatedValue = CalculateMarketValue(results);
 
-            ChimeraLogger.Log($"[PlantGrowthCalculator] Harvest calculated - Yield: {results.TotalYield:F1}g, Quality: {results.QualityScore:F2}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
 
             return results;
         }
@@ -250,7 +252,7 @@ namespace ProjectChimera.Systems.Cultivation
 
         private float CalculateYield(float health, PhenotypicTraits traits, float environmentalFitness)
         {
-            float baseYield = (_strain as PlantStrainSO)?.BaseYieldGrams ?? 100f;
+            float baseYield = (_strain as CultivationPlantStrainSO)?.BaseYieldGrams ?? 100f;
             float healthModifier = Mathf.Lerp(0.3f, 1.2f, health);
             float traitModifier = traits.YieldMultiplier;
             float environmentalModifier = Mathf.Lerp(0.5f, 1.1f, environmentalFitness);
@@ -289,7 +291,7 @@ namespace ProjectChimera.Systems.Cultivation
             if (_strain == null)
                 return new CannabinoidProfile();
 
-            var strainSO = _strain as ProjectChimera.Data.Genetics.PlantStrainSO;
+            var strainSO = _strain as ProjectChimera.Data.Genetics.GeneticPlantStrainSO;
             float combinedModifier = health * quality * environmentalFitness;
 
             var profile = new CannabinoidProfile
@@ -361,7 +363,7 @@ namespace ProjectChimera.Systems.Cultivation
             catch
             {
                 _strainGrowthModifier = 1f;
-                ChimeraLogger.LogWarning("[PlantGrowthCalculator] Could not extract strain modifiers, using defaults");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
@@ -402,7 +404,7 @@ namespace ProjectChimera.Systems.Cultivation
             if (_strain == null || _traits == null)
                 return (50f, 150f); // Default range
 
-            float baseYield = (_strain as PlantStrainSO)?.BaseYieldGrams ?? 100f;
+            float baseYield = (_strain as CultivationPlantStrainSO)?.BaseYieldGrams ?? 100f;
             float traitModifier = _traits.YieldMultiplier;
 
             float minYield = baseYield * traitModifier * 0.3f; // Worst case (poor health/environment)

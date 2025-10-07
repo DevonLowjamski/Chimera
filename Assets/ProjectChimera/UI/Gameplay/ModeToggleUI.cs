@@ -6,6 +6,9 @@ using ProjectChimera.Core.Updates;
 using ProjectChimera.Systems.Gameplay;
 using ProjectChimera.Data.Events;
 using ProjectChimera.Core.Logging;
+using ChimeraLogger = ProjectChimera.Core.Logging.ChimeraLogger;
+using GameplayMode = ProjectChimera.Data.Events.GameplayMode;
+using ModeChangeEventData = ProjectChimera.Data.Events.ModeChangeEventData;
 
 namespace ProjectChimera.UI.Gameplay
 {
@@ -45,7 +48,11 @@ namespace ProjectChimera.UI.Gameplay
         // State tracking
         private GameplayMode _currentMode = GameplayMode.Cultivation;
         private bool _isInitialized = false;
-        
+
+        // ITickable implementation
+        public int TickPriority => ProjectChimera.Core.Updates.TickPriority.UIManager;
+        public bool IsTickable => enabled && gameObject.activeInHierarchy && _isInitialized;
+
         // Button references for easier management
         private System.Collections.Generic.Dictionary<GameplayMode, Button> _modeButtons;
         private System.Collections.Generic.Dictionary<GameplayMode, Text> _modeLabels;
@@ -71,7 +78,7 @@ namespace ProjectChimera.UI.Gameplay
         
         #region ITickable Implementation
         
-        public int Priority => TickPriority.UIManager;
+        public int Priority => ProjectChimera.Core.Updates.TickPriority.UIManager;
         public bool Enabled => _enableHotkeys && _isInitialized;
         
         public void Tick(float deltaTime)
@@ -94,7 +101,7 @@ namespace ProjectChimera.UI.Gameplay
                 
                 if (_modeController == null)
                 {
-                    ChimeraLogger.LogError("[ModeToggleUI] GameplayModeController service not found!");
+                    ChimeraLogger.LogInfo("ModeToggleUI", "$1");
                     return;
                 }
                 
@@ -115,12 +122,12 @@ namespace ProjectChimera.UI.Gameplay
                 
                 if (_debugMode)
                 {
-                    ChimeraLogger.Log($"[ModeToggleUI] Initialized with current mode: {_currentMode}");
+                    ChimeraLogger.LogInfo("ModeToggleUI", "$1");
                 }
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[ModeToggleUI] Error during initialization: {ex.Message}");
+                ChimeraLogger.LogInfo("ModeToggleUI", "$1");
             }
         }
         
@@ -150,7 +157,7 @@ namespace ProjectChimera.UI.Gameplay
             {
                 if (kvp.Value == null)
                 {
-                    ChimeraLogger.LogError($"[ModeToggleUI] {kvp.Key} button is not assigned!");
+                    ChimeraLogger.LogInfo("ModeToggleUI", "$1");
                 }
             }
             
@@ -158,7 +165,7 @@ namespace ProjectChimera.UI.Gameplay
             {
                 if (kvp.Value == null)
                 {
-                    ChimeraLogger.LogWarning($"[ModeToggleUI] {kvp.Key} label is not assigned (optional)");
+                    ChimeraLogger.LogInfo("ModeToggleUI", "$1");
                 }
             }
         }
@@ -171,7 +178,7 @@ namespace ProjectChimera.UI.Gameplay
             }
             else
             {
-                ChimeraLogger.LogWarning("[ModeToggleUI] ModeChangedEvent not assigned - UI may not update properly");
+                ChimeraLogger.LogInfo("ModeToggleUI", "$1");
             }
         }
         
@@ -241,17 +248,17 @@ namespace ProjectChimera.UI.Gameplay
         {
             if (!_isInitialized)
             {
-                ChimeraLogger.LogWarning("[ModeToggleUI] UI not initialized, ignoring button click");
+                ChimeraLogger.LogInfo("ModeToggleUI", "$1");
                 return;
             }
             
             if (_debugMode)
             {
-                ChimeraLogger.Log($"[ModeToggleUI] Mode button clicked: {mode}");
+                ChimeraLogger.LogInfo("ModeToggleUI", "$1");
             }
             
             // Phase 2 Verification: UI button produces identical behavior to keyboard
-            ChimeraLogger.Log("SYSTEM", $"[ModeToggleUI] Phase 2 Verification - UI button click for {mode} mode (identical to keyboard behavior)");
+            ChimeraLogger.LogInfo("ModeToggleUI", "$1");
             
             // Set the mode through the controller (which will trigger the event)
             // This produces the same result as keyboard shortcuts - single event, same validation, same cooldown
@@ -262,7 +269,7 @@ namespace ProjectChimera.UI.Gameplay
         {
             if (_debugMode)
             {
-                ChimeraLogger.Log($"[ModeToggleUI] Received mode change event: {eventData.PreviousMode} → {eventData.NewMode}");
+                ChimeraLogger.LogInfo("ModeToggleUI", "$1");
             }
             
             _currentMode = eventData.NewMode;
@@ -337,7 +344,7 @@ namespace ProjectChimera.UI.Gameplay
                 
                 if (_debugMode)
                 {
-                    ChimeraLogger.Log($"[ModeToggleUI] UI refreshed, current mode: {_currentMode}");
+                    ChimeraLogger.LogInfo("ModeToggleUI", "$1");
                 }
             }
         }
@@ -362,7 +369,7 @@ namespace ProjectChimera.UI.Gameplay
         public void SetDebugMode(bool enabled)
         {
             _debugMode = enabled;
-            ChimeraLogger.Log($"[ModeToggleUI] Debug mode {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.LogInfo("ModeToggleUI", "$1");
         }
         
         #if UNITY_EDITOR
@@ -377,7 +384,7 @@ namespace ProjectChimera.UI.Gameplay
             _inactiveColor = new Color(0.7f, 0.7f, 0.7f, 1f);    // Light Gray
             _hoverColor = new Color(0.9f, 0.9f, 0.9f, 1f);       // Very Light Gray
             
-            ChimeraLogger.Log("[ModeToggleUI] Default colors set up");
+            ChimeraLogger.LogInfo("ModeToggleUI", "$1");
         }
         
         /// <summary>
@@ -392,7 +399,7 @@ namespace ProjectChimera.UI.Gameplay
             }
             else
             {
-                ChimeraLogger.Log("[ModeToggleUI] UI refresh only works during play mode");
+                ChimeraLogger.LogInfo("ModeToggleUI", "$1");
             }
         }
         

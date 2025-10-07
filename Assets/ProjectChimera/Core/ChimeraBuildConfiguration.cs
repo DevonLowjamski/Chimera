@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core
 {

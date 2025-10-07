@@ -1,0 +1,285 @@
+using UnityEngine;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Systems.Camera;
+
+namespace ProjectChimera.Systems.Construction
+{
+    /// <summary>
+    /// BASIC: Simple grid input handler for Project Chimera's construction system.
+    /// Focuses on essential grid input without complex drag selection and validation systems.
+    /// </summary>
+    public class GridInputHandler : MonoBehaviour, ITickable
+    {
+        [Header("Basic Input Settings")]
+        [SerializeField] private bool _enableBasicInput = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private LayerMask _gridLayer = 1;
+        [SerializeField] private float _raycastDistance = 100f;
+
+        // Basic input tracking
+        private UnityEngine.Camera _mainCamera;
+        private Vector3Int _currentGridPosition = Vector3Int.zero;
+        private bool _isInitialized = false;
+
+        /// <summary>
+        /// Events for basic grid input
+        /// </summary>
+        public event System.Action<Vector3Int> OnGridClicked;
+        public event System.Action<Vector3Int> OnGridHovered;
+        public event System.Action<Vector3Int> OnGridCoordinateChanged;
+        public event System.Action OnPlacementRequested;
+        public event System.Action OnCancelRequested;
+        public event System.Action<int> OnHeightLevelChanged;
+
+        /// <summary>
+        /// Current grid coordinate property
+        /// </summary>
+        public Vector3Int CurrentGridCoordinate => _currentGridPosition;
+
+        /// <summary>
+        /// Initialize basic grid input handler
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            // Try to resolve camera from ServiceContainer first
+            var serviceCamera = ServiceContainerFactory.Instance?.TryResolve<UnityEngine.Camera>();
+            if (serviceCamera != null)
+            {
+                _mainCamera = serviceCamera;
+                if (_enableLogging)
+                    ChimeraLogger.Log("OTHER", "$1", this);
+            }
+            else
+            {
+                // Fallback to traditional camera discovery
+                _mainCamera = UnityEngine.Camera.main;
+                if (_mainCamera == null)
+                {
+                    var cameraService = ServiceContainerFactory.Instance?.TryResolve<ProjectChimera.Systems.Camera.ICameraProvider>();
+                    _mainCamera = cameraService?.GetActiveCamera();
+                }
+
+                // Register discovered camera in ServiceContainer for other systems
+                if (_mainCamera != null && ServiceContainerFactory.Instance != null)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<UnityEngine.Camera>(_mainCamera);
+                    if (_enableLogging)
+                        ChimeraLogger.Log("OTHER", "$1", this);
+                }
+            }
+
+            if (_mainCamera == null)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+
+        /// <summary>
+        /// Update input handling
+        /// </summary>
+    public int TickPriority => 100;
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
+            if (!_enableBasicInput || !_isInitialized) return;
+
+            HandleMouseInput();
+            HandleKeyboardInput();
+    }
+
+    private void Awake()
+    {
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
+    }
+
+    private void OnDestroy()
+    {
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
+    }
+
+        /// <summary>
+        /// Handle mouse input for grid interaction
+        /// </summary>
+        private void HandleMouseInput()
+        {
+            // Get mouse position in world space
+            Ray ray = _mainCamera.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit, _raycastDistance, _gridLayer))
+            {
+                // Convert world position to grid coordinates
+                Vector3Int gridPos = WorldToGrid(hit.point);
+
+                // Check if grid position changed
+                if (gridPos != _currentGridPosition)
+                {
+                    _currentGridPosition = gridPos;
+                    OnGridHovered?.Invoke(gridPos);
+                    OnGridCoordinateChanged?.Invoke(gridPos);
+                }
+
+                // Handle mouse clicks
+                if (Input.GetMouseButtonDown(0)) // Left click - place
+                {
+                    OnGridClicked?.Invoke(gridPos);
+                    OnPlacementRequested?.Invoke();
+
+                    if (_enableLogging)
+                    {
+                        ChimeraLogger.Log("OTHER", "$1", this);
+                    }
+                }
+                else if (Input.GetMouseButtonDown(1)) // Right click - cancel
+                {
+                    OnCancelRequested?.Invoke();
+
+                    if (_enableLogging)
+                    {
+                        ChimeraLogger.Log("OTHER", "$1", this);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handle keyboard input
+        /// </summary>
+        private void HandleKeyboardInput()
+        {
+            // Basic keyboard shortcuts
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                OnCancelRequested?.Invoke();
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("OTHER", "$1", this);
+                }
+            }
+
+            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+            {
+                OnPlacementRequested?.Invoke();
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("OTHER", "$1", this);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Convert world position to grid coordinates
+        /// </summary>
+        private Vector3Int WorldToGrid(Vector3 worldPos)
+        {
+            // Simple grid conversion - assuming 1 unit = 1 grid cell
+            return new Vector3Int(
+                Mathf.RoundToInt(worldPos.x),
+                Mathf.RoundToInt(worldPos.y),
+                Mathf.RoundToInt(worldPos.z)
+            );
+        }
+
+        /// <summary>
+        /// Public method to convert world position to grid coordinates
+        /// </summary>
+        public Vector3Int WorldToGridCoordinate(Vector3 worldPos)
+        {
+            return WorldToGrid(worldPos);
+        }
+
+        /// <summary>
+        /// Get current grid position
+        /// </summary>
+        public Vector3Int GetCurrentGridPosition()
+        {
+            return _currentGridPosition;
+        }
+
+        /// <summary>
+        /// Set input enabled state
+        /// </summary>
+        public void SetInputEnabled(bool enabled)
+        {
+            _enableBasicInput = enabled;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+
+        /// <summary>
+        /// Check if input is enabled
+        /// </summary>
+        public bool IsInputEnabled()
+        {
+            return _enableBasicInput && _isInitialized;
+        }
+
+        /// <summary>
+        /// Get input statistics
+        /// </summary>
+        public InputStats GetStats()
+        {
+            return new InputStats
+            {
+                CurrentGridPosition = _currentGridPosition,
+                IsInputEnabled = _enableBasicInput,
+                IsInitialized = _isInitialized,
+                CameraFound = _mainCamera != null
+            };
+        }
+
+        /// <summary>
+        /// Set grid layer mask
+        /// </summary>
+        public void SetGridLayer(LayerMask layerMask)
+        {
+            _gridLayer = layerMask;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+
+        /// <summary>
+        /// Force grid position update
+        /// </summary>
+        public void ForceGridPosition(Vector3Int gridPos)
+        {
+            _currentGridPosition = gridPos;
+            OnGridHovered?.Invoke(gridPos);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Input statistics
+    /// </summary>
+    [System.Serializable]
+    public struct InputStats
+    {
+        public Vector3Int CurrentGridPosition;
+        public bool IsInputEnabled;
+        public bool IsInitialized;
+        public bool CameraFound;
+    }
+}

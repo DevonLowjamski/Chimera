@@ -44,7 +44,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[EnvironmentalResponseSystem] Initialized successfully");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -70,7 +70,7 @@ namespace ProjectChimera.Systems.Cultivation
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[EnvironmentalResponseSystem] Fitness updated to {_environmentalFitness:F2}");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 }
             }
         }
@@ -139,7 +139,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[EnvironmentalResponseSystem] Reset to default conditions");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 

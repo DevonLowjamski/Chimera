@@ -1,5 +1,7 @@
 using UnityEngine;
+using System;
 using ProjectChimera.Data.Shared;
+
 
 namespace ProjectChimera.Data.Cultivation.Plant
 {
@@ -145,9 +147,9 @@ namespace ProjectChimera.Data.Cultivation.Plant
         /// <summary>
         /// Get optimal watering schedule
         /// </summary>
-        public static WateringSchedule GetOptimalWateringSchedule(PlantStateData plantState)
+        public static ProjectChimera.Data.Cultivation.WateringSchedule GetOptimalWateringSchedule(PlantStateData plantState)
         {
-            return new WateringSchedule
+            return new ProjectChimera.Data.Cultivation.WateringSchedule
             {
                 FrequencyHours = plantState.EnergyReserves < 0.5f ? 12f : 24f,
                 AmountPerPlant = plantState.EnergyReserves < 0.5f ? 0.75f : 0.5f,
@@ -158,9 +160,9 @@ namespace ProjectChimera.Data.Cultivation.Plant
         /// <summary>
         /// Get optimal feeding schedule
         /// </summary>
-        public static FeedingSchedule GetOptimalFeedingSchedule(PlantStateData plantState)
+        public static ProjectChimera.Data.Cultivation.FeedingSchedule GetOptimalFeedingSchedule(PlantStateData plantState)
         {
-            return new FeedingSchedule
+            return new ProjectChimera.Data.Cultivation.FeedingSchedule
             {
                 FrequencyHours = plantState.EnergyReserves < 0.5f ? 48f : 72f,
                 NutrientAmount = plantState.EnergyReserves < 0.5f ? 0.75f : 0.5f,

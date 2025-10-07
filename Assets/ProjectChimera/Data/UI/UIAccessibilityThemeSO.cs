@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectChimera.Shared;
+using ProjectChimera.Shared;
 
 namespace ProjectChimera.Data.UI
 {

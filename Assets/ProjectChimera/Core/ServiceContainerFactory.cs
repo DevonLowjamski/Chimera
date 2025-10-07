@@ -1,4 +1,5 @@
 using System;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core
 {
@@ -25,7 +26,7 @@ namespace ProjectChimera.Core
                     {
                         if (_globalInstance == null)
                         {
-                            _globalInstance = new ServiceContainer();
+                            _globalInstance = (IServiceContainer)new ServiceContainer();
                             RegisterCoreServices();
                         }
                     }
@@ -48,6 +49,15 @@ namespace ProjectChimera.Core
         public static IServiceContainer CreateChildContainer()
         {
             return Instance.CreateChildContainer();
+        }
+
+        /// <summary>
+        /// Backward-compatible accessor used by older call sites.
+        /// Returns the global IServiceContainer instance.
+        /// </summary>
+        public static IServiceContainer GetContainer()
+        {
+            return Instance;
         }
 
         /// <summary>

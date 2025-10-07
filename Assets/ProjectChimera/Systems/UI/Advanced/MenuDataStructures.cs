@@ -2,6 +2,7 @@ using UnityEngine;
 using ProjectChimera.Core.Updates;
 using System;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.UI.Advanced
 {
@@ -316,7 +317,7 @@ namespace ProjectChimera.Systems.UI.Advanced
                 if (Time.time - _mouseDownTime < _clickThreshold)
                 {
                     var mousePosition = Input.mousePosition;
-                    var worldPosition = Camera.main?.ScreenToWorldPoint(new Vector3(mousePosition.x, mousePosition.y, 10f)) ?? Vector3.zero;
+                    var worldPosition = UnityEngine.Camera.main?.ScreenToWorldPoint(new Vector3(mousePosition.x, mousePosition.y, 10f)) ?? Vector3.zero;
                     OnContextMenuRequested?.Invoke(worldPosition);
                 }
                 _mouseWasPressed = false;
@@ -336,8 +337,8 @@ namespace ProjectChimera.Systems.UI.Advanced
             // Context menu key
             if (Input.GetKeyDown(_contextMenuKey))
             {
-                var cameraPosition = Camera.main?.transform.position ?? Vector3.zero;
-                var cameraForward = Camera.main?.transform.forward ?? Vector3.forward;
+                var cameraPosition = UnityEngine.Camera.main?.transform.position ?? Vector3.zero;
+                var cameraForward = UnityEngine.Camera.main?.transform.forward ?? Vector3.forward;
                 var worldPosition = cameraPosition + cameraForward * 5f;
                 OnContextMenuRequested?.Invoke(worldPosition);
             }
@@ -365,8 +366,8 @@ namespace ProjectChimera.Systems.UI.Advanced
         }
 
     // ITickable implementation
-    public int Priority => 0;
-    public bool Enabled => enabled && gameObject.activeInHierarchy;
+    public int TickPriority => ProjectChimera.Core.Updates.TickPriority.MenuSystems;
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
 
     public virtual void OnRegistered()
     {

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ProjectChimera.Data.Save;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Save
 {
@@ -12,7 +13,7 @@ namespace ProjectChimera.Systems.Save
     /// Provides basic save/load functionality for core game state as described in gameplay document
     /// Focuses on player progression, facility layouts, and essential game persistence
     /// </summary>
-    public class SimpleSaveProvider : MonoBehaviour, ISaveSectionProvider
+    public class SimpleSaveProvider : MonoBehaviour, ITickable, ISaveSectionProvider
     {
         [Header("Save Configuration")]
         [SerializeField] private string _saveVersion = "1.0.0";
@@ -36,7 +37,7 @@ namespace ProjectChimera.Systems.Save
 
         // Data structures
         [Serializable]
-        private class PlayerProgressData
+        public class PlayerProgressData
         {
             public int SkillPoints;
             public List<string> UnlockedSkills = new List<string>();
@@ -46,7 +47,7 @@ namespace ProjectChimera.Systems.Save
         }
 
         [Serializable]
-        private class FacilityData
+        public class FacilityData
         {
             public string FacilityName;
             public List<SchematicData> SavedSchematics = new List<SchematicData>();
@@ -55,7 +56,7 @@ namespace ProjectChimera.Systems.Save
         }
 
         [Serializable]
-        private class SchematicData
+        public class SchematicData
         {
             public string SchematicName;
             public string SchematicDescription;
@@ -65,7 +66,7 @@ namespace ProjectChimera.Systems.Save
         }
 
         [Serializable]
-        private class EquipmentData
+        public class EquipmentData
         {
             public string EquipmentID;
             public string EquipmentType;
@@ -74,7 +75,7 @@ namespace ProjectChimera.Systems.Save
         }
 
         [Serializable]
-        private class EnvironmentalData
+        public class EnvironmentalData
         {
             public float Temperature;
             public float Humidity;
@@ -82,14 +83,14 @@ namespace ProjectChimera.Systems.Save
         }
 
         [Serializable]
-        private class EconomyData
+        public class EconomyData
         {
             public int Currency;
             public List<TransactionData> TransactionHistory = new List<TransactionData>();
         }
 
         [Serializable]
-        private class TransactionData
+        public class TransactionData
         {
             public string TransactionType;
             public int Amount;
@@ -116,16 +117,23 @@ namespace ProjectChimera.Systems.Save
         {
             InitializeSaveData();
             LoadGameState();
+            UpdateOrchestrator.Instance.RegisterTickable(this);
         }
 
-        private void Update()
+        public int TickPriority => 100;
+        public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+        public void Tick(float deltaTime)
         {
             // Handle auto-save
             if (_enableAutoSave && Time.time - _lastAutoSaveTime >= _autoSaveInterval)
-            {
                 AutoSave();
-            }
         }
+
+    private void OnDestroy()
+    {
+        UpdateOrchestrator.Instance.UnregisterTickable(this);
+    }
 
         /// <summary>
         /// Initializes the save data structure
@@ -165,12 +173,12 @@ namespace ProjectChimera.Systems.Save
                 _currentSaveData.LastSaveTime = DateTime.Now;
                 _lastAutoSaveTime = Time.time;
 
-                ChimeraLogger.Log($"[SimpleSaveProvider] Game saved successfully: {_saveFileName}");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return true;
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SimpleSaveProvider] Failed to save game: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return false;
             }
         }
@@ -186,7 +194,7 @@ namespace ProjectChimera.Systems.Save
 
                 if (!System.IO.File.Exists(filePath))
                 {
-                    ChimeraLogger.LogWarning($"[SimpleSaveProvider] No save file found: {filePath}");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                     return false;
                 }
 
@@ -196,12 +204,12 @@ namespace ProjectChimera.Systems.Save
                 // Apply loaded state to game
                 await ApplyLoadedStateAsync();
 
-                ChimeraLogger.Log($"[SimpleSaveProvider] Game loaded successfully: {_saveFileName}");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return true;
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SimpleSaveProvider] Failed to load game: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return false;
             }
         }
@@ -224,12 +232,12 @@ namespace ProjectChimera.Systems.Save
 
                 _currentSaveData.FacilityData.SavedSchematics.Add(schematic);
 
-                ChimeraLogger.Log($"[SimpleSaveProvider] Schematic saved: {schematicName}");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return true;
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SimpleSaveProvider] Failed to save schematic: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return false;
             }
         }
@@ -244,7 +252,7 @@ namespace ProjectChimera.Systems.Save
 
             if (schematic != null)
             {
-                ChimeraLogger.Log($"[SimpleSaveProvider] Schematic loaded: {schematicName}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
 
             return schematic;
@@ -324,7 +332,7 @@ namespace ProjectChimera.Systems.Save
             if (schematic != null)
             {
                 _currentSaveData.FacilityData.SavedSchematics.Remove(schematic);
-                ChimeraLogger.Log($"[SimpleSaveProvider] Schematic deleted: {schematicName}");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return true;
             }
 
@@ -343,7 +351,7 @@ namespace ProjectChimera.Systems.Save
         private async Task ApplyLoadedStateAsync()
         {
             // This would apply the loaded state to various game systems
-            ChimeraLogger.Log($"[SimpleSaveProvider] Applied loaded state from {_currentSaveData.LastSaveTime}");
+            ChimeraLogger.Log("OTHER", "$1", this);
         }
 
         private void LoadGameState()
@@ -377,31 +385,118 @@ namespace ProjectChimera.Systems.Save
         {
             if (sectionData is SimpleSaveSectionData simpleData)
             {
-                _currentSaveData = simpleData.Data;
+                _currentSaveData = simpleData.Data as SimpleSaveData;
                 await ApplyLoadedStateAsync();
-                return SaveSectionResult.Success;
+                return SaveSectionResult.CreateSuccess();
             }
-            return SaveSectionResult.Failed;
+            return SaveSectionResult.CreateFailure("Invalid section data type");
         }
 
         public async Task<SaveSectionValidation> ValidateSectionDataAsync(ISaveSectionData sectionData)
         {
             // Basic validation
             if (sectionData == null)
-                return SaveSectionValidation.Invalid;
+                return SaveSectionValidation.CreateInvalid(new List<string> { "Section data is null" });
 
-            return SaveSectionValidation.Valid;
+            return SaveSectionValidation.CreateValid();
         }
 
         public string GetSectionId() => "SimpleSaveProvider";
         public int GetPriority() => 0;
+
+        // ISaveSectionProvider interface implementation
+        public string SectionKey => "simple_save";
+        public string SectionName => "Simple Save Provider";
+        public string SectionVersion => _saveVersion;
+        public int Priority => 50;
+        public bool IsRequired => true;
+        public bool SupportsIncrementalSave => false;
+        public long EstimatedDataSize => 1024; // Estimate 1KB
+        public IReadOnlyList<string> Dependencies => new List<string>();
+
+        public async Task<ISaveSectionData> MigrateSectionDataAsync(ISaveSectionData oldData, string fromVersion)
+        {
+            // For now, just return the old data as-is
+            return oldData;
+        }
+
+        public SaveSectionSummary GetSectionSummary()
+        {
+            return new SaveSectionSummary
+            {
+                SectionKey = SectionKey,
+                SectionName = SectionName,
+                StatusDescription = "Basic game save data",
+                ItemCount = 1,
+                DataSize = EstimatedDataSize,
+                LastUpdated = _currentSaveData?.LastSaveTime ?? DateTime.MinValue,
+                KeyValuePairs = new Dictionary<string, string>(),
+                HasErrors = false,
+                ErrorMessages = new List<string>()
+            };
+        }
+
+        public bool HasChanges()
+        {
+            // For simplicity, always return true
+            return true;
+        }
+
+        public void MarkClean()
+        {
+            // Implementation for marking section as clean
+        }
+
+        public async Task ResetToDefaultStateAsync()
+        {
+            InitializeSaveData();
+        }
+
+        public IReadOnlyDictionary<string, IReadOnlyList<string>> GetSupportedMigrations()
+        {
+            return new Dictionary<string, IReadOnlyList<string>>();
+        }
+
+        public async Task PreSaveCleanupAsync()
+        {
+            // No cleanup needed for simple save
+        }
+
+        public async Task PostLoadInitializationAsync()
+        {
+            // No special initialization needed
+        }
+
+        public void OnRegistered()
+        {
+            // Called when registered with UpdateOrchestrator
+        }
+
+        public void OnUnregistered()
+        {
+            // Called when unregistered from UpdateOrchestrator
+        }
     }
 
     // Simple implementation of ISaveSectionData
     public class SimpleSaveSectionData : ISaveSectionData
     {
         public object Data;
-        public string SectionId => "SimpleSave";
-        public string Version => "1.0.0";
+
+        public string SectionKey { get; set; } = "simple_save";
+        public string DataVersion { get; set; } = "1.0.0";
+        public DateTime Timestamp { get; set; } = DateTime.Now;
+        public long EstimatedSize => 1024; // Estimate 1KB
+        public string DataHash { get; set; } = "";
+
+        public bool IsValid()
+        {
+            return Data != null && !string.IsNullOrEmpty(SectionKey);
+        }
+
+        public string GetSummary()
+        {
+            return $"SimpleSave data created at {Timestamp}";
+        }
     }
 }

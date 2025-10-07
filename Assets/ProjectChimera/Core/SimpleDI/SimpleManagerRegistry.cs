@@ -52,7 +52,7 @@ namespace ProjectChimera.Core.SimpleDI
             ValidateManagerRegistration();
 
             if (_enableLogging)
-                ChimeraLogger.LogVerbose($"[SimpleManagerRegistry] Initialized with {_managers.Count} managers");
+                ChimeraLogger.LogInfo("SimpleManagerRegistry", "$1");
         }
 
         /// <summary>
@@ -61,14 +61,14 @@ namespace ProjectChimera.Core.SimpleDI
         private void RegisterCoreManagers()
         {
             MonoBehaviour[] managers;
-            
+
             // Try to use ServiceContainer first for unified DI approach
             if (ServiceContainerFactory.Instance != null)
             {
                 // Use ServiceContainer to get all MonoBehaviour services
                 var services = ServiceContainerFactory.Instance.GetServices(typeof(MonoBehaviour));
                 managers = services.OfType<MonoBehaviour>().ToArray();
-                
+
                 // If no services found, fallback to scene discovery
                 if (managers.Length == 0)
                 {
@@ -131,7 +131,7 @@ namespace ProjectChimera.Core.SimpleDI
                     _managers[interfaceType] = manager;
 
                     if (_enableLogging)
-                        ChimeraLogger.LogVerbose($"[SimpleManagerRegistry] Registered {manager.ManagerName} as {interfaceType.Name}");
+                        ChimeraLogger.LogInfo("SimpleManagerRegistry", "$1");
                 }
             }
         }
@@ -149,7 +149,7 @@ namespace ProjectChimera.Core.SimpleDI
             }
 
             if (_enableLogging)
-                ChimeraLogger.LogWarning($"[SimpleManagerRegistry] Manager not found: {managerType.Name}");
+                ChimeraLogger.LogInfo("SimpleManagerRegistry", "$1");
 
             return null;
         }
@@ -191,7 +191,7 @@ namespace ProjectChimera.Core.SimpleDI
                 if (!_managers.ContainsKey(expectedType))
                 {
                     if (_enableLogging)
-                        ChimeraLogger.LogWarning($"[SimpleManagerRegistry] Expected manager not found: {expectedType.Name}");
+                        ChimeraLogger.LogInfo("SimpleManagerRegistry", "$1");
                     missingCount++;
                 }
             }
@@ -199,11 +199,11 @@ namespace ProjectChimera.Core.SimpleDI
             if (missingCount == 0)
             {
                 if (_enableLogging)
-                    ChimeraLogger.LogVerbose("[SimpleManagerRegistry] All expected managers registered");
+                    ChimeraLogger.LogInfo("SimpleManagerRegistry", "$1");
             }
             else
             {
-                ChimeraLogger.LogWarning($"[SimpleManagerRegistry] {missingCount} expected managers missing");
+                ChimeraLogger.LogInfo("SimpleManagerRegistry", "$1");
             }
         }
 
@@ -218,11 +218,11 @@ namespace ProjectChimera.Core.SimpleDI
                 {
                     manager.Shutdown();
                     if (_enableLogging)
-                        ChimeraLogger.LogVerbose($"[SimpleManagerRegistry] Shut down {manager.ManagerName}");
+                        ChimeraLogger.LogInfo("SimpleManagerRegistry", "$1");
                 }
                 catch (Exception ex)
                 {
-                    ChimeraLogger.LogError($"[SimpleManagerRegistry] Error shutting down {manager.ManagerName}: {ex.Message}");
+                    ChimeraLogger.LogInfo("SimpleManagerRegistry", "$1");
                 }
             }
 
@@ -308,13 +308,6 @@ namespace ProjectChimera.Core.SimpleDI
         void SubscribeEvent<T>(Action<T> handler) where T : IGameEvent;
     }
 
-    public interface ITimeManager : IChimeraManager
-    {
-        float TimeScale { get; set; }
-        DateTime GameTime { get; }
-        void Pause();
-        void Resume();
-    }
 
     public interface IGridSystem : IChimeraManager
     {

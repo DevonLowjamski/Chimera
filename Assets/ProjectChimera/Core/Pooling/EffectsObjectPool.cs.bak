@@ -1,0 +1,432 @@
+using UnityEngine;
+using System.Collections.Generic;
+
+using ProjectChimera.Core.Logging;
+namespace ProjectChimera.Core.Pooling
+{
+    /// <summary>
+    /// PERFORMANCE: Specialized object pool for particle effects and animations
+    /// Optimizes creation/destruction of visual effects for smooth gameplay
+    /// Week 9 Day 4-5: Object Pooling System Implementation
+    /// </summary>
+    public class EffectsObjectPool : MonoBehaviour
+    {
+        [Header("Effects Pool Settings")]
+        [SerializeField] private EffectPoolConfig[] _effectConfigs;
+        [SerializeField] private Transform _poolParent;
+        [SerializeField] private bool _enableLogging = true;
+
+        /// <summary>
+        /// Types of effects that can be pooled
+        /// </summary>
+        public enum EffectType
+        {
+            WateringSplash,
+            GrowthSparkle,
+            HealthIndicator,
+            HarvestEffect,
+            PlantingDust,
+            FertilizingGlow,
+            PestSpray,
+            WindRustle,
+            LightBeam,
+            SmokeEffect
+        }
+
+        // Pool storage
+        private Dictionary<EffectType, ObjectPool<PooledEffect>> _effectPools;
+        private Dictionary<EffectType, Queue<PooledEffect>> _playingEffects;
+        private bool _isInitialized;
+
+        // Performance tracking
+        private Dictionary<EffectType, EffectPoolStats> _poolStats;
+
+        /// <summary>
+        /// Initialize effects object pools
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            // Create pool parent if not assigned
+            if (_poolParent == null)
+            {
+                _poolParent = new GameObject("EffectPools").transform;
+                _poolParent.SetParent(transform);
+            }
+
+            // Initialize dictionaries
+            _effectPools = new Dictionary<EffectType, ObjectPool<PooledEffect>>();
+            _playingEffects = new Dictionary<EffectType, Queue<PooledEffect>>();
+            _poolStats = new Dictionary<EffectType, EffectPoolStats>();
+
+            // Create pools from configuration
+            foreach (var config in _effectConfigs)
+            {
+                CreateEffectPool(config);
+            }
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("EffectsObjectPool", $1);
+            }
+        }
+
+        /// <summary>
+        /// Play effect at specified position
+        /// </summary>
+        public PooledEffect PlayEffect(EffectType effectType, Vector3 position, Quaternion rotation = default, Transform parent = null, float duration = -1f)
+        {
+            if (!_isInitialized || !_effectPools.ContainsKey(effectType))
+                return null;
+
+            var startTime = Time.realtimeSinceStartup;
+            var effect = _effectPools[effectType].Get();
+
+            if (effect != null)
+            {
+                // Setup effect
+                effect.transform.position = position;
+                effect.transform.rotation = rotation == default ? Quaternion.identity : rotation;
+                
+                if (parent != null)
+                    effect.transform.SetParent(parent);
+
+                // Play effect
+                effect.Play(duration > 0 ? duration : GetDefaultDuration(effectType));
+
+                // Track playing effect
+                if (!_playingEffects.ContainsKey(effectType))
+                    _playingEffects[effectType] = new Queue<PooledEffect>();
+                _playingEffects[effectType].Enqueue(effect);
+
+                // Update statistics
+                UpdateEffectStats(effectType, Time.realtimeSinceStartup - startTime);
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogInfo("EffectsObjectPool", $1);
+                }
+
+                return effect;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Play effect with callback when finished
+        /// </summary>
+        public PooledEffect PlayEffect(EffectType effectType, Vector3 position, System.Action onComplete, Quaternion rotation = default, Transform parent = null, float duration = -1f)
+        {
+            var effect = PlayEffect(effectType, position, rotation, parent, duration);
+            if (effect != null && onComplete != null)
+            {
+                effect.OnEffectComplete += onComplete;
+            }
+            return effect;
+        }
+
+        /// <summary>
+        /// Stop and return effect to pool
+        /// </summary>
+        public void StopEffect(PooledEffect effect)
+        {
+            if (effect == null) return;
+
+            effect.Stop();
+            ReturnEffectToPool(effect);
+        }
+
+        /// <summary>
+        /// Stop all effects of specific type
+        /// </summary>
+        public void StopAllEffects(EffectType effectType)
+        {
+            if (!_playingEffects.ContainsKey(effectType)) return;
+
+            var effectsToStop = new Queue<PooledEffect>(_playingEffects[effectType]);
+            _playingEffects[effectType].Clear();
+
+            while (effectsToStop.Count > 0)
+            {
+                var effect = effectsToStop.Dequeue();
+                if (effect != null)
+                {
+                    effect.Stop();
+                    ReturnEffectToPool(effect);
+                }
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("EffectsObjectPool", $1);
+            }
+        }
+
+        /// <summary>
+        /// Pre-warm specific effect pool
+        /// </summary>
+        public void PrewarmEffect(EffectType effectType, int count)
+        {
+            if (!_isInitialized || !_effectPools.ContainsKey(effectType))
+                return;
+
+            var pool = _effectPools[effectType];
+            var targetSize = pool.CountInactive + pool.CountActive + count;
+            pool.Resize(targetSize);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("EffectsObjectPool", $1);
+            }
+        }
+
+        /// <summary>
+        /// Get effect pool statistics
+        /// </summary>
+        public Dictionary<EffectType, EffectPoolStats> GetPoolStats()
+        {
+            var allStats = new Dictionary<EffectType, EffectPoolStats>();
+
+            foreach (var effectType in _effectPools.Keys)
+            {
+                var pool = _effectPools[effectType];
+                var baseStats = _poolStats.ContainsKey(effectType) ? _poolStats[effectType] : new EffectPoolStats();
+                
+                baseStats.CountInactive = pool.CountInactive;
+                baseStats.CountActive = pool.CountActive;
+                baseStats.CountAll = pool.CountAll;
+                baseStats.CurrentlyPlaying = _playingEffects.ContainsKey(effectType) ? _playingEffects[effectType].Count : 0;
+
+                allStats[effectType] = baseStats;
+            }
+
+            return allStats;
+        }
+
+        /// <summary>
+        /// Clear all effect pools
+        /// </summary>
+        public void ClearAllPools()
+        {
+            // Stop all playing effects first
+            foreach (var effectType in _playingEffects.Keys)
+            {
+                StopAllEffects(effectType);
+            }
+
+            // Clear pools
+            foreach (var pool in _effectPools.Values)
+            {
+                pool.Clear();
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("EffectsObjectPool", "$1");
+            }
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Create pool for specific effect type
+        /// </summary>
+        private void CreateEffectPool(EffectPoolConfig config)
+        {
+            if (config.effectPrefab == null) return;
+
+            var poolParent = new GameObject($"EffectPool_{config.effectType}").transform;
+            poolParent.SetParent(_poolParent);
+
+            var pool = new ObjectPool<PooledEffect>(
+                config.effectPrefab,
+                config.initialSize,
+                config.maxSize,
+                config.expandable,
+                poolParent,
+                createFunc: () => CreatePooledEffect(config.effectPrefab, poolParent),
+                onGetAction: OnEffectGet,
+                onReturnAction: OnEffectReturn,
+                onDestroyAction: OnEffectDestroy
+            );
+
+            _effectPools[config.effectType] = pool;
+            _poolStats[config.effectType] = new EffectPoolStats();
+        }
+
+        /// <summary>
+        /// Create pooled effect instance
+        /// </summary>
+        private GameObject CreatePooledEffect(GameObject prefab, Transform parent)
+        {
+            var instance = Instantiate(prefab, parent);
+            var pooledEffect = instance.GetComponent<PooledEffect>();
+            
+            if (pooledEffect == null)
+            {
+                pooledEffect = instance.AddComponent<PooledEffect>();
+            }
+
+            pooledEffect.OnEffectComplete += () => ReturnEffectToPool(pooledEffect);
+            return instance;
+        }
+
+        /// <summary>
+        /// Called when effect is retrieved from pool
+        /// </summary>
+        private void OnEffectGet(PooledEffect effect)
+        {
+            if (effect != null)
+            {
+                effect.gameObject.SetActive(true);
+                effect.Reset();
+            }
+        }
+
+        /// <summary>
+        /// Called when effect is returned to pool
+        /// </summary>
+        private void OnEffectReturn(PooledEffect effect)
+        {
+            if (effect != null)
+            {
+                effect.gameObject.SetActive(false);
+                effect.transform.SetParent(_poolParent);
+                effect.Reset();
+            }
+        }
+
+        /// <summary>
+        /// Called when effect is destroyed from pool
+        /// </summary>
+        private void OnEffectDestroy(PooledEffect effect)
+        {
+            // Cleanup before destruction
+        }
+
+        /// <summary>
+        /// Return effect to appropriate pool
+        /// </summary>
+        private void ReturnEffectToPool(PooledEffect effect)
+        {
+            if (effect == null) return;
+
+            // Find which pool this effect belongs to
+            foreach (var kvp in _effectPools)
+            {
+                kvp.Value.Return(effect);
+                break; // Simple implementation - could be more sophisticated
+            }
+        }
+
+        /// <summary>
+        /// Update effect statistics
+        /// </summary>
+        private void UpdateEffectStats(EffectType effectType, float playTime)
+        {
+            if (!_poolStats.ContainsKey(effectType))
+                _poolStats[effectType] = new EffectPoolStats();
+
+            var stats = _poolStats[effectType];
+            stats.TotalPlays++;
+            stats.TotalPlayTime += playTime;
+            stats.AveragePlayTime = stats.TotalPlayTime / stats.TotalPlays;
+            _poolStats[effectType] = stats;
+        }
+
+        /// <summary>
+        /// Get default duration for effect type
+        /// </summary>
+        private float GetDefaultDuration(EffectType effectType)
+        {
+            return effectType switch
+            {
+                EffectType.WateringSplash => 2f,
+                EffectType.GrowthSparkle => 3f,
+                EffectType.HealthIndicator => 1f,
+                EffectType.HarvestEffect => 2.5f,
+                EffectType.PlantingDust => 1.5f,
+                EffectType.FertilizingGlow => 4f,
+                EffectType.PestSpray => 3f,
+                EffectType.WindRustle => 2f,
+                EffectType.LightBeam => 1f,
+                EffectType.SmokeEffect => 5f,
+                _ => 2f
+            };
+        }
+
+        #endregion
+
+        private void Update()
+        {
+            if (!_isInitialized) return;
+
+            // Update playing effects and return completed ones
+            foreach (var effectType in _playingEffects.Keys)
+            {
+                var queue = _playingEffects[effectType];
+                var effectsToReturn = new List<PooledEffect>();
+
+                // Check all playing effects
+                while (queue.Count > 0)
+                {
+                    var effect = queue.Dequeue();
+                    if (effect == null || !effect.IsPlaying)
+                    {
+                        if (effect != null)
+                            effectsToReturn.Add(effect);
+                    }
+                    else
+                    {
+                        // Put back in queue if still playing
+                        queue.Enqueue(effect);
+                        break; // Prevent infinite loop
+                    }
+                }
+
+                // Return completed effects
+                foreach (var effect in effectsToReturn)
+                {
+                    ReturnEffectToPool(effect);
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            ClearAllPools();
+        }
+    }
+
+    /// <summary>
+    /// Configuration for effect pool
+    /// </summary>
+    [System.Serializable]
+    public struct EffectPoolConfig
+    {
+        public EffectsObjectPool.EffectType effectType;
+        public GameObject effectPrefab;
+        public int initialSize;
+        public int maxSize;
+        public bool expandable;
+    }
+
+    /// <summary>
+    /// Statistics for effect pool
+    /// </summary>
+    [System.Serializable]
+    public struct EffectPoolStats
+    {
+        public int TotalPlays;
+        public float TotalPlayTime;
+        public float AveragePlayTime;
+        public int CountInactive;
+        public int CountActive;
+        public int CountAll;
+        public int CurrentlyPlaying;
+    }
+}

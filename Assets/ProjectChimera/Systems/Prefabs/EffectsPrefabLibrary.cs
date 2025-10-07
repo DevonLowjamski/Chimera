@@ -39,7 +39,7 @@ namespace ProjectChimera.Systems.Prefabs
 
             BuildLookupTables();
             _isInitialized = true;
-            ChimeraLogger.Log("EffectsPrefabLibrary", $"Initialized with {_effectPrefabs.Count} prefabs");
+            ChimeraLogger.LogInfo("Effects", "EffectsPrefabLibrary initialized");
         }
 
         public void Shutdown()

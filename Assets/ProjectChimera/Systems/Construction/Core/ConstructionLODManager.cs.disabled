@@ -1,0 +1,342 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Systems.Construction.LOD;
+using ConstructionLODCore = ProjectChimera.Systems.Construction.LOD.ConstructionLODCore;
+
+namespace ProjectChimera.Systems.Construction.Core
+{
+    /// <summary>
+    /// REFACTORED: Construction LOD Manager - Legacy wrapper for backward compatibility
+    /// Delegates to specialized ConstructionLODCore for all LOD management coordination
+    /// Single Responsibility: Backward compatibility delegation
+    /// </summary>
+    public class ConstructionLODManager : MonoBehaviour
+    {
+        [Header("Legacy Compatibility Settings")]
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private bool _enableLegacyMode = true;
+
+        // Delegation target - the actual LOD management system
+        private ConstructionLODCore _lodCore;
+
+        // Legacy properties for backward compatibility
+        public bool IsEnabled => _lodCore?.IsEnabled ?? true;
+        public int ManagedObjectCount => _lodCore?.ManagedObjectCount ?? 0;
+        public float MaxViewDistance => 100f; // Default value
+
+        // Legacy events for backward compatibility
+        public System.Action<string, ConstructionLODLevel> OnLODChanged;
+        public System.Action<string> OnObjectCulled;
+        public System.Action<string> OnObjectUnculled;
+
+        private void Start()
+        {
+            InitializeLODCore();
+        }
+
+        /// <summary>
+        /// Initialize the LOD core system
+        /// </summary>
+        private void InitializeLODCore()
+        {
+            _lodCore = GetComponent<ConstructionLODCore>();
+            if (_lodCore == null)
+            {
+                _lodCore = gameObject.AddComponent<ConstructionLODCore>();
+            }
+
+            // Connect legacy events to the new core
+            ConnectLegacyEvents();
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "🔄 ConstructionLODManager (Legacy) initialization delegated to LODCore", this);
+        }
+
+        /// <summary>
+        /// Connect legacy events to the new LOD core
+        /// </summary>
+        private void ConnectLegacyEvents()
+        {
+            if (_lodCore != null)
+            {
+                _lodCore.OnLODChanged += (objectId, level) => OnLODChanged?.Invoke(objectId, level);
+                _lodCore.OnObjectCulled += (objectId) => OnObjectCulled?.Invoke(objectId);
+                _lodCore.OnObjectUnculled += (objectId) => OnObjectUnculled?.Invoke(objectId);
+            }
+        }
+
+        /// <summary>
+        /// Register construction object for LOD management (Legacy method - delegates to LODCore)
+        /// </summary>
+        public void RegisterObject(string objectId, GameObject constructionObject, ConstructionObjectType objectType)
+        {
+            _lodCore?.RegisterObject(objectId, constructionObject, objectType);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Registered object via legacy method: {objectId} (type: {objectType})", this);
+        }
+
+        /// <summary>
+        /// Unregister construction object from LOD management (Legacy method - delegates to LODCore)
+        /// </summary>
+        public void UnregisterObject(string objectId)
+        {
+            _lodCore?.UnregisterObject(objectId);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Unregistered object via legacy method: {objectId}", this);
+        }
+
+        /// <summary>
+        /// Update LOD for all managed construction objects (Legacy method - handled automatically by LODCore)
+        /// </summary>
+        [System.Obsolete("LOD updates are now handled automatically by ConstructionLODCore", false)]
+        public void UpdateConstructionLOD()
+        {
+            if (!_enableLegacyMode) return;
+
+            // LOD updates are now handled automatically by the core system
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "Legacy UpdateConstructionLOD called - now handled automatically by LODCore", this);
+        }
+
+        /// <summary>
+        /// Force LOD update for specific object (Legacy method - delegates to LODCore)
+        /// </summary>
+        public void ForceUpdateObjectLOD(string objectId)
+        {
+            _lodCore?.ForceUpdateAllLOD(); // Core system will update all objects
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Force LOD update requested via legacy method: {objectId}", this);
+        }
+
+        /// <summary>
+        /// Set LOD distances (Legacy method - delegates to LODCore)
+        /// </summary>
+        public void SetLODDistances(float highQuality, float mediumQuality, float lowQuality, float maxDistance)
+        {
+            _lodCore?.SetDistanceThresholds(highQuality, mediumQuality, lowQuality, maxDistance);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"LOD distances set via legacy method - H:{highQuality}, M:{mediumQuality}, L:{lowQuality}, Max:{maxDistance}", this);
+        }
+
+        /// <summary>
+        /// Get LOD statistics (Legacy method - delegates to LODCore)
+        /// </summary>
+        public LODManagerStats GetStats()
+        {
+            var coreStats = _lodCore?.Stats ?? new ConstructionLODCoreStats();
+
+            // Convert core stats to legacy stats format
+            return new LODManagerStats
+            {
+                RegisteredObjects = coreStats.ManagedObjects,
+                HighLODObjects = coreStats.HighLODObjects,
+                MediumLODObjects = coreStats.MediumLODObjects,
+                LowLODObjects = coreStats.LowLODObjects,
+                CulledObjects = coreStats.CulledObjects,
+                LODTransitions = coreStats.LODTransitions,
+                LODEfficiency = coreStats.LODEfficiency
+            };
+        }
+
+        /// <summary>
+        /// Set LOD manager enabled/disabled (Legacy method - delegates to LODCore)
+        /// </summary>
+        public void SetEnabled(bool enabled)
+        {
+            _lodCore?.SetEnabled(enabled);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Construction LOD Manager: {(enabled ? "enabled" : "disabled")} via legacy method", this);
+        }
+
+        /// <summary>
+        /// Get construction object LOD info (Legacy method - delegates to LODCore)
+        /// </summary>
+        public ConstructionLODObject? GetObjectLODInfo(string objectId)
+        {
+            var info = _lodCore?.GetObjectInfo(objectId);
+            if (info.HasValue)
+            {
+                // Convert new format to legacy format
+                return new ConstructionLODObject
+                {
+                    ObjectId = info.Value.ObjectId,
+                    GameObject = info.Value.GameObject,
+                    ObjectType = info.Value.ObjectType,
+                    CurrentLODLevel = info.Value.CurrentLODLevel,
+                    DistanceFromViewer = info.Value.LastDistance,
+                    IsVisible = info.Value.CurrentLODLevel != ConstructionLODLevel.Culled,
+                    IsCulled = info.Value.CurrentLODLevel == ConstructionLODLevel.Culled,
+                    OriginalRenderers = new Renderer[0], // No longer cached in new system
+                    OriginalColliders = new Collider[0]  // No longer cached in new system
+                };
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Get objects by LOD level (Legacy method - delegates to LODCore)
+        /// </summary>
+        public ConstructionLODObject[] GetObjectsByLODLevel(ConstructionLODLevel lodLevel)
+        {
+            var objectInfos = _lodCore?.GetObjectsByLODLevel(lodLevel) ?? new ConstructionLODObjectInfo[0];
+            var result = new ConstructionLODObject[objectInfos.Length];
+
+            for (int i = 0; i < objectInfos.Length; i++)
+            {
+                var info = objectInfos[i];
+                result[i] = new ConstructionLODObject
+                {
+                    ObjectId = info.ObjectId,
+                    GameObject = info.GameObject,
+                    ObjectType = info.ObjectType,
+                    CurrentLODLevel = info.CurrentLODLevel,
+                    DistanceFromViewer = info.LastDistance,
+                    IsVisible = info.CurrentLODLevel != ConstructionLODLevel.Culled,
+                    IsCulled = info.CurrentLODLevel == ConstructionLODLevel.Culled,
+                    OriginalRenderers = new Renderer[0],
+                    OriginalColliders = new Collider[0]
+                };
+            }
+
+            return result;
+        }
+
+        #region Private Methods - Legacy Compatibility Helpers
+
+        /// <summary>
+        /// Legacy method - no longer needed as ConstructionLODDistanceCalculator handles viewer reference
+        /// </summary>
+        [System.Obsolete("Use ConstructionLODDistanceCalculator instead", false)]
+        private void InitializeViewerReference()
+        {
+            // Now handled by ConstructionLODDistanceCalculator
+        }
+
+        /// <summary>
+        /// Legacy method - no longer needed as ConstructionLODRendererController handles LOD configurations
+        /// </summary>
+        [System.Obsolete("Use ConstructionLODRendererController instead", false)]
+        private void InitializeLODConfigurations()
+        {
+            // Now handled by ConstructionLODRendererController
+        }
+
+        /// <summary>
+        /// Legacy method - no longer needed as ConstructionLODLevelManager handles level determination
+        /// </summary>
+        [System.Obsolete("Use ConstructionLODLevelManager instead", false)]
+        private ConstructionLODLevel DetermineLODLevel(float distance)
+        {
+            return ConstructionLODLevel.High;
+        }
+
+        /// <summary>
+        /// Legacy method - no longer needed as ConstructionLODLevelManager handles culling
+        /// </summary>
+        [System.Obsolete("Use ConstructionLODLevelManager instead", false)]
+        private bool ShouldUpdateCulling(ConstructionLODObject lodObject, float distance)
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// Legacy method - no longer needed as ConstructionLODRendererController handles LOD application
+        /// </summary>
+        [System.Obsolete("Use ConstructionLODRendererController instead", false)]
+        private void ApplyLODToObject(string objectId)
+        {
+            // Now handled by ConstructionLODRendererController
+        }
+
+        /// <summary>
+        /// Legacy method - no longer needed as ConstructionLODRendererController handles restoration
+        /// </summary>
+        [System.Obsolete("Use ConstructionLODRendererController instead", false)]
+        private void RestoreOriginalLOD(ConstructionLODObject lodObject)
+        {
+            // Now handled by ConstructionLODRendererController
+        }
+
+        #endregion
+    }
+
+    #region Data Structures - Legacy Compatibility
+
+    /// <summary>
+    /// Construction LOD object data structure (legacy - use ConstructionLODObjectInfo from LOD namespace instead)
+    /// </summary>
+    [System.Serializable]
+    public struct ConstructionLODObject
+    {
+        public string ObjectId;
+        public GameObject GameObject;
+        public ConstructionObjectType ObjectType;
+        public ConstructionLODLevel CurrentLODLevel;
+        public float DistanceFromViewer;
+        public bool IsVisible;
+        public bool IsCulled;
+        public Renderer[] OriginalRenderers;
+        public Collider[] OriginalColliders;
+    }
+
+    /// <summary>
+    /// LOD configuration for different quality levels (legacy - use LODRenderConfiguration from LOD namespace instead)
+    /// </summary>
+    [System.Serializable]
+    [System.Obsolete("Use LODRenderConfiguration from ProjectChimera.Systems.Construction.LOD namespace instead")]
+    public struct LODConfiguration
+    {
+        public float EnabledRenderers;
+        public float EnabledColliders;
+        public bool ShadowCasting;
+        public bool EnableParticles;
+        public float DetailLevel;
+    }
+
+    /// <summary>
+    /// LOD Manager statistics (legacy - use ConstructionLODCoreStats from LOD namespace instead)
+    /// </summary>
+    [System.Serializable]
+    public struct LODManagerStats
+    {
+        public int RegisteredObjects;
+        public int HighLODObjects;
+        public int MediumLODObjects;
+        public int LowLODObjects;
+        public int CulledObjects;
+        public int LODTransitions;
+        public float LODEfficiency;
+    }
+
+    /// <summary>
+    /// Construction LOD levels (legacy - use ConstructionLODLevel from LOD namespace instead)
+    /// </summary>
+    public enum ConstructionLODLevel
+    {
+        High,
+        Medium,
+        Low,
+        Culled
+    }
+
+    /// <summary>
+    /// Construction object types (legacy - use ConstructionObjectType from LOD namespace instead)
+    /// </summary>
+    public enum ConstructionObjectType
+    {
+        Building,
+        Infrastructure,
+        Decoration,
+        Equipment,
+        Utility
+    }
+
+    #endregion
+}

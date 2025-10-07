@@ -7,6 +7,7 @@ using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Environment;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Cultivation
 {
@@ -14,7 +15,7 @@ namespace ProjectChimera.Systems.Cultivation
     /// Core plant instance infrastructure and component coordination.
     /// Handles plant identity, lifecycle management, and system integration.
     /// </summary>
-    public class PlantInstanceCore : MonoBehaviour
+    public class PlantInstanceCore : MonoBehaviour, ITickable
     {
         [Header("Plant Identity")]
         [SerializeField] protected string _plantID;
@@ -82,7 +83,7 @@ namespace ProjectChimera.Systems.Cultivation
                 {
                     _growthSystem = gameObject.AddComponent<PlantGrowthSystem>();
                 }
-                _growthSystem.Initialize(this);
+                _growthSystem.Initialize(_plantID, ProjectChimera.Data.Shared.PlantGrowthStage.Seedling);
             }
 
             // Initialize health system
@@ -93,7 +94,7 @@ namespace ProjectChimera.Systems.Cultivation
                 {
                     _healthSystem = gameObject.AddComponent<PlantHealthSystem>();
                 }
-                _healthSystem.Initialize(this);
+                _healthSystem.Initialize();
             }
 
             // Initialize environmental system
@@ -104,7 +105,7 @@ namespace ProjectChimera.Systems.Cultivation
                 {
                     _environmentalSystem = gameObject.AddComponent<PlantEnvironmentalSystem>();
                 }
-                _environmentalSystem.Initialize(this);
+                _environmentalSystem.Initialize();
             }
 
             // Initialize genetics system
@@ -115,7 +116,7 @@ namespace ProjectChimera.Systems.Cultivation
                 {
                     _geneticsSystem = gameObject.AddComponent<PlantGeneticsSystem>();
                 }
-                _geneticsSystem.Initialize(this);
+                _geneticsSystem.Initialize();
             }
 
             // Initialize visualization system
@@ -126,7 +127,7 @@ namespace ProjectChimera.Systems.Cultivation
                 {
                     _visualizationSystem = gameObject.AddComponent<PlantVisualizationSystem>();
                 }
-                _visualizationSystem.Initialize(this);
+                _visualizationSystem.Initialize();
             }
         }
 
@@ -150,12 +151,14 @@ namespace ProjectChimera.Systems.Cultivation
             OnPlantInitialized?.Invoke(this);
         }
 
-        protected virtual void Update()
+        public int TickPriority => 100;
+        public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+        public void Tick(float deltaTime)
         {
             if (!_isActive || !_isInitialized)
                 return;
 
-            float deltaTime = Time.deltaTime;
             UpdatePlantSystems(deltaTime);
         }
 
@@ -172,31 +175,31 @@ namespace ProjectChimera.Systems.Cultivation
             // Update environmental system first (provides data to other systems)
             if (_enableEnvironmentalSystem && _environmentalSystem != null)
             {
-                _environmentalSystem.UpdateSystem(deltaTime);
+                _environmentalSystem.UpdateEnvironmentalMonitoring(deltaTime);
             }
 
             // Update genetics system (affects other systems)
             if (_enableGeneticsSystem && _geneticsSystem != null)
             {
-                _geneticsSystem.UpdateSystem(deltaTime);
+                _geneticsSystem.UpdateAllGenetics(deltaTime);
             }
 
             // Update health system (affects growth)
             if (_enableHealthSystem && _healthSystem != null)
             {
-                _healthSystem.UpdateSystem(deltaTime);
+                _healthSystem.UpdateHealthStatus(deltaTime);
             }
 
             // Update growth system (depends on health and environment)
             if (_enableGrowthSystem && _growthSystem != null)
             {
-                _growthSystem.UpdateSystem(deltaTime);
+                _growthSystem.UpdateGrowthProgress(deltaTime);
             }
 
             // Update visualization system last (reflects state changes)
             if (_enableVisualizationSystem && _visualizationSystem != null)
             {
-                _visualizationSystem.UpdateSystem(deltaTime);
+                _visualizationSystem.UpdateVisualization(deltaTime);
             }
 
             OnSystemsUpdated?.Invoke(this);
@@ -233,31 +236,31 @@ namespace ProjectChimera.Systems.Cultivation
             // Initialize growth system
             if (_enableGrowthSystem && _growthSystem != null)
             {
-                _growthSystem.InitializeFromStrain(_strain);
+                _growthSystem.Initialize(PlantID, ProjectChimera.Data.Shared.PlantGrowthStage.Seedling);
             }
 
             // Initialize health system
             if (_enableHealthSystem && _healthSystem != null)
             {
-                _healthSystem.InitializeFromStrain(_strain);
+                _healthSystem.Initialize();
             }
 
             // Initialize environmental system
             if (_enableEnvironmentalSystem && _environmentalSystem != null)
             {
-                _environmentalSystem.InitializeFromStrain(_strain);
+                _environmentalSystem.Initialize();
             }
 
             // Initialize genetics system
             if (_enableGeneticsSystem && _geneticsSystem != null)
             {
-                _geneticsSystem.InitializeFromStrain(_strain);
+                _geneticsSystem.Initialize();
             }
 
             // Initialize visualization system
             if (_enableVisualizationSystem && _visualizationSystem != null)
             {
-                _visualizationSystem.InitializeFromStrain(_strain);
+                _visualizationSystem.Initialize();
             }
         }
 
@@ -369,7 +372,7 @@ namespace ProjectChimera.Systems.Cultivation
         /// </summary>
         protected void LogPlantAction(string message)
         {
-            ChimeraLogger.Log($"[PlantInstanceCore] {message}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         /// <summary>
@@ -422,7 +425,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (_plantCore != null)
             {
-                ChimeraLogger.Log($"[{GetType().Name}] Plant {_plantCore.PlantID}: {message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -430,13 +433,13 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (_plantCore != null)
             {
-                ChimeraLogger.LogWarning($"[{GetType().Name}] Plant {_plantCore.PlantID}: {message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
         protected void LogSystemError(string message)
         {
-            ChimeraLogger.LogError($"[{GetType().Name}] Plant {_plantCore?.PlantID ?? "Unknown"}: {message}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
     }
 }

@@ -1,0 +1,776 @@
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using System.Collections.Generic;
+using ProjectChimera.Core.Memory;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Rendering
+{
+    /// <summary>
+    /// RENDERING: Environmental renderer for atmospheric effects and weather
+    /// Manages fog, weather effects, and environmental rendering optimizations
+    /// Week 13: Advanced Rendering Pipeline Implementation
+    /// </summary>
+    public class EnvironmentalRenderer : MonoBehaviour
+    {
+        [Header("Environmental Settings")]
+        [SerializeField] private bool _enableEnvironmentalRendering = true;
+        [SerializeField] private bool _enableAtmosphericFog = true;
+        [SerializeField] private bool _enableWeatherEffects = false;
+        [SerializeField] private bool _enableWindEffects = true;
+
+        [Header("Fog Settings")]
+        [SerializeField] private Color _fogColor = new Color(0.5f, 0.6f, 0.7f, 1f);
+        [SerializeField] private float _fogDensity = 0.01f;
+        [SerializeField] private float _fogStart = 10f;
+        [SerializeField] private float _fogEnd = 200f;
+        [SerializeField] private AnimationCurve _fogFalloff = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+        [Header("Weather Effects")]
+        [SerializeField] private WeatherType _currentWeather = WeatherType.Clear;
+        [SerializeField] private float _weatherTransitionSpeed = 1f;
+        [SerializeField] private bool _enableDynamicWeather = false;
+        [SerializeField] private float _weatherChangeInterval = 300f; // 5 minutes
+
+        [Header("Wind System")]
+        [SerializeField] private Vector3 _windDirection = Vector3.right;
+        [SerializeField] private float _windStrength = 1f;
+        [SerializeField] private float _windVariation = 0.5f;
+        [SerializeField] private float _windUpdateFrequency = 0.1f;
+
+        [Header("Performance Settings")]
+        [SerializeField] private bool _enableLODForEffects = true;
+        [SerializeField] private float _effectsLODDistance = 100f;
+        [SerializeField] private int _maxParticleCount = 1000;
+        [SerializeField] private bool _enableEffectCulling = true;
+
+        // Rendering components
+        private Camera _mainCamera;
+        private Light _sunLight;
+        private Material _fogMaterial;
+        private Material _skyboxMaterial;
+
+        // Weather system
+        private WeatherSystem _weatherSystem;
+        private readonly Dictionary<WeatherType, WeatherSettings> _weatherSettings = new Dictionary<WeatherType, WeatherSettings>();
+        private WeatherType _targetWeather;
+        private float _weatherTransitionProgress = 1f;
+
+        // Wind system
+        private WindZone _windZone;
+        private Vector3 _currentWindDirection;
+        private float _currentWindStrength;
+        private float _lastWindUpdate;
+        private readonly List<IWindAffected> _windAffectedObjects = new List<IWindAffected>();
+
+        // Environmental effects
+        private readonly List<EnvironmentalEffect> _activeEffects = new List<EnvironmentalEffect>();
+        private readonly Queue<EnvironmentalEffect> _effectPool = new Queue<EnvironmentalEffect>();
+
+        // Performance tracking
+        private EnvironmentalRenderingStats _stats = new EnvironmentalRenderingStats();
+        private float _lastPerformanceUpdate;
+
+        // Shader properties
+        private int _fogColorProperty;
+        private int _fogParamsProperty;
+        private int _windDataProperty;
+        private int _weatherParamsProperty;
+
+        public bool IsInitialized { get; private set; }
+        public WeatherType CurrentWeather => _currentWeather;
+        public Vector3 CurrentWindDirection => _currentWindDirection;
+        public float CurrentWindStrength => _currentWindStrength;
+        public EnvironmentalRenderingStats Stats => _stats;
+
+        /// <summary>
+        /// Initialize environmental renderer
+        /// </summary>
+        public void Initialize()
+        {
+            if (IsInitialized) return;
+
+            InitializeComponents();
+            InitializeShaderProperties();
+            InitializeWeatherSystem();
+            InitializeWindSystem();
+            InitializeFogSystem();
+            InitializeEffectPool();
+
+            _lastPerformanceUpdate = Time.time;
+            IsInitialized = true;
+
+            ChimeraLogger.Log("OTHER", "$1", this);
+        }
+
+        /// <summary>
+        /// Set weather type
+        /// </summary>
+        public void SetWeather(WeatherType weatherType, bool immediate = false)
+        {
+            if (_currentWeather == weatherType) return;
+
+            _targetWeather = weatherType;
+            
+            if (immediate)
+            {
+                _currentWeather = weatherType;
+                _weatherTransitionProgress = 1f;
+                ApplyWeatherSettings(weatherType);
+            }
+            else
+            {
+                _weatherTransitionProgress = 0f;
+            }
+
+            _stats.WeatherChanges++;
+        }
+
+        /// <summary>
+        /// Set wind parameters
+        /// </summary>
+        public void SetWind(Vector3 direction, float strength)
+        {
+            _windDirection = direction.normalized;
+            _windStrength = strength;
+            
+            if (_windZone != null)
+            {
+                _windZone.transform.rotation = Quaternion.LookRotation(_windDirection);
+                _windZone.windMain = _windStrength;
+            }
+        }
+
+        /// <summary>
+        /// Register object for wind effects
+        /// </summary>
+        public void RegisterWindAffectedObject(IWindAffected windObject)
+        {
+            if (windObject != null && !_windAffectedObjects.Contains(windObject))
+            {
+                _windAffectedObjects.Add(windObject);
+                _stats.WindAffectedObjects++;
+            }
+        }
+
+        /// <summary>
+        /// Unregister object from wind effects
+        /// </summary>
+        public void UnregisterWindAffectedObject(IWindAffected windObject)
+        {
+            if (_windAffectedObjects.Remove(windObject))
+            {
+                _stats.WindAffectedObjects--;
+            }
+        }
+
+        /// <summary>
+        /// Create environmental effect
+        /// </summary>
+        public EnvironmentalEffect CreateEffect(EffectType effectType, Vector3 position, float duration = 5f)
+        {
+            EnvironmentalEffect effect;
+            
+            if (_effectPool.Count > 0)
+            {
+                effect = _effectPool.Dequeue();
+                effect.Reset(effectType, position, duration);
+            }
+            else
+            {
+                effect = new EnvironmentalEffect(effectType, position, duration);
+            }
+
+            _activeEffects.Add(effect);
+            _stats.EffectsCreated++;
+
+            return effect;
+        }
+
+        /// <summary>
+        /// Update environmental rendering - called every frame
+        /// </summary>
+        public void UpdateEnvironmental()
+        {
+            if (!IsInitialized || !_enableEnvironmentalRendering) return;
+
+            UpdateWeatherTransition();
+            UpdateWindSystem();
+            UpdateEnvironmentalEffects();
+            UpdateFogSystem();
+            UpdatePerformanceStats();
+        }
+
+        /// <summary>
+        /// Optimize environmental rendering for performance
+        /// </summary>
+        public void OptimizeEnvironmental()
+        {
+            if (!IsInitialized) return;
+
+            // Reduce effect quality if performance is poor
+            if (_stats.AverageFrameTime > 20f) // 50 FPS threshold
+            {
+                ReduceEffectQuality();
+            }
+
+            // Cull distant effects
+            if (_enableEffectCulling)
+            {
+                CullDistantEffects();
+            }
+
+            // Reduce fog quality if needed
+            if (_enableAtmosphericFog && _stats.AverageFrameTime > 25f) // 40 FPS threshold
+            {
+                ReduceFogQuality();
+            }
+
+            _stats.OptimizationEvents++;
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Initialize core components
+        /// </summary>
+        private void InitializeComponents()
+        {
+            _mainCamera = Camera.main;
+            if (_mainCamera == null)
+            {
+                _mainCamera = FindObjectOfType<Camera>();
+            }
+
+            // Find sun light (main directional light)
+            Light[] lights = FindObjectsOfType<Light>();
+            foreach (Light light in lights)
+            {
+                if (light.type == LightType.Directional)
+                {
+                    _sunLight = light;
+                    break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Initialize shader properties
+        /// </summary>
+        private void InitializeShaderProperties()
+        {
+            _fogColorProperty = Shader.PropertyToID("_FogColor");
+            _fogParamsProperty = Shader.PropertyToID("_FogParams");
+            _windDataProperty = Shader.PropertyToID("_WindData");
+            _weatherParamsProperty = Shader.PropertyToID("_WeatherParams");
+        }
+
+        /// <summary>
+        /// Initialize weather system
+        /// </summary>
+        private void InitializeWeatherSystem()
+        {
+            _weatherSystem = gameObject.AddComponent<WeatherSystem>();
+            InitializeWeatherSettings();
+            
+            if (_enableDynamicWeather)
+            {
+                InvokeRepeating(nameof(RandomWeatherChange), _weatherChangeInterval, _weatherChangeInterval);
+            }
+        }
+
+        /// <summary>
+        /// Initialize weather settings for different types
+        /// </summary>
+        private void InitializeWeatherSettings()
+        {
+            // Clear weather
+            _weatherSettings[WeatherType.Clear] = new WeatherSettings
+            {
+                SunIntensity = 1f,
+                FogDensity = 0.005f,
+                WindStrength = 0.3f,
+                SkyboxTint = Color.white
+            };
+
+            // Cloudy weather
+            _weatherSettings[WeatherType.Cloudy] = new WeatherSettings
+            {
+                SunIntensity = 0.7f,
+                FogDensity = 0.015f,
+                WindStrength = 0.5f,
+                SkyboxTint = new Color(0.8f, 0.8f, 0.9f, 1f)
+            };
+
+            // Rainy weather
+            _weatherSettings[WeatherType.Rainy] = new WeatherSettings
+            {
+                SunIntensity = 0.4f,
+                FogDensity = 0.025f,
+                WindStrength = 0.8f,
+                SkyboxTint = new Color(0.6f, 0.6f, 0.7f, 1f)
+            };
+
+            // Foggy weather
+            _weatherSettings[WeatherType.Foggy] = new WeatherSettings
+            {
+                SunIntensity = 0.3f,
+                FogDensity = 0.05f,
+                WindStrength = 0.2f,
+                SkyboxTint = new Color(0.7f, 0.7f, 0.8f, 1f)
+            };
+        }
+
+        /// <summary>
+        /// Initialize wind system
+        /// </summary>
+        private void InitializeWindSystem()
+        {
+            if (!_enableWindEffects) return;
+
+            var windZoneObj = new GameObject("WindZone");
+            windZoneObj.transform.SetParent(transform);
+            
+            _windZone = windZoneObj.AddComponent<WindZone>();
+            _windZone.mode = WindZoneMode.Directional;
+            _windZone.windMain = _windStrength;
+            _windZone.windTurbulence = _windVariation;
+            _windZone.transform.rotation = Quaternion.LookRotation(_windDirection);
+
+            _currentWindDirection = _windDirection;
+            _currentWindStrength = _windStrength;
+        }
+
+        /// <summary>
+        /// Initialize fog rendering system
+        /// </summary>
+        private void InitializeFogSystem()
+        {
+            if (!_enableAtmosphericFog) return;
+
+            RenderSettings.fog = true;
+            RenderSettings.fogColor = _fogColor;
+            RenderSettings.fogMode = FogMode.ExponentialSquared;
+            RenderSettings.fogDensity = _fogDensity;
+
+            // Create custom fog material if needed
+            var fogShader = Shader.Find("ProjectChimera/Environmental/AtmosphericFog");
+            if (fogShader != null)
+            {
+                _fogMaterial = new Material(fogShader);
+            }
+        }
+
+        /// <summary>
+        /// Initialize effect pool
+        /// </summary>
+        private void InitializeEffectPool()
+        {
+            // Pre-populate effect pool
+            for (int i = 0; i < 50; i++)
+            {
+                _effectPool.Enqueue(new EnvironmentalEffect());
+            }
+        }
+
+        /// <summary>
+        /// Update weather transition
+        /// </summary>
+        private void UpdateWeatherTransition()
+        {
+            if (_weatherTransitionProgress >= 1f || _currentWeather == _targetWeather) return;
+
+            _weatherTransitionProgress += Time.deltaTime * _weatherTransitionSpeed;
+            
+            if (_weatherTransitionProgress >= 1f)
+            {
+                _weatherTransitionProgress = 1f;
+                _currentWeather = _targetWeather;
+            }
+
+            // Interpolate between current and target weather settings
+            InterpolateWeatherSettings();
+        }
+
+        /// <summary>
+        /// Interpolate between weather settings
+        /// </summary>
+        private void InterpolateWeatherSettings()
+        {
+            if (!_weatherSettings.ContainsKey(_currentWeather) || !_weatherSettings.ContainsKey(_targetWeather))
+                return;
+
+            var currentSettings = _weatherSettings[_currentWeather];
+            var targetSettings = _weatherSettings[_targetWeather];
+
+            // Interpolate sun intensity
+            if (_sunLight != null)
+            {
+                float intensity = Mathf.Lerp(currentSettings.SunIntensity, targetSettings.SunIntensity, _weatherTransitionProgress);
+                _sunLight.intensity = intensity;
+            }
+
+            // Interpolate fog density
+            float fogDensity = Mathf.Lerp(currentSettings.FogDensity, targetSettings.FogDensity, _weatherTransitionProgress);
+            RenderSettings.fogDensity = fogDensity;
+
+            // Interpolate wind strength
+            float windStrength = Mathf.Lerp(currentSettings.WindStrength, targetSettings.WindStrength, _weatherTransitionProgress);
+            _currentWindStrength = windStrength;
+            
+            if (_windZone != null)
+            {
+                _windZone.windMain = windStrength;
+            }
+        }
+
+        /// <summary>
+        /// Update wind system
+        /// </summary>
+        private void UpdateWindSystem()
+        {
+            if (!_enableWindEffects) return;
+
+            float currentTime = Time.time;
+            if (currentTime - _lastWindUpdate >= _windUpdateFrequency)
+            {
+                // Apply wind variation
+                Vector3 windVariation = new Vector3(
+                    Mathf.Sin(currentTime * 0.5f) * _windVariation,
+                    0f,
+                    Mathf.Cos(currentTime * 0.3f) * _windVariation
+                );
+
+                _currentWindDirection = (_windDirection + windVariation).normalized;
+                
+                if (_windZone != null)
+                {
+                    _windZone.transform.rotation = Quaternion.LookRotation(_currentWindDirection);
+                }
+
+                // Update wind-affected objects
+                UpdateWindAffectedObjects();
+                
+                _lastWindUpdate = currentTime;
+            }
+
+            // Update shader wind data
+            Vector4 windData = new Vector4(
+                _currentWindDirection.x, 
+                _currentWindDirection.y, 
+                _currentWindDirection.z, 
+                _currentWindStrength
+            );
+            Shader.SetGlobalVector(_windDataProperty, windData);
+        }
+
+        /// <summary>
+        /// Update wind-affected objects
+        /// </summary>
+        private void UpdateWindAffectedObjects()
+        {
+            foreach (var windObject in _windAffectedObjects)
+            {
+                if (windObject != null)
+                {
+                    windObject.ApplyWind(_currentWindDirection, _currentWindStrength);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Update environmental effects
+        /// </summary>
+        private void UpdateEnvironmentalEffects()
+        {
+            for (int i = _activeEffects.Count - 1; i >= 0; i--)
+            {
+                var effect = _activeEffects[i];
+                effect.Update(Time.deltaTime);
+
+                if (effect.IsFinished)
+                {
+                    _activeEffects.RemoveAt(i);
+                    _effectPool.Enqueue(effect);
+                    _stats.EffectsDestroyed++;
+                }
+            }
+
+            _stats.ActiveEffects = _activeEffects.Count;
+        }
+
+        /// <summary>
+        /// Update fog system
+        /// </summary>
+        private void UpdateFogSystem()
+        {
+            if (!_enableAtmosphericFog) return;
+
+            // Update fog color based on time of day and weather
+            Color targetFogColor = _fogColor;
+            
+            if (_sunLight != null)
+            {
+                // Adjust fog color based on sun angle
+                float sunAngle = Vector3.Dot(_sunLight.transform.forward, Vector3.down);
+                Color sunsetColor = new Color(1f, 0.6f, 0.3f, 1f);
+                
+                if (sunAngle > 0.8f) // Near sunset/sunrise
+                {
+                    targetFogColor = Color.Lerp(_fogColor, sunsetColor, (sunAngle - 0.8f) * 5f);
+                }
+            }
+
+            RenderSettings.fogColor = Color.Lerp(RenderSettings.fogColor, targetFogColor, Time.deltaTime);
+
+            // Update shader fog parameters
+            Vector4 fogParams = new Vector4(
+                _fogStart,
+                _fogEnd,
+                _fogDensity,
+                _fogFalloff.Evaluate(0.5f)
+            );
+            Shader.SetGlobalColor(_fogColorProperty, RenderSettings.fogColor);
+            Shader.SetGlobalVector(_fogParamsProperty, fogParams);
+        }
+
+        /// <summary>
+        /// Random weather change for dynamic weather
+        /// </summary>
+        private void RandomWeatherChange()
+        {
+            if (!_enableDynamicWeather) return;
+
+            WeatherType[] weatherTypes = { WeatherType.Clear, WeatherType.Cloudy, WeatherType.Rainy, WeatherType.Foggy };
+            WeatherType newWeather = weatherTypes[UnityEngine.Random.Range(0, weatherTypes.Length)];
+            
+            if (newWeather != _currentWeather)
+            {
+                SetWeather(newWeather);
+            }
+        }
+
+        /// <summary>
+        /// Apply weather settings immediately
+        /// </summary>
+        private void ApplyWeatherSettings(WeatherType weatherType)
+        {
+            if (!_weatherSettings.ContainsKey(weatherType)) return;
+
+            var settings = _weatherSettings[weatherType];
+
+            if (_sunLight != null)
+            {
+                _sunLight.intensity = settings.SunIntensity;
+            }
+
+            RenderSettings.fogDensity = settings.FogDensity;
+            
+            if (_windZone != null)
+            {
+                _windZone.windMain = settings.WindStrength;
+            }
+        }
+
+        /// <summary>
+        /// Reduce effect quality for performance
+        /// </summary>
+        private void ReduceEffectQuality()
+        {
+            // Reduce particle count for active effects
+            foreach (var effect in _activeEffects)
+            {
+                effect.ReduceQuality();
+            }
+
+            // Reduce max particle count
+            _maxParticleCount = Mathf.Max(100, _maxParticleCount / 2);
+        }
+
+        /// <summary>
+        /// Cull distant effects
+        /// </summary>
+        private void CullDistantEffects()
+        {
+            Vector3 cameraPos = _mainCamera != null ? _mainCamera.transform.position : Vector3.zero;
+
+            for (int i = _activeEffects.Count - 1; i >= 0; i--)
+            {
+                var effect = _activeEffects[i];
+                float distance = Vector3.Distance(cameraPos, effect.Position);
+
+                if (distance > _effectsLODDistance)
+                {
+                    _activeEffects.RemoveAt(i);
+                    _effectPool.Enqueue(effect);
+                    _stats.EffectsCulled++;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Reduce fog quality for performance
+        /// </summary>
+        private void ReduceFogQuality()
+        {
+            RenderSettings.fogDensity *= 0.5f;
+            _fogEnd *= 0.7f;
+        }
+
+        /// <summary>
+        /// Update performance statistics
+        /// </summary>
+        private void UpdatePerformanceStats()
+        {
+            _stats.AverageFrameTime = Time.smoothDeltaTime * 1000f; // Convert to milliseconds
+            _stats.LastUpdateTime = Time.time;
+        }
+
+        #endregion
+
+        private void OnDestroy()
+        {
+            if (_fogMaterial != null)
+            {
+                DestroyImmediate(_fogMaterial);
+            }
+
+            if (_skyboxMaterial != null)
+            {
+                DestroyImmediate(_skyboxMaterial);
+            }
+        }
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// Weather types
+    /// </summary>
+    public enum WeatherType
+    {
+        Clear,
+        Cloudy,
+        Rainy,
+        Foggy,
+        Stormy
+    }
+
+    /// <summary>
+    /// Environmental effect types
+    /// </summary>
+    public enum EffectType
+    {
+        Rain,
+        Snow,
+        Dust,
+        Smoke,
+        Steam
+    }
+
+    /// <summary>
+    /// Weather settings data
+    /// </summary>
+    [System.Serializable]
+    public struct WeatherSettings
+    {
+        public float SunIntensity;
+        public float FogDensity;
+        public float WindStrength;
+        public Color SkyboxTint;
+    }
+
+    /// <summary>
+    /// Environmental effect class
+    /// </summary>
+    [System.Serializable]
+    public class EnvironmentalEffect
+    {
+        public EffectType Type { get; private set; }
+        public Vector3 Position { get; private set; }
+        public float Duration { get; private set; }
+        public float ElapsedTime { get; private set; }
+        public bool IsFinished => ElapsedTime >= Duration;
+
+        private ParticleSystem _particleSystem;
+        private bool _isActive;
+
+        public EnvironmentalEffect() { }
+
+        public EnvironmentalEffect(EffectType type, Vector3 position, float duration)
+        {
+            Reset(type, position, duration);
+        }
+
+        public void Reset(EffectType type, Vector3 position, float duration)
+        {
+            Type = type;
+            Position = position;
+            Duration = duration;
+            ElapsedTime = 0f;
+            _isActive = true;
+        }
+
+        public void Update(float deltaTime)
+        {
+            if (!_isActive) return;
+
+            ElapsedTime += deltaTime;
+            
+            if (ElapsedTime >= Duration)
+            {
+                _isActive = false;
+                
+                if (_particleSystem != null)
+                {
+                    _particleSystem.Stop();
+                }
+            }
+        }
+
+        public void ReduceQuality()
+        {
+            if (_particleSystem != null)
+            {
+                var main = _particleSystem.main;
+                main.maxParticles = Mathf.Max(10, main.maxParticles / 2);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Interface for wind-affected objects
+    /// </summary>
+    public interface IWindAffected
+    {
+        void ApplyWind(Vector3 windDirection, float windStrength);
+    }
+
+    /// <summary>
+    /// Weather system component
+    /// </summary>
+    public class WeatherSystem : MonoBehaviour
+    {
+        // Weather system implementation
+    }
+
+    /// <summary>
+    /// Environmental rendering statistics
+    /// </summary>
+    [System.Serializable]
+    public struct EnvironmentalRenderingStats
+    {
+        public int WeatherChanges;
+        public int WindAffectedObjects;
+        public int EffectsCreated;
+        public int EffectsDestroyed;
+        public int EffectsCulled;
+        public int ActiveEffects;
+        public int OptimizationEvents;
+        public float AverageFrameTime;
+        public float LastUpdateTime;
+    }
+
+    #endregion
+}

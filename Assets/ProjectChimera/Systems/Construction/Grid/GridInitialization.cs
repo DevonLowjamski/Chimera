@@ -36,14 +36,14 @@ namespace ProjectChimera.Systems.Construction.Grid
         {
             if (_isInitialized)
             {
-                ChimeraLogger.LogWarning("[GridInitialization] Grid is already initialized");
+                ChimeraLogger.Log("OTHER", "Grid initialization operation", null);
                 onComplete?.Invoke();
                 return;
             }
 
             _onInitializationComplete = onComplete;
 
-            ChimeraLogger.Log("[GridInitialization] Starting grid initialization...");
+            ChimeraLogger.Log("OTHER", "Grid initialization operation", null);
 
             // Clear any existing data
             _gridCells.Clear();
@@ -58,7 +58,7 @@ namespace ProjectChimera.Systems.Construction.Grid
             ValidateInitialization();
 
             _isInitialized = true;
-            ChimeraLogger.Log($"[GridInitialization] Grid initialization complete: {_gridCells.Count} cells created");
+            ChimeraLogger.Log("OTHER", "Grid initialization operation", null);
 
             _onInitializationComplete?.Invoke();
         }
@@ -156,7 +156,7 @@ namespace ProjectChimera.Systems.Construction.Grid
                 }
             }
 
-            ChimeraLogger.Log($"[GridInitialization] Created special construction zone at {center}");
+            ChimeraLogger.Log("OTHER", "Grid initialization operation", null);
         }
 
         /// <summary>
@@ -168,7 +168,7 @@ namespace ProjectChimera.Systems.Construction.Grid
 
             if (_gridCells.Count != expectedCellCount)
             {
-                ChimeraLogger.LogError($"[GridInitialization] Cell count mismatch! Expected: {expectedCellCount}, Actual: {_gridCells.Count}");
+                ChimeraLogger.Log("OTHER", "Grid initialization operation", null);
             }
 
             // Validate that all cells are properly initialized
@@ -181,7 +181,7 @@ namespace ProjectChimera.Systems.Construction.Grid
 
             if (invalidCells > 0)
             {
-                ChimeraLogger.LogWarning($"[GridInitialization] Found {invalidCells} invalid cells");
+                ChimeraLogger.Log("OTHER", "Grid initialization operation", null);
             }
         }
 
@@ -190,7 +190,7 @@ namespace ProjectChimera.Systems.Construction.Grid
         /// </summary>
         public void Reinitialize(GridTypes.GridBounds newBounds)
         {
-            ChimeraLogger.Log("[GridInitialization] Reinitializing grid with new bounds...");
+            ChimeraLogger.Log("OTHER", "Grid initialization operation", null);
 
             // Update bounds reference (assuming it's a reference type)
             // In practice, this would need to be handled by the main GridSystem
@@ -204,7 +204,7 @@ namespace ProjectChimera.Systems.Construction.Grid
         /// </summary>
         public void Reset()
         {
-            ChimeraLogger.Log("[GridInitialization] Resetting grid to initial state...");
+            ChimeraLogger.Log("OTHER", "Grid initialization operation", null);
 
             _gridCells.Clear();
             _isInitialized = false;

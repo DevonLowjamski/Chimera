@@ -1,0 +1,768 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Memory;
+
+using ProjectChimera.Core.Logging;
+namespace ProjectChimera.Core.Streaming
+{
+    /// <summary>
+    /// STREAMING: Level-of-Detail (LOD) management system
+    /// Dynamically adjusts mesh quality, texture resolution, and effects based on distance
+    /// Week 11: Asset Streaming & LOD System
+    /// </summary>
+    public class LODManager : MonoBehaviour
+    {
+        [Header("LOD Settings")]
+        [SerializeField] private bool _enableLOD = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _lodUpdateInterval = 0.2f;
+        [SerializeField] private int _maxLODObjects = 1000;
+
+        [Header("Distance Thresholds")]
+        [SerializeField] private float[] _lodDistances = { 25f, 50f, 100f, 200f };
+        [SerializeField] private float _cullingDistance = 300f;
+
+        [Header("Quality Settings")]
+        [SerializeField] private LODQualityProfile[] _qualityProfiles;
+        [SerializeField] private AdaptiveLODSettings _adaptiveSettings;
+
+        // LOD tracking
+        private readonly Dictionary<int, LODObject> _lodObjects = new Dictionary<int, LODObject>();
+        private readonly MemoryOptimizedList<int> _visibleObjects = new MemoryOptimizedList<int>();
+        private readonly MemoryOptimizedQueue<LODUpdateRequest> _updateQueue = new MemoryOptimizedQueue<LODUpdateRequest>();
+
+        // Reference tracking
+        private Transform _lodCenter; // Usually main camera
+        private float _lastLODUpdate;
+        private int _nextObjectId = 1;
+
+        // Performance tracking
+        private LODStats _stats = new LODStats();
+        private float _averageFrameTime = 0.016f; // Target 60fps
+        private int _frameTimesamples = 0;
+
+        // Adaptive LOD
+        private bool _useAdaptiveLOD = true;
+        private float _dynamicLODMultiplier = 1f;
+
+        private static LODManager _instance;
+        public static LODManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = FindObjectOfType<LODManager>();
+                    if (_instance == null)
+                    {
+                        var go = new GameObject("LODManager");
+                        _instance = go.AddComponent<LODManager>();
+                        DontDestroyOnLoad(go);
+                    }
+                }
+                return _instance;
+            }
+        }
+
+        private void Awake()
+        {
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+                Initialize();
+            }
+            else if (_instance != this)
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Initialize LOD manager
+        /// </summary>
+        public void Initialize()
+        {
+            // Default LOD center to main camera
+            if (_lodCenter == null)
+            {
+                var mainCamera = Camera.main;
+                if (mainCamera != null)
+                {
+                    _lodCenter = mainCamera.transform;
+                }
+                else
+                {
+                    _lodCenter = transform;
+                }
+            }
+
+            // Initialize default quality profiles if none set
+            if (_qualityProfiles == null || _qualityProfiles.Length == 0)
+            {
+                InitializeDefaultProfiles();
+            }
+
+            _lastLODUpdate = Time.time;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("LODManager", "Operation completed");
+            }
+        }
+
+        private void Update()
+        {
+            if (!_enableLOD) return;
+
+            UpdateFrameTimeTracking();
+
+            if (Time.time - _lastLODUpdate >= _lodUpdateInterval)
+            {
+                UpdateLODSystem();
+                _lastLODUpdate = Time.time;
+            }
+
+            ProcessUpdateQueue();
+        }
+
+        /// <summary>
+        /// Set the LOD center (usually main camera)
+        /// </summary>
+        public void SetLODCenter(Transform center)
+        {
+            _lodCenter = center;
+        }
+
+        /// <summary>
+        /// Register object for LOD management
+        /// </summary>
+        public int RegisterLODObject(GameObject gameObject, LODObjectType objectType = LODObjectType.Standard, float customBias = 1f)
+        {
+            if (gameObject == null) return -1;
+
+            int objectId = _nextObjectId++;
+
+            var lodObject = new LODObject
+            {
+                ObjectId = objectId,
+                GameObject = gameObject,
+                Transform = gameObject.transform,
+                ObjectType = objectType,
+                CustomBias = customBias,
+                CurrentLODLevel = -1,
+                LastUpdateTime = Time.time,
+                IsVisible = true,
+                OriginalComponents = CacheOriginalComponents(gameObject)
+            };
+
+            _lodObjects[objectId] = lodObject;
+            _visibleObjects.Add(objectId);
+            _stats.RegisteredObjects++;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("LODManager", "Operation completed");
+            }
+
+            return objectId;
+        }
+
+        /// <summary>
+        /// Unregister object from LOD management
+        /// </summary>
+        public void UnregisterLODObject(int objectId)
+        {
+            if (_lodObjects.ContainsKey(objectId))
+            {
+                var lodObject = _lodObjects[objectId];
+                RestoreOriginalComponents(lodObject);
+
+                _lodObjects.Remove(objectId);
+                _visibleObjects.Remove(objectId);
+                _stats.RegisteredObjects--;
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogInfo("LODManager", "Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Force update LOD level for specific object
+        /// </summary>
+        public void ForceUpdateLOD(int objectId, int lodLevel = -1)
+        {
+            if (_lodObjects.TryGetValue(objectId, out var lodObject))
+            {
+                if (lodLevel >= 0)
+                {
+                    ApplyLODLevel(lodObject, lodLevel);
+                }
+                else
+                {
+                    QueueLODUpdate(objectId, CalculateObjectLOD(lodObject));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Set adaptive LOD enabled
+        /// </summary>
+        public void SetAdaptiveLOD(bool enabled)
+        {
+            _useAdaptiveLOD = enabled;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("LODManager", "Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Get LOD statistics
+        /// </summary>
+        public LODStats GetStats()
+        {
+            _stats.VisibleObjects = _visibleObjects.Count;
+            _stats.AverageFrameTime = _averageFrameTime;
+            _stats.DynamicLODMultiplier = _dynamicLODMultiplier;
+
+            // Count objects by LOD level
+            _stats.ObjectsAtLOD = new int[_lodDistances.Length + 1];
+            foreach (var lodObject in _lodObjects.Values)
+            {
+                if (lodObject.CurrentLODLevel >= 0 && lodObject.CurrentLODLevel < _stats.ObjectsAtLOD.Length)
+                {
+                    _stats.ObjectsAtLOD[lodObject.CurrentLODLevel]++;
+                }
+            }
+
+            return _stats;
+        }
+
+        /// <summary>
+        /// Set LOD quality profile
+        /// </summary>
+        public void SetQualityProfile(int profileIndex)
+        {
+            if (profileIndex >= 0 && profileIndex < _qualityProfiles.Length)
+            {
+                // Apply quality profile settings
+                var profile = _qualityProfiles[profileIndex];
+                _lodDistances = profile.LODDistances;
+                _cullingDistance = profile.CullingDistance;
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogInfo("LODManager", "Operation completed");
+                }
+            }
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Update the entire LOD system
+        /// </summary>
+        private void UpdateLODSystem()
+        {
+            if (_lodCenter == null) return;
+
+            UpdateAdaptiveLODMultiplier();
+
+            Vector3 centerPos = _lodCenter.position;
+            _visibleObjects.Clear();
+
+            // Process all LOD objects
+            foreach (var kvp in _lodObjects)
+            {
+                var lodObject = kvp.Value;
+                if (lodObject.GameObject == null) continue;
+
+                float distance = Vector3.Distance(centerPos, lodObject.Transform.position);
+                lodObject.DistanceFromCenter = distance;
+
+                // Cull objects beyond culling distance
+                bool shouldBeVisible = distance <= _cullingDistance * _dynamicLODMultiplier;
+
+                if (shouldBeVisible != lodObject.IsVisible)
+                {
+                    lodObject.GameObject.SetActive(shouldBeVisible);
+                    lodObject.IsVisible = shouldBeVisible;
+                    _stats.VisibilityChanges++;
+                }
+
+                if (shouldBeVisible)
+                {
+                    _visibleObjects.Add(kvp.Key);
+                    int newLODLevel = CalculateObjectLOD(lodObject);
+
+                    if (newLODLevel != lodObject.CurrentLODLevel)
+                    {
+                        QueueLODUpdate(kvp.Key, newLODLevel);
+                    }
+                }
+            }
+
+            _stats.UpdateCycles++;
+        }
+
+        /// <summary>
+        /// Calculate appropriate LOD level for object
+        /// </summary>
+        private int CalculateObjectLOD(LODObject lodObject)
+        {
+            float adjustedDistance = lodObject.DistanceFromCenter / (lodObject.CustomBias * _dynamicLODMultiplier);
+
+            // Find appropriate LOD level
+            for (int i = 0; i < _lodDistances.Length; i++)
+            {
+                if (adjustedDistance <= _lodDistances[i])
+                {
+                    return i;
+                }
+            }
+
+            return _lodDistances.Length; // Lowest quality LOD
+        }
+
+        /// <summary>
+        /// Update adaptive LOD multiplier based on performance
+        /// </summary>
+        private void UpdateAdaptiveLODMultiplier()
+        {
+            if (!_useAdaptiveLOD) return;
+
+            float targetFrameTime = _adaptiveSettings.TargetFrameTime;
+            float currentFrameTime = _averageFrameTime;
+
+            if (currentFrameTime > targetFrameTime * 1.2f) // Performance is poor
+            {
+                _dynamicLODMultiplier = Mathf.Max(_dynamicLODMultiplier - _adaptiveSettings.AdaptationSpeed * Time.deltaTime,
+                                                  _adaptiveSettings.MinLODMultiplier);
+            }
+            else if (currentFrameTime < targetFrameTime * 0.8f) // Performance is good
+            {
+                _dynamicLODMultiplier = Mathf.Min(_dynamicLODMultiplier + _adaptiveSettings.AdaptationSpeed * 0.5f * Time.deltaTime,
+                                                  _adaptiveSettings.MaxLODMultiplier);
+            }
+        }
+
+        /// <summary>
+        /// Queue LOD update for processing
+        /// </summary>
+        private void QueueLODUpdate(int objectId, int newLODLevel)
+        {
+            var request = new LODUpdateRequest
+            {
+                ObjectId = objectId,
+                NewLODLevel = newLODLevel,
+                RequestTime = Time.time
+            };
+
+            _updateQueue.Enqueue(request);
+        }
+
+        /// <summary>
+        /// Process LOD update queue
+        /// </summary>
+        private void ProcessUpdateQueue()
+        {
+            int processed = 0;
+            const int maxUpdatesPerFrame = 10; // Limit updates to prevent frame spikes
+
+            while (_updateQueue.Count > 0 && processed < maxUpdatesPerFrame)
+            {
+                if (_updateQueue.TryDequeue(out var request))
+                {
+                    if (_lodObjects.TryGetValue(request.ObjectId, out var lodObject))
+                    {
+                        ApplyLODLevel(lodObject, request.NewLODLevel);
+                        processed++;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Apply LOD level to object
+        /// </summary>
+        private void ApplyLODLevel(LODObject lodObject, int lodLevel)
+        {
+            if (lodObject.CurrentLODLevel == lodLevel) return;
+
+            lodObject.CurrentLODLevel = lodLevel;
+            lodObject.LastUpdateTime = Time.time;
+
+            // Apply LOD changes based on object type
+            switch (lodObject.ObjectType)
+            {
+                case LODObjectType.Plant:
+                    ApplyPlantLOD(lodObject, lodLevel);
+                    break;
+                case LODObjectType.Building:
+                    ApplyBuildingLOD(lodObject, lodLevel);
+                    break;
+                case LODObjectType.Equipment:
+                    ApplyEquipmentLOD(lodObject, lodLevel);
+                    break;
+                default:
+                    ApplyStandardLOD(lodObject, lodLevel);
+                    break;
+            }
+
+            _stats.LODChanges++;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("LODManager", "Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Apply LOD to plant objects
+        /// </summary>
+        private void ApplyPlantLOD(LODObject lodObject, int lodLevel)
+        {
+            var gameObject = lodObject.GameObject;
+
+            // Adjust mesh renderers
+            var renderers = gameObject.GetComponentsInChildren<MeshRenderer>();
+            foreach (var renderer in renderers)
+            {
+                if (lodLevel >= 3) // Very far
+                {
+                    renderer.enabled = false;
+                }
+                else if (lodLevel >= 2) // Far
+                {
+                    renderer.enabled = true;
+                    renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                }
+                else // Close/Medium
+                {
+                    renderer.enabled = true;
+                    renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                }
+            }
+
+            // Adjust particle systems for plant effects
+            var particles = gameObject.GetComponentsInChildren<ParticleSystem>();
+            foreach (var particle in particles)
+            {
+                if (lodLevel >= 2)
+                {
+                    particle.Stop();
+                }
+                else
+                {
+                    if (!particle.isPlaying) particle.Play();
+
+                    var main = particle.main;
+                    main.maxParticles = lodLevel == 0 ? 50 : 25; // Reduce particles at distance
+                }
+            }
+        }
+
+        /// <summary>
+        /// Apply LOD to building objects
+        /// </summary>
+        private void ApplyBuildingLOD(LODObject lodObject, int lodLevel)
+        {
+            var gameObject = lodObject.GameObject;
+
+            // Adjust detail meshes
+            var renderers = gameObject.GetComponentsInChildren<MeshRenderer>();
+            foreach (var renderer in renderers)
+            {
+                if (renderer.gameObject.name.Contains("Detail"))
+                {
+                    renderer.enabled = lodLevel < 2; // Hide details at distance
+                }
+            }
+
+            // Adjust lighting
+            var lights = gameObject.GetComponentsInChildren<Light>();
+            foreach (var light in lights)
+            {
+                if (lodLevel >= 3)
+                {
+                    light.enabled = false;
+                }
+                else if (lodLevel >= 1)
+                {
+                    light.shadows = LightShadows.None;
+                    light.range *= 0.8f; // Reduce range slightly
+                }
+            }
+        }
+
+        /// <summary>
+        /// Apply LOD to equipment objects
+        /// </summary>
+        private void ApplyEquipmentLOD(LODObject lodObject, int lodLevel)
+        {
+            var gameObject = lodObject.GameObject;
+
+            // Simplify animations
+            var animators = gameObject.GetComponentsInChildren<Animator>();
+            foreach (var animator in animators)
+            {
+                if (lodLevel >= 2)
+                {
+                    animator.enabled = false;
+                }
+                else
+                {
+                    animator.enabled = true;
+                    animator.cullingMode = lodLevel == 0 ? AnimatorCullingMode.AlwaysAnimate : AnimatorCullingMode.CullUpdateTransforms;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Apply standard LOD
+        /// </summary>
+        private void ApplyStandardLOD(LODObject lodObject, int lodLevel)
+        {
+            var gameObject = lodObject.GameObject;
+
+            // Standard renderer adjustments
+            var renderers = gameObject.GetComponentsInChildren<Renderer>();
+            foreach (var renderer in renderers)
+            {
+                if (lodLevel >= 3)
+                {
+                    renderer.enabled = false;
+                }
+                else
+                {
+                    renderer.enabled = true;
+                    renderer.shadowCastingMode = lodLevel <= 1 ?
+                        UnityEngine.Rendering.ShadowCastingMode.On :
+                        UnityEngine.Rendering.ShadowCastingMode.Off;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Cache original components for restoration
+        /// </summary>
+        private OriginalComponents CacheOriginalComponents(GameObject gameObject)
+        {
+            return new OriginalComponents
+            {
+                RendererStates = gameObject.GetComponentsInChildren<Renderer>()
+                    .ToDictionary(r => r, r => new RendererState
+                    {
+                        Enabled = r.enabled,
+                        ShadowCastingMode = r.shadowCastingMode
+                    }),
+
+                ParticleStates = gameObject.GetComponentsInChildren<ParticleSystem>()
+                    .ToDictionary(p => p, p => new ParticleState
+                    {
+                        IsPlaying = p.isPlaying,
+                        MaxParticles = p.main.maxParticles
+                    })
+            };
+        }
+
+        /// <summary>
+        /// Restore original components
+        /// </summary>
+        private void RestoreOriginalComponents(LODObject lodObject)
+        {
+            var original = lodObject.OriginalComponents;
+
+            // Restore renderers
+            foreach (var kvp in original.RendererStates)
+            {
+                if (kvp.Key != null)
+                {
+                    kvp.Key.enabled = kvp.Value.Enabled;
+                    kvp.Key.shadowCastingMode = kvp.Value.ShadowCastingMode;
+                }
+            }
+
+            // Restore particles
+            foreach (var kvp in original.ParticleStates)
+            {
+                if (kvp.Key != null)
+                {
+                    var main = kvp.Key.main;
+                    main.maxParticles = kvp.Value.MaxParticles;
+
+                    if (kvp.Value.IsPlaying && !kvp.Key.isPlaying)
+                    {
+                        kvp.Key.Play();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Initialize default quality profiles
+        /// </summary>
+        private void InitializeDefaultProfiles()
+        {
+            _qualityProfiles = new LODQualityProfile[]
+            {
+                new LODQualityProfile
+                {
+                    ProfileName = "Low Quality",
+                    LODDistances = new float[] { 15f, 30f, 60f },
+                    CullingDistance = 100f
+                },
+                new LODQualityProfile
+                {
+                    ProfileName = "Medium Quality",
+                    LODDistances = new float[] { 25f, 50f, 100f },
+                    CullingDistance = 200f
+                },
+                new LODQualityProfile
+                {
+                    ProfileName = "High Quality",
+                    LODDistances = new float[] { 40f, 80f, 150f },
+                    CullingDistance = 300f
+                }
+            };
+        }
+
+        /// <summary>
+        /// Update frame time tracking for adaptive LOD
+        /// </summary>
+        private void UpdateFrameTimeTracking()
+        {
+            float currentFrameTime = Time.unscaledDeltaTime;
+            _averageFrameTime = (_averageFrameTime * _frameTimesamples + currentFrameTime) / (_frameTimesamples + 1);
+            _frameTimesamples = Mathf.Min(_frameTimesamples + 1, 60); // Average over last 60 frames
+        }
+
+        #endregion
+
+        private void OnDestroy()
+        {
+            foreach (var lodObject in _lodObjects.Values)
+            {
+                RestoreOriginalComponents(lodObject);
+            }
+
+            _lodObjects.Clear();
+            _visibleObjects?.Dispose();
+            _updateQueue?.Dispose();
+        }
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// LOD object types for specialized handling
+    /// </summary>
+    public enum LODObjectType
+    {
+        Standard,
+        Plant,
+        Building,
+        Equipment,
+        UI,
+        Effect
+    }
+
+    /// <summary>
+    /// LOD object data
+    /// </summary>
+    [System.Serializable]
+    public class LODObject
+    {
+        public int ObjectId;
+        public GameObject GameObject;
+        public Transform Transform;
+        public LODObjectType ObjectType;
+        public float CustomBias;
+        public int CurrentLODLevel;
+        public float LastUpdateTime;
+        public bool IsVisible;
+        public float DistanceFromCenter;
+        public OriginalComponents OriginalComponents;
+    }
+
+    /// <summary>
+    /// Original component states for restoration
+    /// </summary>
+    [System.Serializable]
+    public class OriginalComponents
+    {
+        public Dictionary<Renderer, RendererState> RendererStates;
+        public Dictionary<ParticleSystem, ParticleState> ParticleStates;
+    }
+
+    [System.Serializable]
+    public struct RendererState
+    {
+        public bool Enabled;
+        public UnityEngine.Rendering.ShadowCastingMode ShadowCastingMode;
+    }
+
+    [System.Serializable]
+    public struct ParticleState
+    {
+        public bool IsPlaying;
+        public int MaxParticles;
+    }
+
+    /// <summary>
+    /// LOD update request
+    /// </summary>
+    [System.Serializable]
+    public struct LODUpdateRequest
+    {
+        public int ObjectId;
+        public int NewLODLevel;
+        public float RequestTime;
+    }
+
+    /// <summary>
+    /// LOD quality profile
+    /// </summary>
+    [System.Serializable]
+    public struct LODQualityProfile
+    {
+        public string ProfileName;
+        public float[] LODDistances;
+        public float CullingDistance;
+    }
+
+    /// <summary>
+    /// Adaptive LOD settings
+    /// </summary>
+    [System.Serializable]
+    public struct AdaptiveLODSettings
+    {
+        public float TargetFrameTime;
+        public float AdaptationSpeed;
+        public float MinLODMultiplier;
+        public float MaxLODMultiplier;
+    }
+
+    /// <summary>
+    /// LOD statistics
+    /// </summary>
+    [System.Serializable]
+    public struct LODStats
+    {
+        public int RegisteredObjects;
+        public int VisibleObjects;
+        public int UpdateCycles;
+        public int LODChanges;
+        public int VisibilityChanges;
+        public int[] ObjectsAtLOD;
+        public float AverageFrameTime;
+        public float DynamicLODMultiplier;
+    }
+
+    #endregion
+}

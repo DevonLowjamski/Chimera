@@ -37,7 +37,7 @@ namespace ProjectChimera.Systems.Analytics
                 PlayerMetrics = new PlayerMetrics()
             };
 
-            ChimeraLogger.LogVerbose("[SimpleGameAnalytics] Analytics system initialized");
+            ChimeraLogger.LogInfo("ANALYTICS", "Analytics action completed", this);
         }
 
         #region Harvest Tracking
@@ -77,7 +77,7 @@ namespace ProjectChimera.Systems.Analytics
             TrimEvents();
 
             OnHarvestTracked?.Invoke(harvestData);
-            ChimeraLogger.LogVerbose($"[SimpleGameAnalytics] Tracked harvest: {weight}g {plantType} (${revenue:F2})");
+            ChimeraLogger.LogInfo("ANALYTICS", "Analytics action completed", this);
         }
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace ProjectChimera.Systems.Analytics
             TrimEvents();
 
             OnFacilityUpgradeTracked?.Invoke(upgradeData);
-            ChimeraLogger.LogVerbose($"[SimpleGameAnalytics] Tracked facility upgrade: {upgradeType} (${cost:F2})");
+            ChimeraLogger.LogInfo("ANALYTICS", "Analytics action completed", this);
         }
 
         /// <summary>
@@ -151,7 +151,7 @@ namespace ProjectChimera.Systems.Analytics
             _analyticsData.Events.Add(gameEvent);
             TrimEvents();
 
-            ChimeraLogger.LogVerbose($"[SimpleGameAnalytics] Tracked environmental change: {conditionType} = {value:F1}");
+            ChimeraLogger.LogInfo("ANALYTICS", "Analytics action completed", this);
         }
 
         /// <summary>
@@ -192,7 +192,7 @@ namespace ProjectChimera.Systems.Analytics
             _analyticsData.Events.Add(gameEvent);
             TrimEvents();
 
-            ChimeraLogger.LogVerbose($"[SimpleGameAnalytics] Tracked progression: Level {newLevel} ({skillType})");
+            ChimeraLogger.LogInfo("ANALYTICS", "Analytics action completed", this);
         }
 
         /// <summary>
@@ -221,7 +221,7 @@ namespace ProjectChimera.Systems.Analytics
             _analyticsData.Events.Add(gameEvent);
             TrimEvents();
 
-            ChimeraLogger.LogVerbose($"[SimpleGameAnalytics] Tracked skill upgrade: {skillName} (+{pointsSpent} points)");
+            ChimeraLogger.LogInfo("ANALYTICS", "Analytics action completed", this);
         }
 
         /// <summary>
@@ -243,7 +243,7 @@ namespace ProjectChimera.Systems.Analytics
         {
             _analyticsData.SessionStartTime = DateTime.Now;
             _analyticsData.SessionDuration = TimeSpan.Zero;
-            ChimeraLogger.LogVerbose("[SimpleGameAnalytics] Session started");
+            ChimeraLogger.LogInfo("ANALYTICS", "Analytics action completed", this);
         }
 
         /// <summary>
@@ -252,7 +252,7 @@ namespace ProjectChimera.Systems.Analytics
         public void EndSession()
         {
             _analyticsData.SessionDuration = DateTime.Now - _analyticsData.SessionStartTime;
-            ChimeraLogger.LogVerbose($"[SimpleGameAnalytics] Session ended (Duration: {_analyticsData.SessionDuration.TotalMinutes:F1} minutes)");
+            ChimeraLogger.LogInfo("ANALYTICS", "Analytics action completed", this);
         }
 
         /// <summary>
@@ -295,7 +295,7 @@ namespace ProjectChimera.Systems.Analytics
         public void ClearEvents()
         {
             _analyticsData.Events.Clear();
-            ChimeraLogger.LogVerbose("[SimpleGameAnalytics] All events cleared");
+            ChimeraLogger.LogInfo("ANALYTICS", "Analytics action completed", this);
         }
 
         #endregion
@@ -316,7 +316,7 @@ namespace ProjectChimera.Systems.Analytics
         public void LoadSaveData(AnalyticsData data)
         {
             _analyticsData = data ?? new AnalyticsData();
-            ChimeraLogger.LogVerbose("[SimpleGameAnalytics] Analytics data loaded");
+            ChimeraLogger.LogInfo("ANALYTICS", "Analytics action completed", this);
         }
 
         #endregion

@@ -1,6 +1,7 @@
 using UnityEngine;
 using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Shared;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Genetics
 {

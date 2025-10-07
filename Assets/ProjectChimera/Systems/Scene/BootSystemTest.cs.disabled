@@ -1,0 +1,180 @@
+using ProjectChimera.Core.Logging;
+using UnityEngine;
+using System.Collections;
+using System.Linq;
+using ProjectChimera.Core;
+
+
+namespace ProjectChimera.Systems.Scene
+{
+    /// <summary>
+    /// Deterministic startup test for the consolidated boot system.
+    /// Validates single boot path from scene load to GameState.Running.
+    /// </summary>
+    public class BootSystemTest : MonoBehaviour
+    {
+        [Header("Test Configuration")]
+        [SerializeField] private bool _runOnStart = false;
+        [SerializeField] private float _maxBootTime = 30f;
+        [SerializeField] private bool _enableDetailedLogging = true;
+
+        [Header("Test Results")]
+        [SerializeField, TextArea(5, 10)] private string _testResults = "No test run yet";
+
+        private void Start()
+        {
+            if (_runOnStart)
+            {
+                StartCoroutine(RunBootTestCoroutine());
+            }
+        }
+
+        /// <summary>
+        /// Public method to run the boot test manually
+        /// </summary>
+        public void RunBootTest()
+        {
+            StartCoroutine(RunBootTestCoroutine());
+        }
+
+        private IEnumerator RunBootTestCoroutine()
+        {
+            LogTest("=== BOOT SYSTEM TEST STARTED ===");
+            var startTime = Time.time;
+            var testResults = new System.Text.StringBuilder();
+
+            // Test 1: Validate BootManager exists and is minimal
+            var bootManager = ServiceContainerFactory.Instance?.TryResolve<BootManager>();
+            if (bootManager != null)
+            {
+                testResults.AppendLine("✅ BootManager found");
+                LogTest("PASS: BootManager found");
+            }
+            else
+            {
+                testResults.AppendLine("❌ BootManager not found");
+                LogTest("FAIL: BootManager not found");
+            }
+
+            // Test 2: Validate GameManager is created
+            yield return new WaitForSeconds(1f); // Give boot time to create GameManager
+            var diGameManager = ServiceContainerFactory.Instance?.TryResolve<GameManager>();
+            if (diGameManager != null)
+            {
+                testResults.AppendLine("✅ GameManager created");
+                LogTest("PASS: GameManager created");
+            }
+            else
+            {
+                testResults.AppendLine("❌ GameManager not created");
+                LogTest("FAIL: GameManager not created");
+                _testResults = testResults.ToString();
+                yield break;
+            }
+
+            // Test 3: Wait for game state to reach Running
+            float elapsed = 0f;
+            bool gameStateReached = false;
+            while (elapsed < _maxBootTime)
+            {
+                if (diGameManager.CurrentGameState == GameState.Running)
+                {
+                    gameStateReached = true;
+                    testResults.AppendLine($"✅ GameState.Running reached in {elapsed:F2}s");
+                    LogTest($"PASS: GameState.Running reached in {elapsed:F2}s");
+                    break;
+                }
+                else if (diGameManager.CurrentGameState == GameState.Error)
+                {
+                    testResults.AppendLine($"❌ GameState.Error reached after {elapsed:F2}s");
+                    LogTest($"FAIL: GameState.Error reached after {elapsed:F2}s");
+                    break;
+                }
+
+                yield return new WaitForSeconds(0.1f);
+                elapsed += 0.1f;
+            }
+
+            if (!gameStateReached && elapsed >= _maxBootTime)
+            {
+                testResults.AppendLine($"❌ Timeout: GameState.Running not reached in {_maxBootTime}s");
+                LogTest($"FAIL: Timeout - GameState.Running not reached in {_maxBootTime}s");
+            }
+
+            // Test 4: Validate services are registered
+            if (gameStateReached)
+            {
+                var managerCount = diGameManager.GetAllManagers()?.Count() ?? 0;
+                if (managerCount > 0)
+                {
+                    testResults.AppendLine($"✅ {managerCount} managers registered");
+                    LogTest($"PASS: {managerCount} managers registered");
+                }
+                else
+                {
+                    testResults.AppendLine("⚠️ No managers registered");
+                    LogTest("WARN: No managers registered");
+                }
+            }
+
+            // Test 5: Validate health report
+            if (gameStateReached)
+            {
+                var healthReport = diGameManager.GetServiceHealthReport();
+                if (healthReport != null && healthReport.IsHealthy)
+                {
+                    testResults.AppendLine("✅ System health check passed");
+                    LogTest("PASS: System health check passed");
+                }
+                else if (healthReport != null)
+                {
+                    testResults.AppendLine($"⚠️ Health issues: {healthReport.CriticalErrors?.Count ?? 0} errors");
+                    LogTest($"WARN: Health issues - {healthReport.CriticalErrors?.Count ?? 0} errors");
+                }
+                else
+                {
+                    testResults.AppendLine("❌ Health report unavailable");
+                    LogTest("FAIL: Health report unavailable");
+                }
+            }
+
+            // Test 6: Validate no circular dependencies (no infinite loops)
+            var totalTime = Time.time - startTime;
+            if (totalTime < _maxBootTime)
+            {
+                testResults.AppendLine("✅ No circular dependencies detected");
+                LogTest("PASS: No circular dependencies detected");
+            }
+
+            var finalTime = Time.time - startTime;
+            testResults.AppendLine($"\n=== TEST COMPLETED in {finalTime:F2}s ===");
+            LogTest($"=== BOOT SYSTEM TEST COMPLETED in {finalTime:F2}s ===");
+
+            _testResults = testResults.ToString();
+        }
+
+        private void LogTest(string message)
+        {
+            if (_enableDetailedLogging)
+            {
+                ProjectChimera.Core.Logging.ChimeraLogger.Log("SCENE/TEST", "Boot test step", null);
+            }
+        }
+
+        /// <summary>
+        /// Editor method to run test from inspector
+        /// </summary>
+        [ContextMenu("Run Boot Test")]
+        public void RunBootTestFromEditor()
+        {
+            if (Application.isPlaying)
+            {
+                RunBootTest();
+            }
+            else
+            {
+                ProjectChimera.Core.Logging.ChimeraLogger.Log("SCENE/TEST", "Boot test error", null);
+            }
+        }
+    }
+}

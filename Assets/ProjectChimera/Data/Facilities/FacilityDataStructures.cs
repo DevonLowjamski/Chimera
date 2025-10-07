@@ -58,17 +58,6 @@ namespace ProjectChimera.Data.Facilities
         UrbanRooftop
     }
 
-    [System.Serializable]
-    public enum WeatherType
-    {
-        Clear,
-        Cloudy,
-        Rainy,
-        Stormy,
-        Snowy,
-        Foggy,
-        Windy
-    }
 
     [System.Serializable]
     public enum TimeOfDay

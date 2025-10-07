@@ -1,7 +1,9 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Shared;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Cultivation
 {
@@ -9,7 +11,7 @@ namespace ProjectChimera.Systems.Cultivation
     /// BASIC: Simple plant growth service for Project Chimera's cultivation system.
     /// Focuses on essential plant growth without complex calculators and genetic factors.
     /// </summary>
-    public class PlantGrowthService : MonoBehaviour
+    public class PlantGrowthService : MonoBehaviour, ITickable
     {
         [Header("Basic Growth Settings")]
         [SerializeField] private bool _enableBasicGrowth = true;
@@ -40,24 +42,35 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantGrowthService] Initialized successfully");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
         /// <summary>
         /// Update plant growth
         /// </summary>
-        private void Update()
-        {
+    public int TickPriority => 100;
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
             if (!_enableBasicGrowth || !_isInitialized) return;
 
             float currentTime = Time.time;
             if (currentTime - _lastUpdateTime >= _updateInterval)
-            {
                 UpdateAllPlantGrowth(currentTime - _lastUpdateTime);
                 _lastUpdateTime = currentTime;
-            }
-        }
+    }
+
+    private void Awake()
+    {
+        UpdateOrchestrator.Instance.RegisterTickable(this);
+    }
+
+    private void OnDestroy()
+    {
+        UpdateOrchestrator.Instance.UnregisterTickable(this);
+    }
 
         /// <summary>
         /// Add plant to growth tracking
@@ -77,7 +90,7 @@ namespace ProjectChimera.Systems.Cultivation
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[PlantGrowthService] Added plant {plantId} in {initialStage} stage");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 }
             }
         }
@@ -91,7 +104,7 @@ namespace ProjectChimera.Systems.Cultivation
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[PlantGrowthService] Removed plant {plantId}");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 }
             }
         }
@@ -123,7 +136,7 @@ namespace ProjectChimera.Systems.Cultivation
 
                     if (_enableLogging)
                     {
-                        ChimeraLogger.Log($"[PlantGrowthService] Plant {plantId} progressed to {data.CurrentStage}");
+                        ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                     }
                 }
             }
@@ -176,7 +189,7 @@ namespace ProjectChimera.Systems.Cultivation
 
                     if (_enableLogging)
                     {
-                        ChimeraLogger.Log($"[PlantGrowthService] Manually advanced {plantId} to {data.CurrentStage}");
+                        ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                     }
                 }
             }
@@ -199,7 +212,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantGrowthService] Cleared all plant data");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
@@ -209,10 +222,10 @@ namespace ProjectChimera.Systems.Cultivation
         public GrowthServiceStats GetStats()
         {
             int totalPlants = _plantGrowthData.Count;
-            int seedlings = _plantGrowthData.Count(p => p.Value.CurrentStage == PlantGrowthStage.Seedling);
-            int vegetative = _plantGrowthData.Count(p => p.Value.CurrentStage == PlantGrowthStage.Vegetative);
-            int flowering = _plantGrowthData.Count(p => p.Value.CurrentStage == PlantGrowthStage.Flowering);
-            int mature = _plantGrowthData.Count(p => p.Value.CurrentStage == PlantGrowthStage.Mature);
+            int seedlings = _plantGrowthData.Where(p => p.Value.CurrentStage == PlantGrowthStage.Seedling).Count();
+            int vegetative = _plantGrowthData.Where(p => p.Value.CurrentStage == PlantGrowthStage.Vegetative).Count();
+            int flowering = _plantGrowthData.Where(p => p.Value.CurrentStage == PlantGrowthStage.Flowering).Count();
+            int mature = _plantGrowthData.Where(p => p.Value.CurrentStage == PlantGrowthStage.Mature).Count();
 
             return new GrowthServiceStats
             {

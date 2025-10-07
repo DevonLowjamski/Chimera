@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 
+
 namespace ProjectChimera.Data.Save
 {
     /// <summary>
@@ -18,6 +19,10 @@ namespace ProjectChimera.Data.Save
         public string PrefabName;
         public string TemplateID;
         public ObjectType ObjectType;
+
+        // Alias property for compatibility
+        public string ObjectId { get => ObjectID; set => ObjectID = value; }
+        public Dictionary<string, object> ObjectData = new Dictionary<string, object>();
 
         [Header("Placement Data")]
         public Vector3 Position;

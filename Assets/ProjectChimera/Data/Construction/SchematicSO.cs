@@ -11,17 +11,23 @@ namespace ProjectChimera.Data.Construction
     public class SchematicSO : ScriptableObject
     {
         [Header("Basic Schematic Info")]
+        [SerializeField] private string _schematicId = "";
         [SerializeField] private string _schematicName = "New Schematic";
         [SerializeField] private string _description = "";
+        [SerializeField] private string _createdBy = "";
         [SerializeField] private Sprite _previewIcon;
+        [SerializeField] private Vector3Int _size = Vector3Int.one;
 
         [Header("Construction Items")]
         [SerializeField] private List<SchematicItem> _items = new List<SchematicItem>();
 
         // Basic properties
+        public string SchematicId => _schematicId;
         public string SchematicName => _schematicName;
         public string Description => _description;
+        public string CreatedBy => _createdBy;
         public Sprite PreviewIcon => _previewIcon;
+        public Vector3Int Size => _size;
         public List<SchematicItem> Items => new List<SchematicItem>(_items);
         public int ItemCount => _items.Count;
 
@@ -51,6 +57,16 @@ namespace ProjectChimera.Data.Construction
         {
             _items.Clear();
         }
+
+        /// <summary>
+        /// Set schematic basic properties (for runtime creation)
+        /// </summary>
+        public void SetSchematicId(string id) => _schematicId = id;
+        public void SetSchematicName(string name) => _schematicName = name;
+        public void SetDescription(string description) => _description = description;
+        public void SetCreatedBy(string createdBy) => _createdBy = createdBy;
+        public void SetSize(Vector3Int size) => _size = size;
+        public void SetPreviewIcon(Sprite icon) => _previewIcon = icon;
 
         /// <summary>
         /// Get schematic summary
@@ -92,13 +108,21 @@ namespace ProjectChimera.Data.Construction
     {
         [SerializeField] private string _itemType;
         [SerializeField] private string _itemId;
+        [SerializeField] private string _itemName;
+        [SerializeField] private string _itemCategory;
         [SerializeField] private Vector3Int _position;
+        [SerializeField] private Vector3Int _gridPosition;
+        [SerializeField] private int _height;
         [SerializeField] private Quaternion _rotation = Quaternion.identity;
         [SerializeField] private Vector3 _scale = Vector3.one;
 
         public string ItemType => _itemType;
         public string ItemId => _itemId;
+        public string ItemName => _itemName;
+        public string ItemCategory => _itemCategory;
         public Vector3Int Position => _position;
+        public Vector3Int GridPosition => _gridPosition;
+        public int Height => _height;
         public Quaternion Rotation => _rotation;
         public Vector3 Scale => _scale;
 
@@ -108,6 +132,14 @@ namespace ProjectChimera.Data.Construction
             _itemId = itemId;
             _position = position;
         }
+
+        // Setter methods for runtime modification
+        public void SetItemName(string name) => _itemName = name;
+        public void SetItemCategory(string category) => _itemCategory = category;
+        public void SetGridPosition(Vector3Int gridPos) => _gridPosition = gridPos;
+        public void SetHeight(int height) => _height = height;
+        public void SetRotation(Quaternion rotation) => _rotation = rotation;
+        public void SetScale(Vector3 scale) => _scale = scale;
     }
 
     /// <summary>

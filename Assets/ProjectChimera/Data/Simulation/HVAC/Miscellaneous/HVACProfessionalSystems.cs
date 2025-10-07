@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using ProjectChimera.Shared;
 
 namespace ProjectChimera.Data.Simulation.HVAC.Miscellaneous
 {
@@ -31,7 +32,7 @@ namespace ProjectChimera.Data.Simulation.HVAC.Miscellaneous
 
             if (_enableLogging)
             {
-                Debug.Log("[HVACProfessionalSystems] Initialized successfully");
+                ProjectChimera.Shared.SharedLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -67,7 +68,7 @@ namespace ProjectChimera.Data.Simulation.HVAC.Miscellaneous
 
             if (_enableLogging)
             {
-                Debug.Log($"[HVACProfessionalSystems] Updated zone {zoneId}: T={temperature:F1}°C, H={humidity:F1}%, AQ={airQuality:F1}");
+                ProjectChimera.Shared.SharedLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -164,7 +165,7 @@ namespace ProjectChimera.Data.Simulation.HVAC.Miscellaneous
 
             if (_enableLogging)
             {
-                Debug.Log("[HVACProfessionalSystems] Cleared all environmental data");
+                ProjectChimera.Shared.SharedLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -197,7 +198,7 @@ namespace ProjectChimera.Data.Simulation.HVAC.Miscellaneous
                 {
                     if (_enableLogging)
                     {
-                        Debug.LogWarning($"[HVACProfessionalSystems] Zone {zoneId} has stale data");
+                        ProjectChimera.Shared.SharedLogger.Log("OTHER", "$1", this);
                     }
                 }
             }

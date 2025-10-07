@@ -1,0 +1,560 @@
+using UnityEngine;
+using UnityEngine.Profiling;
+using ProjectChimera.Core.Memory;
+using System.Collections.Generic;
+using System.Linq;
+
+using ProjectChimera.Core.Logging;
+namespace ProjectChimera.Systems.UI
+{
+    /// <summary>
+    /// PERFORMANCE: UI performance monitoring and optimization system
+    /// Tracks UI update costs, memory usage, and applies automatic optimizations
+    /// Week 12: Input & UI Performance
+    /// </summary>
+    public class UIPerformanceMonitor : MonoBehaviour
+    {
+        [Header("Performance Monitoring")]
+        [SerializeField] private bool _enableMonitoring = true;
+        [SerializeField] private bool _enableAutoOptimization = true;
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private float _monitoringInterval = 1f;
+
+        [Header("Performance Targets")]
+        [SerializeField] private float _targetFrameTime = 16.67f; // 60 FPS
+        [SerializeField] private float _maxUIUpdateTime = 2f; // 2ms per frame for UI
+        [SerializeField] private long _maxUIMemoryUsage = 50 * 1024 * 1024; // 50MB
+        [SerializeField] private int _maxBatchSize = 100;
+
+        [Header("Optimization Settings")]
+        [SerializeField] private UIOptimizationLevel _currentOptimizationLevel = UIOptimizationLevel.Balanced;
+        [SerializeField] private bool _enableUIPooling = true;
+        [SerializeField] private bool _enableBatchedUpdates = true;
+        [SerializeField] private bool _enableDistanceCulling = true;
+
+        // Performance tracking
+        private UIPerformanceStats _currentStats = new UIPerformanceStats();
+        private UIPerformanceStats _previousStats = new UIPerformanceStats();
+        private readonly Queue<UIFrameData> _frameDataHistory = new Queue<UIFrameData>();
+        private const int MAX_FRAME_HISTORY = 300; // 5 seconds at 60fps
+
+        // Optimization state
+        private float _lastMonitoringTime;
+        private float _lastOptimizationTime;
+        private bool _needsOptimization;
+        private UIOptimizationRecommendations _currentRecommendations;
+
+        // Component tracking
+        private readonly Dictionary<System.Type, UIComponentStats> _componentStats = new Dictionary<System.Type, UIComponentStats>();
+        private readonly List<IUIUpdatable> _trackedComponents = new List<IUIUpdatable>();
+
+        // Memory tracking
+        private long _baselineMemoryUsage;
+        private long _peakMemoryUsage;
+        private int _memorySpikes;
+
+        private static UIPerformanceMonitor _instance;
+        public static UIPerformanceMonitor Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = FindObjectOfType<UIPerformanceMonitor>();
+                    if (_instance == null)
+                    {
+                        var go = new GameObject("UIPerformanceMonitor");
+                        _instance = go.AddComponent<UIPerformanceMonitor>();
+                        DontDestroyOnLoad(go);
+                    }
+                }
+                return _instance;
+            }
+        }
+
+        public bool IsMonitoring => _enableMonitoring;
+        public UIPerformanceStats CurrentStats => _currentStats;
+        public UIOptimizationLevel OptimizationLevel => _currentOptimizationLevel;
+        public UIOptimizationRecommendations Recommendations => _currentRecommendations;
+
+        private void Awake()
+        {
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+                Initialize();
+            }
+            else if (_instance != this)
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Initialize performance monitor
+        /// </summary>
+        public void Initialize()
+        {
+            _baselineMemoryUsage = Profiler.GetTotalAllocatedMemory(false);
+            _lastMonitoringTime = Time.unscaledTime;
+            _lastOptimizationTime = Time.unscaledTime;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("UIPerformanceMonitor", "$1");
+            }
+        }
+
+        /// <summary>
+        /// Register UI component for tracking
+        /// </summary>
+        public void RegisterUIComponent(IUIUpdatable component)
+        {
+            if (component != null && !_trackedComponents.Contains(component))
+            {
+                _trackedComponents.Add(component);
+                
+                var componentType = component.GetType();
+                if (!_componentStats.ContainsKey(componentType))
+                {
+                    _componentStats[componentType] = new UIComponentStats
+                    {
+                        ComponentType = componentType.Name,
+                        InstanceCount = 0,
+                        TotalUpdateTime = 0f,
+                        AverageUpdateTime = 0f
+                    };
+                }
+                
+                _componentStats[componentType].InstanceCount++;
+                _currentStats.TrackedComponents++;
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogInfo("UIPerformanceMonitor", $1);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Unregister UI component
+        /// </summary>
+        public void UnregisterUIComponent(IUIUpdatable component)
+        {
+            if (_trackedComponents.Remove(component))
+            {
+                var componentType = component.GetType();
+                if (_componentStats.ContainsKey(componentType))
+                {
+                    _componentStats[componentType].InstanceCount--;
+                    if (_componentStats[componentType].InstanceCount <= 0)
+                    {
+                        _componentStats.Remove(componentType);
+                    }
+                }
+                
+                _currentStats.TrackedComponents--;
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogInfo("UIPerformanceMonitor", $1);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Track UI update performance
+        /// </summary>
+        public void TrackUIUpdate(IUIUpdatable component, float updateTime, bool shouldUpdate)
+        {
+            if (!_enableMonitoring) return;
+
+            var componentType = component.GetType();
+            if (_componentStats.ContainsKey(componentType))
+            {
+                var stats = _componentStats[componentType];
+                stats.TotalUpdateTime += updateTime;
+                stats.UpdateCount++;
+                stats.AverageUpdateTime = stats.TotalUpdateTime / stats.UpdateCount;
+                
+                if (shouldUpdate)
+                {
+                    stats.ActiveUpdates++;
+                }
+                else
+                {
+                    stats.SkippedUpdates++;
+                }
+                
+                _componentStats[componentType] = stats;
+            }
+
+            // Track frame-level performance
+            _currentStats.TotalUIUpdateTime += updateTime;
+            _currentStats.UIUpdatesThisFrame++;
+        }
+
+        /// <summary>
+        /// Set optimization level
+        /// </summary>
+        public void SetOptimizationLevel(UIOptimizationLevel level)
+        {
+            if (_currentOptimizationLevel != level)
+            {
+                _currentOptimizationLevel = level;
+                ApplyOptimizationLevel(level);
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogInfo("UIPerformanceMonitor", $1);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Force optimization analysis
+        /// </summary>
+        public void ForceOptimization()
+        {
+            AnalyzePerformance();
+            
+            if (_enableAutoOptimization)
+            {
+                ApplyOptimizationRecommendations();
+            }
+
+            _lastOptimizationTime = Time.unscaledTime;
+        }
+
+        /// <summary>
+        /// Get comprehensive performance report
+        /// </summary>
+        public UIPerformanceReport GetPerformanceReport()
+        {
+            var report = new UIPerformanceReport
+            {
+                CurrentStats = _currentStats,
+                ComponentStats = _componentStats.Values.ToArray(),
+                OptimizationLevel = _currentOptimizationLevel,
+                Recommendations = _currentRecommendations,
+                FrameDataHistory = _frameDataHistory.ToArray(),
+                BaselineMemoryUsage = _baselineMemoryUsage,
+                PeakMemoryUsage = _peakMemoryUsage,
+                MemorySpikes = _memorySpikes
+            };
+
+            return report;
+        }
+
+        private void Update()
+        {
+            if (!_enableMonitoring) return;
+
+            UpdateFrameStats();
+            
+            float currentTime = Time.unscaledTime;
+            if (currentTime - _lastMonitoringTime >= _monitoringInterval)
+            {
+                UpdatePerformanceStats();
+                AnalyzePerformance();
+                
+                if (_enableAutoOptimization && _needsOptimization)
+                {
+                    ApplyOptimizationRecommendations();
+                }
+                
+                _lastMonitoringTime = currentTime;
+            }
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Update frame-level statistics
+        /// </summary>
+        private void UpdateFrameStats()
+        {
+            var frameData = new UIFrameData
+            {
+                FrameNumber = Time.frameCount,
+                FrameTime = Time.unscaledDeltaTime,
+                UIUpdateTime = _currentStats.TotalUIUpdateTime,
+                UIUpdatesCount = _currentStats.UIUpdatesThisFrame,
+                MemoryUsage = Profiler.GetTotalAllocatedMemory(false),
+                Timestamp = Time.unscaledTime
+            };
+
+            _frameDataHistory.Enqueue(frameData);
+            
+            // Maintain frame history size
+            while (_frameDataHistory.Count > MAX_FRAME_HISTORY)
+            {
+                _frameDataHistory.Dequeue();
+            }
+
+            // Track memory spikes
+            if (frameData.MemoryUsage > _peakMemoryUsage)
+            {
+                _peakMemoryUsage = frameData.MemoryUsage;
+                
+                if (frameData.MemoryUsage > _baselineMemoryUsage * 1.5f) // 50% increase
+                {
+                    _memorySpikes++;
+                }
+            }
+
+            // Reset frame counters
+            _currentStats.TotalUIUpdateTime = 0f;
+            _currentStats.UIUpdatesThisFrame = 0;
+        }
+
+        /// <summary>
+        /// Update comprehensive performance statistics
+        /// </summary>
+        private void UpdatePerformanceStats()
+        {
+            _previousStats = _currentStats;
+
+            if (_frameDataHistory.Count > 0)
+            {
+                var recentFrames = _frameDataHistory.TakeLast(60).ToArray(); // Last 1 second
+                
+                _currentStats.AverageFrameTime = recentFrames.Average(f => f.FrameTime);
+                _currentStats.AverageUIUpdateTime = recentFrames.Average(f => f.UIUpdateTime);
+                _currentStats.CurrentMemoryUsage = Profiler.GetTotalAllocatedMemory(false);
+                _currentStats.FrameRate = _currentStats.AverageFrameTime > 0 ? 1f / _currentStats.AverageFrameTime : 0f;
+                
+                // Performance health assessment
+                _currentStats.IsPerformanceHealthy = 
+                    _currentStats.AverageFrameTime < _targetFrameTime &&
+                    _currentStats.AverageUIUpdateTime < _maxUIUpdateTime &&
+                    _currentStats.CurrentMemoryUsage < _maxUIMemoryUsage;
+            }
+
+            _currentStats.MonitoringTime = Time.unscaledTime;
+        }
+
+        /// <summary>
+        /// Analyze performance and generate recommendations
+        /// </summary>
+        private void AnalyzePerformance()
+        {
+            _currentRecommendations = new UIOptimizationRecommendations();
+            _needsOptimization = false;
+
+            // Analyze frame time
+            if (_currentStats.AverageFrameTime > _targetFrameTime * 1.2f)
+            {
+                _currentRecommendations.ReduceUpdateFrequency = true;
+                _currentRecommendations.EnableDistanceCulling = true;
+                _needsOptimization = true;
+            }
+
+            // Analyze UI update time
+            if (_currentStats.AverageUIUpdateTime > _maxUIUpdateTime)
+            {
+                _currentRecommendations.EnableBatchedUpdates = true;
+                _currentRecommendations.ReduceUIComplexity = true;
+                _needsOptimization = true;
+            }
+
+            // Analyze memory usage
+            if (_currentStats.CurrentMemoryUsage > _maxUIMemoryUsage)
+            {
+                _currentRecommendations.EnableUIPooling = true;
+                _currentRecommendations.OptimizeStrings = true;
+                _needsOptimization = true;
+            }
+
+            // Analyze component performance
+            foreach (var componentStat in _componentStats.Values)
+            {
+                if (componentStat.AverageUpdateTime > 0.5f) // 0.5ms per component
+                {
+                    _currentRecommendations.OptimizeSlowComponents = true;
+                    _needsOptimization = true;
+                    break;
+                }
+            }
+
+            // Auto-adjust optimization level
+            if (_needsOptimization && _currentStats.AverageFrameTime > _targetFrameTime * 1.5f)
+            {
+                if (_currentOptimizationLevel < UIOptimizationLevel.Aggressive)
+                {
+                    SetOptimizationLevel(_currentOptimizationLevel + 1);
+                }
+            }
+            else if (_currentStats.IsPerformanceHealthy && _currentOptimizationLevel > UIOptimizationLevel.Balanced)
+            {
+                SetOptimizationLevel(_currentOptimizationLevel - 1);
+            }
+        }
+
+        /// <summary>
+        /// Apply optimization level settings
+        /// </summary>
+        private void ApplyOptimizationLevel(UIOptimizationLevel level)
+        {
+            var uiManager = OptimizedUIManager.Instance;
+            if (uiManager == null) return;
+
+            switch (level)
+            {
+                case UIOptimizationLevel.Conservative:
+                    uiManager.SetUpdateBatchSize(50);
+                    uiManager.SetUIPoolingEnabled(false);
+                    uiManager.SetDistanceCullingEnabled(false);
+                    break;
+                    
+                case UIOptimizationLevel.Balanced:
+                    uiManager.SetUpdateBatchSize(100);
+                    uiManager.SetUIPoolingEnabled(true);
+                    uiManager.SetDistanceCullingEnabled(true);
+                    break;
+                    
+                case UIOptimizationLevel.Aggressive:
+                    uiManager.SetUpdateBatchSize(200);
+                    uiManager.SetUIPoolingEnabled(true);
+                    uiManager.SetDistanceCullingEnabled(true);
+                    // Additional aggressive optimizations
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Apply optimization recommendations
+        /// </summary>
+        private void ApplyOptimizationRecommendations()
+        {
+            var uiManager = OptimizedUIManager.Instance;
+            if (uiManager == null) return;
+
+            if (_currentRecommendations.EnableBatchedUpdates)
+            {
+                uiManager.SetBatchedUpdatesEnabled(true);
+            }
+
+            if (_currentRecommendations.EnableUIPooling)
+            {
+                uiManager.SetUIPoolingEnabled(true);
+            }
+
+            if (_currentRecommendations.EnableDistanceCulling)
+            {
+                uiManager.SetDistanceCullingEnabled(true);
+            }
+
+            if (_currentRecommendations.ReduceUpdateFrequency)
+            {
+                uiManager.IncreaseUpdateInterval(0.1f); // Reduce update frequency by 0.1s
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("UIPerformanceMonitor", "$1");
+            }
+        }
+
+        #endregion
+
+        private void OnDestroy()
+        {
+            _frameDataHistory.Clear();
+            _componentStats.Clear();
+            _trackedComponents.Clear();
+        }
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// UI optimization levels
+    /// </summary>
+    public enum UIOptimizationLevel
+    {
+        Conservative = 0,
+        Balanced = 1,
+        Aggressive = 2
+    }
+
+    /// <summary>
+    /// UI performance statistics
+    /// </summary>
+    [System.Serializable]
+    public struct UIPerformanceStats
+    {
+        public float AverageFrameTime;
+        public float AverageUIUpdateTime;
+        public float TotalUIUpdateTime;
+        public int UIUpdatesThisFrame;
+        public long CurrentMemoryUsage;
+        public float FrameRate;
+        public int TrackedComponents;
+        public bool IsPerformanceHealthy;
+        public float MonitoringTime;
+    }
+
+    /// <summary>
+    /// UI component performance statistics
+    /// </summary>
+    [System.Serializable]
+    public struct UIComponentStats
+    {
+        public string ComponentType;
+        public int InstanceCount;
+        public int UpdateCount;
+        public int ActiveUpdates;
+        public int SkippedUpdates;
+        public float TotalUpdateTime;
+        public float AverageUpdateTime;
+    }
+
+    /// <summary>
+    /// UI frame data
+    /// </summary>
+    [System.Serializable]
+    public struct UIFrameData
+    {
+        public int FrameNumber;
+        public float FrameTime;
+        public float UIUpdateTime;
+        public int UIUpdatesCount;
+        public long MemoryUsage;
+        public float Timestamp;
+    }
+
+    /// <summary>
+    /// UI optimization recommendations
+    /// </summary>
+    [System.Serializable]
+    public struct UIOptimizationRecommendations
+    {
+        public bool EnableBatchedUpdates;
+        public bool EnableUIPooling;
+        public bool EnableDistanceCulling;
+        public bool ReduceUpdateFrequency;
+        public bool ReduceUIComplexity;
+        public bool OptimizeStrings;
+        public bool OptimizeSlowComponents;
+    }
+
+    /// <summary>
+    /// Comprehensive UI performance report
+    /// </summary>
+    [System.Serializable]
+    public struct UIPerformanceReport
+    {
+        public UIPerformanceStats CurrentStats;
+        public UIComponentStats[] ComponentStats;
+        public UIOptimizationLevel OptimizationLevel;
+        public UIOptimizationRecommendations Recommendations;
+        public UIFrameData[] FrameDataHistory;
+        public long BaselineMemoryUsage;
+        public long PeakMemoryUsage;
+        public int MemorySpikes;
+    }
+
+    #endregion
+}

@@ -1,0 +1,287 @@
+using ProjectChimera.Core.Logging;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace ProjectChimera.Core.Updates.Examples
+{
+    /// <summary>
+    /// Example implementations showing how to convert MonoBehaviour.Update() to ITickable
+    /// These examples demonstrate the Phase 0.5 Central Update Bus pattern
+    /// </summary>
+
+    #region Before/After Comparison
+
+    // BEFORE: Traditional MonoBehaviour with Update()
+    public class OldStyleManager : MonoBehaviour
+    {
+        private float _updateTimer = 0f;
+
+        private void Update()
+        {
+            _updateTimer += Time.deltaTime;
+
+            if (_updateTimer >= 1f)
+            {
+                DoPeriodicUpdate();
+                _updateTimer = 0f;
+            }
+
+            DoFrameUpdate();
+        }
+
+        private void DoPeriodicUpdate() { /* Implementation */ }
+        private void DoFrameUpdate() { /* Implementation */ }
+    }
+
+    // AFTER: Modern ITickable implementation
+    public class NewStyleManager : TickableMonoBehaviour
+    {
+        public override int Priority => TickPriority.ConstructionSystem;
+
+        private float _updateTimer = 0f;
+
+        public override void Tick(float deltaTime)
+        {
+            _updateTimer += deltaTime;
+
+            if (_updateTimer >= 1f)
+            {
+                DoPeriodicUpdate();
+                _updateTimer = 0f;
+            }
+
+            DoFrameUpdate();
+        }
+
+        private void DoPeriodicUpdate() { /* Implementation */ }
+        private void DoFrameUpdate() { /* Implementation */ }
+    }
+
+    #endregion
+
+    #region System Manager Example
+
+    /// <summary>
+    /// Example system manager using ITickable with proper priority
+    /// This would replace CultivationManager.Update() calls
+    /// </summary>
+    public class ExampleCultivationManager : MonoBehaviour, ITickable
+    {
+        [Header("Cultivation Settings")]
+        [SerializeField] private float _growthUpdateInterval = 1f;
+
+        // ITickable implementation
+        public int Priority => TickPriority.CultivationManager; // -20, runs after environmental
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+        private float _growthTimer = 0f;
+        private bool _isRegistered = false;
+
+        private void OnEnable()
+        {
+            if (!_isRegistered)
+            {
+                UpdateOrchestrator.Instance.RegisterTickable(this);
+                _isRegistered = true;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_isRegistered)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+                _isRegistered = false;
+            }
+        }
+
+        public void Tick(float deltaTime)
+        {
+            // Update growth timer
+            _growthTimer += deltaTime;
+
+            if (_growthTimer >= _growthUpdateInterval)
+            {
+                UpdatePlantGrowth();
+                _growthTimer = 0f;
+            }
+
+            // Handle real-time cultivation updates
+            HandleWateringSystem(deltaTime);
+            HandleNutrientSystem(deltaTime);
+            UpdateEnvironmentalEffects(deltaTime);
+        }
+
+        public void OnRegistered()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void OnUnregistered()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        private void UpdatePlantGrowth() { /* Growth simulation */ }
+        private void HandleWateringSystem(float deltaTime) { /* Watering logic */ }
+        private void HandleNutrientSystem(float deltaTime) { /* Nutrient logic */ }
+        private void UpdateEnvironmentalEffects(float deltaTime) { /* Environmental effects */ }
+    }
+
+    #endregion
+
+    #region Non-MonoBehaviour Service Example
+
+    /// <summary>
+    /// Example non-MonoBehaviour service using ITickable
+    /// These would be registered/unregistered by their parent systems
+    /// </summary>
+    public class PlantLifecycleService : TickableBase
+    {
+        private readonly List<ExamplePlantData> _plants = new List<ExamplePlantData>();
+
+        public PlantLifecycleService()
+        {
+            SetPriority(TickPriority.PlantLifecycle); // -40
+        }
+
+        public override void Tick(float deltaTime)
+        {
+            if (!Enabled) return;
+
+            // Update all plant instances
+            foreach (var plant in _plants)
+            {
+                if (plant.IsValid)
+                {
+                    UpdatePlantLifecycle(plant, deltaTime);
+                }
+            }
+
+            // Clean up invalid plants
+            _plants.RemoveAll(p => !p.IsValid);
+        }
+
+        public override void OnRegistered()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        private void UpdatePlantLifecycle(ExamplePlantData plant, float deltaTime)
+        {
+            // Plant lifecycle simulation
+        }
+
+        public void AddPlant(ExamplePlantData plant) => _plants.Add(plant);
+        public void RemovePlant(ExamplePlantData plant) => _plants.Remove(plant);
+    }
+
+    // Simple plant instance for example
+    // NOTE: PlantInstance moved to Systems/Cultivation/PlantInstance.cs to avoid CS0101 duplicate definition
+    public class ExamplePlantData
+    {
+        public bool IsValid { get; set; } = true;
+        public float Age { get; set; }
+        public float Health { get; set; } = 1f;
+    }
+
+    #endregion
+
+    #region Multi-Update Type Example
+
+    /// <summary>
+    /// Example showing a system that needs both regular and fixed updates
+    /// Physics-based cultivation system that needs both frame and fixed updates
+    /// </summary>
+    public class PhysicsCultivationSystem : MonoBehaviour, ITickable, IFixedTickable
+    {
+        // Regular update (for UI, effects, etc.)
+        public int Priority => TickPriority.CultivationManager;
+        public bool Enabled => enabled;
+
+        // Fixed update (for physics simulation)
+        public int FixedPriority => TickPriority.CultivationManager;
+        public bool FixedEnabled => enabled;
+
+        private void OnEnable()
+        {
+            var orchestrator = UpdateOrchestrator.Instance;
+            orchestrator.RegisterTickable(this);
+            orchestrator.RegisterFixedTickable(this);
+        }
+
+        private void OnDisable()
+        {
+            var orchestrator = UpdateOrchestrator.Instance;
+            orchestrator?.UnregisterTickable(this);
+            orchestrator?.UnregisterFixedTickable(this);
+        }
+
+        public void Tick(float deltaTime)
+        {
+            // UI updates, visual effects, non-physics logic
+            UpdateVisualEffects(deltaTime);
+            UpdateUI(deltaTime);
+        }
+
+        public void FixedTick(float fixedDeltaTime)
+        {
+            // Physics simulation, movement, collisions
+            UpdatePhysicsSimulation(fixedDeltaTime);
+            UpdatePlantMovement(fixedDeltaTime);
+        }
+
+        private void UpdateVisualEffects(float deltaTime) { /* Visual logic */ }
+        private void UpdateUI(float deltaTime) { /* UI updates */ }
+        private void UpdatePhysicsSimulation(float deltaTime) { /* Physics */ }
+        private void UpdatePlantMovement(float deltaTime) { /* Movement */ }
+    }
+
+    #endregion
+
+    #region Priority Management Example
+
+    /// <summary>
+    /// Example showing how to manage update priorities for dependent systems
+    /// Environmental system must run before cultivation system
+    /// </summary>
+    public class EnvironmentalUpdateManager : TickableMonoBehaviour
+    {
+        public override int Priority => TickPriority.EnvironmentalManager; // -50 (runs first)
+
+        public override void Tick(float deltaTime)
+        {
+            // Environmental updates that cultivation depends on
+            UpdateTemperature(deltaTime);
+            UpdateHumidity(deltaTime);
+            UpdateLighting(deltaTime);
+
+            // Broadcast environmental changes for other systems to react
+            NotifyEnvironmentalChanges();
+        }
+
+        private void UpdateTemperature(float deltaTime) { }
+        private void UpdateHumidity(float deltaTime) { }
+        private void UpdateLighting(float deltaTime) { }
+        private void NotifyEnvironmentalChanges() { }
+    }
+
+    public class CultivationUpdateManager : TickableMonoBehaviour
+    {
+        public override int Priority => TickPriority.CultivationManager; // -20 (runs after environmental)
+
+        public override void Tick(float deltaTime)
+        {
+            // Cultivation updates that depend on environmental state
+            ApplyEnvironmentalEffectsToPlants(deltaTime);
+            UpdatePlantGrowthBasedOnConditions(deltaTime);
+            HandlePlantStressFromEnvironment(deltaTime);
+        }
+
+        private void ApplyEnvironmentalEffectsToPlants(float deltaTime) { }
+        private void UpdatePlantGrowthBasedOnConditions(float deltaTime) { }
+        private void HandlePlantStressFromEnvironment(float deltaTime) { }
+    }
+
+    #endregion
+}

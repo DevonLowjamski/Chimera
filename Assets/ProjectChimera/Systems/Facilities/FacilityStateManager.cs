@@ -1,6 +1,7 @@
 using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ProjectChimera.Systems.Facilities
 {
@@ -33,7 +34,7 @@ namespace ProjectChimera.Systems.Facilities
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[FacilityStateManager] Initialized successfully");
+                ChimeraLogger.Log("FACILITY", "FacilityStateManager initialized", this);
             }
         }
 
@@ -47,7 +48,7 @@ namespace ProjectChimera.Systems.Facilities
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[FacilityStateManager] Shutdown completed");
+                ChimeraLogger.Log("FACILITY", "FacilityStateManager shutdown", this);
             }
         }
 
@@ -72,7 +73,7 @@ namespace ProjectChimera.Systems.Facilities
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[FacilityStateManager] Facility {facilityId} state: {state}");
+                ChimeraLogger.Log("FACILITY", $"Facility {facilityId} state set to {state}", this);
             }
         }
 
@@ -136,7 +137,7 @@ namespace ProjectChimera.Systems.Facilities
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[FacilityStateManager] Cleared {count} facility states");
+                ChimeraLogger.Log("FACILITY", $"Cleared {count} facility states", this);
             }
         }
     }

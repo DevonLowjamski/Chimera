@@ -41,11 +41,10 @@ namespace ProjectChimera.Systems.Construction
             
             // Implementation would create SchematicSO from selected objects
             var schematic = ScriptableObject.CreateInstance<SchematicSO>();
-            schematic.SchematicName = schematicName;
-            schematic.Description = description;
-            schematic.CreatedBy = createdBy;
-            // Note: CreatedDate is handled by CreationDate property which is DateTime, not string
-            
+            schematic.SetSchematicName(schematicName);
+            schematic.SetDescription(description);
+            schematic.SetCreatedBy(createdBy);
+
             return schematic;
         }
         
@@ -161,7 +160,7 @@ namespace ProjectChimera.Systems.Construction
         private void LogDebug(string message)
         {
             if (_enableDebugLogging)
-                ChimeraLogger.Log($"[SchematicPlacementHandler] {message}");
+                ChimeraLogger.Log("OTHER", "$1", this);
         }
     }
 }

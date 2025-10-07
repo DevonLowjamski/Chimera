@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ProjectChimera.Data.Facilities;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Facilities
 {

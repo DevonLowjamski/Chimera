@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
+using System.Linq;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Systems.Gameplay
 {
@@ -45,7 +47,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_uiDocument == null)
             {
-                ChimeraLogger.LogWarning("[GeneticsToolbarManager] No UI document assigned");
+                Logger.Log("OTHER", "$1", this);
                 return;
             }
 
@@ -68,7 +70,7 @@ namespace ProjectChimera.Systems.Gameplay
             _toolbarContainer.style.display = DisplayStyle.None;
 
             CreateTabs();
-            ChimeraLogger.Log("[GeneticsToolbarManager] Toolbar initialized");
+            Logger.Log("OTHER", "$1", this);
         }
 
         /// <summary>
@@ -191,7 +193,7 @@ namespace ProjectChimera.Systems.Gameplay
             }
 
             UpdateToolbarContent();
-            ChimeraLogger.Log($"[GeneticsToolbarManager] Selected tab: {tabId}");
+            Logger.Log("OTHER", "$1", this);
         }
 
         /// <summary>
@@ -339,25 +341,25 @@ namespace ProjectChimera.Systems.Gameplay
 
         private void OnPlantStrain()
         {
-            ChimeraLogger.Log("[GeneticsToolbarManager] Plant strain requested");
+            Logger.Log("OTHER", "$1", this);
             // Would integrate with planting system
         }
 
         private void OnCreateTissueCulture()
         {
-            ChimeraLogger.Log("[GeneticsToolbarManager] Create tissue culture requested");
+            Logger.Log("OTHER", "$1", this);
             // Would integrate with tissue culture system
         }
 
         private void OnStartMicropropagation()
         {
-            ChimeraLogger.Log("[GeneticsToolbarManager] Start micropropagation requested");
+            Logger.Log("OTHER", "$1", this);
             // Would integrate with micropropagation system
         }
 
         private void OnHarvestClones()
         {
-            ChimeraLogger.Log("[GeneticsToolbarManager] Harvest clones requested");
+            Logger.Log("OTHER", "$1", this);
             // Would integrate with harvesting system
         }
 

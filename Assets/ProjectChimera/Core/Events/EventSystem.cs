@@ -4,6 +4,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using ProjectChimera.Core;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Core.Events
 {
@@ -63,7 +64,7 @@ namespace ProjectChimera.Core.Events
                     }
                     catch (Exception ex)
                     {
-                        ChimeraLogger.LogError($"Error handling event {eventType.Name}: {ex.Message}");
+                        Logger.LogError("EventSystem", $"Handler exception: {ex.Message}");
                     }
                 }
             }
@@ -109,7 +110,7 @@ namespace ProjectChimera.Core.Events
                     }
                     catch (Exception ex)
                     {
-                        ChimeraLogger.LogError($"Error handling queued event {eventType.Name}: {ex.Message}");
+                        Logger.LogError("EventSystem", $"DynamicInvoke exception: {ex.Message}");
                     }
                 }
             }
@@ -201,7 +202,7 @@ namespace ProjectChimera.Core.Events
         protected override void OnManagerInitialize()
         {
             // Manager-specific initialization
-            ChimeraLogger.Log("[EventManager] Event system initialized");
+            Logger.LogInfo("EventSystem", "EventManager initialized");
         }
 
         protected override void OnManagerShutdown()
@@ -224,12 +225,12 @@ namespace ProjectChimera.Core.Events
         /// <summary>
         /// ITickable Priority property
         /// </summary>
-        public int Priority => ProjectChimera.Core.Updates.TickPriority.EventManager;
+        public int TickPriority => ProjectChimera.Core.Updates.TickPriority.EventManager;
 
         /// <summary>
         /// ITickable Enabled property
         /// </summary>
-        public bool Enabled => isActiveAndEnabled;
+        public bool IsTickable => isActiveAndEnabled;
 
         protected override void OnDestroy()
         {

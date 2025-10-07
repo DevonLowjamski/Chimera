@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ProjectChimera.Core.DependencyInjection;
-using ContainerVerificationResult = ProjectChimera.Core.DependencyInjection.ContainerVerificationResult;
-using AdvancedServiceDescriptor = ProjectChimera.Core.DependencyInjection.AdvancedServiceDescriptor;
+// Types now available directly in ProjectChimera.Core namespace
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.SimpleDI;
+using ServiceRegistration = ProjectChimera.Core.ServiceRegistrationData;
 
 namespace ProjectChimera.Core
 {
@@ -20,7 +21,7 @@ namespace ProjectChimera.Core
     /// Provides registration, resolution, and lifecycle management for all Project Chimera services
     /// Supports singleton, transient, and scoped lifetimes with constructor injection
     /// </summary>
-    public interface IServiceContainer : IDisposable
+    public interface IServiceContainer : IServiceLocator, IDisposable
     {
         /// <summary>
         /// Registers a service with singleton lifetime (single instance for entire application)

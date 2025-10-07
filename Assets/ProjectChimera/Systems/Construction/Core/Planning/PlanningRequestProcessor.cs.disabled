@@ -1,0 +1,412 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using System;
+using System.Linq;
+
+namespace ProjectChimera.Systems.Construction.Core.Planning
+{
+    /// <summary>
+    /// REFACTORED: Planning Request Processor - Focused request queue and processing management
+    /// Handles request queuing, prioritization, batching, and status tracking
+    /// Single Responsibility: Request processing and queue management
+    /// </summary>
+    public class PlanningRequestProcessor : MonoBehaviour
+    {
+        [Header("Request Processing Settings")]
+        [SerializeField] private bool _enableRequestProcessing = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private int _maxQueuedRequests = 50;
+        [SerializeField] private int _maxRequestsPerFrame = 3;
+
+        [Header("Request Priority Settings")]
+        [SerializeField] private bool _enablePriorityProcessing = true;
+        [SerializeField] private float _highPriorityThreshold = 0.8f;
+        [SerializeField] private float _requestTimeoutSeconds = 300f; // 5 minutes
+
+        // Request queues
+        private readonly Queue<PlanningRequestData> _pendingRequests = new Queue<PlanningRequestData>();
+        private readonly Dictionary<string, PlanningRequestData> _processingRequests = new Dictionary<string, PlanningRequestData>();
+        private readonly Dictionary<string, PlanningRequestData> _completedRequests = new Dictionary<string, PlanningRequestData>();
+        private readonly Dictionary<string, PlanningRequestData> _failedRequests = new Dictionary<string, PlanningRequestData>();
+
+        // Statistics
+        private RequestProcessorStats _stats = new RequestProcessorStats();
+
+        // Properties
+        public bool IsEnabled { get; private set; } = true;
+        public RequestProcessorStats GetStats() => _stats;
+
+        // Events
+        public System.Action<string> OnRequestQueued;
+        public System.Action<string> OnRequestStarted;
+        public System.Action<string> OnRequestCompleted;
+        public System.Action<string> OnRequestFailed;
+        public System.Action<string> OnRequestTimedOut;
+
+        private void Start()
+        {
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            _stats = new RequestProcessorStats();
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "📥 PlanningRequestProcessor initialized", this);
+        }
+
+        /// <summary>
+        /// Queue planning request for processing
+        /// </summary>
+        public string QueuePlanningRequest(PlanningRequest request)
+        {
+            if (!IsEnabled || !_enableRequestProcessing)
+                return null;
+
+            if (_pendingRequests.Count >= _maxQueuedRequests)
+            {
+                if (_enableLogging)
+                    ChimeraLogger.LogWarning("CONSTRUCTION", $"Request queue full ({_maxQueuedRequests}), rejecting request", this);
+                return null;
+            }
+
+            var requestId = GenerateRequestId();
+            var requestData = new PlanningRequestData
+            {
+                RequestId = requestId,
+                Request = request,
+                QueueTime = Time.time,
+                Status = PlanningRequestStatus.Queued,
+                Priority = CalculateRequestPriority(request)
+            };
+
+            if (string.IsNullOrEmpty(request.RequestId))
+            {
+                request.RequestId = requestId;
+            }
+
+            _pendingRequests.Enqueue(requestData);
+            _stats.PlanningRequests++;
+            _stats.QueuedRequests++;
+
+            OnRequestQueued?.Invoke(requestId);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Queued planning request: {requestId} (Priority: {requestData.Priority:F2})", this);
+
+            return requestId;
+        }
+
+        /// <summary>
+        /// Get pending requests for processing
+        /// </summary>
+        public List<PlanningRequest> GetPendingRequests(int maxRequests = -1)
+        {
+            if (!IsEnabled || _pendingRequests.Count == 0)
+                return new List<PlanningRequest>();
+
+            int requestCount = maxRequests == -1 ? _maxRequestsPerFrame : Mathf.Min(maxRequests, _maxRequestsPerFrame);
+            var requests = new List<PlanningRequest>();
+
+            // Convert queue to list for priority sorting if enabled
+            if (_enablePriorityProcessing && _pendingRequests.Count > 1)
+            {
+                var pendingList = new List<PlanningRequestData>(_pendingRequests);
+                _pendingRequests.Clear();
+
+                // Sort by priority (highest first) and queue time (oldest first)
+                pendingList.Sort((a, b) =>
+                {
+                    int priorityComparison = b.Priority.CompareTo(a.Priority);
+                    return priorityComparison != 0 ? priorityComparison : a.QueueTime.CompareTo(b.QueueTime);
+                });
+
+                // Re-queue remaining requests
+                for (int i = requestCount; i < pendingList.Count; i++)
+                {
+                    _pendingRequests.Enqueue(pendingList[i]);
+                }
+
+                // Process top priority requests
+                for (int i = 0; i < Math.Min(requestCount, pendingList.Count); i++)
+                {
+                    var requestData = pendingList[i];
+                    MarkRequestStarted(requestData);
+                    requests.Add(requestData.Request);
+                }
+            }
+            else
+            {
+                // FIFO processing
+                for (int i = 0; i < requestCount && _pendingRequests.Count > 0; i++)
+                {
+                    var requestData = _pendingRequests.Dequeue();
+                    MarkRequestStarted(requestData);
+                    requests.Add(requestData.Request);
+                }
+            }
+
+            return requests;
+        }
+
+        /// <summary>
+        /// Mark request as completed
+        /// </summary>
+        public bool MarkRequestCompleted(string requestId)
+        {
+            if (!IsEnabled || string.IsNullOrEmpty(requestId))
+                return false;
+
+            if (_processingRequests.TryGetValue(requestId, out var requestData))
+            {
+                requestData.Status = PlanningRequestStatus.Completed;
+                requestData.CompletionTime = Time.time;
+                requestData.ProcessingDuration = requestData.CompletionTime - requestData.StartTime;
+
+                _processingRequests.Remove(requestId);
+                _completedRequests[requestId] = requestData;
+
+                _stats.QueuedRequests--;
+                _stats.CompletedRequests++;
+
+                OnRequestCompleted?.Invoke(requestId);
+
+                if (_enableLogging)
+                    ChimeraLogger.Log("CONSTRUCTION", $"Completed planning request: {requestId} (Duration: {requestData.ProcessingDuration:F2}s)", this);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Mark request as failed
+        /// </summary>
+        public bool MarkRequestFailed(string requestId, string errorMessage = null)
+        {
+            if (!IsEnabled || string.IsNullOrEmpty(requestId))
+                return false;
+
+            if (_processingRequests.TryGetValue(requestId, out var requestData))
+            {
+                requestData.Status = PlanningRequestStatus.Failed;
+                requestData.CompletionTime = Time.time;
+                requestData.ProcessingDuration = requestData.CompletionTime - requestData.StartTime;
+                requestData.ErrorMessage = errorMessage;
+
+                _processingRequests.Remove(requestId);
+                _failedRequests[requestId] = requestData;
+
+                _stats.QueuedRequests--;
+                _stats.PlanningFailures++;
+
+                OnRequestFailed?.Invoke(requestId);
+
+                if (_enableLogging)
+                    ChimeraLogger.LogWarning("CONSTRUCTION", $"Failed planning request: {requestId} - {errorMessage}", this);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Get request status
+        /// </summary>
+        public PlanningRequestStatus GetRequestStatus(string requestId)
+        {
+            if (string.IsNullOrEmpty(requestId))
+                return PlanningRequestStatus.Unknown;
+
+            // Check processing requests
+            if (_processingRequests.ContainsKey(requestId))
+                return PlanningRequestStatus.Processing;
+
+            // Check completed requests
+            if (_completedRequests.ContainsKey(requestId))
+                return PlanningRequestStatus.Completed;
+
+            // Check failed requests
+            if (_failedRequests.ContainsKey(requestId))
+                return PlanningRequestStatus.Failed;
+
+            // Check pending requests
+            foreach (var pending in _pendingRequests)
+            {
+                if (pending.RequestId == requestId)
+                    return PlanningRequestStatus.Queued;
+            }
+
+            return PlanningRequestStatus.Unknown;
+        }
+
+        /// <summary>
+        /// Get queued request count
+        /// </summary>
+        public int GetQueuedRequestCount()
+        {
+            return _pendingRequests.Count + _processingRequests.Count;
+        }
+
+        /// <summary>
+        /// Clear completed and failed requests history
+        /// </summary>
+        public void ClearRequestHistory()
+        {
+            _completedRequests.Clear();
+            _failedRequests.Clear();
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "Cleared request history", this);
+        }
+
+        /// <summary>
+        /// Process request timeouts
+        /// </summary>
+        public void ProcessTimeouts()
+        {
+            if (!IsEnabled || _requestTimeoutSeconds <= 0)
+                return;
+
+            float currentTime = Time.time;
+            var timedOutRequests = new List<string>();
+
+            foreach (var kvp in _processingRequests)
+            {
+                var requestData = kvp.Value;
+                if (currentTime - requestData.StartTime > _requestTimeoutSeconds)
+                {
+                    timedOutRequests.Add(kvp.Key);
+                }
+            }
+
+            foreach (var requestId in timedOutRequests)
+            {
+                MarkRequestFailed(requestId, "Request timed out");
+                OnRequestTimedOut?.Invoke(requestId);
+            }
+        }
+
+        /// <summary>
+        /// Set system enabled/disabled
+        /// </summary>
+        public void SetEnabled(bool enabled)
+        {
+            IsEnabled = enabled;
+
+            if (!enabled)
+            {
+                // Clear all pending requests
+                _pendingRequests.Clear();
+                var processingIds = new List<string>(_processingRequests.Keys);
+                foreach (var requestId in processingIds)
+                {
+                    MarkRequestFailed(requestId, "System disabled");
+                }
+            }
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"PlanningRequestProcessor: {(enabled ? "enabled" : "disabled")}", this);
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Generate unique request ID
+        /// </summary>
+        private string GenerateRequestId()
+        {
+            return $"REQ_{System.DateTime.Now:yyyyMMdd_HHmmss}_{UnityEngine.Random.Range(1000, 9999)}";
+        }
+
+        /// <summary>
+        /// Calculate request priority
+        /// </summary>
+        private float CalculateRequestPriority(PlanningRequest request)
+        {
+            float priority = 0.5f; // Base priority
+
+            // Increase priority based on area size (larger areas = higher priority)
+            if (request.AreaSize > 0)
+            {
+                priority += Mathf.Clamp01(request.AreaSize / 1000f) * 0.3f;
+            }
+
+            // Increase priority based on building count
+            if (request.RequiredBuildings != null && request.RequiredBuildings.Length > 0)
+            {
+                priority += Mathf.Clamp01(request.RequiredBuildings.Length / 10f) * 0.2f;
+            }
+
+            // Increase priority based on constraints (more constraints = higher priority)
+            if (request.Constraints.MaxCost > 0 || request.Constraints.MaxDuration > 0)
+            {
+                priority += 0.1f;
+            }
+
+            return Mathf.Clamp01(priority);
+        }
+
+        /// <summary>
+        /// Mark request as started processing
+        /// </summary>
+        private void MarkRequestStarted(PlanningRequestData requestData)
+        {
+            requestData.Status = PlanningRequestStatus.Processing;
+            requestData.StartTime = Time.time;
+
+            _processingRequests[requestData.RequestId] = requestData;
+
+            OnRequestStarted?.Invoke(requestData.RequestId);
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Planning request data wrapper
+    /// </summary>
+    [System.Serializable]
+    public struct PlanningRequestData
+    {
+        public string RequestId;
+        public PlanningRequest Request;
+        public PlanningRequestStatus Status;
+        public float Priority;
+        public float QueueTime;
+        public float StartTime;
+        public float CompletionTime;
+        public float ProcessingDuration;
+        public string ErrorMessage;
+    }
+
+    /// <summary>
+    /// Planning request status enumeration
+    /// </summary>
+    public enum PlanningRequestStatus
+    {
+        Unknown,
+        Queued,
+        Processing,
+        Completed,
+        Failed
+    }
+
+    /// <summary>
+    /// Request processor statistics
+    /// </summary>
+    [System.Serializable]
+    public struct RequestProcessorStats
+    {
+        public int PlanningRequests;
+        public int QueuedRequests;
+        public int CompletedRequests;
+        public int PlanningFailures;
+        public float AverageProcessingTime;
+        public float AverageQueueTime;
+    }
+}

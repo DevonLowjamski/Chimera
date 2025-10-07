@@ -3,14 +3,18 @@
     "rootNamespace": "ProjectChimera.Systems.Construction",
     "references": [
         "ProjectChimera.Core",
+        "ProjectChimera.Core.Performance",
         "ProjectChimera.Systems.Events",
         "ProjectChimera.Systems.Diagnostics",
+        "ProjectChimera.Systems.Camera",
         "ProjectChimera.Shared",
         "ProjectChimera.Data.Shared",
         "ProjectChimera.Data.Construction",
         "ProjectChimera.Data.Facilities",
         "ProjectChimera.Data.Equipment",
         "ProjectChimera.Data.Economy",
+        "ProjectChimera.Systems.Economy",
+        "ProjectChimera.Systems.Services.Economy",
         "UnityEngine.UI"
     ],
     "includePlatforms": [],

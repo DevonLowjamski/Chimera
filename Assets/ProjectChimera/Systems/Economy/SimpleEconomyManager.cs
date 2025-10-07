@@ -10,7 +10,17 @@ namespace ProjectChimera.Systems.Economy
     /// Provides basic currency and resource management as described in gameplay document
     /// Focuses on equipment purchasing and schematics trading without complex financial systems
     /// </summary>
-    public class SimpleEconomyManager : MonoBehaviour
+    public interface ICurrencyManager
+    {
+        bool CanAfford(int cost);
+        bool SpendCash(int amount);
+        bool SpendCurrency(int currencyType, int amount, string reason = "");
+        void AddCurrency(int currencyType, int amount, string description = "");
+        void AddCurrency(int amount, string description = "");
+        int GetCurrentCurrency();
+    }
+
+    public class SimpleEconomyManager : MonoBehaviour, ICurrencyManager
     {
         [Header("Starting Resources")]
         [SerializeField] private int _startingCurrency = 10000;
@@ -46,7 +56,7 @@ namespace ProjectChimera.Systems.Economy
             _resourceStocks["water"] = 100;      // Starting water capacity
             _resourceStocks["nutrients"] = 50;    // Starting nutrient stock
 
-            ChimeraLogger.Log($"[SimpleEconomyManager] Economy initialized: {_currentCurrency} currency, {_currentSkillPoints} skill points");
+            ChimeraLogger.LogInfo("ECONOMY", "Economy system initialized", this);
         }
 
         /// <summary>
@@ -59,12 +69,12 @@ namespace ProjectChimera.Systems.Economy
                 _currentCurrency -= cost;
                 RecordTransaction($"Purchased {itemName}", -cost, description);
 
-                ChimeraLogger.Log($"[SimpleEconomyManager] Purchased {itemName} for {cost} currency");
+                ChimeraLogger.LogInfo("ECONOMY", "Economy system initialized", this);
                 return true;
             }
             else
             {
-                ChimeraLogger.Log($"[SimpleEconomyManager] Insufficient funds for {itemName} (need {cost}, have {_currentCurrency})");
+                ChimeraLogger.LogInfo("ECONOMY", "Economy system initialized", this);
                 return false;
             }
         }
@@ -125,7 +135,13 @@ namespace ProjectChimera.Systems.Economy
             _currentCurrency = Mathf.Min(_currentCurrency + amount, _maxCurrency);
             RecordTransaction($"Received {amount} currency", amount, description);
 
-            ChimeraLogger.Log($"[SimpleEconomyManager] Added {amount} currency, new balance: {_currentCurrency}");
+            ChimeraLogger.LogInfo("ECONOMY", "Economy system initialized", this);
+        }
+
+        // ICurrencyManager explicit method for typed currency (0=cash for now)
+        public void AddCurrency(int currencyType, int amount, string description = "")
+        {
+            AddCurrency(amount, description);
         }
 
         /// <summary>
@@ -136,7 +152,7 @@ namespace ProjectChimera.Systems.Economy
             _currentSkillPoints = Mathf.Min(_currentSkillPoints + amount, _maxSkillPoints);
             RecordTransaction($"Earned {amount} skill points", amount, description, true);
 
-            ChimeraLogger.Log($"[SimpleEconomyManager] Added {amount} skill points, new balance: {_currentSkillPoints}");
+            ChimeraLogger.LogInfo("ECONOMY", "Economy system initialized", this);
         }
 
         /// <summary>
@@ -147,12 +163,12 @@ namespace ProjectChimera.Systems.Economy
             if (_resourceStocks.ContainsKey(resourceType) && _resourceStocks[resourceType] >= amount)
             {
                 _resourceStocks[resourceType] -= amount;
-                ChimeraLogger.Log($"[SimpleEconomyManager] Consumed {amount} {resourceType}, remaining: {_resourceStocks[resourceType]}");
+                ChimeraLogger.LogInfo("ECONOMY", "Economy system initialized", this);
                 return true;
             }
             else
             {
-                ChimeraLogger.LogWarning($"[SimpleEconomyManager] Insufficient {resourceType} (need {amount}, have {_resourceStocks.ContainsKey(resourceType) ? _resourceStocks[resourceType] : 0})");
+                ChimeraLogger.LogInfo("ECONOMY", "Economy system initialized", this);
                 return false;
             }
         }
@@ -170,12 +186,12 @@ namespace ProjectChimera.Systems.Economy
                 RecordTransaction($"Purchased schematic: {schematicName}", -materialCost, "Schematic purchase");
                 RecordTransaction($"Spent {skillPointCost} skill points", -skillPointCost, "Schematic purchase", true);
 
-                ChimeraLogger.Log($"[SimpleEconomyManager] Purchased schematic {schematicName} for {skillPointCost} SP and {materialCost} currency");
+                ChimeraLogger.LogInfo("ECONOMY", "Economy system initialized", this);
                 return true;
             }
             else
             {
-                ChimeraLogger.Log($"[SimpleEconomyManager] Cannot purchase schematic {schematicName} (need {skillPointCost} SP and {materialCost} currency)");
+                ChimeraLogger.LogInfo("ECONOMY", "Economy system initialized", this);
                 return false;
             }
         }
@@ -226,6 +242,22 @@ namespace ProjectChimera.Systems.Economy
         public bool CanAfford(int cost)
         {
             return _currentCurrency >= cost;
+        }
+
+        public bool SpendCash(int amount)
+        {
+            if (_currentCurrency >= amount)
+            {
+                _currentCurrency -= amount;
+                RecordTransaction($"Spent {amount} currency", -amount, "Cash spend");
+                return true;
+            }
+            return false;
+        }
+
+        public bool SpendCurrency(int currencyType, int amount, string reason = "")
+        {
+            return SpendCash(amount);
         }
 
         /// <summary>
@@ -289,7 +321,7 @@ namespace ProjectChimera.Systems.Economy
         {
             InitializeEconomy();
             _recentTransactions.Clear();
-            ChimeraLogger.Log("[SimpleEconomyManager] Economy reset to starting values");
+            ChimeraLogger.LogInfo("ECONOMY", "Economy system initialized", this);
         }
     }
 

@@ -1,5 +1,8 @@
 using UnityEngine;
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Core.Interfaces;
 
 namespace ProjectChimera.Systems.Camera
 {
@@ -7,7 +10,7 @@ namespace ProjectChimera.Systems.Camera
     /// BASIC: Simple camera level contextual menu integrator for Project Chimera.
     /// Focuses on essential camera-menu integration without complex level-based menus and target-specific actions.
     /// </summary>
-    public class CameraLevelContextualMenuIntegrator : MonoBehaviour
+    public class CameraLevelContextualMenuIntegrator : MonoBehaviour, ITickable
     {
         [Header("Basic Integration Settings")]
         [SerializeField] private bool _enableBasicIntegration = true;
@@ -15,7 +18,7 @@ namespace ProjectChimera.Systems.Camera
         [SerializeField] private bool _autoUpdateOnCameraChange = true;
 
         // Basic camera tracking
-        private Camera _mainCamera;
+        private UnityEngine.Camera _mainCamera;
         private Vector3 _currentCameraPosition;
         private Quaternion _currentCameraRotation;
         private bool _isInitialized = false;
@@ -33,32 +36,29 @@ namespace ProjectChimera.Systems.Camera
         {
             if (_isInitialized) return;
 
-            // Primary: Try ServiceContainer resolution
-            if (ServiceContainerFactory.Instance.TryResolve<Camera>(out var serviceCamera))
+            // Primary: Try ServiceContainer resolution via ICameraService
+            var cameraService = ServiceContainerFactory.Instance?.TryResolve<ProjectChimera.Core.Interfaces.ICameraService>();
+            if (cameraService != null)
             {
-                _mainCamera = serviceCamera;
+                _mainCamera = cameraService.MainCamera;
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log("[CameraLevelContextualMenuIntegrator] Using camera from ServiceContainer");
+                    ChimeraLogger.Log("OTHER", "Camera resolved from ICameraService", this);
                 }
             }
             else
             {
                 // Fallback: Standard Unity camera discovery
-                _mainCamera = Camera.main;
+                _mainCamera = UnityEngine.Camera.main;
                 if (_mainCamera == null)
                 {
-                    _mainCamera = UnityEngine.Object.FindObjectOfType<Camera>();
+                    _mainCamera = UnityEngine.Camera.main ?? ServiceContainerFactory.Instance?.TryResolve<ProjectChimera.Core.Interfaces.ICameraService>()?.MainCamera;
                 }
 
                 // Auto-register discovered camera in ServiceContainer for other systems
-                if (_mainCamera != null)
+                if (_mainCamera != null && _enableLogging)
                 {
-                    ServiceContainerFactory.Instance.RegisterInstance<Camera>(_mainCamera);
-                    if (_enableLogging)
-                    {
-                        ChimeraLogger.Log("[CameraLevelContextualMenuIntegrator] Camera registered in ServiceContainer for system-wide access");
-                    }
+                    ChimeraLogger.Log("OTHER", "Camera discovered and available", this);
                 }
             }
 
@@ -72,37 +72,54 @@ namespace ProjectChimera.Systems.Camera
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[CameraLevelContextualMenuIntegrator] Initialized successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
         /// <summary>
         /// Update camera tracking
         /// </summary>
-        private void Update()
+    [SerializeField] private float _tickInterval = 0.1f; // Configurable update frequency
+    private float _lastTickTime;
+
+    public int TickPriority => 50; // Lower priority for complex updates
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
+        _lastTickTime += deltaTime;
+        if (_lastTickTime >= _tickInterval)
         {
-            if (!_enableBasicIntegration || !_isInitialized || _mainCamera == null) return;
-
-            if (!_autoUpdateOnCameraChange) return;
-
-            // Check for camera position/rotation changes
-            Vector3 newPosition = _mainCamera.transform.position;
-            Quaternion newRotation = _mainCamera.transform.rotation;
-
-            if (newPosition != _currentCameraPosition || newRotation != _currentCameraRotation)
-            {
-                _currentCameraPosition = newPosition;
-                _currentCameraRotation = newRotation;
-
-                OnCameraPositionChanged?.Invoke(_currentCameraPosition, _currentCameraRotation);
-                OnMenuIntegrationUpdated?.Invoke();
-
-                if (_enableLogging)
-                {
-                    ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Camera position updated: {newPosition}");
-                }
-            }
+            _lastTickTime = 0f;
+                if (!_enableBasicIntegration || !_isInitialized || _mainCamera == null) return;
+    
+                if (!_autoUpdateOnCameraChange) return;
+    
+                // Check for camera position/rotation changes
+                Vector3 newPosition = _mainCamera.transform.position;
+                Quaternion newRotation = _mainCamera.transform.rotation;
+    
+                if (newPosition != _currentCameraPosition || newRotation != _currentCameraRotation)
+                    _currentCameraPosition = newPosition;
+                    _currentCameraRotation = newRotation;
+    
+                    OnCameraPositionChanged?.Invoke(_currentCameraPosition, _currentCameraRotation);
+                    OnMenuIntegrationUpdated?.Invoke();
+    
+                    if (_enableLogging)
+                        ChimeraLogger.Log("OTHER", "$1", this);
         }
+    }
+
+    private void Awake()
+    {
+        UpdateOrchestrator.Instance.RegisterTickable(this);
+    }
+
+    private void OnDestroy()
+    {
+        UpdateOrchestrator.Instance.UnregisterTickable(this);
+    }
 
         /// <summary>
         /// Get current camera position
@@ -191,7 +208,7 @@ namespace ProjectChimera.Systems.Camera
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[CameraLevelContextualMenuIntegrator] Integration {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -210,7 +227,7 @@ namespace ProjectChimera.Systems.Camera
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log("[CameraLevelContextualMenuIntegrator] Camera update forced");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
             }
         }

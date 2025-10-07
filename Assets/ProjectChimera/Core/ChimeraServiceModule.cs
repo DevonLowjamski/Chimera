@@ -1,9 +1,10 @@
 using System;
+using System.Linq;
 using UnityEngine;
-using ProjectChimera.Core.DependencyInjection;
+
 using ProjectChimera.Core.Logging;
 
-namespace ProjectChimera.Core.DependencyInjection
+namespace ProjectChimera.Core
 {
     /// <summary>
     /// REFACTORED: Core service module has been decomposed into focused service components.
@@ -85,17 +86,17 @@ namespace ProjectChimera.Core.DependencyInjection
         // Logging methods
         private void LogModuleAction(string action)
         {
-            ChimeraLogger.Log("CORE", $"ChimeraServiceModule: {action}", this);
+            ProjectChimera.Core.Logging.ChimeraLogger.LogInfo("ChimeraServiceModule", "$1");
         }
 
         private void LogModuleError(string error)
         {
-            ChimeraLogger.LogError("CORE", $"ChimeraServiceModule Error: {error}", this);
+            ProjectChimera.Core.Logging.ChimeraLogger.LogInfo("ChimeraServiceModule", "$1");
         }
 
         private void LogModuleWarning(string warning)
         {
-            ChimeraLogger.LogWarning("CORE", $"ChimeraServiceModule Warning: {warning}", this);
+            ProjectChimera.Core.Logging.ChimeraLogger.LogInfo("ChimeraServiceModule", "$1");
         }
 
         // Metrics methods
@@ -171,13 +172,13 @@ namespace ProjectChimera.Core.DependencyInjection
             // Configure utility services if enabled
             if (_enableUtilityServices && _utilityServiceProvider != null)
             {
-                _utilityServiceProvider.RegisterUtilityServices(serviceContainer);
+                _utilityServiceProvider.RegisterUtilityServices();
             }
 
             // Configure data services if enabled
             if (_enableDataServices && _dataServiceProvider != null)
             {
-                _dataServiceProvider.RegisterDataServices(serviceContainer);
+                _dataServiceProvider.RegisterDataServices();
             }
 
             // Configure null implementations if enabled
@@ -200,13 +201,13 @@ namespace ProjectChimera.Core.DependencyInjection
             // Initialize utility service provider
             if (_enableUtilityServices && _utilityServiceProvider != null)
             {
-                _utilityServiceProvider.InitializeServices(serviceContainer);
+                _utilityServiceProvider.InitializeServices();
             }
 
             // Initialize data service provider
             if (_enableDataServices && _dataServiceProvider != null)
             {
-                _dataServiceProvider.InitializeServices(serviceContainer);
+                _dataServiceProvider.InitializeServices();
             }
 
             // Initialize null implementation provider
@@ -223,30 +224,32 @@ namespace ProjectChimera.Core.DependencyInjection
             // Validate manager registration provider
             if (_enableManagerRegistration && _managerRegistrationProvider != null)
             {
-                allValid &= _managerRegistrationProvider.ValidateServices(serviceContainer);
+                _managerRegistrationProvider.ValidateServices(serviceContainer);
+                // Note: ValidateServices is void, so we can't check its return value
             }
 
             // Validate utility service provider
             if (_enableUtilityServices && _utilityServiceProvider != null)
             {
-                allValid &= _utilityServiceProvider.ValidateServices(serviceContainer);
+                allValid = allValid && _utilityServiceProvider.ValidateServices();
             }
 
             // Validate data service provider
             if (_enableDataServices && _dataServiceProvider != null)
             {
-                allValid &= _dataServiceProvider.ValidateServices(serviceContainer);
+                allValid = allValid && _dataServiceProvider.ValidateServices();
             }
 
             // Validate null implementation provider
             if (_enableNullImplementations && _nullImplementationProvider != null)
             {
-                allValid &= _nullImplementationProvider.ValidateServices(serviceContainer);
+                _nullImplementationProvider.ValidateServices(serviceContainer);
+                // Note: ValidateServices is void, so we can't check its return value
             }
 
             if (!allValid)
             {
-                ChimeraLogger.LogWarning("Service Validation", "Some services failed validation", this);
+                ProjectChimera.Core.Logging.ChimeraLogger.LogInfo("ChimeraServiceModule", "$1");
             }
         }
 
@@ -347,13 +350,13 @@ namespace ProjectChimera.Core.DependencyInjection
                 LogModuleAction($"Module initialized: {metrics.IsInitialized}");
                 LogModuleAction($"Total components: {metrics.ComponentCount}");
                 LogModuleAction($"Total manager registrations: {metrics.ManagerRegistrationStats.TotalRegistered}");
-                LogModuleAction($"Total utility services: {metrics.UtilityServiceStats.TotalRegistered}");
+                LogModuleAction($"Total utility services: {metrics.UtilityServiceStats.RegisteredServicesCount}");
                 LogModuleAction($"Total data services: {metrics.DataServiceStats.TotalRegistered}");
                 LogModuleAction($"Total null implementations: {metrics.NullImplementationStats.TotalRegistered}");
             }
             else
             {
-                ChimeraLogger.Log("[ChimeraServiceModule] Test only works during play mode");
+                ProjectChimera.Core.Logging.ChimeraLogger.LogInfo("ChimeraServiceModule", "$1");
             }
         }
         #endif

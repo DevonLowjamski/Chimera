@@ -3,6 +3,7 @@ using ProjectChimera.Data.Shared;
 using ProjectChimera.Shared;
 using System.Collections.Generic;
 using System.Linq;
+using ProjectChimera.Shared;
 
 namespace ProjectChimera.Data.Genetics
 {
@@ -14,7 +15,7 @@ namespace ProjectChimera.Data.Genetics
     public class CannabisStrainDatabaseSO : ScriptableObject
     {
         [Header("Strain Database")]
-        [SerializeField] private List<PlantStrainSO> _baseStrains = new List<PlantStrainSO>();
+        [SerializeField] private List<GeneticPlantStrainSO> _baseStrains = new List<GeneticPlantStrainSO>();
         [SerializeField] private List<CannabisStrainAssetSO> _strainAssets = new List<CannabisStrainAssetSO>();
 
         [Header("Database Configuration")]
@@ -24,13 +25,13 @@ namespace ProjectChimera.Data.Genetics
 
         // Public Properties
         public int TotalStrains => _baseStrains.Count + _strainAssets.Count;
-        public List<PlantStrainSO> BaseStrains => _baseStrains;
+        public List<GeneticPlantStrainSO> BaseStrains => _baseStrains;
         public List<CannabisStrainAssetSO> StrainAssets => _strainAssets;
 
         /// <summary>
         /// Get all base strains from the database
         /// </summary>
-        public List<PlantStrainSO> GetAllBaseStrains()
+        public List<GeneticPlantStrainSO> GetAllBaseStrains()
         {
             return _baseStrains.ToList();
         }
@@ -46,7 +47,7 @@ namespace ProjectChimera.Data.Genetics
         /// <summary>
         /// Get a strain by ID
         /// </summary>
-        public PlantStrainSO GetStrainById(string strainId)
+        public GeneticPlantStrainSO GetStrainById(string strainId)
         {
             return _baseStrains.FirstOrDefault(s => s.StrainId == strainId);
         }
@@ -62,7 +63,7 @@ namespace ProjectChimera.Data.Genetics
         /// <summary>
         /// Add a new base strain to the database
         /// </summary>
-        public void AddBaseStrain(PlantStrainSO strain)
+        public void AddBaseStrain(GeneticPlantStrainSO strain)
         {
             if (strain != null && !_baseStrains.Contains(strain))
             {
@@ -84,7 +85,7 @@ namespace ProjectChimera.Data.Genetics
         /// <summary>
         /// Get strains by type (Indica, Sativa, Hybrid)
         /// </summary>
-        public List<PlantStrainSO> GetStrainsByType(StrainType strainType)
+        public List<GeneticPlantStrainSO> GetStrainsByType(StrainType strainType)
         {
             return _baseStrains.Where(s => s.StrainType == strainType).ToList();
         }
@@ -121,7 +122,7 @@ namespace ProjectChimera.Data.Genetics
 
             foreach (var (name, type, description) in defaultStrains)
             {
-                var strain = CreateInstance<PlantStrainSO>();
+                var strain = CreateInstance<GeneticPlantStrainSO>();
                 strain.StrainName = name;
                 strain.StrainType = type;
                 strain.StrainDescription = description;

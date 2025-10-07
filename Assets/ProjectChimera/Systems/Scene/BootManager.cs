@@ -16,12 +16,12 @@ namespace ProjectChimera.Systems.Scene
         private void Start()
         {
             if (_enableDetailedLogging)
-                ChimeraLogger.Log("[BootManager] Starting minimal boot sequence...");
+                ChimeraLogger.Log("SCENE", "BootManager starting", this);
 
             // 1. Validate boot scene
             if (!BootSceneValidator.ValidateBootScene())
             {
-                ChimeraLogger.LogError("[BootManager] Boot scene validation failed!");
+                ChimeraLogger.LogError("SCENE", "Boot scene validation failed", this);
                 return;
             }
 
@@ -36,7 +36,7 @@ namespace ProjectChimera.Systems.Scene
 
             // 3. GameManager handles all subsequent initialization
             if (_enableDetailedLogging)
-                ChimeraLogger.Log("[BootManager] Handoff to GameManager complete");
+                ChimeraLogger.Log("SCENE", "BootManager finished - handing off to GameManager", this);
 
             // Boot manager's job is done - DIGameManager takes over
         }

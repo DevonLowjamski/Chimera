@@ -1,13 +1,15 @@
 using System;
 using UnityEngine;
-using ProjectChimera.Core.DependencyInjection;
+
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.ManagerRegistration;
 
 namespace ProjectChimera.Core
 {
     /// <summary>
-    /// Handles registration of manager interfaces with factory methods and dependency injection.
-    /// Provides fallback implementations and manages interface-based service resolution.
+    /// REFACTORED: Manager registration provider orchestrating focused registration components (Week 8)
+    /// Delegates to CoreManagerRegistration, UIManagerRegistration, ConstructionManagerRegistration,
+    /// DomainManagerRegistration, and AssetServiceRegistration for SRP compliance
     /// </summary>
     public class ManagerRegistrationProvider : ServiceProviderBase
     {
@@ -19,7 +21,14 @@ namespace ProjectChimera.Core
         [SerializeField] private bool _registerAssetServices = true;
         [SerializeField] private bool _registerUpdateOrchestrator = true;
 
-        // Manager registration state
+        // Focused registration components (SRP compliance)
+        private readonly CoreManagerRegistration _coreManagerRegistration = new CoreManagerRegistration();
+        private readonly UIManagerRegistration _uiManagerRegistration = new UIManagerRegistration();
+        private readonly ConstructionManagerRegistration _constructionManagerRegistration = new ConstructionManagerRegistration();
+        private readonly DomainManagerRegistration _domainManagerRegistration = new DomainManagerRegistration();
+        private readonly AssetServiceRegistration _assetServiceRegistration = new AssetServiceRegistration();
+
+        // Registration counters for stats
         private int _registeredCoreManagers = 0;
         private int _registeredUIManagers = 0;
         private int _registeredConstructionManagers = 0;
@@ -30,17 +39,17 @@ namespace ProjectChimera.Core
         // Logging methods
         private void LogProviderAction(string action)
         {
-            ChimeraLogger.Log("CORE", $"ManagerRegistrationProvider: {action}", this);
+            ChimeraLogger.LogInfo("ManagerRegistrationProvider", "$1");
         }
 
         private void LogProviderError(string error)
         {
-            ChimeraLogger.LogError("CORE", $"ManagerRegistrationProvider Error: {error}", this);
+            ChimeraLogger.LogInfo("ManagerRegistrationProvider", "$1");
         }
 
         private void LogProviderWarning(string warning)
         {
-            ChimeraLogger.LogWarning("CORE", $"ManagerRegistrationProvider Warning: {warning}", this);
+            ChimeraLogger.LogInfo("ManagerRegistrationProvider", "$1");
         }
 
         // Configuration method
@@ -52,49 +61,59 @@ namespace ProjectChimera.Core
 
         public override void RegisterManagerInterfaces(IServiceContainer serviceContainer)
         {
-            LogProviderAction("Starting manager interface registration");
+            LogProviderAction("Starting manager interface registration with focused components");
 
             try
             {
-                // Register core manager interfaces
+                var totalRegistered = 0;
+
+                // Register core manager interfaces using focused component
                 if (_registerCoreManagers)
                 {
-                    RegisterCoreManagerInterfaces(serviceContainer);
+                    var count = _coreManagerRegistration.RegisterCoreManagerInterfaces(serviceContainer);
+                    totalRegistered += count;
+                    _registeredCoreManagers += count;
                 }
 
-                // Register UI system interfaces
+                // Register UI system interfaces using focused component
                 if (_registerUIManagers)
                 {
-                    RegisterUIManagerInterfaces(serviceContainer);
+                    var count = _uiManagerRegistration.RegisterUIManagerInterfaces(serviceContainer);
+                    totalRegistered += count;
+                    _registeredUIManagers += count;
                 }
 
-                // Register construction system interfaces
+                // Register construction system interfaces using focused component
                 if (_registerConstructionManagers)
                 {
-                    RegisterConstructionManagerInterfaces(serviceContainer);
+                    var count = _constructionManagerRegistration.RegisterConstructionManagerInterfaces(serviceContainer);
+                    totalRegistered += count;
+                    _registeredConstructionManagers += count;
                 }
 
-                // Register domain-specific manager interfaces
+                // Register domain-specific manager interfaces using focused component
                 if (_registerDomainManagers)
                 {
-                    RegisterDomainManagerInterfaces(serviceContainer);
+                    var count = _domainManagerRegistration.RegisterDomainManagerInterfaces(serviceContainer);
+                    totalRegistered += count;
+                    _registeredDomainManagers += count;
                 }
 
-                // Register asset service interfaces
+                // Register asset service interfaces using focused component
                 if (_registerAssetServices)
                 {
-                    RegisterAssetServiceInterfaces(serviceContainer);
+                    var count = _assetServiceRegistration.RegisterAssetServiceInterfaces(serviceContainer);
+                    totalRegistered += count;
+                    _registeredAssetServices += count;
                 }
 
-                // Register update orchestrator
+                // Register update orchestrator using focused component
                 if (_registerUpdateOrchestrator)
                 {
-                    RegisterUpdateOrchestratorInterface(serviceContainer);
+                    var count = _assetServiceRegistration.RegisterUpdateOrchestratorInterface(serviceContainer);
+                    totalRegistered += count;
+                    _registeredUpdateOrchestrator += count;
                 }
-
-                var totalRegistered = _registeredCoreManagers + _registeredUIManagers +
-                                    _registeredConstructionManagers + _registeredDomainManagers +
-                                    _registeredAssetServices + _registeredUpdateOrchestrator;
 
                 LogProviderAction($"Manager interface registration completed: {totalRegistered} interfaces registered");
             }
@@ -105,174 +124,7 @@ namespace ProjectChimera.Core
             }
         }
 
-        private void RegisterCoreManagerInterfaces(IServiceContainer serviceContainer)
-        {
-            LogProviderAction("Registering core manager interfaces");
 
-            // Core Manager Interfaces
-            // Use existing TimeManager if available, otherwise create a simple null implementation
-            if (!serviceContainer.IsRegistered<ITimeManager>())
-            {
-                serviceContainer.RegisterInstance<ITimeManager>(new TimeManager());
-            }
-            _registeredCoreManagers++;
-
-            if (!serviceContainer.IsRegistered<IDataManager>())
-            {
-                serviceContainer.RegisterInstance<IDataManager>(new NullDataManager());
-            }
-            _registeredCoreManagers++;
-
-            if (!serviceContainer.IsRegistered<IEventManager>())
-            {
-                serviceContainer.RegisterInstance<IEventManager>(new InMemoryEventManager());
-            }
-            _registeredCoreManagers++;
-
-            if (!serviceContainer.IsRegistered<ISettingsManager>())
-            {
-                serviceContainer.RegisterInstance<ISettingsManager>(new PlayerPrefsSettingsManager());
-            }
-            _registeredCoreManagers++;
-
-            LogProviderAction($"Core manager interfaces registered: {_registeredCoreManagers}");
-        }
-
-        private void RegisterUIManagerInterfaces(IServiceContainer serviceContainer)
-        {
-            LogProviderAction("Registering UI manager interfaces");
-
-            // UI System Interfaces
-            if (!serviceContainer.IsRegistered<IUIManager>())
-            {
-                serviceContainer.RegisterInstance<IUIManager>(new NullUIManager());
-            }
-            _registeredUIManagers++;
-
-            if (!serviceContainer.IsRegistered<ISchematicLibraryPanel>())
-            {
-                serviceContainer.RegisterInstance<ISchematicLibraryPanel>(new NullSchematicLibraryPanel());
-            }
-            _registeredUIManagers++;
-
-            if (!serviceContainer.IsRegistered<IConstructionPaletteManager>())
-            {
-                serviceContainer.RegisterInstance<IConstructionPaletteManager>(new NullConstructionPaletteManager());
-            }
-            _registeredUIManagers++;
-
-            LogProviderAction($"UI manager interfaces registered: {_registeredUIManagers}");
-        }
-
-        private void RegisterConstructionManagerInterfaces(IServiceContainer serviceContainer)
-        {
-            LogProviderAction("Registering construction manager interfaces");
-
-            // Construction System Interfaces
-            if (!serviceContainer.IsRegistered<IGridPlacementController>())
-            {
-                serviceContainer.RegisterInstance<IGridPlacementController>(new NullGridPlacementController());
-            }
-            _registeredConstructionManagers++;
-
-            if (!serviceContainer.IsRegistered<IGridSystem>())
-            {
-                serviceContainer.RegisterInstance<IGridSystem>(new NullGridSystem());
-            }
-            _registeredConstructionManagers++;
-
-            if (!serviceContainer.IsRegistered<IInteractiveFacilityConstructor>())
-            {
-                serviceContainer.RegisterInstance<IInteractiveFacilityConstructor>(new NullInteractiveFacilityConstructor());
-            }
-            _registeredConstructionManagers++;
-
-            if (!serviceContainer.IsRegistered<IConstructionCostManager>())
-            {
-                serviceContainer.RegisterInstance<IConstructionCostManager>(new NullConstructionCostManager());
-            }
-            _registeredConstructionManagers++;
-
-            LogProviderAction($"Construction manager interfaces registered: {_registeredConstructionManagers}");
-        }
-
-        private void RegisterDomainManagerInterfaces(IServiceContainer serviceContainer)
-        {
-            LogProviderAction("Registering domain manager interfaces");
-
-            // Domain-Specific Manager Interfaces
-            if (!serviceContainer.IsRegistered<IPlantManager>())
-            {
-                serviceContainer.RegisterInstance<IPlantManager>(new NullPlantManager());
-            }
-            _registeredDomainManagers++;
-
-            if (!serviceContainer.IsRegistered<IGeneticsManager>())
-            {
-                serviceContainer.RegisterInstance<IGeneticsManager>(new NullGeneticsManager());
-            }
-            _registeredDomainManagers++;
-
-            if (!serviceContainer.IsRegistered<IEnvironmentalManager>())
-            {
-                serviceContainer.RegisterInstance<IEnvironmentalManager>(new NullEnvironmentalManager());
-            }
-            _registeredDomainManagers++;
-
-            if (!serviceContainer.IsRegistered<IEconomyManager>())
-            {
-                serviceContainer.RegisterInstance<IEconomyManager>(new NullEconomyManager());
-            }
-            _registeredDomainManagers++;
-
-            if (!serviceContainer.IsRegistered<IProgressionManager>())
-            {
-                serviceContainer.RegisterInstance<IProgressionManager>(new NullProgressionManager());
-            }
-            _registeredDomainManagers++;
-
-            if (!serviceContainer.IsRegistered<IResearchManager>())
-            {
-                serviceContainer.RegisterInstance<IResearchManager>(new NullResearchManager());
-            }
-            _registeredDomainManagers++;
-
-            if (!serviceContainer.IsRegistered<IAudioManager>())
-            {
-                serviceContainer.RegisterInstance<IAudioManager>(new NullAudioManager());
-            }
-            _registeredDomainManagers++;
-
-            LogProviderAction($"Domain manager interfaces registered: {_registeredDomainManagers}");
-        }
-
-        private void RegisterAssetServiceInterfaces(IServiceContainer serviceContainer)
-        {
-            LogProviderAction("Registering asset service interfaces");
-
-            // Asset Service Interfaces
-            if (!serviceContainer.IsRegistered<ISchematicAssetService>())
-            {
-                serviceContainer.RegisterInstance<ISchematicAssetService>(new ResourcesBasedSchematicAssetService());
-            }
-            _registeredAssetServices++;
-
-            LogProviderAction($"Asset service interfaces registered: {_registeredAssetServices}");
-        }
-
-        private void RegisterUpdateOrchestratorInterface(IServiceContainer serviceContainer)
-        {
-            LogProviderAction("Registering update orchestrator interface");
-
-            // Update Management Interface
-            if (!serviceContainer.IsRegistered<IUpdateOrchestrator>())
-            {
-                serviceContainer.RegisterInstance<IUpdateOrchestrator>(new NullUpdateOrchestrator());
-            }
-            _registeredUpdateOrchestrator++;
-
-            LogProviderAction($"Update orchestrator interface registered: {_registeredUpdateOrchestrator}");
-        }
 
         public override void RegisterUtilityServices(IServiceContainer serviceContainer)
         {
@@ -315,40 +167,40 @@ namespace ProjectChimera.Core
             {
                 bool allValid = true;
 
-                // Validate core managers if registered
+                // Validate core managers using focused component
                 if (_registerCoreManagers)
                 {
-                    allValid &= ValidateCoreManagers(serviceContainer);
+                    allValid &= _coreManagerRegistration.ValidateRegistrations(serviceContainer);
                 }
 
-                // Validate UI managers if registered
+                // Validate UI managers using focused component
                 if (_registerUIManagers)
                 {
-                    allValid &= ValidateUIManagers(serviceContainer);
+                    allValid &= _uiManagerRegistration.ValidateRegistrations(serviceContainer);
                 }
 
-                // Validate construction managers if registered
+                // Validate construction managers using focused component
                 if (_registerConstructionManagers)
                 {
-                    allValid &= ValidateConstructionManagers(serviceContainer);
+                    allValid &= _constructionManagerRegistration.ValidateRegistrations(serviceContainer);
                 }
 
-                // Validate domain managers if registered
+                // Validate domain managers using focused component
                 if (_registerDomainManagers)
                 {
-                    allValid &= ValidateDomainManagers(serviceContainer);
+                    allValid &= _domainManagerRegistration.ValidateRegistrations(serviceContainer);
                 }
 
-                // Validate asset services if registered
+                // Validate asset services using focused component
                 if (_registerAssetServices)
                 {
-                    allValid &= ValidateAssetServices(serviceContainer);
+                    allValid &= _assetServiceRegistration.ValidateAssetServices(serviceContainer);
                 }
 
-                // Validate update orchestrator if registered
+                // Validate update orchestrator using focused component
                 if (_registerUpdateOrchestrator)
                 {
-                    allValid &= ValidateUpdateOrchestrator(serviceContainer);
+                    allValid &= _assetServiceRegistration.ValidateUpdateOrchestrator(serviceContainer);
                 }
 
                 if (allValid)
@@ -376,79 +228,6 @@ namespace ProjectChimera.Core
             }
         }
 
-        private bool ValidateCoreManagers(IServiceContainer serviceContainer)
-        {
-            var validationResults = new[]
-            {
-                ValidateManagerService<ITimeManager>(serviceContainer, "TimeManager"),
-                ValidateManagerService<IDataManager>(serviceContainer, "DataManager"),
-                ValidateManagerService<IEventManager>(serviceContainer, "EventManager"),
-                ValidateManagerService<ISettingsManager>(serviceContainer, "SettingsManager")
-            };
-
-            return ValidateAllResults(validationResults, "Core Managers");
-        }
-
-        private bool ValidateUIManagers(IServiceContainer serviceContainer)
-        {
-            var validationResults = new[]
-            {
-                ValidateManagerService<IUIManager>(serviceContainer, "UIManager"),
-                ValidateManagerService<ISchematicLibraryPanel>(serviceContainer, "SchematicLibraryPanel"),
-                ValidateManagerService<IConstructionPaletteManager>(serviceContainer, "ConstructionPaletteManager")
-            };
-
-            return ValidateAllResults(validationResults, "UI Managers");
-        }
-
-        private bool ValidateConstructionManagers(IServiceContainer serviceContainer)
-        {
-            var validationResults = new[]
-            {
-                ValidateManagerService<IGridPlacementController>(serviceContainer, "GridPlacementController"),
-                ValidateManagerService<IGridSystem>(serviceContainer, "GridSystem"),
-                ValidateManagerService<IInteractiveFacilityConstructor>(serviceContainer, "InteractiveFacilityConstructor"),
-                ValidateManagerService<IConstructionCostManager>(serviceContainer, "ConstructionCostManager")
-            };
-
-            return ValidateAllResults(validationResults, "Construction Managers");
-        }
-
-        private bool ValidateDomainManagers(IServiceContainer serviceContainer)
-        {
-            var validationResults = new[]
-            {
-                ValidateManagerService<IPlantManager>(serviceContainer, "PlantManager"),
-                ValidateManagerService<IGeneticsManager>(serviceContainer, "GeneticsManager"),
-                ValidateManagerService<IEnvironmentalManager>(serviceContainer, "EnvironmentalManager"),
-                ValidateManagerService<IEconomyManager>(serviceContainer, "EconomyManager"),
-                ValidateManagerService<IProgressionManager>(serviceContainer, "ProgressionManager"),
-                ValidateManagerService<IResearchManager>(serviceContainer, "ResearchManager"),
-                ValidateManagerService<IAudioManager>(serviceContainer, "AudioManager")
-            };
-
-            return ValidateAllResults(validationResults, "Domain Managers");
-        }
-
-        private bool ValidateAssetServices(IServiceContainer serviceContainer)
-        {
-            var validationResults = new[]
-            {
-                ValidateManagerService<ISchematicAssetService>(serviceContainer, "SchematicAssetService")
-            };
-
-            return ValidateAllResults(validationResults, "Asset Services");
-        }
-
-        private bool ValidateUpdateOrchestrator(IServiceContainer serviceContainer)
-        {
-            var validationResults = new[]
-            {
-                ValidateManagerService<IUpdateOrchestrator>(serviceContainer, "UpdateOrchestrator")
-            };
-
-            return ValidateAllResults(validationResults, "Update Orchestrator");
-        }
 
         private bool ValidateManagerService<T>(IServiceContainer serviceContainer, string serviceName) where T : class
         {

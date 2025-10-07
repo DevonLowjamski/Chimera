@@ -3,6 +3,7 @@ using ProjectChimera.Core.Logging;
 using ProjectChimera.Core.Updates;
 using System.Collections.Generic;
 using System.Linq;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Systems.Gameplay
 {
@@ -18,10 +19,10 @@ namespace ProjectChimera.Systems.Gameplay
         [SerializeField] private bool _showHealthIndicators = true;
         [SerializeField] private bool _showGrowthIndicators = true;
         [SerializeField] private bool _showHarvestReadiness = true;
-        
+
         // ITickable implementation
-        public int Priority => TickPriority.HUD;
-        public bool Enabled => enabled && gameObject.activeInHierarchy;
+        public int TickPriority => ProjectChimera.Core.Updates.TickPriority.HUD;
+        public bool IsTickable => enabled && gameObject.activeInHierarchy;
 
         // Plant tracking
         private List<PlantInfo> _monitoredPlants = new List<PlantInfo>();
@@ -54,7 +55,7 @@ namespace ProjectChimera.Systems.Gameplay
         private void InitializeMonitoring()
         {
             RefreshPlantList();
-            ChimeraLogger.Log($"[PlantMonitor] Initialized monitoring for {_monitoredPlants.Count} plants");
+            Logger.Log("OTHER", "Plant monitoring system initialized", this);
         }
 
         /// <summary>
@@ -90,37 +91,61 @@ namespace ProjectChimera.Systems.Gameplay
         {
             _monitoredPlants.Clear();
 
-            // Primary: Try ServiceContainer resolution for registered plant GameObjects
-            var plantGameObjects = ServiceContainerFactory.Instance.ResolveAll<GameObject>()
-                ?.Where(go => go.CompareTag("Plant")).ToArray();
-                
-            if (plantGameObjects?.Any() != true)
+            // Find all plants in the scene (simplified approach)
+            var plantGameObjects = GameObject.FindGameObjectsWithTag("Plant");
+
+            if (plantGameObjects?.Length > 0)
             {
-                // Fallback: Find all plants in the scene (would use actual plant detection system)
-                plantGameObjects = GameObject.FindGameObjectsWithTag("Plant");
-                
-                // Auto-register discovered plants in ServiceContainer for future use
-                foreach (var plantGO in plantGameObjects)
-                {
-                    ServiceContainerFactory.Instance.RegisterInstance<GameObject>(plantGO);
-                }
-                
-                ChimeraLogger.Log($"[PlantMonitor] Registered {plantGameObjects.Length} plant GameObjects in ServiceContainer");
+                Logger.Log("OTHER", "Plants discovered in scene", this);
             }
             else
             {
-                ChimeraLogger.Log("[PlantMonitor] Using plant GameObjects from ServiceContainer");
+                Logger.Log("OTHER", "No plants found in scene", this);
             }
-            
+
             var plantTransforms = plantGameObjects.Select(obj => obj.transform).ToArray();
 
             foreach (var plantTransform in plantTransforms)
             {
-                var plantInfo = new PlantInfo(plantTransform);
+                var plantInfo = CreatePlantInfoFromTransform(plantTransform);
                 _monitoredPlants.Add(plantInfo);
             }
 
-            ChimeraLogger.Log($"[PlantMonitor] Refreshed plant list: {_monitoredPlants.Count} plants found");
+            Logger.Log("OTHER", $"Plant list refreshed: {_monitoredPlants.Count} plants found", this);
+        }
+
+        /// <summary>
+        /// Creates PlantInfo from transform (placeholder implementation)
+        /// </summary>
+        private PlantInfo CreatePlantInfoFromTransform(Transform plantTransform)
+        {
+            return new PlantInfo
+            {
+                PlantID = plantTransform.GetInstanceID().ToString(),
+                PlantName = plantTransform.name,
+                StrainName = "Unknown",
+                CurrentStage = ProjectChimera.Data.Shared.PlantGrowthStage.Vegetative,
+                AgeInDays = 30f,
+                OverallHealth = Random.Range(0.5f, 1f),
+                Position = plantTransform.position,
+                CurrentHeight = Random.Range(0.5f, 2f),
+                CurrentWidth = Random.Range(0.3f, 1f),
+                GrowthProgress = Random.Range(0.3f, 0.8f),
+                MaturityLevel = Random.Range(0.2f, 0.9f),
+                WaterLevel = Random.Range(0.4f, 1f),
+                NutrientLevel = Random.Range(0.4f, 1f),
+                LightExposure = 0.8f,
+                Temperature = 22f,
+                Humidity = 60f,
+                StressLevel = Random.Range(0f, 0.5f),
+                Vigor = Random.Range(0.6f, 1f),
+                HasIssues = false,
+                CurrentIssues = new string[0],
+                IsHarvestReady = Random.Range(0f, 1f) > 0.8f,
+                EstimatedYield = Random.Range(30f, 80f),
+                EstimatedHarvestDate = System.DateTime.Now.AddDays(Random.Range(1, 14)),
+                QualityRating = Random.Range(0.6f, 1f)
+            };
         }
 
         /// <summary>
@@ -129,10 +154,10 @@ namespace ProjectChimera.Systems.Gameplay
         private void UpdatePlantInfo(PlantInfo plantInfo)
         {
             // Update plant data (would integrate with actual plant systems)
-            plantInfo.Health = Random.Range(0.5f, 1f); // Placeholder
-            plantInfo.GrowthStage = PlantGrowthStage.Vegetative; // Placeholder
-            plantInfo.HarvestReadiness = Random.Range(0f, 1f); // Placeholder
-            plantInfo.LastUpdate = Time.time;
+            plantInfo.OverallHealth = Random.Range(0.5f, 1f); // Placeholder
+            plantInfo.CurrentStage = ProjectChimera.Data.Shared.PlantGrowthStage.Vegetative; // Placeholder
+            // Note: HarvestReadiness and LastUpdate don't exist in current PlantInfo
+            // These would need to be added to PlantInfo or handled differently
         }
 
         /// <summary>
@@ -173,12 +198,12 @@ namespace ProjectChimera.Systems.Gameplay
                 var renderer = indicator.GetComponent<Renderer>();
                 if (renderer != null)
                 {
-                    Color healthColor = GetHealthColor(plantInfo.Health);
+                    Color healthColor = GetHealthColor(plantInfo.OverallHealth);
                     renderer.material.color = healthColor;
                 }
 
                 // Position above plant
-                indicator.transform.position = plantInfo.Transform.position + Vector3.up * 2f;
+                indicator.transform.position = plantInfo.Position + Vector3.up * 2f;
             }
         }
 
@@ -199,11 +224,11 @@ namespace ProjectChimera.Systems.Gameplay
                 var textMesh = indicator.GetComponent<TextMesh>();
                 if (textMesh != null)
                 {
-                    textMesh.text = plantInfo.GrowthStage.ToString();
+                    textMesh.text = plantInfo.CurrentStage.ToString();
                 }
 
                 // Position above plant
-                indicator.transform.position = plantInfo.Transform.position + Vector3.up * 2.5f;
+                indicator.transform.position = plantInfo.Position + Vector3.up * 2.5f;
             }
         }
 
@@ -224,15 +249,15 @@ namespace ProjectChimera.Systems.Gameplay
                 var renderer = indicator.GetComponent<Renderer>();
                 if (renderer != null)
                 {
-                    Color readinessColor = GetReadinessColor(plantInfo.HarvestReadiness);
+                    Color readinessColor = GetReadinessColor(plantInfo.IsHarvestReady ? 1f : 0f);
                     renderer.material.color = readinessColor;
                 }
 
                 // Position above plant
-                indicator.transform.position = plantInfo.Transform.position + Vector3.up * 3f;
+                indicator.transform.position = plantInfo.Position + Vector3.up * 3f;
 
                 // Only show if plant is getting ready for harvest
-                indicator.SetActive(plantInfo.HarvestReadiness > 0.7f);
+                indicator.SetActive(plantInfo.IsHarvestReady);
             }
         }
 
@@ -242,7 +267,7 @@ namespace ProjectChimera.Systems.Gameplay
         private void CreateHealthIndicator(PlantInfo plantInfo)
         {
             var indicatorObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            indicatorObj.name = $"HealthIndicator_{plantInfo.Transform.name}";
+            indicatorObj.name = $"HealthIndicator_{plantInfo.PlantName}";
             indicatorObj.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
 
             _healthIndicators[plantInfo] = indicatorObj;
@@ -253,7 +278,7 @@ namespace ProjectChimera.Systems.Gameplay
         /// </summary>
         private void CreateGrowthIndicator(PlantInfo plantInfo)
         {
-            var indicatorObj = new GameObject($"GrowthIndicator_{plantInfo.Transform.name}");
+            var indicatorObj = new GameObject($"GrowthIndicator_{plantInfo.PlantName}");
             var textMesh = indicatorObj.AddComponent<TextMesh>();
             textMesh.fontSize = 12;
             textMesh.color = Color.white;
@@ -268,7 +293,7 @@ namespace ProjectChimera.Systems.Gameplay
         private void CreateReadinessIndicator(PlantInfo plantInfo)
         {
             var indicatorObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            indicatorObj.name = $"ReadinessIndicator_{plantInfo.Transform.name}";
+            indicatorObj.name = $"ReadinessIndicator_{plantInfo.PlantName}";
             indicatorObj.transform.localScale = new Vector3(0.05f, 0.2f, 0.05f);
 
             _readinessIndicators[plantInfo] = indicatorObj;
@@ -336,9 +361,9 @@ namespace ProjectChimera.Systems.Gameplay
             return new PlantMonitoringStats
             {
                 TotalPlants = _monitoredPlants.Count,
-                HealthyPlants = _monitoredPlants.Count(p => p.Health >= 0.8f),
-                PlantsNeedingAttention = _monitoredPlants.Count(p => p.Health < 0.6f),
-                HarvestReadyPlants = _monitoredPlants.Count(p => p.HarvestReadiness >= 0.9f),
+                HealthyPlants = _monitoredPlants.Count(p => p.OverallHealth >= 0.8f),
+                PlantsNeedingAttention = _monitoredPlants.Count(p => p.OverallHealth < 0.6f),
+                HarvestReadyPlants = _monitoredPlants.Count(p => p.IsHarvestReady),
                 LastUpdate = Time.time
             };
         }

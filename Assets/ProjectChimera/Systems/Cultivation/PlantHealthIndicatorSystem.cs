@@ -4,6 +4,8 @@ using ProjectChimera.Core;
 using ProjectChimera.Core.Updates;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Core.Logging;
+using System.Linq;
 
 namespace ProjectChimera.Systems.Cultivation
 {
@@ -61,7 +63,7 @@ namespace ProjectChimera.Systems.Cultivation
             }
             */
 
-            ChimeraLogger.LogVerbose($"Plant health indicators updated (UI temporarily disabled) - Health: {_targetPlant.CurrentHealth:F1}, Hydration: {_targetPlant.CurrentHydration:F1}, Nutrition: {_targetPlant.CurrentNutrition:F1}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         public void UpdateHealthDisplay(InteractivePlant plant, float quality)
@@ -89,7 +91,7 @@ namespace ProjectChimera.Systems.Cultivation
             // Visual feedback for good care
             if (_stressIndicator != null)
             {
-                StartCoroutine(FlashIndicator(_stressIndicator, Color.green, 0.5f));
+                StartCoroutine(FlashIndicator(_stressIndicator as UnityEngine.UI.Image, Color.green, 0.5f));
             }
         }
 
@@ -98,7 +100,7 @@ namespace ProjectChimera.Systems.Cultivation
             // Visual feedback for poor care
             if (_stressIndicator != null)
             {
-                StartCoroutine(FlashIndicator(_stressIndicator, Color.red, 0.5f));
+                StartCoroutine(FlashIndicator(_stressIndicator as UnityEngine.UI.Image, Color.red, 0.5f));
             }
         }
 
@@ -130,8 +132,8 @@ namespace ProjectChimera.Systems.Cultivation
 
         #region ITickable Implementation
 
-        public int Priority => TickPriority.UIManager;
-        public bool Enabled => _isInitialized && _targetPlant != null;
+        public int TickPriority => ProjectChimera.Core.Updates.TickPriority.UIManager;
+        public bool IsTickable => _isInitialized && _targetPlant != null;
 
         public void Tick(float deltaTime)
         {

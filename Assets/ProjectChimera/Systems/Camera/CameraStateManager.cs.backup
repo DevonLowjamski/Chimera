@@ -1,0 +1,225 @@
+using UnityEngine;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
+
+namespace ProjectChimera.Systems.Camera
+{
+    /// <summary>
+    /// SIMPLE: Basic camera state manager aligned with Project Chimera's hierarchical viewpoint system.
+    /// Focuses on essential camera level management for facility, room, table, and plant views.
+    /// </summary>
+    public class CameraStateManager : MonoBehaviour
+    {
+        [Header("Basic Camera Settings")]
+        [SerializeField] private CameraLevel _defaultLevel = CameraLevel.Facility;
+        [SerializeField] private bool _enableLogging = true;
+
+        // Basic camera state
+        private CameraLevel _currentLevel;
+        private Transform _focusTarget;
+        private bool _isInitialized = false;
+
+        /// <summary>
+        /// Events for state changes
+        /// </summary>
+        public event System.Action<CameraLevel> OnLevelChanged;
+        public event System.Action<Transform> OnFocusTargetChanged;
+
+        /// <summary>
+        /// Initialize the basic camera state manager
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _currentLevel = _defaultLevel;
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Set camera level
+        /// </summary>
+        public void SetCameraLevel(CameraLevel level)
+        {
+            if (_currentLevel == level) return;
+
+            var previousLevel = _currentLevel;
+            _currentLevel = level;
+
+            OnLevelChanged?.Invoke(level);
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Get current camera level
+        /// </summary>
+        public CameraLevel GetCurrentLevel()
+        {
+            return _currentLevel;
+        }
+
+        /// <summary>
+        /// Set focus target
+        /// </summary>
+        public void SetFocusTarget(Transform target)
+        {
+            if (_focusTarget == target) return;
+
+            _focusTarget = target;
+            OnFocusTargetChanged?.Invoke(target);
+
+            if (_enableLogging)
+            {
+                string targetName = target != null ? target.name : "None";
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Get current focus target
+        /// </summary>
+        public Transform GetFocusTarget()
+        {
+            return _focusTarget;
+        }
+
+        /// <summary>
+        /// Clear focus target
+        /// </summary>
+        public void ClearFocusTarget()
+        {
+            SetFocusTarget(null);
+        }
+
+        /// <summary>
+        /// Check if camera is at facility level
+        /// </summary>
+        public bool IsAtFacilityLevel()
+        {
+            return _currentLevel == CameraLevel.Facility;
+        }
+
+        /// <summary>
+        /// Check if camera is at room level
+        /// </summary>
+        public bool IsAtRoomLevel()
+        {
+            return _currentLevel == CameraLevel.Room;
+        }
+
+        /// <summary>
+        /// Check if camera is at table level
+        /// </summary>
+        public bool IsAtTableLevel()
+        {
+            return _currentLevel == CameraLevel.Table;
+        }
+
+        /// <summary>
+        /// Check if camera is at plant level
+        /// </summary>
+        public bool IsAtPlantLevel()
+        {
+            return _currentLevel == CameraLevel.Plant;
+        }
+
+        /// <summary>
+        /// Zoom in to next level
+        /// </summary>
+        public void ZoomIn()
+        {
+            switch (_currentLevel)
+            {
+                case CameraLevel.Facility:
+                    SetCameraLevel(CameraLevel.Room);
+                    break;
+                case CameraLevel.Room:
+                    SetCameraLevel(CameraLevel.Table);
+                    break;
+                case CameraLevel.Table:
+                    SetCameraLevel(CameraLevel.Plant);
+                    break;
+                case CameraLevel.Plant:
+                    // Already at closest level
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Zoom out to previous level
+        /// </summary>
+        public void ZoomOut()
+        {
+            switch (_currentLevel)
+            {
+                case CameraLevel.Facility:
+                    // Already at furthest level
+                    break;
+                case CameraLevel.Room:
+                    SetCameraLevel(CameraLevel.Facility);
+                    break;
+                case CameraLevel.Table:
+                    SetCameraLevel(CameraLevel.Room);
+                    break;
+                case CameraLevel.Plant:
+                    SetCameraLevel(CameraLevel.Table);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Reset to default level
+        /// </summary>
+        public void ResetToDefault()
+        {
+            SetCameraLevel(_defaultLevel);
+            ClearFocusTarget();
+        }
+
+        /// <summary>
+        /// Get camera state summary
+        /// </summary>
+        public CameraStateSummary GetStateSummary()
+        {
+            return new CameraStateSummary
+            {
+                CurrentLevel = _currentLevel,
+                FocusTargetName = _focusTarget != null ? _focusTarget.name : "None",
+                IsInitialized = _isInitialized,
+                DefaultLevel = _defaultLevel
+            };
+        }
+    }
+
+    /// <summary>
+    /// Camera level enum
+    /// </summary>
+    public enum CameraLevel
+    {
+        Facility,
+        Room,
+        Table,
+        Plant
+    }
+
+    /// <summary>
+    /// Camera state summary
+    /// </summary>
+    [System.Serializable]
+    public class CameraStateSummary
+    {
+        public CameraLevel CurrentLevel;
+        public string FocusTargetName;
+        public bool IsInitialized;
+        public CameraLevel DefaultLevel;
+    }
+}

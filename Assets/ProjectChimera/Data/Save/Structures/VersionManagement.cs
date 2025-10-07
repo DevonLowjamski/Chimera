@@ -14,6 +14,16 @@ namespace ProjectChimera.Data.Save.Structures
         #region Version Constants
 
         public const string CurrentVersion = "1.0.0";
+
+        /// <summary>
+        /// Parses version string to integer for SaveSystemVersion
+        /// </summary>
+        public static int ParseVersionNumber(string version)
+        {
+            // Simple parsing - extract major version number
+            var parts = version.Split('.');
+            return parts.Length > 0 ? int.Parse(parts[0]) : 1;
+        }
         public const string MinimumSupportedVersion = "0.9.0";
         public static readonly DateTime VersionIntroduced = new DateTime(2024, 1, 1);
 
@@ -103,7 +113,7 @@ namespace ProjectChimera.Data.Save.Structures
 
             var result = new MigrationResult
             {
-                OriginalVersion = data.SaveSystemVersion,
+                OriginalVersion = data.SaveSystemVersion.ToString(),
                 TargetVersion = targetVersion,
                 Success = true,
                 MigratedData = data
@@ -112,7 +122,7 @@ namespace ProjectChimera.Data.Save.Structures
             try
             {
                 // If versions match, no migration needed
-                if (data.SaveSystemVersion == targetVersion)
+                if (data.SaveSystemVersion.ToString() == targetVersion)
                 {
                     result.RequiredMigration = false;
                     return result;
@@ -121,7 +131,7 @@ namespace ProjectChimera.Data.Save.Structures
                 result.RequiredMigration = true;
 
                 // Apply migration steps
-                var migrationPath = GetMigrationPath(data.SaveSystemVersion, targetVersion);
+                var migrationPath = GetMigrationPath(data.SaveSystemVersion.ToString(), targetVersion);
 
                 foreach (var step in migrationPath)
                 {
@@ -129,7 +139,10 @@ namespace ProjectChimera.Data.Save.Structures
                 }
 
                 // Update version information
-                data.SaveSystemVersion = targetVersion;
+                if (int.TryParse(targetVersion, out int versionNumber))
+                {
+                    data.SaveSystemVersion = versionNumber;
+                }
                 data.SaveTimestamp = DateTime.Now;
 
                 // Validate migrated data
@@ -178,7 +191,7 @@ namespace ProjectChimera.Data.Save.Structures
                     throw new InvalidOperationException("Migrated data failed validation");
 
                 // Version check
-                if (migratedData.SaveSystemVersion != CurrentVersion)
+                if (migratedData.SaveSystemVersion.ToString() != CurrentVersion)
                     throw new InvalidOperationException("Version mismatch after migration");
 
                 // Data integrity checks
@@ -230,20 +243,79 @@ namespace ProjectChimera.Data.Save.Structures
             {
                 // Migrate legacy data structures to DTO-based system
                 // This would contain the actual migration logic
-                Debug.Log("[VersionManagement] Applying DTO migration v1.0.0");
+                ProjectChimera.Shared.SharedLogger.Log("OTHER", "$1", null);
 
                 // Example migration logic (would be more comprehensive in real implementation)
                 if (data.FacilityData == null)
                 {
-                    data.FacilityData = new SaveGameData.FacilityStateDTO();
+                    data.FacilityData = new FacilityStateDTO
+                    {
+                        FacilityId = "migrated_facility",
+                        FacilityName = "Migrated Facility",
+                        FacilityType = "Cultivation",
+                        FacilityLevel = 1,
+                        Position = Vector3.zero,
+                        Size = new Vector3(15f, 10f, 10f),
+                        IsOperational = true,
+                        RoomCount = 1,
+                        EquipmentCount = 0,
+                        PowerConsumption = 0f,
+                        LastUpdate = DateTime.Now
+                    };
                 }
 
                 // Migrate other core systems
-                data.ConstructionData ??= new ConstructionStateDTO();
-                data.PlantsData ??= new SaveGameData.CultivationStateDTO();
-                data.EconomyStateData ??= new SaveGameData.EconomyStateDTO();
-                data.ProgressionStateData ??= new SaveGameData.ProgressionStateDTO();
-                data.UIData ??= new SaveGameData.UIStateDTO();
+                if (data.ConstructionState == null)
+                {
+                    data.ConstructionState = new ConstructionSaveState();
+                }
+                if (data.PlantsData == null)
+                {
+                    data.PlantsData = new CultivationStateDTO
+                    {
+                        Plants = new System.Collections.Generic.List<ProjectChimera.Data.Save.Structures.PlantStateDTO>(),
+                        TotalPlants = 0,
+                        HealthyPlants = 0,
+                        FloweringPlants = 0,
+                        AverageHealth = 1f,
+                        Temperature = 25f,
+                        Humidity = 60f,
+                        LastUpdate = DateTime.Now
+                    };
+                }
+                if (data.EconomyStateData == null)
+                {
+                    data.EconomyStateData = new EconomyStateDTO
+                    {
+                        Currency = 0f,
+                        IncomeRate = 0f,
+                        ExpenseRate = 0f,
+                        ItemCount = 0,
+                        LastUpdate = DateTime.Now
+                    };
+                }
+                if (data.ProgressionStateData == null)
+                {
+                    data.ProgressionStateData = new ProgressionStateDTO
+                    {
+                        PlayerLevel = 1,
+                        Experience = 0f,
+                        SkillPoints = 0,
+                        AchievementCount = 0,
+                        LastUpdate = DateTime.Now
+                    };
+                }
+                if (data.UIData == null)
+                {
+                    data.UIData = new UIStateDTO
+                    {
+                        CameraPosition = Vector3.zero,
+                        CameraRotation = Vector3.zero,
+                        ZoomLevel = 1f,
+                        IsPaused = false,
+                        LastUpdate = DateTime.Now
+                    };
+                }
             }
         }
 
@@ -325,10 +397,25 @@ namespace ProjectChimera.Data.Save.Structures
             }
         }
 
-        #endregion
+    #endregion
+
+    #region DTO Classes for Version Management
+
+    [System.Serializable]
+    public class PlantStateDTO
+    {
+        public string PlantId;
+        public string StrainName;
+        public UnityEngine.Vector3 Position;
+        public float Age;
+        public float Health;
+        public float GrowthStage;
+        public float NutrientLevel = 1f;
+        public float WaterLevel = 1f;
+        public bool IsHealthy = true;
+        public System.DateTime LastUpdate;
     }
 
-    #region Additional DTOs - Moved to SaveGameData.cs to avoid duplication
-
     #endregion
+}
 }

@@ -1,0 +1,300 @@
+using ProjectChimera.Core.Logging;
+using UnityEngine;
+using ProjectChimera.Core;
+using ProjectChimera.Data.Save;
+using ProjectChimera.Data.Save.Structures;
+using System.Threading.Tasks;
+using System;
+using SkillSystemDTO = ProjectChimera.Data.Save.Structures.SkillSystemDTO;
+using AchievementSystemDTO = ProjectChimera.Data.Save.Structures.AchievementSystemDTO;
+
+namespace ProjectChimera.Systems.Save
+{
+    /// <summary>
+    /// Concrete implementation of progression system save/load integration
+    /// Bridges the gap between SaveManager and progression/skill systems
+    /// </summary>
+    public class ProgressionSaveService : MonoBehaviour, IProgressionSaveService
+    {
+        [Header("Progression Save Service Configuration")]
+        [SerializeField] private bool _isEnabled = true;
+        [SerializeField] private bool _supportsOfflineProgression = true;
+
+        private bool _isInitialized = false;
+
+        public string SystemName => "Progression Save Service";
+        public bool IsAvailable => _isInitialized && _isEnabled;
+        public bool SupportsOfflineProgression => _supportsOfflineProgression;
+
+        #region Unity Lifecycle
+
+        private void Awake()
+        {
+            InitializeService();
+        }
+
+        private void Start()
+        {
+            RegisterWithSaveManager();
+        }
+
+        #endregion
+
+        #region Service Initialization
+
+        private void InitializeService()
+        {
+            _isInitialized = true;
+            ChimeraLogger.Log("OTHER", "$1", this);
+        }
+
+        private void RegisterWithSaveManager()
+        {
+            var saveManager = GameManager.Instance?.GetManager<SaveManager>();
+            if (saveManager != null)
+            {
+                saveManager.RegisterSaveService(this);
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+            else
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+
+        #endregion
+
+        #region IProgressionSaveService Implementation
+
+        public ProgressionStateDTO GatherProgressionState()
+        {
+            if (!IsAvailable)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+                return new ProgressionStateDTO
+                {
+                    SaveTimestamp = DateTime.Now,
+                    SaveVersion = "1.0",
+                    EnableProgressionTracking = false
+                };
+            }
+
+            try
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+
+                var progressionState = new ProgressionStateDTO
+                {
+                    SaveTimestamp = DateTime.Now,
+                    SaveVersion = "1.0",
+                    EnableProgressionTracking = true,
+
+                    // Player progress - starter state
+                    PlayerProgress = new PlayerProgressDTO
+                    {
+                        PlayerLevel = 1,
+                        TotalExperience = 0f,
+                        ExperienceToNextLevel = 1000f
+                    },
+
+                    // Unlock system - basic feature flags
+                    UnlockSystem = new UnlockSystemDTO
+                    {
+                        UnlockedFeatures = new System.Collections.Generic.List<string>
+                        {
+                            "basic_cultivation",
+                            "starter_facilities"
+                        }
+                    },
+
+                    // Skill system - basic skills
+                    SkillSystem = new SkillSystemDTO
+                    {
+                        UnlockedSkills = new System.Collections.Generic.List<string> { "cultivation_basics" },
+                        SkillPoints = 0
+                    },
+
+                    // Achievement system - starter achievements
+                    AchievementSystem = new AchievementSystemDTO
+                    {
+                        UnlockedAchievements = new System.Collections.Generic.List<string>
+                        {
+                            "first_steps" // Starting achievement
+                        },
+                        CompletedCount = 1
+                    }
+                };
+
+                ChimeraLogger.Log("OTHER", "$1", this);
+                return progressionState;
+            }
+            catch (Exception ex)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+                return new ProgressionStateDTO
+                {
+                    SaveTimestamp = DateTime.Now,
+                    SaveVersion = "1.0",
+                    EnableProgressionTracking = false
+                };
+            }
+        }
+
+        public async Task ApplyProgressionState(ProgressionStateDTO progressionData)
+        {
+            if (!IsAvailable)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+                return;
+            }
+
+            if (progressionData == null)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+                return;
+            }
+
+            try
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+
+                // Apply player progress
+                if (progressionData.PlayerProgress != null)
+                {
+                    await ApplyPlayerProgress(progressionData.PlayerProgress);
+                }
+
+                // Apply skill system
+                if (progressionData.SkillSystem != null)
+                {
+                    await ApplySkillSystem(progressionData.SkillSystem);
+                }
+
+                // Apply achievement system
+                if (progressionData.AchievementSystem != null)
+                {
+                    await ApplyAchievementSystem(progressionData.AchievementSystem);
+                }
+
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+            catch (Exception ex)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+
+        public OfflineProgressionResult ProcessOfflineProgression(float offlineHours)
+        {
+            if (!IsAvailable || !SupportsOfflineProgression)
+            {
+                return new OfflineProgressionResult
+                {
+                    SystemName = SystemName,
+                    Success = false,
+                    ErrorMessage = "Service not available or offline progression not supported",
+                    ProcessedHours = 0f
+                };
+            }
+
+            try
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+
+                // Calculate passive skill experience gains
+                float passiveSkillXP = CalculatePassiveSkillExperience(offlineHours);
+                int skillLevelsGained = ProcessSkillLevelAdvancement(offlineHours);
+                float achievementProgress = CalculateAchievementProgress(offlineHours);
+
+                return new OfflineProgressionResult
+                {
+                    SystemName = SystemName,
+                    Success = true,
+                    ProcessedHours = offlineHours,
+                    Description = $"Processed progression offline advancement: +{passiveSkillXP:F0} skill XP, {skillLevelsGained} levels gained",
+                    ResultData = new System.Collections.Generic.Dictionary<string, object>
+                    {
+                        ["PassiveSkillXP"] = passiveSkillXP,
+                        ["SkillLevelsGained"] = skillLevelsGained,
+                        ["AchievementProgress"] = achievementProgress,
+                        ["OfflineProgressionEnabled"] = true
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+                return new OfflineProgressionResult
+                {
+                    SystemName = SystemName,
+                    Success = false,
+                    ErrorMessage = ex.Message,
+                    ProcessedHours = 0f
+                };
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        private async Task ApplyPlayerProgress(PlayerProgressDTO playerProgress)
+        {
+            ChimeraLogger.Log("OTHER", "$1", this);
+            
+            // Player progress application would integrate with actual progression systems
+            await Task.CompletedTask;
+        }
+
+        private async Task ApplySkillSystem(SkillSystemDTO skillSystem)
+        {
+            ChimeraLogger.Log("OTHER", "$1", this);
+            
+            // Skill system application would integrate with actual skill management systems
+            foreach (var skillId in skillSystem.UnlockedSkills)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+            
+            await Task.CompletedTask;
+        }
+
+        private async Task ApplyAchievementSystem(AchievementSystemDTO achievementSystem)
+        {
+            ChimeraLogger.Log("OTHER", "$1", this);
+
+            // Achievement system application would integrate with actual achievement systems
+            foreach (var achievement in achievementSystem.UnlockedAchievements)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+
+            await Task.CompletedTask;
+        }
+
+        private float CalculatePassiveSkillExperience(float offlineHours)
+        {
+            // Calculate passive skill experience gains from offline operations
+            float basePassiveRate = 1f; // 1 XP per hour base rate
+            return basePassiveRate * offlineHours;
+        }
+
+        private int ProcessSkillLevelAdvancement(float offlineHours)
+        {
+            // Calculate potential skill level gains during offline period
+            // Based on passive experience accumulation
+            float xpGained = CalculatePassiveSkillExperience(offlineHours);
+            int levelGains = Mathf.FloorToInt(xpGained / 100f); // 100 XP per level
+            return levelGains;
+        }
+
+        private float CalculateAchievementProgress(float offlineHours)
+        {
+            // Calculate progress toward achievements during offline period
+            float progressRate = 0.5f; // 0.5% progress per hour
+            return progressRate * offlineHours;
+        }
+
+        #endregion
+    }
+}

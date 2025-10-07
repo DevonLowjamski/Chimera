@@ -89,7 +89,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[PlaceStructureCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.Log("CONSTRUCTION", "Construction command operation", null);
                 return CommandResult.Failure($"Error placing structure: {ex.Message}");
             }
         }
@@ -163,7 +163,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[PlaceEquipmentCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.Log("CONSTRUCTION", "Construction command operation", null);
                 return CommandResult.Failure($"Error placing equipment: {ex.Message}");
             }
         }
@@ -233,7 +233,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[ApplySchematicCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.Log("CONSTRUCTION", "Construction command operation", null);
                 return CommandResult.Failure($"Error applying schematic: {ex.Message}");
             }
         }
@@ -301,7 +301,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[InstallUtilityCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.Log("CONSTRUCTION", "Construction command operation", null);
                 return CommandResult.Failure($"Error installing utility: {ex.Message}");
             }
         }

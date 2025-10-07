@@ -1,0 +1,175 @@
+using UnityEngine;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Systems.Construction.Core.Planning;
+
+namespace ProjectChimera.Systems.Construction.Core
+{
+    /// <summary>
+    /// REFACTORED: Construction Planner - Legacy wrapper for backward compatibility
+    /// Delegates to PlanningCore for focused construction planning subsystem coordination
+    /// Maintains existing API while utilizing Single Responsibility Principle architecture
+    /// </summary>
+    public class ConstructionPlanner : MonoBehaviour
+    {
+        [Header("Legacy Wrapper Settings")]
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private bool _enableAutomatedPlanning = true;
+        [SerializeField] private bool _enableOptimization = true;
+        [SerializeField] private float _planningUpdateInterval = 1f;
+
+        // Core planning system (delegation target)
+        private PlanningCore _planningCore;
+
+        // Properties
+        public bool IsEnabled { get; private set; } = true;
+        public int ActivePlanCount => _planningCore?.GetActivePlanCount() ?? 0;
+        public int QueuedPlanningRequestCount => _planningCore?.GetQueuedPlanningRequestCount() ?? 0;
+
+        // Events
+        public System.Action<ConstructionPlan> OnPlanCreated;
+        public System.Action<ConstructionPlan> OnPlanCompleted;
+        public System.Action<string> OnPlanningFailed;
+
+        private void Start()
+        {
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            InitializePlanningCore();
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "✅ Construction Planner initialized", this);
+        }
+
+        /// <summary>
+        /// Request construction planning - delegates to PlanningCore
+        /// </summary>
+        public string RequestPlanning(PlanningRequest request)
+        {
+            if (_planningCore != null)
+            {
+                return _planningCore.RequestPlanning(request);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Create construction plan immediately - delegates to PlanningCore
+        /// </summary>
+        public ConstructionPlan CreatePlan(PlanningRequest request)
+        {
+            if (_planningCore != null)
+            {
+                return _planningCore.CreatePlan(request);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Complete construction plan - delegates to PlanningCore
+        /// </summary>
+        public bool CompletePlan(string planId)
+        {
+            return _planningCore?.CompletePlan(planId) ?? false;
+        }
+
+        /// <summary>
+        /// Cancel construction plan - delegates to PlanningCore
+        /// </summary>
+        public bool CancelPlan(string planId)
+        {
+            return _planningCore?.CancelPlan(planId) ?? false;
+        }
+
+        /// <summary>
+        /// Optimize construction plan - delegates to PlanningCore
+        /// </summary>
+        public bool OptimizePlan(string planId)
+        {
+            if (!_enableOptimization) return false;
+            return _planningCore?.OptimizePlan(planId) ?? false;
+        }
+
+        /// <summary>
+        /// Get active construction plans - delegates to PlanningCore
+        /// </summary>
+        public ConstructionPlan[] GetActivePlans()
+        {
+            return _planningCore?.GetActivePlans() ?? new ConstructionPlan[0];
+        }
+
+        /// <summary>
+        /// Get construction plan by ID - delegates to PlanningCore
+        /// </summary>
+        public ConstructionPlan GetPlan(string planId)
+        {
+            return _planningCore?.GetPlan(planId);
+        }
+
+        /// <summary>
+        /// Add custom planning algorithm - delegates to PlanningCore
+        /// </summary>
+        public void AddPlanningAlgorithm(string planType, IPlanningAlgorithm algorithm)
+        {
+            _planningCore?.AddPlanningAlgorithm(planType, algorithm);
+        }
+
+        /// <summary>
+        /// Get planning statistics - delegates to PlanningCore
+        /// </summary>
+        public PlannerStats GetStats()
+        {
+            return _planningCore?.GetCombinedStats() ?? new PlannerStats();
+        }
+
+        /// <summary>
+        /// Set planning system enabled/disabled - delegates to PlanningCore
+        /// </summary>
+        public void SetEnabled(bool enabled)
+        {
+            IsEnabled = enabled;
+            _planningCore?.SetEnabled(enabled);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"ConstructionPlanner: {(enabled ? "enabled" : "disabled")}", this);
+        }
+
+        /// <summary>
+        /// Initialize core planning system
+        /// </summary>
+        private void InitializePlanningCore()
+        {
+            var coreGO = new GameObject("PlanningCore");
+            coreGO.transform.SetParent(transform);
+            _planningCore = coreGO.AddComponent<PlanningCore>();
+
+            // Setup event delegation
+            _planningCore.OnPlanCreated += (plan) => OnPlanCreated?.Invoke(plan);
+            _planningCore.OnPlanCompleted += (plan) => OnPlanCompleted?.Invoke(plan);
+            _planningCore.OnPlanningFailed += (requestId) => OnPlanningFailed?.Invoke(requestId);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "PlanningCore initialized and event delegation setup complete", this);
+        }
+
+        /// <summary>
+        /// Legacy method for backward compatibility
+        /// </summary>
+        [System.Obsolete("Use RequestPlanning instead")]
+        public string QueuePlanningRequest(PlanningRequest request)
+        {
+            return RequestPlanning(request);
+        }
+
+        /// <summary>
+        /// Legacy method for backward compatibility
+        /// </summary>
+        [System.Obsolete("Use GetStats instead")]
+        public PlannerStats GetPlannerStats()
+        {
+            return GetStats();
+        }
+    }
+}

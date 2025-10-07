@@ -1,4 +1,3 @@
-using ProjectChimera.Core.Logging;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
@@ -37,7 +36,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[InputAccessibilityManager] Initialized successfully");
+                ChimeraLogger.LogInfo("InputAccessibilityManager", "$1");
             }
         }
 
@@ -53,7 +52,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[InputAccessibilityManager] Shutdown completed");
+                ChimeraLogger.LogInfo("InputAccessibilityManager", "$1");
             }
         }
 
@@ -68,7 +67,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[InputAccessibilityManager] Basic feedback: {enabled}");
+                ChimeraLogger.LogInfo("InputAccessibilityManager", "$1");
             }
         }
 
@@ -83,11 +82,11 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[InputAccessibilityManager] Announced: {text}");
+                ChimeraLogger.LogInfo("InputAccessibilityManager", "$1");
             }
 
             // In a real implementation, this would interface with screen reader APIs
-            Debug.Log($"Accessibility Announcement: {text}");
+            ChimeraLogger.LogInfo("InputAccessibilityManager", "$1");
         }
 
         /// <summary>
@@ -115,7 +114,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[InputAccessibilityManager] Accessibility mode: {enabled}");
+                ChimeraLogger.LogInfo("InputAccessibilityManager", "$1");
             }
         }
 

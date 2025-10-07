@@ -4,6 +4,7 @@ using ProjectChimera.Shared;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Genetics;
 
+
 namespace ProjectChimera.Data.Visuals
 {
     /// <summary>
@@ -55,7 +56,7 @@ namespace ProjectChimera.Data.Visuals
         /// <summary>
         /// Calculates the modified seasonal parameter based on strain and environmental factors.
         /// </summary>
-        public float CalculateModifiedSeasonalParameter(PlantGrowthStage stage, PlantStrainSO strain, EnvironmentalConditions environment)
+        public float CalculateModifiedSeasonalParameter(PlantGrowthStage stage, GeneticPlantStrainSO strain, EnvironmentalConditions environment)
         {
             float baseParameter = GetSeasonalParameterForStage(stage);
 
@@ -146,7 +147,7 @@ namespace ProjectChimera.Data.Visuals
             return isValid;
         }
 
-        private float ApplyStrainModifier(float baseParameter, PlantGrowthStage stage, PlantStrainSO strain)
+        private float ApplyStrainModifier(float baseParameter, PlantGrowthStage stage, GeneticPlantStrainSO strain)
         {
             var modifier = _strainModifiers.Find(m => m.TargetStrain == strain || m.StrainType == strain.StrainType);
             if (modifier != null)
@@ -330,12 +331,12 @@ namespace ProjectChimera.Data.Visuals
     [System.Serializable]
     public class StrainStageModifier
     {
-        [SerializeField] private PlantStrainSO _targetStrain;
+        [SerializeField] private GeneticPlantStrainSO _targetStrain;
         [SerializeField] private ProjectChimera.Data.Genetics.StrainType _strainType = ProjectChimera.Data.Genetics.StrainType.Hybrid;
         [SerializeField] private bool _useStrainType = false; // If true, applies to all strains of this type
         [SerializeField] private List<StageModifier> _stageModifiers = new List<StageModifier>();
 
-        public PlantStrainSO TargetStrain => _targetStrain;
+        public GeneticPlantStrainSO TargetStrain => _targetStrain;
         public ProjectChimera.Data.Genetics.StrainType StrainType => _strainType;
         public bool UseStrainType => _useStrainType;
         public List<StageModifier> StageModifiers => _stageModifiers;

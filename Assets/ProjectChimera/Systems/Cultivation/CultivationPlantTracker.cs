@@ -7,6 +7,8 @@ using ProjectChimera.Core;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Cultivation.Plant;
+using ProjectChimera.Systems.Cultivation.Advanced;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 
 namespace ProjectChimera.Systems.Cultivation
@@ -59,7 +61,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (IsInitialized) return;
 
-            ChimeraLogger.Log("[CultivationPlantTracker] Initializing plant tracking system...");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
 
             // Initialize plant stage tracking
             foreach (PlantGrowthStage stage in System.Enum.GetValues(typeof(PlantGrowthStage)))
@@ -71,18 +73,18 @@ namespace ProjectChimera.Systems.Cultivation
             _zoneManager = ServiceContainerFactory.Instance?.TryResolve<CultivationZoneManager>();
             if (_zoneManager == null)
             {
-                ChimeraLogger.LogWarning("[CultivationPlantTracker] CultivationZoneManager not found - zone integration will be limited");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
 
             _lastStatisticsUpdate = Time.time;
 
             IsInitialized = true;
-            ChimeraLogger.Log($"[CultivationPlantTracker] Initialized. Max plants: {_maxTrackedPlants}, Detailed tracking: {_enableDetailedTracking}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         public void Shutdown()
         {
-            ChimeraLogger.Log("[CultivationPlantTracker] Shutting down plant tracking...");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
 
             // Save plant states before shutdown
             SaveAllPlantStates();
@@ -125,19 +127,19 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (plant == null)
             {
-                ChimeraLogger.LogWarning("[CultivationPlantTracker] Cannot register null plant");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
 
             if (_activePlants.ContainsKey(plant.PlantID))
             {
-                ChimeraLogger.LogWarning($"[CultivationPlantTracker] Plant {plant.PlantID} already registered");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
 
             if (_activePlants.Count >= _maxTrackedPlants)
             {
-                ChimeraLogger.LogWarning($"[CultivationPlantTracker] Maximum plant limit ({_maxTrackedPlants}) reached");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
 
@@ -155,7 +157,7 @@ namespace ProjectChimera.Systems.Cultivation
                 {
                     PlantId = plant.PlantID,
                     PlantedDate = System.DateTime.Now,
-                    InitialStrain = plant.Strain?.name ?? "Unknown",
+                    InitialStrain = plant.Strain?.Name ?? "Unknown",
                     CurrentStage = (PlantGrowthStage)plant.CurrentGrowthStage,
                     Position = position
                 };
@@ -171,7 +173,7 @@ namespace ProjectChimera.Systems.Cultivation
             _statistics.TotalPlantsGrown++;
 
             OnPlantRegistered?.Invoke(plant);
-            ChimeraLogger.Log($"[CultivationPlantTracker] Registered plant {plant.PlantName} at {position}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
 
             return true;
         }
@@ -183,7 +185,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!_activePlants.TryGetValue(plantId, out PlantInstanceSO plant))
             {
-                ChimeraLogger.LogWarning($"[CultivationPlantTracker] Plant {plantId} not found");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
 
@@ -195,7 +197,7 @@ namespace ProjectChimera.Systems.Cultivation
             {
                 var lifecycleData = _plantLifecycleData[plantId];
                 lifecycleData.RemovalDate = System.DateTime.Now;
-                lifecycleData.RemovalReason = reason;
+                lifecycleData.RemovalReason = reason.ToString();
                 lifecycleData.FinalStage = (PlantGrowthStage)plant.CurrentGrowthStage;
 
                 // Archive completed lifecycle data
@@ -217,7 +219,7 @@ namespace ProjectChimera.Systems.Cultivation
             _plantPositions.Remove(plantId);
 
             OnPlantRemoved?.Invoke(plantId, plant);
-            ChimeraLogger.Log($"[CultivationPlantTracker] Removed plant {plant.PlantName} (Reason: {reason})");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
 
             return true;
         }
@@ -229,7 +231,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!_activePlants.TryGetValue(plantId, out PlantInstanceSO plant))
             {
-                ChimeraLogger.LogWarning($"[CultivationPlantTracker] Plant {plantId} not found for stage update");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return;
             }
 
@@ -256,7 +258,7 @@ namespace ProjectChimera.Systems.Cultivation
             }
 
             OnPlantStageChanged?.Invoke(plant, oldStage, newStage);
-            ChimeraLogger.Log($"[CultivationPlantTracker] Plant {plant.PlantName} stage changed: {oldStage} -> {newStage}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         /// <summary>
@@ -345,7 +347,7 @@ namespace ProjectChimera.Systems.Cultivation
         /// </summary>
         public IEnumerable<PlantInstanceSO> GetPlantsByStrain(object strain)
         {
-            return _activePlants.Values.Where(plant => plant.Strain == strain);
+            return _activePlants.Values.Where(plant => plant.Strain?.Name == strain?.ToString());
         }
 
         /// <summary>
@@ -445,20 +447,20 @@ namespace ProjectChimera.Systems.Cultivation
         private void ArchiveLifecycleData(PlantLifecycleData data)
         {
             // In a full implementation, this would save to a database or file
-            ChimeraLogger.Log($"[CultivationPlantTracker] Archived lifecycle data for plant {data.PlantId}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         private void SaveAllPlantStates()
         {
-            ChimeraLogger.Log($"[CultivationPlantTracker] Saving states for {_activePlants.Count} plants");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             // Implementation would save plant states to persistent storage
         }
 
         #endregion
 
     // ITickable implementation
-    public int Priority => 0;
-    public bool Enabled => enabled && gameObject.activeInHierarchy;
+    public int TickPriority => ProjectChimera.Core.Updates.TickPriority.CultivationManager;
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
 
     public virtual void OnRegistered()
     {

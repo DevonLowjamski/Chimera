@@ -1,0 +1,46 @@
+using UnityEngine;
+using UnityEditor;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Editor
+{
+    /// <summary>
+    /// Custom inspector for UpdateOrchestratorTest
+    /// </summary>
+    [CustomEditor(typeof(UpdateOrchestratorTest))]
+    public class UpdateOrchestratorTestInspector : UnityEditor.Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            DrawDefaultInspector();
+
+            EditorGUILayout.Space();
+
+            var testComponent = (UpdateOrchestratorTest)target;
+
+            if (GUILayout.Button("Run Basic Test"))
+            {
+                testComponent.RunBasicTest();
+            }
+
+            if (GUILayout.Button("Run Performance Test"))
+            {
+                testComponent.RunPerformanceTest();
+            }
+
+            if (GUILayout.Button("Show Statistics"))
+            {
+                testComponent.ShowStatistics();
+            }
+
+            // TODO: Implement ClearAll method in UpdateOrchestratorTest if needed
+            /*
+            if (GUILayout.Button("Clear All"))
+            {
+                testComponent.ClearAll();
+            }
+            */
+        }
+    }
+}

@@ -11,6 +11,8 @@ using ProjectChimera.Data.Environment;
 using ProjectChimera.Core.Events;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 using ProjectChimera.Data.Genetics;
+using CultivationPlantStrainSO = ProjectChimera.Data.Cultivation.PlantStrainSO;
+using GeneticPlantStrainSO = ProjectChimera.Data.Genetics.GeneticPlantStrainSO;
 
 // using ProjectChimera.Systems.Economy; // Use ProjectChimera.Data.Economy for data types
 
@@ -49,18 +51,18 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (IsInitialized) return;
 
-            ChimeraLogger.Log("[HarvestManager] Initializing harvest management...");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
 
             // Register with unified ServiceContainer architecture
             try
             {
                 var serviceContainer = ServiceContainerFactory.Instance;
                 serviceContainer?.RegisterSingleton<IHarvestManager>(this);
-                ChimeraLogger.Log("[HarvestManager] Registered with ServiceContainer");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[HarvestManager] Failed to register with ServiceContainer: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
 
             IsInitialized = true;
@@ -75,32 +77,32 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                ChimeraLogger.LogError("[HarvestManager] Cannot process harvest: Manager not initialized.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return HarvestResult.CreateFailure(plant?.PlantId ?? "unknown", "Manager not initialized");
             }
 
             if (plant == null)
             {
-                ChimeraLogger.LogError("[HarvestManager] Cannot process harvest: Plant is null.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return HarvestResult.CreateFailure("unknown", "Plant is null");
             }
 
             // Validate plant is ready for harvest
             if (plant.CurrentGrowthStage != PlantGrowthStage.Harvest)
             {
-                ChimeraLogger.LogWarning($"[HarvestManager] Plant '{plant.PlantID}' is not ready for harvest (Stage: {plant.CurrentGrowthStage}).");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return HarvestResult.CreateFailure(plant.PlantId, $"Plant not ready for harvest (Stage: {plant.CurrentGrowthStage})");
             }
 
             // Calculate harvest results
-            float yieldAmount = plant.CalculateYieldPotential() * 100f; // Convert to grams
+            float yieldAmount = plant.CalculateYieldPotential().EstimatedYield * 100f; // Convert to grams
             float potency = plant.CalculatePotencyPotential();
             float qualityScore = CalculateQualityScore(plant);
 
             // Update lifecycle statistics
             // Note: Statistics update will be handled by the lifecycle component
 
-            ChimeraLogger.Log($"[HarvestManager] Harvested plant '{plant.PlantID}': {yieldAmount:F1}g at {potency:F1}% potency, {qualityScore:F1}% quality");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
 
             // Add to inventory
             var harvestResult = AddHarvestToInventory(plant, yieldAmount, qualityScore);
@@ -118,14 +120,14 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                ChimeraLogger.LogError("[HarvestManager] Cannot add harvest to inventory: Manager not initialized.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return HarvestResult.CreateFailure(plant?.PlantId ?? "unknown", "Manager not initialized");
             }
 
             try
             {
                 // Economy integration ready for service interface implementation
-                ChimeraLogger.Log($"[HarvestManager] Harvest completed: {yieldAmount}g with quality {qualityScore:F1}% - inventory integration pending");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
 
                 // Generate unique batch ID from plant data
                 string batchId = GenerateBatchId(plant);
@@ -147,7 +149,7 @@ namespace ProjectChimera.Systems.Cultivation
 
                 if (added)
                 {
-                    ChimeraLogger.Log($"[HarvestManager] Successfully processed harvest: {yieldAmount:F1}g (Batch: {batchId}, Quality: {qualityScore:F1}%) - inventory integration pending");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
 
                     TotalPlantsHarvested++;
                     TotalYieldHarvested += yieldAmount;
@@ -156,13 +158,13 @@ namespace ProjectChimera.Systems.Cultivation
                 }
                 else
                 {
-                    ChimeraLogger.LogWarning($"[HarvestManager] Failed to process harvest");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                     return HarvestResult.CreateFailure(plant.PlantId, "Failed to add harvest to inventory");
                 }
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[HarvestManager] Error adding harvest to inventory: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return HarvestResult.CreateFailure(plant.PlantId, $"Error processing harvest: {ex.Message}");
             }
         }
@@ -174,14 +176,14 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                ChimeraLogger.LogError("[HarvestManager] Cannot harvest plant: Manager not initialized.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return false;
             }
 
             var plant = _plantLifecycle.GetPlant(plantId);
             if (plant == null)
             {
-                ChimeraLogger.LogWarning($"[HarvestManager] Cannot harvest plant: Plant ID '{plantId}' not found.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return false;
             }
 
@@ -199,7 +201,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                ChimeraLogger.LogError("[HarvestManager] Cannot harvest all ready plants: Manager not initialized.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return 0;
             }
 
@@ -214,7 +216,7 @@ namespace ProjectChimera.Systems.Cultivation
                 }
             }
 
-            ChimeraLogger.Log($"[HarvestManager] Harvested {harvestedCount} plants ready for harvest.");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             return harvestedCount;
         }
 
@@ -233,7 +235,7 @@ namespace ProjectChimera.Systems.Cultivation
             foreach (var plant in harvestReadyPlants)
             {
                 readyCount++;
-                totalPotentialYield += plant.CalculateYieldPotential() * 100f;
+                totalPotentialYield += plant.CalculateYieldPotential().EstimatedYield * 100f;
                 totalQuality += CalculateQualityScore(plant);
             }
 
@@ -264,7 +266,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (plant == null) return $"UNKNOWN_{System.DateTime.Now:yyyyMMdd_HHmm}";
 
-            string strainName = plant.Strain?.StrainName ?? "Unknown";
+            string strainName = GetStrainName(plant.Strain) ?? "Unknown";
             string plantId = plant.PlantID ?? "NoID";
             string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmm");
 
@@ -294,7 +296,7 @@ namespace ProjectChimera.Systems.Cultivation
             var plant = _plantLifecycle.GetPlant(plantId);
             if (plant == null) return (0f, 0f, 0f);
 
-            float yieldAmount = plant.CalculateYieldPotential() * 100f;
+            float yieldAmount = plant.CalculateYieldPotential().EstimatedYield * 100f;
             float potency = plant.CalculatePotencyPotential();
             float quality = CalculateQualityScore(plant);
 
@@ -330,7 +332,7 @@ namespace ProjectChimera.Systems.Cultivation
         public float CalculateExpectedYield(PlantInstanceSO plant)
         {
             if (plant == null) return 0f;
-            return plant.CalculateYieldPotential() * 100f;
+            return plant.CalculateYieldPotential().EstimatedYield * 100f;
         }
 
         public float CalculateYieldQuality(PlantInstanceSO plant)
@@ -354,7 +356,7 @@ namespace ProjectChimera.Systems.Cultivation
         public void ProcessOfflineHarvestChecks(float offlineHours)
         {
             if (!IsInitialized) return;
-            ChimeraLogger.Log($"[HarvestManager] Processing offline harvest checks for {offlineHours:F1} hours");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         public System.Collections.Generic.List<string> GetPlantsReadyForHarvest()
@@ -365,7 +367,7 @@ namespace ProjectChimera.Systems.Cultivation
         public void ScheduleAutomaticHarvest(string plantId, float hoursUntilHarvest)
         {
             if (!IsInitialized) return;
-            ChimeraLogger.Log($"[HarvestManager] Scheduled automatic harvest for plant {plantId} in {hoursUntilHarvest:F1} hours");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         public HarvestStatistics GetHarvestStatistics()
@@ -404,6 +406,18 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized || !harvestResult.Success) return;
             ProcessHarvestedMaterial(harvestResult.PlantId, harvestResult.YieldAmount, harvestResult.Quality);
+        }
+
+        /// <summary>
+        /// Helper method to get strain name from either type of PlantStrainSO
+        /// </summary>
+        private string GetStrainName(object strain)
+        {
+            if (strain is CultivationPlantStrainSO cultivationStrain)
+                return cultivationStrain.StrainName;
+            if (strain is GeneticPlantStrainSO geneticStrain)
+                return geneticStrain.StrainName;
+            return null;
         }
 
         public void Shutdown()

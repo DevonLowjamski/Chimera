@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Cultivation
 {
@@ -8,7 +10,7 @@ namespace ProjectChimera.Systems.Cultivation
     /// BASIC: Simple plant processing service for Project Chimera's cultivation system.
     /// Focuses on essential plant updates without complex processors and batch systems.
     /// </summary>
-    public class PlantProcessingService : MonoBehaviour
+    public class PlantProcessingService : MonoBehaviour, ITickable
     {
         [Header("Basic Processing Settings")]
         [SerializeField] private bool _enableBasicProcessing = true;
@@ -39,24 +41,35 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantProcessingService] Initialized successfully");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
         /// <summary>
         /// Update plant processing
         /// </summary>
-        private void Update()
-        {
+    public int TickPriority => 100;
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
             if (!_enableBasicProcessing || !_isInitialized) return;
 
             float currentTime = Time.time;
             if (currentTime - _lastUpdateTime >= _updateInterval)
-            {
                 ProcessPlantBatch();
                 _lastUpdateTime = currentTime;
-            }
-        }
+    }
+
+    private void Awake()
+    {
+        UpdateOrchestrator.Instance.RegisterTickable(this);
+    }
+
+    private void OnDestroy()
+    {
+        UpdateOrchestrator.Instance.UnregisterTickable(this);
+    }
 
         /// <summary>
         /// Add plant to processing queue
@@ -76,7 +89,7 @@ namespace ProjectChimera.Systems.Cultivation
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[PlantProcessingService] Added plant {plantId} to processing queue");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 }
             }
         }
@@ -90,7 +103,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantProcessingService] Removed plant {plantId} from processing");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
@@ -115,7 +128,7 @@ namespace ProjectChimera.Systems.Cultivation
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[PlantProcessingService] Processed {plantsProcessed} plants in batch");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 }
             }
         }
@@ -169,9 +182,9 @@ namespace ProjectChimera.Systems.Cultivation
         public ProcessingStats GetStats()
         {
             int totalPlants = _plantsToProcess.Count;
-            int healthyPlants = _plantsToProcess.Count(p => p.Health > 0.8f);
-            int unhealthyPlants = _plantsToProcess.Count(p => p.Health < 0.5f);
-            int maturePlants = _plantsToProcess.Count(p => p.GrowthStage > 0.9f);
+            int healthyPlants = _plantsToProcess.Where(p => p.Health > 0.8f).Count();
+            int unhealthyPlants = _plantsToProcess.Where(p => p.Health < 0.5f).Count();
+            int maturePlants = _plantsToProcess.Where(p => p.GrowthStage > 0.9f).Count();
 
             return new ProcessingStats
             {
@@ -193,7 +206,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantProcessingService] Cleared all plants from processing");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
@@ -211,7 +224,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantProcessingService] Processing {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
     }

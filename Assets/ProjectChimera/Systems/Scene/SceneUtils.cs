@@ -14,8 +14,8 @@ namespace ProjectChimera.Systems.Scene
             {
                 return serviceContainer.TryResolve<ISceneLoader>();
             }
-            
-            ChimeraLogger.LogError("[SceneUtils] ServiceContainer not available - cannot get SceneLoader service");
+
+            ChimeraLogger.LogWarning("SCENE", "No ISceneLoader available (ServiceContainer not initialized)");
             return null;
         }
 
@@ -41,7 +41,7 @@ namespace ProjectChimera.Systems.Scene
         {
             if (!SceneConstants.IsWarehouseScene(warehouseType))
             {
-                ChimeraLogger.LogWarning($"[SceneUtils] Invalid warehouse scene: {warehouseType}, defaulting to Small Bay");
+                ChimeraLogger.LogWarning("SCENE", $"Invalid warehouse scene '{warehouseType}', defaulting to {SceneConstants.WAREHOUSE_SMALL_BAY}");
                 warehouseType = SceneConstants.WAREHOUSE_SMALL_BAY;
             }
 
@@ -61,7 +61,7 @@ namespace ProjectChimera.Systems.Scene
                 }
                 else
                 {
-                    ChimeraLogger.LogWarning("[SceneUtils] No active scene to restart");
+                    ChimeraLogger.LogWarning("SCENE", "Current scene name not available to restart");
                 }
             }
         }

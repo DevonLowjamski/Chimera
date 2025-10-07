@@ -1,0 +1,136 @@
+using UnityEngine;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System;
+using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
+
+namespace ProjectChimera.Systems.Cultivation
+{
+    /// <summary>
+    /// Cultivation service interfaces for dependency injection
+    /// Eliminates FindObjectOfType anti-patterns in cultivation systems
+    /// </summary>
+
+    // Placeholder types for missing cultivation classes
+    [System.Serializable]
+    public class PlantStrainSO : ScriptableObject
+    {
+        public string StrainId;
+        public string StrainName;
+        public float THCContent;
+        public float CBDContent;
+    }
+
+    [System.Serializable]
+    public class PlantInstance : MonoBehaviour
+    {
+        public string PlantId;
+        public PlantStrainSO Strain;
+        public Vector3 Position;
+        public float Age;
+        public float Health;
+    }
+
+    [System.Serializable]
+    public class PlantGrowthData
+    {
+        public string PlantId;
+        public float Height;
+        public float Biomass;
+        public float GrowthRate;
+        public DateTime LastUpdate;
+    }
+
+
+    [System.Serializable]
+    public class CultivationSystemStatus
+    {
+        public int TotalPlants;
+        public int HealthyPlants;
+        public float AverageHealth;
+        public bool IsSystemActive;
+    }
+
+    [System.Serializable]
+    public class EnvironmentalData
+    {
+        public float Temperature;
+        public float Humidity;
+        public float LightIntensity;
+        public float CO2Level;
+        public DateTime Timestamp;
+    }
+
+
+    public interface IPlantGrowthSystem
+    {
+        bool IsInitialized { get; }
+        int ActivePlantCount { get; }
+        void Initialize();
+        void RegisterPlant(PlantInstance plant);
+        void UnregisterPlant(PlantInstance plant);
+        void UpdatePlantGrowth(float deltaTime);
+        PlantGrowthData GetPlantGrowthData(string plantId);
+    }
+
+    public interface ICultivationManager
+    {
+        bool IsInitialized { get; }
+        void Initialize();
+        Task<PlantInstance> CreatePlantAsync(PlantStrainSO strain, Vector3 position);
+        bool RemovePlant(string plantId);
+        PlantInstance GetPlant(string plantId);
+        PlantInstance[] GetAllPlants();
+        int GetTotalPlantCount();
+        int GetHealthyPlantCount();
+        float GetAverageHealth();
+        float GetExpectedYield();
+        CultivationSystemStatus GetSystemStatus();
+        float GetResourceUsage();
+    }
+
+    public interface IPlantStreamingLODIntegration
+    {
+        bool IsInitialized { get; }
+        void Initialize();
+        void RegisterPlantForStreaming(PlantInstance plant);
+        void UnregisterPlantFromStreaming(PlantInstance plant);
+        void UpdatePlantLOD(PlantInstance plant, float distance);
+        void OptimizeStreamingLOD();
+    }
+
+    public interface IPlantInstance
+    {
+        string Id { get; }
+        string StrainName { get; }
+        Vector3 Position { get; }
+        PlantGrowthStage GrowthStage { get; }
+        float Health { get; }
+        float Age { get; }
+        bool IsAlive { get; }
+        void Initialize(PlantStrainSO strain, Vector3 position);
+        void UpdateGrowth(float deltaTime);
+        void ApplyEnvironmentalEffects(EnvironmentalData environmentalData);
+        void Harvest();
+        void Destroy();
+    }
+
+    public interface IPlantEnvironmentalService
+    {
+        bool IsInitialized { get; }
+        void Initialize();
+        EnvironmentalData GetEnvironmentalData(Vector3 position);
+        void UpdateEnvironmentalData(Vector3 position, EnvironmentalData data);
+        void RegisterEnvironmentalSensor(Vector3 position, IEnvironmentalSensor sensor);
+        void UnregisterEnvironmentalSensor(Vector3 position);
+    }
+
+    public interface IEnvironmentalSensor
+    {
+        Vector3 Position { get; }
+        EnvironmentalData GetCurrentData();
+        bool IsActive { get; }
+        void Activate();
+        void Deactivate();
+    }
+}

@@ -109,7 +109,7 @@ namespace ProjectChimera.Systems.Scene
             {
                 return buildIndex;
             }
-            ChimeraLogger.LogError($"[SceneConstants] No build index found for scene '{sceneName}'");
+            ChimeraLogger.LogWarning("SCENE", $"Unknown scene name '{sceneName}'");
             return -1;
         }
 
@@ -122,7 +122,7 @@ namespace ProjectChimera.Systems.Scene
             {
                 return sceneName;
             }
-            ChimeraLogger.LogError($"[SceneConstants] No scene name found for build index {buildIndex}");
+            ChimeraLogger.LogWarning("SCENE", $"Unknown build index '{buildIndex}'");
             return null;
         }
 

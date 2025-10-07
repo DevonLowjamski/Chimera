@@ -2,6 +2,7 @@ using ProjectChimera.Data.Save;
 using ProjectChimera.Systems.Save.Components;
 using System.Threading.Tasks;
 using System.IO.Compression;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Save
 {

@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Core.Logging;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Core
 {
@@ -40,7 +41,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[DataManager] Initialized successfully");
+                Logger.LogInfo("DataManager", "Initialized");
             }
         }
 
@@ -57,8 +58,21 @@ namespace ProjectChimera.Core
                 return _loadedData[assetName] as T;
             }
 
-            // Load from Resources
-            T data = Resources.Load<T>(assetName);
+            // Load from ServiceContainer IAssetManager (with Resources fallback)
+            var serviceContainer = ServiceContainerFactory.Instance;
+            var assetManager = serviceContainer.TryResolve<IAssetManager>();
+            T data = null;
+
+            if (assetManager != null)
+            {
+                data = assetManager.LoadAsset<T>(assetName);
+            }
+            else
+            {
+                // No fallback to Resources.Load - log warning and fail gracefully
+                Logger.LogWarning("DATA", $"Asset manager not available for data asset: {assetName}. Configure AddressablesAssetManager.", this);
+                data = null;
+            }
             if (data != null)
             {
                 _loadedData[assetName] = data;
@@ -66,7 +80,7 @@ namespace ProjectChimera.Core
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[DataManager] Loaded data: {assetName}");
+                    Logger.LogInfo("DataManager", $"Loaded data: {assetName}");
                 }
 
                 return data;
@@ -77,7 +91,7 @@ namespace ProjectChimera.Core
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.LogWarning($"[DataManager] Failed to load data: {assetName}");
+                    Logger.LogInfo("DataManager", $"Failed to load data: {assetName}");
                 }
 
                 return null;
@@ -93,7 +107,7 @@ namespace ProjectChimera.Core
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[DataManager] Unloaded data: {assetName}");
+                    Logger.LogInfo("DataManager", $"Unloaded data: {assetName}");
                 }
             }
         }
@@ -131,7 +145,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[DataManager] Cleared all loaded data");
+                Logger.LogInfo("DataManager", "Cleared all data");
             }
         }
 
@@ -169,7 +183,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[DataManager] Loaded {commonData.Length} common data assets");
+                Logger.LogInfo("DataManager", "Loaded common data");
             }
         }
 

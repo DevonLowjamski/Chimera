@@ -38,7 +38,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[GridPlacementPreviewRenderer] Initialized successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -67,7 +67,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging && Random.value < 0.01f) // Log occasionally
             {
-                ChimeraLogger.Log($"[GridPlacementPreviewRenderer] Preview at {gridPosition}, valid: {isValid}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -83,7 +83,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[GridPlacementPreviewRenderer] Preview hidden");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -103,7 +103,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[GridPlacementPreviewRenderer] Preview cleared");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -121,7 +121,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[GridPlacementPreviewRenderer] Preview {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 

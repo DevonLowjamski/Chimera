@@ -1,3 +1,4 @@
+
 using UnityEngine;
 
 namespace ProjectChimera.Data.Cultivation.IPM
@@ -117,11 +118,4 @@ namespace ProjectChimera.Data.Cultivation.IPM
         Immediate
     }
 
-    public enum RiskLevel
-    {
-        Low,
-        Moderate,
-        High,
-        Critical
-    }
 }

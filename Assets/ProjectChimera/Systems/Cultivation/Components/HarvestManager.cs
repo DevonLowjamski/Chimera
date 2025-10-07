@@ -1,6 +1,7 @@
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Cultivation.Plant;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,34 +42,34 @@ namespace ProjectChimera.Systems.Cultivation
             }
 
             _isInitialized = true;
-            ChimeraLogger.Log("[HarvestManager] Harvest manager initialized");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         public void Shutdown()
         {
             _harvestHistory.Clear();
             _isInitialized = false;
-            ChimeraLogger.Log("[HarvestManager] Harvest manager shutdown");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         public bool HarvestPlant(string plantId)
         {
             if (!_isInitialized || _plantLifecycle == null)
             {
-                ChimeraLogger.LogWarning("[HarvestManager] Cannot harvest plant - system not initialized");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return false;
             }
 
             var plant = _plantLifecycle.GetPlant(plantId);
             if (plant == null)
             {
-                ChimeraLogger.LogWarning($"[HarvestManager] Plant {plantId} not found for harvest");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return false;
             }
 
             if (!IsPlantReadyForHarvest(plantId))
             {
-                ChimeraLogger.LogWarning($"[HarvestManager] Plant {plantId} is not ready for harvest");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return false;
             }
 
@@ -97,18 +98,18 @@ namespace ProjectChimera.Systems.Cultivation
                         lifecycle.UpdateHarvestStatistics(harvestResult.YieldAmount);
                     }
 
-                    ChimeraLogger.Log($"[HarvestManager] Successfully harvested plant {plantId} - Yield: {harvestResult.YieldAmount:F1}g, Quality: {harvestResult.Quality}");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                     return true;
                 }
                 else
                 {
-                    ChimeraLogger.LogError($"[HarvestManager] Failed to harvest plant {plantId}: {harvestResult.ErrorMessage}");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[HarvestManager] Error harvesting plant {plantId}: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return false;
             }
         }
@@ -157,7 +158,7 @@ namespace ProjectChimera.Systems.Cultivation
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[HarvestManager] Error processing harvest for plant {plant.PlantId}: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return HarvestResult.CreateFailure(plant.PlantId, $"Harvest processing error: {ex.Message}");
             }
         }
@@ -263,7 +264,7 @@ namespace ProjectChimera.Systems.Cultivation
                 if (harvestReadyPlants.Any())
                 {
                     int harvestableCount = harvestReadyPlants.Count;
-                    ChimeraLogger.Log($"[HarvestManager] Found {harvestableCount} plants ready for harvest after offline period");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
 
                     // Check for overripe plants
                     foreach (var plantId in harvestReadyPlants)
@@ -271,7 +272,7 @@ namespace ProjectChimera.Systems.Cultivation
                         if (IsPlantOverripe(plantId))
                         {
                             OnPlantOverripe?.Invoke(plantId);
-                            ChimeraLogger.LogWarning($"[HarvestManager] Plant {plantId} has become overripe during offline period");
+                            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                         }
                         else
                         {
@@ -282,7 +283,7 @@ namespace ProjectChimera.Systems.Cultivation
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[HarvestManager] Error processing offline harvest checks: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
@@ -301,7 +302,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             // This would integrate with a scheduling system
             // For now, just log the schedule
-            ChimeraLogger.Log($"[HarvestManager] Scheduled automatic harvest for plant {plantId} in {hoursUntilHarvest:F1} hours");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         public HarvestStatistics GetHarvestStatistics()
@@ -341,7 +342,7 @@ namespace ProjectChimera.Systems.Cultivation
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[HarvestManager] Error calculating harvest statistics: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return new HarvestStatistics();
             }
         }
@@ -384,14 +385,14 @@ namespace ProjectChimera.Systems.Cultivation
             {
                 // This would integrate with inventory system
                 // For now, just log the processed material
-                ChimeraLogger.Log($"[HarvestManager] Processed {yieldAmount:F1}g of {quality} quality material from plant {plantId}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
 
                 // Update inventory would happen here
                 // UpdateInventoryWithHarvest(harvestResult);
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[HarvestManager] Error processing harvested material: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
@@ -406,11 +407,11 @@ namespace ProjectChimera.Systems.Cultivation
             {
                 // This would update the inventory system with harvested materials
                 // Implementation would depend on the inventory system design
-                ChimeraLogger.Log($"[HarvestManager] Updated inventory with harvest: {harvestResult.YieldAmount:F1}g {harvestResult.Quality} quality");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[HarvestManager] Error updating inventory with harvest: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
@@ -422,7 +423,7 @@ namespace ProjectChimera.Systems.Cultivation
         public void ClearHarvestHistory()
         {
             _harvestHistory.Clear();
-            ChimeraLogger.Log("[HarvestManager] Harvest history cleared");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         public List<HarvestResult> GetRecentHarvests(int count = 10)

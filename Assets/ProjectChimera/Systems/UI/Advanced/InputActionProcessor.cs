@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.UI.Advanced
 {
@@ -8,7 +8,7 @@ namespace ProjectChimera.Systems.UI.Advanced
     /// BASIC: Simple input action processor for Project Chimera's UI system.
     /// Focuses on essential input processing without complex action systems and search modes.
     /// </summary>
-    public class InputActionProcessor : MonoBehaviour
+    public class InputActionProcessor : MonoBehaviour, ITickable
     {
         [Header("Basic Input Settings")]
         [SerializeField] private bool _enableBasicProcessing = true;
@@ -41,7 +41,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[InputActionProcessor] Initialized successfully");
+                ChimeraLogger.Log("UI/INPUT", "InputActionProcessor initialized", this);
             }
         }
 
@@ -57,7 +57,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[InputActionProcessor] Menu toggle processed");
+                ChimeraLogger.Log("UI/INPUT", "Menu toggle", this);
             }
         }
 
@@ -73,7 +73,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[InputActionProcessor] Select processed");
+                ChimeraLogger.Log("UI/INPUT", "Select", this);
             }
         }
 
@@ -89,7 +89,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[InputActionProcessor] Cancel processed");
+                ChimeraLogger.Log("UI/INPUT", "Cancel", this);
             }
         }
 
@@ -105,7 +105,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[InputActionProcessor] Navigate up processed");
+                ChimeraLogger.Log("UI/INPUT", "Navigate Up", this);
             }
         }
 
@@ -118,7 +118,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[InputActionProcessor] Navigate down processed");
+                ChimeraLogger.Log("UI/INPUT", "Navigate Down", this);
             }
         }
 
@@ -131,7 +131,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[InputActionProcessor] Navigate left processed");
+                ChimeraLogger.Log("UI/INPUT", "Navigate Left", this);
             }
         }
 
@@ -144,56 +144,63 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[InputActionProcessor] Navigate right processed");
+                ChimeraLogger.Log("UI/INPUT", "Navigate Right", this);
             }
         }
 
         /// <summary>
         /// Process keyboard input automatically
         /// </summary>
-        private void Update()
+    [SerializeField] private float _tickInterval = 0.1f; // Configurable update frequency
+    private float _lastTickTime;
+
+    public int TickPriority => 50; // Lower priority for complex updates
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
+        _lastTickTime += deltaTime;
+        if (_lastTickTime >= _tickInterval)
         {
-            if (!_enableBasicProcessing || !_isInitialized) return;
+            _lastTickTime = 0f;
+                if (!_enableBasicProcessing || !_isInitialized) return;
 
-            // Menu toggle
-            if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.Escape))
-            {
-                ProcessMenuToggle();
-            }
+                // Menu toggle
+                if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.Escape))
+                    ProcessMenuToggle();
 
-            // Select
-            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
-            {
-                ProcessSelect();
-            }
+                // Select
+                if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
+                    ProcessSelect();
 
-            // Cancel
-            if (Input.GetKeyDown(KeyCode.Backspace) || Input.GetMouseButtonDown(1))
-            {
-                ProcessCancel();
-            }
+                // Cancel
+                if (Input.GetKeyDown(KeyCode.Backspace) || Input.GetMouseButtonDown(1))
+                    ProcessCancel();
 
-            // Navigation
-            if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
-            {
-                ProcessNavigateUp();
-            }
+                // Navigation
+                if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
+                    ProcessNavigateUp();
 
-            if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S))
-            {
-                ProcessNavigateDown();
-            }
+                if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S))
+                    ProcessNavigateDown();
 
-            if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
-            {
-                ProcessNavigateLeft();
-            }
+                if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
+                    ProcessNavigateLeft();
 
-            if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
-            {
-                ProcessNavigateRight();
-            }
+                if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
+                    ProcessNavigateRight();
         }
+    }
+
+    private void Awake()
+    {
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
+    }
+
+    private void OnDestroy()
+    {
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
+    }
 
         /// <summary>
         /// Set input processing enabled state
@@ -204,7 +211,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[InputActionProcessor] Input processing {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.Log("UI/INPUT", "Input processing toggled", this);
             }
         }
 
@@ -240,7 +247,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[InputActionProcessor] Cooldown reset");
+                ChimeraLogger.Log("UI/INPUT", "Input cooldown reset", this);
             }
         }
     }

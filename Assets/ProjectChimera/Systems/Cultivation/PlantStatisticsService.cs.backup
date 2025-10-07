@@ -1,0 +1,173 @@
+using ProjectChimera.Core.Logging;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using ProjectChimera.Core;
+
+namespace ProjectChimera.Systems.Cultivation
+{
+    /// <summary>
+    /// SIMPLE: Basic plant statistics service aligned with Project Chimera's cultivation vision.
+    /// Focuses on essential plant tracking for cultivation management.
+    /// </summary>
+    public class PlantStatisticsService
+    {
+        [Header("Basic Settings")]
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _updateInterval = 5f;
+
+        // Basic plant tracking
+        private int _activePlantCount = 0;
+        private float _averageHealth = 1f;
+        private int _unhealthyPlants = 0;
+        private float _lastUpdateTime = 0f;
+        private bool _isInitialized = false;
+
+        // Properties
+        public bool IsInitialized => _isInitialized;
+        public int ActivePlantCount => _activePlantCount;
+        public float AverageHealth => _averageHealth;
+        public int UnhealthyPlants => _unhealthyPlants;
+
+        /// <summary>
+        /// Initialize the statistics service
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _isInitialized = true;
+            UpdateStatistics();
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Shutdown the statistics service
+        /// </summary>
+        public void Shutdown()
+        {
+            if (!_isInitialized) return;
+
+            _isInitialized = false;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Update plant statistics
+        /// </summary>
+        public void UpdateStatistics()
+        {
+            if (!_isInitialized) return;
+
+            // Only update periodically to avoid performance issues
+            if (Time.time - _lastUpdateTime < _updateInterval) return;
+            _lastUpdateTime = Time.time;
+
+            // Simple statistics calculation
+            var plants = GetAllPlants();
+            _activePlantCount = plants.Count;
+
+            if (_activePlantCount > 0)
+            {
+                _averageHealth = plants.Average(p => p.Health);
+                _unhealthyPlants = plants.Count(p => p.Health < 0.5f);
+            }
+            else
+            {
+                _averageHealth = 1f;
+                _unhealthyPlants = 0;
+            }
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Get basic plant statistics
+        /// </summary>
+        public PlantStatistics GetBasicStatistics()
+        {
+            return new PlantStatistics
+            {
+                ActivePlantCount = _activePlantCount,
+                AverageHealth = _averageHealth,
+                UnhealthyPlants = _unhealthyPlants,
+                TotalPlantsEver = GetTotalPlantsEver()
+            };
+        }
+
+        /// <summary>
+        /// Get plants by health status
+        /// </summary>
+        public List<PlantInstance> GetPlantsByHealth(float minHealth, float maxHealth)
+        {
+            return GetAllPlants().Where(p => p.Health >= minHealth && p.Health <= maxHealth).ToList();
+        }
+
+        /// <summary>
+        /// Get unhealthy plants
+        /// </summary>
+        public List<PlantInstance> GetUnhealthyPlants()
+        {
+            return GetPlantsByHealth(0f, 0.5f);
+        }
+
+        /// <summary>
+        /// Get healthy plants
+        /// </summary>
+        public List<PlantInstance> GetHealthyPlants()
+        {
+            return GetPlantsByHealth(0.5f, 1f);
+        }
+
+        #region Private Methods
+
+        private List<PlantInstance> GetAllPlants()
+        {
+            // In a real implementation, this would get plants from the cultivation manager
+            // For now, return an empty list
+            return new List<PlantInstance>();
+        }
+
+        private int GetTotalPlantsEver()
+        {
+            // In a real implementation, this would track total plants ever grown
+            return _activePlantCount;
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Basic plant statistics data
+    /// </summary>
+    [System.Serializable]
+    public class PlantStatistics
+    {
+        public int ActivePlantCount;
+        public float AverageHealth;
+        public int UnhealthyPlants;
+        public int TotalPlantsEver;
+    }
+
+    /// <summary>
+    /// Simple plant instance for statistics
+    /// </summary>
+    [System.Serializable]
+    public class PlantInstance
+    {
+        public string PlantId;
+        public float Health = 1f;
+        public string GrowthStage = "Seedling";
+    }
+}

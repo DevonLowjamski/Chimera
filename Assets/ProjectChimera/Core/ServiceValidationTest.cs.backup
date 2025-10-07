@@ -1,0 +1,214 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+using UnityEngine;
+using System.Linq;
+using ProjectChimera.Core.DependencyInjection;
+
+namespace ProjectChimera.Core
+{
+    /// <summary>
+    /// Test component for validating dependency injection service registrations
+    /// Attach to a GameObject to test service validation at runtime
+    /// </summary>
+    public class ServiceValidationTest : MonoBehaviour, ProjectChimera.Core.Updates.ITickable
+    {
+        [Header("Validation Settings")]
+        [SerializeField] private bool _validateOnStart = true;
+        [SerializeField] private bool _showDetailedReport = true;
+
+        [Header("Test Actions")]
+        [SerializeField] private bool _runValidationTest = false;
+
+        private void Start()
+        {
+        // Register with UpdateOrchestrator
+        ProjectChimera.Core.Updates.UpdateOrchestrator.Instance?.RegisterTickable(this);
+            if (_validateOnStart)
+            {
+                RunValidationTest();
+            }
+        }
+
+        /// <summary>
+        /// ITickable Priority property
+        /// </summary>
+        public int Priority => ProjectChimera.Core.Updates.TickPriority.DebugSystems;
+
+        /// <summary>
+        /// ITickable Enabled property
+        /// </summary>
+        public bool Enabled => isActiveAndEnabled;
+
+        public void Tick(float deltaTime)
+        {
+            if (_runValidationTest)
+            {
+                _runValidationTest = false;
+                RunValidationTest();
+            }
+        }
+
+        /// <summary>
+        /// Run comprehensive service validation test
+        /// </summary>
+        [ContextMenu("Run Service Validation")]
+        public void RunValidationTest()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+
+            var bootstrapper = ServiceBootstrapper.Instance;
+            if (bootstrapper == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return;
+            }
+
+            if (!bootstrapper.IsBootstrapped)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                bootstrapper.BootstrapServices();
+            }
+
+            // Get validation status for all services
+            var validationResults = bootstrapper.GetServiceValidationStatus();
+
+            if (validationResults == null || validationResults.Count == 0)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return;
+            }
+
+            // Summary statistics
+            var totalServices = validationResults.Count;
+            var registeredServices = validationResults.Count(r => r.IsRegistered);
+            var nullImplementations = validationResults.Count(r => r.IsNullImplementation);
+            var criticalFailures = validationResults.Count(r => r.IsCritical && !r.IsRegistered);
+            var warnings = validationResults.Count(r => !r.IsCritical && !r.IsRegistered);
+
+            UnityEngine.Debug.Log("Operation completed");
+            UnityEngine.Debug.Log("Operation completed");
+            UnityEngine.Debug.Log("Operation completed");
+            UnityEngine.Debug.Log("Operation completed");
+            UnityEngine.Debug.Log("Operation completed");
+            UnityEngine.Debug.Log("Operation completed");
+
+            if (_showDetailedReport)
+            {
+                ShowDetailedReport(validationResults);
+            }
+
+            // Test actual service resolution
+            TestServiceResolution();
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        /// <summary>
+        /// Show detailed validation report
+        /// </summary>
+        private void ShowDetailedReport(System.Collections.Generic.List<ServiceValidationResult> results)
+        {
+            UnityEngine.Debug.Log("Operation completed");
+
+            foreach (var result in results)
+            {
+                var status = result.IsRegistered ? "✅" : "❌";
+                var implementation = result.IsNullImplementation ? "(Null)" : "(Concrete)";
+                var criticality = result.IsCritical ? "[CRITICAL]" : "[OPTIONAL]";
+
+                UnityEngine.Debug.Log("Operation completed");
+
+                if (!string.IsNullOrEmpty(result.ErrorMessage))
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Test actual service resolution to ensure DI is working
+        /// </summary>
+        private void TestServiceResolution()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+
+            try
+            {
+                // Test core services
+                var eventManager = ServiceBootstrapper.GetGlobalService<IEventManager>();
+                UnityEngine.Debug.Log("Operation completed");
+
+                var settingsManager = ServiceBootstrapper.GetGlobalService<ISettingsManager>();
+                UnityEngine.Debug.Log("Operation completed");
+
+                // Test UI services
+                var uiManager = ServiceBootstrapper.GetGlobalService<IUIManager>();
+                UnityEngine.Debug.Log("Operation completed");
+
+                // Test construction services
+                var gridSystem = ServiceBootstrapper.GetGlobalService<IGridSystem>();
+                UnityEngine.Debug.Log("Operation completed");
+
+                var assetService = ServiceBootstrapper.GetGlobalService<ISchematicAssetService>();
+                UnityEngine.Debug.Log("Operation completed");
+
+                UnityEngine.Debug.Log("Operation completed");
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+    // ITickable implementation properties are defined above
+
+    public virtual void OnRegistered()
+    {
+        // Override in derived classes if needed
+    }
+
+    public virtual void OnUnregistered()
+    {
+        // Override in derived classes if needed
+    }
+
+    protected virtual void OnDestroy()
+    {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
+    }
+
+    /// <summary>
+    /// Service validation result data structure
+    /// </summary>
+    [System.Serializable]
+    public class ServiceValidationResult
+    {
+        public string ServiceName;
+        public bool IsRegistered;
+        public bool IsNullImplementation;
+        public bool IsCritical;
+        public string ErrorMessage;
+        public string ImplementationType;
+        public System.DateTime ValidationTime;
+
+        public ServiceValidationResult()
+        {
+            ValidationTime = System.DateTime.Now;
+        }
+
+        public ServiceValidationResult(string serviceName, bool isRegistered, bool isNullImplementation, bool isCritical, string errorMessage = "")
+        {
+            ServiceName = serviceName;
+            IsRegistered = isRegistered;
+            IsNullImplementation = isNullImplementation;
+            IsCritical = isCritical;
+            ErrorMessage = errorMessage;
+            ValidationTime = System.DateTime.Now;
+        }
+    }
+
+}
+}
+
+// Editor code moved to Assets/ProjectChimera/Editor/Inspectors/ServiceValidationTestInspector.cs

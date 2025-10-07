@@ -62,8 +62,8 @@ namespace ProjectChimera.Systems.Camera
 
         #region ITickable Implementation
 
-        public int Priority => TickPriority.InputSystem;
-        public bool Enabled => enabled && _isInitialized;
+        public int TickPriority => ProjectChimera.Core.Updates.TickPriority.InputSystem;
+        public bool IsTickable => enabled && _isInitialized;
 
         public void Tick(float deltaTime)
         {
@@ -82,13 +82,13 @@ namespace ProjectChimera.Systems.Camera
 
             if (_mainCamera == null)
             {
-                ChimeraLogger.LogError("[CameraInputHandler] No main camera found in scene!");
+                ChimeraLogger.Log("CAMERA", "Main camera not found");
                 enabled = false;
             }
 
             if (_cameraController == null)
             {
-                ChimeraLogger.LogError("[CameraInputHandler] AdvancedCameraController component required!");
+                ChimeraLogger.Log("CAMERA", "Advanced camera controller not found");
                 enabled = false;
             }
         }
@@ -102,19 +102,19 @@ namespace ProjectChimera.Systems.Camera
 
             if (_enableMouseInput && _mouseInputProcessor == null)
             {
-                ChimeraLogger.LogError("[CameraInputHandler] MouseInputProcessor component is required but not assigned!");
+                ChimeraLogger.Log("CAMERA", "Mouse input processor not assigned but mouse input is enabled");
                 allValid = false;
             }
 
             if (_enableKeyboardInput && _keyboardInputProcessor == null)
             {
-                ChimeraLogger.LogError("[CameraInputHandler] KeyboardInputProcessor component is required but not assigned!");
+                ChimeraLogger.Log("CAMERA", "Keyboard input processor not assigned but keyboard input is enabled");
                 allValid = false;
             }
 
             if (!allValid)
             {
-                ChimeraLogger.LogError("[CameraInputHandler] Component validation failed - camera input system may not function properly");
+                ChimeraLogger.Log("CAMERA", "Component validation failed for CameraInputHandler");
             }
         }
 

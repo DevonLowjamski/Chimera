@@ -1,0 +1,544 @@
+using UnityEngine;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Core.Memory
+{
+    /// <summary>
+    /// MEMORY: Manages garbage collection optimization strategies
+    /// Implements smart GC scheduling and memory pressure monitoring
+    /// Week 10: Memory & GC Optimization
+    /// </summary>
+    public class GCOptimizationManager : MonoBehaviour
+    {
+        [Header("GC Optimization Settings")]
+        [SerializeField] private bool _enableOptimization = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private GCStrategy _gcStrategy = GCStrategy.Adaptive;
+        [SerializeField] private float _memoryPressureThreshold = 0.8f; // 80% of available memory
+
+        [Header("Timing Settings")]
+        [SerializeField] private float _idleGCDelay = 2f; // Delay before GC during idle
+        [SerializeField] private float _sceneTransitionGCDelay = 0.5f;
+        [SerializeField] private float _memoryCheckInterval = 1f;
+
+        [Header("Thresholds")]
+        [SerializeField] private long _forceGCThreshold = 100 * 1024 * 1024; // 100MB
+        [SerializeField] private int _allocationRateThreshold = 50 * 1024 * 1024; // 50MB/s
+        [SerializeField] private float _gcCooldownPeriod = 5f; // Minimum time between forced GCs
+
+        public enum GCStrategy
+        {
+            Disabled,           // No automatic GC management
+            Conservative,       // Only GC during idle and scene transitions
+            Adaptive,          // Smart GC based on memory pressure and usage patterns
+            Aggressive         // Frequent GC to minimize memory usage
+        }
+
+        // State tracking
+        private float _lastGCTime;
+        private float _lastMemoryCheck;
+        private long _lastAllocatedMemory;
+        private bool _isIdle;
+        private bool _isSceneTransitioning;
+        private Coroutine _idleGCCoroutine;
+        private Coroutine _sceneTransitionGCCoroutine;
+
+        // Statistics
+        private int _automaticGCCount;
+        private float _totalGCTime;
+        private long _totalMemoryFreed;
+        private List<GCEvent> _recentGCEvents = new List<GCEvent>();
+
+        private static GCOptimizationManager _instance;
+        public static GCOptimizationManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = FindObjectOfType<GCOptimizationManager>();
+                    if (_instance == null)
+                    {
+                        var go = new GameObject("GCOptimizationManager");
+                        _instance = go.AddComponent<GCOptimizationManager>();
+                        DontDestroyOnLoad(go);
+                    }
+                }
+                return _instance;
+            }
+        }
+
+        private void Awake()
+        {
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+                Initialize();
+            }
+            else if (_instance != this)
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Initialize GC optimization manager
+        /// </summary>
+        public void Initialize()
+        {
+            _lastGCTime = Time.realtimeSinceStartup;
+            _lastMemoryCheck = Time.realtimeSinceStartup;
+            _lastAllocatedMemory = GC.GetTotalMemory(false);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("GCOptimizationManager", $1);
+            }
+        }
+
+        private void Update()
+        {
+            if (!_enableOptimization) return;
+
+            CheckMemoryPressure();
+            UpdateIdleState();
+            ProcessGCStrategy();
+        }
+
+        /// <summary>
+        /// Notify that the application is idle
+        /// </summary>
+        public void NotifyIdle()
+        {
+            if (_isIdle) return;
+
+            _isIdle = true;
+
+            if (_gcStrategy != GCStrategy.Disabled && _idleGCCoroutine == null)
+            {
+                _idleGCCoroutine = StartCoroutine(IdleGCCoroutine());
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("GCOptimizationManager", "Application entered idle state");
+            }
+        }
+
+        /// <summary>
+        /// Notify that the application is no longer idle
+        /// </summary>
+        public void NotifyActive()
+        {
+            if (!_isIdle) return;
+
+            _isIdle = false;
+
+            if (_idleGCCoroutine != null)
+            {
+                StopCoroutine(_idleGCCoroutine);
+                _idleGCCoroutine = null;
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("GCOptimizationManager", "$1");
+            }
+        }
+
+        /// <summary>
+        /// Notify that a scene transition is starting
+        /// </summary>
+        public void NotifySceneTransitionStart()
+        {
+            _isSceneTransitioning = true;
+
+            if (_gcStrategy != GCStrategy.Disabled && _sceneTransitionGCCoroutine == null)
+            {
+                _sceneTransitionGCCoroutine = StartCoroutine(SceneTransitionGCCoroutine());
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("GCOptimizationManager", "$1");
+            }
+        }
+
+        /// <summary>
+        /// Notify that a scene transition has ended
+        /// </summary>
+        public void NotifySceneTransitionEnd()
+        {
+            _isSceneTransitioning = false;
+
+            if (_sceneTransitionGCCoroutine != null)
+            {
+                StopCoroutine(_sceneTransitionGCCoroutine);
+                _sceneTransitionGCCoroutine = null;
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("GCOptimizationManager", "$1");
+            }
+        }
+
+        /// <summary>
+        /// Force garbage collection with optimization
+        /// </summary>
+        public GCResult ForceOptimizedGC(bool waitForFinalizers = true)
+        {
+            if (Time.realtimeSinceStartup - _lastGCTime < _gcCooldownPeriod)
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogInfo("GCOptimizationManager", "$1");
+                }
+                return new GCResult { WasExecuted = false, Reason = "Cooldown period active" };
+            }
+
+            return ExecuteGC(waitForFinalizers, "Manual Force");
+        }
+
+        /// <summary>
+        /// Get current memory pressure level
+        /// </summary>
+        public float GetMemoryPressure()
+        {
+            long totalMemory = GC.GetTotalMemory(false);
+            long systemMemory = SystemInfo.systemMemorySize * 1024L * 1024L;
+            return (float)totalMemory / systemMemory;
+        }
+
+        /// <summary>
+        /// Get GC optimization statistics
+        /// </summary>
+        public GCOptimizationStats GetStats()
+        {
+            return new GCOptimizationStats
+            {
+                Strategy = _gcStrategy,
+                AutomaticGCCount = _automaticGCCount,
+                TotalGCTime = _totalGCTime,
+                TotalMemoryFreed = _totalMemoryFreed,
+                AverageGCTime = _automaticGCCount > 0 ? _totalGCTime / _automaticGCCount : 0f,
+                CurrentMemoryPressure = GetMemoryPressure(),
+                IsIdle = _isIdle,
+                IsSceneTransitioning = _isSceneTransitioning,
+                RecentGCEvents = new List<GCEvent>(_recentGCEvents)
+            };
+        }
+
+        /// <summary>
+        /// Change GC strategy at runtime
+        /// </summary>
+        public void SetGCStrategy(GCStrategy strategy)
+        {
+            _gcStrategy = strategy;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("GCOptimizationManager", $1);
+            }
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Check memory pressure and trigger GC if needed
+        /// </summary>
+        private void CheckMemoryPressure()
+        {
+            if (Time.realtimeSinceStartup - _lastMemoryCheck < _memoryCheckInterval)
+                return;
+
+            _lastMemoryCheck = Time.realtimeSinceStartup;
+
+            long currentMemory = GC.GetTotalMemory(false);
+            float memoryPressure = GetMemoryPressure();
+
+            // Check for rapid allocation
+            long allocationDelta = currentMemory - _lastAllocatedMemory;
+            float timeDelta = _memoryCheckInterval;
+            long allocationRate = (long)(allocationDelta / timeDelta);
+
+            _lastAllocatedMemory = currentMemory;
+
+            // Trigger GC based on strategy
+            bool shouldGC = false;
+            string reason = "";
+
+            switch (_gcStrategy)
+            {
+                case GCStrategy.Aggressive:
+                    if (memoryPressure > 0.5f || allocationRate > _allocationRateThreshold / 2)
+                    {
+                        shouldGC = true;
+                        reason = "Aggressive strategy threshold";
+                    }
+                    break;
+
+                case GCStrategy.Adaptive:
+                    if (memoryPressure > _memoryPressureThreshold ||
+                        allocationRate > _allocationRateThreshold ||
+                        currentMemory > _forceGCThreshold)
+                    {
+                        shouldGC = true;
+                        reason = "Adaptive strategy threshold";
+                    }
+                    break;
+
+                case GCStrategy.Conservative:
+                    if (memoryPressure > 0.9f || currentMemory > _forceGCThreshold * 2)
+                    {
+                        shouldGC = true;
+                        reason = "Conservative strategy threshold";
+                    }
+                    break;
+            }
+
+            if (shouldGC && CanPerformGC())
+            {
+                StartCoroutine(DelayedGC(0.1f, reason)); // Small delay to not interrupt gameplay
+            }
+        }
+
+        /// <summary>
+        /// Update idle state based on input and frame time
+        /// </summary>
+        private void UpdateIdleState()
+        {
+            bool hasInput = Input.anyKey || Input.anyKeyDown ||
+                           Mathf.Abs(Input.GetAxis("Mouse X")) > 0.01f ||
+                           Mathf.Abs(Input.GetAxis("Mouse Y")) > 0.01f;
+
+            if (hasInput)
+            {
+                if (_isIdle)
+                {
+                    NotifyActive();
+                }
+            }
+            else if (!_isIdle && Time.unscaledDeltaTime < 0.02f) // Stable frame time
+            {
+                // Start idle timer
+                if (_idleGCCoroutine == null)
+                {
+                    StartCoroutine(IdleDetectionCoroutine());
+                }
+            }
+        }
+
+        /// <summary>
+        /// Process GC strategy-specific logic
+        /// </summary>
+        private void ProcessGCStrategy()
+        {
+            // Additional strategy-specific processing can go here
+        }
+
+        /// <summary>
+        /// Check if GC can be performed now
+        /// </summary>
+        private bool CanPerformGC()
+        {
+            return Time.realtimeSinceStartup - _lastGCTime >= _gcCooldownPeriod;
+        }
+
+        /// <summary>
+        /// Execute garbage collection with timing
+        /// </summary>
+        private GCResult ExecuteGC(bool waitForFinalizers, string reason)
+        {
+            long memoryBefore = GC.GetTotalMemory(false);
+            float startTime = Time.realtimeSinceStartup;
+
+            GC.Collect();
+            if (waitForFinalizers)
+            {
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+            }
+
+            float endTime = Time.realtimeSinceStartup;
+            long memoryAfter = GC.GetTotalMemory(false);
+
+            float gcTime = endTime - startTime;
+            long memoryFreed = memoryBefore - memoryAfter;
+
+            // Update statistics
+            _automaticGCCount++;
+            _totalGCTime += gcTime;
+            _totalMemoryFreed += memoryFreed;
+            _lastGCTime = endTime;
+
+            // Record event
+            var gcEvent = new GCEvent
+            {
+                Timestamp = endTime,
+                Duration = gcTime,
+                MemoryFreed = memoryFreed,
+                Reason = reason
+            };
+
+            _recentGCEvents.Add(gcEvent);
+            if (_recentGCEvents.Count > 20)
+            {
+                _recentGCEvents.RemoveAt(0);
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("GCOptimizationManager", $1);
+            }
+
+            return new GCResult
+            {
+                WasExecuted = true,
+                Duration = gcTime,
+                MemoryFreed = memoryFreed,
+                Reason = reason
+            };
+        }
+
+        /// <summary>
+        /// Coroutine for idle GC
+        /// </summary>
+        private IEnumerator IdleGCCoroutine()
+        {
+            yield return new WaitForSecondsRealtime(_idleGCDelay);
+
+            if (_isIdle && CanPerformGC())
+            {
+                ExecuteGC(true, "Idle period");
+            }
+
+            _idleGCCoroutine = null;
+        }
+
+        /// <summary>
+        /// Coroutine for scene transition GC
+        /// </summary>
+        private IEnumerator SceneTransitionGCCoroutine()
+        {
+            yield return new WaitForSecondsRealtime(_sceneTransitionGCDelay);
+
+            if (_isSceneTransitioning && CanPerformGC())
+            {
+                ExecuteGC(true, "Scene transition");
+            }
+
+            _sceneTransitionGCCoroutine = null;
+        }
+
+        /// <summary>
+        /// Coroutine for delayed GC
+        /// </summary>
+        private IEnumerator DelayedGC(float delay, string reason)
+        {
+            yield return new WaitForSecondsRealtime(delay);
+
+            if (CanPerformGC())
+            {
+                ExecuteGC(false, reason); // Don't wait for finalizers during gameplay
+            }
+        }
+
+        /// <summary>
+        /// Coroutine for idle detection
+        /// </summary>
+        private IEnumerator IdleDetectionCoroutine()
+        {
+            yield return new WaitForSecondsRealtime(2f);
+
+            // Check if still no input
+            bool hasInput = Input.anyKey || Input.anyKeyDown ||
+                           Mathf.Abs(Input.GetAxis("Mouse X")) > 0.01f ||
+                           Mathf.Abs(Input.GetAxis("Mouse Y")) > 0.01f;
+
+            if (!hasInput)
+            {
+                NotifyIdle();
+            }
+        }
+
+        #endregion
+
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (pauseStatus)
+            {
+                NotifyIdle();
+            }
+            else
+            {
+                NotifyActive();
+            }
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus)
+            {
+                NotifyActive();
+            }
+            else
+            {
+                NotifyIdle();
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (_idleGCCoroutine != null)
+            {
+                StopCoroutine(_idleGCCoroutine);
+            }
+
+            if (_sceneTransitionGCCoroutine != null)
+            {
+                StopCoroutine(_sceneTransitionGCCoroutine);
+            }
+        }
+    }
+
+    #region Data Structures
+
+    [System.Serializable]
+    public struct GCResult
+    {
+        public bool WasExecuted;
+        public float Duration;
+        public long MemoryFreed;
+        public string Reason;
+    }
+
+    [System.Serializable]
+    public struct GCEvent
+    {
+        public float Timestamp;
+        public float Duration;
+        public long MemoryFreed;
+        public string Reason;
+    }
+
+    [System.Serializable]
+    public struct GCOptimizationStats
+    {
+        public GCOptimizationManager.GCStrategy Strategy;
+        public int AutomaticGCCount;
+        public float TotalGCTime;
+        public long TotalMemoryFreed;
+        public float AverageGCTime;
+        public float CurrentMemoryPressure;
+        public bool IsIdle;
+        public bool IsSceneTransitioning;
+        public List<GCEvent> RecentGCEvents;
+    }
+
+    #endregion
+}

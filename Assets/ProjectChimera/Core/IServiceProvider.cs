@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
-namespace ProjectChimera.Core.DependencyInjection
+namespace ProjectChimera.Core
 {
     /// <summary>
     /// Standard service provider interface following Microsoft.Extensions.DependencyInjection patterns

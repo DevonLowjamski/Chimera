@@ -3,9 +3,11 @@ using UnityEngine;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Cultivation.Plant;
 using ProjectChimera.Data.Environment;
 using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Cultivation
 {

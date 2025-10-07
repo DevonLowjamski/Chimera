@@ -1,274 +1,295 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ProjectChimera.Data.Cultivation.Plant
 {
     /// <summary>
-    /// Harvest Readiness Calculator - Determines optimal harvest timing.
-    /// Analyzes plant maturity, trichome development, health status,
-    /// and environmental factors to determine the best harvest time.
+    /// PHASE 0 REFACTORED: Harvest Readiness Calculator
+    /// Single Responsibility: Calculate harvest readiness, yield, and potency
+    /// Extracted from PlantHarvestOperator (785 lines → 4 files <500 lines each)
     /// </summary>
-    public static class HarvestReadinessCalculator
+    public class HarvestReadinessCalculator
     {
-        // Harvest quality thresholds
-        private const float PREMIUM_QUALITY_THRESHOLD = 0.9f;
-        private const float GOOD_QUALITY_THRESHOLD = 0.75f;
-        private const float FAIR_QUALITY_THRESHOLD = 0.6f;
+        // Calculation parameters
+        private float _harvestReadinessThreshold = 0.85f;
+        private float _trichomeReadinessWeight = 0.4f;
+        private float _maturityReadinessWeight = 0.35f;
+        private float _environmentalReadinessWeight = 0.25f;
+        private float _optimalHarvestWindow = 7f; // Days
+
+        // Yield parameters
+        private float _baseYieldPerGram = 0.7f;
+        private float _environmentalYieldModifier = 1f;
+        private float _geneticYieldModifier = 1f;
+        private float _careQualityModifier = 1f;
+
+        // Potency parameters
+        private float _potencyBaseMultiplier = 0.15f;
+        private float _qualityVarianceFactor = 0.1f;
+        private bool _considerGeneticPotential = true;
+
+        public void SetParameters(
+            float readinessThreshold,
+            float trichomeWeight,
+            float maturityWeight,
+            float envWeight,
+            float optimalWindow)
+        {
+            _harvestReadinessThreshold = Mathf.Clamp01(readinessThreshold);
+            _trichomeReadinessWeight = Mathf.Clamp01(trichomeWeight);
+            _maturityReadinessWeight = Mathf.Clamp01(maturityWeight);
+            _environmentalReadinessWeight = Mathf.Clamp01(envWeight);
+            _optimalHarvestWindow = Mathf.Max(1f, optimalWindow);
+        }
+
+        public void SetYieldModifiers(float environmental, float genetic, float careQuality)
+        {
+            _environmentalYieldModifier = Mathf.Max(0.1f, environmental);
+            _geneticYieldModifier = Mathf.Max(0.1f, genetic);
+            _careQualityModifier = Mathf.Max(0.1f, careQuality);
+        }
 
         /// <summary>
-        /// Determines if plant is ready for harvest
+        /// Calculate harvest readiness factors
         /// </summary>
-        public static HarvestReadiness AssessHarvestReadiness(PlantStateData plantState)
+        public HarvestReadinessFactors CalculateReadinessFactors(float plantAge, float maturityLevel, float biomass, float healthFactor)
         {
-            var readiness = new HarvestReadiness
+            return new HarvestReadinessFactors
             {
-                PlantID = plantState.PlantID,
-                IsReadyForHarvest = false,
-                RecommendedHarvestDate = DateTime.MinValue,
-                ReadinessScore = 0f
+                TrichomeReadiness = CalculateTrichomeReadiness(plantAge, maturityLevel),
+                PistilReadiness = CalculatePistilReadiness(plantAge, maturityLevel),
+                CalyxSwelling = CalculateCalyxSwelling(maturityLevel, biomass),
+                MaturityScore = maturityLevel,
+                EnvironmentalScore = healthFactor
+            };
+        }
+
+        /// <summary>
+        /// Calculate overall readiness score
+        /// </summary>
+        public float CalculateOverallReadiness(HarvestReadinessFactors factors)
+        {
+            var readinessFactors = new Dictionary<string, float>
+            {
+                { "Trichome", factors.TrichomeReadiness * _trichomeReadinessWeight },
+                { "Maturity", factors.MaturityScore * _maturityReadinessWeight },
+                { "Environmental", factors.EnvironmentalScore * _environmentalReadinessWeight }
             };
 
-            // Check if plant is in harvest stage
-            if (plantState.CurrentGrowthStage != PlantGrowthStage.Ripening &&
-                plantState.CurrentGrowthStage != PlantGrowthStage.Harvest)
-            {
-                readiness.Reason = "Plant not in harvest stage";
-                return readiness;
-            }
-
-            // Calculate readiness factors
-            float maturityReadiness = plantState.MaturityLevel;
-            float trichomeReadiness = CalculateTrichomeReadiness(plantState);
-            float pistilReadiness = CalculatePistilReadiness(plantState);
-            float healthReadiness = plantState.OverallHealth;
-
-            readiness.ReadinessScore = (maturityReadiness + trichomeReadiness + pistilReadiness + healthReadiness) / 4f;
-
-            // Determine if ready for harvest
-            readiness.IsReadyForHarvest = readiness.ReadinessScore >= FAIR_QUALITY_THRESHOLD;
-
-            // Calculate recommended harvest date
-            readiness.RecommendedHarvestDate = CalculateRecommendedHarvestDate(plantState, readiness.ReadinessScore);
-
-            // Provide reasoning
-            readiness.Reason = GenerateReadinessReason(readiness, maturityReadiness, trichomeReadiness, pistilReadiness, healthReadiness);
-
-            // Calculate days until optimal harvest
-            if (readiness.IsReadyForHarvest)
-            {
-                readiness.DaysUntilOptimal = CalculateDaysUntilOptimal(readiness.RecommendedHarvestDate);
-            }
-
-            return readiness;
+            return readinessFactors.Values.Sum();
         }
 
         /// <summary>
-        /// Calculates harvest window based on plant state
+        /// Check if plant is ready for harvest
         /// </summary>
-        public static HarvestWindow CalculateHarvestWindow(PlantStateData plantState)
+        public bool IsReadyForHarvest(float readinessScore)
         {
-            var window = new HarvestWindow
-            {
-                PlantID = plantState.PlantID,
-                EarliestHarvestDate = DateTime.Now,
-                OptimalHarvestDate = DateTime.Now.AddDays(7),
-                LatestHarvestDate = DateTime.Now.AddDays(14)
-            };
-
-            // Adjust window based on plant characteristics
-            if (plantState.Strain?.FloweringTime != null)
-            {
-                int baseDays = (int)plantState.Strain.FloweringTime;
-                window.EarliestHarvestDate = DateTime.Now.AddDays(baseDays - 3);
-                window.OptimalHarvestDate = DateTime.Now.AddDays(baseDays);
-                window.LatestHarvestDate = DateTime.Now.AddDays(baseDays + 7);
-            }
-
-            // Adjust for environmental conditions
-            if (plantState.Environment?.Temperature > 30f)
-            {
-                // Hot conditions accelerate ripening
-                window.EarliestHarvestDate = window.EarliestHarvestDate.AddDays(-2);
-                window.OptimalHarvestDate = window.OptimalHarvestDate.AddDays(-1);
-                window.LatestHarvestDate = window.LatestHarvestDate.AddDays(-3);
-            }
-
-            // Calculate window quality scores
-            window.EarlyHarvestQuality = CalculateWindowQuality(plantState, window.EarliestHarvestDate);
-            window.OptimalHarvestQuality = CalculateWindowQuality(plantState, window.OptimalHarvestDate);
-            window.LateHarvestQuality = CalculateWindowQuality(plantState, window.LatestHarvestDate);
-
-            return window;
+            return readinessScore >= _harvestReadinessThreshold;
         }
 
         /// <summary>
-        /// Calculates trichome readiness based on plant state
+        /// Calculate yield potential
         /// </summary>
-        private static float CalculateTrichomeReadiness(PlantStateData plantState)
+        public float CalculateYieldPotential(float biomass, float healthFactor, float maturityLevel)
         {
-            // Trichome development is key indicator for harvest readiness
-            // This would analyze trichome color, size, and density
-            float trichomeMaturity = plantState.MaturityLevel;
+            var baseYield = biomass * _baseYieldPerGram;
+            var modifiedYield = baseYield * _environmentalYieldModifier * _geneticYieldModifier * _careQualityModifier * healthFactor;
 
-            // Adjust based on strain characteristics
-            if (plantState.Strain?.TrichomeDensity != null)
-            {
-                trichomeMaturity *= plantState.Strain.TrichomeDensity;
-            }
+            // Maturity penalty for early/late harvest
+            var maturityPenalty = CalculateMaturityPenalty(maturityLevel);
+            var finalYield = modifiedYield * maturityPenalty;
 
-            // Environmental factors affecting trichome development
-            if (plantState.Environment?.Humidity < 40f)
-            {
-                // Low humidity can stress trichome development
-                trichomeMaturity *= 0.9f;
-            }
-
-            return Mathf.Clamp01(trichomeMaturity);
+            return Mathf.Max(0f, finalYield);
         }
 
         /// <summary>
-        /// Calculates pistil readiness
+        /// Calculate potency potential
         /// </summary>
-        private static float CalculatePistilReadiness(PlantStateData plantState)
+        public float CalculatePotencyPotential(float maturityLevel, float healthFactor)
         {
-            // Pistil browning is another harvest indicator
-            float pistilReadiness = plantState.MaturityLevel * 0.8f;
+            var basePotency = _potencyBaseMultiplier;
+            var maturityBonus = GetMaturityPotencyBonus(maturityLevel);
+            var healthBonus = (healthFactor - 0.5f) * 0.1f; // Health above 50% gives bonus
+            var geneticModifier = _considerGeneticPotential ? _geneticYieldModifier : 1f;
 
-            // Strain-specific pistil characteristics
-            if (plantState.Strain?.PistilColorChange != null)
-            {
-                pistilReadiness *= plantState.Strain.PistilColorChange;
-            }
+            var calculatedPotency = (basePotency + maturityBonus + healthBonus) * geneticModifier;
 
-            return Mathf.Clamp01(pistilReadiness);
+            // Add quality variance
+            var variance = UnityEngine.Random.Range(-_qualityVarianceFactor, _qualityVarianceFactor);
+            calculatedPotency += variance;
+
+            return Mathf.Clamp(calculatedPotency, 0.05f, 0.35f); // Realistic potency range 5-35%
         }
 
         /// <summary>
-        /// Calculates recommended harvest date
+        /// Calculate optimal harvest date
         /// </summary>
-        private static DateTime CalculateRecommendedHarvestDate(PlantStateData plantState, float readinessScore)
+        public DateTime CalculateOptimalHarvestDate(float plantAge, float maturityLevel)
         {
-            DateTime baseDate = DateTime.Now;
+            // Estimate days until full maturity
+            var daysUntilOptimal = Mathf.Max(0f, (1f - maturityLevel) * 30f); // Assume 30 days for full maturity
 
-            if (readinessScore >= PREMIUM_QUALITY_THRESHOLD)
+            // Adjust based on plant age (flowering stage)
+            if (plantAge < 60f) // If not yet in late flowering
             {
-                // Ready now for premium quality
-                return baseDate;
+                daysUntilOptimal += (60f - plantAge);
             }
-            else if (readinessScore >= GOOD_QUALITY_THRESHOLD)
+
+            return DateTime.Now.AddDays(daysUntilOptimal);
+        }
+
+        /// <summary>
+        /// Calculate harvest window
+        /// </summary>
+        public (DateTime start, DateTime end) CalculateHarvestWindow(DateTime optimalDate)
+        {
+            var halfWindow = _optimalHarvestWindow / 2f;
+            var start = optimalDate.AddDays(-halfWindow);
+            var end = optimalDate.AddDays(halfWindow);
+            return (start, end);
+        }
+
+        /// <summary>
+        /// Calculate actual harvest yield (with readiness penalty)
+        /// </summary>
+        public float CalculateActualHarvestYield(float estimatedYield, float readinessScore)
+        {
+            // Apply readiness penalty
+            var readinessFactor = Mathf.Lerp(0.5f, 1f, readinessScore); // 50-100% of estimated
+            return estimatedYield * readinessFactor;
+        }
+
+        /// <summary>
+        /// Calculate actual harvest potency (with readiness penalty)
+        /// </summary>
+        public float CalculateActualHarvestPotency(float estimatedPotency, float readinessScore)
+        {
+            // Apply readiness penalty
+            var readinessFactor = Mathf.Lerp(0.7f, 1f, readinessScore); // 70-100% of estimated
+            return estimatedPotency * readinessFactor;
+        }
+
+        #region Private Calculation Methods
+
+        /// <summary>
+        /// Calculate trichome readiness
+        /// </summary>
+        private float CalculateTrichomeReadiness(float plantAge, float maturityLevel)
+        {
+            // Trichomes develop in flowering stage (age > 45 days typically)
+            var ageReadiness = Mathf.Clamp01((plantAge - 45f) / 30f); // 30 days for full trichome development
+            var maturityReadiness = maturityLevel;
+
+            return (ageReadiness + maturityReadiness) / 2f;
+        }
+
+        /// <summary>
+        /// Calculate pistil readiness
+        /// </summary>
+        private float CalculatePistilReadiness(float plantAge, float maturityLevel)
+        {
+            // Pistils change color as plant matures
+            var ageReadiness = Mathf.Clamp01((plantAge - 50f) / 25f); // 25 days for pistil color change
+            return ageReadiness * maturityLevel;
+        }
+
+        /// <summary>
+        /// Calculate calyx swelling
+        /// </summary>
+        private float CalculateCalyxSwelling(float maturityLevel, float biomass)
+        {
+            // Calyxes swell with biomass accumulation and maturity
+            var biomassInfluence = Mathf.Clamp01(biomass / 50f); // Assume 50g for full swelling
+            return (maturityLevel + biomassInfluence) / 2f;
+        }
+
+        /// <summary>
+        /// Calculate maturity penalty for early/late harvest
+        /// </summary>
+        private float CalculateMaturityPenalty(float maturityLevel)
+        {
+            // Optimal maturity range: 0.8 - 1.0
+            if (maturityLevel >= 0.8f && maturityLevel <= 1.0f)
             {
-                // Ready in 2-3 days
-                return baseDate.AddDays(2.5f);
+                return 1.0f; // No penalty
             }
-            else if (readinessScore >= FAIR_QUALITY_THRESHOLD)
+            else if (maturityLevel < 0.8f)
             {
-                // Ready in 5-7 days
-                return baseDate.AddDays(6);
+                // Early harvest penalty
+                return Mathf.Lerp(0.5f, 1.0f, maturityLevel / 0.8f);
             }
             else
             {
-                // Not ready yet
-                return baseDate.AddDays(10);
+                // Late harvest penalty (degradation)
+                var overMaturity = maturityLevel - 1.0f;
+                return Mathf.Max(0.6f, 1.0f - (overMaturity * 0.5f));
             }
         }
 
         /// <summary>
-        /// Generates readiness reason string
+        /// Get maturity potency bonus
         /// </summary>
-        private static string GenerateReadinessReason(HarvestReadiness readiness, float maturity, float trichomes, float pistils, float health)
+        private float GetMaturityPotencyBonus(float maturityLevel)
         {
-            if (readiness.ReadinessScore >= PREMIUM_QUALITY_THRESHOLD)
+            // Peak potency at 90-100% maturity
+            if (maturityLevel >= 0.9f && maturityLevel <= 1.0f)
             {
-                return "Premium quality - All indicators show optimal harvest timing";
+                return 0.1f; // 10% bonus
             }
-            else if (readiness.ReadinessScore >= GOOD_QUALITY_THRESHOLD)
+            else if (maturityLevel >= 0.8f)
             {
-                return "Good quality - Plant showing strong harvest indicators";
-            }
-            else if (readiness.ReadinessScore >= FAIR_QUALITY_THRESHOLD)
-            {
-                return "Fair quality - Plant approaching harvest readiness";
+                return Mathf.Lerp(0f, 0.1f, (maturityLevel - 0.8f) / 0.1f);
             }
             else
             {
-                var lowestFactor = Mathf.Min(maturity, trichomes, pistils, health);
-                if (lowestFactor == maturity) return "Low maturity - Plant needs more time to develop";
-                if (lowestFactor == trichomes) return "Trichomes not ready - Wait for full development";
-                if (lowestFactor == pistils) return "Pistils not browned - Allow more ripening time";
-                if (lowestFactor == health) return "Plant health issues - Address before harvesting";
-                return "Plant not ready for harvest";
+                return 0f; // No bonus for immature plants
             }
         }
 
-        /// <summary>
-        /// Calculates days until optimal harvest
-        /// </summary>
-        private static int CalculateDaysUntilOptimal(DateTime recommendedDate)
-        {
-            return Mathf.Max(0, (int)(recommendedDate - DateTime.Now).TotalDays);
-        }
+        #endregion
+
+        #region Quality Prediction
 
         /// <summary>
-        /// Calculates harvest quality for a specific date
+        /// Predict harvest quality based on readiness
         /// </summary>
-        private static float CalculateWindowQuality(PlantStateData plantState, DateTime harvestDate)
+        public HarvestQualityGrade PredictHarvestQuality(float readinessScore)
         {
-            // Simplified quality calculation based on timing
-            float daysFromNow = (float)(harvestDate - DateTime.Now).TotalDays;
-
-            if (daysFromNow < 0)
-            {
-                // Past optimal time - quality decreases
-                return Mathf.Max(0.3f, 1f - Mathf.Abs(daysFromNow) * 0.1f);
-            }
-            else if (daysFromNow < 3)
-            {
-                // Within optimal window
-                return 0.9f + (daysFromNow * 0.03f);
-            }
+            if (readinessScore >= 0.95f)
+                return HarvestQualityGrade.Premium;
+            else if (readinessScore >= 0.85f)
+                return HarvestQualityGrade.Excellent;
+            else if (readinessScore >= 0.75f)
+                return HarvestQualityGrade.Good;
+            else if (readinessScore >= 0.60f)
+                return HarvestQualityGrade.Fair;
             else
-            {
-                // Future harvest - quality prediction
-                return Mathf.Max(0.4f, 0.8f - (daysFromNow - 3) * 0.05f);
-            }
+                return HarvestQualityGrade.Poor;
         }
-    }
 
-    /// <summary>
-    /// Harvest readiness assessment data structure
-    /// </summary>
-    [System.Serializable]
-    public class HarvestReadiness
-    {
-        public string PlantID;
-        public bool IsReadyForHarvest;
-        public DateTime RecommendedHarvestDate;
-        public float ReadinessScore;
-        public string ReadinessReason;
-        public int DaysUntilOptimal;
-        public HarvestWindow OptimalHarvestWindow;
-    }
+        /// <summary>
+        /// Determine harvest quality from actual results
+        /// </summary>
+        public HarvestQualityGrade DetermineHarvestQuality(float readinessScore, float yield, float potency)
+        {
+            // Base quality on readiness
+            var baseQuality = PredictHarvestQuality(readinessScore);
 
-    /// <summary>
-    /// Optimal harvest window data structure
-    /// </summary>
-    [System.Serializable]
-    public class HarvestWindow
-    {
-        public DateTime StartDate;
-        public DateTime EndDate;
-        public float QualityScore;
+            // Adjust based on yield and potency
+            var yieldFactor = yield > 30f ? 1 : 0; // Bonus for high yield
+            var potencyFactor = potency > 0.20f ? 1 : 0; // Bonus for high potency
 
-        // Additional properties for compatibility
-        public string PlantID { get; set; }
-        public DateTime EarliestHarvestDate => StartDate;
-        public DateTime OptimalHarvestDate => StartDate.AddDays((EndDate - StartDate).TotalDays / 2);
-        public DateTime LatestHarvestDate => EndDate;
+            var qualityAdjustment = yieldFactor + potencyFactor;
+            var adjustedQuality = (int)baseQuality + qualityAdjustment;
 
-        // Additional properties for harvest quality
-        public float EarlyHarvestQuality => QualityScore * 0.8f;
-        public float OptimalHarvestQuality => QualityScore;
-        public float LateHarvestQuality => QualityScore * 0.6f;
+            // Clamp to valid range
+            adjustedQuality = Mathf.Clamp(adjustedQuality, 0, 5);
+
+            return (HarvestQualityGrade)adjustedQuality;
+        }
+
+        #endregion
     }
 }

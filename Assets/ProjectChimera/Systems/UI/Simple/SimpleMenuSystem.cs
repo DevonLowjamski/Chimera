@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
+using System.Linq;
 using System;
 
 namespace ProjectChimera.Systems.UI.Simple
@@ -204,7 +205,7 @@ namespace ProjectChimera.Systems.UI.Simple
         {
             if (_uiDocument == null)
             {
-                ChimeraLogger.LogWarning("[SimpleMenuSystem] No UI document assigned");
+                ChimeraLogger.LogInfo("SimpleMenuSystem", "$1");
                 return;
             }
 
@@ -238,7 +239,7 @@ namespace ProjectChimera.Systems.UI.Simple
             // Initially hide menu
             _menuContainer.style.display = DisplayStyle.None;
 
-            ChimeraLogger.Log("[SimpleMenuSystem] UI initialized");
+            ChimeraLogger.LogInfo("SimpleMenuSystem", "$1");
         }
 
         /// <summary>
@@ -248,14 +249,14 @@ namespace ProjectChimera.Systems.UI.Simple
         {
             if (!_menuDefinitions.ContainsKey(newMode))
             {
-                ChimeraLogger.LogWarning($"[SimpleMenuSystem] Unknown mode: {newMode}");
+                ChimeraLogger.LogInfo("SimpleMenuSystem", "$1");
                 return;
             }
 
             _currentMode = newMode;
             UpdateMenuDisplay();
 
-            ChimeraLogger.Log($"[SimpleMenuSystem] Switched to {newMode} mode");
+            ChimeraLogger.LogInfo("SimpleMenuSystem", "$1");
         }
 
         /// <summary>
@@ -357,7 +358,7 @@ namespace ProjectChimera.Systems.UI.Simple
             }
 
             // Show tab content (for now, just log - would integrate with actual systems)
-            ChimeraLogger.Log($"[SimpleMenuSystem] Selected tab: {tabDef.TabName}");
+            ChimeraLogger.LogInfo("SimpleMenuSystem", "$1");
 
             // Here you would show the actual menu items for the selected tab
             // This would integrate with the game systems for construction, cultivation, etc.
@@ -393,7 +394,7 @@ namespace ProjectChimera.Systems.UI.Simple
         /// </summary>
         public void OnMenuItemSelected(string itemName)
         {
-            ChimeraLogger.Log($"[SimpleMenuSystem] Menu item selected: {itemName}");
+            ChimeraLogger.LogInfo("SimpleMenuSystem", "$1");
 
             // Here you would integrate with the actual game systems:
             // - Construction system for placing equipment

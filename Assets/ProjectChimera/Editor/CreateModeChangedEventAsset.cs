@@ -21,7 +21,7 @@ namespace ProjectChimera.Editor
             var existingAsset = AssetDatabase.LoadAssetAtPath<ModeChangedEventSO>(ASSET_PATH);
             if (existingAsset != null)
             {
-                ChimeraLogger.Log($"[CreateModeChangedEventAsset] Shared ModeChangedEventSO asset already exists at {ASSET_PATH}");
+                ChimeraLogger.Log("OTHER", "Shared Mode Changed Event asset already exists");
                 Selection.activeObject = existingAsset;
                 EditorGUIUtility.PingObject(existingAsset);
                 return;
@@ -47,8 +47,8 @@ namespace ProjectChimera.Editor
             Selection.activeObject = newAsset;
             EditorGUIUtility.PingObject(newAsset);
 
-            ChimeraLogger.Log($"[CreateModeChangedEventAsset] Created shared ModeChangedEventSO asset at {ASSET_PATH}");
-            ChimeraLogger.Log($"[CreateModeChangedEventAsset] Please assign this asset to all mode-aware components for Phase 2 verification");
+            ChimeraLogger.Log("OTHER", "Created Shared Mode Changed Event asset at: " + ASSET_PATH);
+            ChimeraLogger.Log("OTHER", "Asset creation completed successfully");
         }
 
         [MenuItem("Project Chimera/Phase 2 Verification/Find All Mode-Aware Components")]
@@ -57,8 +57,8 @@ namespace ProjectChimera.Editor
             // Find all components that should use the shared event
             var componentTypes = new System.Type[]
             {
-                typeof(ProjectChimera.Systems.Gameplay.GameplayModeController),
-                // Add other types as we implement them
+                // TODO: Re-enable when Gameplay namespace is implemented
+                // typeof(ProjectChimera.Systems.Gameplay.GameplayModeController),
             };
 
             foreach (var componentType in componentTypes)
@@ -67,7 +67,7 @@ namespace ProjectChimera.Editor
                 var components = UnityEngine.Object.FindObjectsOfType(componentType, true);
                 foreach (var component in components)
                 {
-                    ChimeraLogger.Log($"[CreateModeChangedEventAsset] Found {componentType.Name} on {component.name}", component);
+                    ChimeraLogger.Log("OTHER", "Found mode-aware component: " + component.name);
                 }
             }
         }
@@ -78,16 +78,16 @@ namespace ProjectChimera.Editor
             var sharedAsset = AssetDatabase.LoadAssetAtPath<ModeChangedEventSO>(ASSET_PATH);
             if (sharedAsset == null)
             {
-                ChimeraLogger.LogError("[CreateModeChangedEventAsset] Shared ModeChangedEventSO asset not found! Create it first.");
+                ChimeraLogger.Log("OTHER", "Shared Mode Changed Event asset not found. Please create it first.");
                 return;
             }
 
-            ChimeraLogger.Log("[CreateModeChangedEventAsset] Validating mode event assignments...");
+            ChimeraLogger.Log("OTHER", "Starting validation of mode event assignments");
 
             // This would check all components to ensure they're using the same shared asset
             // Implementation would depend on the specific components we create
 
-            ChimeraLogger.Log("[CreateModeChangedEventAsset] Validation complete. Check console for any issues.");
+            ChimeraLogger.Log("OTHER", "Mode event assignment validation completed");
         }
     }
 }

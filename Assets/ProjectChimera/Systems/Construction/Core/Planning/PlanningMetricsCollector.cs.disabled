@@ -1,0 +1,488 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using System;
+
+namespace ProjectChimera.Systems.Construction.Core.Planning
+{
+    /// <summary>
+    /// REFACTORED: Planning Metrics Collector - Focused metrics collection for construction planning
+    /// Handles performance metrics, success rates, and planning system monitoring
+    /// Single Responsibility: Planning metrics collection and analysis
+    /// </summary>
+    public class PlanningMetricsCollector : MonoBehaviour
+    {
+        [Header("Metrics Collection Settings")]
+        [SerializeField] private bool _enableMetricsCollection = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _metricsUpdateInterval = 5f;
+        [SerializeField] private int _maxMetricsHistory = 100;
+
+        [Header("Performance Monitoring")]
+        [SerializeField] private bool _trackPerformanceMetrics = true;
+        [SerializeField] private bool _trackSuccessRates = true;
+        [SerializeField] private bool _trackResourceUsage = true;
+        [SerializeField] private float _performanceThreshold = 0.8f; // 80% success rate threshold
+
+        // Metrics tracking
+        private readonly Queue<PlanningMetricsSnapshot> _metricsHistory = new Queue<PlanningMetricsSnapshot>();
+        private PlanningMetricsData _currentMetrics = new PlanningMetricsData();
+        private PlanningMetricsData _aggregatedMetrics = new PlanningMetricsData();
+
+        // Timing
+        private float _lastMetricsUpdate;
+        private float _metricsStartTime;
+
+        // Performance indicators
+        private readonly Dictionary<string, PlanTypeMetrics> _planTypeMetrics = new Dictionary<string, PlanTypeMetrics>();
+
+        // Properties
+        public bool IsEnabled { get; private set; } = true;
+        public PlanningMetricsData GetCurrentMetrics() => _currentMetrics;
+        public PlanningMetricsData GetAggregatedMetrics() => _aggregatedMetrics;
+        public Queue<PlanningMetricsSnapshot> GetMetricsHistory() => new Queue<PlanningMetricsSnapshot>(_metricsHistory);
+
+        // Events
+        public System.Action<PlanningMetricsSnapshot> OnMetricsSnapshot;
+        public System.Action<PlanningMetricsData> OnMetricsUpdated;
+        public System.Action OnPerformanceThresholdBreached;
+
+        private void Start()
+        {
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            _metricsStartTime = Time.time;
+            _lastMetricsUpdate = Time.time;
+
+            ResetMetrics();
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "📊 PlanningMetricsCollector initialized", this);
+        }
+
+        /// <summary>
+        /// Update metrics collection
+        /// </summary>
+        public void UpdateMetrics(PlannerStats stats)
+        {
+            if (!IsEnabled || !_enableMetricsCollection)
+                return;
+
+            float currentTime = Time.time;
+
+            // Update current metrics from provided stats
+            UpdateCurrentMetrics(stats);
+
+            // Update interval-based metrics
+            if (currentTime - _lastMetricsUpdate >= _metricsUpdateInterval)
+            {
+                CollectMetricsSnapshot();
+                _lastMetricsUpdate = currentTime;
+            }
+
+            // Check performance thresholds
+            CheckPerformanceThresholds();
+        }
+
+        /// <summary>
+        /// Record planning request event
+        /// </summary>
+        public void RecordPlanningRequest(string planType, bool successful, float planningDuration)
+        {
+            if (!_enableMetricsCollection)
+                return;
+
+            _currentMetrics.TotalPlanningRequests++;
+
+            if (successful)
+            {
+                _currentMetrics.SuccessfulPlans++;
+                _currentMetrics.TotalPlanningTime += planningDuration;
+                _currentMetrics.AveragePlanningTime = _currentMetrics.TotalPlanningTime / _currentMetrics.SuccessfulPlans;
+
+                if (planningDuration > _currentMetrics.MaxPlanningTime)
+                    _currentMetrics.MaxPlanningTime = planningDuration;
+
+                if (_currentMetrics.MinPlanningTime == 0 || planningDuration < _currentMetrics.MinPlanningTime)
+                    _currentMetrics.MinPlanningTime = planningDuration;
+            }
+            else
+            {
+                _currentMetrics.FailedPlans++;
+            }
+
+            // Update success rate
+            _currentMetrics.PlanningSuccessRate = (float)_currentMetrics.SuccessfulPlans / _currentMetrics.TotalPlanningRequests;
+
+            // Update plan type metrics
+            UpdatePlanTypeMetrics(planType, successful, planningDuration);
+        }
+
+        /// <summary>
+        /// Record plan optimization event
+        /// </summary>
+        public void RecordOptimization(string planId, bool successful, float optimizationDuration, float improvementPercent = 0f)
+        {
+            if (!_enableMetricsCollection)
+                return;
+
+            _currentMetrics.TotalOptimizations++;
+
+            if (successful)
+            {
+                _currentMetrics.SuccessfulOptimizations++;
+                _currentMetrics.TotalOptimizationTime += optimizationDuration;
+                _currentMetrics.AverageOptimizationTime = _currentMetrics.TotalOptimizationTime / _currentMetrics.SuccessfulOptimizations;
+
+                if (improvementPercent > 0)
+                {
+                    _currentMetrics.TotalImprovement += improvementPercent;
+                    _currentMetrics.AverageImprovement = _currentMetrics.TotalImprovement / _currentMetrics.SuccessfulOptimizations;
+                }
+            }
+            else
+            {
+                _currentMetrics.FailedOptimizations++;
+            }
+
+            // Update optimization success rate
+            _currentMetrics.OptimizationSuccessRate = (float)_currentMetrics.SuccessfulOptimizations / _currentMetrics.TotalOptimizations;
+        }
+
+        /// <summary>
+        /// Record resource usage
+        /// </summary>
+        public void RecordResourceUsage(int activePlans, int queuedRequests, float memoryUsage)
+        {
+            if (!_enableMetricsCollection || !_trackResourceUsage)
+                return;
+
+            _currentMetrics.ActivePlans = activePlans;
+            _currentMetrics.QueuedRequests = queuedRequests;
+            _currentMetrics.MemoryUsage = memoryUsage;
+
+            if (activePlans > _currentMetrics.PeakActivePlans)
+                _currentMetrics.PeakActivePlans = activePlans;
+
+            if (queuedRequests > _currentMetrics.PeakQueuedRequests)
+                _currentMetrics.PeakQueuedRequests = queuedRequests;
+
+            if (memoryUsage > _currentMetrics.PeakMemoryUsage)
+                _currentMetrics.PeakMemoryUsage = memoryUsage;
+        }
+
+        /// <summary>
+        /// Get plan type performance summary
+        /// </summary>
+        public PlanTypeMetrics GetPlanTypeMetrics(string planType)
+        {
+            _planTypeMetrics.TryGetValue(planType, out var metrics);
+            return metrics;
+        }
+
+        /// <summary>
+        /// Get all plan type metrics
+        /// </summary>
+        public Dictionary<string, PlanTypeMetrics> GetAllPlanTypeMetrics()
+        {
+            return new Dictionary<string, PlanTypeMetrics>(_planTypeMetrics);
+        }
+
+        /// <summary>
+        /// Get performance summary
+        /// </summary>
+        public PlanningPerformanceSummary GetPerformanceSummary()
+        {
+            return new PlanningPerformanceSummary
+            {
+                TotalRuntime = Time.time - _metricsStartTime,
+                PlanningSuccessRate = _currentMetrics.PlanningSuccessRate,
+                AveragePlanningTime = _currentMetrics.AveragePlanningTime,
+                OptimizationSuccessRate = _currentMetrics.OptimizationSuccessRate,
+                AverageImprovement = _currentMetrics.AverageImprovement,
+                CurrentLoad = CalculateCurrentLoad(),
+                IsPerformingWell = _currentMetrics.PlanningSuccessRate >= _performanceThreshold,
+                TotalPlansCreated = _currentMetrics.SuccessfulPlans,
+                TotalOptimizations = _currentMetrics.SuccessfulOptimizations
+            };
+        }
+
+        /// <summary>
+        /// Reset metrics
+        /// </summary>
+        public void ResetMetrics()
+        {
+            _currentMetrics = new PlanningMetricsData
+            {
+                StartTime = Time.time
+            };
+
+            _aggregatedMetrics = new PlanningMetricsData
+            {
+                StartTime = Time.time
+            };
+
+            _metricsHistory.Clear();
+            _planTypeMetrics.Clear();
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "Planning metrics reset", this);
+        }
+
+        /// <summary>
+        /// Set system enabled/disabled
+        /// </summary>
+        public void SetEnabled(bool enabled)
+        {
+            IsEnabled = enabled;
+
+            if (!enabled)
+            {
+                _metricsHistory.Clear();
+            }
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"PlanningMetricsCollector: {(enabled ? "enabled" : "disabled")}", this);
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Update current metrics from planner stats
+        /// </summary>
+        private void UpdateCurrentMetrics(PlannerStats stats)
+        {
+            _currentMetrics.ActivePlans = stats.ActivePlans;
+            _currentMetrics.QueuedRequests = stats.QueuedRequests;
+            _currentMetrics.PlanningSuccessRate = stats.PlanningSuccessRate;
+            _currentMetrics.IsPerformingWell = stats.IsPerformingWell;
+        }
+
+        /// <summary>
+        /// Collect metrics snapshot
+        /// </summary>
+        private void CollectMetricsSnapshot()
+        {
+            var snapshot = new PlanningMetricsSnapshot
+            {
+                Timestamp = Time.time,
+                ActivePlans = _currentMetrics.ActivePlans,
+                QueuedRequests = _currentMetrics.QueuedRequests,
+                PlanningSuccessRate = _currentMetrics.PlanningSuccessRate,
+                OptimizationSuccessRate = _currentMetrics.OptimizationSuccessRate,
+                AveragePlanningTime = _currentMetrics.AveragePlanningTime,
+                MemoryUsage = _currentMetrics.MemoryUsage,
+                IsPerformingWell = _currentMetrics.IsPerformingWell
+            };
+
+            _metricsHistory.Enqueue(snapshot);
+
+            // Maintain history size limit
+            while (_metricsHistory.Count > _maxMetricsHistory)
+            {
+                _metricsHistory.Dequeue();
+            }
+
+            OnMetricsSnapshot?.Invoke(snapshot);
+            OnMetricsUpdated?.Invoke(_currentMetrics);
+
+            // Update aggregated metrics
+            UpdateAggregatedMetrics();
+        }
+
+        /// <summary>
+        /// Update aggregated metrics
+        /// </summary>
+        private void UpdateAggregatedMetrics()
+        {
+            if (_metricsHistory.Count == 0)
+                return;
+
+            float totalSuccessRate = 0;
+            float totalOptimizationRate = 0;
+            float totalPlanningTime = 0;
+            int snapshotCount = _metricsHistory.Count;
+
+            foreach (var snapshot in _metricsHistory)
+            {
+                totalSuccessRate += snapshot.PlanningSuccessRate;
+                totalOptimizationRate += snapshot.OptimizationSuccessRate;
+                totalPlanningTime += snapshot.AveragePlanningTime;
+            }
+
+            _aggregatedMetrics.AveragePlanningSuccessRate = totalSuccessRate / snapshotCount;
+            _aggregatedMetrics.AverageOptimizationSuccessRate = totalOptimizationRate / snapshotCount;
+            _aggregatedMetrics.AverageAveragePlanningTime = totalPlanningTime / snapshotCount;
+        }
+
+        /// <summary>
+        /// Update plan type specific metrics
+        /// </summary>
+        private void UpdatePlanTypeMetrics(string planType, bool successful, float duration)
+        {
+            if (string.IsNullOrEmpty(planType))
+                return;
+
+            if (!_planTypeMetrics.ContainsKey(planType))
+            {
+                _planTypeMetrics[planType] = new PlanTypeMetrics
+                {
+                    PlanType = planType
+                };
+            }
+
+            var metrics = _planTypeMetrics[planType];
+            metrics.TotalRequests++;
+
+            if (successful)
+            {
+                metrics.SuccessfulRequests++;
+                metrics.TotalDuration += duration;
+                metrics.AverageDuration = metrics.TotalDuration / metrics.SuccessfulRequests;
+
+                if (duration > metrics.MaxDuration)
+                    metrics.MaxDuration = duration;
+
+                if (metrics.MinDuration == 0 || duration < metrics.MinDuration)
+                    metrics.MinDuration = duration;
+            }
+            else
+            {
+                metrics.FailedRequests++;
+            }
+
+            metrics.SuccessRate = (float)metrics.SuccessfulRequests / metrics.TotalRequests;
+            _planTypeMetrics[planType] = metrics;
+        }
+
+        /// <summary>
+        /// Check performance thresholds and trigger events
+        /// </summary>
+        private void CheckPerformanceThresholds()
+        {
+            if (_trackSuccessRates && _currentMetrics.PlanningSuccessRate < _performanceThreshold)
+            {
+                OnPerformanceThresholdBreached?.Invoke();
+
+                if (_enableLogging)
+                    ChimeraLogger.LogWarning("CONSTRUCTION", $"Planning performance below threshold: {_currentMetrics.PlanningSuccessRate:F2} < {_performanceThreshold:F2}", this);
+            }
+        }
+
+        /// <summary>
+        /// Calculate current system load
+        /// </summary>
+        private float CalculateCurrentLoad()
+        {
+            float load = 0f;
+
+            // Factor in active plans
+            load += _currentMetrics.ActivePlans * 0.1f;
+
+            // Factor in queued requests
+            load += _currentMetrics.QueuedRequests * 0.05f;
+
+            // Factor in memory usage
+            if (_currentMetrics.MemoryUsage > 0)
+                load += _currentMetrics.MemoryUsage / 1024f; // Normalize MB to load factor
+
+            return Mathf.Clamp01(load);
+        }
+
+        #endregion
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// Planning metrics data
+    /// </summary>
+    [System.Serializable]
+    public struct PlanningMetricsData
+    {
+        public float StartTime;
+        public int TotalPlanningRequests;
+        public int SuccessfulPlans;
+        public int FailedPlans;
+        public float TotalPlanningTime;
+        public float AveragePlanningTime;
+        public float MaxPlanningTime;
+        public float MinPlanningTime;
+        public float PlanningSuccessRate;
+        public int TotalOptimizations;
+        public int SuccessfulOptimizations;
+        public int FailedOptimizations;
+        public float TotalOptimizationTime;
+        public float AverageOptimizationTime;
+        public float OptimizationSuccessRate;
+        public float TotalImprovement;
+        public float AverageImprovement;
+        public int ActivePlans;
+        public int QueuedRequests;
+        public int PeakActivePlans;
+        public int PeakQueuedRequests;
+        public float MemoryUsage;
+        public float PeakMemoryUsage;
+        public bool IsPerformingWell;
+
+        // Aggregated metrics
+        public float AveragePlanningSuccessRate;
+        public float AverageOptimizationSuccessRate;
+        public float AverageAveragePlanningTime;
+    }
+
+    /// <summary>
+    /// Planning metrics snapshot
+    /// </summary>
+    [System.Serializable]
+    public struct PlanningMetricsSnapshot
+    {
+        public float Timestamp;
+        public int ActivePlans;
+        public int QueuedRequests;
+        public float PlanningSuccessRate;
+        public float OptimizationSuccessRate;
+        public float AveragePlanningTime;
+        public float MemoryUsage;
+        public bool IsPerformingWell;
+    }
+
+    /// <summary>
+    /// Plan type specific metrics
+    /// </summary>
+    [System.Serializable]
+    public struct PlanTypeMetrics
+    {
+        public string PlanType;
+        public int TotalRequests;
+        public int SuccessfulRequests;
+        public int FailedRequests;
+        public float SuccessRate;
+        public float TotalDuration;
+        public float AverageDuration;
+        public float MinDuration;
+        public float MaxDuration;
+    }
+
+    /// <summary>
+    /// Planning performance summary
+    /// </summary>
+    [System.Serializable]
+    public struct PlanningPerformanceSummary
+    {
+        public float TotalRuntime;
+        public float PlanningSuccessRate;
+        public float AveragePlanningTime;
+        public float OptimizationSuccessRate;
+        public float AverageImprovement;
+        public float CurrentLoad;
+        public bool IsPerformingWell;
+        public int TotalPlansCreated;
+        public int TotalOptimizations;
+    }
+
+    #endregion
+}

@@ -1,0 +1,114 @@
+using UnityEngine;
+using System;
+
+namespace ProjectChimera.Systems.Rendering
+{
+    /// <summary>
+    /// Rendering service interfaces for dependency injection
+    /// Eliminates FindObjectOfType anti-patterns in rendering systems
+    /// </summary>
+
+    // Placeholder types for missing rendering classes
+    public enum RenderingQuality
+    {
+        Low,
+        Medium,
+        High,
+        Ultra
+    }
+
+    [System.Serializable]
+    public class PlantRenderingData
+    {
+        public string PlantId;
+        public Vector3 Position;
+        public float Scale;
+        public Color LeafColor;
+        public float Health;
+    }
+
+    [System.Serializable]
+    public class GrowLight
+    {
+        public string LightId;
+        public Vector3 Position;
+        public Color Color;
+        public float Intensity;
+        public float Range;
+    }
+
+    public enum WeatherType
+    {
+        Clear,
+        Cloudy,
+        Rainy,
+        Stormy
+    }
+
+    public interface IWindAffected
+    {
+        void ApplyWindForce(Vector3 windDirection, float windStrength);
+        Vector3 Position { get; }
+        bool IsActive { get; }
+    }
+
+    public interface IAdvancedRenderingManager
+    {
+        bool IsInitialized { get; }
+        RenderingQuality CurrentQuality { get; }
+        void Initialize();
+        void SetRenderingQuality(RenderingQuality quality);
+        void RegisterPlantForRendering(GameObject plantObject, PlantRenderingData renderData);
+        void UnregisterPlantFromRendering(GameObject plantObject);
+        void OptimizeRendering();
+    }
+
+    public interface IPlantInstancedRenderer
+    {
+        int MaxInstances { get; }
+        int RegisteredCount { get; }
+        int VisibleCount { get; }
+        bool IsInitialized { get; }
+        void Initialize(int maxInstances, float cullingDistance);
+        int RegisterPlant(GameObject plantObject, PlantRenderingData renderData);
+        void UnregisterPlant(GameObject plantObject);
+        void UpdatePlantData(GameObject plantObject, PlantRenderingData renderData);
+        void UpdateRenderer();
+    }
+
+    public interface ICustomLightingRenderer
+    {
+        bool IsInitialized { get; }
+        int ActiveLightCount { get; }
+        int GrowLightCount { get; }
+        void Initialize(bool enableVolumetric = false);
+        GrowLight AddGrowLight(Vector3 position, Color color, float intensity, float range);
+        void RemoveGrowLight(GrowLight growLight);
+        void UpdateLighting();
+        void OptimizeLighting();
+    }
+
+    public interface IEnvironmentalRenderer
+    {
+        bool IsInitialized { get; }
+        WeatherType CurrentWeather { get; }
+        Vector3 CurrentWindDirection { get; }
+        float CurrentWindStrength { get; }
+        void Initialize();
+        void SetWeather(WeatherType weatherType, bool immediate = false);
+        void SetWind(Vector3 direction, float strength);
+        void RegisterWindAffectedObject(IWindAffected windObject);
+        void UnregisterWindAffectedObject(IWindAffected windObject);
+        void UpdateEnvironmental();
+        void OptimizeEnvironmental();
+    }
+
+    public interface ILightingService
+    {
+        Light GetMainLight();
+        void SetMainLight(Light light);
+        Light[] GetAllLights();
+        void RegisterLight(Light light);
+        void UnregisterLight(Light light);
+    }
+}

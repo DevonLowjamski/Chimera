@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Equipment.Degradation
 {
@@ -52,7 +53,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
 
             _lastAssessment = DateTime.Now;
 
-            Debug.Log($"[HealthAssessmentSystem] System health: {_currentSystemHealth.OverallSystemHealth:F2}");
+            ProjectChimera.Core.Logging.ChimeraLogger.Log("EQUIPMENT", "System health assessment performed", null);
 
             return _currentSystemHealth;
         }

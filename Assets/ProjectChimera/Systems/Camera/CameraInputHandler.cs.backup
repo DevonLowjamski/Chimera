@@ -1,0 +1,229 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+
+namespace ProjectChimera.Systems.Camera
+{
+    /// <summary>
+    /// SIMPLIFIED: Basic camera input coordinator aligned with Project Chimera's direct player control vision.
+    /// Focuses on essential camera input handling while maintaining simple, focused functionality.
+    ///
+    /// Coordinator Structure:
+    /// - MouseInputProcessor.cs: Handles basic mouse input
+    /// - KeyboardInputProcessor.cs: Manages keyboard input
+    /// - CameraInputHandler.cs: Coordinates the camera input system
+    /// </summary>
+    public class CameraInputHandler : MonoBehaviour, ITickable
+    {
+        [Header("Component References")]
+        [SerializeField] private MouseInputProcessor _mouseInputProcessor;
+        [SerializeField] private KeyboardInputProcessor _keyboardInputProcessor;
+
+        [Header("Input Settings")]
+        [SerializeField] private bool _enableMouseInput = true;
+        [SerializeField] private bool _enableKeyboardInput = true;
+        [SerializeField] private bool _enableClickToFocus = true;
+        [SerializeField] private float _maxFocusDistance = 100f;
+        [SerializeField] private LayerMask _clickFocusLayers = -1;
+
+        // Core references
+        private UnityEngine.Camera _mainCamera;
+        private AdvancedCameraController _cameraController;
+
+        // Basic state
+        private bool _isInitialized = false;
+
+        // Events - Forwarded from components
+        public event System.Action<Vector2> OnMouseInput;
+        public event System.Action<float> OnScrollInput;
+        public event System.Action<Vector3> OnKeyboardMovement;
+        public event System.Action<Transform> OnFocusTargetClicked;
+        public event System.Action OnFocusClearRequested;
+
+        // Properties - Access to component capabilities
+        public bool IsInitialized => _isInitialized;
+        public bool HasMouseProcessor => _mouseInputProcessor != null;
+        public bool HasKeyboardProcessor => _keyboardInputProcessor != null;
+
+        private void Awake()
+        {
+            InitializeComponents();
+        }
+
+        private void Start()
+        {
+            ValidateComponents();
+            SetupComponentCoordination();
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+            _isInitialized = true;
+        }
+
+        #region ITickable Implementation
+
+        public int Priority => TickPriority.InputSystem;
+        public bool Enabled => enabled && _isInitialized;
+
+        public void Tick(float deltaTime)
+        {
+            // Component updates are handled by their respective systems
+            // This coordinator ensures proper orchestration between components
+        }
+
+        #endregion
+
+        #region Initialization
+
+        private void InitializeComponents()
+        {
+            _mainCamera = UnityEngine.Camera.main;
+            _cameraController = GetComponent<AdvancedCameraController>();
+
+            if (_mainCamera == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                enabled = false;
+            }
+
+            if (_cameraController == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                enabled = false;
+            }
+        }
+
+        /// <summary>
+        /// Validates that all required components are properly assigned
+        /// </summary>
+        private void ValidateComponents()
+        {
+            bool allValid = true;
+
+            if (_enableMouseInput && _mouseInputProcessor == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                allValid = false;
+            }
+
+            if (_enableKeyboardInput && _keyboardInputProcessor == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                allValid = false;
+            }
+
+            if (!allValid)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Sets up coordination between components
+        /// </summary>
+        private void SetupComponentCoordination()
+        {
+            // Connect mouse input processor events
+            if (_mouseInputProcessor != null)
+            {
+                _mouseInputProcessor.OnMouseInput += (input) => OnMouseInput?.Invoke(input);
+                _mouseInputProcessor.OnScrollInput += (scroll) => OnScrollInput?.Invoke(scroll);
+                if (_enableClickToFocus)
+                {
+                    _mouseInputProcessor.OnClickToFocus += (target) => OnFocusTargetClicked?.Invoke(target);
+                }
+            }
+
+            // Connect keyboard input processor events
+            if (_keyboardInputProcessor != null)
+            {
+                _keyboardInputProcessor.OnKeyboardMovement += (movement) => OnKeyboardMovement?.Invoke(movement);
+                _keyboardInputProcessor.OnFocusClearRequested += () => OnFocusClearRequested?.Invoke();
+            }
+        }
+
+        #endregion
+
+        #region Public API - Camera Input Coordination
+
+        /// <summary>
+        /// Enable or disable camera input processing
+        /// </summary>
+        public void SetInputEnabled(bool enabled)
+        {
+            this.enabled = enabled;
+
+            if (!enabled)
+            {
+                // Disable component processors
+                if (_mouseInputProcessor != null)
+                    _mouseInputProcessor.enabled = false;
+                if (_keyboardInputProcessor != null)
+                    _keyboardInputProcessor.enabled = false;
+            }
+            else if (_isInitialized)
+            {
+                // Re-enable component processors
+                if (_mouseInputProcessor != null)
+                    _mouseInputProcessor.enabled = _enableMouseInput;
+                if (_keyboardInputProcessor != null)
+                    _keyboardInputProcessor.enabled = _enableKeyboardInput;
+            }
+        }
+
+        /// <summary>
+        /// Set click-to-focus enabled
+        /// </summary>
+        public void SetClickToFocusEnabled(bool enabled)
+        {
+            _enableClickToFocus = enabled;
+            // Update mouse processor if it exists
+            if (_mouseInputProcessor != null && _mouseInputProcessor is MouseInputProcessor mouseProc)
+            {
+                mouseProc.SetClickToFocusEnabled(enabled);
+            }
+        }
+
+        /// <summary>
+        /// Focus on target at screen position
+        /// </summary>
+        public bool FocusOnTargetAtScreenPosition(Vector2 screenPosition)
+        {
+            if (_mouseInputProcessor != null)
+            {
+                return _mouseInputProcessor.TryFocusOnTarget(screenPosition);
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Get target at screen position
+        /// </summary>
+        public Transform GetTargetAtScreenPosition(Vector2 screenPosition)
+        {
+            if (_mouseInputProcessor != null)
+            {
+                return _mouseInputProcessor.GetTargetAtPosition(screenPosition);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Clear current focus
+        /// </summary>
+        public void ClearFocus()
+        {
+            OnFocusClearRequested?.Invoke();
+        }
+
+        #endregion
+
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+        }
+    }
+}

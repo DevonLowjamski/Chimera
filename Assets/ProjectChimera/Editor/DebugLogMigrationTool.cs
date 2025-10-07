@@ -1,0 +1,342 @@
+using UnityEngine;
+using UnityEditor;
+using System.IO;
+using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace ProjectChimera.Editor
+{
+    /// <summary>
+    /// ENHANCED Debug.Log Migration Tool for Project Chimera
+    /// Automated migration from Debug.Log to ChimeraLogger with context awareness
+    /// Part of Week 6: Complete Logging Migration
+    /// </summary>
+    public class DebugLogMigrationTool : EditorWindow
+    {
+        private Vector2 _scrollPosition;
+        private List<DebugLogViolation> _violations = new List<DebugLogViolation>();
+        private bool _showViolations = false;
+        private string _migrationLog = "";
+
+        [MenuItem("Chimera/Migrate Debug Logs")]
+        public static void ShowWindow()
+        {
+            var window = GetWindow<DebugLogMigrationTool>("Debug Log Migration");
+            window.minSize = new Vector2(800, 600);
+        }
+
+        private void OnGUI()
+        {
+            GUILayout.Label("🔧 Project Chimera Debug.Log Migration Tool", EditorStyles.boldLabel);
+            GUILayout.Space(10);
+
+            EditorGUILayout.HelpBox("This tool migrates Debug.Log calls to ChimeraLogger with proper context and categorization.", MessageType.Info);
+            GUILayout.Space(10);
+
+            // Action Buttons
+            GUILayout.BeginHorizontal();
+            
+            if (GUILayout.Button("🔍 Scan for Debug.Log Calls", GUILayout.Height(40)))
+            {
+                ScanForDebugCalls();
+            }
+            
+            if (GUILayout.Button("🚀 Migrate All Debug Calls", GUILayout.Height(40)))
+            {
+                MigrateAllDebugCalls();
+            }
+            
+            if (GUILayout.Button("✅ Validate Migration", GUILayout.Height(40)))
+            {
+                ValidateMigration();
+            }
+            
+            GUILayout.EndHorizontal();
+            GUILayout.Space(10);
+
+            // Statistics
+            if (_violations.Count > 0)
+            {
+                EditorGUILayout.LabelField($"Total Violations Found: {_violations.Count}", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField($"Debug.Log: {_violations.Count(v => v.Type == "Log")}");
+                EditorGUILayout.LabelField($"Debug.LogWarning: {_violations.Count(v => v.Type == "Warning")}");
+                EditorGUILayout.LabelField($"Debug.LogError: {_violations.Count(v => v.Type == "Error")}");
+                GUILayout.Space(10);
+            }
+
+            // Show Violations Toggle
+            if (_violations.Count > 0)
+            {
+                _showViolations = EditorGUILayout.Foldout(_showViolations, "Show Violation Details");
+                
+                if (_showViolations)
+                {
+                    _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition, GUILayout.Height(200));
+                    foreach (var violation in _violations)
+                    {
+                        EditorGUILayout.BeginHorizontal();
+                        EditorGUILayout.LabelField(Path.GetFileName(violation.File), GUILayout.Width(200));
+                        EditorGUILayout.LabelField($"Line {violation.Line}", GUILayout.Width(80));
+                        EditorGUILayout.LabelField(violation.Type, GUILayout.Width(80));
+                        EditorGUILayout.LabelField(violation.Content, EditorStyles.wordWrappedLabel);
+                        EditorGUILayout.EndHorizontal();
+                    }
+                    EditorGUILayout.EndScrollView();
+                }
+            }
+
+            // Migration Log
+            if (!string.IsNullOrEmpty(_migrationLog))
+            {
+                GUILayout.Space(10);
+                EditorGUILayout.LabelField("Migration Log:", EditorStyles.boldLabel);
+                EditorGUILayout.TextArea(_migrationLog, GUILayout.Height(150));
+            }
+        }
+
+        /// <summary>
+        /// Scan for all Debug.Log calls in the project
+        /// </summary>
+        private void ScanForDebugCalls()
+        {
+            _violations.Clear();
+            _migrationLog = "🔍 Scanning for Debug.Log violations...\n";
+
+            var csFiles = Directory.GetFiles("Assets/ProjectChimera", "*.cs", SearchOption.AllDirectories)
+                                  .Where(f => !f.Contains("Testing") && !f.Contains("Editor"));
+
+            foreach (var file in csFiles)
+            {
+                ScanFileForViolations(file);
+            }
+
+            _migrationLog += $"✅ Scan complete: Found {_violations.Count} violations\n";
+            Repaint();
+        }
+
+        /// <summary>
+        /// Scan individual file for Debug.Log violations
+        /// </summary>
+        private void ScanFileForViolations(string filePath)
+        {
+            try
+            {
+                var lines = File.ReadAllLines(filePath);
+                
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    var line = lines[i];
+                    
+                    if (line.Contains("ChimeraLogger.Log(\"OTHER\", \"$1\", this)"))
+                    {
+                        _violations.Add(new DebugLogViolation
+                        {
+                            File = filePath,
+                            Line = i + 1,
+                            Type = "Log",
+                            Content = line.Trim()
+                        });
+                    }
+                    else if (line.Contains("ChimeraLogger.LogWarning(\"OTHER\", \"$1\", this)"))
+                    {
+                        _violations.Add(new DebugLogViolation
+                        {
+                            File = filePath,
+                            Line = i + 1,
+                            Type = "Warning",
+                            Content = line.Trim()
+                        });
+                    }
+                    else if (line.Contains("ChimeraLogger.LogError(\"OTHER\", \"$1\", this)"))
+                    {
+                        _violations.Add(new DebugLogViolation
+                        {
+                            File = filePath,
+                            Line = i + 1,
+                            Type = "Error",
+                            Content = line.Trim()
+                        });
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                _migrationLog += $"⚠️ Error scanning {filePath}: {ex.Message}\n";
+            }
+        }
+
+        /// <summary>
+        /// Migrate all Debug.Log calls to ChimeraLogger
+        /// </summary>
+        private void MigrateAllDebugCalls()
+        {
+            if (_violations.Count == 0)
+            {
+                ScanForDebugCalls();
+            }
+
+            _migrationLog = "🚀 Starting Debug.Log migration...\n";
+            
+            var csFiles = Directory.GetFiles("Assets/ProjectChimera", "*.cs", SearchOption.AllDirectories)
+                                  .Where(f => !f.Contains("Testing") && !f.Contains("Editor"));
+            
+            int migratedFiles = 0;
+            int totalReplacements = 0;
+
+            foreach (var file in csFiles)
+            {
+                var replacements = MigrateDebugCallsInFile(file);
+                if (replacements > 0)
+                {
+                    migratedFiles++;
+                    totalReplacements += replacements;
+                    _migrationLog += $"✅ {Path.GetFileName(file)}: {replacements} replacements\n";
+                }
+            }
+
+            _migrationLog += $"🎉 Migration complete!\n";
+            _migrationLog += $"📊 Files processed: {migratedFiles}\n";
+            _migrationLog += $"📊 Total replacements: {totalReplacements}\n";
+
+            AssetDatabase.Refresh();
+            Repaint();
+        }
+
+        /// <summary>
+        /// Migrate Debug.Log calls in a specific file
+        /// </summary>
+        private int MigrateDebugCallsInFile(string filePath)
+        {
+            try
+            {
+                var content = File.ReadAllText(filePath);
+                var originalContent = content;
+                int replacements = 0;
+
+                // Add using statement if not present
+                if (!content.Contains("using ProjectChimera.Core.Logging;"))
+                {
+                    // Find the last using statement and add after it
+                    var usingMatch = Regex.Match(content, @"(using\s+[^;]+;)");
+                    if (usingMatch.Success)
+                    {
+                        var lastUsing = content.LastIndexOf("using ");
+                        var endOfLastUsing = content.IndexOf(';', lastUsing) + 1;
+                        content = content.Insert(endOfLastUsing, "\nusing ProjectChimera.Core.Logging;");
+                    }
+                }
+
+                // Determine system category based on file path
+                string category = GetSystemCategory(filePath);
+
+                // Pattern 1: Simple string ChimeraLogger.Log("OTHER", "$1", this)
+                var simpleLogPattern = @"Debug\.Log\s*\(\s*""([^""]*)""\s*\)";
+                content = Regex.Replace(content, simpleLogPattern,
+                    $"ChimeraLogger.Log(\"OTHER\", \"$1\", this);");
+                replacements += Regex.Matches(originalContent, simpleLogPattern).Count;
+
+                // Pattern 2: Simple string ChimeraLogger.LogWarning("OTHER", "$1", this)
+                var simpleWarningPattern = @"Debug\.LogWarning\s*\(\s*""([^""]*)""\s*\)";
+                content = Regex.Replace(content, simpleWarningPattern,
+                    $"ChimeraLogger.LogWarning(\"OTHER\", \"$1\", this);");
+                replacements += Regex.Matches(originalContent, simpleWarningPattern).Count;
+
+                // Pattern 3: Simple string ChimeraLogger.LogError("OTHER", "$1", this)
+                var simpleErrorPattern = @"Debug\.LogError\s*\(\s*""([^""]*)""\s*\)";
+                content = Regex.Replace(content, simpleErrorPattern,
+                    $"ChimeraLogger.LogError(\"OTHER\", \"$1\", this);");
+                replacements += Regex.Matches(originalContent, simpleErrorPattern).Count;
+
+                // Pattern 4: String interpolation ChimeraLogger.Log("OTHER", $1, this)
+                var interpolationLogPattern = @"Debug\.Log\s*\(\s*(\$""[^""]*"")\s*\)";
+                content = Regex.Replace(content, interpolationLogPattern,
+                    $"ChimeraLogger.Log(\"OTHER\", \"$1\", this);");
+                replacements += Regex.Matches(originalContent, interpolationLogPattern).Count;
+
+                // Pattern 5: Variable ChimeraLogger.Log("OTHER", $1, this)
+                var variableLogPattern = @"Debug\.Log\s*\(\s*([^;,)]+)\s*\)";
+                content = Regex.Replace(content, variableLogPattern,
+                    $"ChimeraLogger.Log(\"OTHER\", \"$1\", this);");
+
+                // Write back if changed
+                if (content != originalContent)
+                {
+                    File.WriteAllText(filePath, content);
+                    return replacements;
+                }
+
+                return 0;
+            }
+            catch (System.Exception ex)
+            {
+                _migrationLog += $"❌ Error migrating {filePath}: {ex.Message}\n";
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Determine system category based on file path
+        /// </summary>
+        private string GetSystemCategory(string filePath)
+        {
+            if (filePath.Contains("/Core/")) return "CORE";
+            if (filePath.Contains("/Systems/Cultivation/")) return "PLANT";
+            if (filePath.Contains("/Systems/Construction/")) return "CONSTRUCT";
+            if (filePath.Contains("/Systems/Camera/")) return "CAMERA";
+            if (filePath.Contains("/Systems/Audio/")) return "AUDIO";
+            if (filePath.Contains("/UI/")) return "UI";
+            if (filePath.Contains("/Data/")) return "DATA";
+            if (filePath.Contains("/Systems/")) return "SYSTEM";
+            return "INFO";
+        }
+
+        /// <summary>
+        /// Validate that migration was successful
+        /// </summary>
+        private void ValidateMigration()
+        {
+            _migrationLog = "✅ Validating migration...\n";
+
+            // Re-scan for violations
+            ScanForDebugCalls();
+
+            if (_violations.Count == 0)
+            {
+                _migrationLog += "🎉 VALIDATION SUCCESS: No Debug.Log violations found!\n";
+                _migrationLog += "✅ All Debug.Log calls have been successfully migrated to ChimeraLogger\n";
+            }
+            else
+            {
+                _migrationLog += $"⚠️ VALIDATION INCOMPLETE: {_violations.Count} violations still exist\n";
+                _migrationLog += "❌ Manual review and fixes may be required\n";
+            }
+
+            // Check for ChimeraLogger usage
+            var chimeraLoggerCount = 0;
+            var csFiles = Directory.GetFiles("Assets/ProjectChimera", "*.cs", SearchOption.AllDirectories);
+            
+            foreach (var file in csFiles)
+            {
+                var content = File.ReadAllText(file);
+                chimeraLoggerCount += Regex.Matches(content, @"ChimeraLogger\.Log").Count;
+            }
+
+            _migrationLog += $"📊 ChimeraLogger usage count: {chimeraLoggerCount}\n";
+
+            Repaint();
+        }
+    }
+
+    /// <summary>
+    /// Debug.Log violation data structure
+    /// </summary>
+    [System.Serializable]
+    public class DebugLogViolation
+    {
+        public string File;
+        public int Line;
+        public string Type;
+        public string Content;
+    }
+}

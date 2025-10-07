@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core
 {

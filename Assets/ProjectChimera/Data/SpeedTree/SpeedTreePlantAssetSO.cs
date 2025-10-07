@@ -4,17 +4,18 @@ using ProjectChimera.Shared;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Genetics;
 
+
 namespace ProjectChimera.Data.Visuals
 {
     /// <summary>
-    /// Links PlantStrainSO genetics data to SpeedTree assets, defining how genetic traits
+    /// Links GeneticPlantStrainSO genetics data to SpeedTree assets, defining how genetic traits
     /// map to SpeedTree procedural parameters for dynamic plant visualization.
     /// </summary>
     [CreateAssetMenu(fileName = "New SpeedTree Plant Asset", menuName = "Project Chimera/Visuals/SpeedTree Plant Asset", order = 1)]
     public class SpeedTreePlantAssetSO : ChimeraDataSO
     {
         [Header("Asset References")]
-        [SerializeField] private PlantStrainSO _targetStrain;
+        [SerializeField] private GeneticPlantStrainSO _targetStrain;
         [SerializeField, Tooltip("Path to SpeedTree .st/.st9 file in Assets folder")]
         private string _speedTreeAssetPath;
         [SerializeField] private GameObject _speedTreePrefab;
@@ -37,7 +38,7 @@ namespace ProjectChimera.Data.Visuals
         [SerializeField] private bool _enableOcclusionCulling = true;
 
         // Public Properties
-        public PlantStrainSO TargetStrain => _targetStrain;
+        public GeneticPlantStrainSO TargetStrain => _targetStrain;
         public string SpeedTreeAssetPath => _speedTreeAssetPath;
         public GameObject SpeedTreePrefab => _speedTreePrefab;
         public List<GrowthStageAsset> GrowthStageAssets => _growthStageAssets;

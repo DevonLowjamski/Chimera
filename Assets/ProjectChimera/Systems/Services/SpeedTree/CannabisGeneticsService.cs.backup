@@ -1,0 +1,391 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using ProjectChimera.Core;
+
+namespace ProjectChimera.Systems.Services.SpeedTree
+{
+    /// <summary>
+    /// PC014-5b: Cannabis Genetics Service
+    /// Manages genetic variation processing, growth stages, and cannabis-specific trait expression
+    /// Decomposed from AdvancedSpeedTreeManager (360 lines target)
+    /// </summary>
+    public class CannabisGeneticsService : MonoBehaviour, ITickable, ICannabisGeneticsService
+    {
+        #region Properties
+
+        public bool IsInitialized { get; private set; }
+        public int Priority => TickPriority.SpeedTreeServices;
+        public bool Enabled => _enableGrowthAnimation && gameObject.activeInHierarchy;
+
+        #endregion
+
+        #region Private Fields
+
+        [Header("Genetics Configuration")]
+        [SerializeField] private ScriptableObject _geneticsConfig;
+        [SerializeField] private ScriptableObject _growthConfig;
+        [SerializeField] private List<ScriptableObject> _registeredStrains = new List<ScriptableObject>();
+
+        [Header("Growth Animation Settings")]
+        [SerializeField] private bool _enableGrowthAnimation = true;
+        [SerializeField] private float _animationTimeScale = 1f;
+        [SerializeField] private AnimationCurve _growthCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+        // Genetics Processing
+        private Dictionary<string, ScriptableObject> _strainDatabase = new Dictionary<string, ScriptableObject>();
+        private Dictionary<int, object> _instanceGenetics = new Dictionary<int, object>();
+        private Dictionary<int, object> _growthAnimations = new Dictionary<int, object>();
+
+        // Growth Management
+        private Dictionary<int, object> _currentStages = new Dictionary<int, object>();
+        private Dictionary<int, float> _growthProgress = new Dictionary<int, float>();
+        private List<int> _plantsNeedingUpdate = new List<int>();
+
+        #endregion
+
+        #region Events
+
+        public event Action<int, object, object> OnGrowthStageChanged;
+        public event Action<int, object> OnGeneticExpressionUpdated;
+        public event Action<string> OnStrainRegistered;
+
+        #endregion
+
+        #region IService Implementation
+
+        public void Initialize()
+        {
+            if (IsInitialized) return;
+
+            UnityEngine.Debug.Log("Operation completed");
+
+            // Initialize strain database
+            InitializeStrainDatabase();
+
+            // Initialize growth system
+            InitializeGrowthSystem();
+
+            // Register with ServiceRegistry
+            ServiceContainerFactory.Instance.RegisterSingleton<ICannabisGeneticsService>(this);
+
+            IsInitialized = true;
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void Shutdown()
+        {
+            if (!IsInitialized) return;
+
+            UnityEngine.Debug.Log("Operation completed");
+
+            // Clear all collections
+            _strainDatabase.Clear();
+            _instanceGenetics.Clear();
+            _growthAnimations.Clear();
+            _currentStages.Clear();
+            _growthProgress.Clear();
+            _plantsNeedingUpdate.Clear();
+
+            IsInitialized = false;
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        #endregion
+
+        #region Genetics Processing
+
+        public object GenerateGeneticVariation(string strainId, object genotype)
+        {
+            if (string.IsNullOrEmpty(strainId))
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return CreateDefaultGeneticData();
+            }
+
+            var genetics = CreateDefaultGeneticData();
+
+            UnityEngine.Debug.Log("Operation completed");
+            return genetics;
+        }
+
+        public void ProcessGeneticExpression(int plantId)
+        {
+            if (plantId <= 0) return;
+
+            if (!_instanceGenetics.TryGetValue(plantId, out var genetics))
+            {
+                // Generate genetics if not already present
+                genetics = GenerateGeneticVariation("default", null);
+                _instanceGenetics[plantId] = genetics;
+            }
+
+            OnGeneticExpressionUpdated?.Invoke(plantId, genetics);
+        }
+
+        public void ValidateGeneticData(object genetics)
+        {
+            if (genetics == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return;
+            }
+
+            // Validation logic would be implemented based on actual genetic data structure
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        #endregion
+
+        #region Growth Management
+
+        public void InitializePlantGrowth(int plantId)
+        {
+            if (plantId <= 0) return;
+
+            // Set initial growth stage
+            _currentStages[plantId] = "Seedling";
+            _growthProgress[plantId] = 0f;
+
+            // Initialize growth animation data
+            var animationData = new object(); // Placeholder
+            _growthAnimations[plantId] = animationData;
+
+            // Generate genetics for the plant
+            ProcessGeneticExpression(plantId);
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void UpdatePlantGrowth(int plantId, float deltaTime)
+        {
+            if (plantId <= 0 || !_enableGrowthAnimation) return;
+
+            if (!_growthProgress.TryGetValue(plantId, out var progress) ||
+                !_currentStages.TryGetValue(plantId, out var currentStage))
+            {
+                InitializePlantGrowth(plantId);
+                return;
+            }
+
+            // Update growth progress
+            progress += deltaTime * _animationTimeScale;
+            _growthProgress[plantId] = progress;
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void TriggerGrowthStageTransition(int plantId, object newStage)
+        {
+            if (plantId <= 0) return;
+
+            var oldStage = _currentStages.GetValueOrDefault(plantId, "Seedling");
+
+            _currentStages[plantId] = newStage;
+            _growthProgress[plantId] = 0f; // Reset progress for new stage
+
+            // Start stage transition animation
+            AnimateStageTransition(plantId, oldStage, newStage);
+
+            // Update genetic expression for new stage
+            ProcessGeneticExpression(plantId);
+
+            OnGrowthStageChanged?.Invoke(plantId, oldStage, newStage);
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        #endregion
+
+        #region Strain Management
+
+        public void RegisterStrain(string strainId, object strain)
+        {
+            if (string.IsNullOrEmpty(strainId) || strain == null) return;
+
+            _strainDatabase[strainId] = (ScriptableObject)strain;
+
+            if (!_registeredStrains.Contains((ScriptableObject)strain))
+            {
+                _registeredStrains.Add((ScriptableObject)strain);
+            }
+
+            OnStrainRegistered?.Invoke(strainId);
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void UnregisterStrain(string strainId)
+        {
+            if (string.IsNullOrEmpty(strainId)) return;
+
+            if (_strainDatabase.TryGetValue(strainId, out var strain))
+            {
+                _strainDatabase.Remove(strainId);
+                _registeredStrains.Remove(strain);
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        public object GetCannabisStrain(string strainId)
+        {
+            if (string.IsNullOrEmpty(strainId)) return GetDefaultStrain();
+
+            _strainDatabase.TryGetValue(strainId, out var strain);
+            return strain ?? GetDefaultStrain();
+        }
+
+        #endregion
+
+        #region Growth Animation
+
+        public void AnimateStageTransition(int plantId, object oldStage, object newStage)
+        {
+            if (plantId <= 0 || !_enableGrowthAnimation) return;
+
+            if (_growthAnimations.TryGetValue(plantId, out var animationData))
+            {
+                // Animation logic would be implemented based on actual data structure
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        public void UpdateGrowthAnimations(IEnumerable<int> plantIds)
+        {
+            if (!_enableGrowthAnimation) return;
+
+            foreach (var plantId in plantIds)
+            {
+                UpdateGrowthAnimation(plantId, Time.deltaTime);
+            }
+        }
+
+        #endregion
+
+        #region Private Helper Methods
+
+        private void InitializeStrainDatabase()
+        {
+            _strainDatabase.Clear();
+
+            foreach (var strain in _registeredStrains)
+            {
+                if (strain != null && !string.IsNullOrEmpty(strain.name))
+                {
+                    _strainDatabase[strain.name] = strain;
+                }
+            }
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        private void InitializeGrowthSystem()
+        {
+            _currentStages.Clear();
+            _growthProgress.Clear();
+            _growthAnimations.Clear();
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        private object CreateDefaultGeneticData()
+        {
+            return new object(); // Placeholder genetic data
+        }
+
+        // All helper methods removed or simplified to avoid type references
+        // These would be reimplemented when the genetics system is rebuilt
+
+        private object GetDefaultStrain()
+        {
+            return _registeredStrains?.FirstOrDefault();
+        }
+
+        private void UpdateGrowthAnimation(int plantId, float deltaTime)
+        {
+            // Growth animation logic would be implemented based on actual data structure
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        #endregion
+
+        #region Unity Lifecycle
+
+        private void Start()
+        {
+        // Register with UpdateOrchestrator
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
+            Initialize();
+        }
+
+        private void OnDestroy()
+        {
+        // Unregister from UpdateOrchestrator
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
+            Shutdown();
+        }
+
+            public void Tick(float deltaTime)
+    {
+            if (!IsInitialized || !_enableGrowthAnimation) return;
+
+            // Update growth animations for all plants
+            if (_plantsNeedingUpdate.Count > 0)
+            {
+                UpdateGrowthAnimations(_plantsNeedingUpdate);
+
+    }
+        }
+
+        #endregion
+
+        // ITickable implementation
+
+        public virtual void OnRegistered()
+        {
+            // Override in derived classes if needed
+        }
+
+        public virtual void OnUnregistered()
+        {
+            // Override in derived classes if needed
+        }
+
+        // ICannabisGeneticsService implementation
+        public void UpdateGenetics(float deltaTime)
+        {
+            // Stub implementation
+        }
+
+        public void ProcessGeneticVariation(int plantId, GeneticProfile profile)
+        {
+            // Stub implementation
+        }
+
+        public void UpdateGrowthStage(int plantId, GrowthStage stage)
+        {
+            // Stub implementation
+        }
+
+        public void ApplyTraitExpression(int plantId, string[] traits)
+        {
+            // Stub implementation
+        }
+
+        public GeneticProfile GetGeneticProfile(int plantId)
+        {
+            return new GeneticProfile();
+        }
+
+        public GrowthStage GetCurrentGrowthStage(int plantId)
+        {
+            return GrowthStage.Seedling;
+        }
+    }
+
+    // Supporting data classes removed to avoid type references
+    // These would be reimplemented when the genetics system is rebuilt
+
+}

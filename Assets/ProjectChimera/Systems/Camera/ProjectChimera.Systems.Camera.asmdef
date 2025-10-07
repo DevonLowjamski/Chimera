@@ -11,7 +11,6 @@
         "ProjectChimera.Data.Facilities",
         "ProjectChimera.Data.Camera",
         "ProjectChimera.Data.Events",
-        "ProjectChimera.Systems.Gameplay",
         "Cinemachine",
         "UnityEngine.UI"
     ],

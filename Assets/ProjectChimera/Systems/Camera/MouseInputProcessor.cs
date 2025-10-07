@@ -1,6 +1,7 @@
 using UnityEngine;
 using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Camera
 {
@@ -9,7 +10,7 @@ namespace ProjectChimera.Systems.Camera
     /// Processes mouse movement, clicks, and drag gestures for camera control
     /// Supports the hierarchical viewpoint system as described in gameplay document
     /// </summary>
-    public class MouseInputProcessor : MonoBehaviour
+    public class MouseInputProcessor : MonoBehaviour, ITickable
     {
         [Header("Mouse Settings")]
         [SerializeField] private float _mouseSensitivity = 2f;
@@ -47,12 +48,30 @@ namespace ProjectChimera.Systems.Camera
         private bool _isMouseButtonDown1;
         private bool _isMouseButtonDown2;
 
-        private void Update()
-        {
+        // Events
+        public event System.Action<Vector2> OnMouseInput;
+        public event System.Action<float> OnScrollInput;
+        public event System.Action<Transform> OnClickToFocus;
+
+    public int TickPriority => 100;
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
             UpdateMouseState();
             ProcessClicks();
             ProcessGestures();
-        }
+    }
+
+    private void Awake()
+    {
+        UpdateOrchestrator.Instance.RegisterTickable(this);
+    }
+
+    private void OnDestroy()
+    {
+        UpdateOrchestrator.Instance.UnregisterTickable(this);
+    }
 
         /// <summary>
         /// Updates the current mouse state
@@ -67,6 +86,17 @@ namespace ProjectChimera.Systems.Camera
             _isMouseButtonDown0 = Input.GetMouseButton(0);
             _isMouseButtonDown1 = Input.GetMouseButton(1);
             _isMouseButtonDown2 = Input.GetMouseButton(2);
+
+            // Trigger events
+            if (_mouseDelta.sqrMagnitude > 0.01f)
+            {
+                OnMouseInput?.Invoke(_mouseDelta);
+            }
+
+            if (Mathf.Abs(_mouseWheelDelta) > 0.01f)
+            {
+                OnScrollInput?.Invoke(_mouseWheelDelta);
+            }
         }
 
         /// <summary>
@@ -244,7 +274,7 @@ namespace ProjectChimera.Systems.Camera
         /// </summary>
         public Ray GetMouseRay()
         {
-            return Camera.main.ScreenPointToRay(_mousePosition);
+            return UnityEngine.Camera.main.ScreenPointToRay(_mousePosition);
         }
 
         /// <summary>
@@ -288,18 +318,18 @@ namespace ProjectChimera.Systems.Camera
 
         private void OnSingleClick(Vector2 position)
         {
-            ChimeraLogger.Log($"[MouseInputProcessor] Single click at {position}");
+            ChimeraLogger.LogInfo("MouseInputProcessor", "$1");
 
             // Handle click-to-focus for hierarchical viewpoint system
             if (RaycastFromMouse(out RaycastHit hit, Mathf.Infinity, _clickFocusLayers))
             {
-                OnClickToFocus(hit.transform, hit.point);
+                RaiseClickToFocus(hit.transform, hit.point);
             }
         }
 
         private void OnDoubleClick(Vector2 position)
         {
-            ChimeraLogger.Log($"[MouseInputProcessor] Double click at {position}");
+            ChimeraLogger.LogInfo("MouseInputProcessor", "$1");
 
             // Handle double-click to focus (as mentioned in gameplay document)
             if (RaycastFromMouse(out RaycastHit hit, Mathf.Infinity, _clickFocusLayers))
@@ -310,7 +340,7 @@ namespace ProjectChimera.Systems.Camera
 
         private void OnGestureRecognized(GestureType gesture, float distance)
         {
-            ChimeraLogger.Log($"[MouseInputProcessor] Gesture recognized: {gesture}, distance: {distance}");
+            ChimeraLogger.LogInfo("MouseInputProcessor", "$1");
 
             // Handle gestures for camera control
             switch (gesture)
@@ -330,8 +360,47 @@ namespace ProjectChimera.Systems.Camera
             }
         }
 
+        /// <summary>
+        /// Try to focus on target at screen position
+        /// </summary>
+        public bool TryFocusOnTarget(Vector2 screenPosition)
+        {
+            var ray = UnityEngine.Camera.main.ScreenPointToRay(screenPosition);
+            if (Physics.Raycast(ray, out RaycastHit hit, 100f, _clickFocusLayers))
+            {
+                RaiseClickToFocus(hit.transform, hit.point);
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Get target at screen position
+        /// </summary>
+        public Transform GetTargetAtPosition(Vector2 screenPosition)
+        {
+            var ray = UnityEngine.Camera.main.ScreenPointToRay(screenPosition);
+            if (Physics.Raycast(ray, out RaycastHit hit, 100f, _clickFocusLayers))
+            {
+                return hit.transform;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Set click to focus enabled
+        /// </summary>
+        public void SetClickToFocusEnabled(bool enabled)
+        {
+            // This method enables/disables click to focus functionality
+            // For now, just track the state - can be expanded later
+        }
+
         // Virtual methods for integration with camera system
-        protected virtual void OnClickToFocus(Transform target, Vector3 point) { }
+        protected virtual void RaiseClickToFocus(Transform target, Vector3 point)
+        {
+            OnClickToFocus?.Invoke(target);
+        }
         protected virtual void OnDoubleClickToFocus(Transform target, Vector3 point) { }
         protected virtual void OnZoomIn() { }
         protected virtual void OnZoomOut() { }

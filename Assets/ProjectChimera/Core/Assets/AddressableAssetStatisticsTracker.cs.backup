@@ -1,0 +1,767 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Core.Assets
+{
+    /// <summary>
+    /// REFACTORED: Addressable Asset Statistics Tracker
+    /// Single Responsibility: Performance metrics collection, usage analytics, and asset management statistics
+    /// Extracted from AddressablesAssetManager for better separation of concerns
+    /// </summary>
+    public class AddressableAssetStatisticsTracker
+    {
+        [Header("Statistics Settings")]
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private bool _enableDetailedTracking = true;
+        [SerializeField] private int _maxHistoryEntries = 1000;
+        [SerializeField] private float _updateInterval = 5f; // seconds
+
+        // Core statistics
+        private AssetManagerStats _overallStats = new AssetManagerStats();
+        private Dictionary<string, AssetUsageStats> _assetStats = new Dictionary<string, AssetUsageStats>();
+        private Dictionary<Type, TypeUsageStats> _typeStats = new Dictionary<Type, TypeUsageStats>();
+
+        // Performance tracking
+        private List<PerformanceMetric> _performanceHistory = new List<PerformanceMetric>();
+        private MovingAverage _loadTimeAverage = new MovingAverage(100);
+        private MovingAverage _memoryUsageAverage = new MovingAverage(50);
+
+        // Session tracking
+        private DateTime _sessionStartTime;
+        private SessionStats _currentSession = new SessionStats();
+
+        // State tracking
+        private bool _isInitialized = false;
+        private float _lastUpdateTime = 0f;
+
+        // Events
+        public event System.Action<AssetManagerStats> OnStatsUpdated;
+        public event System.Action<PerformanceAlert> OnPerformanceAlert;
+        public event System.Action<SessionStats> OnSessionStatsUpdate;
+        public event System.Action<StatisticsReport> OnReportGenerated;
+
+        public bool IsInitialized => _isInitialized;
+        public AssetManagerStats OverallStats => _overallStats;
+        public SessionStats CurrentSession => _currentSession;
+        public int TrackedAssets => _assetStats.Count;
+        public int TrackedTypes => _typeStats.Count;
+
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _assetStats.Clear();
+            _typeStats.Clear();
+            _performanceHistory.Clear();
+            ResetStats();
+
+            _sessionStartTime = DateTime.Now;
+            _currentSession = new SessionStats { StartTime = _sessionStartTime };
+            _lastUpdateTime = Time.time;
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("ASSETS", "Addressable Asset Statistics Tracker initialized");
+            }
+        }
+
+        /// <summary>
+        /// Record asset load operation
+        /// </summary>
+        public void RecordAssetLoad(string address, Type assetType, float loadTime, bool success, long memoryUsage = 0)
+        {
+            if (!_isInitialized) return;
+
+            // Update overall stats
+            _overallStats.TotalLoadAttempts++;
+            _overallStats.TotalLoadTime += loadTime;
+
+            if (success)
+            {
+                _overallStats.SuccessfulLoads++;
+                _overallStats.TotalMemoryUsage += memoryUsage;
+            }
+            else
+            {
+                _overallStats.FailedLoads++;
+            }
+
+            // Update asset-specific stats
+            UpdateAssetStats(address, assetType, loadTime, success, memoryUsage);
+
+            // Update type-specific stats
+            UpdateTypeStats(assetType, loadTime, success, memoryUsage);
+
+            // Record performance metrics
+            if (_enableDetailedTracking)
+            {
+                RecordPerformanceMetric(address, assetType, loadTime, success);
+            }
+
+            // Update moving averages
+            _loadTimeAverage.AddValue(loadTime);
+            if (memoryUsage > 0)
+            {
+                _memoryUsageAverage.AddValue(memoryUsage);
+            }
+
+            // Check for performance alerts
+            CheckPerformanceAlerts(address, loadTime, success);
+
+            // Update session stats
+            _currentSession.TotalOperations++;
+            if (success)
+            {
+                _currentSession.SuccessfulOperations++;
+            }
+        }
+
+        /// <summary>
+        /// Record asset cache operation
+        /// </summary>
+        public void RecordCacheOperation(string address, CacheOperationType operationType, bool success)
+        {
+            if (!_isInitialized) return;
+
+            switch (operationType)
+            {
+                case CacheOperationType.Hit:
+                    _overallStats.CacheHits++;
+                    break;
+                case CacheOperationType.Miss:
+                    _overallStats.CacheMisses++;
+                    break;
+                case CacheOperationType.Eviction:
+                    _overallStats.CacheEvictions++;
+                    break;
+            }
+
+            // Update asset stats
+            if (_assetStats.TryGetValue(address, out var assetStats))
+            {
+                switch (operationType)
+                {
+                    case CacheOperationType.Hit:
+                        assetStats.CacheHits++;
+                        break;
+                    case CacheOperationType.Miss:
+                        assetStats.CacheMisses++;
+                        break;
+                    case CacheOperationType.Eviction:
+                        assetStats.CacheEvictions++;
+                        break;
+                }
+                _assetStats[address] = assetStats;
+            }
+        }
+
+        /// <summary>
+        /// Record asset release operation
+        /// </summary>
+        public void RecordAssetRelease(string address, Type assetType, long freedMemory)
+        {
+            if (!_isInitialized) return;
+
+            _overallStats.TotalReleases++;
+            _overallStats.TotalMemoryUsage = System.Math.Max(0L, _overallStats.TotalMemoryUsage - freedMemory);
+
+            // Update asset stats
+            if (_assetStats.TryGetValue(address, out var assetStats))
+            {
+                assetStats.ReleaseCount++;
+                _assetStats[address] = assetStats;
+            }
+
+            // Update type stats
+            if (_typeStats.TryGetValue(assetType, out var typeStats))
+            {
+                typeStats.ReleasedAssets++;
+                typeStats.TotalMemoryFreed += freedMemory;
+                _typeStats[assetType] = typeStats;
+            }
+        }
+
+        /// <summary>
+        /// Update statistics (call periodically)
+        /// </summary>
+        public void UpdateStatistics()
+        {
+            if (!_isInitialized) return;
+
+            var currentTime = Time.time;
+            if (currentTime - _lastUpdateTime < _updateInterval)
+            {
+                return;
+            }
+
+            _lastUpdateTime = currentTime;
+
+            // Calculate derived statistics
+            CalculateDerivedStats();
+
+            // Update session duration
+            _currentSession.Duration = (float)(DateTime.Now - _sessionStartTime).TotalSeconds;
+
+            // Trigger events
+            OnStatsUpdated?.Invoke(_overallStats);
+            OnSessionStatsUpdate?.Invoke(_currentSession);
+
+            if (_enableLogging)
+            {
+                LogStatisticsSummary();
+            }
+        }
+
+        /// <summary>
+        /// Get asset usage statistics
+        /// </summary>
+        public AssetUsageStats? GetAssetStats(string address)
+        {
+            return _assetStats.TryGetValue(address, out var stats) ? stats : (AssetUsageStats?)null;
+        }
+
+        /// <summary>
+        /// Get type usage statistics
+        /// </summary>
+        public TypeUsageStats? GetTypeStats<T>()
+        {
+            return GetTypeStats(typeof(T));
+        }
+
+        /// <summary>
+        /// Get type usage statistics
+        /// </summary>
+        public TypeUsageStats? GetTypeStats(Type assetType)
+        {
+            return _typeStats.TryGetValue(assetType, out var stats) ? stats : (TypeUsageStats?)null;
+        }
+
+        /// <summary>
+        /// Get performance history
+        /// </summary>
+        public List<PerformanceMetric> GetPerformanceHistory(TimeSpan? period = null)
+        {
+            if (!period.HasValue)
+            {
+                return new List<PerformanceMetric>(_performanceHistory);
+            }
+
+            var cutoffTime = DateTime.Now - period.Value;
+            return _performanceHistory.Where(p => p.Timestamp >= cutoffTime).ToList();
+        }
+
+        /// <summary>
+        /// Generate comprehensive statistics report
+        /// </summary>
+        public StatisticsReport GenerateReport()
+        {
+            if (!_isInitialized)
+            {
+                return new StatisticsReport { IsValid = false };
+            }
+
+            var topAssets = _assetStats.Values
+                .OrderByDescending(a => a.LoadCount)
+                .Take(10)
+                .ToList();
+
+            var recentPerformance = GetPerformanceHistory(TimeSpan.FromHours(1));
+
+            var report = new StatisticsReport
+            {
+                IsValid = true,
+                GenerationTime = DateTime.Now,
+                OverallStats = _overallStats,
+                SessionStats = _currentSession,
+                TopAssetsByUsage = topAssets,
+                TypeStatistics = _typeStats.Values.ToList(),
+                RecentPerformanceMetrics = recentPerformance,
+                AverageLoadTime = _loadTimeAverage.Average,
+                AverageMemoryUsage = _memoryUsageAverage.Average,
+                TrackedAssetsCount = _assetStats.Count,
+                TrackedTypesCount = _typeStats.Count
+            };
+
+            OnReportGenerated?.Invoke(report);
+            return report;
+        }
+
+        /// <summary>
+        /// Get performance trends
+        /// </summary>
+        public PerformanceTrends GetPerformanceTrends(TimeSpan period)
+        {
+            var recentMetrics = GetPerformanceHistory(period);
+            if (recentMetrics.Count == 0)
+            {
+                return new PerformanceTrends { IsValid = false };
+            }
+
+            var loadTimes = recentMetrics.Select(m => m.LoadTime).ToArray();
+            var successRates = recentMetrics.GroupBy(m => m.Timestamp.Hour)
+                .Select(g => (float)g.Count(m => m.Success) / g.Count())
+                .ToArray();
+
+            return new PerformanceTrends
+            {
+                IsValid = true,
+                Period = period,
+                AverageLoadTime = loadTimes.Average(),
+                MinLoadTime = loadTimes.Min(),
+                MaxLoadTime = loadTimes.Max(),
+                LoadTimeVariance = CalculateVariance(loadTimes),
+                AverageSuccessRate = successRates.Length > 0 ? successRates.Average() : 0f,
+                TotalOperations = recentMetrics.Count,
+                TrendDirection = AnalyzeTrend(loadTimes)
+            };
+        }
+
+        /// <summary>
+        /// Reset all statistics
+        /// </summary>
+        public void ResetStatistics()
+        {
+            _assetStats.Clear();
+            _typeStats.Clear();
+            _performanceHistory.Clear();
+            ResetStats();
+            _loadTimeAverage.Reset();
+            _memoryUsageAverage.Reset();
+
+            _sessionStartTime = DateTime.Now;
+            _currentSession = new SessionStats { StartTime = _sessionStartTime };
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("ASSETS", "Asset statistics reset");
+            }
+        }
+
+        /// <summary>
+        /// Update asset-specific statistics
+        /// </summary>
+        private void UpdateAssetStats(string address, Type assetType, float loadTime, bool success, long memoryUsage)
+        {
+            if (!_assetStats.TryGetValue(address, out var assetStats))
+            {
+                assetStats = new AssetUsageStats
+                {
+                    Address = address,
+                    AssetType = assetType,
+                    FirstLoadTime = DateTime.Now
+                };
+            }
+
+            assetStats.LoadCount++;
+            assetStats.TotalLoadTime += loadTime;
+            assetStats.LastLoadTime = DateTime.Now;
+
+            if (success)
+            {
+                assetStats.SuccessfulLoads++;
+                assetStats.TotalMemoryUsage += memoryUsage;
+            }
+            else
+            {
+                assetStats.FailedLoads++;
+            }
+
+            _assetStats[address] = assetStats;
+        }
+
+        /// <summary>
+        /// Update type-specific statistics
+        /// </summary>
+        private void UpdateTypeStats(Type assetType, float loadTime, bool success, long memoryUsage)
+        {
+            if (!_typeStats.TryGetValue(assetType, out var typeStats))
+            {
+                typeStats = new TypeUsageStats
+                {
+                    AssetType = assetType,
+                    FirstUsageTime = DateTime.Now
+                };
+            }
+
+            typeStats.LoadAttempts++;
+            typeStats.TotalLoadTime += loadTime;
+
+            if (success)
+            {
+                typeStats.SuccessfulLoads++;
+                typeStats.TotalMemoryUsage += memoryUsage;
+            }
+            else
+            {
+                typeStats.FailedLoads++;
+            }
+
+            _typeStats[assetType] = typeStats;
+        }
+
+        /// <summary>
+        /// Record detailed performance metric
+        /// </summary>
+        private void RecordPerformanceMetric(string address, Type assetType, float loadTime, bool success)
+        {
+            var metric = new PerformanceMetric
+            {
+                Address = address,
+                AssetType = assetType,
+                LoadTime = loadTime,
+                Success = success,
+                Timestamp = DateTime.Now
+            };
+
+            _performanceHistory.Add(metric);
+
+            // Maintain history size limit
+            if (_performanceHistory.Count > _maxHistoryEntries)
+            {
+                _performanceHistory.RemoveAt(0);
+            }
+        }
+
+        /// <summary>
+        /// Check for performance alerts
+        /// </summary>
+        private void CheckPerformanceAlerts(string address, float loadTime, bool success)
+        {
+            const float SlowLoadThreshold = 1000f; // 1 second
+            const float VerySlowLoadThreshold = 5000f; // 5 seconds
+
+            if (loadTime > VerySlowLoadThreshold)
+            {
+                var alert = new PerformanceAlert
+                {
+                    Type = PerformanceAlertType.VerySlowLoad,
+                    Message = $"Very slow load: {address} took {loadTime:F1}ms",
+                    Address = address,
+                    LoadTime = loadTime,
+                    Timestamp = DateTime.Now
+                };
+
+                OnPerformanceAlert?.Invoke(alert);
+            }
+            else if (loadTime > SlowLoadThreshold)
+            {
+                var alert = new PerformanceAlert
+                {
+                    Type = PerformanceAlertType.SlowLoad,
+                    Message = $"Slow load: {address} took {loadTime:F1}ms",
+                    Address = address,
+                    LoadTime = loadTime,
+                    Timestamp = DateTime.Now
+                };
+
+                OnPerformanceAlert?.Invoke(alert);
+            }
+
+            if (!success)
+            {
+                var alert = new PerformanceAlert
+                {
+                    Type = PerformanceAlertType.LoadFailure,
+                    Message = $"Load failed: {address}",
+                    Address = address,
+                    LoadTime = loadTime,
+                    Timestamp = DateTime.Now
+                };
+
+                OnPerformanceAlert?.Invoke(alert);
+            }
+        }
+
+        /// <summary>
+        /// Calculate derived statistics
+        /// </summary>
+        private void CalculateDerivedStats()
+        {
+            _overallStats.AverageLoadTime = _overallStats.TotalLoadAttempts > 0
+                ? _overallStats.TotalLoadTime / _overallStats.TotalLoadAttempts
+                : 0f;
+
+            _overallStats.SuccessRate = _overallStats.TotalLoadAttempts > 0
+                ? (float)_overallStats.SuccessfulLoads / _overallStats.TotalLoadAttempts
+                : 0f;
+
+            _overallStats.CacheHitRate = (_overallStats.CacheHits + _overallStats.CacheMisses) > 0
+                ? (float)_overallStats.CacheHits / (_overallStats.CacheHits + _overallStats.CacheMisses)
+                : 0f;
+        }
+
+        /// <summary>
+        /// Log statistics summary
+        /// </summary>
+        private void LogStatisticsSummary()
+        {
+            ChimeraLogger.Log("ASSETS", $"Asset Stats - Loads: {_overallStats.SuccessfulLoads}/{_overallStats.TotalLoadAttempts} " +
+                                       $"({_overallStats.SuccessRate:P1}), " +
+                                       $"Cache: {_overallStats.CacheHitRate:P1} hit rate, " +
+                                       $"Avg Load: {_overallStats.AverageLoadTime:F1}ms");
+        }
+
+        /// <summary>
+        /// Calculate variance for trend analysis
+        /// </summary>
+        private float CalculateVariance(float[] values)
+        {
+            if (values.Length == 0) return 0f;
+
+            var mean = values.Average();
+            var variance = values.Select(x => (x - mean) * (x - mean)).Average();
+            return variance;
+        }
+
+        /// <summary>
+        /// Analyze trend direction
+        /// </summary>
+        private TrendDirection AnalyzeTrend(float[] values)
+        {
+            if (values.Length < 2) return TrendDirection.Stable;
+
+            var firstHalf = values.Take(values.Length / 2).Average();
+            var secondHalf = values.Skip(values.Length / 2).Average();
+
+            var difference = secondHalf - firstHalf;
+            var threshold = firstHalf * 0.1f; // 10% change threshold
+
+            if (Math.Abs(difference) < threshold)
+                return TrendDirection.Stable;
+
+            return difference > 0 ? TrendDirection.Increasing : TrendDirection.Decreasing;
+        }
+
+        /// <summary>
+        /// Reset core statistics
+        /// </summary>
+        private void ResetStats()
+        {
+            _overallStats = new AssetManagerStats();
+        }
+
+        /// <summary>
+        /// Set statistics configuration
+        /// </summary>
+        public void SetStatisticsConfig(bool enableDetailed, int maxHistory, float updateInterval)
+        {
+            _enableDetailedTracking = enableDetailed;
+            _maxHistoryEntries = Mathf.Max(100, maxHistory);
+            _updateInterval = Mathf.Max(1f, updateInterval);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("ASSETS", $"Statistics config updated: Detailed={enableDetailed}, MaxHistory={maxHistory}, UpdateInterval={updateInterval}s");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Moving average calculator
+    /// </summary>
+    public class MovingAverage
+    {
+        private readonly Queue<float> _values;
+        private readonly int _windowSize;
+        private float _sum;
+
+        public float Average => _values.Count > 0 ? _sum / _values.Count : 0f;
+
+        public MovingAverage(int windowSize)
+        {
+            _windowSize = windowSize;
+            _values = new Queue<float>();
+        }
+
+        public void AddValue(float value)
+        {
+            _values.Enqueue(value);
+            _sum += value;
+
+            while (_values.Count > _windowSize)
+            {
+                _sum -= _values.Dequeue();
+            }
+        }
+
+        public void Reset()
+        {
+            _values.Clear();
+            _sum = 0f;
+        }
+    }
+
+    /// <summary>
+    /// Cache operation types
+    /// </summary>
+    public enum CacheOperationType
+    {
+        Hit = 0,
+        Miss = 1,
+        Eviction = 2
+    }
+
+    /// <summary>
+    /// Performance alert types
+    /// </summary>
+    public enum PerformanceAlertType
+    {
+        SlowLoad = 0,
+        VerySlowLoad = 1,
+        LoadFailure = 2,
+        MemoryPressure = 3
+    }
+
+    /// <summary>
+    /// Trend direction
+    /// </summary>
+    public enum TrendDirection
+    {
+        Stable = 0,
+        Increasing = 1,
+        Decreasing = 2
+    }
+
+    /// <summary>
+    /// Overall asset manager statistics
+    /// </summary>
+    [System.Serializable]
+    public struct AssetManagerStats
+    {
+        public int TotalLoadAttempts;
+        public int SuccessfulLoads;
+        public int FailedLoads;
+        public int CacheHits;
+        public int CacheMisses;
+        public int CacheEvictions;
+        public int TotalReleases;
+        public float TotalLoadTime;
+        public long TotalMemoryUsage;
+        public float AverageLoadTime;
+        public float SuccessRate;
+        public float CacheHitRate;
+    }
+
+    /// <summary>
+    /// Per-asset usage statistics
+    /// </summary>
+    [System.Serializable]
+    public struct AssetUsageStats
+    {
+        public string Address;
+        public Type AssetType;
+        public int LoadCount;
+        public int SuccessfulLoads;
+        public int FailedLoads;
+        public int CacheHits;
+        public int CacheMisses;
+        public int CacheEvictions;
+        public int ReleaseCount;
+        public float TotalLoadTime;
+        public long TotalMemoryUsage;
+        public DateTime FirstLoadTime;
+        public DateTime LastLoadTime;
+
+        public readonly float AverageLoadTime => LoadCount > 0 ? TotalLoadTime / LoadCount : 0f;
+        public readonly float SuccessRate => LoadCount > 0 ? (float)SuccessfulLoads / LoadCount : 0f;
+    }
+
+    /// <summary>
+    /// Per-type usage statistics
+    /// </summary>
+    [System.Serializable]
+    public struct TypeUsageStats
+    {
+        public Type AssetType;
+        public int LoadAttempts;
+        public int SuccessfulLoads;
+        public int FailedLoads;
+        public int ReleasedAssets;
+        public float TotalLoadTime;
+        public long TotalMemoryUsage;
+        public long TotalMemoryFreed;
+        public DateTime FirstUsageTime;
+
+        public readonly float AverageLoadTime => LoadAttempts > 0 ? TotalLoadTime / LoadAttempts : 0f;
+        public readonly float SuccessRate => LoadAttempts > 0 ? (float)SuccessfulLoads / LoadAttempts : 0f;
+    }
+
+    /// <summary>
+    /// Performance metric entry
+    /// </summary>
+    [System.Serializable]
+    public struct PerformanceMetric
+    {
+        public string Address;
+        public Type AssetType;
+        public float LoadTime;
+        public bool Success;
+        public DateTime Timestamp;
+    }
+
+    /// <summary>
+    /// Session statistics
+    /// </summary>
+    [System.Serializable]
+    public struct SessionStats
+    {
+        public DateTime StartTime;
+        public float Duration;
+        public int TotalOperations;
+        public int SuccessfulOperations;
+    }
+
+    /// <summary>
+    /// Performance alert
+    /// </summary>
+    [System.Serializable]
+    public struct PerformanceAlert
+    {
+        public PerformanceAlertType Type;
+        public string Message;
+        public string Address;
+        public float LoadTime;
+        public DateTime Timestamp;
+    }
+
+    /// <summary>
+    /// Performance trends analysis
+    /// </summary>
+    [System.Serializable]
+    public struct PerformanceTrends
+    {
+        public bool IsValid;
+        public TimeSpan Period;
+        public float AverageLoadTime;
+        public float MinLoadTime;
+        public float MaxLoadTime;
+        public float LoadTimeVariance;
+        public float AverageSuccessRate;
+        public int TotalOperations;
+        public TrendDirection TrendDirection;
+    }
+
+    /// <summary>
+    /// Comprehensive statistics report
+    /// </summary>
+    [System.Serializable]
+    public struct StatisticsReport
+    {
+        public bool IsValid;
+        public DateTime GenerationTime;
+        public AssetManagerStats OverallStats;
+        public SessionStats SessionStats;
+        public List<AssetUsageStats> TopAssetsByUsage;
+        public List<TypeUsageStats> TypeStatistics;
+        public List<PerformanceMetric> RecentPerformanceMetrics;
+        public float AverageLoadTime;
+        public float AverageMemoryUsage;
+        public int TrackedAssetsCount;
+        public int TrackedTypesCount;
+    }
+}

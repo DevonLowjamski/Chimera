@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 
+using ProjectChimera.Core.Logging;
 namespace ProjectChimera.CI
 {
     /// <summary>
@@ -28,8 +29,8 @@ namespace ProjectChimera.CI
         [ContextMenu("Run Quality Gates")]
         public void RunQualityGates()
         {
-            Debug.Log("🔍 Project Chimera Quality Gates - Enhanced Validation");
-            Debug.Log("=" + new string('=', 60));
+            ChimeraLogger.LogInfo("QualityGateRunner", "Starting Quality Gate validation...");
+            ChimeraLogger.LogInfo("QualityGateRunner", "===========================================");
 
             try
             {
@@ -37,24 +38,24 @@ namespace ProjectChimera.CI
 
                 if (!results.HasViolations)
                 {
-                    Debug.Log("✅ ALL QUALITY GATES PASSED!");
-                    Debug.Log($"🎉 Zero violations found - architecture is clean!");
+                    ChimeraLogger.LogInfo("QualityGateRunner", "✅ All Quality Gates PASSED!");
+                    ChimeraLogger.LogInfo("QualityGateRunner", "Project is ready for deployment.");
                     return;
                 }
 
-                Debug.LogWarning($"⚠️ Quality Gate Violations Found: {results.TotalViolations} total");
+                ChimeraLogger.LogWarning("QualityGateRunner", "⚠️ Quality Gate violations detected:");
 
                 // Report Anti-Pattern Violations
                 if (results.AntiPatternViolations?.Count > 0)
                 {
-                    Debug.LogError($"❌ ANTI-PATTERN VIOLATIONS: {results.AntiPatternViolations.Count}");
-                    
+                    ChimeraLogger.LogError("QualityGateRunner", $"❌ Anti-Pattern Violations: {results.AntiPatternViolations.Count}");
+
                     if (_logViolations)
                     {
                         foreach (var violation in results.AntiPatternViolations)
                         {
-                            Debug.LogError($"  💥 {violation.File}:{violation.LineNumber} - Pattern: {violation.Pattern}");
-                            Debug.LogError($"      Content: {violation.Content}");
+                            ChimeraLogger.LogError("QualityGateRunner", $"  • {violation.Pattern} in {violation.File}:{violation.LineNumber}");
+                            ChimeraLogger.LogError("QualityGateRunner", $"    Content: {violation.Content}");
                         }
                     }
                 }
@@ -62,13 +63,13 @@ namespace ProjectChimera.CI
                 // Report File Size Violations
                 if (results.FileSizeViolations?.Count > 0)
                 {
-                    Debug.LogWarning($"📏 FILE SIZE VIOLATIONS: {results.FileSizeViolations.Count}");
-                    
+                    ChimeraLogger.LogWarning("QualityGateRunner", $"⚠️ File Size Violations: {results.FileSizeViolations.Count}");
+
                     if (_logViolations)
                     {
                         foreach (var violation in results.FileSizeViolations)
                         {
-                            Debug.LogWarning($"  📄 {violation.File} - {violation.LineCount}/{violation.MaxAllowed} lines");
+                            ChimeraLogger.LogWarning("QualityGateRunner", $"  • {violation.File}: {violation.LineCount} lines (limit: {violation.MaxAllowed})");
                         }
                     }
                 }
@@ -76,13 +77,13 @@ namespace ProjectChimera.CI
                 // Report Architecture Violations
                 if (results.ArchitectureViolations?.Count > 0)
                 {
-                    Debug.LogError($"🏗️ ARCHITECTURE VIOLATIONS: {results.ArchitectureViolations.Count}");
-                    
+                    ChimeraLogger.LogError("QualityGateRunner", $"Architecture violations detected: {results.ArchitectureViolations.Count}");
+
                     if (_logViolations)
                     {
                         foreach (var violation in results.ArchitectureViolations)
                         {
-                            Debug.LogError($"  🚫 {violation.File} - {violation.Type}: {violation.Description}");
+                            ChimeraLogger.LogError("QualityGateRunner", $"Architecture violation: {violation}");
                         }
                     }
                 }
@@ -90,22 +91,22 @@ namespace ProjectChimera.CI
                 // Report Complexity Violations
                 if (results.ComplexityViolations?.Count > 0)
                 {
-                    Debug.LogWarning($"🔥 COMPLEXITY VIOLATIONS: {results.ComplexityViolations.Count}");
-                    
+                    ChimeraLogger.LogWarning("QualityGateRunner", $"Complexity violations detected: {results.ComplexityViolations.Count}");
+
                     if (_logViolations)
                     {
                         foreach (var violation in results.ComplexityViolations)
                         {
-                            Debug.LogWarning($"  ⚡ {violation.File}:{violation.Method} - Complexity: {violation.Complexity}/{violation.MaxAllowed}");
+                            ChimeraLogger.LogWarning("QualityGateRunner", $"Complexity violation: {violation}");
                         }
                     }
                 }
 
-                Debug.Log("=" + new string('=', 60));
+                ChimeraLogger.LogInfo("QualityGateRunner", "Quality gate checks completed");
 
                 if (_exitOnFailure && results.AntiPatternViolations?.Count > 0)
                 {
-                    Debug.LogError("💥 CRITICAL VIOLATIONS DETECTED - BLOCKING COMMIT");
+                    ChimeraLogger.LogError("QualityGateRunner", "$1");
                     #if UNITY_EDITOR
                     UnityEditor.EditorApplication.ExitPlaymode();
                     #endif
@@ -113,7 +114,7 @@ namespace ProjectChimera.CI
             }
             catch (Exception ex)
             {
-                Debug.LogError($"💥 Quality Gate Runner Error: {ex.Message}");
+                ChimeraLogger.LogError("QualityGateRunner", $"Error running quality gates: {ex.Message}");
             }
         }
 
@@ -123,14 +124,14 @@ namespace ProjectChimera.CI
         [ContextMenu("Test Anti-Pattern Detection")]
         public void TestAntiPatternDetection()
         {
-            Debug.Log("🔍 Testing Anti-Pattern Detection...");
+            ChimeraLogger.LogInfo("QualityGateRunner", "Testing anti-pattern detection...");
 
             var violations = QualityGates.CheckAntiPatterns();
-            Debug.Log($"Found {violations.Count} anti-pattern violations");
+            ChimeraLogger.LogInfo("QualityGateRunner", $"Found {violations.Count} anti-pattern violations");
 
             foreach (var violation in violations)
             {
-                Debug.LogWarning($"⚠️ {violation.File}:{violation.LineNumber} - {violation.Pattern}");
+                ChimeraLogger.LogWarning("QualityGateRunner", $"Anti-pattern: {violation}");
             }
         }
 
@@ -140,14 +141,14 @@ namespace ProjectChimera.CI
         [ContextMenu("Test File Size Validation")]
         public void TestFileSizeValidation()
         {
-            Debug.Log("📏 Testing File Size Validation...");
+            ChimeraLogger.LogInfo("QualityGateRunner", "Testing file size validation...");
 
             var violations = QualityGates.CheckFileSizes();
-            Debug.Log($"Found {violations.Count} file size violations");
+            ChimeraLogger.LogInfo("QualityGateRunner", $"Found {violations.Count} file size violations");
 
             foreach (var violation in violations)
             {
-                Debug.LogWarning($"📄 {violation.File} - {violation.LineCount}/{violation.MaxAllowed} lines");
+                ChimeraLogger.LogWarning("QualityGateRunner", $"File size violation: {violation}");
             }
         }
 

@@ -4,22 +4,56 @@ namespace ProjectChimera.Shared
 {
     /// <summary>
     /// Simple logging abstraction for Foundation layer - avoids Core dependencies
+    /// Uses Unity's built-in Debug logging to prevent circular assembly references
     /// </summary>
     public static class SharedLogger
     {
         public static void Log(string message, Object context = null)
         {
-            Debug.Log($"[Chimera] {message}", context);
+            if (context != null)
+                Debug.Log($"[Shared] {message}", context);
+            else
+                Debug.Log($"[Shared] {message}");
         }
-        
+
+        public static void Log(string category, string message, Object context = null)
+        {
+            if (context != null)
+                Debug.Log($"[{category}] {message}", context);
+            else
+                Debug.Log($"[{category}] {message}");
+        }
+
         public static void LogWarning(string message, Object context = null)
         {
-            Debug.LogWarning($"[Chimera] {message}", context);
+            if (context != null)
+                Debug.LogWarning($"[Shared] {message}", context);
+            else
+                Debug.LogWarning($"[Shared] {message}");
         }
-        
+
+        public static void LogWarning(string category, string message, Object context = null)
+        {
+            if (context != null)
+                Debug.LogWarning($"[{category}] {message}", context);
+            else
+                Debug.LogWarning($"[{category}] {message}");
+        }
+
         public static void LogError(string message, Object context = null)
         {
-            Debug.LogError($"[Chimera] {message}", context);
+            if (context != null)
+                Debug.LogError($"[Shared] {message}", context);
+            else
+                Debug.LogError($"[Shared] {message}");
+        }
+
+        public static void LogError(string category, string message, Object context = null)
+        {
+            if (context != null)
+                Debug.LogError($"[{category}] {message}", context);
+            else
+                Debug.LogError($"[{category}] {message}");
         }
     }
 
@@ -30,7 +64,7 @@ namespace ProjectChimera.Shared
     {
         public string UniqueID => name;
         public string DisplayName => name;
-        
+
         /// <summary>
         /// Sets display name for editor configuration (replaces dangerous reflection access)
         /// </summary>

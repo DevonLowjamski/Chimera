@@ -1,0 +1,576 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Memory;
+using System;
+
+namespace ProjectChimera.Core.Input
+{
+    /// <summary>
+    /// PERFORMANCE: Optimized input handling system for cultivation interfaces
+    /// Reduces input polling overhead and provides efficient event distribution
+    /// Week 12: Input & UI Performance
+    /// </summary>
+    public class OptimizedInputManager : MonoBehaviour
+    {
+        [Header("Input Optimization Settings")]
+        [SerializeField] private bool _enableInputOptimization = true;
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private float _inputPollingRate = 60f; // Hz
+        [SerializeField] private float _mouseDeltaThreshold = 0.01f;
+        [SerializeField] private int _maxInputEventsPerFrame = 50;
+
+        [Header("Performance Settings")]
+        [SerializeField] private bool _useInputBuffering = true;
+        [SerializeField] private int _inputBufferSize = 100;
+        [SerializeField] private bool _enableInputPrediction = true;
+        [SerializeField] private float _predictionTimeWindow = 0.1f;
+
+        // Input state tracking
+        private readonly Dictionary<string, InputState> _inputStates = new Dictionary<string, InputState>();
+        private readonly MemoryOptimizedQueue<InputEvent> _inputEventQueue = new MemoryOptimizedQueue<InputEvent>();
+        private readonly List<IInputHandler> _inputHandlers = new List<IInputHandler>();
+
+        // Mouse and touch optimization
+        private Vector2 _lastMousePosition;
+        private Vector2 _mouseVelocity;
+        private float _lastMouseUpdateTime;
+        private bool _mouseMovedThisFrame;
+
+        // Input prediction
+        private readonly Queue<Vector2> _mousePositionHistory = new Queue<Vector2>();
+        private readonly Queue<float> _mouseTimeHistory = new Queue<float>();
+
+        // Performance tracking
+        private float _lastInputPollTime;
+        private int _inputEventsThisFrame;
+        private InputPerformanceStats _stats = new InputPerformanceStats();
+
+        // Input state tracking (using legacy Input system)
+        private Vector2 _lastMousePosition;
+        private Vector2 _mouseDelta;
+
+        public static OptimizedInputManager Instance { get; private set; }
+
+        public bool IsInitialized { get; private set; }
+        public InputPerformanceStats Stats => _stats;
+
+        // Events
+        public event Action<Vector2> OnOptimizedMouseMove;
+        public event Action<Vector2> OnMouseClick;
+        public event Action<Vector2> OnMouseDrag;
+        public event Action<float> OnScrollWheel;
+        public event Action<KeyCode> OnKeyPressed;
+        public event Action<KeyCode> OnKeyReleased;
+
+        private void Awake()
+        {
+            if (Instance == null)
+            {
+                Instance = this;
+                DontDestroyOnLoad(gameObject);
+                Initialize();
+            }
+            else if (Instance != this)
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Initialize optimized input manager
+        /// </summary>
+        public void Initialize()
+        {
+            if (IsInitialized) return;
+
+            InitializeInputSystem();
+            SetupInputActions();
+
+            _lastInputPollTime = Time.unscaledTime;
+            _lastMouseUpdateTime = Time.unscaledTime;
+            _lastMousePosition = Mouse.current?.position.ReadValue() ?? Vector2.zero;
+
+            IsInitialized = true;
+
+            if (_enableLogging)
+            {
+                Debug.Log("[OptimizedInputManager] Input optimization initialized");
+            }
+        }
+
+        private void Update()
+        {
+            if (!_enableInputOptimization || !IsInitialized) return;
+
+            _inputEventsThisFrame = 0;
+
+            UpdateInputPolling();
+            ProcessInputBuffer();
+            UpdateMouseOptimization();
+            UpdateInputPrediction();
+
+            _stats.UpdateCycles++;
+        }
+
+        /// <summary>
+        /// Register input handler for optimized events
+        /// </summary>
+        public void RegisterInputHandler(IInputHandler handler)
+        {
+            if (handler != null && !_inputHandlers.Contains(handler))
+            {
+                _inputHandlers.Add(handler);
+                _stats.RegisteredHandlers++;
+
+                if (_enableLogging)
+                {
+                    Debug.Log($"[OptimizedInputManager] Registered input handler: {handler.GetType().Name}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Unregister input handler
+        /// </summary>
+        public void UnregisterInputHandler(IInputHandler handler)
+        {
+            if (_inputHandlers.Remove(handler))
+            {
+                _stats.RegisteredHandlers--;
+
+                if (_enableLogging)
+                {
+                    Debug.Log($"[OptimizedInputManager] Unregistered input handler: {handler.GetType().Name}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get predicted mouse position
+        /// </summary>
+        public Vector2 GetPredictedMousePosition(float deltaTime = 0.016f)
+        {
+            if (!_enableInputPrediction || _mouseVelocity.magnitude < _mouseDeltaThreshold)
+            {
+                return _lastMousePosition;
+            }
+
+            return _lastMousePosition + (_mouseVelocity * deltaTime);
+        }
+
+        /// <summary>
+        /// Check if mouse moved significantly this frame
+        /// </summary>
+        public bool HasMouseMovedThisFrame()
+        {
+            return _mouseMovedThisFrame;
+        }
+
+        /// <summary>
+        /// Get optimized input state
+        /// </summary>
+        public InputState GetInputState(string inputName)
+        {
+            return _inputStates.TryGetValue(inputName, out var state) ? state : new InputState();
+        }
+
+        /// <summary>
+        /// Set input context for optimization
+        /// </summary>
+        public void SetInputContext(InputContext context)
+        {
+            switch (context)
+            {
+                case InputContext.Gameplay:
+                    _gameplayMap?.Enable();
+                    _uiMap?.Disable();
+                    break;
+                case InputContext.UI:
+                    _gameplayMap?.Disable();
+                    _uiMap?.Enable();
+                    break;
+                case InputContext.Both:
+                    _gameplayMap?.Enable();
+                    _uiMap?.Enable();
+                    break;
+            }
+
+            if (_enableLogging)
+            {
+                Debug.Log($"[OptimizedInputManager] Input context set to: {context}");
+            }
+        }
+
+        /// <summary>
+        /// Enable/disable input processing
+        /// </summary>
+        public void SetInputEnabled(bool enabled)
+        {
+            _enableInputOptimization = enabled;
+
+            if (enabled)
+            {
+                _inputActions?.Enable();
+            }
+            else
+            {
+                _inputActions?.Disable();
+            }
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Initialize input system components
+        /// </summary>
+        private void InitializeInputSystem()
+        {
+            // Initialize input state tracking
+            _inputStates["Mouse"] = new InputState { IsActive = true };
+            _inputStates["Keyboard"] = new InputState { IsActive = true };
+            _inputStates["Touch"] = new InputState { IsActive = true };
+        }
+
+        /// <summary>
+        /// Set up input actions using Unity Input System
+        /// </summary>
+        private void SetupInputActions()
+        {
+            // Create input actions programmatically
+            _inputActions = ScriptableObject.CreateInstance<InputActionAsset>();
+
+            // Gameplay input map
+            _gameplayMap = _inputActions.AddActionMap("Gameplay");
+
+            var mousePosition = _gameplayMap.AddAction("MousePosition", binding: "<Mouse>/position");
+            var mouseClick = _gameplayMap.AddAction("MouseClick", binding: "<Mouse>/leftButton");
+            var mouseDrag = _gameplayMap.AddAction("MouseDrag", binding: "<Mouse>/rightButton");
+            var scrollWheel = _gameplayMap.AddAction("ScrollWheel", binding: "<Mouse>/scroll");
+
+            // UI input map
+            _uiMap = _inputActions.AddActionMap("UI");
+            var uiClick = _uiMap.AddAction("UIClick", binding: "<Mouse>/leftButton");
+            var uiNavigate = _uiMap.AddAction("UINavigate", binding: "<Keyboard>/tab");
+
+            // Set up callbacks with optimization
+            mousePosition.performed += OnMousePositionChanged;
+            mouseClick.performed += OnMouseClickPerformed;
+            mouseClick.canceled += OnMouseClickCanceled;
+            mouseDrag.performed += OnMouseDragPerformed;
+            scrollWheel.performed += OnScrollWheelPerformed;
+
+            _inputActions.Enable();
+        }
+
+        /// <summary>
+        /// Update input polling at controlled rate
+        /// </summary>
+        private void UpdateInputPolling()
+        {
+            float currentTime = Time.unscaledTime;
+            float pollInterval = 1f / _inputPollingRate;
+
+            if (currentTime - _lastInputPollTime >= pollInterval)
+            {
+                PollInputDevices();
+                _lastInputPollTime = currentTime;
+            }
+        }
+
+        /// <summary>
+        /// Poll input devices efficiently
+        /// </summary>
+        private void PollInputDevices()
+        {
+            // Mouse polling
+            if (Mouse.current != null)
+            {
+                var mouseState = _inputStates["Mouse"];
+                mouseState.LastUpdateTime = Time.unscaledTime;
+
+                // Check for mouse movement
+                Vector2 currentMousePos = Mouse.current.position.ReadValue();
+                Vector2 mouseDelta = currentMousePos - _lastMousePosition;
+
+                if (mouseDelta.magnitude > _mouseDeltaThreshold)
+                {
+                    QueueInputEvent(new InputEvent
+                    {
+                        Type = InputEventType.MouseMove,
+                        MousePosition = currentMousePos,
+                        MouseDelta = mouseDelta,
+                        Timestamp = Time.unscaledTime
+                    });
+                }
+            }
+
+            // Keyboard polling (simplified)
+            if (Keyboard.current != null)
+            {
+                var keyboardState = _inputStates["Keyboard"];
+                keyboardState.LastUpdateTime = Time.unscaledTime;
+            }
+
+            _stats.InputPolls++;
+        }
+
+        /// <summary>
+        /// Process input event buffer
+        /// </summary>
+        private void ProcessInputBuffer()
+        {
+            while (_inputEventQueue.Count > 0 && _inputEventsThisFrame < _maxInputEventsPerFrame)
+            {
+                if (_inputEventQueue.TryDequeue(out var inputEvent))
+                {
+                    ProcessInputEvent(inputEvent);
+                    _inputEventsThisFrame++;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Process individual input event
+        /// </summary>
+        private void ProcessInputEvent(InputEvent inputEvent)
+        {
+            switch (inputEvent.Type)
+            {
+                case InputEventType.MouseMove:
+                    OnOptimizedMouseMove?.Invoke(inputEvent.MousePosition);
+                    break;
+                case InputEventType.MouseClick:
+                    OnMouseClick?.Invoke(inputEvent.MousePosition);
+                    break;
+                case InputEventType.MouseDrag:
+                    OnMouseDrag?.Invoke(inputEvent.MousePosition);
+                    break;
+                case InputEventType.ScrollWheel:
+                    OnScrollWheel?.Invoke(inputEvent.ScrollDelta);
+                    break;
+                case InputEventType.KeyPress:
+                    OnKeyPressed?.Invoke(inputEvent.KeyCode);
+                    break;
+                case InputEventType.KeyRelease:
+                    OnKeyReleased?.Invoke(inputEvent.KeyCode);
+                    break;
+            }
+
+            // Notify registered handlers
+            foreach (var handler in _inputHandlers)
+            {
+                handler.HandleInputEvent(inputEvent);
+            }
+
+            _stats.EventsProcessed++;
+        }
+
+        /// <summary>
+        /// Queue input event for processing
+        /// </summary>
+        private void QueueInputEvent(InputEvent inputEvent)
+        {
+            if (_useInputBuffering)
+            {
+                _inputEventQueue.Enqueue(inputEvent);
+                _stats.EventsQueued++;
+            }
+            else
+            {
+                ProcessInputEvent(inputEvent);
+            }
+        }
+
+        /// <summary>
+        /// Update mouse-specific optimizations
+        /// </summary>
+        private void UpdateMouseOptimization()
+        {
+            if (Mouse.current == null) return;
+
+            Vector2 currentMousePos = Mouse.current.position.ReadValue();
+            float currentTime = Time.unscaledTime;
+            float deltaTime = currentTime - _lastMouseUpdateTime;
+
+            if (deltaTime > 0f)
+            {
+                Vector2 mouseDelta = currentMousePos - _lastMousePosition;
+                _mouseVelocity = mouseDelta / deltaTime;
+                _mouseMovedThisFrame = mouseDelta.magnitude > _mouseDeltaThreshold;
+
+                _lastMousePosition = currentMousePos;
+                _lastMouseUpdateTime = currentTime;
+            }
+            else
+            {
+                _mouseMovedThisFrame = false;
+            }
+        }
+
+        /// <summary>
+        /// Update input prediction system
+        /// </summary>
+        private void UpdateInputPrediction()
+        {
+            if (!_enableInputPrediction) return;
+
+            float currentTime = Time.unscaledTime;
+
+            // Add current mouse position to history
+            _mousePositionHistory.Enqueue(_lastMousePosition);
+            _mouseTimeHistory.Enqueue(currentTime);
+
+            // Remove old entries outside prediction window
+            while (_mouseTimeHistory.Count > 0 && currentTime - _mouseTimeHistory.Peek() > _predictionTimeWindow)
+            {
+                _mousePositionHistory.Dequeue();
+                _mouseTimeHistory.Dequeue();
+            }
+        }
+
+        #region Input Processing
+
+        private void Update()
+        {
+            if (!IsInitialized) return;
+
+            // Mouse position tracking
+            Vector2 currentMousePos = Input.mousePosition;
+            _mouseDelta = currentMousePos - _lastMousePosition;
+
+            if (_mouseDelta.magnitude > _mouseDeltaThreshold)
+            {
+                QueueInputEvent(new InputEvent
+                {
+                    Type = InputEventType.MouseMove,
+                    MousePosition = currentMousePos,
+                    Timestamp = Time.unscaledTime
+                });
+                _lastMousePosition = currentMousePos;
+            }
+
+            // Mouse button handling
+            if (Input.GetMouseButtonDown(0))
+            {
+                QueueInputEvent(new InputEvent
+                {
+                    Type = InputEventType.MouseClick,
+                    MousePosition = currentMousePos,
+                    Timestamp = Time.unscaledTime
+                });
+            }
+
+            if (Input.GetMouseButtonUp(0))
+            {
+                QueueInputEvent(new InputEvent
+                {
+                    Type = InputEventType.MouseRelease,
+                    MousePosition = currentMousePos,
+                    Timestamp = Time.unscaledTime
+                });
+            }
+
+            // Mouse scroll wheel
+            float scrollDelta = Input.GetAxis("Mouse ScrollWheel");
+            if (Mathf.Abs(scrollDelta) > 0.01f)
+            {
+                QueueInputEvent(new InputEvent
+                {
+                    Type = InputEventType.ScrollWheel,
+                    ScrollDelta = scrollDelta,
+                    Timestamp = Time.unscaledTime
+                });
+            }
+        }
+
+        #endregion
+
+        #endregion
+
+        private void OnDestroy()
+        {
+            _inputActions?.Disable();
+            _inputActions?.Dispose();
+            _inputEventQueue?.Dispose();
+        }
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// Input event types
+    /// </summary>
+    public enum InputEventType
+    {
+        MouseMove,
+        MouseClick,
+        MouseRelease,
+        MouseDrag,
+        ScrollWheel,
+        KeyPress,
+        KeyRelease,
+        TouchStart,
+        TouchEnd,
+        TouchMove
+    }
+
+    /// <summary>
+    /// Input context for optimization
+    /// </summary>
+    public enum InputContext
+    {
+        Gameplay,
+        UI,
+        Both
+    }
+
+    /// <summary>
+    /// Input event data structure
+    /// </summary>
+    [System.Serializable]
+    public struct InputEvent
+    {
+        public InputEventType Type;
+        public Vector2 MousePosition;
+        public Vector2 MouseDelta;
+        public float ScrollDelta;
+        public KeyCode KeyCode;
+        public float Timestamp;
+    }
+
+    /// <summary>
+    /// Input state tracking
+    /// </summary>
+    [System.Serializable]
+    public struct InputState
+    {
+        public bool IsActive;
+        public float LastUpdateTime;
+        public Vector2 LastPosition;
+        public float LastValue;
+    }
+
+    /// <summary>
+    /// Input performance statistics
+    /// </summary>
+    [System.Serializable]
+    public struct InputPerformanceStats
+    {
+        public int UpdateCycles;
+        public int InputPolls;
+        public int EventsQueued;
+        public int EventsProcessed;
+        public int RegisteredHandlers;
+        public float AverageProcessingTime;
+    }
+
+    /// <summary>
+    /// Interface for input handlers
+    /// </summary>
+    public interface IInputHandler
+    {
+        void HandleInputEvent(InputEvent inputEvent);
+    }
+
+    #endregion
+}

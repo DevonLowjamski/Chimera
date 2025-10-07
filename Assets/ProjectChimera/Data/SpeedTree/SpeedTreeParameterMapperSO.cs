@@ -4,6 +4,7 @@ using ProjectChimera.Shared;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Genetics;
 
+
 namespace ProjectChimera.Data.Visuals
 {
     /// <summary>
@@ -41,7 +42,7 @@ namespace ProjectChimera.Data.Visuals
         /// <summary>
         /// Calculates SpeedTree parameters based on current cultivation conditions and plant genetics.
         /// </summary>
-        public SpeedTreeParameters CalculateSpeedTreeParameters(CultivationConditions conditions, PlantStrainSO strain)
+        public SpeedTreeParameters CalculateSpeedTreeParameters(CultivationConditions conditions, GeneticPlantStrainSO strain)
         {
             var parameters = new SpeedTreeParameters();
 
@@ -70,7 +71,7 @@ namespace ProjectChimera.Data.Visuals
             return parameters;
         }
 
-        private float CalculateEnvironmentalStress(CultivationConditions conditions, PlantStrainSO strain)
+        private float CalculateEnvironmentalStress(CultivationConditions conditions, GeneticPlantStrainSO strain)
         {
             if (strain?.BaseSpecies == null) return 0f;
 
@@ -103,7 +104,7 @@ namespace ProjectChimera.Data.Visuals
             return (nResponse + pResponse + kResponse) / 3f;
         }
 
-        private float CalculateGeneticScaleFactor(PlantStrainSO strain)
+        private float CalculateGeneticScaleFactor(GeneticPlantStrainSO strain)
         {
             if (strain == null) return 1f;
 
@@ -113,7 +114,7 @@ namespace ProjectChimera.Data.Visuals
             return baseScale * (1f + geneticVariation);
         }
 
-        private float CalculateSeasonalParameter(CultivationConditions conditions, PlantStrainSO strain)
+        private float CalculateSeasonalParameter(CultivationConditions conditions, GeneticPlantStrainSO strain)
         {
             // This would typically be driven by growth stage, but can be influenced by environment
             float baseParameter = conditions.GrowthStageProgress;
@@ -124,7 +125,7 @@ namespace ProjectChimera.Data.Visuals
             return Mathf.Clamp01(baseParameter + environmentalInfluence * 0.1f);
         }
 
-        private float CalculateFoliageDensity(CultivationConditions conditions, PlantStrainSO strain)
+        private float CalculateFoliageDensity(CultivationConditions conditions, GeneticPlantStrainSO strain)
         {
             float baseDensity = 1f;
 
@@ -139,7 +140,7 @@ namespace ProjectChimera.Data.Visuals
             return baseDensity * lightEffect;
         }
 
-        private float CalculateBranchDensity(CultivationConditions conditions, PlantStrainSO strain)
+        private float CalculateBranchDensity(CultivationConditions conditions, GeneticPlantStrainSO strain)
         {
             float baseDensity = 1f;
 
@@ -154,7 +155,7 @@ namespace ProjectChimera.Data.Visuals
             return baseDensity * nutrientEffect;
         }
 
-        private float CalculateLeafSize(CultivationConditions conditions, PlantStrainSO strain)
+        private float CalculateLeafSize(CultivationConditions conditions, GeneticPlantStrainSO strain)
         {
             float baseSize = 1f;
 
@@ -170,7 +171,7 @@ namespace ProjectChimera.Data.Visuals
             return baseSize * environmentalEffect;
         }
 
-        private float CalculateTrunkThickness(CultivationConditions conditions, PlantStrainSO strain)
+        private float CalculateTrunkThickness(CultivationConditions conditions, GeneticPlantStrainSO strain)
         {
             float baseThickness = 1f;
 
@@ -185,7 +186,7 @@ namespace ProjectChimera.Data.Visuals
             return baseThickness * nutrientEffect;
         }
 
-        private float CalculateColorVariation(CultivationConditions conditions, PlantStrainSO strain)
+        private float CalculateColorVariation(CultivationConditions conditions, GeneticPlantStrainSO strain)
         {
             // Environmental stress can cause color changes
             float stress = CalculateEnvironmentalStress(conditions, strain);
@@ -194,7 +195,7 @@ namespace ProjectChimera.Data.Visuals
             return stress * _stressResponse.MaxColorVariation;
         }
 
-        private float CalculateEnvironmentalInfluence(CultivationConditions conditions, PlantStrainSO strain)
+        private float CalculateEnvironmentalInfluence(CultivationConditions conditions, GeneticPlantStrainSO strain)
         {
             if (strain?.BaseSpecies == null) return 1f;
 
@@ -207,7 +208,7 @@ namespace ProjectChimera.Data.Visuals
             }, strain);
         }
 
-        private float EvaluateEnvironmentalSuitability(EnvironmentalConditions conditions, PlantStrainSO strain)
+        private float EvaluateEnvironmentalSuitability(EnvironmentalConditions conditions, GeneticPlantStrainSO strain)
         {
             // Simple environmental suitability calculation based on strain type
             float suitability = 1.0f;

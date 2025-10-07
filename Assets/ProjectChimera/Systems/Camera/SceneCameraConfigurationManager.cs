@@ -93,7 +93,7 @@ namespace ProjectChimera.Systems.Camera
                 
                 if (_cameraController == null)
                 {
-                    ChimeraLogger.LogError("[SceneCameraConfigurationManager] AdvancedCameraController not found!");
+                    ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
                     return;
                 }
                 
@@ -107,12 +107,12 @@ namespace ProjectChimera.Systems.Camera
                 
                 if (_debugMode)
                 {
-                    ChimeraLogger.Log($"[SceneCameraConfigurationManager] Initialized with {_sceneConfigurations.Length} configuration entries");
+                    ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
                 }
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[SceneCameraConfigurationManager] Error during initialization: {ex.Message}");
+                ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
             }
         }
         
@@ -148,7 +148,7 @@ namespace ProjectChimera.Systems.Camera
             
             if (_debugMode)
             {
-                ChimeraLogger.Log($"[SceneCameraConfigurationManager] Built cache with {_configurationCache.Count} scene types");
+                ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
             }
         }
         
@@ -176,7 +176,7 @@ namespace ProjectChimera.Systems.Camera
         {
             if (_debugMode)
             {
-                ChimeraLogger.Log($"[SceneCameraConfigurationManager] Scene loaded: {scene.name}");
+                ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
             }
             
             LoadConfigurationForScene(scene.name);
@@ -186,7 +186,7 @@ namespace ProjectChimera.Systems.Camera
         {
             if (_debugMode)
             {
-                ChimeraLogger.Log($"[SceneCameraConfigurationManager] Scene unloaded: {scene.name}");
+                ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
             }
         }
         
@@ -217,7 +217,7 @@ namespace ProjectChimera.Systems.Camera
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[SceneCameraConfigurationManager] Error loading configuration for scene '{sceneName}': {ex.Message}");
+                ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
                 ApplyDefaultConfiguration(sceneName);
             }
         }
@@ -313,7 +313,7 @@ namespace ProjectChimera.Systems.Camera
             
             if (_debugMode)
             {
-                ChimeraLogger.Log($"[SceneCameraConfigurationManager] Applied configuration '{configuration.ConfigurationName}' for scene '{sceneName}' (Type: {sceneType})");
+                ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
             }
         }
         
@@ -322,11 +322,11 @@ namespace ProjectChimera.Systems.Camera
             if (_defaultConfiguration != null && _cameraController != null)
             {
                 ApplyConfiguration(_defaultConfiguration, sceneName, SceneType.Facility);
-                ChimeraLogger.LogWarning($"[SceneCameraConfigurationManager] Applied default configuration for unknown scene: {sceneName}");
+                ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
             }
             else
             {
-                ChimeraLogger.LogError($"[SceneCameraConfigurationManager] No configuration available for scene: {sceneName}");
+                ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
             }
         }
         
@@ -347,7 +347,7 @@ namespace ProjectChimera.Systems.Camera
                 
                 if (_debugMode)
                 {
-                    ChimeraLogger.Log($"[SceneCameraConfigurationManager] Manually set configuration: {configuration.ConfigurationName}");
+                    ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
                 }
             }
         }
@@ -425,7 +425,7 @@ namespace ProjectChimera.Systems.Camera
         public void SetDebugMode(bool enabled)
         {
             _debugMode = enabled;
-            ChimeraLogger.Log($"[SceneCameraConfigurationManager] Debug mode {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
         }
         
         /// <summary>
@@ -449,20 +449,20 @@ namespace ProjectChimera.Systems.Camera
             if (Application.isPlaying)
             {
                 var currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-                ChimeraLogger.Log($"[SceneCameraConfigurationManager] Testing configuration for scene: {currentScene.name}");
+                ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
                 
                 var sceneType = DetermineSceneType(currentScene.name);
-                ChimeraLogger.Log($"Determined scene type: {sceneType}");
+                ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
                 
                 var config = GetPrimaryConfigurationForSceneType(sceneType);
-                ChimeraLogger.Log($"Primary configuration: {(config ? config.ConfigurationName : "None")}");
+                ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
                 
                 var allConfigs = GetConfigurationsForSceneType(sceneType);
-                ChimeraLogger.Log($"Available configurations: {allConfigs.Length}");
+                ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
             }
             else
             {
-                ChimeraLogger.Log("[SceneCameraConfigurationManager] Test only works during play mode");
+                ChimeraLogger.LogInfo("SceneCameraConfigurationManager", "$1");
             }
         }
         

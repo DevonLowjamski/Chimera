@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Genetics
@@ -39,7 +40,7 @@ namespace ProjectChimera.Systems.Genetics
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[FractalGeneticsEngine] Initialized successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -67,7 +68,7 @@ namespace ProjectChimera.Systems.Genetics
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[FractalGeneticsEngine] Created genetic data for {strainId}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -82,7 +83,7 @@ namespace ProjectChimera.Systems.Genetics
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.LogWarning("[FractalGeneticsEngine] Parent strains not found");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
                 return null;
             }
@@ -109,7 +110,7 @@ namespace ProjectChimera.Systems.Genetics
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log("[FractalGeneticsEngine] Genetic mutation occurred!");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
             }
 
@@ -125,7 +126,7 @@ namespace ProjectChimera.Systems.Genetics
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[FractalGeneticsEngine] Bred {offspringName} from {parent1Id} and {parent2Id}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
 
             return offspringId;
@@ -194,7 +195,7 @@ namespace ProjectChimera.Systems.Genetics
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[FractalGeneticsEngine] Cleared all genetic data");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 

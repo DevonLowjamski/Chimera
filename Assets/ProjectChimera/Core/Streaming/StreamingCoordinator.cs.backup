@@ -1,0 +1,567 @@
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using ProjectChimera.Core.Memory;
+using System.Collections;
+
+using ProjectChimera.Core.Logging;
+namespace ProjectChimera.Core.Streaming
+{
+    /// <summary>
+    /// STREAMING: Central coordinator for all streaming and LOD systems
+    /// Manages initialization, coordination, and optimization of streaming systems
+    /// Week 11: Asset Streaming & LOD System
+    /// </summary>
+    public class StreamingCoordinator : MonoBehaviour
+    {
+        [Header("Coordinator Settings")]
+        [SerializeField] private bool _enableStreaming = true;
+        [SerializeField] private bool _enableLOD = true;
+        [SerializeField] private bool _enablePerformanceMonitoring = true;
+        [SerializeField] private bool _enableLogging = true;
+
+        [Header("Initialization")]
+        [SerializeField] private float _initializationDelay = 1f;
+        [SerializeField] private bool _waitForSceneReady = true;
+
+        [Header("Quality Profiles")]
+        [SerializeField] private StreamingQualityProfile[] _qualityProfiles;
+        [SerializeField] private int _defaultQualityIndex = 1; // Medium quality
+
+        // System references
+        private AssetStreamingManager _assetStreaming;
+        private LODManager _lodManager;
+        private StreamingPerformanceMonitor _performanceMonitor;
+        private GCOptimizationManager _gcManager;
+
+        // State
+        private bool _isInitialized = false;
+        private int _currentQualityIndex = 1;
+        private StreamingCoordinatorStats _stats = new StreamingCoordinatorStats();
+
+        // Events
+        public System.Action OnStreamingInitialized;
+        public System.Action<int> OnQualityChanged;
+        public System.Action<StreamingSystemHealth> OnHealthChanged;
+
+        private static StreamingCoordinator _instance;
+        public static StreamingCoordinator Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = FindObjectOfType<StreamingCoordinator>();
+                    if (_instance == null)
+                    {
+                        var go = new GameObject("StreamingCoordinator");
+                        _instance = go.AddComponent<StreamingCoordinator>();
+                        DontDestroyOnLoad(go);
+                    }
+                }
+                return _instance;
+            }
+        }
+
+        public bool IsInitialized => _isInitialized;
+        public StreamingCoordinatorStats Stats => _stats;
+
+        private void Awake()
+        {
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+
+                // Initialize default quality profiles if not set
+                if (_qualityProfiles == null || _qualityProfiles.Length == 0)
+                {
+                    InitializeDefaultQualityProfiles();
+                }
+
+                StartCoroutine(InitializeStreamingSystems());
+            }
+            else if (_instance != this)
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Initialize all streaming systems
+        /// </summary>
+        private IEnumerator InitializeStreamingSystems()
+        {
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("StreamingCoordinator", "Operation completed");
+            }
+
+            // Wait for initial delay
+            yield return new WaitForSeconds(_initializationDelay);
+
+            // Wait for scene to be ready if required
+            if (_waitForSceneReady)
+            {
+                yield return new WaitUntil(() => Time.time > 2f); // Basic scene readiness check
+            }
+
+            // Initialize systems in order
+            yield return StartCoroutine(InitializeAssetStreaming());
+            yield return StartCoroutine(InitializeLODSystem());
+            yield return StartCoroutine(InitializePerformanceMonitoring());
+            yield return StartCoroutine(InitializePlantStreaming());
+            yield return StartCoroutine(InitializeMemoryManagement());
+
+            // Apply initial quality settings
+            ApplyQualityProfile(_defaultQualityIndex);
+
+            // Set up scene change handling
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
+
+            _isInitialized = true;
+            _stats.InitializationTime = Time.time;
+            OnStreamingInitialized?.Invoke();
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("StreamingCoordinator", "Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Set streaming quality profile
+        /// </summary>
+        public void SetQualityProfile(int profileIndex)
+        {
+            if (profileIndex >= 0 && profileIndex < _qualityProfiles.Length && profileIndex != _currentQualityIndex)
+            {
+                ApplyQualityProfile(profileIndex);
+                _currentQualityIndex = profileIndex;
+                OnQualityChanged?.Invoke(profileIndex);
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogInfo("StreamingCoordinator", "Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get current streaming system health
+        /// </summary>
+        public StreamingSystemHealth GetSystemHealth()
+        {
+            var health = new StreamingSystemHealth();
+
+            // Check asset streaming health
+            if (_assetStreaming != null)
+            {
+                var streamingStats = _assetStreaming.GetStats();
+                health.AssetStreamingHealth = streamingStats.FailedLoads < 5 ? SystemHealthStatus.Healthy : SystemHealthStatus.Warning;
+                health.LoadedAssets = streamingStats.LoadedAssets;
+                health.FailedLoads = streamingStats.FailedLoads;
+            }
+
+            // Check LOD system health
+            if (_lodManager != null)
+            {
+                var lodStats = _lodManager.GetStats();
+                health.LODSystemHealth = lodStats.AverageFrameTime < 0.02f ? SystemHealthStatus.Healthy : SystemHealthStatus.Warning;
+                health.VisibleObjects = lodStats.VisibleObjects;
+                health.LODChanges = lodStats.LODChanges;
+            }
+
+            // Check performance health
+            if (_performanceMonitor != null)
+            {
+                var perfStats = _performanceMonitor.GetStats();
+                health.PerformanceHealth = perfStats.CurrentFrameRate > 45f ? SystemHealthStatus.Healthy :
+                                         perfStats.CurrentFrameRate > 30f ? SystemHealthStatus.Warning : SystemHealthStatus.Critical;
+                health.CurrentFrameRate = perfStats.CurrentFrameRate;
+                health.MemoryUsage = perfStats.CurrentMemoryUsage;
+            }
+
+            // Overall system health
+            health.OverallHealth = DetermineOverallHealth(health);
+
+            return health;
+        }
+
+        /// <summary>
+        /// Force garbage collection with streaming coordination
+        /// </summary>
+        public void ForceGarbageCollection()
+        {
+            if (_gcManager != null)
+            {
+                _gcManager.ForceOptimizedGC();
+            }
+            else
+            {
+                System.GC.Collect();
+                System.GC.WaitForPendingFinalizers();
+                System.GC.Collect();
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("StreamingCoordinator", "Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Optimize streaming systems for current conditions
+        /// </summary>
+        public void OptimizeStreaming()
+        {
+            if (!_isInitialized) return;
+
+            // Get current system health
+            var health = GetSystemHealth();
+
+            // Apply optimizations based on health
+            if (health.OverallHealth == SystemHealthStatus.Critical)
+            {
+                // Emergency optimizations
+                if (_performanceMonitor != null)
+                {
+                    _performanceMonitor.ForceOptimization(StreamingPerformanceMonitor.StreamingOptimizationState.Critical);
+                }
+
+                // Reduce quality if necessary
+                if (_currentQualityIndex > 0)
+                {
+                    SetQualityProfile(_currentQualityIndex - 1);
+                }
+            }
+            else if (health.OverallHealth == SystemHealthStatus.Warning)
+            {
+                // Moderate optimizations
+                if (_performanceMonitor != null)
+                {
+                    _performanceMonitor.ForceOptimization(StreamingPerformanceMonitor.StreamingOptimizationState.Degraded);
+                }
+            }
+
+            _stats.OptimizationEvents++;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("StreamingCoordinator", "Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Get comprehensive streaming statistics
+        /// </summary>
+        public StreamingCoordinatorStats GetDetailedStats()
+        {
+            _stats.CurrentQualityProfile = _currentQualityIndex;
+            _stats.SystemHealth = GetSystemHealth();
+
+            if (_assetStreaming != null)
+            {
+                var streamingStats = _assetStreaming.GetStats();
+                _stats.AssetStreamingStats = streamingStats;
+            }
+
+            if (_lodManager != null)
+            {
+                var lodStats = _lodManager.GetStats();
+                _stats.LODStats = lodStats;
+            }
+
+            if (_performanceMonitor != null)
+            {
+                var perfStats = _performanceMonitor.GetStats();
+                _stats.PerformanceStats = perfStats;
+            }
+
+            // Plant streaming stats not available in simplified implementation
+
+            return _stats;
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Initialize asset streaming system
+        /// </summary>
+        private IEnumerator InitializeAssetStreaming()
+        {
+            if (!_enableStreaming) yield break;
+
+            _assetStreaming = AssetStreamingManager.Instance;
+            if (_assetStreaming != null)
+            {
+                _assetStreaming.Initialize();
+                yield return new WaitForEndOfFrame();
+            }
+        }
+
+        /// <summary>
+        /// Initialize LOD system
+        /// </summary>
+        private IEnumerator InitializeLODSystem()
+        {
+            if (!_enableLOD) yield break;
+
+            _lodManager = LODManager.Instance;
+            if (_lodManager != null)
+            {
+                _lodManager.Initialize();
+                yield return new WaitForEndOfFrame();
+            }
+        }
+
+        /// <summary>
+        /// Initialize performance monitoring
+        /// </summary>
+        private IEnumerator InitializePerformanceMonitoring()
+        {
+            if (!_enablePerformanceMonitoring) yield break;
+
+            _performanceMonitor = StreamingPerformanceMonitor.Instance;
+            if (_performanceMonitor != null)
+            {
+                _performanceMonitor.Initialize();
+                yield return new WaitForEndOfFrame();
+            }
+        }
+
+        /// <summary>
+        /// Initialize plant streaming integration
+        /// </summary>
+        private IEnumerator InitializePlantStreaming()
+        {
+            // Plant streaming integration not available in simplified implementation
+            yield return null;
+        }
+
+        /// <summary>
+        /// Initialize memory management systems
+        /// </summary>
+        private IEnumerator InitializeMemoryManagement()
+        {
+            _gcManager = GCOptimizationManager.Instance;
+            if (_gcManager != null)
+            {
+                _gcManager.Initialize();
+                yield return new WaitForEndOfFrame();
+            }
+        }
+
+        /// <summary>
+        /// Apply quality profile settings
+        /// </summary>
+        private void ApplyQualityProfile(int profileIndex)
+        {
+            if (profileIndex < 0 || profileIndex >= _qualityProfiles.Length) return;
+
+            var profile = _qualityProfiles[profileIndex];
+
+            // Apply to asset streaming
+            if (_assetStreaming != null)
+            {
+                // Would need to extend AssetStreamingManager to accept quality settings
+            }
+
+            // Apply to LOD system
+            if (_lodManager != null)
+            {
+                _lodManager.SetQualityProfile(profileIndex);
+            }
+
+            // Apply to performance monitoring
+            if (_performanceMonitor != null)
+            {
+                // Performance monitor adjusts automatically based on targets
+            }
+
+            _stats.QualityChanges++;
+        }
+
+        /// <summary>
+        /// Initialize default quality profiles
+        /// </summary>
+        private void InitializeDefaultQualityProfiles()
+        {
+            _qualityProfiles = new StreamingQualityProfile[]
+            {
+                new StreamingQualityProfile
+                {
+                    ProfileName = "Low Quality",
+                    StreamingRadius = 50f,
+                    LODDistances = new float[] { 15f, 30f, 60f },
+                    MaxConcurrentLoads = 2,
+                    MemoryThreshold = 200 * 1024 * 1024 // 200MB
+                },
+                new StreamingQualityProfile
+                {
+                    ProfileName = "Medium Quality",
+                    StreamingRadius = 75f,
+                    LODDistances = new float[] { 25f, 50f, 100f },
+                    MaxConcurrentLoads = 3,
+                    MemoryThreshold = 400 * 1024 * 1024 // 400MB
+                },
+                new StreamingQualityProfile
+                {
+                    ProfileName = "High Quality",
+                    StreamingRadius = 100f,
+                    LODDistances = new float[] { 40f, 80f, 150f },
+                    MaxConcurrentLoads = 5,
+                    MemoryThreshold = 600 * 1024 * 1024 // 600MB
+                }
+            };
+        }
+
+        /// <summary>
+        /// Determine overall system health
+        /// </summary>
+        private SystemHealthStatus DetermineOverallHealth(StreamingSystemHealth health)
+        {
+            var healthStatuses = new[]
+            {
+                health.AssetStreamingHealth,
+                health.LODSystemHealth,
+                health.PerformanceHealth
+            };
+
+            if (healthStatuses.Any(h => h == SystemHealthStatus.Critical))
+                return SystemHealthStatus.Critical;
+
+            if (healthStatuses.Count(h => h == SystemHealthStatus.Warning) >= 2)
+                return SystemHealthStatus.Warning;
+
+            if (healthStatuses.Any(h => h == SystemHealthStatus.Warning))
+                return SystemHealthStatus.Warning;
+
+            return SystemHealthStatus.Healthy;
+        }
+
+        /// <summary>
+        /// Handle scene loaded event
+        /// </summary>
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (_gcManager != null)
+            {
+                _gcManager.NotifySceneTransitionEnd();
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("StreamingCoordinator", "Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Handle scene unloaded event
+        /// </summary>
+        private void OnSceneUnloaded(Scene scene)
+        {
+            if (_gcManager != null)
+            {
+                _gcManager.NotifySceneTransitionStart();
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("StreamingCoordinator", "Operation completed");
+            }
+        }
+
+        #endregion
+
+        private void Update()
+        {
+            if (!_isInitialized) return;
+
+            // Periodic system health check
+            if (Time.frameCount % 300 == 0) // Every ~5 seconds at 60fps
+            {
+                var currentHealth = GetSystemHealth();
+                var previousHealth = _stats.SystemHealth.OverallHealth;
+
+                if (currentHealth.OverallHealth != previousHealth)
+                {
+                    OnHealthChanged?.Invoke(currentHealth);
+                    _stats.HealthChanges++;
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
+        }
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// Streaming quality profile
+    /// </summary>
+    [System.Serializable]
+    public struct StreamingQualityProfile
+    {
+        public string ProfileName;
+        public float StreamingRadius;
+        public float[] LODDistances;
+        public int MaxConcurrentLoads;
+        public long MemoryThreshold;
+    }
+
+    /// <summary>
+    /// System health status
+    /// </summary>
+    public enum SystemHealthStatus
+    {
+        Healthy,
+        Warning,
+        Critical
+    }
+
+    /// <summary>
+    /// Streaming system health information
+    /// </summary>
+    [System.Serializable]
+    public struct StreamingSystemHealth
+    {
+        public SystemHealthStatus OverallHealth;
+        public SystemHealthStatus AssetStreamingHealth;
+        public SystemHealthStatus LODSystemHealth;
+        public SystemHealthStatus PerformanceHealth;
+
+        public int LoadedAssets;
+        public int FailedLoads;
+        public int VisibleObjects;
+        public int LODChanges;
+        public float CurrentFrameRate;
+        public long MemoryUsage;
+    }
+
+    /// <summary>
+    /// Comprehensive streaming coordinator statistics
+    /// </summary>
+    [System.Serializable]
+    public struct StreamingCoordinatorStats
+    {
+        public bool IsInitialized;
+        public float InitializationTime;
+        public int CurrentQualityProfile;
+        public int QualityChanges;
+        public int OptimizationEvents;
+        public int HealthChanges;
+        public StreamingSystemHealth SystemHealth;
+
+        // System-specific stats
+        public StreamingStats AssetStreamingStats;
+        public LODStats LODStats;
+        public StreamingPerformanceStats PerformanceStats;
+    }
+
+    #endregion
+}

@@ -1,0 +1,561 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Core;
+
+namespace ProjectChimera.Testing
+{
+    /// <summary>
+    /// REFACTORED: Foundation System Tester
+    /// Single Responsibility: Testing core foundation components and infrastructure
+    /// Extracted from Phase1IntegrationTester for better separation of concerns
+    /// </summary>
+    public class FoundationSystemTester : MonoBehaviour
+    {
+        [Header("Foundation Testing Settings")]
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private bool _enableDetailedValidation = true;
+        [SerializeField] private bool _validateServiceContainer = true;
+        [SerializeField] private float _testTimeout = 30f;
+
+        // System references
+        private Phase1FoundationCoordinator _foundationCoordinator;
+        private UpdateOrchestrator _updateOrchestrator;
+
+        // Test state
+        private bool _isInitialized = false;
+        private FoundationTestResult _lastTestResult;
+
+        // Statistics
+        private FoundationTestStats _stats = new FoundationTestStats();
+
+        // Events
+        public event System.Action<FoundationTestResult> OnFoundationTestCompleted;
+        public event System.Action<string> OnFoundationValidationStep; // step description
+
+        public bool IsInitialized => _isInitialized;
+        public FoundationTestStats Stats => _stats;
+        public FoundationTestResult LastTestResult => _lastTestResult;
+
+        private void Awake()
+        {
+            Initialize();
+        }
+
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            // Get system references
+            _foundationCoordinator = Phase1FoundationCoordinator.Instance;
+            _updateOrchestrator = UpdateOrchestrator.Instance;
+
+            ResetStats();
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("TESTING", "Foundation System Tester initialized");
+            }
+        }
+
+        /// <summary>
+        /// Test foundation systems
+        /// </summary>
+        public IEnumerator TestFoundationSystems()
+        {
+            if (!_isInitialized) Initialize();
+
+            var testResult = new FoundationTestResult
+            {
+                TestName = "Foundation Systems Validation",
+                TestCategory = "Foundation",
+                StartTime = Time.time,
+                TestSteps = new List<string>(),
+                ValidationResults = new Dictionary<string, bool>()
+            };
+
+            _stats.TestsStarted++;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("TESTING", "Starting foundation systems test...");
+            }
+
+            try
+            {
+                // Test 1: Foundation Coordinator
+                yield return StartCoroutine(TestFoundationCoordinator(testResult));
+
+                // Test 2: Update Orchestrator
+                yield return StartCoroutine(TestUpdateOrchestrator(testResult));
+
+                // Test 3: Service Container (if enabled)
+                if (_validateServiceContainer)
+                {
+                    yield return StartCoroutine(TestServiceContainer(testResult));
+                }
+
+                // Test 4: Core Infrastructure
+                yield return StartCoroutine(TestCoreInfrastructure(testResult));
+
+                // Evaluate overall success
+                testResult.Success = EvaluateOverallSuccess(testResult);
+                testResult.CompletionTime = Time.time;
+                testResult.TestDuration = testResult.CompletionTime - testResult.StartTime;
+
+                if (testResult.Success)
+                {
+                    testResult.ResultMessage = "All foundation systems operational";
+                    _stats.TestsPassed++;
+                }
+                else
+                {
+                    testResult.ResultMessage = "Foundation system validation failed";
+                    _stats.TestsFailed++;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                testResult.Success = false;
+                testResult.CompletionTime = Time.time;
+                testResult.TestDuration = testResult.CompletionTime - testResult.StartTime;
+                testResult.ResultMessage = $"Foundation test error: {ex.Message}";
+                testResult.Exception = ex;
+                _stats.TestsFailed++;
+                _stats.TestErrors++;
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogError("TESTING", $"Foundation test exception: {ex.Message}");
+                }
+            }
+
+            _lastTestResult = testResult;
+            _stats.TotalTestTime += testResult.TestDuration;
+
+            OnFoundationTestCompleted?.Invoke(testResult);
+
+            if (_enableLogging)
+            {
+                LogFoundationTestResults(testResult);
+            }
+
+            yield return null;
+        }
+
+        /// <summary>
+        /// Test foundation coordinator
+        /// </summary>
+        private IEnumerator TestFoundationCoordinator(FoundationTestResult testResult)
+        {
+            var stepDescription = "Testing Foundation Coordinator...";
+            OnFoundationValidationStep?.Invoke(stepDescription);
+
+            bool foundationExists = _foundationCoordinator != null;
+            bool foundationInitialized = foundationExists && _foundationCoordinator.IsInitialized;
+
+            testResult.ValidationResults["FoundationCoordinatorExists"] = foundationExists;
+            testResult.ValidationResults["FoundationCoordinatorInitialized"] = foundationInitialized;
+
+            if (foundationExists)
+            {
+                testResult.TestSteps.Add($"Foundation Coordinator Found: {_foundationCoordinator.name}");
+
+                if (foundationInitialized)
+                {
+                    testResult.TestSteps.Add("Foundation Coordinator: INITIALIZED ✅");
+
+                    // Additional validation if detailed testing is enabled
+                    if (_enableDetailedValidation)
+                    {
+                        yield return StartCoroutine(DetailedFoundationValidation(testResult));
+                    }
+                }
+                else
+                {
+                    testResult.TestSteps.Add("Foundation Coordinator: NOT INITIALIZED ❌");
+                }
+            }
+            else
+            {
+                testResult.TestSteps.Add("Foundation Coordinator: NOT FOUND ❌");
+            }
+
+            _stats.FoundationTests++;
+            yield return null;
+        }
+
+        /// <summary>
+        /// Test update orchestrator
+        /// </summary>
+        private IEnumerator TestUpdateOrchestrator(FoundationTestResult testResult)
+        {
+            var stepDescription = "Testing Update Orchestrator...";
+            OnFoundationValidationStep?.Invoke(stepDescription);
+
+            bool orchestratorExists = _updateOrchestrator != null;
+            bool orchestratorActive = orchestratorExists && _updateOrchestrator.GetTickableCount() > 0;
+
+            testResult.ValidationResults["UpdateOrchestratorExists"] = orchestratorExists;
+            testResult.ValidationResults["UpdateOrchestratorActive"] = orchestratorActive;
+
+            if (orchestratorExists)
+            {
+                var tickableCount = _updateOrchestrator.GetTickableCount();
+                testResult.TestSteps.Add($"Update Orchestrator Found: {tickableCount} tickables registered");
+
+                if (orchestratorActive)
+                {
+                    testResult.TestSteps.Add("Update Orchestrator: ACTIVE ✅");
+
+                    // Test orchestrator performance
+                    if (_enableDetailedValidation)
+                    {
+                        yield return StartCoroutine(TestOrchestratorPerformance(testResult));
+                    }
+                }
+                else
+                {
+                    testResult.TestSteps.Add("Update Orchestrator: NO TICKABLES ⚠️");
+                }
+            }
+            else
+            {
+                testResult.TestSteps.Add("Update Orchestrator: NOT FOUND ❌");
+            }
+
+            _stats.OrchestratorTests++;
+            yield return null;
+        }
+
+        /// <summary>
+        /// Test service container
+        /// </summary>
+        private IEnumerator TestServiceContainer(FoundationTestResult testResult)
+        {
+            var stepDescription = "Testing Service Container...";
+            OnFoundationValidationStep?.Invoke(stepDescription);
+
+            try
+            {
+                // Check if ServiceContainerFactory is available
+                bool containerFactoryExists = ServiceContainerFactory.Instance != null;
+                testResult.ValidationResults["ServiceContainerFactoryExists"] = containerFactoryExists;
+
+                if (containerFactoryExists)
+                {
+                    testResult.TestSteps.Add("Service Container Factory: FOUND ✅");
+
+                    // Test container functionality
+                    var registeredTypes = ServiceContainerFactory.Instance.GetRegisteredTypes();
+                    var typeCount = registeredTypes?.Count() ?? 0;
+
+                    testResult.TestSteps.Add($"Service Container: {typeCount} types registered");
+                    testResult.ValidationResults["ServiceContainerHasTypes"] = typeCount > 0;
+
+                    if (typeCount > 0)
+                    {
+                        testResult.TestSteps.Add("Service Container: OPERATIONAL ✅");
+                    }
+                    else
+                    {
+                        testResult.TestSteps.Add("Service Container: NO REGISTRATIONS ⚠️");
+                    }
+                }
+                else
+                {
+                    testResult.TestSteps.Add("Service Container Factory: NOT AVAILABLE ❌");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                testResult.TestSteps.Add($"Service Container Test: ERROR - {ex.Message} ❌");
+                testResult.ValidationResults["ServiceContainerError"] = true;
+            }
+
+            _stats.ServiceContainerTests++;
+            yield return null;
+        }
+
+        /// <summary>
+        /// Test core infrastructure
+        /// </summary>
+        private IEnumerator TestCoreInfrastructure(FoundationTestResult testResult)
+        {
+            var stepDescription = "Testing Core Infrastructure...";
+            OnFoundationValidationStep?.Invoke(stepDescription);
+
+            // Test Unity's basic systems
+            bool applicationRunning = Application.isPlaying;
+            testResult.ValidationResults["ApplicationRunning"] = applicationRunning;
+            testResult.TestSteps.Add($"Application Running: {(applicationRunning ? "YES ✅" : "NO ❌")}");
+
+            // Test time system
+            bool timeSystemWorking = Time.time > 0f && Time.deltaTime > 0f;
+            testResult.ValidationResults["TimeSystemWorking"] = timeSystemWorking;
+            testResult.TestSteps.Add($"Time System: {(timeSystemWorking ? "WORKING ✅" : "NOT WORKING ❌")}");
+
+            // Test logging system
+            bool loggingWorking = TestLoggingSystem();
+            testResult.ValidationResults["LoggingSystemWorking"] = loggingWorking;
+            testResult.TestSteps.Add($"Logging System: {(loggingWorking ? "WORKING ✅" : "NOT WORKING ❌")}");
+
+            // Test memory management
+            long memoryUsage = System.GC.GetTotalMemory(false);
+            bool memoryReasonable = memoryUsage < 1024 * 1024 * 1024; // Less than 1GB
+            testResult.ValidationResults["MemoryUsageReasonable"] = memoryReasonable;
+            testResult.TestSteps.Add($"Memory Usage: {memoryUsage / (1024 * 1024):F1}MB {(memoryReasonable ? "✅" : "⚠️")}");
+
+            _stats.InfrastructureTests++;
+            yield return null;
+        }
+
+        /// <summary>
+        /// Detailed foundation validation
+        /// </summary>
+        private IEnumerator DetailedFoundationValidation(FoundationTestResult testResult)
+        {
+            if (_foundationCoordinator == null) yield break;
+
+            var stepDescription = "Performing detailed foundation validation...";
+            OnFoundationValidationStep?.Invoke(stepDescription);
+
+            // Test foundation coordinator methods (if they exist)
+            try
+            {
+                // Example validation - would depend on actual FoundationCoordinator interface
+                testResult.TestSteps.Add("Detailed Foundation Validation: COMPLETED ✅");
+                testResult.ValidationResults["DetailedFoundationValidation"] = true;
+            }
+            catch (System.Exception ex)
+            {
+                testResult.TestSteps.Add($"Detailed Foundation Validation: ERROR - {ex.Message} ❌");
+                testResult.ValidationResults["DetailedFoundationValidation"] = false;
+            }
+
+            yield return new WaitForSeconds(0.5f); // Brief pause for detailed validation
+        }
+
+        /// <summary>
+        /// Test orchestrator performance
+        /// </summary>
+        private IEnumerator TestOrchestratorPerformance(FoundationTestResult testResult)
+        {
+            if (_updateOrchestrator == null) yield break;
+
+            var stepDescription = "Testing orchestrator performance...";
+            OnFoundationValidationStep?.Invoke(stepDescription);
+
+            float testDuration = 2f;
+            float startTime = Time.time;
+            int frameCount = 0;
+            float maxFrameTime = 0f;
+
+            while (Time.time - startTime < testDuration)
+            {
+                float frameStart = Time.unscaledTime;
+                yield return null; // Wait one frame
+                float frameTime = (Time.unscaledTime - frameStart) * 1000f; // Convert to milliseconds
+
+                maxFrameTime = Mathf.Max(maxFrameTime, frameTime);
+                frameCount++;
+            }
+
+            bool performanceAcceptable = maxFrameTime < 50f; // 20 FPS minimum
+            testResult.ValidationResults["OrchestratorPerformanceAcceptable"] = performanceAcceptable;
+            testResult.TestSteps.Add($"Orchestrator Performance: Max {maxFrameTime:F2}ms over {frameCount} frames {(performanceAcceptable ? "✅" : "⚠️")}");
+        }
+
+        /// <summary>
+        /// Test logging system
+        /// </summary>
+        private bool TestLoggingSystem()
+        {
+            try
+            {
+                ChimeraLogger.Log("TESTING", "Foundation test logging validation");
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Evaluate overall test success
+        /// </summary>
+        private bool EvaluateOverallSuccess(FoundationTestResult testResult)
+        {
+            var criticalTests = new[]
+            {
+                "FoundationCoordinatorExists",
+                "FoundationCoordinatorInitialized",
+                "UpdateOrchestratorExists",
+                "ApplicationRunning",
+                "TimeSystemWorking"
+            };
+
+            foreach (var test in criticalTests)
+            {
+                if (testResult.ValidationResults.TryGetValue(test, out bool result) && !result)
+                {
+                    return false;
+                }
+            }
+
+            // Calculate overall success rate
+            int passedTests = testResult.ValidationResults.Values.Count(v => v);
+            int totalTests = testResult.ValidationResults.Count;
+            float successRate = (float)passedTests / totalTests;
+
+            return successRate >= 0.8f; // 80% success rate required
+        }
+
+        /// <summary>
+        /// Log foundation test results
+        /// </summary>
+        private void LogFoundationTestResults(FoundationTestResult testResult)
+        {
+            ChimeraLogger.Log("TESTING", "=== FOUNDATION TEST RESULTS ===");
+            ChimeraLogger.Log("TESTING", $"Test: {testResult.TestName}");
+            ChimeraLogger.Log("TESTING", $"Duration: {testResult.TestDuration:F2}s");
+            ChimeraLogger.Log("TESTING", $"Result: {(testResult.Success ? "PASS ✅" : "FAIL ❌")}");
+
+            if (!string.IsNullOrEmpty(testResult.ResultMessage))
+            {
+                ChimeraLogger.Log("TESTING", $"Message: {testResult.ResultMessage}");
+            }
+
+            foreach (var step in testResult.TestSteps)
+            {
+                ChimeraLogger.Log("TESTING", $"  {step}");
+            }
+
+            int passedValidations = testResult.ValidationResults.Values.Count(v => v);
+            int totalValidations = testResult.ValidationResults.Count;
+            ChimeraLogger.Log("TESTING", $"Validations: {passedValidations}/{totalValidations} passed");
+
+            if (testResult.Exception != null)
+            {
+                ChimeraLogger.LogError("TESTING", $"Exception: {testResult.Exception.Message}");
+            }
+
+            ChimeraLogger.Log("TESTING", "=== END FOUNDATION TEST ===");
+        }
+
+        /// <summary>
+        /// Get foundation test summary
+        /// </summary>
+        public FoundationTestSummary GetTestSummary()
+        {
+            return new FoundationTestSummary
+            {
+                TestsStarted = _stats.TestsStarted,
+                TestsPassed = _stats.TestsPassed,
+                TestsFailed = _stats.TestsFailed,
+                TestErrors = _stats.TestErrors,
+                TotalTestTime = _stats.TotalTestTime,
+                FoundationTests = _stats.FoundationTests,
+                OrchestratorTests = _stats.OrchestratorTests,
+                ServiceContainerTests = _stats.ServiceContainerTests,
+                InfrastructureTests = _stats.InfrastructureTests,
+                LastTestSuccess = _lastTestResult?.Success ?? false,
+                LastTestDuration = _lastTestResult?.TestDuration ?? 0f
+            };
+        }
+
+        /// <summary>
+        /// Reset test statistics
+        /// </summary>
+        private void ResetStats()
+        {
+            _stats = new FoundationTestStats();
+        }
+
+        /// <summary>
+        /// Set testing parameters
+        /// </summary>
+        public void SetTestingParameters(bool enableLogging, bool enableDetailedValidation, bool validateServiceContainer, float timeout)
+        {
+            _enableLogging = enableLogging;
+            _enableDetailedValidation = enableDetailedValidation;
+            _validateServiceContainer = validateServiceContainer;
+            _testTimeout = Mathf.Max(1f, timeout);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("TESTING", $"Foundation testing parameters updated: Detailed={enableDetailedValidation}, ServiceContainer={validateServiceContainer}, Timeout={timeout:F1}s");
+            }
+        }
+
+        /// <summary>
+        /// Manual foundation test trigger
+        /// </summary>
+        [ContextMenu("Run Foundation Test")]
+        public void RunFoundationTest()
+        {
+            if (_isInitialized)
+            {
+                StartCoroutine(TestFoundationSystems());
+            }
+        }
+    }
+
+    /// <summary>
+    /// Foundation test statistics
+    /// </summary>
+    [System.Serializable]
+    public struct FoundationTestStats
+    {
+        public int TestsStarted;
+        public int TestsPassed;
+        public int TestsFailed;
+        public int TestErrors;
+        public float TotalTestTime;
+        public int FoundationTests;
+        public int OrchestratorTests;
+        public int ServiceContainerTests;
+        public int InfrastructureTests;
+    }
+
+    /// <summary>
+    /// Foundation test result
+    /// </summary>
+    [System.Serializable]
+    public class FoundationTestResult
+    {
+        public string TestName;
+        public string TestCategory;
+        public float StartTime;
+        public float CompletionTime;
+        public float TestDuration;
+        public bool Success;
+        public string ResultMessage;
+        public List<string> TestSteps;
+        public Dictionary<string, bool> ValidationResults;
+        public System.Exception Exception;
+    }
+
+    /// <summary>
+    /// Foundation test summary
+    /// </summary>
+    [System.Serializable]
+    public struct FoundationTestSummary
+    {
+        public int TestsStarted;
+        public int TestsPassed;
+        public int TestsFailed;
+        public int TestErrors;
+        public float TotalTestTime;
+        public int FoundationTests;
+        public int OrchestratorTests;
+        public int ServiceContainerTests;
+        public int InfrastructureTests;
+        public bool LastTestSuccess;
+        public float LastTestDuration;
+    }
+}

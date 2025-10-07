@@ -1,0 +1,120 @@
+using UnityEngine;
+using ProjectChimera.Core.Logging;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
+
+namespace ProjectChimera.Core
+{
+    /// <summary>
+    /// Validation test for ChimeraLogger to ensure Debug.Log migration is successful
+    /// Tests all logging categories and levels
+    /// </summary>
+    public class ChimeraLoggerValidationTest : MonoBehaviour
+    {
+        [Header("Test Configuration")]
+        [SerializeField] private bool _runTestOnStart = false;
+        [SerializeField] private bool _testAllCategories = true;
+
+        private void Start()
+        {
+            if (_runTestOnStart)
+            {
+                RunValidationTest();
+            }
+        }
+
+        [ContextMenu("Run Logger Validation Test")]
+        public void RunValidationTest()
+        {
+            Logger.Log("VALIDATION", "=== ChimeraLogger Validation Test Started ===", this);
+
+            // Test basic logging
+            Logger.Log("TEST", "Basic log message test", this);
+            Logger.LogWarning("TEST", "Warning message test", this);
+            Logger.LogError("TEST", "Error message test", this);
+
+            // Test performance logging
+            Logger.LogPerformance("ValidationTest", 0.016f, this);
+
+            // Test initialization logging
+            Logger.LogInitialization("ValidationTest", true, this);
+            Logger.LogInitialization("ValidationTest", "Custom initialization message", this);
+
+            // Test gameplay logging
+            Logger.LogGameplay("MODE_CHANGE", "Switched to Cultivation mode", this);
+
+            // Test data logging
+            Logger.LogData("SAVE", "Player progress saved successfully", this);
+
+            if (_testAllCategories)
+            {
+                TestAllSystemCategories();
+            }
+
+            // Test logging configuration
+            bool debugEnabled = Logger.DebugEnabled;
+            bool warningsEnabled = Logger.WarningsEnabled;
+            bool errorsEnabled = Logger.ErrorsEnabled;
+
+            Logger.Log("VALIDATION", $"Logging Configuration - Debug: {debugEnabled}, Warnings: {warningsEnabled}, Errors: {errorsEnabled}", this);
+            Logger.Log("VALIDATION", "=== ChimeraLogger Validation Test Completed ===", this);
+        }
+
+        private void TestAllSystemCategories()
+        {
+            // Test all system categories used in migration
+            string[] categories = {
+                "CORE", "CULTIVATION", "CONSTRUCTION", "GENETICS", "SAVE", "FACILITIES",
+                "GAMEPLAY", "RENDERING", "AUDIO", "DIAGNOSTICS", "SCENE", "SERVICES",
+                "EQUIPMENT", "PROGRESSION", "ENVIRONMENT", "EVENTS", "PERFORMANCE",
+                "CAMERA", "ASSETS", "UI", "EDITOR", "TEST", "DATA"
+            };
+
+            foreach (string category in categories)
+            {
+                Logger.Log(category, $"Testing {category} category logging", this);
+            }
+        }
+
+        [ContextMenu("Test Logging Levels")]
+        public void TestLoggingLevels()
+        {
+            // Test different logging levels
+            Logger.LogVerbose("Verbose logging test", this);
+            Logger.LogTesting("Testing logging test", this);
+            Logger.LogPerformance("Performance logging test", this);
+            Logger.LogValidation("Validation logging test", this);
+            Logger.LogDebugUI("Debug UI logging test", this);
+            Logger.LogCritical("Critical logging test", this);
+        }
+
+        [ContextMenu("Test Logging Configuration")]
+        public void TestLoggingConfiguration()
+        {
+            Logger.Log("CONFIG", "Testing logging configuration", this);
+
+            // Store original state
+            bool originalDebug = Logger.DebugEnabled;
+            bool originalWarnings = Logger.WarningsEnabled;
+            bool originalErrors = Logger.ErrorsEnabled;
+
+            // Test disabling debug logging
+            Logger.DebugEnabled = false;
+            Logger.Log("CONFIG", "This debug message should not appear", this);
+
+            // Test disabling warnings
+            Logger.WarningsEnabled = false;
+            Logger.LogWarning("CONFIG", "This warning should not appear", this);
+
+            // Test disabling errors
+            Logger.ErrorsEnabled = false;
+            Logger.LogError("CONFIG", "This error should not appear", this);
+
+            // Restore original state
+            Logger.DebugEnabled = originalDebug;
+            Logger.WarningsEnabled = originalWarnings;
+            Logger.ErrorsEnabled = originalErrors;
+
+            Logger.Log("CONFIG", "Logging configuration restored", this);
+        }
+    }
+}

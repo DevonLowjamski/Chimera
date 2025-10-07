@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core
 {
@@ -43,9 +44,11 @@ namespace ProjectChimera.Core
     }
 
     /// <summary>
-    /// Basic update interface for managers that need per-frame updates
+    /// Basic update interface for managers that need per-frame updates.
+    /// NOTE: The centralized update system uses ProjectChimera.Core.Updates.ITickable.
+    /// This simplified interface is renamed to avoid ambiguity with the unified ITickable.
     /// </summary>
-    public interface ITickable
+    public interface ISimpleTickable
     {
         void Tick(float deltaTime);
     }
@@ -118,6 +121,7 @@ namespace ProjectChimera.Core
         Playing,
         Running,
         Paused,
+        Error,
         Loading
     }
 

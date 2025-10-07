@@ -1,0 +1,112 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+// using ProjectChimera.Data.Services;  // Commented out - namespace not available
+using ProjectChimera.Systems.Prefabs;
+
+namespace ProjectChimera.Systems.Prefabs
+{
+    /// <summary>
+    /// Core prefab library for managing effect prefabs, sequences, and performance optimization.
+    /// </summary>
+    [CreateAssetMenu(fileName = "EffectsPrefabLibrary", menuName = "Project Chimera/Effects/Prefab Library")]
+    public class EffectsPrefabLibrary : ScriptableObject
+    {
+        [Header("Core Effect Management")]
+        [SerializeField] private List<EffectPrefabEntry> _effectPrefabs = new List<EffectPrefabEntry>();
+        [SerializeField] private List<EffectSequence> _effectSequences = new List<EffectSequence>();
+        [SerializeField] private EffectValidationSO _effectValidation;
+        // [SerializeField] private EffectSequencesLibrary _effectSequencesLibrary;  // Commented out - type not available
+
+        [Header("Performance Configuration")]
+        [SerializeField] private bool _enablePerformanceOptimization = true;
+        [SerializeField] private int _maxConcurrentEffects = 50;
+
+        // Runtime lookups
+        private Dictionary<string, EffectPrefabEntry> _prefabLookup = new Dictionary<string, EffectPrefabEntry>();
+        private Dictionary<EffectType, List<EffectPrefabEntry>> _typeLookup = new Dictionary<EffectType, List<EffectPrefabEntry>>();
+        private Dictionary<EffectCategory, List<EffectPrefabEntry>> _categoryLookup = new Dictionary<EffectCategory, List<EffectPrefabEntry>>();
+        private Dictionary<string, EffectSequence> _sequenceLookup = new Dictionary<string, EffectSequence>();
+
+        private bool _isInitialized = false;
+
+        public bool IsInitialized => _isInitialized;
+
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            BuildLookupTables();
+            _isInitialized = true;
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void Shutdown()
+        {
+            _prefabLookup.Clear();
+            _typeLookup.Clear();
+            _categoryLookup.Clear();
+            _sequenceLookup.Clear();
+            _isInitialized = false;
+        }
+
+        private void BuildLookupTables()
+        {
+            _prefabLookup.Clear();
+            _typeLookup.Clear();
+            _categoryLookup.Clear();
+            _sequenceLookup.Clear();
+
+            foreach (var prefab in _effectPrefabs)
+            {
+                if (string.IsNullOrEmpty(prefab.PrefabId)) continue;
+
+                _prefabLookup[prefab.PrefabId] = prefab;
+
+                if (!_typeLookup.ContainsKey(prefab.EffectType))
+                    _typeLookup[prefab.EffectType] = new List<EffectPrefabEntry>();
+                _typeLookup[prefab.EffectType].Add(prefab);
+
+                if (!_categoryLookup.ContainsKey(prefab.EffectCategory))
+                    _categoryLookup[prefab.EffectCategory] = new List<EffectPrefabEntry>();
+                _categoryLookup[prefab.EffectCategory].Add(prefab);
+            }
+
+            foreach (var sequence in _effectSequences)
+            {
+                if (!string.IsNullOrEmpty(sequence.SequenceId))
+                    _sequenceLookup[sequence.SequenceId] = sequence;
+            }
+        }
+
+        public EffectPrefabEntry GetPrefab(string prefabId)
+        {
+            return _prefabLookup.TryGetValue(prefabId, out var prefab) ? prefab : null;
+        }
+
+        public List<EffectPrefabEntry> GetEffectsByCategory(EffectCategory category)
+        {
+            return _categoryLookup.TryGetValue(category, out var prefabs) ?
+                new List<EffectPrefabEntry>(prefabs) : new List<EffectPrefabEntry>();
+        }
+
+        public List<EffectPrefabEntry> GetAllEffectsFromFocusedLibraries()
+        {
+            return new List<EffectPrefabEntry>(_effectPrefabs);
+        }
+
+        public EffectSequence GetEffectSequence(string sequenceId)
+        {
+            return _sequenceLookup.TryGetValue(sequenceId, out var sequence) ? sequence : null;
+        }
+
+        private void OnValidate()
+        {
+            if (Application.isPlaying)
+            {
+                BuildLookupTables();
+            }
+        }
+    }
+}

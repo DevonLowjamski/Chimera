@@ -1,3 +1,4 @@
+
 namespace ProjectChimera.Data.Shared
 {
     public enum PlantGrowthStage
@@ -15,6 +16,7 @@ namespace ProjectChimera.Data.Shared
         Ripening,
         Mature,           // Alias used by some systems
         Harvest,
+        Harvested,        // Plant has been harvested (alias for backward compatibility)
         Drying,
         Curing,
         Complete,         // Final completed state

@@ -1,0 +1,176 @@
+using ProjectChimera.Core.Logging;
+using UnityEngine;
+using ProjectChimera.Core;
+// ServiceContainer validation - checks legacy ServiceLocator during boot
+
+
+namespace ProjectChimera.Systems.Scene
+{
+    /// <summary>
+    /// Validation utility for the Boot scene configuration
+    /// This can be used in Editor scripts or runtime diagnostics
+    /// </summary>
+    public static class BootSceneValidator
+    {
+        public static bool ValidateBootScene()
+        {
+            bool isValid = true;
+
+            UnityEngine.Debug.Log("Operation completed");
+
+            // Check for BootManager - try ServiceContainer first, fall back to direct search for validation
+            var bootManager = ServiceContainerFactory.Instance?.TryResolve<BootManager>();
+            if (bootManager == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                isValid = false;
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            // Check for existing GameManager (should not exist in Boot scene initially)
+            var existingGameManager = ServiceContainerFactory.Instance?.TryResolve<GameManager>();
+            if (existingGameManager != null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            // Check ServiceLocator availability (should not exist yet)
+            try
+            {
+                var serviceContainer = ServiceContainerFactory.Instance;
+                if (serviceContainer != null)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+                else
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+            catch
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            // Check scene name
+            var currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            if (currentScene.name != SceneConstants.BOOT_SCENE)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                isValid = false;
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            // Validate target scenes exist
+            if (!SceneConstants.IsValidScene(SceneConstants.MAIN_MENU_SCENE))
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                isValid = false;
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            if (isValid)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            return isValid;
+        }
+
+        public static void RunRuntimeValidation()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+            ValidateBootScene();
+        }
+
+        public static bool ValidatePostBoot()
+        {
+            bool isValid = true;
+
+            UnityEngine.Debug.Log("Operation completed");
+
+            // Check if GameManager exists and is initialized - try ServiceContainer first
+            var gameManager = ServiceContainerFactory.Instance?.TryResolve<GameManager>();
+            if (gameManager == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                isValid = false;
+            }
+            else if (!gameManager.IsInitialized)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                isValid = false;
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                
+                // Game state validation completed (removed CurrentGameState dependency)
+                UnityEngine.Debug.Log("Operation completed");
+
+                // Service health validation simplified for now
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            // Check ServiceLocator availability
+            try
+            {
+                var serviceContainer = ServiceContainerFactory.Instance;
+                if (serviceContainer != null)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                    
+                    // Try to get SceneLoader service
+                    var sceneLoader = serviceContainer.TryResolve<ISceneLoader>();
+                    if (sceneLoader != null)
+                    {
+                        UnityEngine.Debug.Log("Operation completed");
+                    }
+                    else
+                    {
+                        UnityEngine.Debug.Log("Operation completed");
+                        isValid = false;
+                    }
+                }
+                else
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                    isValid = false;
+                }
+            }
+            catch (System.Exception e)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                isValid = false;
+            }
+
+            if (isValid)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            return isValid;
+        }
+    }
+}

@@ -2,6 +2,7 @@ using UnityEngine;
 using ProjectChimera.Data.Shared;
 using System.Collections.Generic;
 
+
 namespace ProjectChimera.Data.Genetics
 {
     /// <summary>
@@ -21,7 +22,7 @@ namespace ProjectChimera.Data.Genetics
         /// <summary>
         /// Generates a basic genotype from a strain definition.
         /// </summary>
-        public PlantGenotype GenerateFounderGenotype(PlantStrainSO strain)
+        public PlantGenotype GenerateFounderGenotype(GeneticPlantStrainSO strain)
         {
             return new PlantGenotype
             {

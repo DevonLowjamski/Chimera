@@ -25,12 +25,12 @@ namespace ProjectChimera.Editor
             // Check if Build Settings need configuration
             if (ShouldConfigureBuildSettings())
             {
-                ChimeraLogger.Log("[AutoConfigureBuildSettings] Auto-configuring Build Settings for Project Chimera...");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 BuildSettingsConfigurator.ConfigureBuildSettings();
             }
             else
             {
-                ChimeraLogger.Log("[AutoConfigureBuildSettings] Build Settings already configured correctly.");
+                ChimeraLogger.Log("OTHER", "$1", null);
             }
         }
 
@@ -41,14 +41,14 @@ namespace ProjectChimera.Editor
             // If no scenes configured, definitely need to configure
             if (currentScenes == null || currentScenes.Length == 0)
             {
-                ChimeraLogger.Log("[AutoConfigureBuildSettings] No scenes in Build Settings - configuration needed.");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return true;
             }
 
             // Check if first scene is our Boot scene
             if (currentScenes.Length > 0 && !currentScenes[0].path.Contains("01_Boot"))
             {
-                ChimeraLogger.Log("[AutoConfigureBuildSettings] Boot scene not at index 0 - configuration needed.");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return true;
             }
 
@@ -58,7 +58,7 @@ namespace ProjectChimera.Editor
                 return false;
             }
 
-            ChimeraLogger.Log($"[AutoConfigureBuildSettings] Expected 9 scenes, found {currentScenes.Length} - configuration needed.");
+            ChimeraLogger.Log("OTHER", "$1", null);
             return true;
         }
     }

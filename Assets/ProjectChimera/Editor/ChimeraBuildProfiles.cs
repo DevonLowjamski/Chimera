@@ -77,7 +77,7 @@ namespace ProjectChimera.Editor
         {
             if (!BuildProfiles.TryGetValue(profileName, out var defines))
             {
-                ChimeraLogger.LogError($"[ChimeraBuildProfiles] Unknown build profile: {profileName}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return;
             }
 
@@ -94,8 +94,8 @@ namespace ProjectChimera.Editor
             var newDefinesString = string.Join(";", currentDefines.Where(d => !string.IsNullOrEmpty(d)));
             PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTarget, newDefinesString);
             
-            ChimeraLogger.Log($"[ChimeraBuildProfiles] Applied '{profileName}' profile to {buildTarget}");
-            ChimeraLogger.Log($"[ChimeraBuildProfiles] Active defines: {string.Join(", ", defines)}");
+            ChimeraLogger.Log("OTHER", "$1", null);
+            ChimeraLogger.Log("OTHER", "$1", null);
             
             // Force recompilation
             AssetDatabase.Refresh();
@@ -144,7 +144,7 @@ namespace ProjectChimera.Editor
                 var newDefinesString = string.Join(";", currentDefines.Where(d => !string.IsNullOrEmpty(d)));
                 PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTarget, newDefinesString);
                 
-                ChimeraLogger.Log($"[ChimeraBuildProfiles] Added script define: {define}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 AssetDatabase.Refresh();
             }
         }
@@ -162,7 +162,7 @@ namespace ProjectChimera.Editor
                 var newDefinesString = string.Join(";", currentDefines.Where(d => !string.IsNullOrEmpty(d)));
                 PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTarget, newDefinesString);
                 
-                ChimeraLogger.Log($"[ChimeraBuildProfiles] Removed script define: {define}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 AssetDatabase.Refresh();
             }
         }
@@ -182,7 +182,7 @@ namespace ProjectChimera.Editor
                 var newDefinesString = string.Join(";", currentDefines.Where(d => !string.IsNullOrEmpty(d)));
                 PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTarget, newDefinesString);
                 
-                ChimeraLogger.Log($"[ChimeraBuildProfiles] Cleared {removedCount} Chimera script defines");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 AssetDatabase.Refresh();
             }
         }
@@ -195,10 +195,10 @@ namespace ProjectChimera.Editor
             var activeDefines = GetActiveChimeraDefines();
             var activeProfile = GetActiveBuildProfile();
             
-            ChimeraLogger.Log($"[ChimeraBuildProfiles] Build Configuration Validation:");
-            ChimeraLogger.Log($"  Active Profile: {activeProfile}");
-            ChimeraLogger.Log($"  Active Defines: {string.Join(", ", activeDefines)}");
-            ChimeraLogger.Log($"  Build Target: {EditorUserBuildSettings.selectedBuildTargetGroup}");
+            ChimeraLogger.Log("OTHER", "$1", null);
+            ChimeraLogger.Log("OTHER", "$1", null);
+            ChimeraLogger.Log("OTHER", "$1", null);
+            ChimeraLogger.Log("OTHER", "$1", null);
             
             // Check for conflicting defines
             var conflictingDefines = new[]
@@ -212,7 +212,7 @@ namespace ProjectChimera.Editor
             {
                 if (conflict.All(d => activeDefines.Contains(d)))
                 {
-                    ChimeraLogger.LogWarning($"[ChimeraBuildProfiles] Potential conflict: {string.Join(" + ", conflict)}");
+                    ChimeraLogger.Log("OTHER", "$1", null);
                 }
             }
         }
@@ -273,8 +273,8 @@ namespace ProjectChimera.Editor
             var activeProfile = ChimeraBuildProfiles.GetActiveBuildProfile();
             var activeDefines = ChimeraBuildProfiles.GetActiveChimeraDefines();
             
-            ChimeraLogger.Log($"[ChimeraBuildProfiles] Current Profile: {activeProfile}");
-            ChimeraLogger.Log($"[ChimeraBuildProfiles] Active Defines: {string.Join(", ", activeDefines)}");
+            ChimeraLogger.Log("OTHER", "$1", null);
+            ChimeraLogger.Log("OTHER", "$1", null);
             
             EditorUtility.DisplayDialog("Current Build Profile", 
                 $"Profile: {activeProfile}\n\nDefines:\n{string.Join("\n", activeDefines)}", 

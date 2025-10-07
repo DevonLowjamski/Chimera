@@ -1,5 +1,5 @@
-using UnityEngine;
 
+using UnityEngine;
 namespace ProjectChimera.Data.Shared
 {
     [System.Serializable]
@@ -19,6 +19,7 @@ namespace ProjectChimera.Data.Shared
         public float BarometricPressure;
         public float AirQualityIndex;
         public System.DateTime LastMeasurement;
+        public System.DateTime Timestamp;
 
         // Optional fields used by some systems
         public float PhotoperiodHours;

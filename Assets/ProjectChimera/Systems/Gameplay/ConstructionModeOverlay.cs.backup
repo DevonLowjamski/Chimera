@@ -1,0 +1,225 @@
+using UnityEngine;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
+
+namespace ProjectChimera.Systems.Gameplay
+{
+    /// <summary>
+    /// SIMPLE: Basic construction mode overlay aligned with Project Chimera's construction vision.
+    /// Focuses on essential construction mode UI and visual feedback.
+    /// </summary>
+    public class ConstructionModeOverlay : MonoBehaviour
+    {
+        [Header("Basic Overlay Settings")]
+        [SerializeField] private bool _enableOverlay = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private Color _constructionModeColor = new Color(0.5f, 0.8f, 1f, 0.3f);
+
+        [Header("UI Elements")]
+        [SerializeField] private GameObject _overlayPanel;
+        [SerializeField] private GameObject _blueprintToggleButton;
+        [SerializeField] private GameObject _gridToggleButton;
+
+        // Basic state
+        private bool _isInitialized = false;
+        private bool _isConstructionModeActive = false;
+        private bool _blueprintVisible = false;
+        private bool _gridVisible = false;
+
+        /// <summary>
+        /// Initialize the basic overlay
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Activate construction mode
+        /// </summary>
+        public void ActivateConstructionMode()
+        {
+            if (!_enableOverlay) return;
+
+            _isConstructionModeActive = true;
+
+            if (_overlayPanel != null)
+            {
+                _overlayPanel.SetActive(true);
+            }
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Deactivate construction mode
+        /// </summary>
+        public void DeactivateConstructionMode()
+        {
+            if (!_enableOverlay) return;
+
+            _isConstructionModeActive = false;
+
+            if (_overlayPanel != null)
+            {
+                _overlayPanel.SetActive(false);
+            }
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Toggle blueprint visibility
+        /// </summary>
+        public void ToggleBlueprintVisibility()
+        {
+            _blueprintVisible = !_blueprintVisible;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Toggle grid visibility
+        /// </summary>
+        public void ToggleGridVisibility()
+        {
+            _gridVisible = !_gridVisible;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Show placement preview
+        /// </summary>
+        public void ShowPlacementPreview(Vector3 position, bool isValid)
+        {
+            if (!_enableOverlay || !_isConstructionModeActive) return;
+
+            Color previewColor = isValid ? Color.green : Color.red;
+            // In a real implementation, this would show a preview object at the position
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Hide placement preview
+        /// </summary>
+        public void HidePlacementPreview()
+        {
+            if (!_enableOverlay) return;
+
+            // In a real implementation, this would hide the preview object
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Set overlay color
+        /// </summary>
+        public void SetOverlayColor(Color color)
+        {
+            _constructionModeColor = color;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Check if construction mode is active
+        /// </summary>
+        public bool IsConstructionModeActive()
+        {
+            return _isConstructionModeActive;
+        }
+
+        /// <summary>
+        /// Check if blueprint is visible
+        /// </summary>
+        public bool IsBlueprintVisible()
+        {
+            return _blueprintVisible;
+        }
+
+        /// <summary>
+        /// Check if grid is visible
+        /// </summary>
+        public bool IsGridVisible()
+        {
+            return _gridVisible;
+        }
+
+        /// <summary>
+        /// Get overlay statistics
+        /// </summary>
+        public OverlayStatistics GetStatistics()
+        {
+            return new OverlayStatistics
+            {
+                IsInitialized = _isInitialized,
+                IsConstructionModeActive = _isConstructionModeActive,
+                BlueprintVisible = _blueprintVisible,
+                GridVisible = _gridVisible,
+                OverlayColor = _constructionModeColor
+            };
+        }
+
+        /// <summary>
+        /// Set overlay enabled/disabled
+        /// </summary>
+        public void SetOverlayEnabled(bool enabled)
+        {
+            _enableOverlay = enabled;
+
+            if (!enabled)
+            {
+                DeactivateConstructionMode();
+                HidePlacementPreview();
+            }
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Overlay statistics
+    /// </summary>
+    [System.Serializable]
+    public class OverlayStatistics
+    {
+        public bool IsInitialized;
+        public bool IsConstructionModeActive;
+        public bool BlueprintVisible;
+        public bool GridVisible;
+        public Color OverlayColor;
+    }
+}

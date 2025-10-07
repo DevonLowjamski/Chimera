@@ -1,5 +1,6 @@
 using ProjectChimera.Data.Events;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Gameplay
 {

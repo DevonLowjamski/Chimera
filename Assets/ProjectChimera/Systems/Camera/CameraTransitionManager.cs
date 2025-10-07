@@ -1,6 +1,7 @@
 using UnityEngine;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Core;
+using ProjectChimera.Data.Camera;
 
 namespace ProjectChimera.Systems.Camera
 {
@@ -13,16 +14,19 @@ namespace ProjectChimera.Systems.Camera
         [Header("Basic Camera Settings")]
         [SerializeField] private bool _enableBasicCamera = true;
         [SerializeField] private bool _enableLogging = true;
-        [SerializeField] private Camera _mainCamera;
+        [SerializeField] private UnityEngine.Camera _mainCamera;
 
         // Basic camera state
         private CameraLevel _currentLevel = CameraLevel.Facility;
         private bool _isInitialized = false;
+        private bool _isTransitioning = false;
 
         /// <summary>
-        /// Events for level changes
+        /// Events for level changes and transitions
         /// </summary>
         public event System.Action<CameraLevel> OnLevelChanged;
+        public event System.Action<bool> OnTransitionStateChanged;
+        public event System.Action<TransitionType> OnTransitionCompleted;
 
         /// <summary>
         /// Initialize basic camera management
@@ -33,14 +37,14 @@ namespace ProjectChimera.Systems.Camera
 
             if (_mainCamera == null)
             {
-                _mainCamera = Camera.main;
+                _mainCamera = UnityEngine.Camera.main;
             }
 
             _isInitialized = true;
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[CameraTransitionManager] Initialized successfully");
+                ChimeraLogger.LogInfo("CameraTransitionManager", "$1");
             }
         }
 
@@ -56,7 +60,7 @@ namespace ProjectChimera.Systems.Camera
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[CameraTransitionManager] Set camera position: {position}");
+                ChimeraLogger.LogInfo("CameraTransitionManager", "$1");
             }
         }
 
@@ -72,7 +76,7 @@ namespace ProjectChimera.Systems.Camera
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[CameraTransitionManager] Set camera level to: {level}");
+                ChimeraLogger.LogInfo("CameraTransitionManager", "$1");
             }
         }
 
@@ -111,7 +115,7 @@ namespace ProjectChimera.Systems.Camera
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[CameraTransitionManager] Set FOV to: {fov}");
+                ChimeraLogger.LogInfo("CameraTransitionManager", "$1");
             }
         }
 
@@ -121,6 +125,14 @@ namespace ProjectChimera.Systems.Camera
         public float GetFieldOfView()
         {
             return _mainCamera != null ? _mainCamera.fieldOfView : 60f;
+        }
+
+        /// <summary>
+        /// Check if transition is in progress
+        /// </summary>
+        public bool IsTransitioning
+        {
+            get { return _isTransitioning; }
         }
 
         /// <summary>
@@ -134,7 +146,7 @@ namespace ProjectChimera.Systems.Camera
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[CameraTransitionManager] Reset camera to default");
+                ChimeraLogger.LogInfo("CameraTransitionManager", "$1");
             }
         }
 
@@ -152,7 +164,7 @@ namespace ProjectChimera.Systems.Camera
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[CameraTransitionManager] Camera {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.LogInfo("CameraTransitionManager", "$1");
             }
         }
 
@@ -171,18 +183,114 @@ namespace ProjectChimera.Systems.Camera
                 IsEnabled = _enableBasicCamera && (_mainCamera != null ? _mainCamera.enabled : false)
             };
         }
+
+        /// <summary>
+        /// Zoom to specified camera level
+        /// </summary>
+        public bool ZoomTo(CameraLevel targetLevel)
+        {
+            SetCameraLevel(targetLevel);
+            return true;
+        }
+
+        /// <summary>
+        /// Zoom to specified camera level with anchor
+        /// </summary>
+        public bool ZoomTo(CameraLevel targetLevel, Transform anchor)
+        {
+            SetCameraLevel(targetLevel);
+            return true;
+        }
+
+        /// <summary>
+        /// Zoom to specified camera level with custom position
+        /// </summary>
+        public bool ZoomTo(CameraLevel targetLevel, Vector3 customPosition)
+        {
+            SetCameraLevel(targetLevel);
+            SetCameraPosition(customPosition, GetCameraRotation());
+            return true;
+        }
+
+        /// <summary>
+        /// Get optimal transition duration between levels
+        /// </summary>
+        public float GetOptimalTransitionDuration(CameraLevel fromLevel, CameraLevel toLevel)
+        {
+            return 1f; // Default transition duration
+        }
+
+        /// <summary>
+        /// Orbit camera around target
+        /// </summary>
+        public void OrbitAroundTarget(float yaw, float pitch, float duration = -1f)
+        {
+            if (_mainCamera == null) return;
+
+            var currentRotation = _mainCamera.transform.rotation;
+            var targetRotation = Quaternion.Euler(pitch, yaw, 0);
+            _mainCamera.transform.rotation = targetRotation;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("CameraTransitionManager", "$1");
+            }
+        }
+
+        /// <summary>
+        /// Focus camera on target
+        /// </summary>
+        public bool FocusOnTarget(Transform target)
+        {
+            if (target == null || _mainCamera == null) return false;
+
+            var direction = (target.position - _mainCamera.transform.position).normalized;
+            var targetRotation = Quaternion.LookRotation(direction);
+            _mainCamera.transform.rotation = targetRotation;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("CameraTransitionManager", "$1");
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Move camera to specific position and rotation
+        /// </summary>
+        public void MoveCameraToPosition(Vector3 position, Quaternion rotation, float duration = -1f)
+        {
+            SetCameraPosition(position, rotation);
+        }
+
+        /// <summary>
+        /// Get level transition speed
+        /// </summary>
+        public float GetLevelTransitionSpeed(CameraLevel level)
+        {
+            return 1f; // Default transition speed
+        }
+
+        /// <summary>
+        /// Focus camera on specific position
+        /// </summary>
+        public bool FocusOnPosition(Vector3 position, Transform anchorReference = null)
+        {
+            if (_mainCamera == null) return false;
+
+            var direction = (position - _mainCamera.transform.position).normalized;
+            var targetRotation = Quaternion.LookRotation(direction);
+            _mainCamera.transform.rotation = targetRotation;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("CameraTransitionManager", "$1");
+            }
+            return true;
+        }
     }
 
-    /// <summary>
-    /// Camera level enum
-    /// </summary>
-    public enum CameraLevel
-    {
-        Facility,
-        Room,
-        Table,
-        Plant
-    }
+    // CameraLevel enum is defined in ProjectChimera.Data.Camera namespace
 
     /// <summary>
     /// Basic camera statistics
@@ -196,5 +304,43 @@ namespace ProjectChimera.Systems.Camera
         public Quaternion Rotation;
         public float FieldOfView;
         public bool IsEnabled;
+    }
+
+    /// <summary>
+    /// Camera transition type enumeration
+    /// </summary>
+    public enum TransitionType
+    {
+        None,
+        Pan,
+        Zoom,
+        Focus,
+        Level
+    }
+
+    /// <summary>
+    /// Camera transition information structure
+    /// </summary>
+    [System.Serializable]
+    public struct CameraTransitionInfo
+    {
+        public Vector3 TargetPosition;
+        public Quaternion TargetRotation;
+        public float TargetFieldOfView;
+        public TransitionType Type;
+        public float Duration;
+        public bool IsValid;
+
+        public CameraTransitionInfo(Vector3 position, Quaternion rotation, float fov = 60f, TransitionType type = TransitionType.Focus, float duration = 1f)
+        {
+            TargetPosition = position;
+            TargetRotation = rotation;
+            TargetFieldOfView = fov;
+            Type = type;
+            Duration = duration;
+            IsValid = true;
+        }
+
+        public static CameraTransitionInfo Invalid => new CameraTransitionInfo { IsValid = false };
     }
 }

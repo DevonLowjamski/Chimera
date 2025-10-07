@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ProjectChimera.Core.Logging;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 using UnityEngine;
 
 namespace ProjectChimera.Core
@@ -21,17 +22,17 @@ namespace ProjectChimera.Core
         // Logging methods
         private void LogProviderAction(string action)
         {
-            ChimeraLogger.Log("CORE", $"UtilityServiceProvider: {action}", this);
+            Logger.LogInfo("UtilityServiceProvider", action);
         }
 
         private void LogProviderError(string error)
         {
-            ChimeraLogger.LogError("CORE", $"UtilityServiceProvider Error: {error}", this);
+            Logger.LogInfo("UtilityServiceProvider", error);
         }
 
         private void LogProviderWarning(string warning)
         {
-            ChimeraLogger.LogWarning("CORE", $"UtilityServiceProvider Warning: {warning}", this);
+            Logger.LogInfo("UtilityServiceProvider", warning);
         }
 
         // Configuration method
@@ -54,7 +55,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[UtilityServiceProvider] Initialized successfully");
+                Logger.LogInfo("UtilityServiceProvider", "Initialized");
             }
         }
 
@@ -68,7 +69,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[UtilityServiceProvider] Shutdown completed");
+                Logger.LogInfo("UtilityServiceProvider", "Shutdown complete");
             }
         }
 
@@ -81,7 +82,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[UtilityServiceProvider] Registered service: {typeof(T).Name}");
+                Logger.LogInfo("UtilityServiceProvider", $"Registered service {typeof(T).Name}");
             }
         }
 
@@ -97,7 +98,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.LogWarning($"[UtilityServiceProvider] Service not found: {typeof(T).Name}");
+                Logger.LogInfo("UtilityServiceProvider", $"Service not found: {typeof(T).Name}");
             }
 
             return null;
@@ -120,7 +121,7 @@ namespace ProjectChimera.Core
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[UtilityServiceProvider] Unregistered service: {typeof(T).Name}");
+                    Logger.LogInfo("UtilityServiceProvider", $"Unregistered service {typeof(T).Name}");
                 }
             }
         }
@@ -143,7 +144,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[UtilityServiceProvider] Cleared {count} services");
+                Logger.LogInfo("UtilityServiceProvider", $"Cleared {count} services");
             }
         }
 
@@ -191,6 +192,46 @@ namespace ProjectChimera.Core
                 LastUpdate = DateTime.Now;
                 Status = "Unknown";
             }
+        }
+
+        // Additional methods for ChimeraServiceModule compatibility
+        public void RegisterUtilityServices()
+        {
+            RegisterBasicServices();
+            LogProviderAction("Registered utility services");
+        }
+
+        public void InitializeServices()
+        {
+            if (!_isInitialized)
+            {
+                _isInitialized = true;
+                LogProviderAction("Initialized utility services");
+            }
+        }
+
+        public bool ValidateServices()
+        {
+            var hasServices = _services.Count > 0;
+            if (!hasServices)
+            {
+                LogProviderWarning("No utility services registered");
+            }
+            else
+            {
+                LogProviderAction($"Validated {_services.Count} utility services");
+            }
+            return hasServices;
+        }
+
+        public UtilityServiceStats GetStats()
+        {
+            return new UtilityServiceStats
+            {
+                RegisteredServicesCount = _services.Count,
+                LastUpdate = DateTime.Now,
+                Status = _isInitialized ? "Active" : "Inactive"
+            };
         }
     }
 

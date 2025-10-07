@@ -37,7 +37,7 @@ namespace ProjectChimera.Systems.UI
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[UIAnimationSystem] Initialized successfully");
+                ChimeraLogger.LogInfo("UIAnimationSystem", "$1");
             }
         }
 
@@ -133,7 +133,7 @@ namespace ProjectChimera.Systems.UI
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[UIAnimationSystem] Stopped animations on {uiObject.name}");
+                ChimeraLogger.LogInfo("UIAnimationSystem", "$1");
             }
         }
 
@@ -154,7 +154,7 @@ namespace ProjectChimera.Systems.UI
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[UIAnimationSystem] Stopped all animations");
+                ChimeraLogger.LogInfo("UIAnimationSystem", "$1");
             }
         }
 
@@ -172,7 +172,7 @@ namespace ProjectChimera.Systems.UI
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[UIAnimationSystem] Animations {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.LogInfo("UIAnimationSystem", "$1");
             }
         }
 

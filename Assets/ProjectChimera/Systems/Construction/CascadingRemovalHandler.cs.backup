@@ -1,0 +1,193 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Construction
+{
+    /// <summary>
+    /// SIMPLE: Basic cascading removal handler aligned with Project Chimera's construction vision.
+    /// Focuses on essential object removal without complex dependency analysis.
+    /// </summary>
+    public class CascadingRemovalHandler : MonoBehaviour
+    {
+        [Header("Basic Settings")]
+        [SerializeField] private bool _enableRemoval = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _removalDelay = 0.1f;
+
+        // Basic removal tracking
+        private readonly Queue<GameObject> _removalQueue = new Queue<GameObject>();
+        private readonly HashSet<GameObject> _pendingRemoval = new HashSet<GameObject>();
+        private bool _isProcessing = false;
+
+        // Events
+        public System.Action<GameObject> OnObjectRemoved;
+        public System.Action<List<GameObject>> OnBatchRemovalCompleted;
+
+        /// <summary>
+        /// Initialize the removal handler
+        /// </summary>
+        public void Initialize()
+        {
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Queue an object for removal
+        /// </summary>
+        public void QueueForRemoval(GameObject obj, bool immediate = false)
+        {
+            if (!_enableRemoval || obj == null || _pendingRemoval.Contains(obj))
+                return;
+
+            if (immediate)
+            {
+                RemoveObject(obj);
+            }
+            else
+            {
+                _removalQueue.Enqueue(obj);
+                _pendingRemoval.Add(obj);
+
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Process the removal queue
+        /// </summary>
+        public void ProcessRemovalQueue()
+        {
+            if (_isProcessing || _removalQueue.Count == 0) return;
+
+            _isProcessing = true;
+
+            List<GameObject> removedObjects = new List<GameObject>();
+
+            while (_removalQueue.Count > 0 && removedObjects.Count < 10) // Process up to 10 per frame
+            {
+                var obj = _removalQueue.Dequeue();
+                if (obj != null && _pendingRemoval.Contains(obj))
+                {
+                    RemoveObject(obj);
+                    removedObjects.Add(obj);
+                    _pendingRemoval.Remove(obj);
+                }
+            }
+
+            if (removedObjects.Count > 0)
+            {
+                OnBatchRemovalCompleted?.Invoke(removedObjects);
+
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+
+            _isProcessing = false;
+        }
+
+        /// <summary>
+        /// Remove an object immediately
+        /// </summary>
+        public void RemoveObjectImmediate(GameObject obj)
+        {
+            if (obj == null) return;
+
+            RemoveObject(obj);
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Clear all pending removals
+        /// </summary>
+        public void ClearPendingRemovals()
+        {
+            _removalQueue.Clear();
+            _pendingRemoval.Clear();
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Get pending removal count
+        /// </summary>
+        public int GetPendingRemovalCount()
+        {
+            return _removalQueue.Count;
+        }
+
+        /// <summary>
+        /// Check if object is pending removal
+        /// </summary>
+        public bool IsPendingRemoval(GameObject obj)
+        {
+            return obj != null && _pendingRemoval.Contains(obj);
+        }
+
+        /// <summary>
+        /// Set removal delay
+        /// </summary>
+        public void SetRemovalDelay(float delay)
+        {
+            _removalDelay = Mathf.Max(0f, delay);
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Enable or disable removal processing
+        /// </summary>
+        public void SetRemovalEnabled(bool enabled)
+        {
+            _enableRemoval = enabled;
+
+            if (!enabled)
+            {
+                ClearPendingRemovals();
+            }
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        #region Private Methods
+
+        private void RemoveObject(GameObject obj)
+        {
+            if (obj == null) return;
+
+            OnObjectRemoved?.Invoke(obj);
+
+            // Simple destruction - could be pooled in a real implementation
+            Destroy(obj);
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        #endregion
+    }
+}

@@ -31,21 +31,21 @@ namespace ProjectChimera.Systems.Cultivation
         {
             InitializeDefaultZones();
             _isInitialized = true;
-            ChimeraLogger.Log("[EnvironmentControl] Environment control system initialized");
+            ChimeraLogger.Log("CULTIVATION", "Processing offline equipment maintenance", null);
         }
 
         public void Shutdown()
         {
             _zoneEnvironments.Clear();
             _isInitialized = false;
-            ChimeraLogger.Log("[EnvironmentControl] Environment control system shutdown");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         public void SetZoneEnvironment(string zoneId, EnvironmentalConditions environment)
         {
             if (!_isInitialized)
             {
-                ChimeraLogger.LogWarning("[EnvironmentControl] Cannot set zone environment - system not initialized");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return;
             }
 
@@ -54,7 +54,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             OnZoneEnvironmentChanged?.Invoke(zoneId, environment);
 
-            ChimeraLogger.Log($"[EnvironmentControl] Zone {zoneId} environment updated - Temp: {environment.Temperature:F1}°C, Humidity: {environment.Humidity:P0}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         public EnvironmentalConditions GetZoneEnvironment(string zoneId)
@@ -130,11 +130,11 @@ namespace ProjectChimera.Systems.Cultivation
                 }
                 catch (Exception ex)
                 {
-                    ChimeraLogger.LogError($"[EnvironmentControl] Error processing offline environmental changes for zone {zoneId}: {ex.Message}");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 }
             }
 
-            ChimeraLogger.Log($"[EnvironmentControl] Processed offline environmental changes for {zonesProcessed} zones over {offlineHours:F1} hours");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         public bool IsAutoWateringEnabled()
@@ -163,7 +163,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (totalWear > 0.01f) // 1% or more efficiency loss
             {
-                ChimeraLogger.Log($"[EnvironmentControl] Automation systems lost {totalWear:P2} efficiency during offline period");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 OnAutomationEfficiencyChanged?.Invoke(_automationEfficiency);
             }
 
@@ -176,7 +176,7 @@ namespace ProjectChimera.Systems.Cultivation
 
         public void ProcessOfflineEquipmentMaintenance(float offlineHours)
         {
-            ChimeraLogger.Log($"[EnvironmentControl] Processing equipment maintenance for {offlineHours:F1} hours");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
 
             // Simulate equipment degradation during offline period
             int equipmentCount = SimulateEquipmentDegradation(offlineHours);
@@ -187,8 +187,7 @@ namespace ProjectChimera.Systems.Cultivation
             // Process automation system wear
             ProcessAutomationSystemWear(offlineHours);
 
-            ChimeraLogger.Log($"[EnvironmentControl] Equipment maintenance processed: {equipmentCount} pieces tracked, " +
-                     $"{maintenanceAlerts} maintenance alerts");
+            ChimeraLogger.Log("CULTIVATION", $"Offline maintenance processed: degraded {equipmentCount} pieces, alerts={maintenanceAlerts}", null);
         }
 
         public int SimulateEquipmentDegradation(float offlineHours)
@@ -300,14 +299,14 @@ namespace ProjectChimera.Systems.Cultivation
             _autoWateringEnabled = watering;
             _autoFeedingEnabled = feeding;
 
-            ChimeraLogger.Log($"[EnvironmentControl] Automation updated - Watering: {watering}, Feeding: {feeding}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         public void RepairAutomationSystem()
         {
             _automationEfficiency = 1.0f;
             OnAutomationEfficiencyChanged?.Invoke(_automationEfficiency);
-            ChimeraLogger.Log("[EnvironmentControl] Automation system repaired - efficiency restored to 100%");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         private void InitializeDefaultZones()
@@ -327,7 +326,7 @@ namespace ProjectChimera.Systems.Cultivation
             };
             _zoneEnvironments["outdoor_1"] = outdoorZone;
 
-            ChimeraLogger.Log($"[EnvironmentControl] Initialized {_zoneEnvironments.Count} default environmental zones");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
 
         // NOTE: Duplicate GetOptimalEnvironmentForStage method removed - implementation already exists above

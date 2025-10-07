@@ -57,7 +57,7 @@ namespace ProjectChimera.Systems.UI.Simple
                     break;
             }
 
-            ChimeraLogger.LogVerbose($"[SimpleVisualFeedback] Applied {state} state to {element.name}");
+            ChimeraLogger.LogInfo("SimpleVisualFeedback", "$1");
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace ProjectChimera.Systems.UI.Simple
             Color modeColor = GetModeColor(newMode);
             ApplyColorTransition(container, modeColor);
 
-            ChimeraLogger.Log($"[SimpleVisualFeedback] Transitioned to {newMode} mode");
+            ChimeraLogger.LogInfo("SimpleVisualFeedback", "$1");
         }
 
         /// <summary>
@@ -130,13 +130,13 @@ namespace ProjectChimera.Systems.UI.Simple
             // Auto-hide after a few seconds
             StartCoroutine(HideAlertAfterDelay(alertPanel, 3f));
 
-            ChimeraLogger.Log($"[SimpleVisualFeedback] Showed critical alert: {message}");
+            ChimeraLogger.LogInfo("SimpleVisualFeedback", "$1");
         }
 
         /// <summary>
         /// Applies blueprint overlay for construction mode (as described in gameplay document)
         /// </summary>
-        public void ApplyBlueprintOverlay(Camera camera)
+        public void ApplyBlueprintOverlay(UnityEngine.Camera camera)
         {
             if (camera == null) return;
 
@@ -145,7 +145,7 @@ namespace ProjectChimera.Systems.UI.Simple
             var overlay = camera.GetComponent<BlueprintOverlay>();
             if (overlay == null)
             {
-                overlay = camera.AddComponent<BlueprintOverlay>();
+                overlay = camera.gameObject.AddComponent<BlueprintOverlay>();
             }
 
             overlay.Enable();
@@ -154,7 +154,7 @@ namespace ProjectChimera.Systems.UI.Simple
         /// <summary>
         /// Removes blueprint overlay
         /// </summary>
-        public void RemoveBlueprintOverlay(Camera camera)
+        public void RemoveBlueprintOverlay(UnityEngine.Camera camera)
         {
             if (camera == null) return;
 
@@ -173,16 +173,6 @@ namespace ProjectChimera.Systems.UI.Simple
             if (element == null) return;
 
             ApplyHighlight(element);
-        }
-
-        /// <summary>
-        /// Removes highlight from element
-        /// </summary>
-        public void RemoveHighlight(VisualElement element)
-        {
-            if (element == null) return;
-
-            RemoveHighlight(element);
         }
 
         // Private helper methods

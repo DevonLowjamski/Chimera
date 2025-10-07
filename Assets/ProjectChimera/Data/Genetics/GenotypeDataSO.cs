@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+
 namespace ProjectChimera.Data.Genetics
 {
     /// <summary>
@@ -28,6 +29,27 @@ namespace ProjectChimera.Data.Genetics
         [SerializeField] private bool _isStable = true;
         [SerializeField] private string _parentStrain1 = "";
         [SerializeField] private string _parentStrain2 = "";
+        [SerializeField] private string _individualId = "";
+        [SerializeField] private int _generation = 1;
+        [SerializeField] private float _overallFitness = 1.0f;
+
+        [Header("Advanced Genetics")]
+        [SerializeField] private List<GenePair> _genePairs = new List<GenePair>();
+        [SerializeField] private List<MutationRecord> _mutationHistory = new List<MutationRecord>();
+
+        // Public properties for compatibility
+        public string Name => _strainName;
+        public string StrainName => _strainName;
+        public string StrainId => _strainId;
+        public string GenotypeID => _strainId; // Use StrainId as GenotypeID for compatibility
+        public PlantSpecies Species => _species;
+        public string Description => _description;
+        public string IndividualID => _individualId;
+        public GeneticPlantStrainSO ParentStrain => null; // For compatibility - returns null for now
+        public int Generation => _generation;
+        public float OverallFitness => _overallFitness;
+        public List<GenePair> GenePairs => _genePairs;
+        public List<MutationRecord> MutationHistory => _mutationHistory;
 
         /// <summary>
         /// Get basic strain information
@@ -182,6 +204,19 @@ namespace ProjectChimera.Data.Genetics
                 ParentStrain2 = otherInfo.StrainId
             };
         }
+
+        /// <summary>
+        /// Initialize genotype with advanced genetics data
+        /// </summary>
+        public void InitializeGenotype(string strainId, string individualId, int generation, float overallFitness, List<GenePair> genePairs, List<MutationRecord> mutationHistory)
+        {
+            _strainId = strainId;
+            _individualId = individualId;
+            _generation = generation;
+            _overallFitness = overallFitness;
+            _genePairs = genePairs ?? new List<GenePair>();
+            _mutationHistory = mutationHistory ?? new List<MutationRecord>();
+        }
     }
 
     /// <summary>
@@ -213,5 +248,30 @@ namespace ProjectChimera.Data.Genetics
         public bool IsStable;
         public string ParentStrain1;
         public string ParentStrain2;
+    }
+
+    /// <summary>
+    /// Gene pair data structure for genetics system
+    /// </summary>
+    [System.Serializable]
+    public struct GenePair
+    {
+        public GeneDefinitionSO Gene;
+        public AlleleSO Allele1;
+        public AlleleSO Allele2;
+    }
+
+    /// <summary>
+    /// Mutation event data structure for genetics system
+    /// </summary>
+    [System.Serializable]
+    public struct MutationEvent
+    {
+        public GeneDefinitionSO Gene;
+        public AlleleSO FromAllele;
+        public AlleleSO ToAllele;
+        public float MutationTime;
+        public int Generation;
+        public string MutationDescription;
     }
 }

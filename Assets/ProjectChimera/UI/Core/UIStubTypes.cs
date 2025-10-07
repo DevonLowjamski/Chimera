@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UIElements;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.UI.Core
 {

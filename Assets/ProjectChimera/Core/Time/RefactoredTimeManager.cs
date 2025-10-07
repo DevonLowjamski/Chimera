@@ -20,6 +20,10 @@ namespace ProjectChimera.Core
         [SerializeField] private bool _enableOfflineProgression = true;
         [SerializeField] private TimeSpeedLevel _defaultSpeedLevel = TimeSpeedLevel.Normal;
 
+        // ITickable implementation (unified Update Bus)
+        public int TickPriority => -50; // High priority for time management
+        public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
         [Header("Time Scale Events")]
         [SerializeField] private FloatGameEventSO _onTimeScaleChanged;
         [SerializeField] private SimpleGameEventSO _onTimePaused;
@@ -63,6 +67,16 @@ namespace ProjectChimera.Core
         {
             base.Awake();
             InitializeComponents();
+        }
+
+        private void OnEnable()
+        {
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
+        }
+
+        private void OnDisable()
+        {
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
         }
 
         protected override void OnManagerInitialize()
@@ -109,13 +123,6 @@ namespace ProjectChimera.Core
             }
         }
 
-        #endregion
-
-        #region ITickable Implementation
-
-        public int Priority => TickPriority.TimeManager;
-        public bool Enabled => true;
-
         public void Tick(float deltaTime)
         {
             if (_saveTime != null)
@@ -145,10 +152,10 @@ namespace ProjectChimera.Core
                 case GameState.Paused:
                     Pause();
                     break;
-                case GameState.InGame:
+                case GameState.Playing:
                     Resume();
                     break;
-                case GameState.MainMenu:
+                case GameState.Menu:
                     // Might want to pause or reset time here
                     break;
             }
@@ -377,7 +384,7 @@ namespace ProjectChimera.Core
         public static string FormatDuration(float seconds, TimeDisplayFormat format)
         {
             TimeSpan duration = TimeSpan.FromSeconds(seconds);
-            
+
             switch (format)
             {
                 case TimeDisplayFormat.Compact:
@@ -446,7 +453,7 @@ namespace ProjectChimera.Core
             _timeEvents.SetTimePausedEvent(_onTimePaused);
             _timeEvents.SetTimeResumedEvent(_onTimeResumed);
             _timeEvents.SetSpeedPenaltyEvent(_onSpeedPenaltyChanged);
-            
+
             (_offlineProgression as OfflineProgression)?.SetOfflineProgressionEvent(_onOfflineProgressionCalculated);
         }
 
@@ -457,12 +464,12 @@ namespace ProjectChimera.Core
         private void LogDebug(string message)
         {
             if (_enableTimeDebug)
-                ChimeraLogger.Log($"[TimeManager] {message}");
+                ChimeraLogger.LogInfo("RefactoredTimeManager", "$1");
         }
 
         private void LogError(string message)
         {
-            ChimeraLogger.LogError($"[TimeManager] {message}");
+            ChimeraLogger.LogInfo("RefactoredTimeManager", "$1");
         }
 
         #endregion

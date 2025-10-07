@@ -1,0 +1,61 @@
+using UnityEngine;
+using UnityEditor;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Editor
+{
+    /// <summary>
+    /// Initialization script that sets up default build profiles when the project loads
+    /// This ensures consistent build configuration across different development environments
+    /// </summary>
+    [InitializeOnLoad]
+    public static class InitializeBuildProfiles
+    {
+        static InitializeBuildProfiles()
+        {
+            EditorApplication.delayCall += InitializeOnFirstLoad;
+        }
+
+        private static void InitializeOnFirstLoad()
+        {
+            // Check if we need to set up default build configuration
+            var activeDefines = ChimeraBuildProfiles.GetActiveChimeraDefines();
+            var activeProfile = ChimeraBuildProfiles.GetActiveBuildProfile();
+            
+            // If no Chimera defines are active, apply the default Development profile
+            if (activeDefines.Length == 0 || activeProfile == "Custom")
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                ChimeraBuildProfiles.ApplyBuildProfile("Development");
+                
+                // Show a notification about the applied profile
+                EditorApplication.delayCall += () =>
+                {
+                    EditorUtility.DisplayDialog(
+                        "Build Profile Applied",
+                        "Project Chimera Development build profile has been applied.\n\n" +
+                        "Active defines:\n" +
+                        "• CHIMERA_DEV_LOGS\n" +
+                        "• CHIMERA_VERBOSE_INIT\n" +
+                        "• CHIMERA_ASSERTS\n" +
+                        "• CHIMERA_DEBUG_UI\n" +
+                        "• CHIMERA_PERFORMANCE_PROFILING\n\n" +
+                        "Use 'Project Chimera > Build Profile Manager' to change profiles.",
+                        "OK"
+                    );
+                };
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        [MenuItem("Project Chimera/Initialize Default Build Profile")]
+        public static void ForceInitializeProfile()
+        {
+            ChimeraBuildProfiles.ApplyBuildProfile("Development");
+            UnityEngine.Debug.Log("Operation completed");
+        }
+    }
+}

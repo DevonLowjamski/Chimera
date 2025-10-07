@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Services.SpeedTree.Performance
 {
@@ -7,7 +8,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
     /// BASIC: Simple memory manager for Project Chimera's performance system.
     /// Focuses on essential memory monitoring without complex asset tracking and optimization systems.
     /// </summary>
-    public class MemoryManager : MonoBehaviour
+    public class MemoryManager : UnityEngine.MonoBehaviour, ITickable
     {
         [Header("Basic Memory Settings")]
         [SerializeField] private bool _enableBasicMonitoring = true;
@@ -39,24 +40,35 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[MemoryManager] Initialized successfully");
+                ChimeraLogger.Log("SPEEDTREE/MEM", "MemoryManager initialized", this);
             }
         }
 
         /// <summary>
         /// Update memory monitoring
         /// </summary>
-        private void Update()
-        {
+    public int TickPriority => 100;
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
             if (!_enableBasicMonitoring || !_isInitialized) return;
 
             float currentTime = Time.time;
             if (currentTime - _lastMemoryCheck >= _memoryCheckInterval)
-            {
                 CheckMemoryUsage();
                 _lastMemoryCheck = currentTime;
-            }
-        }
+    }
+
+    private void OnEnable()
+    {
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
+    }
+
+    private void OnDisable()
+    {
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
+    }
 
         /// <summary>
         /// Check current memory usage
@@ -80,7 +92,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.LogWarning($"[MemoryManager] High memory usage: {currentMemoryMB:F1}MB (threshold: {_memoryWarningThresholdMB:F1}MB)");
+                    ChimeraLogger.LogWarning("SPEEDTREE/MEM", $"Memory warning: {currentMemoryMB:F1} MB", this);
                 }
             }
 
@@ -97,7 +109,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[MemoryManager] Forced garbage collection and asset cleanup");
+                ChimeraLogger.Log("SPEEDTREE/MEM", "Forced garbage collection", this);
             }
         }
 
@@ -145,7 +157,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[MemoryManager] Updated parameters - Interval: {_memoryCheckInterval:F1}s, Threshold: {_memoryWarningThresholdMB:F1}MB");
+                ChimeraLogger.Log("SPEEDTREE/MEM", $"Monitoring params set: interval={_memoryCheckInterval}, warn={_memoryWarningThresholdMB}", this);
             }
         }
 
@@ -160,7 +172,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[MemoryManager] Reset memory tracking");
+                ChimeraLogger.Log("SPEEDTREE/MEM", "Memory tracking reset", this);
             }
         }
 
@@ -194,7 +206,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[MemoryManager] Monitoring {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.Log("SPEEDTREE/MEM", $"Monitoring {(enabled ? "enabled" : "disabled")}", this);
             }
         }
     }

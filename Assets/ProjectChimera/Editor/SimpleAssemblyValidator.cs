@@ -62,7 +62,7 @@ namespace ProjectChimera.Editor
             AssetDatabase.Refresh();
 
             // Display results
-            ChimeraLogger.Log("SYSTEM", $"[Simple Assembly Validator] {report.ToString()}");
+            ChimeraLogger.Log("OTHER", "$1", null);
 
             var statusMessage = validAssemblies == totalAssemblies ?
                 "✅ All assemblies are valid" :
@@ -139,7 +139,7 @@ namespace ProjectChimera.Editor
             message.AppendLine();
             message.AppendLine(status);
 
-            ChimeraLogger.Log("SYSTEM", $"[Quick Assembly Check] {message.ToString()}");
+            ChimeraLogger.Log("OTHER", "$1", null);
             EditorUtility.DisplayDialog("Quick Assembly Check", message.ToString(), "OK");
         }
 

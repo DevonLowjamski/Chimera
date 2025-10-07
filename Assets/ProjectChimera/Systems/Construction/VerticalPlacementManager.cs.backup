@@ -1,0 +1,264 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Construction
+{
+    /// <summary>
+    /// BASIC: Simple construction placement for Project Chimera.
+    /// Focuses on essential placement validation without complex vertical management systems.
+    /// </summary>
+    public class VerticalPlacementManager : MonoBehaviour
+    {
+        [Header("Basic Placement Settings")]
+        [SerializeField] private bool _enableBasicValidation = true;
+        [SerializeField] private bool _requireGroundLevel = true;
+        [SerializeField] private int _maxHeight = 5;
+        [SerializeField] private bool _enableLogging = true;
+
+        // Basic placement tracking
+        private readonly Dictionary<Vector3Int, PlacedObject> _placedObjects = new Dictionary<Vector3Int, PlacedObject>();
+        private bool _isInitialized = false;
+
+        /// <summary>
+        /// Events for placement operations
+        /// </summary>
+        public event System.Action<Vector3Int, PlacedObject> OnObjectPlaced;
+        public event System.Action<Vector3Int> OnObjectRemoved;
+
+        /// <summary>
+        /// Initialize basic placement system
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Check if position can accept placement
+        /// </summary>
+        public bool CanPlaceAt(Vector3Int position)
+        {
+            if (!_enableBasicValidation || !_isInitialized) return true;
+
+            // Check if position is already occupied
+            if (_placedObjects.ContainsKey(position)) return false;
+
+            // Check height limit
+            if (_requireGroundLevel && position.y > _maxHeight) return false;
+
+            // Check if there's a supporting structure below (for elevated positions)
+            if (position.y > 0)
+            {
+                Vector3Int belowPosition = new Vector3Int(position.x, position.y - 1, position.z);
+                if (!_placedObjects.ContainsKey(belowPosition))
+                {
+                    return false; // Nothing below to support this placement
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Place object at position
+        /// </summary>
+        public bool PlaceObject(Vector3Int position, string objectType, GameObject prefab)
+        {
+            if (!CanPlaceAt(position)) return false;
+
+            var placedObject = new PlacedObject
+            {
+                ObjectType = objectType,
+                Prefab = prefab,
+                Position = position,
+                PlacementTime = Time.time
+            };
+
+            _placedObjects[position] = placedObject;
+            OnObjectPlaced?.Invoke(position, placedObject);
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Remove object from position
+        /// </summary>
+        public bool RemoveObject(Vector3Int position)
+        {
+            if (!_placedObjects.ContainsKey(position)) return false;
+
+            _placedObjects.Remove(position);
+            OnObjectRemoved?.Invoke(position);
+
+            // Check if removing this object affects objects above it
+            Vector3Int abovePosition = new Vector3Int(position.x, position.y + 1, position.z);
+            if (_placedObjects.ContainsKey(abovePosition))
+            {
+                // Could implement cascading removal here if needed
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Get object at position
+        /// </summary>
+        public PlacedObject GetObjectAt(Vector3Int position)
+        {
+            return _placedObjects.TryGetValue(position, out var obj) ? obj : null;
+        }
+
+        /// <summary>
+        /// Check if position has an object
+        /// </summary>
+        public bool HasObjectAt(Vector3Int position)
+        {
+            return _placedObjects.ContainsKey(position);
+        }
+
+        /// <summary>
+        /// Get all placed objects
+        /// </summary>
+        public Dictionary<Vector3Int, PlacedObject> GetAllPlacedObjects()
+        {
+            return new Dictionary<Vector3Int, PlacedObject>(_placedObjects);
+        }
+
+        /// <summary>
+        /// Get objects by type
+        /// </summary>
+        public List<Vector3Int> GetObjectsByType(string objectType)
+        {
+            var positions = new List<Vector3Int>();
+
+            foreach (var kvp in _placedObjects)
+            {
+                if (kvp.Value.ObjectType == objectType)
+                {
+                    positions.Add(kvp.Key);
+                }
+            }
+
+            return positions;
+        }
+
+        /// <summary>
+        /// Clear all placed objects
+        /// </summary>
+        public void ClearAllObjects()
+        {
+            var positionsToRemove = new List<Vector3Int>(_placedObjects.Keys);
+            _placedObjects.Clear();
+
+            foreach (var position in positionsToRemove)
+            {
+                OnObjectRemoved?.Invoke(position);
+            }
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Get placement statistics
+        /// </summary>
+        public PlacementStatistics GetStatistics()
+        {
+            var objectTypes = new Dictionary<string, int>();
+
+            foreach (var obj in _placedObjects.Values)
+            {
+                if (!objectTypes.ContainsKey(obj.ObjectType))
+                {
+                    objectTypes[obj.ObjectType] = 0;
+                }
+                objectTypes[obj.ObjectType]++;
+            }
+
+            return new PlacementStatistics
+            {
+                TotalObjects = _placedObjects.Count,
+                ObjectTypes = objectTypes,
+                MaxHeight = _maxHeight,
+                RequiresGroundLevel = _requireGroundLevel
+            };
+        }
+
+        /// <summary>
+        /// Validate entire structure for stability
+        /// </summary>
+        public bool ValidateStructureStability()
+        {
+            bool isStable = true;
+
+            foreach (var kvp in _placedObjects)
+            {
+                Vector3Int position = kvp.Key;
+
+                // Check if elevated objects have support
+                if (position.y > 0)
+                {
+                    Vector3Int belowPosition = new Vector3Int(position.x, position.y - 1, position.z);
+                    if (!_placedObjects.ContainsKey(belowPosition))
+                    {
+                        isStable = false;
+                        if (_enableLogging)
+                        {
+                            UnityEngine.Debug.Log("Operation completed");
+                        }
+                    }
+                }
+            }
+
+            return isStable;
+        }
+    }
+
+    /// <summary>
+    /// Placed object data
+    /// </summary>
+    [System.Serializable]
+    public class PlacedObject
+    {
+        public string ObjectType;
+        public GameObject Prefab;
+        public Vector3Int Position;
+        public float PlacementTime;
+    }
+
+    /// <summary>
+    /// Placement statistics
+    /// </summary>
+    [System.Serializable]
+    public class PlacementStatistics
+    {
+        public int TotalObjects;
+        public Dictionary<string, int> ObjectTypes = new Dictionary<string, int>();
+        public int MaxHeight;
+        public bool RequiresGroundLevel;
+    }
+}

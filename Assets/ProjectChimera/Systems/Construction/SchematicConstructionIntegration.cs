@@ -6,6 +6,7 @@ using ProjectChimera.Data.Construction;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Construction
 {
@@ -87,8 +88,8 @@ namespace ProjectChimera.Systems.Construction
         }
 
         // ITickable implementation
-        int ITickable.Priority => 0;
-        bool ITickable.Enabled => enabled && gameObject.activeInHierarchy;
+        public int TickPriority => 0;
+        public bool IsTickable => enabled && gameObject.activeInHierarchy;
 
         public void OnRegistered() { }
         public void OnUnregistered() { }

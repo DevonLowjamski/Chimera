@@ -4,6 +4,18 @@ using ProjectChimera.Core.Logging;
 namespace ProjectChimera.Systems.Construction
 {
     /// <summary>
+    /// Minimal construction object descriptor used by GridPlacementSystem.
+    /// Provides prefab, name, and grid size. Bridges missing type errors.
+    /// </summary>
+    [System.Serializable]
+    public class ConstructionObject
+    {
+        public string ObjectName;
+        public GameObject Prefab;
+        public Vector2Int GridSize = Vector2Int.one;
+    }
+
+    /// <summary>
     /// BASIC: Core grid placement component for Project Chimera's construction system.
     /// Focuses on essential grid placement functionality.
     /// </summary>
@@ -38,8 +50,10 @@ namespace ProjectChimera.Systems.Construction
         /// Properties
         /// </summary>
         public Vector3Int GridSize => _gridSize;
-        public Vector3Int GridPosition => _currentGridPosition;
-        public bool IsPlaced => _isPlaced;
+        public Vector3Int Size => _gridSize; // Alias for GridSize for compatibility with CanPlace method
+        public Vector3Int GridPosition { get => _currentGridPosition; set => _currentGridPosition = value; }
+        public Vector3Int GridCoordinate { get => _currentGridPosition; set => _currentGridPosition = value; } // Alias for GridPosition for compatibility
+        public bool IsPlaced { get => _isPlaced; set => _isPlaced = value; }
         public bool IsPreviewMode => _isPreviewMode;
         public PlaceableType Type => _placeableType;
         public bool CanRotate => _canRotate;
@@ -72,7 +86,7 @@ namespace ProjectChimera.Systems.Construction
             _isPreviewMode = false;
 
             OnPlaced?.Invoke(this);
-            ChimeraLogger.Log($"[GridPlaceable] Placed {name} at {_currentGridPosition}");
+            ChimeraLogger.Log("OTHER", "$1", this);
 
             return true;
         }
@@ -86,7 +100,7 @@ namespace ProjectChimera.Systems.Construction
 
             _isPlaced = false;
             OnRemoved?.Invoke(this);
-            ChimeraLogger.Log($"[GridPlaceable] Removed {name} from {_currentGridPosition}");
+            ChimeraLogger.Log("OTHER", "$1", this);
 
             return true;
         }
@@ -132,6 +146,16 @@ namespace ProjectChimera.Systems.Construction
                 Quaternion.identity,
                 _collisionLayers
             );
+        }
+
+        /// <summary>
+        /// Get object bounds for collision calculation
+        /// </summary>
+        public Bounds GetObjectBounds()
+        {
+            Vector3 center = transform.position + _pivotOffset;
+            Vector3 size = new Vector3(_gridSize.x, _gridSize.y, _gridSize.z);
+            return new Bounds(center, size);
         }
 
         /// <summary>
@@ -223,7 +247,8 @@ namespace ProjectChimera.Systems.Construction
         Structure,
         Equipment,
         Plant,
-        Utility
+        Utility,
+        Decoration
     }
 
     /// <summary>

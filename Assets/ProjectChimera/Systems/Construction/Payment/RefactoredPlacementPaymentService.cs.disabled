@@ -1,0 +1,432 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Interfaces;
+using ProjectChimera.Data.Construction;
+using ProjectChimera.Data.Economy;
+using ProjectChimera.Systems.Economy;
+
+
+namespace ProjectChimera.Systems.Construction
+{
+    /// <summary>
+    /// Refactored Placement Payment Service - orchestrates all payment components
+    /// Maintains original interface while using modular components
+    /// Refactored from monolithic 977-line class into focused components
+    /// </summary>
+    public class RefactoredPlacementPaymentService : MonoBehaviour, ITickable
+    {
+        [Header("Cost Configuration")]
+        [SerializeField] private bool _enablePaymentValidation = true;
+        [SerializeField] private float _heightCostMultiplier = 1.15f;
+        [SerializeField] private float _foundationCostMultiplier = 1.25f;
+        [SerializeField] private bool _enableBulkDiscounts = true;
+        [SerializeField] private float _bulkDiscountThreshold = 5f;
+        [SerializeField] private float _bulkDiscountRate = 0.1f;
+
+        [Header("Resource Management")]
+        [SerializeField] private bool _enableResourceReservation = true;
+        [SerializeField] private float _reservationDuration = 30f;
+        [SerializeField] private bool _autoReleaseReservations = true;
+        [SerializeField] private int _maxSimultaneousReservations = 10;
+
+        [Header("Payment Processing")]
+        [SerializeField] private bool _requireInstantPayment = false;
+        [SerializeField] private bool _enablePaymentPlans = true;
+        [SerializeField] private float _creditLimit = 10000f;
+        [SerializeField] private bool _enableRefunds = true;
+        [SerializeField] private float _refundPercentage = 0.8f;
+
+        // Core references
+        private GridSystem _gridSystem;
+        private ICurrencyManager _currencyManager;
+        private MonoBehaviour _tradingManager;
+
+        // Payment components
+        private IPlacementValidator _placementValidator;
+        private IPaymentProcessor _paymentProcessor;
+        private ICostCalculator _costCalculator;
+        private IRefundHandler _refundHandler;
+
+        // Events - forwarded from components
+        public System.Action<PaymentValidationResult> OnPaymentValidated;
+        public System.Action<PaymentTransaction> OnPaymentProcessed;
+        public System.Action<string, ResourceReservation> OnResourceReserved;
+        public System.Action<string> OnReservationReleased;
+        public System.Action<PaymentError> OnPaymentError;
+
+        private bool _isInitialized = false;
+
+        #region Unity Lifecycle
+
+        private void Awake()
+        {
+            InitializeComponents();
+        }
+
+        private void Start()
+        {
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
+            RegisterEconomyEvents();
+        }
+
+        private void OnDestroy()
+        {
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
+            ShutdownComponents();
+        }
+
+        #endregion
+
+        #region ITickable Implementation
+
+        public int TickPriority => TickPriority.ConstructionSystem;
+        public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+        public void Tick(float deltaTime)
+        {
+            if (_autoReleaseReservations)
+            {
+                _refundHandler?.Tick(deltaTime);
+            }
+        }
+
+        public virtual void OnRegistered()
+        {
+            // Called when registered with UpdateOrchestrator
+        }
+
+        public virtual void OnUnregistered()
+        {
+            // Called when unregistered from UpdateOrchestrator
+        }
+
+        #endregion
+
+        #region Initialization
+
+        private void InitializeComponents()
+        {
+            if (_isInitialized) return;
+
+            try
+            {
+                InitializeSystemReferences();
+                CreatePaymentComponents();
+                ConfigureComponentIntegrations();
+                InitializeAllComponents();
+                SetupEventForwarding();
+
+                _isInitialized = true;
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+            catch (System.Exception ex)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+
+        private void InitializeSystemReferences()
+        {
+            _gridSystem = ServiceContainerFactory.Instance?.TryResolve<IGridSystem>() as GridSystem;
+
+            // Try to resolve Currency Manager from ServiceContainer first
+            var currencyService = ServiceContainerFactory.Instance?.TryResolve<ICurrencyManager>();
+            if (currencyService != null)
+            {
+                _currencyManager = currencyService;
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+            else
+            {
+                // Fallback to GameObject.Find for backward compatibility
+                var currencyObj = GameObject.Find("CurrencyManager");
+                _currencyManager = currencyObj?.GetComponent<ICurrencyManager>();
+
+                // Register found manager in ServiceContainer for future use
+                if (_currencyManager != null && ServiceContainerFactory.Instance != null)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<ICurrencyManager>(_currencyManager);
+                    ChimeraLogger.Log("OTHER", "$1", this);
+                }
+            }
+
+            // Try to resolve Trading Manager from ServiceContainer first
+            MonoBehaviour tradingManagerComponent = null;
+            var tradingService = ServiceContainerFactory.Instance?.TryResolve<ITradingManager>();
+            if (tradingService != null)
+            {
+                tradingManagerComponent = tradingService as MonoBehaviour;
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+            else
+            {
+                // Fallback to GameObject.Find for backward compatibility
+                var tradingObj = GameObject.Find("TradingManager");
+                tradingManagerComponent = tradingObj?.GetComponent<MonoBehaviour>();
+
+                // Register found manager in ServiceContainer if it implements ITradingManager
+                if (tradingManagerComponent is ITradingManager tradingManager && ServiceContainerFactory.Instance != null)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<ITradingManager>(tradingManager);
+                    ChimeraLogger.Log("OTHER", "$1", this);
+                }
+            }
+            _tradingManager = tradingManagerComponent;
+
+            // Log warnings for missing systems
+            if (_gridSystem == null)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+            if (_currencyManager == null)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+            if (_tradingManager == null)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+
+        private void CreatePaymentComponents()
+        {
+            // Create payment components
+            _costCalculator = new CostCalculator();
+            _placementValidator = new PlacementValidator(_currencyManager, _tradingManager, _costCalculator);
+            _paymentProcessor = new PaymentProcessor(_currencyManager, _tradingManager, _costCalculator, null); // RefundHandler set later
+            _refundHandler = new RefundHandler(_currencyManager, _tradingManager, _paymentProcessor, _costCalculator);
+        }
+
+        private void ConfigureComponentIntegrations()
+        {
+            // Set up cross-component dependencies
+            (_placementValidator as PlacementValidator)?.SetDependencies(_currencyManager, _tradingManager, _costCalculator);
+            (_paymentProcessor as PaymentProcessor)?.SetDependencies(_currencyManager, _tradingManager, _costCalculator, _refundHandler);
+            (_refundHandler as RefundHandler)?.SetDependencies(_currencyManager, _tradingManager, _paymentProcessor, _costCalculator);
+        }
+
+        private void InitializeAllComponents()
+        {
+            // Initialize all components with their specific configurations
+            _placementValidator.Initialize(_enablePaymentValidation, _creditLimit);
+
+            _paymentProcessor.Initialize(_requireInstantPayment, _enablePaymentPlans);
+
+            _costCalculator.Initialize(_heightCostMultiplier, _foundationCostMultiplier,
+                _enableBulkDiscounts, _bulkDiscountThreshold, _bulkDiscountRate);
+
+            _refundHandler.Initialize(_enableRefunds, _refundPercentage, _enableResourceReservation,
+                _reservationDuration, _autoReleaseReservations, _maxSimultaneousReservations);
+
+            ChimeraLogger.Log("OTHER", "$1", this);
+        }
+
+        private void SetupEventForwarding()
+        {
+            // Forward events from components to this service's events
+            if (_paymentProcessor != null)
+            {
+                _paymentProcessor.OnPaymentProcessed = (transaction) => {
+                    OnPaymentProcessed?.Invoke(transaction);
+                };
+
+                _paymentProcessor.OnPaymentError = (error) => {
+                    OnPaymentError?.Invoke(error);
+                };
+            }
+
+            if (_refundHandler != null)
+            {
+                _refundHandler.OnResourceReserved = (reservationId, reservation) => {
+                    OnResourceReserved?.Invoke(reservationId, reservation);
+                };
+
+                _refundHandler.OnReservationReleased = (reservationId) => {
+                    OnReservationReleased?.Invoke(reservationId);
+                };
+            }
+        }
+
+        private void ShutdownComponents()
+        {
+            try
+            {
+                _placementValidator?.Shutdown();
+                _paymentProcessor?.Shutdown();
+                _costCalculator?.Shutdown();
+                _refundHandler?.Shutdown();
+            }
+            catch (System.Exception ex)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+
+            ChimeraLogger.Log("OTHER", "$1", this);
+        }
+
+        #endregion
+
+        #region Public API - Core Operations
+
+        /// <summary>
+        /// Validate payment requirements for placing an object at specified position
+        /// </summary>
+        public PaymentValidationResult ValidatePayment(GridPlaceable placeable, Vector3Int gridPosition)
+        {
+            if (!_isInitialized)
+            {
+                return new PaymentValidationResult
+                {
+                    IsValid = false,
+                    ErrorMessage = "Payment service not initialized"
+                };
+            }
+
+            var result = _placementValidator.ValidatePayment(placeable, gridPosition);
+            OnPaymentValidated?.Invoke(result);
+            return result;
+        }
+
+        /// <summary>
+        /// Process payment for object placement
+        /// </summary>
+        public PaymentProcessingResult ProcessPayment(GridPlaceable placeable, Vector3Int gridPosition, string reservationId = null)
+        {
+            if (!_isInitialized)
+            {
+                return new PaymentProcessingResult
+                {
+                    Success = false,
+                    ErrorMessage = "Payment service not initialized"
+                };
+            }
+
+            return _paymentProcessor.ProcessPayment(placeable, gridPosition, reservationId);
+        }
+
+        /// <summary>
+        /// Create resource reservation for future placement
+        /// </summary>
+        public ResourceReservationResult CreateReservation(GridPlaceable placeable, Vector3Int gridPosition)
+        {
+            if (!_isInitialized)
+            {
+                return new ResourceReservationResult
+                {
+                    Success = false,
+                    ErrorMessage = "Payment service not initialized"
+                };
+            }
+
+            return _refundHandler.CreateReservation(placeable, gridPosition);
+        }
+
+        /// <summary>
+        /// Release a resource reservation
+        /// </summary>
+        public bool ReleaseReservation(string reservationId)
+        {
+            return _refundHandler?.ReleaseReservation(reservationId) ?? false;
+        }
+
+        /// <summary>
+        /// Process refund for object removal
+        /// </summary>
+        public RefundResult ProcessRefund(Vector3Int gridPosition, string reason = "")
+        {
+            if (!_isInitialized)
+            {
+                return new RefundResult
+                {
+                    Success = false,
+                    ErrorMessage = "Payment service not initialized"
+                };
+            }
+
+            return _refundHandler.ProcessRefund(gridPosition, reason);
+        }
+
+        /// <summary>
+        /// Get cost estimate for placing object at position
+        /// </summary>
+        public CostEstimate GetCostEstimate(GridPlaceable placeable, Vector3Int gridPosition)
+        {
+            if (!_isInitialized || _costCalculator == null)
+            {
+                return new CostEstimate
+                {
+                    TotalCost = 0f,
+                    ResourceCosts = new List<ResourceCost>(),
+                    CostBreakdown = new Dictionary<string, float>(),
+                    HeightModifier = 1f,
+                    FoundationModifier = 1f
+                };
+            }
+
+            return _costCalculator.GetCostEstimate(placeable, gridPosition);
+        }
+
+        #endregion
+
+        #region Legacy Support Methods
+
+        // These methods maintain compatibility with existing code
+        public bool ValidateAndReserveFunds(GridPlaceable placeable)
+        {
+            return _placementValidator?.ValidateAndReserveFunds(placeable) ?? false;
+        }
+
+        public void CompletePurchase(GridPlaceable placeable)
+        {
+            _paymentProcessor?.CompletePurchase(placeable);
+        }
+
+        public void UpdatePlayerFunds(float funds)
+        {
+            _paymentProcessor?.UpdatePlayerFunds(funds);
+        }
+
+        public void UpdatePlayerResources(Dictionary<string, int> resources)
+        {
+            _paymentProcessor?.UpdatePlayerResources(resources);
+        }
+
+        #endregion
+
+        #region Component Access (for advanced usage)
+
+        public IPlacementValidator GetPlacementValidator() => _placementValidator;
+        public IPaymentProcessor GetPaymentProcessor() => _paymentProcessor;
+        public ICostCalculator GetCostCalculator() => _costCalculator;
+        public IRefundHandler GetRefundHandler() => _refundHandler;
+
+        #endregion
+
+        #region Event Registration
+
+        private void RegisterEconomyEvents()
+        {
+            // Register for economy events if needed
+            // This would be expanded based on actual economy system integration
+        }
+
+        #endregion
+
+        #region Debug and Testing Support
+
+        public bool IsInitialized => _isInitialized;
+
+        public void ForceReinitialization()
+        {
+            _isInitialized = false;
+            InitializeComponents();
+        }
+
+        #endregion
+    }
+}

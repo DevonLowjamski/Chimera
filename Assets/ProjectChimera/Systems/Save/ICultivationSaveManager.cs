@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using ProjectChimera.Data.Environment;
+using ProjectChimera.Core.Logging;
 
 
 namespace ProjectChimera.Systems.Save

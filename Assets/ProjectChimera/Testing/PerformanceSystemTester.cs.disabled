@@ -1,0 +1,675 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Performance;
+
+namespace ProjectChimera.Testing
+{
+    /// <summary>
+    /// REFACTORED: Performance System Tester
+    /// Single Responsibility: Testing performance monitoring systems and metrics collection
+    /// Extracted from Phase1IntegrationTester for better separation of concerns
+    /// </summary>
+    public class PerformanceSystemTester : MonoBehaviour
+    {
+        [Header("Performance Testing Settings")]
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private bool _enableStressTest = true;
+        [SerializeField] private float _maxAcceptableFrameTime = 20f; // 50 FPS minimum
+        [SerializeField] private long _maxAcceptableMemoryUsage = 600 * 1024 * 1024; // 600MB
+
+        [Header("Test Parameters")]
+        [SerializeField] private float _performanceTestDuration = 10f;
+        [SerializeField] private float _stressTestDuration = 5f;
+        [SerializeField] private int _stressTestIterations = 1000;
+        [SerializeField] private bool _collectDetailedMetrics = true;
+
+        // System references
+        private AdvancedPerformanceMonitor _performanceMonitor;
+        private MetricsCollectionFramework _metricsFramework;
+
+        // Test state
+        private bool _isInitialized = false;
+        private PerformanceTestResult _lastTestResult;
+
+        // Statistics
+        private PerformanceTestStats _stats = new PerformanceTestStats();
+
+        // Events
+        public event System.Action<PerformanceTestResult> OnPerformanceTestCompleted;
+        public event System.Action<string> OnPerformanceValidationStep; // step description
+        public event System.Action<PerformanceMetricSample> OnMetricSampleCollected;
+
+        public bool IsInitialized => _isInitialized;
+        public PerformanceTestStats Stats => _stats;
+        public PerformanceTestResult LastTestResult => _lastTestResult;
+
+        private void Awake()
+        {
+            Initialize();
+        }
+
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            // Get system references
+            _performanceMonitor = FindObjectOfType<AdvancedPerformanceMonitor>();
+            _metricsFramework = MetricsCollectionFramework.Instance;
+
+            ResetStats();
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("TESTING", "Performance System Tester initialized");
+            }
+        }
+
+        /// <summary>
+        /// Test performance systems
+        /// </summary>
+        public IEnumerator TestPerformanceSystems()
+        {
+            if (!_isInitialized) Initialize();
+
+            var testResult = new PerformanceTestResult
+            {
+                TestName = "Performance Systems Validation",
+                TestCategory = "Performance",
+                StartTime = Time.time,
+                TestSteps = new List<string>(),
+                ValidationResults = new Dictionary<string, bool>(),
+                MetricSamples = new List<PerformanceMetricSample>()
+            };
+
+            _stats.TestsStarted++;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("TESTING", "Starting performance systems test...");
+            }
+
+            try
+            {
+                // Test 1: Performance Monitor
+                yield return StartCoroutine(TestPerformanceMonitor(testResult));
+
+                // Test 2: Metrics Framework
+                yield return StartCoroutine(TestMetricsFramework(testResult));
+
+                // Test 3: Performance Baseline
+                yield return StartCoroutine(TestPerformanceBaseline(testResult));
+
+                // Test 4: Stress Test (if enabled)
+                if (_enableStressTest)
+                {
+                    yield return StartCoroutine(PerformStressTest(testResult));
+                }
+
+                // Test 5: Memory Performance
+                yield return StartCoroutine(TestMemoryPerformance(testResult));
+
+                // Evaluate overall success
+                testResult.Success = EvaluateOverallSuccess(testResult);
+                testResult.CompletionTime = Time.time;
+                testResult.TestDuration = testResult.CompletionTime - testResult.StartTime;
+
+                if (testResult.Success)
+                {
+                    testResult.ResultMessage = "Performance systems validated successfully";
+                    _stats.TestsPassed++;
+                }
+                else
+                {
+                    testResult.ResultMessage = "Performance system validation failed";
+                    _stats.TestsFailed++;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                testResult.Success = false;
+                testResult.CompletionTime = Time.time;
+                testResult.TestDuration = testResult.CompletionTime - testResult.StartTime;
+                testResult.ResultMessage = $"Performance test error: {ex.Message}";
+                testResult.Exception = ex;
+                _stats.TestsFailed++;
+                _stats.TestErrors++;
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogError("TESTING", $"Performance test exception: {ex.Message}");
+                }
+            }
+
+            _lastTestResult = testResult;
+            _stats.TotalTestTime += testResult.TestDuration;
+
+            OnPerformanceTestCompleted?.Invoke(testResult);
+
+            if (_enableLogging)
+            {
+                LogPerformanceTestResults(testResult);
+            }
+
+            yield return null;
+        }
+
+        /// <summary>
+        /// Test performance monitor
+        /// </summary>
+        private IEnumerator TestPerformanceMonitor(PerformanceTestResult testResult)
+        {
+            var stepDescription = "Testing Performance Monitor...";
+            OnPerformanceValidationStep?.Invoke(stepDescription);
+
+            bool monitorExists = _performanceMonitor != null;
+            bool monitorActive = monitorExists && _performanceMonitor.IsMonitoring;
+
+            testResult.ValidationResults["PerformanceMonitorExists"] = monitorExists;
+            testResult.ValidationResults["PerformanceMonitorActive"] = monitorActive;
+
+            if (monitorExists)
+            {
+                testResult.TestSteps.Add($"Performance Monitor Found: {_performanceMonitor.name}");
+
+                if (monitorActive)
+                {
+                    testResult.TestSteps.Add("Performance Monitor: ACTIVE ✅");
+
+                    // Wait for data collection
+                    yield return new WaitForSeconds(3f);
+
+                    // Test metrics collection
+                    var currentMetrics = _performanceMonitor.GetCurrentMetrics();
+                    bool metricsAvailable = currentMetrics != null;
+                    testResult.ValidationResults["PerformanceMetricsAvailable"] = metricsAvailable;
+
+                    if (metricsAvailable)
+                    {
+                        testResult.TestSteps.Add("Performance Metrics: AVAILABLE ✅");
+                        testResult.TestSteps.Add($"  Frame Time: {currentMetrics.FrameTime:F2}ms");
+                        testResult.TestSteps.Add($"  Memory Usage: {currentMetrics.GCMemory / (1024 * 1024):F1}MB");
+
+                        // Record metric sample
+                        var sample = new PerformanceMetricSample
+                        {
+                            Timestamp = Time.time,
+                            FrameTime = currentMetrics.FrameTime,
+                            MemoryUsage = currentMetrics.GCMemory,
+                            FPS = 1000f / currentMetrics.FrameTime
+                        };
+                        testResult.MetricSamples.Add(sample);
+                        OnMetricSampleCollected?.Invoke(sample);
+
+                        // Validate performance metrics
+                        bool performanceAcceptable = currentMetrics.FrameTime < _maxAcceptableFrameTime &&
+                                                   currentMetrics.GCMemory < _maxAcceptableMemoryUsage;
+                        testResult.ValidationResults["PerformanceAcceptable"] = performanceAcceptable;
+
+                        if (performanceAcceptable)
+                        {
+                            testResult.TestSteps.Add("Performance Metrics: ACCEPTABLE ✅");
+                        }
+                        else
+                        {
+                            testResult.TestSteps.Add("Performance Metrics: POOR ⚠️");
+                        }
+                    }
+                    else
+                    {
+                        testResult.TestSteps.Add("Performance Metrics: NOT AVAILABLE ❌");
+                    }
+                }
+                else
+                {
+                    testResult.TestSteps.Add("Performance Monitor: NOT ACTIVE ❌");
+                }
+            }
+            else
+            {
+                testResult.TestSteps.Add("Performance Monitor: NOT FOUND ❌");
+            }
+
+            _stats.PerformanceMonitorTests++;
+            yield return null;
+        }
+
+        /// <summary>
+        /// Test metrics framework
+        /// </summary>
+        private IEnumerator TestMetricsFramework(PerformanceTestResult testResult)
+        {
+            var stepDescription = "Testing Metrics Framework...";
+            OnPerformanceValidationStep?.Invoke(stepDescription);
+
+            bool frameworkExists = _metricsFramework != null;
+            testResult.ValidationResults["MetricsFrameworkExists"] = frameworkExists;
+
+            if (frameworkExists)
+            {
+                testResult.TestSteps.Add("Metrics Framework: FOUND ✅");
+
+                try
+                {
+                    // Test metrics collection
+                    var aggregatedMetrics = _metricsFramework.GetAggregatedMetrics(10);
+                    bool metricsCollected = aggregatedMetrics != null && aggregatedMetrics.SystemMetrics.Count > 0;
+                    testResult.ValidationResults["MetricsCollected"] = metricsCollected;
+
+                    if (metricsCollected)
+                    {
+                        testResult.TestSteps.Add($"Metrics Collection: {aggregatedMetrics.SystemMetrics.Count} systems reporting ✅");
+
+                        // Test metric details
+                        foreach (var systemMetric in aggregatedMetrics.SystemMetrics.Take(3)) // Show first 3
+                        {
+                            testResult.TestSteps.Add($"  System: {systemMetric.Key}");
+                        }
+                    }
+                    else
+                    {
+                        testResult.TestSteps.Add("Metrics Collection: NO SYSTEMS REPORTING ❌");
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    testResult.TestSteps.Add($"Metrics Framework Test: ERROR - {ex.Message} ❌");
+                    testResult.ValidationResults["MetricsFrameworkError"] = true;
+                }
+            }
+            else
+            {
+                testResult.TestSteps.Add("Metrics Framework: NOT FOUND ❌");
+            }
+
+            _stats.MetricsFrameworkTests++;
+            yield return null;
+        }
+
+        /// <summary>
+        /// Test performance baseline
+        /// </summary>
+        private IEnumerator TestPerformanceBaseline(PerformanceTestResult testResult)
+        {
+            var stepDescription = "Testing Performance Baseline...";
+            OnPerformanceValidationStep?.Invoke(stepDescription);
+
+            float testDuration = _performanceTestDuration;
+            float startTime = Time.time;
+            var samples = new List<PerformanceMetricSample>();
+
+            float maxFrameTime = 0f;
+            float minFrameTime = float.MaxValue;
+            float totalFrameTime = 0f;
+            int frameCount = 0;
+
+            testResult.TestSteps.Add($"Collecting baseline performance data for {testDuration:F1}s...");
+
+            while (Time.time - startTime < testDuration)
+            {
+                float frameStart = Time.unscaledTime;
+                yield return null; // Wait one frame
+                float frameTime = (Time.unscaledTime - frameStart) * 1000f; // Convert to milliseconds
+
+                maxFrameTime = Mathf.Max(maxFrameTime, frameTime);
+                minFrameTime = Mathf.Min(minFrameTime, frameTime);
+                totalFrameTime += frameTime;
+                frameCount++;
+
+                // Collect detailed samples if enabled
+                if (_collectDetailedMetrics && frameCount % 10 == 0) // Every 10th frame
+                {
+                    var sample = new PerformanceMetricSample
+                    {
+                        Timestamp = Time.time,
+                        FrameTime = frameTime,
+                        MemoryUsage = System.GC.GetTotalMemory(false),
+                        FPS = 1000f / frameTime
+                    };
+                    samples.Add(sample);
+                    testResult.MetricSamples.Add(sample);
+                    OnMetricSampleCollected?.Invoke(sample);
+                }
+            }
+
+            float avgFrameTime = totalFrameTime / frameCount;
+            float avgFPS = 1000f / avgFrameTime;
+
+            // Evaluate baseline performance
+            bool baselineAcceptable = avgFrameTime < _maxAcceptableFrameTime &&
+                                    maxFrameTime < _maxAcceptableFrameTime * 2f; // Allow 2x spikes
+
+            testResult.ValidationResults["BaselinePerformanceAcceptable"] = baselineAcceptable;
+            testResult.BaselineMetrics = new BaselinePerformanceMetrics
+            {
+                AverageFrameTime = avgFrameTime,
+                MinFrameTime = minFrameTime,
+                MaxFrameTime = maxFrameTime,
+                AverageFPS = avgFPS,
+                FrameCount = frameCount,
+                TestDuration = testDuration
+            };
+
+            testResult.TestSteps.Add($"Baseline Performance Results:");
+            testResult.TestSteps.Add($"  Average Frame Time: {avgFrameTime:F2}ms ({avgFPS:F1} FPS)");
+            testResult.TestSteps.Add($"  Min Frame Time: {minFrameTime:F2}ms");
+            testResult.TestSteps.Add($"  Max Frame Time: {maxFrameTime:F2}ms");
+            testResult.TestSteps.Add($"  Frames Tested: {frameCount}");
+            testResult.TestSteps.Add($"Baseline Performance: {(baselineAcceptable ? "ACCEPTABLE ✅" : "POOR ⚠️")}");
+
+            _stats.BaselineTests++;
+            yield return null;
+        }
+
+        /// <summary>
+        /// Perform stress test
+        /// </summary>
+        private IEnumerator PerformStressTest(PerformanceTestResult testResult)
+        {
+            var stepDescription = "Performing Stress Test...";
+            OnPerformanceValidationStep?.Invoke(stepDescription);
+
+            float testDuration = _stressTestDuration;
+            float startTime = Time.time;
+            float maxStressFrameTime = 0f;
+            int stressFrameCount = 0;
+
+            testResult.TestSteps.Add($"Starting stress test for {testDuration:F1}s with {_stressTestIterations} operations per frame...");
+
+            while (Time.time - startTime < testDuration)
+            {
+                float frameStart = Time.unscaledTime;
+
+                // Create artificial load
+                for (int i = 0; i < _stressTestIterations; i++)
+                {
+                    // Simple mathematical operations to create CPU load
+                    float result = Mathf.Sin(i) * Mathf.Cos(i) + Mathf.Sqrt(i + 1);
+                    // Prevent compiler optimization
+                    if (result > 999999f) Debug.Log("Unlikely result");
+                }
+
+                yield return null; // Wait one frame
+
+                float frameTime = (Time.unscaledTime - frameStart) * 1000f;
+                maxStressFrameTime = Mathf.Max(maxStressFrameTime, frameTime);
+                stressFrameCount++;
+            }
+
+            // Evaluate stress test performance
+            bool stressTestAcceptable = maxStressFrameTime < _maxAcceptableFrameTime * 3f; // Allow 3x during stress
+            testResult.ValidationResults["StressTestAcceptable"] = stressTestAcceptable;
+
+            testResult.TestSteps.Add($"Stress Test Results:");
+            testResult.TestSteps.Add($"  Max Stress Frame Time: {maxStressFrameTime:F2}ms");
+            testResult.TestSteps.Add($"  Stress Frames: {stressFrameCount}");
+            testResult.TestSteps.Add($"Stress Test: {(stressTestAcceptable ? "PASSED ✅" : "FAILED ⚠️")}");
+
+            _stats.StressTests++;
+            yield return null;
+        }
+
+        /// <summary>
+        /// Test memory performance
+        /// </summary>
+        private IEnumerator TestMemoryPerformance(PerformanceTestResult testResult)
+        {
+            var stepDescription = "Testing Memory Performance...";
+            OnPerformanceValidationStep?.Invoke(stepDescription);
+
+            long initialMemory = System.GC.GetTotalMemory(false);
+            testResult.TestSteps.Add($"Initial Memory Usage: {initialMemory / (1024 * 1024):F1}MB");
+
+            // Force garbage collection
+            System.GC.Collect();
+            yield return new WaitForSeconds(0.5f);
+
+            long memoryAfterGC = System.GC.GetTotalMemory(true);
+            testResult.TestSteps.Add($"Memory After GC: {memoryAfterGC / (1024 * 1024):F1}MB");
+
+            // Create temporary memory load
+            var tempList = new List<byte[]>();
+            for (int i = 0; i < 100; i++)
+            {
+                tempList.Add(new byte[1024 * 1024]); // 1MB allocations
+                if (i % 10 == 0) yield return null; // Allow frame processing
+            }
+
+            long memoryDuringLoad = System.GC.GetTotalMemory(false);
+            testResult.TestSteps.Add($"Memory During Load: {memoryDuringLoad / (1024 * 1024):F1}MB");
+
+            // Clean up
+            tempList.Clear();
+            tempList = null;
+            System.GC.Collect();
+            yield return new WaitForSeconds(0.5f);
+
+            long memoryAfterCleanup = System.GC.GetTotalMemory(true);
+            testResult.TestSteps.Add($"Memory After Cleanup: {memoryAfterCleanup / (1024 * 1024):F1}MB");
+
+            // Evaluate memory performance
+            bool memoryPerformanceGood = memoryAfterCleanup < _maxAcceptableMemoryUsage &&
+                                       (memoryAfterCleanup - initialMemory) < 50 * 1024 * 1024; // Less than 50MB growth
+
+            testResult.ValidationResults["MemoryPerformanceGood"] = memoryPerformanceGood;
+            testResult.TestSteps.Add($"Memory Performance: {(memoryPerformanceGood ? "GOOD ✅" : "POOR ⚠️")}");
+
+            _stats.MemoryTests++;
+            yield return null;
+        }
+
+        /// <summary>
+        /// Evaluate overall test success
+        /// </summary>
+        private bool EvaluateOverallSuccess(PerformanceTestResult testResult)
+        {
+            var criticalTests = new[]
+            {
+                "PerformanceMonitorExists",
+                "PerformanceMonitorActive",
+                "PerformanceMetricsAvailable",
+                "BaselinePerformanceAcceptable"
+            };
+
+            foreach (var test in criticalTests)
+            {
+                if (testResult.ValidationResults.TryGetValue(test, out bool result) && !result)
+                {
+                    return false;
+                }
+            }
+
+            // Calculate overall success rate
+            int passedTests = testResult.ValidationResults.Values.Count(v => v);
+            int totalTests = testResult.ValidationResults.Count;
+            float successRate = (float)passedTests / totalTests;
+
+            return successRate >= 0.75f; // 75% success rate required for performance tests
+        }
+
+        /// <summary>
+        /// Log performance test results
+        /// </summary>
+        private void LogPerformanceTestResults(PerformanceTestResult testResult)
+        {
+            ChimeraLogger.Log("TESTING", "=== PERFORMANCE TEST RESULTS ===");
+            ChimeraLogger.Log("TESTING", $"Test: {testResult.TestName}");
+            ChimeraLogger.Log("TESTING", $"Duration: {testResult.TestDuration:F2}s");
+            ChimeraLogger.Log("TESTING", $"Result: {(testResult.Success ? "PASS ✅" : "FAIL ❌")}");
+
+            if (!string.IsNullOrEmpty(testResult.ResultMessage))
+            {
+                ChimeraLogger.Log("TESTING", $"Message: {testResult.ResultMessage}");
+            }
+
+            foreach (var step in testResult.TestSteps)
+            {
+                ChimeraLogger.Log("TESTING", $"  {step}");
+            }
+
+            if (testResult.BaselineMetrics.HasValue)
+            {
+                var baseline = testResult.BaselineMetrics.Value;
+                ChimeraLogger.Log("TESTING", $"Baseline: {baseline.AverageFPS:F1} FPS avg, {baseline.MaxFrameTime:F2}ms max");
+            }
+
+            int passedValidations = testResult.ValidationResults.Values.Count(v => v);
+            int totalValidations = testResult.ValidationResults.Count;
+            ChimeraLogger.Log("TESTING", $"Validations: {passedValidations}/{totalValidations} passed");
+
+            ChimeraLogger.Log("TESTING", $"Metric Samples: {testResult.MetricSamples.Count} collected");
+
+            if (testResult.Exception != null)
+            {
+                ChimeraLogger.LogError("TESTING", $"Exception: {testResult.Exception.Message}");
+            }
+
+            ChimeraLogger.Log("TESTING", "=== END PERFORMANCE TEST ===");
+        }
+
+        /// <summary>
+        /// Get performance test summary
+        /// </summary>
+        public PerformanceTestSummary GetTestSummary()
+        {
+            return new PerformanceTestSummary
+            {
+                TestsStarted = _stats.TestsStarted,
+                TestsPassed = _stats.TestsPassed,
+                TestsFailed = _stats.TestsFailed,
+                TestErrors = _stats.TestErrors,
+                TotalTestTime = _stats.TotalTestTime,
+                PerformanceMonitorTests = _stats.PerformanceMonitorTests,
+                MetricsFrameworkTests = _stats.MetricsFrameworkTests,
+                BaselineTests = _stats.BaselineTests,
+                StressTests = _stats.StressTests,
+                MemoryTests = _stats.MemoryTests,
+                LastTestSuccess = _lastTestResult?.Success ?? false,
+                LastTestDuration = _lastTestResult?.TestDuration ?? 0f
+            };
+        }
+
+        /// <summary>
+        /// Reset test statistics
+        /// </summary>
+        private void ResetStats()
+        {
+            _stats = new PerformanceTestStats();
+        }
+
+        /// <summary>
+        /// Set testing parameters
+        /// </summary>
+        public void SetTestingParameters(bool enableLogging, bool enableStressTest, float maxFrameTime, long maxMemory)
+        {
+            _enableLogging = enableLogging;
+            _enableStressTest = enableStressTest;
+            _maxAcceptableFrameTime = Mathf.Max(1f, maxFrameTime);
+            _maxAcceptableMemoryUsage = Mathf.Max(100 * 1024 * 1024, maxMemory); // Minimum 100MB
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("TESTING", $"Performance testing parameters updated: StressTest={enableStressTest}, MaxFrame={maxFrameTime:F1}ms, MaxMemory={maxMemory / (1024 * 1024):F1}MB");
+            }
+        }
+
+        /// <summary>
+        /// Manual performance test trigger
+        /// </summary>
+        [ContextMenu("Run Performance Test")]
+        public void RunPerformanceTest()
+        {
+            if (_isInitialized)
+            {
+                StartCoroutine(TestPerformanceSystems());
+            }
+        }
+    }
+
+    /// <summary>
+    /// Performance test statistics
+    /// </summary>
+    [System.Serializable]
+    public struct PerformanceTestStats
+    {
+        public int TestsStarted;
+        public int TestsPassed;
+        public int TestsFailed;
+        public int TestErrors;
+        public float TotalTestTime;
+        public int PerformanceMonitorTests;
+        public int MetricsFrameworkTests;
+        public int BaselineTests;
+        public int StressTests;
+        public int MemoryTests;
+    }
+
+    /// <summary>
+    /// Performance metric sample
+    /// </summary>
+    [System.Serializable]
+    public struct PerformanceMetricSample
+    {
+        public float Timestamp;
+        public float FrameTime;
+        public long MemoryUsage;
+        public float FPS;
+    }
+
+    /// <summary>
+    /// Baseline performance metrics
+    /// </summary>
+    [System.Serializable]
+    public struct BaselinePerformanceMetrics
+    {
+        public float AverageFrameTime;
+        public float MinFrameTime;
+        public float MaxFrameTime;
+        public float AverageFPS;
+        public int FrameCount;
+        public float TestDuration;
+    }
+
+    /// <summary>
+    /// Performance test result
+    /// </summary>
+    [System.Serializable]
+    public class PerformanceTestResult
+    {
+        public string TestName;
+        public string TestCategory;
+        public float StartTime;
+        public float CompletionTime;
+        public float TestDuration;
+        public bool Success;
+        public string ResultMessage;
+        public List<string> TestSteps;
+        public Dictionary<string, bool> ValidationResults;
+        public List<PerformanceMetricSample> MetricSamples;
+        public BaselinePerformanceMetrics? BaselineMetrics;
+        public System.Exception Exception;
+    }
+
+    /// <summary>
+    /// Performance test summary
+    /// </summary>
+    [System.Serializable]
+    public struct PerformanceTestSummary
+    {
+        public int TestsStarted;
+        public int TestsPassed;
+        public int TestsFailed;
+        public int TestErrors;
+        public float TotalTestTime;
+        public int PerformanceMonitorTests;
+        public int MetricsFrameworkTests;
+        public int BaselineTests;
+        public int StressTests;
+        public int MemoryTests;
+        public bool LastTestSuccess;
+        public float LastTestDuration;
+    }
+}

@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Core.Logging;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Core
 {
@@ -21,17 +22,17 @@ namespace ProjectChimera.Core
         // Logging methods
         private void LogProviderAction(string action)
         {
-            ChimeraLogger.Log("CORE", $"DataServiceProvider: {action}", this);
+            Logger.LogInfo("DataServiceProvider", action);
         }
 
         private void LogProviderError(string error)
         {
-            ChimeraLogger.LogError("CORE", $"DataServiceProvider Error: {error}", this);
+            Logger.LogInfo("DataServiceProvider", error);
         }
 
         private void LogProviderWarning(string warning)
         {
-            ChimeraLogger.LogWarning("CORE", $"DataServiceProvider Warning: {warning}", this);
+            Logger.LogInfo("DataServiceProvider", warning);
         }
 
         // Configuration method
@@ -57,7 +58,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[DataServiceProvider] Initialized successfully");
+                Logger.LogInfo("DataServiceProvider", "Initialized");
             }
         }
 
@@ -71,7 +72,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[DataServiceProvider] Registered service: {serviceName}");
+                Logger.LogInfo("DataServiceProvider", $"Registered service {serviceName}");
             }
         }
 
@@ -88,7 +89,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.LogWarning($"[DataServiceProvider] Service not found: {serviceName}");
+                Logger.LogInfo("DataServiceProvider", $"Service not found: {serviceName}");
             }
 
             return null;
@@ -113,7 +114,7 @@ namespace ProjectChimera.Core
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[DataServiceProvider] Unregistered service: {serviceName}");
+                    Logger.LogInfo("DataServiceProvider", $"Unregistered service {serviceName}");
                 }
             }
         }
@@ -135,7 +136,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[DataServiceProvider] Cleared all services");
+                Logger.LogInfo("DataServiceProvider", "Cleared all services");
             }
         }
 
@@ -203,6 +204,36 @@ namespace ProjectChimera.Core
                 if (TotalRequests == 0) return 1f;
                 return (float)(TotalRequests - FailedRequests) / TotalRequests;
             }
+        }
+
+        // Additional methods for ChimeraServiceModule compatibility
+        public void RegisterDataServices()
+        {
+            RegisterBasicServices();
+            LogProviderAction("Registered data services");
+        }
+
+        public void InitializeServices()
+        {
+            if (!_isInitialized)
+            {
+                _isInitialized = true;
+                LogProviderAction("Initialized data services");
+            }
+        }
+
+        public bool ValidateServices()
+        {
+            var hasServices = _services.Count > 0;
+            if (!hasServices)
+            {
+                LogProviderWarning("No data services registered");
+            }
+            else
+            {
+                LogProviderAction($"Validated {_services.Count} data services");
+            }
+            return hasServices;
         }
 
         #endregion

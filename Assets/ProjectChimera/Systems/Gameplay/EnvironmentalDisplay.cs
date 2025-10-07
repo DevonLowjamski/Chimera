@@ -1,8 +1,10 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using ProjectChimera.Core.Logging;
-using ProjectChimera.Data.Environment;
-using ProjectChimera.Systems.Environment;
+using ProjectChimera.Data.Shared;
+using Env = ProjectChimera.Systems.Environment;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
+using ProjectChimera.Core;
 
 namespace ProjectChimera.Systems.Gameplay
 {
@@ -30,7 +32,7 @@ namespace ProjectChimera.Systems.Gameplay
         private Slider _lightSlider;
 
         // Environmental controller reference
-        private EnvironmentalController _environmentalController;
+        private Env.EnvironmentalController _environmentalController;
 
         private void Awake()
         {
@@ -45,7 +47,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_uiDocument == null)
             {
-                ChimeraLogger.LogWarning("[EnvironmentalDisplay] No UI document assigned");
+                Logger.Log("UI", "EnvironmentalDisplay: UIDocument is not assigned", this);
                 return;
             }
 
@@ -163,25 +165,15 @@ namespace ProjectChimera.Systems.Gameplay
         private void FindEnvironmentalController()
         {
             // Primary: Try ServiceContainer resolution
-            if (ServiceContainerFactory.Instance.TryResolve<Systems.Environment.EnvironmentalController>(out var serviceController))
+            _environmentalController = ServiceContainerFactory.Instance.TryResolve<Env.EnvironmentalController>();
+
+            if (_environmentalController != null)
             {
-                _environmentalController = serviceController;
-                ChimeraLogger.Log("[EnvironmentalDisplay] Using EnvironmentalController from ServiceContainer");
+                Logger.Log("UI", "EnvironmentalDisplay: EnvironmentalController resolved from service container", this);
             }
             else
             {
-                // Fallback: Scene discovery + auto-registration
-                _environmentalController = UnityEngine.Object.FindObjectOfType<Systems.Environment.EnvironmentalController>();
-                if (_environmentalController != null)
-                {
-                    ServiceContainerFactory.Instance.RegisterInstance<Systems.Environment.EnvironmentalController>(_environmentalController);
-                    ChimeraLogger.Log("[EnvironmentalDisplay] EnvironmentalController registered in ServiceContainer for system-wide access");
-                }
-            }
-
-            if (_environmentalController == null)
-            {
-                ChimeraLogger.LogWarning("[EnvironmentalDisplay] No EnvironmentalController found in scene");
+                Logger.LogWarning("UI", "EnvironmentalDisplay: EnvironmentalController not found - ensure it is registered in ServiceContainer during Awake()", this);
             }
         }
 
@@ -243,7 +235,7 @@ namespace ProjectChimera.Systems.Gameplay
             {
                 _environmentalController.SetTemperature(value);
                 UpdateDisplayValues();
-                ChimeraLogger.Log($"[EnvironmentalDisplay] Temperature set to {value:F1}°C");
+                Logger.Log("UI", $"Temperature set to {value:F1}", this);
             }
         }
 
@@ -256,7 +248,7 @@ namespace ProjectChimera.Systems.Gameplay
             {
                 _environmentalController.SetHumidity(value);
                 UpdateDisplayValues();
-                ChimeraLogger.Log($"[EnvironmentalDisplay] Humidity set to {value:F1}%");
+                Logger.Log("UI", $"Humidity set to {value:F1}", this);
             }
         }
 
@@ -269,7 +261,7 @@ namespace ProjectChimera.Systems.Gameplay
             {
                 _environmentalController.SetCO2Level(value);
                 UpdateDisplayValues();
-                ChimeraLogger.Log($"[EnvironmentalDisplay] CO2 level set to {value:F0}ppm");
+                Logger.Log("UI", $"CO2 set to {value:F0}ppm", this);
             }
         }
 
@@ -282,7 +274,7 @@ namespace ProjectChimera.Systems.Gameplay
             {
                 _environmentalController.SetLightIntensity(value);
                 UpdateDisplayValues();
-                ChimeraLogger.Log($"[EnvironmentalDisplay] Light intensity set to {value:F2}");
+                Logger.Log("UI", $"Light intensity set to {value:F2}", this);
             }
         }
 
@@ -295,7 +287,7 @@ namespace ProjectChimera.Systems.Gameplay
             {
                 _environmentalController.ResetToOptimal();
                 UpdateDisplayValues();
-                ChimeraLogger.Log("[EnvironmentalDisplay] Reset to optimal environmental conditions");
+                Logger.Log("UI", "Environmental settings reset to optimal", this);
             }
         }
 

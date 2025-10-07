@@ -1,6 +1,7 @@
 using UnityEngine;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Core;
+using ProjectChimera.Data.Camera;
 
 namespace ProjectChimera.Systems.Camera
 {
@@ -17,13 +18,18 @@ namespace ProjectChimera.Systems.Camera
         // Basic camera state
         private CameraLevel _currentLevel;
         private Transform _focusTarget;
+        private Transform _currentLevelAnchor;
         private bool _isInitialized = false;
+        private bool _userControlActive = true;
+        private bool _isLevelTransitioning = false;
 
         /// <summary>
         /// Events for state changes
         /// </summary>
         public event System.Action<CameraLevel> OnLevelChanged;
         public event System.Action<Transform> OnFocusTargetChanged;
+        public event System.Action<Transform> OnLevelAnchorChanged;
+        public event System.Action<bool> OnUserControlChanged;
 
         /// <summary>
         /// Initialize the basic camera state manager
@@ -37,7 +43,7 @@ namespace ProjectChimera.Systems.Camera
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[CameraStateManager] Initialized with level: {_currentLevel}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -55,7 +61,7 @@ namespace ProjectChimera.Systems.Camera
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[CameraStateManager] Changed level from {previousLevel} to {level}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -80,7 +86,7 @@ namespace ProjectChimera.Systems.Camera
             if (_enableLogging)
             {
                 string targetName = target != null ? target.name : "None";
-                ChimeraLogger.Log($"[CameraStateManager] Focus target set to: {targetName}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -121,7 +127,7 @@ namespace ProjectChimera.Systems.Camera
         /// </summary>
         public bool IsAtTableLevel()
         {
-            return _currentLevel == CameraLevel.Table;
+            return _currentLevel == CameraLevel.Bench;
         }
 
         /// <summary>
@@ -143,9 +149,9 @@ namespace ProjectChimera.Systems.Camera
                     SetCameraLevel(CameraLevel.Room);
                     break;
                 case CameraLevel.Room:
-                    SetCameraLevel(CameraLevel.Table);
+                    SetCameraLevel(CameraLevel.Bench);
                     break;
-                case CameraLevel.Table:
+                case CameraLevel.Bench:
                     SetCameraLevel(CameraLevel.Plant);
                     break;
                 case CameraLevel.Plant:
@@ -167,11 +173,11 @@ namespace ProjectChimera.Systems.Camera
                 case CameraLevel.Room:
                     SetCameraLevel(CameraLevel.Facility);
                     break;
-                case CameraLevel.Table:
+                case CameraLevel.Bench:
                     SetCameraLevel(CameraLevel.Room);
                     break;
                 case CameraLevel.Plant:
-                    SetCameraLevel(CameraLevel.Table);
+                    SetCameraLevel(CameraLevel.Bench);
                     break;
             }
         }
@@ -183,6 +189,156 @@ namespace ProjectChimera.Systems.Camera
         {
             SetCameraLevel(_defaultLevel);
             ClearFocusTarget();
+        }
+
+        /// <summary>
+        /// Public properties for camera state access
+        /// </summary>
+        public Transform FocusTarget => _focusTarget;
+        public bool UserControlActive => _userControlActive;
+        public Transform CurrentLevelAnchor => _currentLevelAnchor;
+        public bool IsLevelTransitioning => _isLevelTransitioning;
+        public CameraLevel CurrentLevel => _currentLevel;
+
+        /// <summary>
+        /// Clear focus
+        /// </summary>
+        public void ClearFocus()
+        {
+            ClearFocusTarget();
+        }
+
+        /// <summary>
+        /// Set user control enabled/disabled
+        /// </summary>
+        public void SetUserControlEnabled(bool enabled)
+        {
+            if (_userControlActive != enabled)
+            {
+                _userControlActive = enabled;
+                OnUserControlChanged?.Invoke(enabled);
+            }
+        }
+
+        /// <summary>
+        /// Update camera state with camera and transform references
+        /// </summary>
+        public void UpdateCameraState(UnityEngine.Camera camera, Transform cameraTransform)
+        {
+            // Basic camera state update logic
+            // Implementation would depend on specific camera behavior requirements
+        }
+
+        /// <summary>
+        /// Additional camera state management methods required by AdvancedCameraController
+        /// </summary>
+        public bool ZoomOutOneLevel()
+        {
+            var originalLevel = _currentLevel;
+            ZoomOut();
+            return _currentLevel != originalLevel;
+        }
+
+        public float GetLevelDistance(CameraLevel level)
+        {
+            // Return default distance based on level
+            switch (level)
+            {
+                case CameraLevel.Facility: return 50f;
+                case CameraLevel.Room: return 25f;
+                case CameraLevel.Bench: return 10f;
+                case CameraLevel.Plant: return 5f;
+                default: return 15f;
+            }
+        }
+
+        public float GetLevelHeight(CameraLevel level)
+        {
+            // Return default height based on level
+            switch (level)
+            {
+                case CameraLevel.Facility: return 30f;
+                case CameraLevel.Room: return 15f;
+                case CameraLevel.Bench: return 8f;
+                case CameraLevel.Plant: return 3f;
+                default: return 10f;
+            }
+        }
+
+        public bool IsValidLevel(CameraLevel level)
+        {
+            return System.Enum.IsDefined(typeof(CameraLevel), level);
+        }
+
+        public int GetLevelDistance(CameraLevel fromLevel, CameraLevel toLevel)
+        {
+            return Mathf.Abs((int)fromLevel - (int)toLevel);
+        }
+
+        public bool IsValidLevelTransition(CameraLevel fromLevel, CameraLevel toLevel)
+        {
+            return IsValidLevel(fromLevel) && IsValidLevel(toLevel);
+        }
+
+        public void SetMovementSmoothing(bool enabled, float movementSmoothTime = -1f, float rotationSmoothTime = -1f)
+        {
+            // Implementation would set smoothing parameters
+        }
+
+        public void SetCameraBounds(Vector3 min, Vector3 max, bool useSoftBounds = false)
+        {
+            // Implementation would set camera bounds
+        }
+
+        public string GetLevelSemanticName(CameraLevel level)
+        {
+            switch (level)
+            {
+                case CameraLevel.Facility: return "Facility View";
+                case CameraLevel.Room: return "Room View";
+                case CameraLevel.Bench: return "Table View";
+                case CameraLevel.Plant: return "Plant View";
+                default: return level.ToString();
+            }
+        }
+
+        public string GetLevelDescription(CameraLevel level)
+        {
+            switch (level)
+            {
+                case CameraLevel.Facility: return "Overview of the entire facility";
+                case CameraLevel.Room: return "Focus on a specific room";
+                case CameraLevel.Bench: return "Close view of cultivation table";
+                case CameraLevel.Plant: return "Individual plant inspection";
+                default: return "";
+            }
+        }
+
+        public float GetLevelFieldOfView(CameraLevel level)
+        {
+            switch (level)
+            {
+                case CameraLevel.Facility: return 80f;
+                case CameraLevel.Room: return 60f;
+                case CameraLevel.Bench: return 45f;
+                case CameraLevel.Plant: return 30f;
+                default: return 60f;
+            }
+        }
+
+        public bool IsLevelAvailable(CameraLevel level)
+        {
+            return IsValidLevel(level);
+        }
+
+        public Vector3 ApplyGlobalPositionOffset(Vector3 originalPosition)
+        {
+            return originalPosition; // No offset by default
+        }
+
+        public void SetCameraLevelConfiguration(object configuration)
+        {
+            // Implementation would apply configuration
         }
 
         /// <summary>
@@ -201,17 +357,6 @@ namespace ProjectChimera.Systems.Camera
     }
 
     /// <summary>
-    /// Camera level enum
-    /// </summary>
-    public enum CameraLevel
-    {
-        Facility,
-        Room,
-        Table,
-        Plant
-    }
-
-    /// <summary>
     /// Camera state summary
     /// </summary>
     [System.Serializable]
@@ -221,5 +366,48 @@ namespace ProjectChimera.Systems.Camera
         public string FocusTargetName;
         public bool IsInitialized;
         public CameraLevel DefaultLevel;
+    }
+
+    /// <summary>
+    /// Camera snapshot for state persistence
+    /// </summary>
+    [System.Serializable]
+    public class CameraSnapshot
+    {
+        public Vector3 position;
+        public Quaternion rotation;
+        public float fieldOfView;
+        public CameraLevel cameraLevel;
+        public bool userControlActive;
+        public float timestamp;
+        public Vector3 focusPosition;
+        public string focusTargetName;
+        public bool isTransitioning;
+
+        public CameraSnapshot()
+        {
+            position = Vector3.zero;
+            rotation = Quaternion.identity;
+            fieldOfView = 60f;
+            cameraLevel = CameraLevel.Facility;
+            userControlActive = true;
+            timestamp = 0f;
+            focusPosition = Vector3.zero;
+            focusTargetName = "";
+            isTransitioning = false;
+        }
+
+        public CameraSnapshot(Vector3 pos, Quaternion rot, float fov, CameraLevel level, bool userControl)
+        {
+            position = pos;
+            rotation = rot;
+            fieldOfView = fov;
+            cameraLevel = level;
+            userControlActive = userControl;
+            timestamp = UnityEngine.Time.time;
+            focusPosition = Vector3.zero;
+            focusTargetName = "";
+            isTransitioning = false;
+        }
     }
 }

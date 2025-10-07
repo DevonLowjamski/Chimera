@@ -1,8 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
-
 // Explicit aliases for MutationRecord reference
 using MutationRecord = ProjectChimera.Data.Genetics.MutationRecord;
+
 
 namespace ProjectChimera.Data.Genetics
 {
@@ -70,8 +70,8 @@ namespace ProjectChimera.Data.Genetics
         public int StepNumber;
         public string StepName;
         public BreedingAction Action;
-        public PlantStrainSO ParentA;
-        public PlantStrainSO ParentB;
+        public GeneticPlantStrainSO ParentA;
+        public GeneticPlantStrainSO ParentB;
         public string ExpectedOutcome;
         public float EstimatedSuccess = 0.8f;
     }
@@ -142,8 +142,8 @@ namespace ProjectChimera.Data.Genetics
         public System.DateTime EvaluationDate;
         
         // Missing properties for Systems layer
-        public PlantStrainSO Parent1;
-        public PlantStrainSO Parent2;
+        public GeneticPlantStrainSO Parent1;
+        public GeneticPlantStrainSO Parent2;
         public float EvaluatedAt;
         public Dictionary<string, float> GoalScores = new Dictionary<string, float>();
         public List<string> StrategyRecommendations = new List<string>();
@@ -153,8 +153,8 @@ namespace ProjectChimera.Data.Genetics
     public class BreedingAttempt
     {
         public string AttemptID;
-        public PlantStrainSO ParentA;
-        public PlantStrainSO ParentB;
+        public GeneticPlantStrainSO ParentA;
+        public GeneticPlantStrainSO ParentB;
         public GenotypeDataSO ResultingGenotype;
         public BreedingStrategy UsedStrategy;
         public bool IsSuccessful;
@@ -218,8 +218,8 @@ namespace ProjectChimera.Data.Genetics
     [System.Serializable]
     public class RecommendedCross
     {
-        public PlantStrainSO ParentA;
-        public PlantStrainSO ParentB;
+        public GeneticPlantStrainSO ParentA;
+        public GeneticPlantStrainSO ParentB;
         public float PredictedSuccess;
         public List<TraitType> TargetTraits = new List<TraitType>();
         public string Reasoning;

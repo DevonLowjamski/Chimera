@@ -6,7 +6,9 @@
         "ProjectChimera.Shared",
         "ProjectChimera.Data",
         "ProjectChimera.Data.Shared",
-        "ProjectChimera.Systems.Diagnostics"
+        "ProjectChimera.Systems.Diagnostics",
+        "Unity.Addressables",
+        "Unity.ResourceManager"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

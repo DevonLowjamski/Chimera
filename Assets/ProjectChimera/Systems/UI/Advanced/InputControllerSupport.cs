@@ -1,4 +1,3 @@
-using ProjectChimera.Core.Logging;
 using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections;
@@ -76,19 +75,19 @@ namespace ProjectChimera.Systems.UI.Advanced
             
             if (_navigationCore == null)
             {
-                ChimeraLogger.LogError("[InputControllerSupport] InputNavigationCore component required");
+                ChimeraLogger.LogInfo("InputControllerSupport", "$1");
                 enabled = false;
                 return;
             }
             
             if (_playerInput == null)
             {
-                ChimeraLogger.LogError("[InputControllerSupport] PlayerInput component required");
+                ChimeraLogger.LogInfo("InputControllerSupport", "$1");
                 enabled = false;
                 return;
             }
             
-            ChimeraLogger.Log("[InputControllerSupport] Controller support initialized");
+            ChimeraLogger.LogInfo("InputControllerSupport", "$1");
         }
         
         private void SetupInputActions()
@@ -159,7 +158,7 @@ namespace ProjectChimera.Systems.UI.Advanced
             
             root.Add(_controllerCursor);
             
-            ChimeraLogger.Log("[InputControllerSupport] Controller cursor setup complete");
+            ChimeraLogger.LogInfo("InputControllerSupport", "$1");
         }
         
         /// <summary>
@@ -183,7 +182,7 @@ namespace ProjectChimera.Systems.UI.Advanced
             }
             
             OnNavigationModeChanged?.Invoke(newMode);
-            ChimeraLogger.Log($"[InputControllerSupport] Switched to {newMode} navigation mode");
+            ChimeraLogger.LogInfo("InputControllerSupport", "$1");
         }
         
         /// <summary>
@@ -405,7 +404,7 @@ namespace ProjectChimera.Systems.UI.Advanced
             {
                 if (device is Gamepad)
                 {
-                    ChimeraLogger.Log("[InputControllerSupport] Gamepad connected");
+                    ChimeraLogger.LogInfo("InputControllerSupport", "$1");
                     SwitchNavigationMode(NavigationMode.Controller);
                     OnControllerConnected?.Invoke();
                 }
@@ -414,7 +413,7 @@ namespace ProjectChimera.Systems.UI.Advanced
             {
                 if (device is Gamepad)
                 {
-                    ChimeraLogger.Log("[InputControllerSupport] Gamepad disconnected");
+                    ChimeraLogger.LogInfo("InputControllerSupport", "$1");
                     SwitchNavigationMode(NavigationMode.Keyboard);
                     OnControllerDisconnected?.Invoke();
                 }
@@ -435,7 +434,7 @@ namespace ProjectChimera.Systems.UI.Advanced
             
             InputSystem.onDeviceChange -= OnDeviceChanged;
             
-            ChimeraLogger.Log("[InputControllerSupport] Controller support cleanup complete");
+            ChimeraLogger.LogInfo("InputControllerSupport", "$1");
         }
     }
     

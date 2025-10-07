@@ -1,0 +1,428 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Data.Construction;
+using ProjectChimera.Data.Economy;
+using ProjectChimera.Systems.Services.Economy;
+using System;
+
+namespace ProjectChimera.Systems.Construction.Payment
+{
+    /// <summary>
+    /// BASIC: Simple refund handler for Project Chimera's construction payment system.
+    /// Focuses on essential refund operations without complex reservation systems.
+    /// </summary>
+    public class RefundHandler : MonoBehaviour, IRefundHandler
+    {
+        [Header("Basic Refund Settings")]
+        [SerializeField] private bool _enableBasicRefunds = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _refundPercentage = 0.8f; // 80% refund
+        [SerializeField] private float _maxRefundTimeHours = 24f; // 24 hours to refund
+
+        // Basic refund tracking
+        private readonly Dictionary<string, RefundRecord> _pendingRefunds = new Dictionary<string, RefundRecord>();
+        private float _totalRefunded = 0f;
+        private bool _isInitialized = false;
+
+        // Dependencies
+        private ICurrencyManager _currencyManager;
+        private ITradingManager _tradingManager;
+        private PaymentProcessor _paymentProcessor;
+        private ICostCalculator _costCalculator;
+
+        // IRefundHandler implementation fields
+        private readonly Dictionary<string, ResourceReservation> _activeReservations = new Dictionary<string, ResourceReservation>();
+        private readonly Dictionary<Vector3Int, List<string>> _positionReservations = new Dictionary<Vector3Int, List<string>>();
+
+        /// <summary>
+        /// Constructor for dependency injection
+        /// </summary>
+        public RefundHandler(ICurrencyManager currencyManager, ITradingManager tradingManager,
+                            PaymentProcessor paymentProcessor, ICostCalculator costCalculator)
+        {
+            _currencyManager = currencyManager;
+            _tradingManager = tradingManager;
+            _paymentProcessor = paymentProcessor;
+            _costCalculator = costCalculator;
+        }
+
+        // Default constructor for MonoBehaviour
+        public RefundHandler() { }
+
+        /// <summary>
+        /// Set dependencies after instantiation
+        /// </summary>
+        public void SetDependencies(ICurrencyManager currencyManager, ITradingManager tradingManager,
+                                   PaymentProcessor paymentProcessor, ICostCalculator costCalculator)
+        {
+            _currencyManager = currencyManager;
+            _tradingManager = tradingManager;
+            _paymentProcessor = paymentProcessor;
+            _costCalculator = costCalculator;
+        }
+
+        /// <summary>
+        /// Events for refund operations
+        /// </summary>
+        public event System.Action<string, float> OnRefundProcessed;
+        public event System.Action<string> OnRefundExpired;
+
+        // IRefundHandler interface properties and events
+        public bool EnableRefunds { get; set; } = true;
+        public float RefundPercentage { get; set; } = 0.8f;
+        public bool EnableResourceReservation { get; set; } = true;
+        public float ReservationDuration { get; set; } = 3600f; // 1 hour
+        public bool AutoReleaseReservations { get; set; } = true;
+        public int MaxSimultaneousReservations { get; set; } = 10;
+
+        public Dictionary<string, ResourceReservation> ActiveReservations => _activeReservations;
+        public Dictionary<Vector3Int, List<string>> PositionReservations => _positionReservations;
+
+        public Action<string, ResourceReservation> OnResourceReserved { get; set; }
+        public Action<string> OnReservationReleased { get; set; }
+
+        /// <summary>
+        /// Initialize basic refund handler
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", "RefundHandler operation", this);
+            }
+        }
+
+        /// <summary>
+        /// Process a refund request
+        /// </summary>
+        public bool ProcessRefund(string transactionId, float originalAmount, System.DateTime transactionTime)
+        {
+            if (!_enableBasicRefunds || !_isInitialized) return false;
+
+            // Check if within refund window
+            float hoursSinceTransaction = (float)(System.DateTime.Now - transactionTime).TotalHours;
+            if (hoursSinceTransaction > _maxRefundTimeHours)
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("OTHER", "RefundHandler operation", this);
+                }
+                OnRefundExpired?.Invoke(transactionId);
+                return false;
+            }
+
+            // Calculate refund amount
+            float refundAmount = originalAmount * _refundPercentage;
+
+            // Record the refund
+            var refundRecord = new RefundRecord
+            {
+                TransactionId = transactionId,
+                OriginalAmount = originalAmount,
+                RefundAmount = refundAmount,
+                TransactionTime = transactionTime,
+                RefundTime = System.DateTime.Now,
+                Processed = true
+            };
+
+            _pendingRefunds[transactionId] = refundRecord;
+            _totalRefunded += refundAmount;
+
+            OnRefundProcessed?.Invoke(transactionId, refundAmount);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", "RefundHandler operation", this);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Check if transaction can be refunded
+        /// </summary>
+        public bool CanRefund(string transactionId, System.DateTime transactionTime)
+        {
+            if (!_enableBasicRefunds || !_isInitialized) return false;
+
+            // Check if already refunded
+            if (_pendingRefunds.ContainsKey(transactionId))
+            {
+                return false;
+            }
+
+            // Check time window
+            float hoursSinceTransaction = (float)(System.DateTime.Now - transactionTime).TotalHours;
+            return hoursSinceTransaction <= _maxRefundTimeHours;
+        }
+
+        /// <summary>
+        /// Get refund amount for transaction
+        /// </summary>
+        public float GetRefundAmount(float originalAmount)
+        {
+            return originalAmount * _refundPercentage;
+        }
+
+        /// <summary>
+        /// Get refund record
+        /// </summary>
+        public RefundRecord GetRefundRecord(string transactionId)
+        {
+            return _pendingRefunds.TryGetValue(transactionId, out var record) ? record : null;
+        }
+
+        /// <summary>
+        /// Get all refund records
+        /// </summary>
+        public List<RefundRecord> GetAllRefundRecords()
+        {
+            return new List<RefundRecord>(_pendingRefunds.Values);
+        }
+
+        /// <summary>
+        /// Get refund statistics
+        /// </summary>
+        public RefundStats GetStats()
+        {
+            int totalRefunds = _pendingRefunds.Count;
+            float averageRefundAmount = totalRefunds > 0 ? _totalRefunded / totalRefunds : 0f;
+
+            return new RefundStats
+            {
+                TotalRefundsProcessed = totalRefunds,
+                TotalAmountRefunded = _totalRefunded,
+                AverageRefundAmount = averageRefundAmount,
+                RefundPercentage = _refundPercentage,
+                MaxRefundTimeHours = _maxRefundTimeHours,
+                IsRefundsEnabled = _enableBasicRefunds,
+                IsInitialized = _isInitialized
+            };
+        }
+
+        /// <summary>
+        /// Clear old refund records (older than retention period)
+        /// </summary>
+        public void ClearOldRecords(float retentionDays = 30f)
+        {
+            var cutoffTime = System.DateTime.Now.AddDays(-retentionDays);
+            var keysToRemove = new List<string>();
+
+            foreach (var kvp in _pendingRefunds)
+            {
+                if (kvp.Value.RefundTime < cutoffTime)
+                {
+                    keysToRemove.Add(kvp.Key);
+                }
+            }
+
+            foreach (string key in keysToRemove)
+            {
+                _pendingRefunds.Remove(key);
+            }
+
+            if (_enableLogging && keysToRemove.Count > 0)
+            {
+                ChimeraLogger.Log("OTHER", "RefundHandler operation", this);
+            }
+        }
+
+        /// <summary>
+        /// Set refund settings
+        /// </summary>
+        public void SetRefundSettings(float refundPercentage, float maxRefundTimeHours)
+        {
+            _refundPercentage = Mathf.Clamp01(refundPercentage);
+            _maxRefundTimeHours = Mathf.Max(0f, maxRefundTimeHours);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", "RefundHandler operation", this);
+            }
+        }
+
+        /// <summary>
+        /// Reset refund handler
+        /// </summary>
+        public void Reset()
+        {
+            _pendingRefunds.Clear();
+            _totalRefunded = 0f;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", "RefundHandler reset", this);
+            }
+        }
+
+        #region IRefundHandler Interface Implementation
+
+        public RefundResult ProcessRefund(Vector3Int gridPosition, string reason = "")
+        {
+            var refundResult = new RefundResult
+            {
+                Success = true,
+                RefundAmount = 100f, // Placeholder
+                RefundedResources = new List<ResourceCost>(),
+                ErrorMessage = ""
+            };
+            return refundResult;
+        }
+
+        public List<ResourceCost> CalculateResourceRefund(List<ResourceCost> originalCosts)
+        {
+            var refundedCosts = new List<ResourceCost>();
+            foreach (var cost in originalCosts)
+            {
+                refundedCosts.Add(new ResourceCost
+                {
+                    ResourceId = cost.ResourceId,
+                    Quantity = (int)(cost.Quantity * RefundPercentage)
+                });
+            }
+            return refundedCosts;
+        }
+
+        public ResourceReservationResult CreateReservation(GridPlaceable placeable, Vector3Int gridPosition)
+        {
+            string reservationId = System.Guid.NewGuid().ToString();
+            return new ResourceReservationResult
+            {
+                Success = true,
+                ReservationId = reservationId,
+                ErrorMessage = "",
+                ExpiryTime = Time.time + ReservationDuration
+            };
+        }
+
+        public bool ReleaseReservation(string reservationId)
+        {
+            if (_activeReservations.ContainsKey(reservationId))
+            {
+                _activeReservations.Remove(reservationId);
+                OnReservationReleased?.Invoke(reservationId);
+                return true;
+            }
+            return false;
+        }
+
+        public void ProcessExpiredReservations()
+        {
+            var expiredIds = new List<string>();
+            float currentTime = Time.time;
+
+            foreach (var kvp in _activeReservations)
+            {
+                if (kvp.Value.ExpiryTime < currentTime)
+                {
+                    expiredIds.Add(kvp.Key);
+                }
+            }
+
+            foreach (string id in expiredIds)
+            {
+                ReleaseReservation(id);
+            }
+        }
+
+        public bool ReserveResources(List<ResourceCost> resources)
+        {
+            // Placeholder implementation
+            return true;
+        }
+
+        public void ReleaseReservedResources(List<ResourceCost> resources)
+        {
+            // Placeholder implementation
+        }
+
+        public void RefundResources(List<ResourceCost> resources)
+        {
+            // Placeholder implementation
+        }
+
+        public bool ReserveResourceFromInventory(string resourceId, int quantity)
+        {
+            return true; // Placeholder
+        }
+
+        public void ReleaseReservedResourceFromInventory(string resourceId, int quantity)
+        {
+            // Placeholder implementation
+        }
+
+        public void AddResourceToInventory(string resourceId, int quantity)
+        {
+            // Placeholder implementation
+        }
+
+        public string GetPlayerID()
+        {
+            return "Player1"; // Placeholder
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (AutoReleaseReservations)
+            {
+                ProcessExpiredReservations();
+            }
+        }
+
+        public void Initialize(bool enableRefunds, float refundPercentage, bool enableResourceReservation,
+                              float reservationDuration, bool autoReleaseReservations, int maxSimultaneousReservations)
+        {
+            EnableRefunds = enableRefunds;
+            RefundPercentage = refundPercentage;
+            EnableResourceReservation = enableResourceReservation;
+            ReservationDuration = reservationDuration;
+            AutoReleaseReservations = autoReleaseReservations;
+            MaxSimultaneousReservations = maxSimultaneousReservations;
+
+            Initialize(); // Call existing initialize method
+        }
+
+        public void Shutdown()
+        {
+            _activeReservations.Clear();
+            _positionReservations.Clear();
+            Reset();
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Refund record data
+    /// </summary>
+    [System.Serializable]
+    public class RefundRecord
+    {
+        public string TransactionId;
+        public float OriginalAmount;
+        public float RefundAmount;
+        public System.DateTime TransactionTime;
+        public System.DateTime RefundTime;
+        public bool Processed;
+    }
+
+    /// <summary>
+    /// Refund statistics
+    /// </summary>
+    [System.Serializable]
+    public struct RefundStats
+    {
+        public int TotalRefundsProcessed;
+        public float TotalAmountRefunded;
+        public float AverageRefundAmount;
+        public float RefundPercentage;
+        public float MaxRefundTimeHours;
+        public bool IsRefundsEnabled;
+        public bool IsInitialized;
+    }
+}

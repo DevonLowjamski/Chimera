@@ -1,0 +1,512 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using System;
+using System.Linq;
+
+namespace ProjectChimera.Systems.Construction.Core.Planning
+{
+    /// <summary>
+    /// REFACTORED: Plan Optimizer - Focused plan optimization and improvement
+    /// Handles plan analysis, optimization strategies, and performance improvement
+    /// Single Responsibility: Construction plan optimization
+    /// </summary>
+    public class PlanOptimizer : MonoBehaviour
+    {
+        [Header("Optimization Settings")]
+        [SerializeField] private bool _enableOptimization = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _optimizationTimeout = 30f;
+        [SerializeField] private int _maxOptimizationIterations = 10;
+
+        [Header("Optimization Strategies")]
+        [SerializeField] private bool _enableCostOptimization = true;
+        [SerializeField] private bool _enableTimeOptimization = true;
+        [SerializeField] private bool _enableResourceOptimization = true;
+        [SerializeField] private bool _enableSpatialOptimization = true;
+
+        [Header("Optimization Thresholds")]
+        [SerializeField] private float _minCostImprovement = 0.05f; // 5% minimum improvement
+        [SerializeField] private float _minTimeImprovement = 0.1f; // 10% minimum improvement
+        [SerializeField] private float _maxOptimizationRisk = 0.2f; // 20% maximum risk tolerance
+
+        // Optimization tracking
+        private readonly Dictionary<string, OptimizationSession> _optimizationSessions = new Dictionary<string, OptimizationSession>();
+        private readonly List<OptimizationStrategy> _availableStrategies = new List<OptimizationStrategy>();
+
+        // Statistics
+        private OptimizerStats _stats = new OptimizerStats();
+
+        // Properties
+        public bool IsEnabled { get; private set; } = true;
+        public OptimizerStats GetStats() => _stats;
+
+        // Events
+        public System.Action<string, ConstructionPlan> OnOptimizationStarted;
+        public System.Action<string, ConstructionPlan> OnOptimizationCompleted;
+        public System.Action<string, string> OnOptimizationFailed;
+
+        private void Start()
+        {
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            _stats = new OptimizerStats();
+            InitializeOptimizationStrategies();
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "⚡ PlanOptimizer initialized", this);
+        }
+
+        /// <summary>
+        /// Optimize construction plan using available strategies
+        /// </summary>
+        public ConstructionPlan OptimizePlan(ConstructionPlan plan, IPlanningAlgorithm algorithm)
+        {
+            if (!IsEnabled || !_enableOptimization || plan == null)
+                return null;
+
+            string sessionId = GenerateSessionId();
+            var session = new OptimizationSession
+            {
+                SessionId = sessionId,
+                OriginalPlan = plan,
+                Algorithm = algorithm,
+                StartTime = Time.time,
+                Status = OptimizationStatus.Running
+            };
+
+            _optimizationSessions[sessionId] = session;
+            OnOptimizationStarted?.Invoke(sessionId, plan);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Starting plan optimization: {plan.PlanId} (Session: {sessionId})", this);
+
+            try
+            {
+                var optimizedPlan = PerformOptimization(plan, algorithm, session);
+
+                if (optimizedPlan != null && IsOptimizationWorthwhile(plan, optimizedPlan))
+                {
+                    session.OptimizedPlan = optimizedPlan;
+                    session.Status = OptimizationStatus.Completed;
+                    session.EndTime = Time.time;
+                    session.OptimizationDuration = session.EndTime - session.StartTime;
+
+                    _stats.PlansOptimized++;
+                    _stats.TotalOptimizationTime += session.OptimizationDuration;
+
+                    OnOptimizationCompleted?.Invoke(sessionId, optimizedPlan);
+
+                    if (_enableLogging)
+                        ChimeraLogger.Log("CONSTRUCTION", $"Plan optimization completed: {sessionId} (Duration: {session.OptimizationDuration:F2}s)", this);
+
+                    return optimizedPlan;
+                }
+                else
+                {
+                    session.Status = OptimizationStatus.Failed;
+                    session.ErrorMessage = "Optimization did not produce significant improvements";
+
+                    _stats.FailedOptimizations++;
+                    OnOptimizationFailed?.Invoke(sessionId, session.ErrorMessage);
+
+                    if (_enableLogging)
+                        ChimeraLogger.LogWarning("CONSTRUCTION", $"Plan optimization failed - no significant improvement: {sessionId}", this);
+                }
+            }
+            catch (Exception ex)
+            {
+                session.Status = OptimizationStatus.Failed;
+                session.ErrorMessage = ex.Message;
+
+                _stats.FailedOptimizations++;
+                OnOptimizationFailed?.Invoke(sessionId, ex.Message);
+
+                if (_enableLogging)
+                    ChimeraLogger.LogError("CONSTRUCTION", $"Plan optimization failed with exception: {sessionId} - {ex.Message}", this);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Get optimization session status
+        /// </summary>
+        public OptimizationStatus GetOptimizationStatus(string sessionId)
+        {
+            if (_optimizationSessions.TryGetValue(sessionId, out var session))
+            {
+                return session.Status;
+            }
+            return OptimizationStatus.Unknown;
+        }
+
+        /// <summary>
+        /// Get optimization session data
+        /// </summary>
+        public OptimizationSession GetOptimizationSession(string sessionId)
+        {
+            _optimizationSessions.TryGetValue(sessionId, out var session);
+            return session;
+        }
+
+        /// <summary>
+        /// Clear completed optimization sessions
+        /// </summary>
+        public void ClearOptimizationHistory()
+        {
+            var completedSessions = _optimizationSessions.Where(kvp =>
+                kvp.Value.Status == OptimizationStatus.Completed ||
+                kvp.Value.Status == OptimizationStatus.Failed).ToList();
+
+            foreach (var kvp in completedSessions)
+            {
+                _optimizationSessions.Remove(kvp.Key);
+            }
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Cleared {completedSessions.Count} completed optimization sessions", this);
+        }
+
+        /// <summary>
+        /// Set system enabled/disabled
+        /// </summary>
+        public void SetEnabled(bool enabled)
+        {
+            IsEnabled = enabled;
+
+            if (!enabled)
+            {
+                // Cancel all running optimizations
+                var runningSessions = _optimizationSessions.Where(kvp => kvp.Value.Status == OptimizationStatus.Running).ToList();
+                foreach (var kvp in runningSessions)
+                {
+                    var session = kvp.Value;
+                    session.Status = OptimizationStatus.Failed;
+                    session.ErrorMessage = "System disabled";
+                    _optimizationSessions[kvp.Key] = session;
+                }
+            }
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"PlanOptimizer: {(enabled ? "enabled" : "disabled")}", this);
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Initialize optimization strategies
+        /// </summary>
+        private void InitializeOptimizationStrategies()
+        {
+            if (_enableCostOptimization)
+                _availableStrategies.Add(new CostOptimizationStrategy());
+
+            if (_enableTimeOptimization)
+                _availableStrategies.Add(new TimeOptimizationStrategy());
+
+            if (_enableResourceOptimization)
+                _availableStrategies.Add(new ResourceOptimizationStrategy());
+
+            if (_enableSpatialOptimization)
+                _availableStrategies.Add(new SpatialOptimizationStrategy());
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Initialized {_availableStrategies.Count} optimization strategies", this);
+        }
+
+        /// <summary>
+        /// Perform plan optimization using available strategies
+        /// </summary>
+        private ConstructionPlan PerformOptimization(ConstructionPlan originalPlan, IPlanningAlgorithm algorithm, OptimizationSession session)
+        {
+            var currentPlan = ClonePlan(originalPlan);
+            var bestPlan = currentPlan;
+            float bestScore = CalculatePlanScore(currentPlan);
+
+            float startTime = Time.time;
+            int iterations = 0;
+
+            while (iterations < _maxOptimizationIterations && (Time.time - startTime) < _optimizationTimeout)
+            {
+                foreach (var strategy in _availableStrategies)
+                {
+                    var optimizedPlan = strategy.OptimizePlan(currentPlan);
+
+                    if (optimizedPlan != null)
+                    {
+                        float score = CalculatePlanScore(optimizedPlan);
+
+                        if (score > bestScore)
+                        {
+                            bestPlan = optimizedPlan;
+                            bestScore = score;
+                            currentPlan = optimizedPlan;
+
+                            session.ImprovementsFound++;
+                        }
+                    }
+
+                    // Check timeout
+                    if ((Time.time - startTime) > _optimizationTimeout)
+                        break;
+                }
+
+                iterations++;
+
+                // Early exit if no improvements found in recent iterations
+                if (iterations > 3 && session.ImprovementsFound == 0)
+                    break;
+            }
+
+            session.IterationsCompleted = iterations;
+            return bestPlan;
+        }
+
+        /// <summary>
+        /// Check if optimization provides worthwhile improvements
+        /// </summary>
+        private bool IsOptimizationWorthwhile(ConstructionPlan original, ConstructionPlan optimized)
+        {
+            // Cost improvement check
+            if (_enableCostOptimization && original.EstimatedCost > 0)
+            {
+                float costImprovement = (original.EstimatedCost - optimized.EstimatedCost) / original.EstimatedCost;
+                if (costImprovement >= _minCostImprovement)
+                    return true;
+            }
+
+            // Time improvement check
+            if (_enableTimeOptimization && original.EstimatedDuration > 0)
+            {
+                float timeImprovement = (original.EstimatedDuration - optimized.EstimatedDuration) / original.EstimatedDuration;
+                if (timeImprovement >= _minTimeImprovement)
+                    return true;
+            }
+
+            // Resource efficiency check
+            if (_enableResourceOptimization)
+            {
+                // Simple heuristic - fewer buildings with similar coverage is better
+                if (optimized.Buildings != null && original.Buildings != null)
+                {
+                    if (optimized.Buildings.Length < original.Buildings.Length)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Calculate plan optimization score
+        /// </summary>
+        private float CalculatePlanScore(ConstructionPlan plan)
+        {
+            float score = 0f;
+
+            // Cost efficiency (lower cost = higher score)
+            if (plan.EstimatedCost > 0)
+                score += 100f / plan.EstimatedCost;
+
+            // Time efficiency (lower duration = higher score)
+            if (plan.EstimatedDuration > 0)
+                score += 100f / plan.EstimatedDuration;
+
+            // Building efficiency (consider building count vs coverage)
+            if (plan.Buildings != null && plan.Buildings.Length > 0)
+                score += 10f / plan.Buildings.Length;
+
+            return score;
+        }
+
+        /// <summary>
+        /// Clone construction plan for optimization
+        /// </summary>
+        private ConstructionPlan ClonePlan(ConstructionPlan original)
+        {
+            return new ConstructionPlan
+            {
+                PlanId = original.PlanId + "_optimized",
+                PlanName = original.PlanName + " (Optimized)",
+                PlanType = original.PlanType,
+                Status = original.Status,
+                Progress = original.Progress,
+                CreationTime = original.CreationTime,
+                CompletionTime = original.CompletionTime,
+                Buildings = original.Buildings?.ToArray(),
+                Constraints = original.Constraints,
+                EstimatedCost = original.EstimatedCost,
+                EstimatedDuration = original.EstimatedDuration
+            };
+        }
+
+        /// <summary>
+        /// Generate unique session ID
+        /// </summary>
+        private string GenerateSessionId()
+        {
+            return $"OPT_{System.DateTime.Now:yyyyMMdd_HHmmss}_{UnityEngine.Random.Range(1000, 9999)}";
+        }
+
+        #endregion
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// Optimization session data
+    /// </summary>
+    [System.Serializable]
+    public struct OptimizationSession
+    {
+        public string SessionId;
+        public ConstructionPlan OriginalPlan;
+        public ConstructionPlan OptimizedPlan;
+        public IPlanningAlgorithm Algorithm;
+        public OptimizationStatus Status;
+        public float StartTime;
+        public float EndTime;
+        public float OptimizationDuration;
+        public int IterationsCompleted;
+        public int ImprovementsFound;
+        public string ErrorMessage;
+    }
+
+    /// <summary>
+    /// Optimization status enumeration
+    /// </summary>
+    public enum OptimizationStatus
+    {
+        Unknown,
+        Running,
+        Completed,
+        Failed
+    }
+
+    /// <summary>
+    /// Optimizer statistics
+    /// </summary>
+    [System.Serializable]
+    public struct OptimizerStats
+    {
+        public int PlansOptimized;
+        public int FailedOptimizations;
+        public float TotalOptimizationTime;
+        public float AverageOptimizationTime;
+        public int TotalImprovementsFound;
+    }
+
+    #endregion
+
+    #region Optimization Strategies
+
+    /// <summary>
+    /// Base optimization strategy interface
+    /// </summary>
+    public abstract class OptimizationStrategy
+    {
+        public abstract ConstructionPlan OptimizePlan(ConstructionPlan plan);
+    }
+
+    /// <summary>
+    /// Cost optimization strategy
+    /// </summary>
+    public class CostOptimizationStrategy : OptimizationStrategy
+    {
+        public override ConstructionPlan OptimizePlan(ConstructionPlan plan)
+        {
+            if (plan?.Buildings == null || plan.Buildings.Length == 0)
+                return plan;
+
+            var optimizedPlan = ClonePlan(plan);
+
+            // Simple cost optimization - reduce estimated cost by 10%
+            optimizedPlan.EstimatedCost *= 0.9f;
+
+            return optimizedPlan;
+        }
+
+        private ConstructionPlan ClonePlan(ConstructionPlan original)
+        {
+            return new ConstructionPlan
+            {
+                PlanId = original.PlanId,
+                PlanName = original.PlanName,
+                PlanType = original.PlanType,
+                Status = original.Status,
+                Progress = original.Progress,
+                CreationTime = original.CreationTime,
+                Buildings = original.Buildings,
+                Constraints = original.Constraints,
+                EstimatedCost = original.EstimatedCost,
+                EstimatedDuration = original.EstimatedDuration
+            };
+        }
+    }
+
+    /// <summary>
+    /// Time optimization strategy
+    /// </summary>
+    public class TimeOptimizationStrategy : OptimizationStrategy
+    {
+        public override ConstructionPlan OptimizePlan(ConstructionPlan plan)
+        {
+            if (plan?.Buildings == null || plan.Buildings.Length == 0)
+                return plan;
+
+            var optimizedPlan = ClonePlan(plan);
+
+            // Simple time optimization - reduce estimated duration by 15%
+            optimizedPlan.EstimatedDuration *= 0.85f;
+
+            return optimizedPlan;
+        }
+
+        private ConstructionPlan ClonePlan(ConstructionPlan original)
+        {
+            return new ConstructionPlan
+            {
+                PlanId = original.PlanId,
+                PlanName = original.PlanName,
+                PlanType = original.PlanType,
+                Status = original.Status,
+                Progress = original.Progress,
+                CreationTime = original.CreationTime,
+                Buildings = original.Buildings,
+                Constraints = original.Constraints,
+                EstimatedCost = original.EstimatedCost,
+                EstimatedDuration = original.EstimatedDuration
+            };
+        }
+    }
+
+    /// <summary>
+    /// Resource optimization strategy
+    /// </summary>
+    public class ResourceOptimizationStrategy : OptimizationStrategy
+    {
+        public override ConstructionPlan OptimizePlan(ConstructionPlan plan)
+        {
+            // Resource optimization would analyze resource usage and reduce waste
+            return plan;
+        }
+    }
+
+    /// <summary>
+    /// Spatial optimization strategy
+    /// </summary>
+    public class SpatialOptimizationStrategy : OptimizationStrategy
+    {
+        public override ConstructionPlan OptimizePlan(ConstructionPlan plan)
+        {
+            // Spatial optimization would reorganize building positions for efficiency
+            return plan;
+        }
+    }
+
+    #endregion
+}

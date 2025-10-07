@@ -18,8 +18,8 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         #region Properties
 
         public bool IsInitialized { get; private set; }
-        public int Priority => TickPriority.SpeedTreeServices;
-        public bool Enabled => _enableGrowthAnimation && gameObject.activeInHierarchy;
+        public int TickPriority => ProjectChimera.Core.Updates.TickPriority.SpeedTreeServices;
+        public bool IsTickable => _enableGrowthAnimation && gameObject.activeInHierarchy;
 
         #endregion
 
@@ -61,7 +61,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         {
             if (IsInitialized) return;
 
-            ChimeraLogger.Log("Initializing CannabisGeneticsService...");
+            ChimeraLogger.Log("SPEEDTREE/GENETICS", "Initialize", this);
 
             // Initialize strain database
             InitializeStrainDatabase();
@@ -73,14 +73,14 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             ServiceContainerFactory.Instance.RegisterSingleton<ICannabisGeneticsService>(this);
 
             IsInitialized = true;
-            ChimeraLogger.Log("CannabisGeneticsService initialized successfully");
+            ChimeraLogger.Log("SPEEDTREE/GENETICS", "Initialized", this);
         }
 
         public void Shutdown()
         {
             if (!IsInitialized) return;
 
-            ChimeraLogger.Log("Shutting down CannabisGeneticsService...");
+            ChimeraLogger.Log("SPEEDTREE/GENETICS", "Shutdown", this);
 
             // Clear all collections
             _strainDatabase.Clear();
@@ -91,7 +91,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             _plantsNeedingUpdate.Clear();
 
             IsInitialized = false;
-            ChimeraLogger.Log("CannabisGeneticsService shutdown complete");
+            ChimeraLogger.Log("SPEEDTREE/GENETICS", "Shutdown complete", this);
         }
 
         #endregion
@@ -102,13 +102,13 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         {
             if (string.IsNullOrEmpty(strainId))
             {
-                ChimeraLogger.LogError("Cannot generate genetic variation - strain ID is null or empty");
+                ChimeraLogger.Log("SPEEDTREE/GENETICS", "Created default genetics", this);
                 return CreateDefaultGeneticData();
             }
 
             var genetics = CreateDefaultGeneticData();
 
-            ChimeraLogger.Log($"Generated genetic variation for strain: {strainId}");
+            ChimeraLogger.Log("SPEEDTREE/GENETICS", "Validated genetic data", this);
             return genetics;
         }
 
@@ -130,12 +130,12 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         {
             if (genetics == null)
             {
-                ChimeraLogger.LogError("Genetic data is null");
+                ChimeraLogger.LogWarning("SPEEDTREE/GENETICS", "ValidateGeneticData called with null", this);
                 return;
             }
 
             // Validation logic would be implemented based on actual genetic data structure
-            ChimeraLogger.Log("Genetic data validated");
+            ChimeraLogger.Log("SPEEDTREE/GENETICS", "Initialized plant growth", this);
         }
 
         #endregion
@@ -157,7 +157,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             // Generate genetics for the plant
             ProcessGeneticExpression(plantId);
 
-            ChimeraLogger.Log($"Initialized growth for plant {plantId}");
+            ChimeraLogger.Log("SPEEDTREE/GENETICS", "Updated plant growth", this);
         }
 
         public void UpdatePlantGrowth(int plantId, float deltaTime)
@@ -175,7 +175,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             progress += deltaTime * _animationTimeScale;
             _growthProgress[plantId] = progress;
 
-            ChimeraLogger.Log($"Updated growth for plant {plantId}");
+            ChimeraLogger.Log("SPEEDTREE/GENETICS", "Stage transition", this);
         }
 
         public void TriggerGrowthStageTransition(int plantId, object newStage)
@@ -195,7 +195,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 
             OnGrowthStageChanged?.Invoke(plantId, oldStage, newStage);
 
-            ChimeraLogger.Log($"Plant {plantId} transitioned from {oldStage} to {newStage}");
+            ChimeraLogger.Log("SPEEDTREE/GENETICS", "Registered strain", this);
         }
 
         #endregion
@@ -214,7 +214,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             }
 
             OnStrainRegistered?.Invoke(strainId);
-            ChimeraLogger.Log($"Registered cannabis strain: {strainId}");
+            ChimeraLogger.Log("SPEEDTREE/GENETICS", "Strain registered", this);
         }
 
         public void UnregisterStrain(string strainId)
@@ -225,7 +225,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             {
                 _strainDatabase.Remove(strainId);
                 _registeredStrains.Remove(strain);
-                ChimeraLogger.Log($"Unregistered cannabis strain: {strainId}");
+                ChimeraLogger.Log("SPEEDTREE/GENETICS", "Unregistered strain", this);
             }
         }
 
@@ -248,7 +248,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             if (_growthAnimations.TryGetValue(plantId, out var animationData))
             {
                 // Animation logic would be implemented based on actual data structure
-                ChimeraLogger.Log($"Animating stage transition for plant {plantId}");
+                ChimeraLogger.Log("SPEEDTREE/GENETICS", "Animated stage transition", this);
             }
         }
 
@@ -278,7 +278,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
                 }
             }
 
-            ChimeraLogger.Log($"Initialized strain database with {_strainDatabase.Count} strains");
+            ChimeraLogger.Log("SPEEDTREE/GENETICS", "Strain DB initialized", this);
         }
 
         private void InitializeGrowthSystem()
@@ -287,7 +287,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             _growthProgress.Clear();
             _growthAnimations.Clear();
 
-            ChimeraLogger.Log("Growth system initialized");
+            ChimeraLogger.Log("SPEEDTREE/GENETICS", "Growth system initialized", this);
         }
 
         private object CreateDefaultGeneticData()
@@ -306,7 +306,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         private void UpdateGrowthAnimation(int plantId, float deltaTime)
         {
             // Growth animation logic would be implemented based on actual data structure
-            ChimeraLogger.Log($"Updating growth animation for plant {plantId}");
+            ChimeraLogger.Log("SPEEDTREE/GENETICS", "Growth animation updated", this);
         }
 
         #endregion

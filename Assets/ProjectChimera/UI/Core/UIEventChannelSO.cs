@@ -50,7 +50,7 @@ namespace ProjectChimera.UI.Core
         {
             if (_logEvents)
             {
-                ChimeraLogger.Log($"[{_channelName}] UI Event: {eventData.EventType} - {eventData.Message}");
+                ChimeraLogger.LogInfo("UIEventChannelSO", "$1");
             }
             
             // Add to history
@@ -167,7 +167,7 @@ namespace ProjectChimera.UI.Core
         public void ClearHistory()
         {
             _eventHistory.Clear();
-            ChimeraLogger.Log($"[{_channelName}] Event history cleared");
+            ChimeraLogger.LogInfo("UIEventChannelSO", "$1");
         }
         
         protected override void OnValidate()

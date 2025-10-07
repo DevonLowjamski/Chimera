@@ -10,6 +10,7 @@ using ProjectChimera.Data.Cultivation;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Environment;
+using ProjectChimera.Data.Cultivation.Plant;
 
 namespace ProjectChimera.Systems.Cultivation
 {
@@ -66,14 +67,14 @@ namespace ProjectChimera.Systems.Cultivation
             _environmentalManager = environmentalManager ?? throw new System.ArgumentNullException(nameof(environmentalManager));
             _harvestManager = harvestManager ?? throw new System.ArgumentNullException(nameof(harvestManager));
 
-            ChimeraLogger.Log("[PlantLifecycleManager] Dependencies successfully injected via SetDependencies method");
+            ChimeraLogger.Log("CULTIVATION", "PlantLifecycleManager operation", null);
         }
 
         public void Initialize()
         {
             if (IsInitialized) return;
 
-            ChimeraLogger.Log("[PlantLifecycleManager] Initializing plant lifecycle management...");
+            ChimeraLogger.Log("CULTIVATION", "PlantLifecycleManager operation", null);
 
             // Register with unified ServiceContainer architecture
             try
@@ -81,25 +82,25 @@ namespace ProjectChimera.Systems.Cultivation
                 // Register with ServiceContainer for dependency injection
                 var serviceContainer = ServiceContainerFactory.Instance;
                 serviceContainer?.RegisterSingleton<IPlantLifecycleManager>(this);
-                ChimeraLogger.Log("[PlantLifecycleManager] Registered with ServiceContainer");
+                ChimeraLogger.Log("CULTIVATION", "PlantLifecycleManager operation", null);
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[PlantLifecycleManager] Failed to register services: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "PlantLifecycleManager operation", null);
             }
 
             _activePlants.Clear();
             _plantPositions.Clear();
 
             IsInitialized = true;
-            ChimeraLogger.Log($"[PlantLifecycleManager] Initialized. Max plants: {_maxPlantsPerGrow}");
+            ChimeraLogger.Log("CULTIVATION", "PlantLifecycleManager operation", null);
         }
 
         public void Shutdown()
         {
             if (!IsInitialized) return;
 
-            ChimeraLogger.Log("[PlantLifecycleManager] Shutting down plant lifecycle management...");
+            ChimeraLogger.Log("CULTIVATION", "PlantLifecycleManager operation", null);
 
             // Save current plant states before shutdown
             SaveAllPlantStates();
@@ -117,19 +118,19 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                ChimeraLogger.LogError("[PlantLifecycleManager] Cannot plant seed: Manager not initialized.");
+                ChimeraLogger.Log("CULTIVATION", "PlantLifecycleManager operation", null);
                 return null;
             }
 
             if (_activePlants.Count >= _maxPlantsPerGrow)
             {
-                ChimeraLogger.LogWarning($"[PlantLifecycleManager] Cannot plant '{plantName}': Maximum plant limit ({_maxPlantsPerGrow}) reached.");
+                ChimeraLogger.Log("CULTIVATION", "PlantLifecycleManager operation", null);
                 return null;
             }
 
             if (strain == null)
             {
-                ChimeraLogger.LogError($"[PlantLifecycleManager] Cannot plant '{plantName}': No strain specified.");
+                ChimeraLogger.Log("CULTIVATION", "PlantLifecycleManager operation", null);
                 return null;
             }
 
@@ -139,7 +140,7 @@ namespace ProjectChimera.Systems.Cultivation
             // Create new plant instance
             PlantInstanceSO newPlant = ScriptableObject.CreateInstance<PlantInstanceSO>();
             newPlant.name = $"Plant_{plantId}_{plantName}";
-            newPlant.InitializePlant(plantId, plantName, strain as ProjectChimera.Data.Cultivation.PlantStrainSO, genotype, position);
+            newPlant.InitializePlant(plantId, plantName, strain as ProjectChimera.Data.Cultivation.Plant.PlantStrainSO, genotype, position);
 
             // Add to active plants
             _activePlants[plantId] = newPlant;
@@ -150,7 +151,7 @@ namespace ProjectChimera.Systems.Cultivation
             // Raise planting event
             _onPlantPlanted?.Raise(newPlant);
 
-            ChimeraLogger.Log($"[PlantLifecycleManager] Planted '{plantName}' (ID: {plantId}) at position {position}");
+            ChimeraLogger.Log("CULTIVATION", "PlantLifecycleManager operation", null);
 
             return newPlant;
         }
@@ -162,13 +163,13 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                ChimeraLogger.LogError("[PlantLifecycleManager] Cannot remove plant: Manager not initialized.");
+                ChimeraLogger.Log("CULTIVATION", "PlantLifecycleManager operation", null);
                 return false;
             }
 
             if (!_activePlants.ContainsKey(plantId))
             {
-                ChimeraLogger.LogWarning($"[PlantLifecycleManager] Cannot remove plant: Plant ID '{plantId}' not found.");
+                ChimeraLogger.Log("CULTIVATION", "PlantLifecycleManager operation", null);
                 return false;
             }
 
@@ -194,7 +195,7 @@ namespace ProjectChimera.Systems.Cultivation
                 Object.DestroyImmediate(plant);
             }
 
-            ChimeraLogger.Log($"[PlantLifecycleManager] Removed plant '{plantId}' (Harvest: {isHarvest})");
+            ChimeraLogger.Log("CULTIVATION", "PlantLifecycleManager operation", null);
 
             return true;
         }
@@ -294,7 +295,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             // This would typically save to persistent storage
             // For now, just log the save operation
-            ChimeraLogger.Log($"[PlantLifecycleManager] Saving states for {_activePlants.Count} plants...");
+            ChimeraLogger.Log("CULTIVATION", "PlantLifecycleManager operation", null);
         }
     }
 }

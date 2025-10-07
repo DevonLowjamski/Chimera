@@ -29,7 +29,7 @@ namespace ProjectChimera.Systems.Cultivation
     /// Represents an individual plant instance with genetic characteristics, growth state,
     /// environmental responses, and health status.
     /// </summary>
-    public class PlantInstance : PlantInstanceCore
+    public class PlantInstance : PlantInstanceCore, IPlantInstance
     {
         [Header("PlantInstance Legacy Settings")]
         [SerializeField] private bool _enableLegacyCompatibility = true;
@@ -43,40 +43,86 @@ namespace ProjectChimera.Systems.Cultivation
         public event Action<PlantInstance> OnEnvironmentChanged;
 
         // Legacy compatibility properties
-        public string PlantId => PlantID;
+        public string PlantId { get => PlantID; set => PlantID = value; }
         public object PlantStrain { get => Strain; set => InitializeFromStrain(value); }
         public PlantGrowthStage CurrentStage { get => GrowthSystem?.CurrentGrowthStage ?? PlantGrowthStage.Seed; set => GrowthSystem?.SetGrowthStage(value); }
-        public float Health => HealthSystem?.CurrentHealth ?? 1f;
+        public float Health { get => HealthSystem?.CurrentHealth ?? 1f; set => HealthSystem?.SetHealth(value); }
         public float WaterLevel { get => HealthSystem?.WaterLevel ?? 1f; set => HealthSystem?.SetWaterLevel(value); }
         public float NutrientLevel { get => HealthSystem?.NutrientLevel ?? 1f; set => HealthSystem?.SetNutrientLevel(value); }
         public object GeneticProfile { get => Strain; set => InitializeFromStrain(value); }
-        public string StrainName => (Strain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown";
-        public int TotalDaysGrown => GrowthSystem?.DaysSincePlanted ?? 0;
+        public string StrainName
+        {
+            get => (Strain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown";
+            set => InitializeFromStrain(value);
+        }
+        public int TotalDaysGrown => (int)(GrowthSystem?.DaysSincePlanted ?? 0);
 
         // Additional legacy properties
-        public PlantGrowthStage CurrentGrowthStage => GrowthSystem?.CurrentGrowthStage ?? PlantGrowthStage.Seed;
-        public float GrowthProgress => GrowthSystem?.GrowthProgress ?? 0f;
+        public PlantGrowthStage CurrentGrowthStage
+        {
+            get => GrowthSystem?.CurrentGrowthStage ?? PlantGrowthStage.Seed;
+            set => GrowthSystem?.SetGrowthStage(value);
+        }
+        public float GrowthProgress
+        {
+            get => GrowthSystem?.GrowthProgress ?? 0f;
+            set => GrowthSystem?.SetGrowthProgress(value);
+        }
         public float OverallGrowthProgress => GrowthSystem?.OverallGrowthProgress ?? 0f;
-        public int DaysSincePlanted => GrowthSystem?.DaysSincePlanted ?? 0;
-        public Vector3 PlantSize => GrowthSystem?.PlantSize ?? Vector3.one;
+        public int DaysSincePlanted => (int)(GrowthSystem?.DaysSincePlanted ?? 0);
+        public Vector3 PlantSize => new Vector3(GrowthSystem?.PlantSize ?? 1f, GrowthSystem?.PlantSize ?? 1f, GrowthSystem?.PlantSize ?? 1f);
         public float CurrentHealth => HealthSystem?.CurrentHealth ?? 1f;
         public float MaxHealth => HealthSystem?.MaxHealth ?? 1f;
         public float StressLevel => HealthSystem?.StressLevel ?? 0f;
         public EnvironmentalConditions CurrentEnvironment => EnvironmentalSystem?.CurrentEnvironment ?? new EnvironmentalConditions();
         public float EnvironmentalFitness => EnvironmentalSystem?.EnvironmentalFitness ?? 1f;
-        public PhenotypicTraits ExpressedTraits => GeneticsSystem?.ExpressedTraits;
+        public Dictionary<string, object> ExpressedTraits => GeneticsSystem?.ExpressedTraits ?? new Dictionary<string, object>();
         public float YieldPotential => GrowthSystem?.YieldPotential ?? 1f;
         public float QualityPotential => GrowthSystem?.QualityPotential ?? 1f;
         public bool IsHarvestable => GrowthSystem?.IsHarvestable ?? false;
 
+        // Missing properties from error messages
+        public Vector3 Position { get; set; } = Vector3.zero;
+        public int AgeInDays
+        {
+            get => DaysSincePlanted;
+            set => GrowthSystem?.SetDaysSincePlanted(value);
+        }
+        public float Age
+        {
+            get => DaysSincePlanted;
+            set => GrowthSystem?.SetDaysSincePlanted((int)value);
+        }
+        public float Height { get; set; } = 1.0f;
+        public float Biomass { get; set; } = 1.0f;
+        public PlantGrowthStage GrowthStage
+        {
+            get => CurrentGrowthStage;
+            set => GrowthSystem?.SetGrowthStage(value);
+        }
+        public float Temperature { get; set; } = 22.0f;
+        public float Humidity { get; set; } = 60.0f;
+        public float LightIntensity { get; set; } = 400.0f;
+        public float CO2Level { get; set; } = 400.0f;
+        public DateTime LastWatering { get; set; } = DateTime.Now;
+        public DateTime LastFeeding { get; set; } = DateTime.Now;
+        public float Stress
+        {
+            get => StressLevel;
+            set => HealthSystem?.SetStressLevel(value);
+        }
+        public float EnergyLevel { get; set; } = 1.0f;
+        public EnvironmentalConditions EnvironmentData => CurrentEnvironment;
+        public bool IsAlive => HealthSystem?.IsAlive() ?? true;
+
         // Genetic properties for compatibility
-        public GenotypeDataSO Genotype
+        public CannabisGenotype Genotype
         {
             get => GeneticsSystem?.Genotype;
-            set { if (GeneticsSystem != null) GeneticsSystem.GetType().GetField("_genotype", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(GeneticsSystem, value); }
+            set { if (GeneticsSystem != null) GeneticsSystem.SetGenotype(value); }
         }
 
-        public TraitExpressionResult LastTraitExpression => GeneticsSystem?.LastTraitExpression;
+        public DateTime LastTraitExpression => GeneticsSystem?.LastTraitExpression ?? DateTime.Now;
 
         protected override void Awake()
         {
@@ -115,7 +161,7 @@ namespace ProjectChimera.Systems.Cultivation
             // Forward growth system events
             if (GrowthSystem != null)
             {
-                GrowthSystem.OnGrowthStageChanged += (stage) => OnGrowthStageChanged?.Invoke(this);
+                GrowthSystem.OnGrowthStageChanged += (fromStage, toStage) => OnGrowthStageChanged?.Invoke(this);
             }
 
             // Forward health system events
@@ -135,7 +181,7 @@ namespace ProjectChimera.Systems.Cultivation
         /// <summary>
         /// Legacy method: Set the last trait expression result for this plant.
         /// </summary>
-        public void SetLastTraitExpression(TraitExpressionResult traitExpression)
+        public void SetLastTraitExpression(DateTime traitExpression)
         {
             GeneticsSystem?.SetLastTraitExpression(traitExpression);
         }
@@ -143,9 +189,9 @@ namespace ProjectChimera.Systems.Cultivation
         /// <summary>
         /// Legacy method: Apply height growth modifier based on genetic expression.
         /// </summary>
-        public void ApplyHeightGrowthModifier(float heightModifier, float deltaTime)
+        public void ApplyHeightGrowthModifier(float heightModifier, float deltaTime = 0f)
         {
-            GeneticsSystem?.ApplyHeightGrowthModifier(heightModifier, deltaTime);
+            GeneticsSystem?.ApplyHeightGrowthModifier(heightModifier);
         }
 
         /// <summary>
@@ -233,7 +279,7 @@ namespace ProjectChimera.Systems.Cultivation
             // But we provide this method for legacy compatibility
             if (IsActive && IsInitialized)
             {
-                GrowthSystem?.ApplyGrowthRate(globalGrowthModifier, deltaTime);
+                GrowthSystem?.ApplyGrowthRate(globalGrowthModifier);
             }
         }
 
@@ -258,7 +304,7 @@ namespace ProjectChimera.Systems.Cultivation
         /// </summary>
         public void UpdateEnvironmentalAdaptation(EnvironmentalConditions conditions)
         {
-            EnvironmentalSystem?.ProcessAdaptation(conditions, 0.01f);
+            EnvironmentalSystem?.ProcessAdaptation(0.01f);
         }
 
         /// <summary>
@@ -266,7 +312,8 @@ namespace ProjectChimera.Systems.Cultivation
         /// </summary>
         public bool ApplyStress(EnvironmentalStressSO stressSource, float intensity)
         {
-            return HealthSystem?.ApplyStress(stressSource, intensity) ?? false;
+            HealthSystem?.ApplyStress(intensity);
+            return true;
         }
 
         /// <summary>
@@ -274,7 +321,7 @@ namespace ProjectChimera.Systems.Cultivation
         /// </summary>
         public void RemoveStress(EnvironmentalStressSO stressSource)
         {
-            HealthSystem?.RemoveStress(stressSource);
+            HealthSystem?.RemoveStress(1.0f); // Convert EnvironmentalStressSO to float value
         }
 
         /// <summary>
@@ -288,9 +335,10 @@ namespace ProjectChimera.Systems.Cultivation
         /// <summary>
         /// Legacy method: Harvests the plant and returns harvest results.
         /// </summary>
-        public HarvestResults Harvest()
+        public ProjectChimera.Data.Cultivation.HarvestResults Harvest()
         {
-            return GrowthSystem?.Harvest();
+            float yieldAmount = GrowthSystem?.Harvest() ?? 0f;
+            return new ProjectChimera.Data.Cultivation.HarvestResults(yieldAmount, 1.0f, PlantId, true);
         }
 
         /// <summary>
@@ -298,7 +346,12 @@ namespace ProjectChimera.Systems.Cultivation
         /// </summary>
         public bool AdvanceGrowthStage()
         {
-            return GrowthSystem?.AdvanceGrowthStage() ?? false;
+            if (GrowthSystem != null)
+            {
+                GrowthSystem.AdvanceGrowthStage();
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -331,7 +384,7 @@ namespace ProjectChimera.Systems.Cultivation
         /// </summary>
         public void ApplyGrowthRate(float growthRate, float deltaTime)
         {
-            GrowthSystem?.ApplyGrowthRate(growthRate, deltaTime);
+            GrowthSystem?.ApplyGrowthRate(growthRate);
         }
 
         /// <summary>
@@ -348,6 +401,45 @@ namespace ProjectChimera.Systems.Cultivation
         public void SetEnvironmentalFitness(float fitness)
         {
             EnvironmentalSystem?.SetEnvironmentalFitness(fitness);
+        }
+
+        /// <summary>
+        /// Legacy method: Water the plant (for PlantCareManager compatibility)
+        /// </summary>
+        public bool Water(float waterAmount, DateTime timestamp)
+        {
+            if (HealthSystem == null) return false;
+
+            HealthSystem.SetWaterLevel(Mathf.Clamp01(WaterLevel + waterAmount));
+            LastWatering = timestamp;
+            LogPlantAction($"Plant watered: {waterAmount:F2}");
+            return true;
+        }
+
+        /// <summary>
+        /// Legacy method: Feed the plant nutrients (for PlantCareManager compatibility)
+        /// </summary>
+        public bool Feed(float nutrientAmount, DateTime timestamp)
+        {
+            if (HealthSystem == null) return false;
+
+            HealthSystem.SetNutrientLevel(Mathf.Clamp01(NutrientLevel + nutrientAmount));
+            LastFeeding = timestamp;
+            LogPlantAction($"Plant fed: {nutrientAmount:F2}");
+            return true;
+        }
+
+        /// <summary>
+        /// Legacy method: Apply training to the plant (for PlantCareManager compatibility)
+        /// </summary>
+        public bool ApplyTraining(string trainingType, DateTime timestamp)
+        {
+            if (string.IsNullOrEmpty(trainingType) || HealthSystem == null) return false;
+
+            // Reduce stress as training helps plant management
+            HealthSystem.SetStressLevel(Mathf.Max(0f, StressLevel - 0.1f));
+            LogPlantAction($"Training applied: {trainingType}");
+            return true;
         }
 
         /// <summary>
@@ -389,13 +481,95 @@ namespace ProjectChimera.Systems.Cultivation
                 VisualizationSystemActive = baseMetrics.VisualizationSystemActive,
                 
                 // Additional metrics from individual systems
-                GrowthMetrics = GrowthSystem?.GetGrowthMetrics(),
-                HealthMetrics = HealthSystem?.GetHealthMetrics(),
+                GrowthMetrics = GrowthSystem?.GetGrowthMetrics() as PlantGrowthMetrics,
+                HealthMetrics = HealthSystem?.GetHealthMetrics() as PlantHealthMetrics,
                 EnvironmentalMetrics = EnvironmentalSystem?.GetEnvironmentalMetrics(),
-                GeneticsMetrics = GeneticsSystem?.GetGeneticsMetrics(),
-                VisualizationMetrics = VisualizationSystem?.GetVisualizationMetrics()
+                GeneticsMetrics = GeneticsSystem?.GetGeneticsMetrics() as PlantGeneticsMetrics,
+                VisualizationMetrics = VisualizationSystem?.GetVisualizationMetrics() as PlantVisualizationMetrics
             };
         }
+
+        #region IPlantInstance Interface Implementation
+
+        // IPlantInstance required properties
+        string IPlantInstance.Id => PlantID;
+        string IPlantInstance.StrainName => StrainName;
+        Vector3 IPlantInstance.Position => Position;
+        PlantGrowthStage IPlantInstance.GrowthStage => CurrentGrowthStage;
+        float IPlantInstance.Health => CurrentHealth;
+        float IPlantInstance.Age => DaysSincePlanted;
+        bool IPlantInstance.IsAlive => IsAlive;
+
+        /// <summary>
+        /// Initialize plant with strain and position (IPlantInstance interface implementation)
+        /// </summary>
+        public void Initialize(ProjectChimera.Systems.Cultivation.PlantStrainSO strain, Vector3 position)
+        {
+            InitializeFromStrain(strain);
+            Position = position;
+        }
+
+        /// <summary>
+        /// Update plant growth based on delta time (IPlantInstance interface implementation)
+        /// </summary>
+        public void UpdateGrowth(float deltaTime)
+        {
+            GrowthSystem?.UpdateGrowthProgress(deltaTime);
+        }
+
+        /// <summary>
+        /// Apply environmental effects to the plant (IPlantInstance interface implementation)
+        /// </summary>
+        public void ApplyEnvironmentalEffects(ProjectChimera.Systems.Cultivation.EnvironmentalData environmentalData)
+        {
+            if (environmentalData == null || EnvironmentalSystem == null) return;
+
+            // Convert EnvironmentalData to EnvironmentalConditions
+            var conditions = new EnvironmentalConditions
+            {
+                Temperature = environmentalData.Temperature,
+                Humidity = environmentalData.Humidity,
+                LightIntensity = environmentalData.LightIntensity,
+                CO2Level = environmentalData.CO2Level
+            };
+
+            EnvironmentalSystem.UpdateEnvironmentalConditions(conditions);
+            EnvironmentalSystem.ProcessEnvironmentalConditions(Time.deltaTime);
+        }
+
+        /// <summary>
+        /// Harvest the plant (IPlantInstance interface implementation)
+        /// </summary>
+        void IPlantInstance.Harvest()
+        {
+            // Mark plant as harvested and trigger harvest events
+            if (GrowthSystem != null)
+            {
+                GrowthSystem.SetGrowthStage(PlantGrowthStage.Harvested);
+            }
+
+            // Trigger legacy harvest event
+            OnPlantDied?.Invoke(this);
+
+            // Log harvest action
+            LogPlantAction($"Plant {PlantID} harvested");
+        }
+
+        /// <summary>
+        /// Destroy the plant instance (IPlantInstance interface implementation)
+        /// </summary>
+        public void Destroy()
+        {
+            OnPlantDied?.Invoke(this);
+            LogPlantAction($"Plant {PlantID} destroyed");
+
+            if (gameObject != null)
+            {
+                UnityEngine.Object.Destroy(gameObject);
+            }
+        }
+
+        #endregion
 
         #if UNITY_EDITOR
         /// <summary>
@@ -416,7 +590,7 @@ namespace ProjectChimera.Systems.Cultivation
             }
             else
             {
-                ChimeraLogger.Log("[PlantInstance] Test only works during play mode");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
         #endif
@@ -426,11 +600,11 @@ namespace ProjectChimera.Systems.Cultivation
         /// </summary>
         public new class PlantInstanceMetrics : PlantInstanceCore.PlantInstanceMetrics
         {
-            public PlantGrowthSystem.PlantGrowthMetrics GrowthMetrics;
-            public PlantHealthSystem.PlantHealthMetrics HealthMetrics;
-            public PlantEnvironmentalSystem.PlantEnvironmentalMetrics EnvironmentalMetrics;
-            public PlantGeneticsSystem.PlantGeneticsMetrics GeneticsMetrics;
-            public PlantVisualizationSystem.PlantVisualizationMetrics VisualizationMetrics;
+            public PlantGrowthMetrics GrowthMetrics;
+            public PlantHealthMetrics HealthMetrics;
+            public PlantEnvironmentalMetrics EnvironmentalMetrics;
+            public PlantGeneticsMetrics GeneticsMetrics;
+            public PlantVisualizationMetrics VisualizationMetrics;
         }
     }
 

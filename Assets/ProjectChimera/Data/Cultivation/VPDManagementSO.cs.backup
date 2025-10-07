@@ -1,0 +1,257 @@
+using UnityEngine;
+
+
+namespace ProjectChimera.Data.Cultivation
+{
+    /// <summary>
+    /// SIMPLE: Basic environmental management aligned with Project Chimera's cultivation needs.
+    /// Focuses on essential temperature and humidity control without complex VPD calculations.
+    /// </summary>
+    [CreateAssetMenu(fileName = "Basic Environment Manager", menuName = "Project Chimera/Cultivation/Basic Environment")]
+    public class VPDManagementSO : ScriptableObject
+    {
+        [Header("Basic Environmental Settings")]
+        [SerializeField] private bool _enableBasicManagement = true;
+        [SerializeField] private float _optimalTemperature = 25f; // Celsius
+        [SerializeField] private float _optimalHumidity = 60f; // Percentage
+        [SerializeField] private float _temperatureTolerance = 5f; // Degrees
+        [SerializeField] private float _humidityTolerance = 10f; // Percentage
+
+        [Header("Basic Control Settings")]
+        [SerializeField] private bool _enableTemperatureControl = true;
+        [SerializeField] private bool _enableHumidityControl = true;
+        [SerializeField] private float _adjustmentSpeed = 1f; // Units per minute
+
+        /// <summary>
+        /// Check if temperature is optimal
+        /// </summary>
+        public bool IsTemperatureOptimal(float currentTemperature)
+        {
+            if (!_enableBasicManagement || !_enableTemperatureControl) return true;
+
+            float minTemp = _optimalTemperature - _temperatureTolerance;
+            float maxTemp = _optimalTemperature + _temperatureTolerance;
+
+            return currentTemperature >= minTemp && currentTemperature <= maxTemp;
+        }
+
+        /// <summary>
+        /// Check if humidity is optimal
+        /// </summary>
+        public bool IsHumidityOptimal(float currentHumidity)
+        {
+            if (!_enableBasicManagement || !_enableHumidityControl) return true;
+
+            float minHumidity = _optimalHumidity - _humidityTolerance;
+            float maxHumidity = _optimalHumidity + _humidityTolerance;
+
+            return currentHumidity >= minHumidity && currentHumidity <= maxHumidity;
+        }
+
+        /// <summary>
+        /// Get temperature adjustment recommendation
+        /// </summary>
+        public TemperatureRecommendation GetTemperatureRecommendation(float currentTemperature)
+        {
+            var recommendation = new TemperatureRecommendation
+            {
+                CurrentTemperature = currentTemperature,
+                TargetTemperature = _optimalTemperature,
+                IsOptimal = IsTemperatureOptimal(currentTemperature)
+            };
+
+            if (!recommendation.IsOptimal)
+            {
+                if (currentTemperature < _optimalTemperature - _temperatureTolerance)
+                {
+                    recommendation.Action = "Increase temperature";
+                    recommendation.AdjustmentNeeded = (_optimalTemperature - _temperatureTolerance) - currentTemperature;
+                }
+                else if (currentTemperature > _optimalTemperature + _temperatureTolerance)
+                {
+                    recommendation.Action = "Decrease temperature";
+                    recommendation.AdjustmentNeeded = currentTemperature - (_optimalTemperature + _temperatureTolerance);
+                }
+            }
+            else
+            {
+                recommendation.Action = "Temperature optimal";
+                recommendation.AdjustmentNeeded = 0f;
+            }
+
+            return recommendation;
+        }
+
+        /// <summary>
+        /// Get humidity adjustment recommendation
+        /// </summary>
+        public HumidityRecommendation GetHumidityRecommendation(float currentHumidity)
+        {
+            var recommendation = new HumidityRecommendation
+            {
+                CurrentHumidity = currentHumidity,
+                TargetHumidity = _optimalHumidity,
+                IsOptimal = IsHumidityOptimal(currentHumidity)
+            };
+
+            if (!recommendation.IsOptimal)
+            {
+                if (currentHumidity < _optimalHumidity - _humidityTolerance)
+                {
+                    recommendation.Action = "Increase humidity";
+                    recommendation.AdjustmentNeeded = (_optimalHumidity - _humidityTolerance) - currentHumidity;
+                }
+                else if (currentHumidity > _optimalHumidity + _humidityTolerance)
+                {
+                    recommendation.Action = "Decrease humidity";
+                    recommendation.AdjustmentNeeded = currentHumidity - (_optimalHumidity + _humidityTolerance);
+                }
+            }
+            else
+            {
+                recommendation.Action = "Humidity optimal";
+                recommendation.AdjustmentNeeded = 0f;
+            }
+
+            return recommendation;
+        }
+
+        /// <summary>
+        /// Get overall environmental status
+        /// </summary>
+        public EnvironmentalStatus GetEnvironmentalStatus(float currentTemperature, float currentHumidity)
+        {
+            var tempRecommendation = GetTemperatureRecommendation(currentTemperature);
+            var humidityRecommendation = GetHumidityRecommendation(currentHumidity);
+
+            return new EnvironmentalStatus
+            {
+                TemperatureRecommendation = tempRecommendation,
+                HumidityRecommendation = humidityRecommendation,
+                IsOptimal = tempRecommendation.IsOptimal && humidityRecommendation.IsOptimal,
+                IssuesCount = (tempRecommendation.IsOptimal ? 0 : 1) + (humidityRecommendation.IsOptimal ? 0 : 1)
+            };
+        }
+
+        /// <summary>
+        /// Get optimal environmental ranges
+        /// </summary>
+        public EnvironmentalRanges GetOptimalRanges()
+        {
+            return new EnvironmentalRanges
+            {
+                MinTemperature = _optimalTemperature - _temperatureTolerance,
+                MaxTemperature = _optimalTemperature + _temperatureTolerance,
+                MinHumidity = _optimalHumidity - _humidityTolerance,
+                MaxHumidity = _optimalHumidity + _humidityTolerance,
+                TemperatureEnabled = _enableTemperatureControl,
+                HumidityEnabled = _enableHumidityControl
+            };
+        }
+
+        /// <summary>
+        /// Simulate environmental adjustment
+        /// </summary>
+        public EnvironmentalAdjustment SimulateAdjustment(float currentTemperature, float currentHumidity, float deltaTime)
+        {
+            var adjustment = new EnvironmentalAdjustment
+            {
+                StartTemperature = currentTemperature,
+                StartHumidity = currentHumidity,
+                AdjustmentTime = deltaTime
+            };
+
+            // Simple adjustment simulation
+            if (_enableTemperatureControl && !IsTemperatureOptimal(currentTemperature))
+            {
+                float targetTemp = _optimalTemperature;
+                float tempDiff = targetTemp - currentTemperature;
+                float adjustmentAmount = Mathf.Sign(tempDiff) * _adjustmentSpeed * deltaTime;
+                adjustment.EndTemperature = currentTemperature + Mathf.Min(Mathf.Abs(tempDiff), Mathf.Abs(adjustmentAmount)) * Mathf.Sign(tempDiff);
+            }
+            else
+            {
+                adjustment.EndTemperature = currentTemperature;
+            }
+
+            if (_enableHumidityControl && !IsHumidityOptimal(currentHumidity))
+            {
+                float targetHumidity = _optimalHumidity;
+                float humidityDiff = targetHumidity - currentHumidity;
+                float adjustmentAmount = Mathf.Sign(humidityDiff) * _adjustmentSpeed * deltaTime;
+                adjustment.EndHumidity = currentHumidity + Mathf.Min(Mathf.Abs(humidityDiff), Mathf.Abs(adjustmentAmount)) * Mathf.Sign(humidityDiff);
+            }
+            else
+            {
+                adjustment.EndHumidity = currentHumidity;
+            }
+
+            return adjustment;
+        }
+    }
+
+    /// <summary>
+    /// Temperature recommendation
+    /// </summary>
+    [System.Serializable]
+    public struct TemperatureRecommendation
+    {
+        public float CurrentTemperature;
+        public float TargetTemperature;
+        public bool IsOptimal;
+        public string Action;
+        public float AdjustmentNeeded;
+    }
+
+    /// <summary>
+    /// Humidity recommendation
+    /// </summary>
+    [System.Serializable]
+    public struct HumidityRecommendation
+    {
+        public float CurrentHumidity;
+        public float TargetHumidity;
+        public bool IsOptimal;
+        public string Action;
+        public float AdjustmentNeeded;
+    }
+
+    /// <summary>
+    /// Environmental status
+    /// </summary>
+    [System.Serializable]
+    public struct EnvironmentalStatus
+    {
+        public TemperatureRecommendation TemperatureRecommendation;
+        public HumidityRecommendation HumidityRecommendation;
+        public bool IsOptimal;
+        public int IssuesCount;
+    }
+
+    /// <summary>
+    /// Environmental ranges
+    /// </summary>
+    [System.Serializable]
+    public struct EnvironmentalRanges
+    {
+        public float MinTemperature;
+        public float MaxTemperature;
+        public float MinHumidity;
+        public float MaxHumidity;
+        public bool TemperatureEnabled;
+        public bool HumidityEnabled;
+    }
+
+    /// <summary>
+    /// Environmental adjustment simulation
+    /// </summary>
+    [System.Serializable]
+    public struct EnvironmentalAdjustment
+    {
+        public float StartTemperature;
+        public float StartHumidity;
+        public float EndTemperature;
+        public float EndHumidity;
+        public float AdjustmentTime;
+    }
+}

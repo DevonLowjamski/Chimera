@@ -1,0 +1,1 @@
+// This file was moved to IConstructionGamingSystem.cs to avoid duplicates

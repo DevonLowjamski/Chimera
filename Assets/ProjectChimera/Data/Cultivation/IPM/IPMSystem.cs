@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using CultivationPestType = ProjectChimera.Data.Cultivation.IPM.IPMDataStructures.PestType;
-using IPMPestType = ProjectChimera.Data.Cultivation.IPM.PestType;
+using IPMPestType = ProjectChimera.Data.Cultivation.IPM.IPMDataStructures.PestType;
 using PestMonitoringData = ProjectChimera.Data.Cultivation.IPM.IPMDataStructures.PestMonitoringData;
 using BiologicalControlPlan = ProjectChimera.Data.Cultivation.IPM.IPMDataStructures.BiologicalControlPlan;
 using MonitoringPlan = ProjectChimera.Data.Cultivation.IPM.IPMDataStructures.MonitoringPlan;
@@ -14,6 +14,12 @@ using EnvironmentalRiskFactor = ProjectChimera.Data.Cultivation.IPM.IPMDataStruc
 using IPMRecommendation = ProjectChimera.Data.Cultivation.IPM.IPMDataStructures.IPMRecommendation;
 using MonitoringStation = ProjectChimera.Data.Cultivation.IPM.IPMDataStructures.MonitoringStation;
 using ImprovementRecommendation = ProjectChimera.Data.Cultivation.IPM.IPMDataStructures.ImprovementRecommendation;
+using PopulationTrend = ProjectChimera.Data.Cultivation.IPM.IPMDataStructures.PopulationTrend;
+using InfestationSeverity = ProjectChimera.Data.Cultivation.IPM.IPMDataStructures.InfestationSeverity;
+using RiskLevel = ProjectChimera.Data.Cultivation.IPM.IPMDataStructures.RiskLevel;
+using PestDetectionResult = ProjectChimera.Data.Cultivation.IPM.IPMDataStructures.PestDetectionResult;
+using IPMAssessment = ProjectChimera.Data.Cultivation.IPM.IPMDataStructures.IPMAssessment;
+
 
 namespace ProjectChimera.Data.Cultivation.IPM
 {
@@ -36,8 +42,8 @@ namespace ProjectChimera.Data.Cultivation.IPM
 
         [Header("Core Components")]
         [SerializeField] private BeneficialOrganism[] _beneficialOrganisms;
-        [SerializeField] private MonitoringProtocol _monitoringProtocol;
-        [SerializeField] private CulturalPractice[] _culturalPractices;
+        [SerializeField] private IPMDataStructures.MonitoringProtocol _monitoringProtocol;
+        [SerializeField] private IPMDataStructures.CulturalPractice[] _culturalPractices;
 
         // Current state
         private PestMonitoringData[] _recentMonitoringData;
@@ -65,13 +71,13 @@ namespace ProjectChimera.Data.Cultivation.IPM
 
             var assessment = new IPMAssessment
             {
-                AssessmentTime = DateTime.Now,
-                OverallRisk = CalculateOverallRisk(monitoringData),
+                AssessmentTimestamp = DateTime.Now,
+                OverallRiskLevel = (RiskLevel)CalculateOverallRisk(monitoringData),
                 DetectedPests = IdentifyDetectedPests(monitoringData),
-                EnvironmentalFactors = AnalyzeEnvironmentalFactors(environmentalData)
+                EnvironmentalRiskFactors = AnalyzeEnvironmentalFactors(environmentalData)
             };
 
-            assessment.Recommendations = GenerateRecommendations(assessment);
+            assessment.RecommendedActions = GenerateRecommendations(assessment);
 
             return assessment;
         }
@@ -85,11 +91,44 @@ namespace ProjectChimera.Data.Cultivation.IPM
 
             return new BiologicalControlPlan
             {
-                TargetPest = targetPest,
-                RecommendedBeneficials = suitableBeneficials,
+                TargetPest = ConvertPestType(targetPest),
+                ZoneID = "Default Zone",
+                CreationTimestamp = DateTime.Now,
+                PestPressureLevel = 0.5f,
+                SelectedBeneficials = suitableBeneficials,
                 ReleaseStrategy = CreateReleaseStrategy(suitableBeneficials),
                 MonitoringRequirements = CreateMonitoringRequirements(targetPest)
             };
+        }
+
+        /// <summary>
+        /// Converts IPMEnums.PestType to IPMDataStructures.PestType
+        /// </summary>
+        private static CultivationPestType ConvertPestType(IPMPestType sourcePestType)
+        {
+            switch (sourcePestType)
+            {
+                case IPMPestType.Spider_Mites:
+                    return CultivationPestType.Spider_Mites;
+                case IPMPestType.Thrips:
+                    return CultivationPestType.Thrips;
+                case IPMPestType.Aphids:
+                    return CultivationPestType.Aphids;
+                case IPMPestType.Whiteflies:
+                    return CultivationPestType.Whiteflies;
+                case IPMPestType.Fungus_Gnats:
+                    return CultivationPestType.Fungus_Gnats;
+                case IPMPestType.Powdery_Mildew:
+                    return CultivationPestType.Powdery_Mildew;
+                case IPMPestType.Botrytis:
+                    return CultivationPestType.Botrytis;
+                case IPMPestType.Pythium:
+                    return CultivationPestType.Pythium;
+                case IPMPestType.Fusarium:
+                    return CultivationPestType.Fusarium;
+                default:
+                    return CultivationPestType.Spider_Mites; // Default fallback
+            }
         }
 
         /// <summary>
@@ -99,10 +138,10 @@ namespace ProjectChimera.Data.Cultivation.IPM
         {
             return new MonitoringPlan
             {
-                Protocol = _monitoringProtocol,
+                Protocol = _monitoringProtocol?.ToString() ?? "Standard Protocol",
                 Stations = CreateMonitoringStations(),
-                Schedule = CreateInspectionSchedule(),
-                AlertThresholds = _monitoringProtocol?.ActionThresholds
+                InspectionSchedule = CreateInspectionSchedule(),
+                AlertThresholds = _monitoringProtocol?.ActionThresholds ?? new float[0]
             };
         }
 
@@ -121,7 +160,7 @@ namespace ProjectChimera.Data.Cultivation.IPM
                 PestReduction = pestReduction,
                 CostEffectiveness = costEffectiveness,
                 EnvironmentalImpact = environmentalImpact,
-                Recommendations = GenerateImprovementRecommendations(pestReduction, environmentalImpact)
+                Recommendations = GenerateImprovementRecommendations(pestReduction, environmentalImpact).Select(r => r.ToString()).ToArray()
             };
         }
 
@@ -140,15 +179,15 @@ namespace ProjectChimera.Data.Cultivation.IPM
             }
 
             if (maxPopulation > 1.0f) return RiskLevel.Critical;
-            if (maxPopulation > 0.5f) return RiskLevel.High;
-            if (maxPopulation > 0.2f) return RiskLevel.Moderate;
+            if (maxPopulation > 0.5f) return RiskLevel.Very_High;
+            if (maxPopulation > 0.2f) return RiskLevel.Medium;
             return RiskLevel.Low;
         }
 
-        private PestDetectionResult[] IdentifyDetectedPests(PestMonitoringData[] data)
+        private IPMDataStructures.PestDetectionResult[] IdentifyDetectedPests(PestMonitoringData[] data)
         {
             // Group by pest type and find max population
-            var pestGroups = new System.Collections.Generic.Dictionary<PestType, float>();
+            var pestGroups = new System.Collections.Generic.Dictionary<CultivationPestType, float>();
 
             foreach (var pestData in data)
             {
@@ -158,13 +197,15 @@ namespace ProjectChimera.Data.Cultivation.IPM
                 pestGroups[pestData.Pest] = Mathf.Max(pestGroups[pestData.Pest], pestData.Population);
             }
 
-            var results = new System.Collections.Generic.List<PestDetectionResult>();
+            var results = new System.Collections.Generic.List<IPMDataStructures.PestDetectionResult>();
             foreach (var kvp in pestGroups)
             {
-                results.Add(new PestDetectionResult
+                results.Add(new IPMDataStructures.PestDetectionResult
                 {
-                    PestType = kvp.Key,
+                    PestType = ConvertPestTypeToDataStructures(kvp.Key),
                     PopulationLevel = kvp.Value,
+                    Trend = IPMDataStructures.PopulationTrend.Stable,
+                    Severity = IPMDataStructures.InfestationSeverity.Low,
                     DetectionMethod = "Automated Monitoring"
                 });
             }
@@ -182,7 +223,7 @@ namespace ProjectChimera.Data.Cultivation.IPM
                 factors.Add(new EnvironmentalRiskFactor
                 {
                     Factor = "Temperature",
-                    RiskLevel = data.Temperature < 15f || data.Temperature > 35f ? 0.9f : 0.6f,
+                    RiskLevel = data.Temperature < 15f || data.Temperature > 35f ? IPMDataStructures.RiskLevel.High : IPMDataStructures.RiskLevel.Medium,
                     Description = $"Temperature {data.Temperature}°C is outside optimal range"
                 });
             }
@@ -193,7 +234,7 @@ namespace ProjectChimera.Data.Cultivation.IPM
                 factors.Add(new EnvironmentalRiskFactor
                 {
                     Factor = "Humidity",
-                    RiskLevel = data.Humidity < 30f || data.Humidity > 90f ? 0.8f : 0.5f,
+                    RiskLevel = data.Humidity < 30f || data.Humidity > 90f ? IPMDataStructures.RiskLevel.High : IPMDataStructures.RiskLevel.Medium,
                     Description = $"Humidity {data.Humidity}% is outside optimal range"
                 });
             }
@@ -206,7 +247,7 @@ namespace ProjectChimera.Data.Cultivation.IPM
             var recommendations = new System.Collections.Generic.List<IPMRecommendation>();
 
             // Biological control recommendations
-            if (_enableBiologicalControls && assessment.OverallRisk >= RiskLevel.Moderate)
+            if (_enableBiologicalControls && assessment.OverallRiskLevel >= IPMDataStructures.RiskLevel.Medium)
             {
                 foreach (var pest in assessment.DetectedPests)
                 {
@@ -216,7 +257,7 @@ namespace ProjectChimera.Data.Cultivation.IPM
                         recommendations.Add(new IPMRecommendation
                         {
                             Action = $"Implement biological control for {pest.PestType}",
-                            Priority = InterventionPriority.Medium,
+                            Priority = IPMDataStructures.InterventionPriority.Medium,
                             Justification = $"Detected {pest.PopulationLevel} population of {pest.PestType}"
                         });
                     }
@@ -231,7 +272,7 @@ namespace ProjectChimera.Data.Cultivation.IPM
                     recommendations.Add(new IPMRecommendation
                     {
                         Action = $"Implement {practice.PracticeName}",
-                        Priority = InterventionPriority.Low,
+                        Priority = IPMDataStructures.InterventionPriority.Low,
                         Justification = "Preventative cultural practice"
                     });
                 }
@@ -259,25 +300,33 @@ namespace ProjectChimera.Data.Cultivation.IPM
             return suitable.ToArray();
         }
 
-        private ReleaseStrategy CreateReleaseStrategy(BeneficialOrganism[] beneficials)
+        private IPMDataStructures.ReleaseStrategy CreateReleaseStrategy(BeneficialOrganism[] beneficials)
         {
             if (beneficials.Length == 0) return null;
 
             var strategy = beneficials[0].GetRecommendedSchedule();
-            return new ReleaseStrategy
+            return new IPMDataStructures.ReleaseStrategy
             {
                 ReleaseDate = DateTime.Now,
                 Quantity = strategy.InitialRelease,
-                ReleaseLocations = new[] { "Main cultivation area" }
+                ReleaseLocations = new[] { "Main cultivation area" },
+                Frequency = IPMDataStructures.ReleaseFrequency.Single,
+                MonitoringDays = 14
             };
         }
 
-        private BiologicalMonitoringPlan CreateMonitoringRequirements(IPMPestType pest)
+        private IPMDataStructures.MonitoringRequirements CreateMonitoringRequirements(IPMPestType pest)
         {
-            return new BiologicalMonitoringPlan
+            return new IPMDataStructures.MonitoringRequirements
             {
                 MonitoringMethods = new[] { "Visual inspection", "Sticky traps", "Leaf sampling" },
-                MonitoringFrequency = 3f // days
+                MonitoringFrequency = IPMDataStructures.InspectionFrequency.Every_Other_Day,
+                ActionThresholds = new Dictionary<string, float>
+                {
+                    ["Low"] = 5f,
+                    ["Medium"] = 15f,
+                    ["High"] = 30f
+                }
             };
         }
 
@@ -287,19 +336,19 @@ namespace ProjectChimera.Data.Cultivation.IPM
             {
                 new MonitoringStation
                 {
-                    Location = Vector3.zero,
-                    Equipment = new[] { "Sticky traps", "Magnifying glass" },
-                    TargetPests = new[] { IPMPestType.SpiderMites, IPMPestType.Thrips, IPMPestType.Aphids }
+                    Location = "Main cultivation area",
+                    Equipment = "Sticky traps and magnifying glass",
+                    TargetPests = new[] { "SpiderMites", "Thrips", "Aphids" }
                 }
             };
         }
 
-        private InspectionSchedule CreateInspectionSchedule()
+        private IPMDataStructures.InspectionSchedule CreateInspectionSchedule()
         {
-            return new InspectionSchedule
+            return new IPMDataStructures.InspectionSchedule
             {
-                InspectionTimes = new[] { DateTime.Now.AddHours(9), DateTime.Now.AddHours(14) },
-                InspectionTypes = new[] { "Visual inspection", "Trap monitoring" }
+                TotalInspectionsPerWeek = 14,
+                InspectionSlots = null
             };
         }
 
@@ -357,19 +406,19 @@ namespace ProjectChimera.Data.Cultivation.IPM
             return recommendations.ToArray();
         }
 
+        /// <summary>
+        /// Convert IPM.PestType to IPMDataStructures.PestType
+        /// </summary>
+        private static IPMDataStructures.PestType ConvertPestTypeToDataStructures(CultivationPestType pestType)
+        {
+            // Simple conversion - in a real implementation this would map the enum values
+            return (IPMDataStructures.PestType)System.Enum.Parse(typeof(IPMDataStructures.PestType), pestType.ToString());
+        }
+
         #endregion
     }
 
-    // Supporting data classes
-    [System.Serializable]
-    public class IPMAssessment
-    {
-        public DateTime AssessmentTime;
-        public RiskLevel OverallRisk;
-        public PestDetectionResult[] DetectedPests;
-        public EnvironmentalRiskFactor[] EnvironmentalFactors;
-        public IPMRecommendation[] Recommendations;
-    }
+    // Supporting data classes - using IPMDataStructures versions
 
     [System.Serializable]
     public class EnvironmentalData
@@ -379,4 +428,5 @@ namespace ProjectChimera.Data.Cultivation.IPM
         public float LightIntensity;
         public float CO2Level;
     }
+
 }

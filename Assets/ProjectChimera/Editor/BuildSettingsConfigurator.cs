@@ -37,7 +37,7 @@ namespace ProjectChimera.Editor
         [MenuItem("Tools/Project Chimera/Configure Build Settings")]
         public static void ConfigureBuildSettings()
         {
-            ChimeraLogger.Log("[BuildSettingsConfigurator] Starting Build Settings configuration...");
+            ChimeraLogger.Log("OTHER", "$1", null);
 
             var buildScenes = new List<EditorBuildSettingsScene>();
             int processedScenes = 0;
@@ -55,11 +55,11 @@ namespace ProjectChimera.Editor
                     buildScenes.Add(buildSettingsScene);
                     processedScenes++;
 
-                    ChimeraLogger.Log("SYSTEM", $"[BuildSettingsConfigurator] Added scene {buildIndex}: {Path.GetFileNameWithoutExtension(scenePath)}");
+                    ChimeraLogger.Log("OTHER", "$1", null);
                 }
                 else
                 {
-                    ChimeraLogger.LogError($"[BuildSettingsConfigurator] Missing scene file: {scenePath}");
+                    ChimeraLogger.Log("OTHER", "$1", null);
                     missingScenes++;
                 }
             }
@@ -77,12 +77,12 @@ namespace ProjectChimera.Editor
 
             if (missingScenes == 0)
             {
-                ChimeraLogger.Log($"[BuildSettingsConfigurator] {summary}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 EditorUtility.DisplayDialog("Build Settings Configuration", summary, "OK");
             }
             else
             {
-                ChimeraLogger.LogWarning($"[BuildSettingsConfigurator] {summary}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 EditorUtility.DisplayDialog("Build Settings Configuration", summary + "\n\nCheck console for missing scene details.", "OK");
             }
 
@@ -96,7 +96,7 @@ namespace ProjectChimera.Editor
         [MenuItem("Tools/Project Chimera/Validate Build Settings")]
         public static void ValidateBuildSettings()
         {
-            ChimeraLogger.Log("[BuildSettingsConfigurator] Validating Build Settings...");
+            ChimeraLogger.Log("OTHER", "$1", null);
 
             var currentScenes = EditorBuildSettings.scenes;
             bool isValid = true;
@@ -137,14 +137,14 @@ namespace ProjectChimera.Editor
             // Report results
             if (isValid)
             {
-                ChimeraLogger.Log("[BuildSettingsConfigurator] Build Settings validation: PASSED");
+                ChimeraLogger.Log("OTHER", "$1", null);
             }
             else
             {
-                ChimeraLogger.LogError("[BuildSettingsConfigurator] Build Settings validation: FAILED");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 foreach (var result in validationResults)
                 {
-                    ChimeraLogger.LogError($"[BuildSettingsConfigurator] • {result}");
+                    ChimeraLogger.Log("OTHER", "$1", null);
                 }
             }
         }
@@ -160,7 +160,7 @@ namespace ProjectChimera.Editor
                 return Path.GetFileNameWithoutExtension(scenePath);
             }
 
-            ChimeraLogger.LogError($"[BuildSettingsConfigurator] No scene defined for build index {buildIndex}");
+            ChimeraLogger.Log("OTHER", "$1", null);
             return null;
         }
 
@@ -178,7 +178,7 @@ namespace ProjectChimera.Editor
                 }
             }
 
-            ChimeraLogger.LogError($"[BuildSettingsConfigurator] No build index found for scene '{sceneName}'");
+            ChimeraLogger.Log("OTHER", "$1", null);
             return -1;
         }
 
@@ -188,7 +188,7 @@ namespace ProjectChimera.Editor
         [MenuItem("Tools/Project Chimera/Print Build Settings")]
         public static void PrintBuildSettings()
         {
-            ChimeraLogger.Log("[BuildSettingsConfigurator] Current Build Settings:");
+            ChimeraLogger.Log("OTHER", "$1", null);
 
             var scenes = EditorBuildSettings.scenes;
             for (int i = 0; i < scenes.Length; i++)
@@ -197,10 +197,10 @@ namespace ProjectChimera.Editor
                 string status = scene.enabled ? "ENABLED" : "DISABLED";
                 string fileName = Path.GetFileNameWithoutExtension(scene.path);
 
-                ChimeraLogger.Log("SYSTEM", $"[BuildSettingsConfigurator] Index {i}: {fileName} ({status}) - {scene.path}");
+                ChimeraLogger.Log("OTHER", "$1", null);
             }
 
-            ChimeraLogger.Log($"[BuildSettingsConfigurator] Total scenes in build: {scenes.Length}");
+            ChimeraLogger.Log("OTHER", "$1", null);
         }
 
         /// <summary>

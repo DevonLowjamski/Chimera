@@ -1,0 +1,737 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Data.Cultivation.Plant
+{
+    /// <summary>
+    /// REFACTORED: Plant Sync Configuration Manager
+    /// Single Responsibility: Auto-sync settings, parameter management, and configuration persistence
+    /// Extracted from PlantDataSynchronizer for better separation of concerns
+    /// </summary>
+    [System.Serializable]
+    public class PlantSyncConfigurationManager
+    {
+        [Header("Configuration Settings")]
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private bool _persistConfiguration = true;
+        [SerializeField] private string _configurationKey = "PlantSyncConfig";
+
+        // Core configuration
+        [SerializeField] private PlantSyncConfiguration _configuration = new PlantSyncConfiguration();
+
+        // Configuration profiles
+        private Dictionary<string, PlantSyncConfiguration> _configurationProfiles = new Dictionary<string, PlantSyncConfiguration>();
+        private string _activeProfile = "Default";
+
+        // Configuration state
+        private bool _isInitialized = false;
+        private bool _isDirty = false;
+        private DateTime _lastConfigChange = DateTime.Now;
+
+        // Statistics
+        private ConfigurationStats _stats = new ConfigurationStats();
+
+        // Events
+        public event System.Action<PlantSyncConfiguration> OnConfigurationChanged;
+        public event System.Action<string> OnProfileChanged;
+        public event System.Action<ConfigurationValidationResult> OnValidationComplete;
+        public event System.Action OnConfigurationSaved;
+
+        public bool IsInitialized => _isInitialized;
+        public PlantSyncConfiguration Configuration => _configuration;
+        public string ActiveProfile => _activeProfile;
+        public bool IsDirty => _isDirty;
+        public ConfigurationStats Stats => _stats;
+        public DateTime LastConfigChange => _lastConfigChange;
+
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            LoadDefaultConfiguration();
+            InitializeProfiles();
+
+            if (_persistConfiguration)
+            {
+                LoadPersistedConfiguration();
+            }
+
+            ResetStats();
+            ValidateConfiguration();
+
+            _isInitialized = true;
+            _isDirty = false;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("PLANT", "Plant Sync Configuration Manager initialized");
+            }
+        }
+
+        /// <summary>
+        /// Update configuration with new values
+        /// </summary>
+        public ConfigurationUpdateResult UpdateConfiguration(PlantSyncConfiguration newConfiguration, bool validate = true)
+        {
+            if (!_isInitialized)
+            {
+                return new ConfigurationUpdateResult
+                {
+                    Success = false,
+                    ErrorMessage = "Configuration manager not initialized"
+                };
+            }
+
+            var validationResult = validate ? ValidateConfiguration(newConfiguration) : new ConfigurationValidationResult { IsValid = true };
+
+            if (!validationResult.IsValid)
+            {
+                return new ConfigurationUpdateResult
+                {
+                    Success = false,
+                    ErrorMessage = $"Configuration validation failed: {string.Join(", ", validationResult.Errors)}",
+                    ValidationResult = validationResult
+                };
+            }
+
+            var oldConfiguration = _configuration;
+            _configuration = newConfiguration;
+            _isDirty = true;
+            _lastConfigChange = DateTime.Now;
+            _stats.ConfigurationUpdates++;
+
+            OnConfigurationChanged?.Invoke(_configuration);
+
+            if (_persistConfiguration)
+            {
+                SaveConfiguration();
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("PLANT", $"Configuration updated for profile '{_activeProfile}'");
+            }
+
+            return new ConfigurationUpdateResult
+            {
+                Success = true,
+                PreviousConfiguration = oldConfiguration,
+                ValidationResult = validationResult
+            };
+        }
+
+        /// <summary>
+        /// Update specific configuration parameter
+        /// </summary>
+        public bool UpdateParameter<T>(string parameterName, T value)
+        {
+            if (!_isInitialized) return false;
+
+            var updated = false;
+
+            switch (parameterName.ToLower())
+            {
+                case "autosync":
+                    if (value is bool autoSync)
+                    {
+                        _configuration.AutoSyncEnabled = autoSync;
+                        updated = true;
+                    }
+                    break;
+
+                case "syncfrequency":
+                    if (value is float frequency)
+                    {
+                        _configuration.SyncFrequency = Mathf.Max(0.1f, frequency);
+                        updated = true;
+                    }
+                    break;
+
+                case "validatedata":
+                    if (value is bool validate)
+                    {
+                        _configuration.ValidateDataIntegrity = validate;
+                        updated = true;
+                    }
+                    break;
+
+                case "enablelogging":
+                    if (value is bool logging)
+                    {
+                        _configuration.EnableLogging = logging;
+                        updated = true;
+                    }
+                    break;
+
+                case "syncdirection":
+                    if (value is SyncDirection direction)
+                    {
+                        _configuration.DefaultSyncDirection = direction;
+                        updated = true;
+                    }
+                    break;
+
+                case "batchsize":
+                    if (value is int batchSize)
+                    {
+                        _configuration.BatchSize = Mathf.Max(1, batchSize);
+                        updated = true;
+                    }
+                    break;
+
+                case "timeout":
+                    if (value is float timeout)
+                    {
+                        _configuration.OperationTimeoutSeconds = Mathf.Max(1f, timeout);
+                        updated = true;
+                    }
+                    break;
+            }
+
+            if (updated)
+            {
+                _isDirty = true;
+                _lastConfigChange = DateTime.Now;
+                _stats.ParameterUpdates++;
+
+                OnConfigurationChanged?.Invoke(_configuration);
+
+                if (_persistConfiguration)
+                {
+                    SaveConfiguration();
+                }
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("PLANT", $"Updated parameter '{parameterName}' to '{value}'");
+                }
+            }
+
+            return updated;
+        }
+
+        /// <summary>
+        /// Create configuration profile
+        /// </summary>
+        public bool CreateProfile(string profileName, PlantSyncConfiguration configuration)
+        {
+            if (!_isInitialized || string.IsNullOrEmpty(profileName)) return false;
+
+            if (_configurationProfiles.ContainsKey(profileName))
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("PLANT", $"Profile '{profileName}' already exists");
+                }
+                return false;
+            }
+
+            var validationResult = ValidateConfiguration(configuration);
+            if (!validationResult.IsValid)
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("PLANT", $"Cannot create profile '{profileName}': {string.Join(", ", validationResult.Errors)}");
+                }
+                return false;
+            }
+
+            _configurationProfiles[profileName] = configuration;
+            _stats.ProfilesCreated++;
+
+            if (_persistConfiguration)
+            {
+                SaveProfiles();
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("PLANT", $"Created configuration profile '{profileName}'");
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Load configuration profile
+        /// </summary>
+        public bool LoadProfile(string profileName)
+        {
+            if (!_isInitialized || string.IsNullOrEmpty(profileName)) return false;
+
+            if (!_configurationProfiles.TryGetValue(profileName, out var profile))
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("PLANT", $"Profile '{profileName}' not found");
+                }
+                return false;
+            }
+
+            var oldProfile = _activeProfile;
+            _activeProfile = profileName;
+            _configuration = profile;
+            _isDirty = false;
+            _lastConfigChange = DateTime.Now;
+            _stats.ProfileSwitches++;
+
+            OnProfileChanged?.Invoke(_activeProfile);
+            OnConfigurationChanged?.Invoke(_configuration);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("PLANT", $"Loaded profile '{profileName}' (was '{oldProfile}')");
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Save current configuration as profile
+        /// </summary>
+        public bool SaveAsProfile(string profileName)
+        {
+            if (!_isInitialized || string.IsNullOrEmpty(profileName)) return false;
+
+            _configurationProfiles[profileName] = _configuration;
+            _stats.ProfilesSaved++;
+
+            if (_persistConfiguration)
+            {
+                SaveProfiles();
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("PLANT", $"Saved current configuration as profile '{profileName}'");
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Delete configuration profile
+        /// </summary>
+        public bool DeleteProfile(string profileName)
+        {
+            if (!_isInitialized || string.IsNullOrEmpty(profileName) || profileName == "Default") return false;
+
+            if (!_configurationProfiles.Remove(profileName)) return false;
+
+            if (_activeProfile == profileName)
+            {
+                LoadProfile("Default");
+            }
+
+            _stats.ProfilesDeleted++;
+
+            if (_persistConfiguration)
+            {
+                SaveProfiles();
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("PLANT", $"Deleted configuration profile '{profileName}'");
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Get list of available profiles
+        /// </summary>
+        public List<string> GetAvailableProfiles()
+        {
+            return new List<string>(_configurationProfiles.Keys);
+        }
+
+        /// <summary>
+        /// Validate configuration
+        /// </summary>
+        public ConfigurationValidationResult ValidateConfiguration(PlantSyncConfiguration? config = null)
+        {
+            var configToValidate = config ?? _configuration;
+            var errors = new List<string>();
+            var warnings = new List<string>();
+
+            // Validate sync frequency
+            if (configToValidate.SyncFrequency < 0.1f)
+            {
+                errors.Add($"Sync frequency too low: {configToValidate.SyncFrequency} (minimum: 0.1)");
+            }
+            else if (configToValidate.SyncFrequency > 300f)
+            {
+                warnings.Add($"Sync frequency very high: {configToValidate.SyncFrequency} seconds");
+            }
+
+            // Validate batch size
+            if (configToValidate.BatchSize < 1)
+            {
+                errors.Add($"Invalid batch size: {configToValidate.BatchSize} (minimum: 1)");
+            }
+            else if (configToValidate.BatchSize > 1000)
+            {
+                warnings.Add($"Very large batch size: {configToValidate.BatchSize}");
+            }
+
+            // Validate timeout
+            if (configToValidate.OperationTimeoutSeconds < 1f)
+            {
+                errors.Add($"Timeout too low: {configToValidate.OperationTimeoutSeconds} (minimum: 1)");
+            }
+
+            // Validate retry settings
+            if (configToValidate.MaxRetryAttempts < 0 || configToValidate.MaxRetryAttempts > 10)
+            {
+                warnings.Add($"Unusual retry attempts: {configToValidate.MaxRetryAttempts}");
+            }
+
+            var result = new ConfigurationValidationResult
+            {
+                IsValid = errors.Count == 0,
+                Errors = errors,
+                Warnings = warnings,
+                ValidationTime = DateTime.Now
+            };
+
+            OnValidationComplete?.Invoke(result);
+            _stats.ValidationAttempts++;
+
+            return result;
+        }
+
+        /// <summary>
+        /// Reset configuration to defaults
+        /// </summary>
+        public void ResetToDefaults()
+        {
+            LoadDefaultConfiguration();
+            _isDirty = true;
+            _lastConfigChange = DateTime.Now;
+            _stats.ConfigurationResets++;
+
+            OnConfigurationChanged?.Invoke(_configuration);
+
+            if (_persistConfiguration)
+            {
+                SaveConfiguration();
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("PLANT", "Configuration reset to defaults");
+            }
+        }
+
+        /// <summary>
+        /// Get configuration summary
+        /// </summary>
+        public ConfigurationSummary GetConfigurationSummary()
+        {
+            return new ConfigurationSummary
+            {
+                CurrentConfiguration = _configuration,
+                ActiveProfile = _activeProfile,
+                AvailableProfiles = GetAvailableProfiles(),
+                IsDirty = _isDirty,
+                LastConfigChange = _lastConfigChange,
+                ValidationResult = ValidateConfiguration(),
+                Stats = _stats,
+                IsInitialized = _isInitialized
+            };
+        }
+
+        /// <summary>
+        /// Load default configuration
+        /// </summary>
+        private void LoadDefaultConfiguration()
+        {
+            _configuration = new PlantSyncConfiguration
+            {
+                AutoSyncEnabled = true,
+                SyncFrequency = 1f,
+                ValidateDataIntegrity = true,
+                EnableLogging = false,
+                DefaultSyncDirection = SyncDirection.FromComponents,
+                BatchSize = 10,
+                EnableBatching = true,
+                OperationTimeoutSeconds = 30f,
+                MaxRetryAttempts = 3,
+                RetryDelayMultiplier = 2f,
+                EnablePerformanceTracking = true,
+                PerformanceAlertThreshold = 100f
+            };
+        }
+
+        /// <summary>
+        /// Initialize default profiles
+        /// </summary>
+        private void InitializeProfiles()
+        {
+            _configurationProfiles.Clear();
+
+            // Default profile
+            _configurationProfiles["Default"] = _configuration;
+
+            // Performance profile
+            _configurationProfiles["Performance"] = new PlantSyncConfiguration
+            {
+                AutoSyncEnabled = true,
+                SyncFrequency = 0.5f,
+                ValidateDataIntegrity = false,
+                EnableLogging = false,
+                DefaultSyncDirection = SyncDirection.FromComponents,
+                BatchSize = 20,
+                EnableBatching = true,
+                OperationTimeoutSeconds = 10f,
+                MaxRetryAttempts = 1,
+                RetryDelayMultiplier = 1.5f,
+                EnablePerformanceTracking = true,
+                PerformanceAlertThreshold = 50f
+            };
+
+            // Debug profile
+            _configurationProfiles["Debug"] = new PlantSyncConfiguration
+            {
+                AutoSyncEnabled = true,
+                SyncFrequency = 2f,
+                ValidateDataIntegrity = true,
+                EnableLogging = true,
+                DefaultSyncDirection = SyncDirection.FromComponents,
+                BatchSize = 1,
+                EnableBatching = false,
+                OperationTimeoutSeconds = 60f,
+                MaxRetryAttempts = 5,
+                RetryDelayMultiplier = 3f,
+                EnablePerformanceTracking = true,
+                PerformanceAlertThreshold = 200f
+            };
+
+            // Conservative profile
+            _configurationProfiles["Conservative"] = new PlantSyncConfiguration
+            {
+                AutoSyncEnabled = false,
+                SyncFrequency = 5f,
+                ValidateDataIntegrity = true,
+                EnableLogging = true,
+                DefaultSyncDirection = SyncDirection.FromComponents,
+                BatchSize = 5,
+                EnableBatching = true,
+                OperationTimeoutSeconds = 120f,
+                MaxRetryAttempts = 3,
+                RetryDelayMultiplier = 2f,
+                EnablePerformanceTracking = false,
+                PerformanceAlertThreshold = 500f
+            };
+        }
+
+        /// <summary>
+        /// Save configuration to persistent storage
+        /// </summary>
+        private void SaveConfiguration()
+        {
+            try
+            {
+                var configJson = JsonUtility.ToJson(_configuration, true);
+                PlayerPrefs.SetString(_configurationKey, configJson);
+                PlayerPrefs.Save();
+
+                _isDirty = false;
+                _stats.ConfigurationSaves++;
+                OnConfigurationSaved?.Invoke();
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("PLANT", "Configuration saved to persistent storage");
+                }
+            }
+            catch (Exception ex)
+            {
+                _stats.SaveFailures++;
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogError("PLANT", $"Failed to save configuration: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Load configuration from persistent storage
+        /// </summary>
+        private void LoadPersistedConfiguration()
+        {
+            try
+            {
+                if (PlayerPrefs.HasKey(_configurationKey))
+                {
+                    var configJson = PlayerPrefs.GetString(_configurationKey);
+                    if (!string.IsNullOrEmpty(configJson))
+                    {
+                        _configuration = JsonUtility.FromJson<PlantSyncConfiguration>(configJson);
+                        _stats.ConfigurationLoads++;
+
+                        if (_enableLogging)
+                        {
+                            ChimeraLogger.Log("PLANT", "Configuration loaded from persistent storage");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _stats.LoadFailures++;
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogError("PLANT", $"Failed to load configuration: {ex.Message}");
+                }
+
+                LoadDefaultConfiguration();
+            }
+        }
+
+        /// <summary>
+        /// Save all profiles to persistent storage
+        /// </summary>
+        private void SaveProfiles()
+        {
+            try
+            {
+                var profilesJson = JsonUtility.ToJson(new SerializableProfiles { Profiles = _configurationProfiles }, true);
+                PlayerPrefs.SetString(_configurationKey + "_Profiles", profilesJson);
+                PlayerPrefs.Save();
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("PLANT", "Configuration profiles saved");
+                }
+            }
+            catch (Exception ex)
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogError("PLANT", $"Failed to save profiles: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Reset statistics
+        /// </summary>
+        private void ResetStats()
+        {
+            _stats = new ConfigurationStats();
+        }
+
+        /// <summary>
+        /// Set persistence enabled
+        /// </summary>
+        public void SetPersistenceEnabled(bool enabled)
+        {
+            _persistConfiguration = enabled;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("PLANT", $"Configuration persistence {(enabled ? "enabled" : "disabled")}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Plant sync configuration
+    /// </summary>
+    [System.Serializable]
+    public struct PlantSyncConfiguration
+    {
+        [Header("Sync Settings")]
+        public bool AutoSyncEnabled;
+        public float SyncFrequency;
+        public bool ValidateDataIntegrity;
+        public bool EnableLogging;
+        public SyncDirection DefaultSyncDirection;
+
+        [Header("Batching")]
+        public int BatchSize;
+        public bool EnableBatching;
+
+        [Header("Performance")]
+        public float OperationTimeoutSeconds;
+        public int MaxRetryAttempts;
+        public float RetryDelayMultiplier;
+        public bool EnablePerformanceTracking;
+        public float PerformanceAlertThreshold;
+    }
+
+    /// <summary>
+    /// Configuration validation result
+    /// </summary>
+    [System.Serializable]
+    public struct ConfigurationValidationResult
+    {
+        public bool IsValid;
+        public List<string> Errors;
+        public List<string> Warnings;
+        public DateTime ValidationTime;
+    }
+
+    /// <summary>
+    /// Configuration update result
+    /// </summary>
+    [System.Serializable]
+    public struct ConfigurationUpdateResult
+    {
+        public bool Success;
+        public string ErrorMessage;
+        public PlantSyncConfiguration? PreviousConfiguration;
+        public ConfigurationValidationResult ValidationResult;
+    }
+
+    /// <summary>
+    /// Configuration statistics
+    /// </summary>
+    [System.Serializable]
+    public struct ConfigurationStats
+    {
+        public int ConfigurationUpdates;
+        public int ParameterUpdates;
+        public int ProfilesCreated;
+        public int ProfilesSaved;
+        public int ProfilesDeleted;
+        public int ProfileSwitches;
+        public int ValidationAttempts;
+        public int ConfigurationResets;
+        public int ConfigurationSaves;
+        public int ConfigurationLoads;
+        public int SaveFailures;
+        public int LoadFailures;
+    }
+
+    /// <summary>
+    /// Configuration summary
+    /// </summary>
+    [System.Serializable]
+    public struct ConfigurationSummary
+    {
+        public PlantSyncConfiguration CurrentConfiguration;
+        public string ActiveProfile;
+        public List<string> AvailableProfiles;
+        public bool IsDirty;
+        public DateTime LastConfigChange;
+        public ConfigurationValidationResult ValidationResult;
+        public ConfigurationStats Stats;
+        public bool IsInitialized;
+    }
+
+    /// <summary>
+    /// Serializable profiles container
+    /// </summary>
+    [System.Serializable]
+    public struct SerializableProfiles
+    {
+        public Dictionary<string, PlantSyncConfiguration> Profiles;
+    }
+}

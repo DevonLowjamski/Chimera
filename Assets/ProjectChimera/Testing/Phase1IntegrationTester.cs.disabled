@@ -1,0 +1,128 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Testing.Core;
+
+namespace ProjectChimera.Testing
+{
+    /// <summary>
+    /// REFACTORED: Phase 1 Integration Tester - Legacy wrapper
+    /// Now delegates to TestingCore for focused responsibility
+    /// Maintains backward compatibility while providing improved architecture
+    /// </summary>
+    public class Phase1IntegrationTester : MonoBehaviour, ITickable
+    {
+        [Header("Legacy Integration Testing Settings")]
+        [SerializeField] private bool _enableIntegrationTesting = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private bool _runTestsOnStart = false;
+
+        [Header("Legacy Test Configuration")]
+        [SerializeField] private bool _testPerformanceSystem = true;
+        [SerializeField] private bool _testCultivationSystem = true;
+        [SerializeField] private bool _testConstructionSystem = true;
+        [SerializeField] private bool _testSystemIntegration = true;
+        [SerializeField] private bool _performLoadTesting = true;
+
+        // Core testing system (delegation target)
+        private TestingCore _testingCore;
+
+        // Legacy properties for backward compatibility
+        public bool IsTestingInProgress => _testingCore?.IsTestingInProgress ?? false;
+        public List<IntegrationTestResult> TestResults => _testingCore?.GetTestResults() ?? new List<IntegrationTestResult>();
+
+        public int TickPriority => -200; // Very low priority for testing
+        public bool IsTickable => enabled && gameObject.activeInHierarchy && _enableIntegrationTesting && _testingCore != null;
+
+        // Legacy events (forward to TestingCore)
+        public event System.Action<IntegrationTestResult> OnTestCompleted;
+        public event System.Action<IntegrationTestSuite> OnTestSuiteCompleted;
+
+        private void Awake()
+        {
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+            Initialize();
+        }
+
+        private void Start()
+        {
+            if (_runTestsOnStart)
+            {
+                RunFullIntegrationTestSuite();
+            }
+        }
+
+        private void OnDestroy()
+        {
+            UpdateOrchestrator.Instance.UnregisterTickable(this);
+        }
+
+        private void Initialize()
+        {
+            // Initialize TestingCore
+            InitializeTestingCore();
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("TESTING", "✅ Phase1IntegrationTester initialized (delegating to TestingCore)", this);
+            }
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (!_enableIntegrationTesting || _testingCore == null) return;
+
+            // TestingCore handles its own update timing through ITickable
+            // This method maintained for backward compatibility
+        }
+
+        /// <summary>
+        /// Run complete Phase 1 integration test suite - delegates to TestingCore
+        /// </summary>
+        [ContextMenu("Run Full Integration Test Suite")]
+        public void RunFullIntegrationTestSuite()
+        {
+            if (_testingCore != null)
+            {
+                _testingCore.RunFullIntegrationTestSuite();
+            }
+        }
+
+        /// <summary>
+        /// Run specific test category - delegates to TestingCore
+        /// </summary>
+        public void RunTestCategory(string category)
+        {
+            if (_testingCore != null)
+            {
+                StartCoroutine(_testingCore.RunTestCategory(category));
+            }
+        }
+
+        /// <summary>
+        /// Get test results - delegates to TestingCore
+        /// </summary>
+        public List<IntegrationTestResult> GetTestResults()
+        {
+            return _testingCore?.GetTestResults() ?? new List<IntegrationTestResult>();
+        }
+
+        private void InitializeTestingCore()
+        {
+            // Create TestingCore GameObject
+            var coreGO = new GameObject("TestingCore");
+            coreGO.transform.SetParent(transform);
+            _testingCore = coreGO.AddComponent<TestingCore>();
+
+            // Subscribe to TestingCore events and forward them
+            _testingCore.OnTestCompleted += (result) => OnTestCompleted?.Invoke(result);
+            _testingCore.OnTestSuiteCompleted += (suite) => OnTestSuiteCompleted?.Invoke(suite);
+        }
+
+        // Legacy methods removed - functionality moved to TestingCore subsystems
+    }
+
+    // Data structures moved to TestingCore namespace for proper organization
+}

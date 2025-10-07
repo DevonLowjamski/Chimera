@@ -1,0 +1,325 @@
+using UnityEngine;
+using ProjectChimera.Core.Logging;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Systems.Performance
+{
+    /// <summary>
+    /// Simple Performance Manager - Aligned with Project Chimera's vision
+    /// Provides basic performance optimizations as described in gameplay document
+    /// Focuses on LOD systems and occlusion culling for rendering optimization
+    /// </summary>
+    public class SimplePerformanceManager : MonoBehaviour
+    {
+        [Header("LOD Settings")]
+        [SerializeField] private float _lodNearDistance = 5f;
+        [SerializeField] private float _lodMidDistance = 15f;
+        [SerializeField] private float _lodFarDistance = 30f;
+        [SerializeField] private bool _enableLOD = true;
+
+        [Header("Occlusion Settings")]
+        [SerializeField] private bool _enableOcclusionCulling = true;
+        [SerializeField] private float _occlusionCheckInterval = 1f;
+
+        [Header("Basic Optimizations")]
+        [SerializeField] private bool _enableFrustumCulling = true;
+        [SerializeField] private bool _optimizeShadows = true;
+        [SerializeField] private int _targetFrameRate = 60;
+
+        // LOD management
+        private Dictionary<GameObject, LODGroup> _lodGroups = new Dictionary<GameObject, LODGroup>();
+        private Dictionary<GameObject, MeshRenderer> _renderers = new Dictionary<GameObject, MeshRenderer>();
+        private Camera _mainCamera;
+        private float _lastOcclusionCheck;
+
+        private void Awake()
+        {
+            InitializePerformanceSettings();
+            FindMainCamera();
+        }
+
+        private void Update()
+        {
+            if (_enableLOD)
+            {
+                UpdateLOD();
+            }
+
+            if (_enableOcclusionCulling && Time.time - _lastOcclusionCheck >= _occlusionCheckInterval)
+            {
+                UpdateOcclusionCulling();
+                _lastOcclusionCheck = Time.time;
+            }
+        }
+
+        /// <summary>
+        /// Initializes basic performance settings
+        /// </summary>
+        private void InitializePerformanceSettings()
+        {
+            // Set target frame rate as mentioned in gameplay document context
+            Application.targetFrameRate = _targetFrameRate;
+
+            // Enable basic optimizations
+            if (_optimizeShadows)
+            {
+                QualitySettings.shadows = ShadowQuality.HardOnly;
+                QualitySettings.shadowResolution = ShadowResolution.Medium;
+            }
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        /// <summary>
+        /// Finds the main camera for LOD calculations
+        /// </summary>
+        private void FindMainCamera()
+        {
+            _mainCamera = Camera.main;
+            if (_mainCamera == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Registers a game object for LOD management
+        /// </summary>
+        public void RegisterForLOD(GameObject obj, MeshRenderer renderer = null)
+        {
+            if (obj == null) return;
+
+            // Try to find renderer if not provided
+            if (renderer == null)
+            {
+                renderer = obj.GetComponent<MeshRenderer>();
+            }
+
+            if (renderer != null)
+            {
+                _renderers[obj] = renderer;
+            }
+
+            // Create basic LOD group if it doesn't exist
+            if (!obj.GetComponent<LODGroup>())
+            {
+                var lodGroup = obj.AddComponent<LODGroup>();
+                _lodGroups[obj] = lodGroup;
+
+                // Create basic LOD levels (high, medium, low detail)
+                var lod0 = new LOD(0.6f, new Renderer[] { renderer }); // High detail
+                var lod1 = new LOD(0.3f, new Renderer[] { renderer }); // Medium detail
+                var lod2 = new LOD(0.1f, new Renderer[] { renderer }); // Low detail
+
+                lodGroup.SetLODs(new LOD[] { lod0, lod1, lod2 });
+                lodGroup.RecalculateBounds();
+            }
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        /// <summary>
+        /// Unregisters a game object from LOD management
+        /// </summary>
+        public void UnregisterFromLOD(GameObject obj)
+        {
+            if (obj == null) return;
+
+            _renderers.Remove(obj);
+            _lodGroups.Remove(obj);
+
+            var lodGroup = obj.GetComponent<LODGroup>();
+            if (lodGroup != null)
+            {
+                Destroy(lodGroup);
+            }
+        }
+
+        /// <summary>
+        /// Updates LOD for all registered objects
+        /// </summary>
+        private void UpdateLOD()
+        {
+            if (_mainCamera == null) return;
+
+            foreach (var kvp in _renderers)
+            {
+                GameObject obj = kvp.Key;
+                MeshRenderer renderer = kvp.Value;
+
+                if (obj == null || renderer == null) continue;
+
+                float distance = Vector3.Distance(_mainCamera.transform.position, obj.transform.position);
+
+                // Simple distance-based LOD as described in gameplay document
+                if (distance > _lodFarDistance)
+                {
+                    // Far - disable renderer
+                    renderer.enabled = false;
+                }
+                else if (distance > _lodMidDistance)
+                {
+                    // Medium distance - enable with reduced detail
+                    renderer.enabled = true;
+                    // Could reduce material quality here
+                }
+                else if (distance > _lodNearDistance)
+                {
+                    // Near - full detail
+                    renderer.enabled = true;
+                    // Full quality
+                }
+                else
+                {
+                    // Very close - highest detail
+                    renderer.enabled = true;
+                    // Maximum quality
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates occlusion culling for registered objects
+        /// </summary>
+        private void UpdateOcclusionCulling()
+        {
+            if (_mainCamera == null) return;
+
+            foreach (var kvp in _renderers)
+            {
+                GameObject obj = kvp.Key;
+                MeshRenderer renderer = kvp.Value;
+
+                if (obj == null || renderer == null) continue;
+
+                // Simple frustum culling as mentioned in gameplay document
+                if (_enableFrustumCulling)
+                {
+                    Plane[] planes = GeometryUtility.CalculateFrustumPlanes(_mainCamera);
+                    Bounds bounds = renderer.bounds;
+
+                    if (!GeometryUtility.TestPlanesAABB(planes, bounds))
+                    {
+                        // Object is outside camera frustum - disable
+                        renderer.enabled = false;
+                        continue;
+                    }
+                }
+
+                // Basic occlusion check (simplified)
+                // In a real implementation, you might use Unity's occlusion culling system
+                renderer.enabled = true;
+            }
+        }
+
+        /// <summary>
+        /// Optimizes rendering for the current scene
+        /// </summary>
+        public void OptimizeCurrentScene()
+        {
+            // Primary: Try ServiceContainer resolution for registered renderers
+            var renderers = ServiceContainerFactory.Instance.ResolveAll<MeshRenderer>();
+            if (renderers?.Any() != true)
+            {
+                // Fallback: Find all renderers in the scene and register them for LOD
+                renderers = UnityEngine.Object.FindObjectsOfType<MeshRenderer>();
+                
+                // Auto-register discovered renderers in ServiceContainer for future use
+                foreach (var renderer in renderers)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<MeshRenderer>(renderer);
+                }
+                
+                UnityEngine.Debug.Log("Operation completed");
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+            foreach (var renderer in renderers)
+            {
+                if (renderer.gameObject.isStatic || renderer.gameObject.CompareTag("Terrain"))
+                {
+                    // Prioritize static objects and terrain for LOD
+                    RegisterForLOD(renderer.gameObject, renderer);
+                }
+            }
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        /// <summary>
+        /// Sets the quality level for the game
+        /// </summary>
+        public void SetQualityLevel(int level)
+        {
+            QualitySettings.SetQualityLevel(level, true);
+
+            // Adjust our settings based on quality level
+            switch (level)
+            {
+                case 0: // Low
+                    _enableLOD = false;
+                    _enableOcclusionCulling = false;
+                    _optimizeShadows = false;
+                    break;
+                case 1: // Medium
+                    _enableLOD = true;
+                    _enableOcclusionCulling = false;
+                    _optimizeShadows = true;
+                    break;
+                case 2: // High
+                    _enableLOD = true;
+                    _enableOcclusionCulling = true;
+                    _optimizeShadows = true;
+                    break;
+            }
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        /// <summary>
+        /// Gets current performance statistics
+        /// </summary>
+        public PerformanceStats GetPerformanceStats()
+        {
+            return new PerformanceStats
+            {
+                CurrentFPS = 1f / Time.deltaTime,
+                RegisteredLODObjects = _renderers.Count,
+                QualityLevel = QualitySettings.GetQualityLevel(),
+                LODSystemEnabled = _enableLOD,
+                OcclusionCullingEnabled = _enableOcclusionCulling
+            };
+        }
+
+        /// <summary>
+        /// Cleans up resources
+        /// </summary>
+        public void Cleanup()
+        {
+            foreach (var obj in _renderers.Keys)
+            {
+                UnregisterFromLOD(obj);
+            }
+
+            _renderers.Clear();
+            _lodGroups.Clear();
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+    }
+
+    /// <summary>
+    /// Performance statistics structure
+    /// </summary>
+    public struct PerformanceStats
+    {
+        public float CurrentFPS;
+        public int RegisteredLODObjects;
+        public int QualityLevel;
+        public bool LODSystemEnabled;
+        public bool OcclusionCullingEnabled;
+    }
+}
+

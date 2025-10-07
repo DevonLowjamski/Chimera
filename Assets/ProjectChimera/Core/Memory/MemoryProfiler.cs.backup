@@ -1,0 +1,546 @@
+using UnityEngine;
+using UnityEngine.Profiling;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Core.Memory
+{
+    /// <summary>
+    /// MEMORY: Advanced memory profiling and garbage collection monitoring
+    /// Tracks memory usage patterns and provides optimization recommendations
+    /// Week 10: Memory & GC Optimization
+    /// </summary>
+    public class MemoryProfiler : MonoBehaviour
+    {
+        [Header("Memory Profiler Settings")]
+        [SerializeField] private bool _enableProfiling = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _profilingInterval = 1f;
+        [SerializeField] private int _historySize = 300; // 5 minutes at 1-second intervals
+
+        // Memory tracking
+        private List<MemorySnapshot> _memoryHistory = new List<MemorySnapshot>();
+        private Dictionary<string, List<AllocationSnapshot>> _allocationHistory = new Dictionary<string, List<AllocationSnapshot>>();
+
+        // GC tracking
+        private List<GCSnapshot> _gcHistory = new List<GCSnapshot>();
+        private int _lastGC0Count = 0;
+        private int _lastGC1Count = 0;
+        private int _lastGC2Count = 0;
+
+        // Performance thresholds
+        [Header("Alert Thresholds")]
+        [SerializeField] private long _memoryWarningThreshold = 500 * 1024 * 1024; // 500MB
+        [SerializeField] private long _memoryCriticalThreshold = 1024 * 1024 * 1024; // 1GB
+        [SerializeField] private float _gcFrequencyWarning = 5f; // 5 GCs per second
+        [SerializeField] private long _allocationRateWarning = 10 * 1024 * 1024; // 10MB/s
+
+        private float _lastProfilingTime;
+        private bool _isInitialized;
+
+        // Static instance for global access
+        private static MemoryProfiler _instance;
+        public static MemoryProfiler Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = FindObjectOfType<MemoryProfiler>();
+                    if (_instance == null)
+                    {
+                        var go = new GameObject("MemoryProfiler");
+                        _instance = go.AddComponent<MemoryProfiler>();
+                        DontDestroyOnLoad(go);
+                    }
+                }
+                return _instance;
+            }
+        }
+
+        private void Awake()
+        {
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+                Initialize();
+            }
+            else if (_instance != this)
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Initialize memory profiler
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _lastProfilingTime = Time.realtimeSinceStartup;
+
+            // Initialize GC counters
+            _lastGC0Count = System.GC.CollectionCount(0);
+            _lastGC1Count = System.GC.CollectionCount(1);
+            _lastGC2Count = System.GC.CollectionCount(2);
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("MemoryProfiler", "Operation completed");
+            }
+        }
+
+        private void Update()
+        {
+            if (!_enableProfiling || !_isInitialized) return;
+
+            float currentTime = Time.realtimeSinceStartup;
+            if (currentTime - _lastProfilingTime >= _profilingInterval)
+            {
+                CaptureMemorySnapshot();
+                CheckGCActivity();
+                AnalyzeMemoryPatterns();
+                _lastProfilingTime = currentTime;
+            }
+        }
+
+        /// <summary>
+        /// Capture current memory state
+        /// </summary>
+        public void CaptureMemorySnapshot()
+        {
+            var snapshot = new MemorySnapshot
+            {
+                Timestamp = Time.realtimeSinceStartup,
+                TotalAllocatedMemory = Profiler.GetTotalAllocatedMemory(),
+                TotalReservedMemory = Profiler.GetTotalReservedMemory(),
+                TotalUnusedReservedMemory = Profiler.GetTotalUnusedReservedMemory(),
+                MonoHeapSize = Profiler.GetMonoHeapSize(),
+                MonoUsedSize = Profiler.GetMonoUsedSize(),
+                TempAllocatorSize = Profiler.GetTempAllocatorSize(),
+                SystemMemorySize = SystemInfo.systemMemorySize * 1024L * 1024L,
+                GraphicsMemorySize = SystemInfo.graphicsMemorySize * 1024L * 1024L
+            };
+
+            _memoryHistory.Add(snapshot);
+
+            // Maintain history size
+            if (_memoryHistory.Count > _historySize)
+            {
+                _memoryHistory.RemoveAt(0);
+            }
+
+            // Check thresholds
+            CheckMemoryThresholds(snapshot);
+        }
+
+        /// <summary>
+        /// Record allocation for specific category
+        /// </summary>
+        public void RecordAllocation(string category, long bytes)
+        {
+            if (!_enableProfiling) return;
+
+            if (!_allocationHistory.ContainsKey(category))
+            {
+                _allocationHistory[category] = new List<AllocationSnapshot>();
+            }
+
+            var allocation = new AllocationSnapshot
+            {
+                Timestamp = Time.realtimeSinceStartup,
+                Category = category,
+                Bytes = bytes
+            };
+
+            _allocationHistory[category].Add(allocation);
+
+            // Maintain history size per category
+            if (_allocationHistory[category].Count > _historySize)
+            {
+                _allocationHistory[category].RemoveAt(0);
+            }
+        }
+
+        /// <summary>
+        /// Force garbage collection and measure impact
+        /// </summary>
+        public GCMetrics ForceGarbageCollection()
+        {
+            var beforeSnapshot = new MemorySnapshot
+            {
+                Timestamp = Time.realtimeSinceStartup,
+                TotalAllocatedMemory = Profiler.GetTotalAllocatedMemory(),
+                MonoHeapSize = Profiler.GetMonoHeapSize(),
+                MonoUsedSize = Profiler.GetMonoUsedSize()
+            };
+
+            var startTime = Time.realtimeSinceStartup;
+            System.GC.Collect();
+            System.GC.WaitForPendingFinalizers();
+            System.GC.Collect();
+            var endTime = Time.realtimeSinceStartup;
+
+            var afterSnapshot = new MemorySnapshot
+            {
+                Timestamp = endTime,
+                TotalAllocatedMemory = Profiler.GetTotalAllocatedMemory(),
+                MonoHeapSize = Profiler.GetMonoHeapSize(),
+                MonoUsedSize = Profiler.GetMonoUsedSize()
+            };
+
+            var metrics = new GCMetrics
+            {
+                GCTime = endTime - startTime,
+                MemoryFreed = beforeSnapshot.TotalAllocatedMemory - afterSnapshot.TotalAllocatedMemory,
+                MonoHeapReduction = beforeSnapshot.MonoHeapSize - afterSnapshot.MonoHeapSize,
+                MonoUsedReduction = beforeSnapshot.MonoUsedSize - afterSnapshot.MonoUsedSize
+            };
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("MemoryProfiler", "Operation completed");
+            }
+
+            return metrics;
+        }
+
+        /// <summary>
+        /// Get current memory report
+        /// </summary>
+        public MemoryReport GetMemoryReport()
+        {
+            var report = new MemoryReport();
+
+            if (_memoryHistory.Count > 0)
+            {
+                var latest = _memoryHistory.Last();
+                report.CurrentSnapshot = latest;
+
+                // Calculate trends
+                if (_memoryHistory.Count > 1)
+                {
+                    var previous = _memoryHistory[_memoryHistory.Count - 2];
+                    report.AllocationTrend = latest.TotalAllocatedMemory - previous.TotalAllocatedMemory;
+                    report.HeapTrend = latest.MonoHeapSize - previous.MonoHeapSize;
+                }
+            }
+
+            // GC statistics
+            report.GCCounts = new int[]
+            {
+                System.GC.CollectionCount(0),
+                System.GC.CollectionCount(1),
+                System.GC.CollectionCount(2)
+            };
+
+            // Recent GC activity
+            if (_gcHistory.Count > 0)
+            {
+                var recentGCs = _gcHistory.Where(gc => Time.realtimeSinceStartup - gc.Timestamp < 60f).ToList();
+                report.RecentGCCount = recentGCs.Count;
+                report.AverageGCTime = recentGCs.Count > 0 ? recentGCs.Average(gc => gc.Duration) : 0f;
+            }
+
+            // Allocation breakdown
+            report.AllocationsByCategory = new Dictionary<string, long>();
+            foreach (var kvp in _allocationHistory)
+            {
+                var recentAllocations = kvp.Value.Where(a => Time.realtimeSinceStartup - a.Timestamp < 60f);
+                report.AllocationsByCategory[kvp.Key] = recentAllocations.Sum(a => a.Bytes);
+            }
+
+            // Memory recommendations
+            report.Recommendations = GenerateMemoryRecommendations();
+
+            return report;
+        }
+
+        /// <summary>
+        /// Get memory optimization suggestions
+        /// </summary>
+        public List<MemoryRecommendation> GetOptimizationRecommendations()
+        {
+            return GenerateMemoryRecommendations();
+        }
+
+        /// <summary>
+        /// Clear all profiling history
+        /// </summary>
+        public void ClearHistory()
+        {
+            _memoryHistory.Clear();
+            _allocationHistory.Clear();
+            _gcHistory.Clear();
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("MemoryProfiler", "Operation completed");
+            }
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Check for garbage collection activity
+        /// </summary>
+        private void CheckGCActivity()
+        {
+            int currentGC0 = System.GC.CollectionCount(0);
+            int currentGC1 = System.GC.CollectionCount(1);
+            int currentGC2 = System.GC.CollectionCount(2);
+
+            // Record new GC events
+            if (currentGC0 > _lastGC0Count)
+            {
+                RecordGCEvent(0, currentGC0 - _lastGC0Count);
+                _lastGC0Count = currentGC0;
+            }
+
+            if (currentGC1 > _lastGC1Count)
+            {
+                RecordGCEvent(1, currentGC1 - _lastGC1Count);
+                _lastGC1Count = currentGC1;
+            }
+
+            if (currentGC2 > _lastGC2Count)
+            {
+                RecordGCEvent(2, currentGC2 - _lastGC2Count);
+                _lastGC2Count = currentGC2;
+            }
+        }
+
+        /// <summary>
+        /// Record garbage collection event
+        /// </summary>
+        private void RecordGCEvent(int generation, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                var gcSnapshot = new GCSnapshot
+                {
+                    Timestamp = Time.realtimeSinceStartup,
+                    Generation = generation,
+                    Duration = 0f // Unity doesn't provide GC duration directly
+                };
+
+                _gcHistory.Add(gcSnapshot);
+            }
+
+            // Maintain history size
+            if (_gcHistory.Count > _historySize)
+            {
+                _gcHistory.RemoveRange(0, _gcHistory.Count - _historySize);
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("MemoryProfiler", "Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Check memory usage against thresholds
+        /// </summary>
+        private void CheckMemoryThresholds(MemorySnapshot snapshot)
+        {
+            if (snapshot.TotalAllocatedMemory > _memoryCriticalThreshold)
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogError("MemoryProfiler", "Operation completed");
+                }
+            }
+            else if (snapshot.TotalAllocatedMemory > _memoryWarningThreshold)
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("MemoryProfiler", "Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Analyze memory patterns and detect issues
+        /// </summary>
+        private void AnalyzeMemoryPatterns()
+        {
+            if (_memoryHistory.Count < 10) return; // Need enough data
+
+            // Check for memory leaks (steady upward trend)
+            var recentSnapshots = _memoryHistory.TakeLast(10).ToList();
+            var memoryTrend = LinearRegression(recentSnapshots.Select((s, i) => new { x = (double)i, y = (double)s.TotalAllocatedMemory }));
+
+            if (memoryTrend > _allocationRateWarning / _profilingInterval)
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("MemoryProfiler", "Operation completed");
+                }
+            }
+
+            // Check GC frequency
+            var recentGCs = _gcHistory.Where(gc => Time.realtimeSinceStartup - gc.Timestamp < 1f).Count();
+            if (recentGCs > _gcFrequencyWarning)
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("MemoryProfiler", "Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generate memory optimization recommendations
+        /// </summary>
+        private List<MemoryRecommendation> GenerateMemoryRecommendations()
+        {
+            var recommendations = new List<MemoryRecommendation>();
+
+            if (_memoryHistory.Count == 0) return recommendations;
+
+            var latest = _memoryHistory.Last();
+
+            // High memory usage
+            if (latest.TotalAllocatedMemory > _memoryWarningThreshold)
+            {
+                recommendations.Add(new MemoryRecommendation
+                {
+                    Priority = RecommendationPriority.High,
+                    Category = "Memory Usage",
+                    Description = "Memory usage is high. Consider reducing texture quality, mesh detail, or active object count.",
+                    Impact = "Performance"
+                });
+            }
+
+            // High GC frequency
+            var recentGCs = _gcHistory.Where(gc => Time.realtimeSinceStartup - gc.Timestamp < 60f).Count();
+            if (recentGCs > 30) // More than 30 GCs per minute
+            {
+                recommendations.Add(new MemoryRecommendation
+                {
+                    Priority = RecommendationPriority.High,
+                    Category = "Garbage Collection",
+                    Description = "Frequent garbage collection detected. Reduce temporary allocations and use object pooling.",
+                    Impact = "Performance"
+                });
+            }
+
+            // Large heap size
+            if (latest.MonoHeapSize > latest.MonoUsedSize * 2)
+            {
+                recommendations.Add(new MemoryRecommendation
+                {
+                    Priority = RecommendationPriority.Medium,
+                    Category = "Heap Fragmentation",
+                    Description = "Heap appears fragmented. Consider calling GC.Collect() during loading screens.",
+                    Impact = "Memory Efficiency"
+                });
+            }
+
+            return recommendations;
+        }
+
+        /// <summary>
+        /// Simple linear regression for trend analysis
+        /// </summary>
+        private double LinearRegression(IEnumerable<dynamic> points)
+        {
+            var pointList = points.ToList();
+            if (pointList.Count < 2) return 0;
+
+            var n = pointList.Count;
+            var sumX = pointList.Sum(p => p.x);
+            var sumY = pointList.Sum(p => p.y);
+            var sumXY = pointList.Sum(p => p.x * p.y);
+            var sumX2 = pointList.Sum(p => p.x * p.x);
+
+            return (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+        }
+
+        #endregion
+
+        private void OnDestroy()
+        {
+            ClearHistory();
+        }
+    }
+
+    #region Data Structures
+
+    [System.Serializable]
+    public struct MemorySnapshot
+    {
+        public float Timestamp;
+        public long TotalAllocatedMemory;
+        public long TotalReservedMemory;
+        public long TotalUnusedReservedMemory;
+        public long MonoHeapSize;
+        public long MonoUsedSize;
+        public uint TempAllocatorSize;
+        public long SystemMemorySize;
+        public long GraphicsMemorySize;
+    }
+
+    [System.Serializable]
+    public struct AllocationSnapshot
+    {
+        public float Timestamp;
+        public string Category;
+        public long Bytes;
+    }
+
+    [System.Serializable]
+    public struct GCSnapshot
+    {
+        public float Timestamp;
+        public int Generation;
+        public float Duration;
+    }
+
+    [System.Serializable]
+    public struct GCMetrics
+    {
+        public float GCTime;
+        public long MemoryFreed;
+        public long MonoHeapReduction;
+        public long MonoUsedReduction;
+    }
+
+    [System.Serializable]
+    public struct MemoryReport
+    {
+        public MemorySnapshot CurrentSnapshot;
+        public long AllocationTrend;
+        public long HeapTrend;
+        public int[] GCCounts;
+        public int RecentGCCount;
+        public float AverageGCTime;
+        public Dictionary<string, long> AllocationsByCategory;
+        public List<MemoryRecommendation> Recommendations;
+    }
+
+    [System.Serializable]
+    public struct MemoryRecommendation
+    {
+        public RecommendationPriority Priority;
+        public string Category;
+        public string Description;
+        public string Impact;
+    }
+
+    public enum RecommendationPriority
+    {
+        Low,
+        Medium,
+        High,
+        Critical
+    }
+
+    #endregion
+}

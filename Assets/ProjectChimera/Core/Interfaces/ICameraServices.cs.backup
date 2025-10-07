@@ -1,0 +1,101 @@
+using UnityEngine;
+using System;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Camera
+{
+    /// <summary>
+    /// Camera service interfaces for dependency injection
+    /// Eliminates FindObjectOfType anti-patterns in camera systems
+    /// </summary>
+
+    public enum CameraMode
+    {
+        Free,
+        Orbit,
+        FirstPerson,
+        TopDown
+    }
+
+    [System.Serializable]
+    public class CameraState
+    {
+        public Vector3 Position;
+        public Quaternion Rotation;
+        public float FieldOfView;
+        public CameraMode Mode;
+        public Transform Target;
+    }
+
+    [System.Serializable]
+    public class CameraTransition
+    {
+        public CameraState FromState;
+        public CameraState ToState;
+        public float Duration;
+        public AnimationCurve Curve;
+    }
+
+    public interface ICameraService
+    {
+        UnityEngine.Camera MainCamera { get; }
+        bool IsInitialized { get; }
+        CameraMode CurrentMode { get; }
+        void Initialize();
+        void SetMainCamera(UnityEngine.Camera camera);
+        void SwitchToMode(CameraMode mode);
+        void SetTarget(Transform target);
+        void MoveTo(Vector3 position, float duration = 1f);
+        void LookAt(Transform target, float duration = 1f);
+        CameraState GetCurrentState();
+        void ApplyCameraState(CameraState state);
+    }
+
+    public interface ICameraLevelContextualMenuIntegrator
+    {
+        bool IsInitialized { get; }
+        bool MenusEnabled { get; set; }
+        void Initialize();
+        void EnableContextualMenus();
+        void DisableContextualMenus();
+        void ShowContextMenu(Vector3 worldPosition, string[] menuItems);
+        void HideContextMenu();
+        void RegisterContextualObject(GameObject obj, string[] menuItems);
+        void UnregisterContextualObject(GameObject obj);
+    }
+
+    public interface ICameraController
+    {
+        bool IsInitialized { get; }
+        bool InputEnabled { get; set; }
+        void Initialize();
+        void Update();
+        void SetSensitivity(float mouseSensitivity, float zoomSensitivity);
+        void SetConstraints(Vector3 minPosition, Vector3 maxPosition);
+        void ResetToDefault();
+        void SetTransition(CameraTransition transition);
+    }
+
+    public interface ICameraTransitionManager
+    {
+        bool IsTransitioning { get; }
+        bool IsInitialized { get; }
+        void Initialize();
+        void TransitionTo(CameraState targetState, float duration);
+        void TransitionBetween(CameraState fromState, CameraState toState, float duration);
+        void SetTransitionCurve(AnimationCurve curve);
+        void CancelCurrentTransition();
+        event Action<CameraState> OnTransitionComplete;
+    }
+
+    public interface ICameraTargetAnchor
+    {
+        Transform Target { get; set; }
+        Vector3 Offset { get; set; }
+        bool IsAnchored { get; }
+        void AnchorTo(Transform target);
+        void AnchorTo(Transform target, Vector3 offset);
+        void Release();
+        void Update();
+    }
+}

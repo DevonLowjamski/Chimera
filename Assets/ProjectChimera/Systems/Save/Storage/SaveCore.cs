@@ -62,7 +62,7 @@ namespace ProjectChimera.Systems.Save.Storage
             CreateDirectoryStructure();
             _isInitialized = true;
 
-            ChimeraLogger.Log($"[SaveCore] Initialized - Directory: {_baseSaveDirectory}");
+            ChimeraLogger.Log("OTHER", "$1", null);
         }
 
         public void Shutdown()
@@ -72,7 +72,7 @@ namespace ProjectChimera.Systems.Save.Storage
             _activeTransactions.Clear();
             _isInitialized = false;
 
-            ChimeraLogger.Log("[SaveCore] Save core system shutdown");
+            ChimeraLogger.Log("OTHER", "$1", null);
         }
 
         public async Task<StorageResult> WriteFileAsync(string fileName, byte[] data, bool createBackup = true)
@@ -178,7 +178,7 @@ namespace ProjectChimera.Systems.Save.Storage
 
             _activeTransactions[transactionId] = transaction;
 
-            ChimeraLogger.Log($"[SaveCore] Transaction {transactionId} started");
+            ChimeraLogger.Log("OTHER", "$1", null);
             return transactionId;
         }
 
@@ -193,7 +193,7 @@ namespace ProjectChimera.Systems.Save.Storage
             // Store the slot name separately
             _transactionOperations[transactionId] = new List<string> { slotName };
 
-            ChimeraLogger.Log($"[SaveCore] Transaction {transactionId} started for slot {slotName}");
+            ChimeraLogger.Log("OTHER", "$1", null);
             return StorageResult.CreateSuccess($"Transaction {transactionId} started");
         }
 
@@ -219,13 +219,13 @@ namespace ProjectChimera.Systems.Save.Storage
 
                 _activeTransactions.Remove(transactionId);
 
-                ChimeraLogger.Log($"[SaveCore] Transaction {transactionId} committed successfully");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return StorageResult.CreateSuccess($"Transaction {transactionId} committed");
             }
             catch (Exception ex)
             {
                 transaction.Status = TransactionStatus.Failed;
-                ChimeraLogger.LogError($"[SaveCore] Transaction {transactionId} commit failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return StorageResult.CreateFailure($"Transaction commit failed: {ex.Message}");
             }
         }
@@ -252,13 +252,13 @@ namespace ProjectChimera.Systems.Save.Storage
 
                 _activeTransactions.Remove(transactionId);
 
-                ChimeraLogger.Log($"[SaveCore] Transaction {transactionId} rolled back successfully");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return StorageResult.CreateSuccess($"Transaction {transactionId} rolled back");
             }
             catch (Exception ex)
             {
                 transaction.Status = TransactionStatus.Failed;
-                ChimeraLogger.LogError($"[SaveCore] Transaction {transactionId} rollback failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return StorageResult.CreateFailure($"Transaction rollback failed: {ex.Message}");
             }
         }
@@ -361,11 +361,11 @@ namespace ProjectChimera.Systems.Save.Storage
 
                 operation.Result.SetResult(StorageResult.CreateSuccess());
 
-                ChimeraLogger.Log($"[SaveCore] Successfully wrote {operation.Data.Length} bytes to slot {operation.SlotName}");
+                ChimeraLogger.Log("OTHER", "$1", null);
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SaveCore] Write operation failed for slot {operation.SlotName}: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 operation.Result.SetResult(StorageResult.CreateFailure(ex.Message));
             }
         }
@@ -385,11 +385,11 @@ namespace ProjectChimera.Systems.Save.Storage
 
                 operation.Result.SetResult(StorageResult.CreateSuccess());
 
-                ChimeraLogger.Log($"[SaveCore] Successfully deleted slot {operation.SlotName}");
+                ChimeraLogger.Log("OTHER", "$1", null);
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SaveCore] Delete operation failed for slot {operation.SlotName}: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 operation.Result.SetResult(StorageResult.CreateFailure(ex.Message));
             }
         }
@@ -398,7 +398,7 @@ namespace ProjectChimera.Systems.Save.Storage
         {
             // Simple rollback implementation - in a real system this would be more sophisticated
             await Task.Delay(1);
-            ChimeraLogger.Log($"[SaveCore] Rolled back operation {operation.OperationId}");
+            ChimeraLogger.Log("OTHER", "$1", null);
         }
 
         private void CreateDirectoryStructure()
@@ -410,11 +410,11 @@ namespace ProjectChimera.Systems.Save.Storage
                 Directory.CreateDirectory(_fullTempDirectory);
                 Directory.CreateDirectory(_fullArchiveDirectory);
 
-                ChimeraLogger.Log("[SaveCore] Storage directory structure created successfully");
+                ChimeraLogger.Log("OTHER", "$1", null);
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SaveCore] Failed to create directory structure: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 throw;
             }
         }

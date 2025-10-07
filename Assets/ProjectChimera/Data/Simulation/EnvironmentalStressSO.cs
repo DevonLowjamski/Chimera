@@ -4,6 +4,7 @@ using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Genetics;
 using System.Collections.Generic;
 
+
 namespace ProjectChimera.Data.Simulation
 {
     /// <summary>
@@ -182,7 +183,7 @@ namespace ProjectChimera.Data.Simulation
         /// <summary>
         /// Calculates genetic tolerance modifier for a specific strain.
         /// </summary>
-        public float CalculateGeneticTolerance(PlantStrainSO strain)
+        public float CalculateGeneticTolerance(GeneticPlantStrainSO strain)
         {
             // Base tolerance from strain characteristics
             float tolerance = 1f;
@@ -232,7 +233,7 @@ namespace ProjectChimera.Data.Simulation
             }
         }
 
-        private bool IsModifierApplicable(ToleranceModifier modifier, PlantStrainSO strain)
+        private bool IsModifierApplicable(ToleranceModifier modifier, GeneticPlantStrainSO strain)
         {
             // Check if strain has the required characteristics for this tolerance modifier
             // This is a simplified check - could be made more sophisticated

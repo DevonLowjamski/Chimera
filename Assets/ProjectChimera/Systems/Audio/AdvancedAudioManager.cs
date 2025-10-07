@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Audio
 {
@@ -43,7 +44,7 @@ namespace ProjectChimera.Systems.Audio
 
             if (_enableLogging)
             {
-                Debug.Log("[AdvancedAudioManager] Initialized successfully");
+                ChimeraLogger.Log("AUDIO", "AdvancedAudioManager initialized", this);
             }
         }
 
@@ -65,7 +66,7 @@ namespace ProjectChimera.Systems.Audio
 
                 if (_enableLogging)
                 {
-                    Debug.Log($"[AdvancedAudioManager] Played {category}: {clip.name}");
+                    ChimeraLogger.Log("AUDIO", $"Played audio {clip.name}", this);
                 }
             }
         }
@@ -86,7 +87,7 @@ namespace ProjectChimera.Systems.Audio
 
                 if (_enableLogging)
                 {
-                    Debug.Log($"[AdvancedAudioManager] Started ambient: {clip.name}");
+                    ChimeraLogger.Log("AUDIO", $"Played ambient {clip.name}", this);
                 }
             }
         }
@@ -107,7 +108,7 @@ namespace ProjectChimera.Systems.Audio
 
                 if (_enableLogging)
                 {
-                    Debug.Log($"[AdvancedAudioManager] Started music: {clip.name}");
+                    ChimeraLogger.Log("AUDIO", $"Played music {clip.name}", this);
                 }
             }
         }
@@ -123,7 +124,7 @@ namespace ProjectChimera.Systems.Audio
 
                 if (_enableLogging)
                 {
-                    Debug.Log("[AdvancedAudioManager] Stopped ambient audio");
+                    ChimeraLogger.Log("AUDIO", "Stopped ambient", this);
                 }
             }
         }
@@ -139,7 +140,7 @@ namespace ProjectChimera.Systems.Audio
 
                 if (_enableLogging)
                 {
-                    Debug.Log("[AdvancedAudioManager] Stopped music");
+                    ChimeraLogger.Log("AUDIO", "Stopped music", this);
                 }
             }
         }
@@ -162,7 +163,7 @@ namespace ProjectChimera.Systems.Audio
 
             if (_enableLogging)
             {
-                Debug.Log($"[AdvancedAudioManager] Volume set to: {_masterVolume:F2}");
+                ChimeraLogger.Log("AUDIO", $"Master volume set to {_masterVolume:F2}", this);
             }
         }
 
@@ -182,7 +183,7 @@ namespace ProjectChimera.Systems.Audio
 
             if (_enableLogging)
             {
-                Debug.Log($"[AdvancedAudioManager] Muted: {muted}");
+                ChimeraLogger.Log("AUDIO", $"Muted set to {muted}", this);
             }
         }
 
@@ -198,7 +199,7 @@ namespace ProjectChimera.Systems.Audio
 
             if (_enableLogging)
             {
-                Debug.Log($"[AdvancedAudioManager] State changed to: {state}");
+                ChimeraLogger.Log("AUDIO", $"Audio state set to {state}", this);
             }
         }
 

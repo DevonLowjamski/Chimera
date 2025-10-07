@@ -1,0 +1,273 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Construction
+{
+    /// <summary>
+    /// BASIC: Simple utility overlay for Project Chimera's construction system.
+    /// Focuses on essential utility visualization without complex integration systems.
+    /// </summary>
+    public class UtilityOverlayIntegration : MonoBehaviour
+    {
+        [Header("Basic Overlay Settings")]
+        [SerializeField] private bool _enableBasicOverlay = true;
+        [SerializeField] private bool _showElectrical = true;
+        [SerializeField] private bool _showWater = true;
+        [SerializeField] private bool _showAir = true;
+        [SerializeField] private Color _electricalColor = Color.yellow;
+        [SerializeField] private Color _waterColor = Color.blue;
+        [SerializeField] private Color _airColor = Color.green;
+
+        // Basic overlay state
+        private readonly List<UtilityVisualization> _activeVisualizations = new List<UtilityVisualization>();
+        private bool _isInitialized = false;
+
+        /// <summary>
+        /// Events for overlay operations
+        /// </summary>
+        public event System.Action OnOverlayUpdated;
+
+        /// <summary>
+        /// Initialize basic overlay system
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _isInitialized = true;
+
+            if (_enableBasicOverlay)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Show utility overlay for construction
+        /// </summary>
+        public void ShowUtilityOverlay(Vector3 position, float radius)
+        {
+            if (!_enableBasicOverlay || !_isInitialized) return;
+
+            // Create basic utility visualizations
+            if (_showElectrical)
+            {
+                CreateUtilityVisualization(UtilityType.Electrical, position, radius, _electricalColor);
+            }
+
+            if (_showWater)
+            {
+                CreateUtilityVisualization(UtilityType.Water, position + Vector3.right * 2f, radius, _waterColor);
+            }
+
+            if (_showAir)
+            {
+                CreateUtilityVisualization(UtilityType.Air, position + Vector3.left * 2f, radius, _airColor);
+            }
+
+            OnOverlayUpdated?.Invoke();
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        /// <summary>
+        /// Hide utility overlay
+        /// </summary>
+        public void HideUtilityOverlay()
+        {
+            foreach (var visualization in _activeVisualizations)
+            {
+                if (visualization.GameObject != null)
+                {
+                    visualization.GameObject.SetActive(false);
+                }
+            }
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        /// <summary>
+        /// Clear all utility visualizations
+        /// </summary>
+        public void ClearUtilityOverlay()
+        {
+            foreach (var visualization in _activeVisualizations)
+            {
+                if (visualization.GameObject != null)
+                {
+                    Destroy(visualization.GameObject);
+                }
+            }
+
+            _activeVisualizations.Clear();
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        /// <summary>
+        /// Update overlay visibility settings
+        /// </summary>
+        public void UpdateVisibilitySettings(bool showElectrical, bool showWater, bool showAir)
+        {
+            _showElectrical = showElectrical;
+            _showWater = showWater;
+            _showAir = showAir;
+
+            // Update existing visualizations
+            foreach (var visualization in _activeVisualizations)
+            {
+                bool shouldShow = false;
+                switch (visualization.Type)
+                {
+                    case UtilityType.Electrical: shouldShow = _showElectrical; break;
+                    case UtilityType.Water: shouldShow = _showWater; break;
+                    case UtilityType.Air: shouldShow = _showAir; break;
+                }
+
+                if (visualization.GameObject != null)
+                {
+                    visualization.GameObject.SetActive(shouldShow);
+                }
+            }
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        /// <summary>
+        /// Get overlay statistics
+        /// </summary>
+        public OverlayStats GetOverlayStats()
+        {
+            int electricalCount = _activeVisualizations.Count(v => v.Type == UtilityType.Electrical && v.GameObject != null && v.GameObject.activeSelf);
+            int waterCount = _activeVisualizations.Count(v => v.Type == UtilityType.Water && v.GameObject != null && v.GameObject.activeSelf);
+            int airCount = _activeVisualizations.Count(v => v.Type == UtilityType.Air && v.GameObject != null && v.GameObject.activeSelf);
+
+            return new OverlayStats
+            {
+                TotalVisualizations = _activeVisualizations.Count,
+                ActiveElectrical = electricalCount,
+                ActiveWater = waterCount,
+                ActiveAir = airCount,
+                IsOverlayEnabled = _enableBasicOverlay
+            };
+        }
+
+        /// <summary>
+        /// Check if utility is available at position
+        /// </summary>
+        public bool IsUtilityAvailable(UtilityType utilityType, Vector3 position)
+        {
+            // Simple availability check - in a real implementation, this would check actual utility networks
+            return true; // Assume utilities are always available for basic implementation
+        }
+
+        /// <summary>
+        /// Get utility requirements for construction
+        /// </summary>
+        public UtilityRequirements GetUtilityRequirements(ConstructionType constructionType)
+        {
+            // Basic requirements based on construction type
+            switch (constructionType)
+            {
+                case ConstructionType.Light:
+                    return new UtilityRequirements { RequiresElectrical = true };
+                case ConstructionType.Irrigation:
+                    return new UtilityRequirements { RequiresElectrical = true, RequiresWater = true };
+                case ConstructionType.Ventilation:
+                    return new UtilityRequirements { RequiresElectrical = true, RequiresAir = true };
+                default:
+                    return new UtilityRequirements();
+            }
+        }
+
+        #region Private Methods
+
+        private void CreateUtilityVisualization(UtilityType type, Vector3 position, float radius, Color color)
+        {
+            // Create a simple sphere to represent utility coverage
+            GameObject visualization = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            visualization.transform.position = position;
+            visualization.transform.localScale = new Vector3(radius * 2f, 0.1f, radius * 2f);
+
+            // Set color
+            var renderer = visualization.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = new Color(color.r, color.g, color.b, 0.3f); // Semi-transparent
+            }
+
+            // Make it not collide with anything
+            var collider = visualization.GetComponent<Collider>();
+            if (collider != null)
+            {
+                collider.enabled = false;
+            }
+
+            _activeVisualizations.Add(new UtilityVisualization
+            {
+                Type = type,
+                GameObject = visualization,
+                Position = position,
+                Radius = radius
+            });
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Utility types
+    /// </summary>
+    public enum UtilityType
+    {
+        Electrical,
+        Water,
+        Air
+    }
+
+    /// <summary>
+    /// Construction types
+    /// </summary>
+    public enum ConstructionType
+    {
+        Light,
+        Irrigation,
+        Ventilation,
+        Storage
+    }
+
+    /// <summary>
+    /// Utility visualization data
+    /// </summary>
+    [System.Serializable]
+    public class UtilityVisualization
+    {
+        public UtilityType Type;
+        public GameObject GameObject;
+        public Vector3 Position;
+        public float Radius;
+    }
+
+    /// <summary>
+    /// Overlay statistics
+    /// </summary>
+    [System.Serializable]
+    public struct OverlayStats
+    {
+        public int TotalVisualizations;
+        public int ActiveElectrical;
+        public int ActiveWater;
+        public int ActiveAir;
+        public bool IsOverlayEnabled;
+    }
+
+    /// <summary>
+    /// Utility requirements
+    /// </summary>
+    [System.Serializable]
+    public struct UtilityRequirements
+    {
+        public bool RequiresElectrical;
+        public bool RequiresWater;
+        public bool RequiresAir;
+    }
+}

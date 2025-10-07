@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Facilities;
+using System.Linq;
 
 namespace ProjectChimera.Systems.Facilities
 {
@@ -34,8 +35,68 @@ namespace ProjectChimera.Systems.Facilities
         {
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[FacilityRegistry] Initialized successfully");
+                ChimeraLogger.Log("FACILITY", "FacilityRegistry initialized", this);
             }
+        }
+
+        // Compatibility properties/methods for validators expecting a richer API
+        public string CurrentFacilityId => _currentFacilityId;
+        public int OwnedFacilitiesCount => _facilities.Count;
+
+        public OwnedFacility GetFacilityById(string facilityId)
+        {
+            var basic = GetFacility(facilityId);
+            return basic != null ? ToOwnedFacility(basic) : new OwnedFacility();
+        }
+
+        public int GetFacilityCountForTier(ProjectChimera.Data.Facilities.FacilityTierSO tier)
+        {
+            // Basic implementation: we don't model tiers here; treat all as same tier
+            return _facilities.Count;
+        }
+
+        public IEnumerable<OwnedFacility> OwnedFacilities
+        {
+            get
+            {
+                foreach (var kv in _facilities)
+                    yield return ToOwnedFacility(kv.Value);
+            }
+        }
+
+        public RegistryValidationResult ValidateRegistry()
+        {
+            var result = new RegistryValidationResult
+            {
+                IsValid = true
+            };
+
+            // Simple sanity checks
+            foreach (var kv in _facilities)
+            {
+                if (string.IsNullOrEmpty(kv.Key) || string.IsNullOrEmpty(kv.Value.FacilityId))
+                {
+                    result.IsValid = false;
+                    result.Errors.Add("Facility has invalid ID");
+                }
+            }
+
+            return result;
+        }
+
+        private OwnedFacility ToOwnedFacility(BasicFacility basic)
+        {
+            return new OwnedFacility
+            {
+                FacilityId = basic.FacilityId,
+                FacilityName = basic.FacilityName,
+                IsActive = basic.IsActive,
+                IsOperational = basic.IsActive,
+                MaintenanceLevel = 1f,
+                Tier = null,
+                TotalPlantsGrown = 0,
+                CurrentValue = 0f
+            };
         }
 
         /// <summary>
@@ -68,7 +129,7 @@ namespace ProjectChimera.Systems.Facilities
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[FacilityRegistry] Added facility: {facilityName} ({facilityId})");
+                ChimeraLogger.Log("FACILITY", $"Facility added: {facilityName} ({facilityId})", this);
             }
 
             return true;
@@ -92,7 +153,7 @@ namespace ProjectChimera.Systems.Facilities
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[FacilityRegistry] Removed facility: {facilityId}");
+                    ChimeraLogger.Log("FACILITY", $"Facility removed: {facilityId}", this);
                 }
 
                 return true;
@@ -116,7 +177,7 @@ namespace ProjectChimera.Systems.Facilities
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[FacilityRegistry] Set current facility: {facilityId}");
+                ChimeraLogger.Log("FACILITY", $"Current facility set: {facilityId}", this);
             }
 
             return true;
@@ -196,7 +257,7 @@ namespace ProjectChimera.Systems.Facilities
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[FacilityRegistry] Cleared {facilityIds.Count} facilities");
+                ChimeraLogger.Log("FACILITY", "All facilities cleared", this);
             }
         }
 
@@ -248,6 +309,33 @@ namespace ProjectChimera.Systems.Facilities
         public float Size;
         public bool IsActive;
         public System.DateTime DateCreated;
+    }
+
+    /// <summary>
+    /// Compatibility type for validators that expect extended facility data
+    /// </summary>
+    [System.Serializable]
+    public class OwnedFacility
+    {
+        public string FacilityId;
+        public string FacilityName;
+        public bool IsActive;
+        public bool IsOperational;
+        public float MaintenanceLevel;
+        public ProjectChimera.Data.Facilities.FacilityTierSO Tier;
+        public int TotalPlantsGrown;
+        public float CurrentValue;
+    }
+
+    /// <summary>
+    /// Registry validation result for compatibility with validation services
+    /// </summary>
+    [System.Serializable]
+    public class RegistryValidationResult
+    {
+        public bool IsValid;
+        public System.Collections.Generic.List<string> Errors = new System.Collections.Generic.List<string>();
+        public System.Collections.Generic.List<string> Warnings = new System.Collections.Generic.List<string>();
     }
 
     // FacilityType enum moved to ProjectChimera.Data.Facilities.FacilityEnums

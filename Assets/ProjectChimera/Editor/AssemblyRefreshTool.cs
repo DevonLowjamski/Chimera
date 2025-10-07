@@ -14,32 +14,32 @@ namespace ProjectChimera.Editor
         [MenuItem("Tools/Project Chimera/Refresh Assembly Definitions")]
         public static void RefreshAssemblyDefinitions()
         {
-            ChimeraLogger.Log("Refreshing Assembly Definitions...");
-            
+            ChimeraLogger.LogInfo("EDITOR", "Refreshing assembly definitions...");
+
             // Force Unity to refresh assets
             AssetDatabase.Refresh();
-            
+
             // Request script compilation
             CompilationPipeline.RequestScriptCompilation();
-            
-            ChimeraLogger.Log("Assembly refresh completed. Check console for compilation results.");
+
+            ChimeraLogger.LogInfo("EDITOR", "Assembly definitions refreshed successfully");
         }
         
         [MenuItem("Tools/Project Chimera/Force Recompile")]
         public static void ForceRecompile()
         {
-            ChimeraLogger.Log("Forcing Unity recompilation...");
-            
+            ChimeraLogger.LogInfo("EDITOR", "Force recompiling project...");
+
             // Refresh assets
             AssetDatabase.Refresh();
-            
+
             // Force garbage collection
             System.GC.Collect();
-            
+
             // Request script compilation
             CompilationPipeline.RequestScriptCompilation();
-            
-            ChimeraLogger.Log("Forced recompilation requested. Check console for compilation results.");
+
+            ChimeraLogger.LogInfo("EDITOR", "Force recompile completed");
         }
     }
 } 

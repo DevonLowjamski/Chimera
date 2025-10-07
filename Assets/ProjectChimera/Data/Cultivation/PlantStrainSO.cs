@@ -1,6 +1,7 @@
 using UnityEngine;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 
+
 namespace ProjectChimera.Data.Cultivation
 {
     /// <summary>
@@ -35,6 +36,7 @@ namespace ProjectChimera.Data.Cultivation
         
         // Properties for compatibility
         public float AverageTHC => thcContent;
+        public float MaxHeight => AverageHeight; // Alias for AverageHeight
 
         [Header("Yield Range")]
         public float minYield = 50.0f;

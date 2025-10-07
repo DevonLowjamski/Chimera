@@ -2,8 +2,10 @@ using ProjectChimera.Core.Logging;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Save;
+using ProjectChimera.Data.Save.Structures;
 using System.Threading.Tasks;
 using System;
+using EconomyStateDTO = ProjectChimera.Data.Save.EconomyStateDTO;
 
 namespace ProjectChimera.Systems.Save
 {
@@ -42,7 +44,7 @@ namespace ProjectChimera.Systems.Save
         private void InitializeService()
         {
             _isInitialized = true;
-            ChimeraLogger.Log("[EconomySaveService] Service initialized successfully");
+            ChimeraLogger.Log("OTHER", "$1", this);
         }
 
         private void RegisterWithSaveManager()
@@ -51,11 +53,11 @@ namespace ProjectChimera.Systems.Save
             if (saveManager != null)
             {
                 saveManager.RegisterSaveService(this);
-                ChimeraLogger.Log("[EconomySaveService] Registered with SaveManager");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
             else
             {
-                ChimeraLogger.LogWarning("[EconomySaveService] SaveManager not found - integration disabled");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -67,7 +69,7 @@ namespace ProjectChimera.Systems.Save
         {
             if (!IsAvailable)
             {
-                ChimeraLogger.LogWarning("[EconomySaveService] Service not available for state gathering");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return new EconomyStateDTO
                 {
                     SaveTimestamp = DateTime.Now,
@@ -81,7 +83,7 @@ namespace ProjectChimera.Systems.Save
 
             try
             {
-                ChimeraLogger.Log("[EconomySaveService] Gathering economy state...");
+                ChimeraLogger.Log("OTHER", "$1", this);
 
                 var economyState = new EconomyStateDTO
                 {
@@ -146,12 +148,12 @@ namespace ProjectChimera.Systems.Save
                     }
                 };
 
-                ChimeraLogger.Log("[EconomySaveService] Economy state gathered successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return economyState;
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[EconomySaveService] Error gathering economy state: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return new EconomyStateDTO
                 {
                     SaveTimestamp = DateTime.Now,
@@ -168,19 +170,19 @@ namespace ProjectChimera.Systems.Save
         {
             if (!IsAvailable)
             {
-                ChimeraLogger.LogWarning("[EconomySaveService] Service not available for state application");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return;
             }
 
             if (economyData == null)
             {
-                ChimeraLogger.LogWarning("[EconomySaveService] No economy data to apply");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return;
             }
 
             try
             {
-                ChimeraLogger.Log("[EconomySaveService] Applying economy state from save data");
+                ChimeraLogger.Log("OTHER", "$1", this);
 
                 // Apply market state
                 if (economyData.MarketState != null)
@@ -200,11 +202,11 @@ namespace ProjectChimera.Systems.Save
                     await ApplyPlayerEconomyState(economyData.PlayerEconomyState);
                 }
 
-                ChimeraLogger.Log("[EconomySaveService] Economy state applied successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[EconomySaveService] Error applying economy state: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -223,7 +225,7 @@ namespace ProjectChimera.Systems.Save
 
             try
             {
-                ChimeraLogger.Log($"[EconomySaveService] Processing {offlineHours:F2} hours of offline economic progression");
+                ChimeraLogger.Log("OTHER", "$1", this);
 
                 // Calculate offline economic changes
                 float passiveIncome = CalculatePassiveIncome(offlineHours);
@@ -247,7 +249,7 @@ namespace ProjectChimera.Systems.Save
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[EconomySaveService] Error processing offline progression: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return new OfflineProgressionResult
                 {
                     SystemName = SystemName,
@@ -264,7 +266,7 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplyMarketState(MarketStateDTO marketState)
         {
-            ChimeraLogger.Log($"[EconomySaveService] Applying market state (Active: {marketState.IsMarketActive})");
+            ChimeraLogger.Log("OTHER", "$1", this);
 
             // Market state application would integrate with actual market systems
             await Task.CompletedTask;
@@ -272,7 +274,7 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplyTradingState(TradingStateDTO tradingState)
         {
-            ChimeraLogger.Log($"[EconomySaveService] Applying trading state ({tradingState.PendingTransactions?.Count ?? 0} pending transactions)");
+            ChimeraLogger.Log("OTHER", "$1", this);
 
             // Trading state application would integrate with actual trading systems
             await Task.CompletedTask;
@@ -280,7 +282,7 @@ namespace ProjectChimera.Systems.Save
 
         private async Task ApplyPlayerEconomyState(PlayerEconomyStateDTO playerEconomyState)
         {
-            ChimeraLogger.Log($"[EconomySaveService] Applying player economy state (Cash: ${playerEconomyState.PlayerFinances?.TotalCash ?? 0:F0})");
+            ChimeraLogger.Log("OTHER", "$1", this);
 
             // Player economy state application would integrate with actual player finance systems
             await Task.CompletedTask;

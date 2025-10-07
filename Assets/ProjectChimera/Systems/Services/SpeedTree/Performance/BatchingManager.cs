@@ -19,6 +19,10 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
         private readonly Dictionary<string, List<GameObject>> _batches = new Dictionary<string, List<GameObject>>();
         private bool _isInitialized = false;
 
+        // Quality flags influenced by service settings
+        public bool EnableGPUInstancing { get; set; }
+        public bool EnableDynamicBatching { get; set; }
+
         /// <summary>
         /// Events for batching operations
         /// </summary>
@@ -36,8 +40,15 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[BatchingManager] Initialized successfully");
+                ChimeraLogger.Log("SPEEDTREE/BATCH", "BatchingManager initialized", this);
             }
+        }
+
+        public void Initialize(SpeedTreeBatchingMethod method)
+        {
+            Initialize();
+            EnableGPUInstancing = method == SpeedTreeBatchingMethod.GPUInstancing;
+            EnableDynamicBatching = method == SpeedTreeBatchingMethod.DynamicBatching;
         }
 
         /// <summary>
@@ -60,7 +71,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[BatchingManager] Added {obj.name} to batch '{batchKey}'");
+                    ChimeraLogger.Log("SPEEDTREE/BATCH", $"Added to batch {batchKey}", this);
                 }
             }
         }
@@ -77,7 +88,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[BatchingManager] Removed {obj.name} from batch '{batchKey}'");
+                    ChimeraLogger.Log("SPEEDTREE/BATCH", $"Removed from batch {batchKey}", this);
                 }
 
                 // Remove empty batches
@@ -120,7 +131,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[BatchingManager] Cleared {batchKeys.Count} batches");
+                ChimeraLogger.Log("SPEEDTREE/BATCH", "Cleared all batches", this);
             }
         }
 
@@ -144,7 +155,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[BatchingManager] Set rendering for batch '{batchKey}' to {enabled}");
+                ChimeraLogger.Log("SPEEDTREE/BATCH", $"Set batch {batchKey} rendering: {enabled}", this);
             }
         }
 
@@ -159,7 +170,43 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
             // Simple optimization - could combine meshes in a real implementation
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[BatchingManager] Optimized batch '{batchKey}' with {batch.Count} objects");
+                ChimeraLogger.Log("SPEEDTREE/BATCH", $"Optimized batch {batchKey}", this);
+            }
+        }
+
+        // API expected by orchestrator
+        public void ClearBatches() => ClearAllBatches();
+
+        public void UpdateBatches()
+        {
+            // No-op in basic implementation; hook for future metrics/maintenance
+        }
+
+        public int GetBatchCount() => _batches.Count;
+
+        public void RemoveFromBatch(GameObject obj)
+        {
+            if (obj == null) return;
+            string emptyKey = null;
+            foreach (var kvp in _batches)
+            {
+                if (kvp.Value.Remove(obj))
+                {
+                    if (_enableLogging)
+                    {
+                        ChimeraLogger.Log("SPEEDTREE/BATCH", $"Removed object from batch {kvp.Key}", this);
+                    }
+                    if (kvp.Value.Count == 0)
+                    {
+                        emptyKey = kvp.Key;
+                    }
+                    break;
+                }
+            }
+            if (!string.IsNullOrEmpty(emptyKey))
+            {
+                _batches.Remove(emptyKey);
+                OnBatchRemoved?.Invoke(emptyKey);
             }
         }
 

@@ -1,0 +1,998 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Performance;
+using ProjectChimera.Systems.Cultivation.Advanced;
+
+namespace ProjectChimera.Testing
+{
+    /// <summary>
+    /// REFACTORED: Load Tester
+    /// Single Responsibility: System load testing and performance validation under stress
+    /// Extracted from Phase1IntegrationTester for better separation of concerns
+    /// </summary>
+    public class LoadTester : MonoBehaviour
+    {
+        [Header("Load Testing Settings")]
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private bool _enableConcurrentTesting = true;
+        [SerializeField] private bool _enableMemoryPressureTesting = true;
+        [SerializeField] private bool _enableCPULoadTesting = true;
+
+        [Header("Load Parameters")]
+        [SerializeField] private float _loadTestDuration = 10f;
+        [SerializeField] private int _maxTestEntities = 1000;
+        [SerializeField] private float _rampUpDuration = 2f;
+        [SerializeField] private float _sustainedLoadDuration = 5f;
+        [SerializeField] private float _rampDownDuration = 3f;
+
+        [Header("Performance Thresholds")]
+        [SerializeField] private float _maxAcceptableFrameTime = 30f; // 33 FPS minimum under load
+        [SerializeField] private long _maxAcceptableMemoryUsage = 800 * 1024 * 1024; // 800MB under load
+        [SerializeField] private float _performanceDegradationThreshold = 2f; // 2x baseline acceptable
+
+        // System references
+        private AdvancedPerformanceMonitor _performanceMonitor;
+        private AdvancedCultivationManager _cultivationManager;
+
+        // Test state
+        private bool _isInitialized = false;
+        private bool _loadTestInProgress = false;
+        private LoadTestResult _lastTestResult;
+
+        // Load test entities
+        private List<LoadTestEntity> _testEntities = new List<LoadTestEntity>();
+        private List<AdvancedPlantInstance> _testPlants = new List<AdvancedPlantInstance>();
+
+        // Statistics
+        private LoadTestStats _stats = new LoadTestStats();
+
+        // Events
+        public event System.Action<LoadTestResult> OnLoadTestCompleted;
+        public event System.Action<string> OnLoadTestStep; // step description
+        public event System.Action<LoadTestPhase, float> OnLoadTestPhaseChanged; // phase, progress
+        public event System.Action<LoadMetricSample> OnLoadMetricCollected;
+
+        public bool IsInitialized => _isInitialized;
+        public bool LoadTestInProgress => _loadTestInProgress;
+        public LoadTestStats Stats => _stats;
+        public LoadTestResult LastTestResult => _lastTestResult;
+
+        private void Awake()
+        {
+            Initialize();
+        }
+
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            // Get system references
+            _performanceMonitor = FindObjectOfType<AdvancedPerformanceMonitor>();
+            _cultivationManager = AdvancedCultivationManager.Instance;
+
+            ResetStats();
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("TESTING", "Load Tester initialized");
+            }
+        }
+
+        /// <summary>
+        /// Perform comprehensive load testing
+        /// </summary>
+        public IEnumerator PerformLoadTesting()
+        {
+            if (!_isInitialized) Initialize();
+
+            if (_loadTestInProgress)
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("TESTING", "Load test already in progress");
+                }
+                yield break;
+            }
+
+            _loadTestInProgress = true;
+
+            var testResult = new LoadTestResult
+            {
+                TestName = "Comprehensive Load Testing",
+                TestCategory = "Load",
+                StartTime = Time.time,
+                TestSteps = new List<string>(),
+                ValidationResults = new Dictionary<string, bool>(),
+                MetricSamples = new List<LoadMetricSample>(),
+                PhaseResults = new Dictionary<LoadTestPhase, LoadPhaseResult>()
+            };
+
+            _stats.TestsStarted++;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("TESTING", "Starting comprehensive load testing...");
+            }
+
+            try
+            {
+                // Phase 1: Baseline measurement
+                yield return StartCoroutine(MeasureBaseline(testResult));
+
+                // Phase 2: Ramp up load
+                yield return StartCoroutine(RampUpLoad(testResult));
+
+                // Phase 3: Sustained load
+                yield return StartCoroutine(SustainedLoad(testResult));
+
+                // Phase 4: Peak load
+                yield return StartCoroutine(PeakLoad(testResult));
+
+                // Phase 5: Ramp down
+                yield return StartCoroutine(RampDownLoad(testResult));
+
+                // Phase 6: Memory pressure test (if enabled)
+                if (_enableMemoryPressureTesting)
+                {
+                    yield return StartCoroutine(MemoryPressureTest(testResult));
+                }
+
+                // Phase 7: CPU load test (if enabled)
+                if (_enableCPULoadTesting)
+                {
+                    yield return StartCoroutine(CPULoadTest(testResult));
+                }
+
+                // Phase 8: Concurrent operations test (if enabled)
+                if (_enableConcurrentTesting)
+                {
+                    yield return StartCoroutine(ConcurrentOperationsTest(testResult));
+                }
+
+                // Cleanup and evaluate results
+                yield return StartCoroutine(CleanupAndEvaluate(testResult));
+            }
+            catch (System.Exception ex)
+            {
+                testResult.Success = false;
+                testResult.CompletionTime = Time.time;
+                testResult.TestDuration = testResult.CompletionTime - testResult.StartTime;
+                testResult.ResultMessage = $"Load test error: {ex.Message}";
+                testResult.Exception = ex;
+                _stats.TestsFailed++;
+                _stats.TestErrors++;
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogError("TESTING", $"Load test exception: {ex.Message}");
+                }
+            }
+
+            _loadTestInProgress = false;
+            _lastTestResult = testResult;
+            _stats.TotalTestTime += testResult.TestDuration;
+
+            OnLoadTestCompleted?.Invoke(testResult);
+
+            if (_enableLogging)
+            {
+                LogLoadTestResults(testResult);
+            }
+
+            yield return null;
+        }
+
+        /// <summary>
+        /// Measure baseline performance
+        /// </summary>
+        private IEnumerator MeasureBaseline(LoadTestResult testResult)
+        {
+            var stepDescription = "Measuring baseline performance...";
+            OnLoadTestStep?.Invoke(stepDescription);
+            OnLoadTestPhaseChanged?.Invoke(LoadTestPhase.Baseline, 0f);
+
+            float phaseStartTime = Time.time;
+            var samples = new List<LoadMetricSample>();
+            int frameCount = 0;
+            float totalFrameTime = 0f;
+
+            // Collect baseline for 3 seconds
+            while (Time.time - phaseStartTime < 3f)
+            {
+                float frameStart = Time.unscaledTime;
+                yield return null;
+                float frameTime = (Time.unscaledTime - frameStart) * 1000f;
+
+                totalFrameTime += frameTime;
+                frameCount++;
+
+                if (frameCount % 5 == 0) // Every 5th frame
+                {
+                    var sample = new LoadMetricSample
+                    {
+                        Timestamp = Time.time,
+                        Phase = LoadTestPhase.Baseline,
+                        FrameTime = frameTime,
+                        MemoryUsage = System.GC.GetTotalMemory(false),
+                        ActiveEntities = 0,
+                        FPS = 1000f / frameTime
+                    };
+                    samples.Add(sample);
+                    testResult.MetricSamples.Add(sample);
+                    OnLoadMetricCollected?.Invoke(sample);
+                }
+
+                float progress = (Time.time - phaseStartTime) / 3f;
+                OnLoadTestPhaseChanged?.Invoke(LoadTestPhase.Baseline, progress);
+            }
+
+            float baselineFrameTime = totalFrameTime / frameCount;
+            testResult.BaselineFrameTime = baselineFrameTime;
+            testResult.BaselineMemory = samples.LastOrDefault().MemoryUsage;
+
+            var phaseResult = new LoadPhaseResult
+            {
+                Phase = LoadTestPhase.Baseline,
+                Duration = Time.time - phaseStartTime,
+                AverageFrameTime = baselineFrameTime,
+                MaxFrameTime = samples.Max(s => s.FrameTime),
+                AverageMemory = samples.Average(s => s.MemoryUsage),
+                MaxMemory = samples.Max(s => s.MemoryUsage),
+                Success = true
+            };
+
+            testResult.PhaseResults[LoadTestPhase.Baseline] = phaseResult;
+            testResult.TestSteps.Add($"Baseline: {baselineFrameTime:F2}ms avg frame time");
+
+            _stats.BaselineTests++;
+        }
+
+        /// <summary>
+        /// Ramp up load gradually
+        /// </summary>
+        private IEnumerator RampUpLoad(LoadTestResult testResult)
+        {
+            var stepDescription = "Ramping up system load...";
+            OnLoadTestStep?.Invoke(stepDescription);
+            OnLoadTestPhaseChanged?.Invoke(LoadTestPhase.RampUp, 0f);
+
+            float phaseStartTime = Time.time;
+            var samples = new List<LoadMetricSample>();
+            int targetEntities = _maxTestEntities / 4; // 25% of max during ramp up
+
+            // Gradually create test entities
+            while (Time.time - phaseStartTime < _rampUpDuration)
+            {
+                float progress = (Time.time - phaseStartTime) / _rampUpDuration;
+                int currentTargetEntities = Mathf.FloorToInt(targetEntities * progress);
+
+                // Add entities if needed
+                while (_testEntities.Count < currentTargetEntities)
+                {
+                    CreateTestEntity();
+                    yield return null; // Spread creation across frames
+                }
+
+                // Collect metrics
+                var sample = CollectLoadMetricSample(LoadTestPhase.RampUp);
+                samples.Add(sample);
+                testResult.MetricSamples.Add(sample);
+                OnLoadMetricCollected?.Invoke(sample);
+
+                OnLoadTestPhaseChanged?.Invoke(LoadTestPhase.RampUp, progress);
+                yield return null;
+            }
+
+            var phaseResult = new LoadPhaseResult
+            {
+                Phase = LoadTestPhase.RampUp,
+                Duration = Time.time - phaseStartTime,
+                AverageFrameTime = samples.Average(s => s.FrameTime),
+                MaxFrameTime = samples.Max(s => s.FrameTime),
+                AverageMemory = samples.Average(s => s.MemoryUsage),
+                MaxMemory = samples.Max(s => s.MemoryUsage),
+                Success = samples.All(s => s.FrameTime < _maxAcceptableFrameTime)
+            };
+
+            testResult.PhaseResults[LoadTestPhase.RampUp] = phaseResult;
+            testResult.TestSteps.Add($"Ramp Up: {_testEntities.Count} entities, {phaseResult.MaxFrameTime:F2}ms max frame");
+
+            _stats.RampUpTests++;
+        }
+
+        /// <summary>
+        /// Sustained load testing
+        /// </summary>
+        private IEnumerator SustainedLoad(LoadTestResult testResult)
+        {
+            var stepDescription = "Testing sustained load performance...";
+            OnLoadTestStep?.Invoke(stepDescription);
+            OnLoadTestPhaseChanged?.Invoke(LoadTestPhase.Sustained, 0f);
+
+            float phaseStartTime = Time.time;
+            var samples = new List<LoadMetricSample>();
+            int targetEntities = _maxTestEntities / 2; // 50% of max for sustained
+
+            // Reach target entity count
+            while (_testEntities.Count < targetEntities)
+            {
+                CreateTestEntity();
+                if (_testEntities.Count % 10 == 0) yield return null; // Batch creation
+            }
+
+            // Sustain load and monitor
+            while (Time.time - phaseStartTime < _sustainedLoadDuration)
+            {
+                float progress = (Time.time - phaseStartTime) / _sustainedLoadDuration;
+
+                // Update entities to create sustained processing load
+                for (int i = 0; i < Mathf.Min(100, _testEntities.Count); i++)
+                {
+                    _testEntities[i].Update();
+                }
+
+                // Collect metrics
+                var sample = CollectLoadMetricSample(LoadTestPhase.Sustained);
+                samples.Add(sample);
+                testResult.MetricSamples.Add(sample);
+                OnLoadMetricCollected?.Invoke(sample);
+
+                OnLoadTestPhaseChanged?.Invoke(LoadTestPhase.Sustained, progress);
+                yield return null;
+            }
+
+            var phaseResult = new LoadPhaseResult
+            {
+                Phase = LoadTestPhase.Sustained,
+                Duration = Time.time - phaseStartTime,
+                AverageFrameTime = samples.Average(s => s.FrameTime),
+                MaxFrameTime = samples.Max(s => s.FrameTime),
+                AverageMemory = samples.Average(s => s.MemoryUsage),
+                MaxMemory = samples.Max(s => s.MemoryUsage),
+                Success = samples.Average(s => s.FrameTime) < _maxAcceptableFrameTime
+            };
+
+            testResult.PhaseResults[LoadTestPhase.Sustained] = phaseResult;
+            testResult.TestSteps.Add($"Sustained: {_testEntities.Count} entities, {phaseResult.AverageFrameTime:F2}ms avg frame");
+
+            _stats.SustainedTests++;
+        }
+
+        /// <summary>
+        /// Peak load testing
+        /// </summary>
+        private IEnumerator PeakLoad(LoadTestResult testResult)
+        {
+            var stepDescription = "Testing peak load performance...";
+            OnLoadTestStep?.Invoke(stepDescription);
+            OnLoadTestPhaseChanged?.Invoke(LoadTestPhase.Peak, 0f);
+
+            float phaseStartTime = Time.time;
+            var samples = new List<LoadMetricSample>();
+
+            // Reach maximum entity count
+            while (_testEntities.Count < _maxTestEntities)
+            {
+                CreateTestEntity();
+                if (_testEntities.Count % 20 == 0) yield return null; // Batch creation
+            }
+
+            // Create test plants for cultivation system load
+            for (int i = 0; i < 100; i++)
+            {
+                var plant = new AdvancedPlantInstance
+                {
+                    PlantId = $"PEAK_TEST_PLANT_{i:000}",
+                    IsActive = true
+                };
+                _testPlants.Add(plant);
+                _cultivationManager?.RegisterPlant(plant);
+
+                if (i % 10 == 0) yield return null;
+            }
+
+            // Monitor peak performance for short duration
+            float peakDuration = 3f;
+            while (Time.time - phaseStartTime < peakDuration)
+            {
+                float progress = (Time.time - phaseStartTime) / peakDuration;
+
+                // Update all entities for maximum load
+                foreach (var entity in _testEntities)
+                {
+                    entity.Update();
+                }
+
+                // Collect metrics
+                var sample = CollectLoadMetricSample(LoadTestPhase.Peak);
+                samples.Add(sample);
+                testResult.MetricSamples.Add(sample);
+                OnLoadMetricCollected?.Invoke(sample);
+
+                OnLoadTestPhaseChanged?.Invoke(LoadTestPhase.Peak, progress);
+                yield return null;
+            }
+
+            var phaseResult = new LoadPhaseResult
+            {
+                Phase = LoadTestPhase.Peak,
+                Duration = Time.time - phaseStartTime,
+                AverageFrameTime = samples.Average(s => s.FrameTime),
+                MaxFrameTime = samples.Max(s => s.FrameTime),
+                AverageMemory = samples.Average(s => s.MemoryUsage),
+                MaxMemory = samples.Max(s => s.MemoryUsage),
+                Success = samples.Max(s => s.FrameTime) < _maxAcceptableFrameTime * _performanceDegradationThreshold
+            };
+
+            testResult.PhaseResults[LoadTestPhase.Peak] = phaseResult;
+            testResult.TestSteps.Add($"Peak: {_testEntities.Count} entities + {_testPlants.Count} plants, {phaseResult.MaxFrameTime:F2}ms max frame");
+
+            _stats.PeakTests++;
+        }
+
+        /// <summary>
+        /// Ramp down load
+        /// </summary>
+        private IEnumerator RampDownLoad(LoadTestResult testResult)
+        {
+            var stepDescription = "Ramping down system load...";
+            OnLoadTestStep?.Invoke(stepDescription);
+            OnLoadTestPhaseChanged?.Invoke(LoadTestPhase.RampDown, 0f);
+
+            float phaseStartTime = Time.time;
+            var samples = new List<LoadMetricSample>();
+
+            while (Time.time - phaseStartTime < _rampDownDuration)
+            {
+                float progress = (Time.time - phaseStartTime) / _rampDownDuration;
+                int targetEntities = Mathf.FloorToInt(_maxTestEntities * (1f - progress));
+
+                // Remove entities gradually
+                while (_testEntities.Count > targetEntities && _testEntities.Count > 0)
+                {
+                    DestroyTestEntity(_testEntities.Count - 1);
+                    if (_testEntities.Count % 10 == 0) yield return null;
+                }
+
+                // Remove plants gradually
+                if (progress > 0.5f && _testPlants.Count > 0)
+                {
+                    int plantsToRemove = Mathf.Min(5, _testPlants.Count);
+                    for (int i = 0; i < plantsToRemove; i++)
+                    {
+                        var plant = _testPlants[_testPlants.Count - 1];
+                        _cultivationManager?.UnregisterPlant(plant.PlantId);
+                        _testPlants.RemoveAt(_testPlants.Count - 1);
+                    }
+                }
+
+                // Collect metrics
+                var sample = CollectLoadMetricSample(LoadTestPhase.RampDown);
+                samples.Add(sample);
+                testResult.MetricSamples.Add(sample);
+                OnLoadMetricCollected?.Invoke(sample);
+
+                OnLoadTestPhaseChanged?.Invoke(LoadTestPhase.RampDown, progress);
+                yield return null;
+            }
+
+            var phaseResult = new LoadPhaseResult
+            {
+                Phase = LoadTestPhase.RampDown,
+                Duration = Time.time - phaseStartTime,
+                AverageFrameTime = samples.Average(s => s.FrameTime),
+                MaxFrameTime = samples.Max(s => s.FrameTime),
+                AverageMemory = samples.Average(s => s.MemoryUsage),
+                MaxMemory = samples.Max(s => s.MemoryUsage),
+                Success = true // Ramp down should always succeed
+            };
+
+            testResult.PhaseResults[LoadTestPhase.RampDown] = phaseResult;
+            testResult.TestSteps.Add($"Ramp Down: Reduced to {_testEntities.Count} entities, {phaseResult.AverageFrameTime:F2}ms avg frame");
+
+            _stats.RampDownTests++;
+        }
+
+        /// <summary>
+        /// Memory pressure testing
+        /// </summary>
+        private IEnumerator MemoryPressureTest(LoadTestResult testResult)
+        {
+            var stepDescription = "Testing memory pressure handling...";
+            OnLoadTestStep?.Invoke(stepDescription);
+            OnLoadTestPhaseChanged?.Invoke(LoadTestPhase.MemoryPressure, 0f);
+
+            float phaseStartTime = Time.time;
+            var samples = new List<LoadMetricSample>();
+            var memoryBlocks = new List<byte[]>();
+
+            // Gradually increase memory pressure
+            for (int i = 0; i < 50; i++)
+            {
+                // Allocate 10MB blocks
+                memoryBlocks.Add(new byte[10 * 1024 * 1024]);
+
+                var sample = CollectLoadMetricSample(LoadTestPhase.MemoryPressure);
+                samples.Add(sample);
+                testResult.MetricSamples.Add(sample);
+                OnLoadMetricCollected?.Invoke(sample);
+
+                float progress = (float)i / 50f;
+                OnLoadTestPhaseChanged?.Invoke(LoadTestPhase.MemoryPressure, progress);
+
+                yield return null;
+            }
+
+            // Monitor under memory pressure
+            yield return new WaitForSeconds(2f);
+
+            // Cleanup memory
+            memoryBlocks.Clear();
+            System.GC.Collect();
+            yield return new WaitForSeconds(1f);
+
+            var phaseResult = new LoadPhaseResult
+            {
+                Phase = LoadTestPhase.MemoryPressure,
+                Duration = Time.time - phaseStartTime,
+                AverageFrameTime = samples.Average(s => s.FrameTime),
+                MaxFrameTime = samples.Max(s => s.FrameTime),
+                AverageMemory = samples.Average(s => s.MemoryUsage),
+                MaxMemory = samples.Max(s => s.MemoryUsage),
+                Success = samples.Max(s => s.MemoryUsage) < _maxAcceptableMemoryUsage
+            };
+
+            testResult.PhaseResults[LoadTestPhase.MemoryPressure] = phaseResult;
+            testResult.TestSteps.Add($"Memory Pressure: {phaseResult.MaxMemory / (1024 * 1024):F1}MB peak, {phaseResult.Success}");
+
+            _stats.MemoryTests++;
+        }
+
+        /// <summary>
+        /// CPU load testing
+        /// </summary>
+        private IEnumerator CPULoadTest(LoadTestResult testResult)
+        {
+            var stepDescription = "Testing CPU load handling...";
+            OnLoadTestStep?.Invoke(stepDescription);
+            OnLoadTestPhaseChanged?.Invoke(LoadTestPhase.CPULoad, 0f);
+
+            float phaseStartTime = Time.time;
+            var samples = new List<LoadMetricSample>();
+            float cpuTestDuration = 3f;
+
+            while (Time.time - phaseStartTime < cpuTestDuration)
+            {
+                float progress = (Time.time - phaseStartTime) / cpuTestDuration;
+
+                // Create CPU load with mathematical operations
+                for (int i = 0; i < 10000; i++)
+                {
+                    float result = Mathf.Sin(i) * Mathf.Cos(i) + Mathf.Sqrt(i + 1);
+                    if (result > 999999f) Debug.Log("CPU test");
+                }
+
+                var sample = CollectLoadMetricSample(LoadTestPhase.CPULoad);
+                samples.Add(sample);
+                testResult.MetricSamples.Add(sample);
+                OnLoadMetricCollected?.Invoke(sample);
+
+                OnLoadTestPhaseChanged?.Invoke(LoadTestPhase.CPULoad, progress);
+                yield return null;
+            }
+
+            var phaseResult = new LoadPhaseResult
+            {
+                Phase = LoadTestPhase.CPULoad,
+                Duration = Time.time - phaseStartTime,
+                AverageFrameTime = samples.Average(s => s.FrameTime),
+                MaxFrameTime = samples.Max(s => s.FrameTime),
+                AverageMemory = samples.Average(s => s.MemoryUsage),
+                MaxMemory = samples.Max(s => s.MemoryUsage),
+                Success = samples.Max(s => s.FrameTime) < _maxAcceptableFrameTime * 2f // Allow 2x for CPU load
+            };
+
+            testResult.PhaseResults[LoadTestPhase.CPULoad] = phaseResult;
+            testResult.TestSteps.Add($"CPU Load: {phaseResult.MaxFrameTime:F2}ms max frame, {phaseResult.Success}");
+
+            _stats.CPUTests++;
+        }
+
+        /// <summary>
+        /// Concurrent operations test
+        /// </summary>
+        private IEnumerator ConcurrentOperationsTest(LoadTestResult testResult)
+        {
+            var stepDescription = "Testing concurrent operations...";
+            OnLoadTestStep?.Invoke(stepDescription);
+            OnLoadTestPhaseChanged?.Invoke(LoadTestPhase.Concurrent, 0f);
+
+            float phaseStartTime = Time.time;
+            var samples = new List<LoadMetricSample>();
+
+            // Start multiple concurrent operations
+            var coroutines = new List<Coroutine>();
+            for (int i = 0; i < 5; i++)
+            {
+                coroutines.Add(StartCoroutine(ConcurrentWorkload(i)));
+            }
+
+            // Monitor for duration
+            float concurrentDuration = 3f;
+            while (Time.time - phaseStartTime < concurrentDuration)
+            {
+                float progress = (Time.time - phaseStartTime) / concurrentDuration;
+
+                var sample = CollectLoadMetricSample(LoadTestPhase.Concurrent);
+                samples.Add(sample);
+                testResult.MetricSamples.Add(sample);
+                OnLoadMetricCollected?.Invoke(sample);
+
+                OnLoadTestPhaseChanged?.Invoke(LoadTestPhase.Concurrent, progress);
+                yield return null;
+            }
+
+            // Stop concurrent operations
+            foreach (var coroutine in coroutines)
+            {
+                if (coroutine != null) StopCoroutine(coroutine);
+            }
+
+            var phaseResult = new LoadPhaseResult
+            {
+                Phase = LoadTestPhase.Concurrent,
+                Duration = Time.time - phaseStartTime,
+                AverageFrameTime = samples.Average(s => s.FrameTime),
+                MaxFrameTime = samples.Max(s => s.FrameTime),
+                AverageMemory = samples.Average(s => s.MemoryUsage),
+                MaxMemory = samples.Max(s => s.MemoryUsage),
+                Success = samples.Average(s => s.FrameTime) < _maxAcceptableFrameTime * 1.5f
+            };
+
+            testResult.PhaseResults[LoadTestPhase.Concurrent] = phaseResult;
+            testResult.TestSteps.Add($"Concurrent: {coroutines.Count} operations, {phaseResult.AverageFrameTime:F2}ms avg frame, {phaseResult.Success}");
+
+            _stats.ConcurrentTests++;
+        }
+
+        /// <summary>
+        /// Concurrent workload coroutine
+        /// </summary>
+        private IEnumerator ConcurrentWorkload(int workloadId)
+        {
+            while (true)
+            {
+                // Simulate work
+                for (int i = 0; i < 1000; i++)
+                {
+                    float result = Mathf.Sin(i + workloadId) * Mathf.Cos(i + workloadId);
+                    if (result > 999f) Debug.Log($"Workload {workloadId}");
+                }
+                yield return null;
+            }
+        }
+
+        /// <summary>
+        /// Cleanup and evaluate final results
+        /// </summary>
+        private IEnumerator CleanupAndEvaluate(LoadTestResult testResult)
+        {
+            var stepDescription = "Cleaning up and evaluating results...";
+            OnLoadTestStep?.Invoke(stepDescription);
+
+            // Cleanup all test entities
+            for (int i = _testEntities.Count - 1; i >= 0; i--)
+            {
+                DestroyTestEntity(i);
+                if (i % 10 == 0) yield return null;
+            }
+
+            // Cleanup all test plants
+            foreach (var plant in _testPlants)
+            {
+                _cultivationManager?.UnregisterPlant(plant.PlantId);
+            }
+            _testPlants.Clear();
+
+            // Force garbage collection
+            System.GC.Collect();
+            yield return new WaitForSeconds(1f);
+
+            // Evaluate overall success
+            testResult.Success = EvaluateOverallSuccess(testResult);
+            testResult.CompletionTime = Time.time;
+            testResult.TestDuration = testResult.CompletionTime - testResult.StartTime;
+
+            if (testResult.Success)
+            {
+                testResult.ResultMessage = "Load testing passed successfully";
+                _stats.TestsPassed++;
+            }
+            else
+            {
+                testResult.ResultMessage = "Load testing failed - performance degradation detected";
+                _stats.TestsFailed++;
+            }
+
+            testResult.TestSteps.Add($"Cleanup completed, {testResult.MetricSamples.Count} samples collected");
+        }
+
+        /// <summary>
+        /// Create a test entity
+        /// </summary>
+        private void CreateTestEntity()
+        {
+            var entity = new LoadTestEntity
+            {
+                Id = _testEntities.Count,
+                CreationTime = Time.time,
+                IsActive = true
+            };
+            _testEntities.Add(entity);
+        }
+
+        /// <summary>
+        /// Destroy a test entity
+        /// </summary>
+        private void DestroyTestEntity(int index)
+        {
+            if (index >= 0 && index < _testEntities.Count)
+            {
+                _testEntities.RemoveAt(index);
+            }
+        }
+
+        /// <summary>
+        /// Collect load metric sample
+        /// </summary>
+        private LoadMetricSample CollectLoadMetricSample(LoadTestPhase phase)
+        {
+            float frameStart = Time.unscaledTime;
+            // Allow one frame to pass for frame time measurement (simplified)
+            float frameTime = Time.unscaledDeltaTime * 1000f; // Convert to milliseconds
+
+            return new LoadMetricSample
+            {
+                Timestamp = Time.time,
+                Phase = phase,
+                FrameTime = frameTime,
+                MemoryUsage = System.GC.GetTotalMemory(false),
+                ActiveEntities = _testEntities.Count,
+                FPS = 1000f / frameTime
+            };
+        }
+
+        /// <summary>
+        /// Evaluate overall test success
+        /// </summary>
+        private bool EvaluateOverallSuccess(LoadTestResult testResult)
+        {
+            // Check critical phases
+            var criticalPhases = new[] { LoadTestPhase.Sustained, LoadTestPhase.Peak };
+            foreach (var phase in criticalPhases)
+            {
+                if (testResult.PhaseResults.TryGetValue(phase, out var result) && !result.Success)
+                {
+                    return false;
+                }
+            }
+
+            // Check performance degradation
+            if (testResult.BaselineFrameTime > 0f)
+            {
+                var peakPhase = testResult.PhaseResults.GetValueOrDefault(LoadTestPhase.Peak);
+                if (peakPhase.MaxFrameTime > testResult.BaselineFrameTime * _performanceDegradationThreshold * 2f)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Log load test results
+        /// </summary>
+        private void LogLoadTestResults(LoadTestResult testResult)
+        {
+            ChimeraLogger.Log("TESTING", "=== LOAD TEST RESULTS ===");
+            ChimeraLogger.Log("TESTING", $"Test: {testResult.TestName}");
+            ChimeraLogger.Log("TESTING", $"Duration: {testResult.TestDuration:F2}s");
+            ChimeraLogger.Log("TESTING", $"Result: {(testResult.Success ? "PASS ✅" : "FAIL ❌")}");
+
+            foreach (var step in testResult.TestSteps)
+            {
+                ChimeraLogger.Log("TESTING", $"  {step}");
+            }
+
+            foreach (var phaseResult in testResult.PhaseResults)
+            {
+                var phase = phaseResult.Value;
+                ChimeraLogger.Log("TESTING", $"{phaseResult.Key}: {phase.AverageFrameTime:F2}ms avg, {phase.MaxFrameTime:F2}ms max, {(phase.Success ? "✅" : "❌")}");
+            }
+
+            ChimeraLogger.Log("TESTING", $"Baseline: {testResult.BaselineFrameTime:F2}ms");
+            ChimeraLogger.Log("TESTING", $"Samples: {testResult.MetricSamples.Count} collected");
+
+            ChimeraLogger.Log("TESTING", "=== END LOAD TEST ===");
+        }
+
+        /// <summary>
+        /// Get load test summary
+        /// </summary>
+        public LoadTestSummary GetTestSummary()
+        {
+            return new LoadTestSummary
+            {
+                TestsStarted = _stats.TestsStarted,
+                TestsPassed = _stats.TestsPassed,
+                TestsFailed = _stats.TestsFailed,
+                TestErrors = _stats.TestErrors,
+                TotalTestTime = _stats.TotalTestTime,
+                BaselineTests = _stats.BaselineTests,
+                RampUpTests = _stats.RampUpTests,
+                SustainedTests = _stats.SustainedTests,
+                PeakTests = _stats.PeakTests,
+                RampDownTests = _stats.RampDownTests,
+                MemoryTests = _stats.MemoryTests,
+                CPUTests = _stats.CPUTests,
+                ConcurrentTests = _stats.ConcurrentTests,
+                LastTestSuccess = _lastTestResult?.Success ?? false,
+                LastTestDuration = _lastTestResult?.TestDuration ?? 0f
+            };
+        }
+
+        /// <summary>
+        /// Reset test statistics
+        /// </summary>
+        private void ResetStats()
+        {
+            _stats = new LoadTestStats();
+        }
+
+        /// <summary>
+        /// Manual load test trigger
+        /// </summary>
+        [ContextMenu("Run Load Test")]
+        public void RunLoadTest()
+        {
+            if (_isInitialized && !_loadTestInProgress)
+            {
+                StartCoroutine(PerformLoadTesting());
+            }
+        }
+    }
+
+    /// <summary>
+    /// Load test phases
+    /// </summary>
+    public enum LoadTestPhase
+    {
+        Baseline,
+        RampUp,
+        Sustained,
+        Peak,
+        RampDown,
+        MemoryPressure,
+        CPULoad,
+        Concurrent
+    }
+
+    /// <summary>
+    /// Load test entity for creating system load
+    /// </summary>
+    [System.Serializable]
+    public class LoadTestEntity
+    {
+        public int Id;
+        public float CreationTime;
+        public bool IsActive;
+        public Vector3 Position;
+        public float UpdateCounter;
+
+        public void Update()
+        {
+            UpdateCounter += Time.deltaTime;
+            Position += Vector3.one * Time.deltaTime;
+        }
+    }
+
+    /// <summary>
+    /// Load test statistics
+    /// </summary>
+    [System.Serializable]
+    public struct LoadTestStats
+    {
+        public int TestsStarted;
+        public int TestsPassed;
+        public int TestsFailed;
+        public int TestErrors;
+        public float TotalTestTime;
+        public int BaselineTests;
+        public int RampUpTests;
+        public int SustainedTests;
+        public int PeakTests;
+        public int RampDownTests;
+        public int MemoryTests;
+        public int CPUTests;
+        public int ConcurrentTests;
+    }
+
+    /// <summary>
+    /// Load metric sample
+    /// </summary>
+    [System.Serializable]
+    public struct LoadMetricSample
+    {
+        public float Timestamp;
+        public LoadTestPhase Phase;
+        public float FrameTime;
+        public long MemoryUsage;
+        public int ActiveEntities;
+        public float FPS;
+    }
+
+    /// <summary>
+    /// Load test phase result
+    /// </summary>
+    [System.Serializable]
+    public struct LoadPhaseResult
+    {
+        public LoadTestPhase Phase;
+        public float Duration;
+        public float AverageFrameTime;
+        public float MaxFrameTime;
+        public double AverageMemory;
+        public long MaxMemory;
+        public bool Success;
+    }
+
+    /// <summary>
+    /// Load test result
+    /// </summary>
+    [System.Serializable]
+    public class LoadTestResult
+    {
+        public string TestName;
+        public string TestCategory;
+        public float StartTime;
+        public float CompletionTime;
+        public float TestDuration;
+        public bool Success;
+        public string ResultMessage;
+        public List<string> TestSteps;
+        public Dictionary<string, bool> ValidationResults;
+        public List<LoadMetricSample> MetricSamples;
+        public Dictionary<LoadTestPhase, LoadPhaseResult> PhaseResults;
+        public float BaselineFrameTime;
+        public long BaselineMemory;
+        public System.Exception Exception;
+    }
+
+    /// <summary>
+    /// Load test summary
+    /// </summary>
+    [System.Serializable]
+    public struct LoadTestSummary
+    {
+        public int TestsStarted;
+        public int TestsPassed;
+        public int TestsFailed;
+        public int TestErrors;
+        public float TotalTestTime;
+        public int BaselineTests;
+        public int RampUpTests;
+        public int SustainedTests;
+        public int PeakTests;
+        public int RampDownTests;
+        public int MemoryTests;
+        public int CPUTests;
+        public int ConcurrentTests;
+        public bool LastTestSuccess;
+        public float LastTestDuration;
+    }
+}

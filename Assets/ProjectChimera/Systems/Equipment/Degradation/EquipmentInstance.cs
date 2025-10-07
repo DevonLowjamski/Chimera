@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Core.Logging;
+using System.Linq;
+using ProjectChimera.Data.Equipment;
 
 namespace ProjectChimera.Systems.Equipment.Degradation
 {
@@ -16,7 +18,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         /// <summary>
         /// Register basic equipment
         /// </summary>
-        public static void RegisterEquipment(string equipmentId, EquipmentType type, string name, Vector3 location)
+        public static void RegisterEquipment(string equipmentId, Data.Equipment.EquipmentType type, string name, Vector3 location)
         {
             if (_equipmentRegistry.ContainsKey(equipmentId))
             {
@@ -38,7 +40,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
 
             _equipmentRegistry[equipmentId] = equipment;
 
-            ChimeraLogger.Log($"[EquipmentInstance] Registered equipment: {equipmentId} ({type})");
+            ProjectChimera.Core.Logging.ChimeraLogger.Log("EQUIPMENT", $"Registered equipment {equipmentId} ({name})", null);
         }
 
         /// <summary>
@@ -60,7 +62,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         {
             if (_equipmentRegistry.Remove(equipmentId))
             {
-                ChimeraLogger.Log($"[EquipmentInstance] Removed equipment: {equipmentId}");
+                ProjectChimera.Core.Logging.ChimeraLogger.Log("EQUIPMENT", $"Removed equipment {equipmentId}", null);
             }
         }
 
@@ -100,7 +102,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
                     if (equipment.Age > profile.BaseLifespan && Random.value < 0.01f) // 1% chance per update when over lifespan
                     {
                         equipment.IsOperational = false;
-                        ChimeraLogger.LogWarning($"[EquipmentInstance] Equipment failed: {equipmentId}");
+                        ProjectChimera.Core.Logging.ChimeraLogger.Log("EQUIPMENT", $"{equipment.EquipmentId} exceeded lifespan and failed", null);
                     }
                 }
             }
@@ -116,7 +118,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
                 equipment.Efficiency = Mathf.Min(1f, equipment.Efficiency + 0.2f); // Restore 20% efficiency
                 equipment.LastMaintenance = System.DateTime.Now;
 
-                ChimeraLogger.Log($"[EquipmentInstance] Maintenance performed on: {equipmentId}");
+                ProjectChimera.Core.Logging.ChimeraLogger.Log("EQUIPMENT", $"Performed maintenance on {equipment.EquipmentId}", null);
             }
         }
 
@@ -167,7 +169,23 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         public static void ClearAllEquipment()
         {
             _equipmentRegistry.Clear();
-            ChimeraLogger.Log("[EquipmentInstance] Cleared all equipment");
+            ProjectChimera.Core.Logging.ChimeraLogger.Log("EQUIPMENT", "Cleared all equipment", null);
+        }
+
+        // Minimal health assessment for HealthAssessmentSystem
+        public static EquipmentHealthData GetHealthAssessment(string equipmentId)
+        {
+            var equipment = GetEquipment(equipmentId);
+            if (equipment == null) return null;
+
+            return new EquipmentHealthData
+            {
+                EquipmentId = equipment.EquipmentId,
+                OverallHealth = Mathf.Clamp01(equipment.Efficiency),
+                WearLevel = 1f - Mathf.Clamp01(equipment.Efficiency),
+                Condition = equipment.IsOperational ? EquipmentCondition.Good : EquipmentCondition.Critical,
+                LastMaintenance = equipment.LastMaintenance
+            };
         }
     }
 
@@ -178,7 +196,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
     public class BasicEquipmentData
     {
         public string EquipmentId;
-        public EquipmentType Type;
+        public Data.Equipment.EquipmentType Type;
         public string Name;
         public Vector3 Location;
         public System.DateTime InstallationDate;

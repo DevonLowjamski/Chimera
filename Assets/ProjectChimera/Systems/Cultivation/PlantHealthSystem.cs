@@ -22,11 +22,23 @@ namespace ProjectChimera.Systems.Cultivation
         private float _lastCareTime = 0f;
         private bool _isInitialized = false;
 
+        // Additional health properties needed by PlantInstance
+        private float _waterLevel = 1f;
+        private float _nutrientLevel = 1f;
+        private float _stressLevel = 0f;
+
         /// <summary>
         /// Events for health changes
         /// </summary>
         public event System.Action<float> OnHealthChanged;
         public event System.Action OnPlantDied;
+
+        // Properties accessed by PlantInstance
+        public float CurrentHealth => _currentHealth;
+        public float MaxHealth => _maxHealth;
+        public float WaterLevel => _waterLevel;
+        public float NutrientLevel => _nutrientLevel;
+        public float StressLevel => _stressLevel;
 
         /// <summary>
         /// Initialize the basic health system
@@ -41,7 +53,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantHealthSystem] Initialized successfully");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -63,7 +75,7 @@ namespace ProjectChimera.Systems.Cultivation
                 OnPlantDied?.Invoke();
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log("[PlantHealthSystem] Plant has died");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 }
             }
         }
@@ -82,7 +94,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantHealthSystem] Applied care: +{careAmount:F1}, Health: {_currentHealth:F1}/{_maxHealth:F1}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -95,7 +107,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantHealthSystem] Plant watered: {waterAmount:F1}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -108,7 +120,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantHealthSystem] Plant fed: {nutrientAmount:F1}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -163,7 +175,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantHealthSystem] Health reset to maximum");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -176,7 +188,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantHealthSystem] Max health set to {_maxHealth:F1}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -195,11 +207,184 @@ namespace ProjectChimera.Systems.Cultivation
                 IsHealthy = IsHealthy()
             };
         }
+
+        #region PlantInstance Compatibility Methods
+
+        /// <summary>
+        /// Set health value
+        /// </summary>
+        public void SetHealth(float health)
+        {
+            _currentHealth = Mathf.Clamp(health, 0f, _maxHealth);
+            OnHealthChanged?.Invoke(_currentHealth);
+        }
+
+        /// <summary>
+        /// Set water level
+        /// </summary>
+        public void SetWaterLevel(float waterLevel)
+        {
+            _waterLevel = Mathf.Clamp01(waterLevel);
+        }
+
+        /// <summary>
+        /// Set nutrient level
+        /// </summary>
+        public void SetNutrientLevel(float nutrientLevel)
+        {
+            _nutrientLevel = Mathf.Clamp01(nutrientLevel);
+        }
+
+        /// <summary>
+        /// Set stress level
+        /// </summary>
+        public void SetStressLevel(float stressLevel)
+        {
+            _stressLevel = Mathf.Max(0f, stressLevel);
+        }
+
+        // UpdateHealthStatus method moved to PlantInstance integration section (line 362)
+
+        /// <summary>
+        /// Apply health change
+        /// </summary>
+        public void ApplyHealthChange(float healthChange)
+        {
+            _currentHealth = Mathf.Clamp(_currentHealth + healthChange, 0f, _maxHealth);
+            OnHealthChanged?.Invoke(_currentHealth);
+        }
+
+        /// <summary>
+        /// Apply stress to the plant
+        /// </summary>
+        public void ApplyStress(float stressAmount)
+        {
+            _stressLevel += stressAmount;
+            // Stress reduces health over time
+            ApplyHealthChange(-stressAmount * 0.1f);
+        }
+
+        /// <summary>
+        /// Remove stress from the plant
+        /// </summary>
+        public void RemoveStress(float stressAmount)
+        {
+            _stressLevel = Mathf.Max(0f, _stressLevel - stressAmount);
+        }
+
+        /// <summary>
+        /// Get health metrics
+        /// </summary>
+        public object GetHealthMetrics()
+        {
+            return new
+            {
+                CurrentHealth = _currentHealth,
+                MaxHealth = _maxHealth,
+                WaterLevel = _waterLevel,
+                NutrientLevel = _nutrientLevel,
+                StressLevel = _stressLevel,
+                HealthPercentage = GetHealthPercentage(),
+                IsAlive = IsAlive(),
+                IsHealthy = IsHealthy()
+            };
+        }
+
+        #endregion
+        /// <summary>
+        /// Properties and methods required by PlantInstance integration
+        /// </summary>
+        public List<string> ActiveStressors { get; private set; } = new List<string>();
+
+        /// <summary>
+        /// Apply temperature stress to the plant
+        /// </summary>
+        public void ApplyTemperatureStress(float stressLevel, float deltaTime = 0f)
+        {
+            ApplyStress(stressLevel);
+            ActiveStressors.Add($"Temperature ({stressLevel:F2})");
+        }
+
+        /// <summary>
+        /// Apply light stress to the plant
+        /// </summary>
+        public void ApplyLightStress(float stressLevel, float deltaTime = 0f)
+        {
+            ApplyStress(stressLevel);
+            ActiveStressors.Add($"Light ({stressLevel:F2})");
+        }
+
+        /// <summary>
+        /// Apply water stress to the plant
+        /// </summary>
+        public void ApplyWaterStress(float stressLevel, float deltaTime = 0f)
+        {
+            ApplyStress(stressLevel);
+            ActiveStressors.Add($"Water ({stressLevel:F2})");
+        }
+
+        /// <summary>
+        /// Apply nutrient stress to the plant
+        /// </summary>
+        public void ApplyNutrientStress(float stressLevel, float deltaTime = 0f)
+        {
+            ApplyStress(stressLevel);
+            ActiveStressors.Add($"Nutrient ({stressLevel:F2})");
+        }
+
+        /// <summary>
+        /// Apply atmospheric stress to the plant
+        /// </summary>
+        public void ApplyAtmosphericStress(float stressLevel, float deltaTime = 0f)
+        {
+            ApplyStress(stressLevel);
+            ActiveStressors.Add($"Atmospheric ({stressLevel:F2})");
+        }
+
+        // Private field for tracking last update time
+        private System.DateTime _lastUpdateTime = System.DateTime.Now;
+
+        /// <summary>
+        /// Set current health directly
+        /// </summary>
+        public void SetCurrentHealth(float health)
+        {
+            _currentHealth = Mathf.Clamp(health, 0f, _maxHealth);
+            _lastUpdateTime = System.DateTime.Now;
+        }
+
+        /// <summary>
+        /// Update health status (required by PlantInstanceCore)
+        /// </summary>
+        public void UpdateHealthStatus(float deltaTime)
+        {
+            if (!_enableBasicHealth || !_isInitialized) return;
+
+            // Clear old stressors each update
+            ActiveStressors.Clear();
+
+            // Update health based on time and environmental factors
+            // This would be expanded for biological accuracy in Phase 2
+            _lastUpdateTime = System.DateTime.Now;
+        }
     }
 
     /// <summary>
-    /// Health statistics
+    /// Plant health metrics for instance integration
     /// </summary>
+    [System.Serializable]
+    public class PlantHealthMetrics
+    {
+        public float CurrentHealth;
+        public float MaxHealth;
+        public float HealthPercentage;
+        public float TimeSinceCare;
+        public bool IsAlive;
+        public bool IsHealthy;
+        public string PlantId;
+        public System.DateTime LastUpdateTime;
+    }
+
     [System.Serializable]
     public class HealthStatistics
     {

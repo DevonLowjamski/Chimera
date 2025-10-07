@@ -1,0 +1,459 @@
+using ProjectChimera.Core.Logging;
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using ProjectChimera.Core;
+
+namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
+{
+    /// <summary>
+    /// Wind System for SpeedTree Plants
+    /// Manages wind animations, wind zones, and wind effects on plants
+    /// in the cannabis cultivation simulation.
+    /// </summary>
+    public class WindSystem : MonoBehaviour
+    {
+        [Header("Wind System Configuration")]
+        [SerializeField] private bool _enableWindAnimation = true;
+        [SerializeField] private float _globalWindStrength = 1.0f;
+        [SerializeField] private Vector3 _globalWindDirection = Vector3.right;
+        [SerializeField] private float _windVariationFrequency = 0.1f;
+        [SerializeField] private float _windGustFrequency = 2.0f;
+
+        // Wind zone management
+        private Dictionary<WindZone, WindZoneSettings> _windZones = new Dictionary<WindZone, WindZoneSettings>();
+        private List<WindZone> _activeWindZones = new List<WindZone>();
+
+        // Global wind state
+        private float _currentWindStrength = 0f;
+        private Vector3 _currentWindDirection = Vector3.zero;
+        private float _windVariationTimer = 0f;
+        private float _windGustTimer = 0f;
+
+        // Shader property IDs for wind effects
+        private int _windStrengthPropertyId;
+        private int _windDirectionPropertyId;
+        private int _windGustPropertyId;
+
+        #region Public Events
+        public event Action<float> OnWindStrengthChanged;
+        public event Action<Vector3> OnWindDirectionChanged;
+        public event Action<float> OnWindGust;
+        #endregion
+
+        #region Initialization
+        public void Initialize()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+
+            // Cache shader property IDs
+            CacheShaderProperties();
+
+            // Initialize wind parameters
+            _currentWindStrength = _globalWindStrength;
+            _currentWindDirection = _globalWindDirection.normalized;
+
+            // Find existing wind zones
+            FindExistingWindZones();
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void Shutdown()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+
+            _windZones.Clear();
+            _activeWindZones.Clear();
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        private void CacheShaderProperties()
+        {
+            _windStrengthPropertyId = Shader.PropertyToID("_WindStrength");
+            _windDirectionPropertyId = Shader.PropertyToID("_WindDirection");
+            _windGustPropertyId = Shader.PropertyToID("_WindGust");
+        }
+
+        private void FindExistingWindZones()
+        {
+            // Primary: Try ServiceContainer resolution for registered WindZones
+            var windZones = ServiceContainerFactory.Instance.ResolveAll<WindZone>();
+            if (windZones?.Any() != true)
+            {
+                // Fallback: Scene discovery + auto-registration
+                windZones = UnityEngine.Object.FindObjectsOfType<WindZone>();
+                
+                // Auto-register discovered WindZones in ServiceContainer for future use
+                foreach (var windZone in windZones)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<WindZone>(windZone);
+                }
+                
+                UnityEngine.Debug.Log("Operation completed");
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+            
+            foreach (var windZone in windZones)
+            {
+                RegisterWindZone(windZone);
+            }
+        }
+        #endregion
+
+        #region Wind Zone Management
+
+        /// <summary>
+        /// Registers a wind zone with the system
+        /// </summary>
+        public void RegisterWindZone(WindZone windZone)
+        {
+            if (windZone == null || _windZones.ContainsKey(windZone)) return;
+
+            try
+            {
+                var settings = new WindZoneSettings(windZone);
+                _windZones[windZone] = settings;
+                _activeWindZones.Add(windZone);
+
+                UnityEngine.Debug.Log("Operation completed");
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Unregisters a wind zone from the system
+        /// </summary>
+        public void UnregisterWindZone(WindZone windZone)
+        {
+            if (windZone == null) return;
+
+            _windZones.Remove(windZone);
+            _activeWindZones.Remove(windZone);
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        /// <summary>
+        /// Updates a specific wind zone
+        /// </summary>
+        public void UpdateWindZone(WindZone windZone)
+        {
+            if (windZone == null || !_windZones.TryGetValue(windZone, out var settings)) return;
+
+            try
+            {
+                // Update zone-specific wind parameters
+                UpdateWindZoneParameters(windZone, settings);
+
+                // Apply wind effects to SpeedTree renderers in range
+                ApplyWindToZoneRenderers(windZone, settings);
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        #endregion
+
+        #region Global Wind System
+
+        /// <summary>
+        /// Updates the global wind system
+        /// </summary>
+        public void UpdateGlobalWind()
+        {
+            if (!_enableWindAnimation) return;
+
+            try
+            {
+                // Update wind variation
+                _windVariationTimer += Time.deltaTime;
+                if (_windVariationTimer >= _windVariationFrequency)
+                {
+                    UpdateWindVariation();
+                    _windVariationTimer = 0f;
+                }
+
+                // Update wind gusts
+                _windGustTimer += Time.deltaTime;
+                if (_windGustTimer >= _windGustFrequency)
+                {
+                    UpdateWindGusts();
+                    _windGustTimer = 0f;
+                }
+
+                // Apply global wind to all SpeedTree renderers
+                ApplyGlobalWindToRenderers();
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        private void UpdateWindVariation()
+        {
+            // Add natural wind variation
+            float variationStrength = Random.Range(0.8f, 1.2f);
+            float newStrength = _globalWindStrength * variationStrength;
+
+            // Slight direction variation
+            float angleVariation = Random.Range(-10f, 10f);
+            Vector3 newDirection = Quaternion.Euler(0, angleVariation, 0) * _globalWindDirection;
+
+            // Update if significant change
+            if (Mathf.Abs(newStrength - _currentWindStrength) > 0.1f)
+            {
+                _currentWindStrength = newStrength;
+                OnWindStrengthChanged?.Invoke(_currentWindStrength);
+            }
+
+            if (Vector3.Angle(newDirection, _currentWindDirection) > 5f)
+            {
+                _currentWindDirection = newDirection.normalized;
+                OnWindDirectionChanged?.Invoke(_currentWindDirection);
+            }
+        }
+
+        private void UpdateWindGusts()
+        {
+            // Occasional wind gusts
+            if (Random.value < 0.1f) // 10% chance per gust interval
+            {
+                float gustStrength = Random.Range(1.5f, 3.0f);
+                OnWindGust?.Invoke(gustStrength);
+
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        #endregion
+
+        #region Wind Application
+
+        private void ApplyGlobalWindToRenderers()
+        {
+            // Primary: Try ServiceContainer resolution for registered Renderers
+            var allRenderers = ServiceContainerFactory.Instance.ResolveAll<Renderer>();
+            if (allRenderers?.Any() != true)
+            {
+                // Fallback: Scene discovery + auto-registration
+                allRenderers = UnityEngine.Object.FindObjectsOfType<Renderer>();
+                
+                // Auto-register discovered Renderers in ServiceContainer for future use
+                foreach (var renderer in allRenderers)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<Renderer>(renderer);
+                }
+                
+                UnityEngine.Debug.Log("Operation completed");
+            }
+            
+            // Filter for SpeedTree renderers
+            var renderers = allRenderers
+                .Where(r => r.sharedMaterial != null &&
+                           r.sharedMaterial.shader != null &&
+                           r.sharedMaterial.shader.name.Contains("SpeedTree"));
+
+            foreach (var renderer in renderers)
+            {
+                ApplyWindToRenderer(renderer, _currentWindStrength, _currentWindDirection);
+            }
+        }
+
+        private void ApplyWindToZoneRenderers(WindZone windZone, WindZoneSettings settings)
+        {
+            if (windZone == null) return;
+
+            // Primary: Try ServiceContainer resolution for registered Renderers
+            var allRenderers = ServiceContainerFactory.Instance.ResolveAll<Renderer>();
+            if (allRenderers?.Any() != true)
+            {
+                // Fallback: Scene discovery (should already be registered from previous calls)
+                allRenderers = UnityEngine.Object.FindObjectsOfType<Renderer>();
+                UnityEngine.Debug.Log("Operation completed");
+            }
+            
+            // Find renderers within wind zone range
+            var renderers = allRenderers
+                .Where(r => r.sharedMaterial != null &&
+                           r.sharedMaterial.shader != null &&
+                           r.sharedMaterial.shader.name.Contains("SpeedTree") &&
+                           IsRendererInWindZone(r, windZone));
+
+            foreach (var renderer in renderers)
+            {
+                float zoneStrength = settings.Strength * _currentWindStrength;
+                Vector3 zoneDirection = settings.Direction != Vector3.zero ?
+                    settings.Direction : _currentWindDirection;
+
+                ApplyWindToRenderer(renderer, zoneStrength, zoneDirection);
+            }
+        }
+
+        private void ApplyWindToRenderer(Renderer renderer, float strength, Vector3 direction)
+        {
+            if (renderer == null || renderer.sharedMaterial == null) return;
+
+            try
+            {
+                var material = renderer.material;
+
+                // Apply wind strength
+                if (material.HasProperty(_windStrengthPropertyId))
+                {
+                    material.SetFloat(_windStrengthPropertyId, strength);
+                }
+
+                // Apply wind direction
+                if (material.HasProperty(_windDirectionPropertyId))
+                {
+                    material.SetVector(_windDirectionPropertyId, direction);
+                }
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        private bool IsRendererInWindZone(Renderer renderer, WindZone windZone)
+        {
+            if (renderer == null || windZone == null) return false;
+
+            // Simple distance check (could be enhanced with more sophisticated zone detection)
+            float distance = Vector3.Distance(renderer.transform.position, windZone.transform.position);
+            return distance <= windZone.radius;
+        }
+
+        private void UpdateWindZoneParameters(WindZone windZone, WindZoneSettings settings)
+        {
+            // Update zone-specific wind parameters based on zone settings
+            settings.Strength = windZone.windMain;
+            settings.Direction = windZone.transform.forward;
+
+            // Apply zone-specific variations
+            settings.Strength *= Random.Range(0.9f, 1.1f);
+        }
+
+        private WindZoneSettings CreateWindSettingsForZone(WindZone windZone)
+        {
+            return new WindZoneSettings(windZone);
+        }
+
+        #endregion
+
+        #region Public Interface
+
+        /// <summary>
+        /// Sets the global wind strength
+        /// </summary>
+        public void SetWindStrength(float strength)
+        {
+            _globalWindStrength = Mathf.Max(0f, strength);
+            _currentWindStrength = _globalWindStrength;
+            OnWindStrengthChanged?.Invoke(_currentWindStrength);
+        }
+
+        /// <summary>
+        /// Sets the global wind direction
+        /// </summary>
+        public void SetWindDirection(Vector3 direction)
+        {
+            _globalWindDirection = direction.normalized;
+            _currentWindDirection = _globalWindDirection;
+            OnWindDirectionChanged?.Invoke(_currentWindDirection);
+        }
+
+        /// <summary>
+        /// Gets the current wind strength
+        /// </summary>
+        public float GetCurrentWindStrength()
+        {
+            return _currentWindStrength;
+        }
+
+        /// <summary>
+        /// Gets the current wind direction
+        /// </summary>
+        public Vector3 GetCurrentWindDirection()
+        {
+            return _currentWindDirection;
+        }
+
+        /// <summary>
+        /// Gets all active wind zones
+        /// </summary>
+        public IReadOnlyList<WindZone> GetActiveWindZones()
+        {
+            return _activeWindZones.AsReadOnly();
+        }
+
+        #endregion
+
+        #region Update Loop
+
+        public void Tick(float deltaTime)
+        {
+            if (!_enableWindAnimation) return;
+
+            try
+            {
+                UpdateGlobalWind();
+
+                // Update all active wind zones
+                foreach (var windZone in _activeWindZones.ToArray())
+                {
+                    if (windZone != null)
+                    {
+                        UpdateWindZone(windZone);
+                    }
+                    else
+                    {
+                        // Clean up destroyed wind zones
+                        _activeWindZones.Remove(windZone);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        #endregion
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// Settings for individual wind zones
+    /// </summary>
+    [Serializable]
+    public class WindZoneSettings
+    {
+        public float Strength;
+        public Vector3 Direction;
+        public float Radius;
+        public WindZone Zone;
+
+        public WindZoneSettings(WindZone zone)
+        {
+            Zone = zone;
+            Strength = zone.windMain;
+            Direction = zone.transform.forward;
+            Radius = zone.radius;
+        }
+    }
+
+    #endregion
+}

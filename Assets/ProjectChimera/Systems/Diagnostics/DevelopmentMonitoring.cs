@@ -31,6 +31,9 @@ namespace ProjectChimera.Systems.Diagnostics
         // State tracking
         private bool _isInitialized = false;
 
+        public int TickPriority => ProjectChimera.Core.Updates.TickPriority.DebugSystems;
+        public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
         private void Awake()
         {
             InitializeDevelopmentMonitoring();
@@ -65,12 +68,12 @@ namespace ProjectChimera.Systems.Diagnostics
             // Validate component references
             if (!ValidateComponents())
             {
-                ChimeraLogger.LogError("[DevelopmentMonitoring] Component validation failed!");
+                ChimeraLogger.LogWarning("DEV", "DevelopmentMonitoring: Missing required components", this);
                 return;
             }
 
             _isInitialized = true;
-            ChimeraLogger.Log("[DevelopmentMonitoring] Development monitoring coordinator initialized");
+            ChimeraLogger.Log("DEV", "Development monitoring initialized", this);
         }
 
         /// <summary>
@@ -82,13 +85,13 @@ namespace ProjectChimera.Systems.Diagnostics
 
             if (_enablePerformanceProfiling && _performanceProfiler == null)
             {
-                ChimeraLogger.LogError("[DevelopmentMonitoring] PerformanceProfiler component is required but not assigned!");
+                ChimeraLogger.LogWarning("DEV", "PerformanceProfiler is not assigned", this);
                 allValid = false;
             }
 
             if (_enableDebugOverlays && _debugOverlayManager == null)
             {
-                ChimeraLogger.LogError("[DevelopmentMonitoring] DebugOverlayManager component is required but not assigned!");
+                ChimeraLogger.LogWarning("DEV", "DebugOverlayManager is not assigned", this);
                 allValid = false;
             }
 
@@ -114,7 +117,7 @@ namespace ProjectChimera.Systems.Diagnostics
                     // Debug overlay manager handles its own refresh
                 }
 
-                ChimeraLogger.Log("[DevelopmentMonitoring] Monitoring system refreshed manually");
+                ChimeraLogger.Log("DEV", "Development monitoring refreshed", this);
             }
         }
 
@@ -124,7 +127,7 @@ namespace ProjectChimera.Systems.Diagnostics
         public void SetDevelopmentMonitoringEnabled(bool enabled)
         {
             _enableDevelopmentMonitoring = enabled;
-            ChimeraLogger.Log($"[DevelopmentMonitoring] Development monitoring {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.Log("DEV", $"Development monitoring {(enabled ? "enabled" : "disabled")}", this);
         }
 
         /// <summary>
@@ -157,20 +160,6 @@ namespace ProjectChimera.Systems.Diagnostics
 
         #endregion
 
-        #region ITickable Implementation
-
-        public int Priority => 0;
-        public bool Enabled => enabled && gameObject.activeInHierarchy;
-
-        public virtual void OnRegistered()
-        {
-            // Override in derived classes if needed
-        }
-
-        public virtual void OnUnregistered()
-        {
-            // Override in derived classes if needed
-        }
-
-        #endregion
+    }
+}
 

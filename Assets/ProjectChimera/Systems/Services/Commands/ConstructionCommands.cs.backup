@@ -1,0 +1,327 @@
+using UnityEngine;
+using ProjectChimera.Systems.Services.Core;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Services.Commands
+{
+    /// <summary>
+    /// Construction pillar commands for contextual menu integration
+    /// Implements command pattern for construction operations
+    /// </summary>
+
+    /// <summary>
+    /// Base class for all construction commands
+    /// </summary>
+    public abstract class ConstructionCommand : IMenuCommand
+    {
+        protected IConstructionService _constructionService;
+        protected IEconomyManager _economyManager;
+
+        public abstract string CommandId { get; }
+        public abstract string DisplayName { get; }
+
+        public ConstructionCommand(IConstructionService constructionService, IEconomyManager economyManager)
+        {
+            _constructionService = constructionService ?? throw new System.ArgumentNullException(nameof(constructionService));
+            _economyManager = economyManager ?? throw new System.ArgumentNullException(nameof(economyManager));
+        }
+
+        public abstract bool CanExecute();
+        public abstract CommandResult Execute();
+        public abstract CommandResult Undo();
+    }
+
+    /// <summary>
+    /// Command for placing structures (walls, rooms, etc.)
+    /// </summary>
+    public class PlaceStructureCommand : ConstructionCommand
+    {
+        private readonly string _structureId;
+        private readonly Vector3Int _gridPosition;
+        private bool _wasPlaced = false;
+
+        public override string CommandId => $"place_structure_{_structureId}";
+        public override string DisplayName => $"Place {_structureId}";
+
+        public PlaceStructureCommand(string structureId, Vector3Int gridPosition, 
+            IConstructionService constructionService, IEconomyManager economyManager)
+            : base(constructionService, economyManager)
+        {
+            _structureId = structureId;
+            _gridPosition = gridPosition;
+        }
+
+        public override bool CanExecute()
+        {
+            return _constructionService.CanPlaceStructure(_structureId, _gridPosition) &&
+                   _constructionService.CanAffordStructure(_structureId);
+        }
+
+        public override CommandResult Execute()
+        {
+            try
+            {
+                if (!CanExecute())
+                {
+                    return CommandResult.Failure("Cannot place structure at this position or insufficient funds");
+                }
+
+                var cost = _constructionService.GetStructureCost(_structureId);
+                if (!_economyManager.CanAfford(cost))
+                {
+                    return CommandResult.Failure($"Insufficient funds. Need ${cost:F2}");
+                }
+
+                _economyManager.SpendMoney(cost, $"Placed {_structureId}");
+                _wasPlaced = _constructionService.PlaceStructure(_structureId, _gridPosition);
+
+                if (_wasPlaced)
+                {
+                    return CommandResult.Success($"Successfully placed {_structureId}");
+                }
+                else
+                {
+                    // Refund if placement failed
+                    _economyManager.AddMoney(cost, "Refund: Structure placement failed");
+                    return CommandResult.Failure("Structure placement failed");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return CommandResult.Failure($"Error placing structure: {ex.Message}");
+            }
+        }
+
+        public override CommandResult Undo()
+        {
+            if (_wasPlaced)
+            {
+                var success = _constructionService.RemoveStructure(_gridPosition);
+                if (success)
+                {
+                    var cost = _constructionService.GetStructureCost(_structureId);
+                    _economyManager.AddMoney(cost * 0.8f, "Refund: Structure removed"); // 80% refund
+                    _wasPlaced = false;
+                    return CommandResult.Success($"Removed {_structureId}");
+                }
+                return CommandResult.Failure("Failed to remove structure");
+            }
+            return CommandResult.Failure("No structure to remove");
+        }
+    }
+
+    /// <summary>
+    /// Command for placing equipment (lights, HVAC, irrigation, etc.)
+    /// </summary>
+    public class PlaceEquipmentCommand : ConstructionCommand
+    {
+        private readonly string _equipmentId;
+        private readonly Vector3Int _gridPosition;
+        private bool _wasPlaced = false;
+
+        public override string CommandId => $"place_equipment_{_equipmentId}";
+        public override string DisplayName => $"Place {_equipmentId}";
+
+        public PlaceEquipmentCommand(string equipmentId, Vector3Int gridPosition,
+            IConstructionService constructionService, IEconomyManager economyManager)
+            : base(constructionService, economyManager)
+        {
+            _equipmentId = equipmentId;
+            _gridPosition = gridPosition;
+        }
+
+        public override bool CanExecute()
+        {
+            return _constructionService.CanPlaceEquipment(_equipmentId, _gridPosition) &&
+                   _constructionService.CanAffordEquipment(_equipmentId);
+        }
+
+        public override CommandResult Execute()
+        {
+            try
+            {
+                if (!CanExecute())
+                {
+                    return CommandResult.Failure("Cannot place equipment at this position or insufficient funds");
+                }
+
+                var cost = _constructionService.GetEquipmentCost(_equipmentId);
+                _economyManager.SpendMoney(cost, $"Placed {_equipmentId}");
+                _wasPlaced = _constructionService.PlaceEquipment(_equipmentId, _gridPosition);
+
+                if (_wasPlaced)
+                {
+                    return CommandResult.Success($"Successfully placed {_equipmentId}");
+                }
+                else
+                {
+                    _economyManager.AddMoney(cost, "Refund: Equipment placement failed");
+                    return CommandResult.Failure("Equipment placement failed");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return CommandResult.Failure($"Error placing equipment: {ex.Message}");
+            }
+        }
+
+        public override CommandResult Undo()
+        {
+            if (_wasPlaced)
+            {
+                var success = _constructionService.RemoveEquipment(_gridPosition);
+                if (success)
+                {
+                    var cost = _constructionService.GetEquipmentCost(_equipmentId);
+                    _economyManager.AddMoney(cost * 0.8f, "Refund: Equipment removed");
+                    _wasPlaced = false;
+                    return CommandResult.Success($"Removed {_equipmentId}");
+                }
+                return CommandResult.Failure("Failed to remove equipment");
+            }
+            return CommandResult.Failure("No equipment to remove");
+        }
+    }
+
+    /// <summary>
+    /// Command for applying schematics to the facility
+    /// </summary>
+    public class ApplySchematicCommand : ConstructionCommand
+    {
+        private readonly string _schematicId;
+        private readonly Vector3Int _position;
+        private bool _wasApplied = false;
+
+        public override string CommandId => $"apply_schematic_{_schematicId}";
+        public override string DisplayName => $"Apply {_schematicId} Schematic";
+
+        public ApplySchematicCommand(string schematicId, Vector3Int position,
+            IConstructionService constructionService, IEconomyManager economyManager)
+            : base(constructionService, economyManager)
+        {
+            _schematicId = schematicId;
+            _position = position;
+        }
+
+        public override bool CanExecute()
+        {
+            return _constructionService.CanApplySchematic(_schematicId, _position);
+        }
+
+        public override CommandResult Execute()
+        {
+            try
+            {
+                if (!CanExecute())
+                {
+                    return CommandResult.Failure("Cannot apply schematic at this position");
+                }
+
+                _wasApplied = _constructionService.ApplySchematic(_schematicId, _position);
+
+                if (_wasApplied)
+                {
+                    return CommandResult.Success($"Successfully applied {_schematicId} schematic");
+                }
+                else
+                {
+                    return CommandResult.Failure("Schematic application failed");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return CommandResult.Failure($"Error applying schematic: {ex.Message}");
+            }
+        }
+
+        public override CommandResult Undo()
+        {
+            // Schematic undo would be complex - would need to track all placed items
+            // For now, return not supported
+            return CommandResult.Failure("Schematic undo not supported");
+        }
+    }
+
+    /// <summary>
+    /// Command for installing utilities (electrical, plumbing, HVAC)
+    /// </summary>
+    public class InstallUtilityCommand : ConstructionCommand
+    {
+        private readonly string _utilityType;
+        private readonly Vector3Int _startPosition;
+        private readonly Vector3Int _endPosition;
+        private bool _wasInstalled = false;
+
+        public override string CommandId => $"install_utility_{_utilityType}";
+        public override string DisplayName => $"Install {_utilityType}";
+
+        public InstallUtilityCommand(string utilityType, Vector3Int startPosition, Vector3Int endPosition,
+            IConstructionService constructionService, IEconomyManager economyManager)
+            : base(constructionService, economyManager)
+        {
+            _utilityType = utilityType;
+            _startPosition = startPosition;
+            _endPosition = endPosition;
+        }
+
+        public override bool CanExecute()
+        {
+            var distance = Vector3.Distance(_startPosition, _endPosition);
+            return _constructionService.CanAffordUtility(_utilityType, distance);
+        }
+
+        public override CommandResult Execute()
+        {
+            try
+            {
+                if (!CanExecute())
+                {
+                    return CommandResult.Failure("Cannot install utility - insufficient funds or invalid positions");
+                }
+
+                var distance = Vector3.Distance(_startPosition, _endPosition);
+                var cost = _constructionService.GetUtilityCost(_utilityType, distance);
+                
+                _economyManager.SpendMoney(cost, $"Installed {_utilityType} utility");
+                _wasInstalled = _constructionService.InstallUtility(_utilityType, _startPosition, _endPosition);
+
+                if (_wasInstalled)
+                {
+                    return CommandResult.Success($"Successfully installed {_utilityType} utility");
+                }
+                else
+                {
+                    _economyManager.AddMoney(cost, "Refund: Utility installation failed");
+                    return CommandResult.Failure("Utility installation failed");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return CommandResult.Failure($"Error installing utility: {ex.Message}");
+            }
+        }
+
+        public override CommandResult Undo()
+        {
+            if (_wasInstalled)
+            {
+                var success = _constructionService.RemoveUtility(_startPosition);
+                if (success)
+                {
+                    var distance = Vector3.Distance(_startPosition, _endPosition);
+                    var cost = _constructionService.GetUtilityCost(_utilityType, distance);
+                    _economyManager.AddMoney(cost * 0.5f, "Refund: Utility removed"); // 50% refund for utilities
+                    _wasInstalled = false;
+                    return CommandResult.Success($"Removed {_utilityType} utility");
+                }
+                return CommandResult.Failure("Failed to remove utility");
+            }
+            return CommandResult.Failure("No utility to remove");
+        }
+    }
+}

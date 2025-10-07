@@ -25,7 +25,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
         private HashSet<GameObject> _forceCulled = new HashSet<GameObject>();
 
         // Camera and frustum data
-        private Camera _mainCamera;
+        private UnityEngine.Camera _mainCamera;
         private Plane[] _frustumPlanes = new Plane[6];
         private Vector3 _cameraPosition;
         private float _cameraFarClipPlane;
@@ -47,13 +47,13 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
             _cullingDistance = cullingDistance;
 
             // Find main camera
-            _mainCamera = Camera.main;
+            _mainCamera = UnityEngine.Camera.main;
             if (_mainCamera != null)
             {
                 _cameraFarClipPlane = _mainCamera.farClipPlane;
             }
 
-            ChimeraLogger.LogVerbose($"Culling Manager initialized with strategy: {_cullingStrategy}, distance: {_cullingDistance}");
+            ChimeraLogger.Log("SPEEDTREE/CULL", "Initialized", null);
         }
 
         /// <summary>
@@ -205,7 +205,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
                 _visibleRenderers.Add(speedTree);
                 if (!wasVisible)
                 {
-                    ChimeraLogger.LogVerbose($"SpeedTree became visible: {speedTree.name}");
+                    ChimeraLogger.Log("SPEEDTREE/CULL", "Became visible", null);
                 }
             }
             else
@@ -213,7 +213,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
                 _culledRenderers.Add(speedTree);
                 if (wasVisible)
                 {
-                    ChimeraLogger.LogVerbose($"SpeedTree was culled: {speedTree.name}");
+                    ChimeraLogger.Log("SPEEDTREE/CULL", "Became hidden", null);
                 }
             }
 
@@ -232,7 +232,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
         public void SetCullingDistance(float distance)
         {
             _cullingDistance = Mathf.Max(1f, distance);
-            ChimeraLogger.LogVerbose($"Culling distance set to: {_cullingDistance}");
+            ChimeraLogger.Log("SPEEDTREE/CULL", "Culling distance set", null);
         }
 
         /// <summary>
@@ -245,7 +245,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
                 _forceVisible.Add(speedTree);
                 _forceCulled.Remove(speedTree);
                 UpdateRendererVisibility(speedTree, true);
-                ChimeraLogger.LogVerbose($"Forced visible: {speedTree.name}");
+                ChimeraLogger.Log("SPEEDTREE/CULL", "Forced visible", null);
             }
         }
 
@@ -259,7 +259,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
                 _forceCulled.Add(speedTree);
                 _forceVisible.Remove(speedTree);
                 UpdateRendererVisibility(speedTree, false);
-                ChimeraLogger.LogVerbose($"Forced cull: {speedTree.name}");
+                ChimeraLogger.Log("SPEEDTREE/CULL", "Forced culled", null);
             }
         }
 
@@ -273,7 +273,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
                 _forceVisible.Add(speedTree);
                 _forceCulled.Remove(speedTree);
                 UpdateRendererVisibility(speedTree, true);
-                ChimeraLogger.LogVerbose($"Forced visible: {speedTree.name}");
+                ChimeraLogger.Log("SPEEDTREE/CULL", "Force show", null);
             }
         }
 
@@ -315,7 +315,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
                 }
             }
 
-            ChimeraLogger.LogVerbose("Culling data cleared");
+            ChimeraLogger.Log("SPEEDTREE/CULL", "Cleared culling", null);
         }
 
         /// <summary>
@@ -326,7 +326,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
             if (!_rendererData.ContainsKey(speedTree))
             {
                 _rendererData[speedTree] = new SpeedTreeRendererData(speedTree);
-                ChimeraLogger.LogVerbose($"Added SpeedTree to culling: {speedTree.name}");
+                ChimeraLogger.Log("SPEEDTREE/CULL", "Added SpeedTree", null);
             }
         }
 
@@ -343,7 +343,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
                 _forceCulled.Remove(speedTree);
                 _occlusionStates.Remove(speedTree);
 
-                ChimeraLogger.LogVerbose($"Removed SpeedTree from culling: {speedTree.name}");
+                ChimeraLogger.Log("SPEEDTREE/CULL", "Removed SpeedTree", null);
             }
         }
 
@@ -374,13 +374,13 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
             {
                 // Reduce culling distance to improve performance
                 _cullingDistance = Mathf.Max(50f, _cullingDistance * 0.8f);
-                ChimeraLogger.LogVerbose($"Optimized culling distance to: {_cullingDistance}");
+                ChimeraLogger.Log("SPEEDTREE/CULL", "Optimized culling", null);
             }
             else if (averageFrameTime < 16f) // More than 60 FPS
             {
                 // Increase culling distance for better quality
                 _cullingDistance = Mathf.Min(200f, _cullingDistance * 1.2f);
-                ChimeraLogger.LogVerbose($"Increased culling distance to: {_cullingDistance}");
+                ChimeraLogger.Log("SPEEDTREE/CULLING", "Operation completed");
             }
         }
 
@@ -390,7 +390,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
         public void SetCullingStrategy(SpeedTreeCullingStrategy strategy)
         {
             _cullingStrategy = strategy;
-            ChimeraLogger.LogVerbose($"Culling strategy changed to: {_cullingStrategy}");
+            ChimeraLogger.Log("SPEEDTREE/CULL", "Culling strategy set", null);
         }
 
         /// <summary>
@@ -403,7 +403,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
             {
                 _occlusionStates.Clear();
             }
-            ChimeraLogger.LogVerbose($"Occlusion culling {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.Log("SPEEDTREE/CULL", "Occlusion toggled", null);
         }
 
         // Public properties

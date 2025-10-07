@@ -25,7 +25,7 @@ namespace ProjectChimera.Editor
             // If no Chimera defines are active, apply the default Development profile
             if (activeDefines.Length == 0 || activeProfile == "Custom")
             {
-                ChimeraLogger.Log("[InitializeBuildProfiles] No active build profile detected, applying Development profile");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 ChimeraBuildProfiles.ApplyBuildProfile("Development");
                 
                 // Show a notification about the applied profile
@@ -47,7 +47,7 @@ namespace ProjectChimera.Editor
             }
             else
             {
-                ChimeraLogger.Log($"[InitializeBuildProfiles] Active build profile: {activeProfile} with {activeDefines.Length} defines");
+                ChimeraLogger.Log("OTHER", "$1", null);
             }
         }
 
@@ -55,7 +55,7 @@ namespace ProjectChimera.Editor
         public static void ForceInitializeProfile()
         {
             ChimeraBuildProfiles.ApplyBuildProfile("Development");
-            ChimeraLogger.Log("[InitializeBuildProfiles] Manually applied Development build profile");
+            ChimeraLogger.Log("OTHER", "$1", null);
         }
     }
 }

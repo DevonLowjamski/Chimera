@@ -1,0 +1,31 @@
+using System;
+using UnityEngine;
+
+
+// This file has been refactored into focused files in the HVAC subdirectory
+// Please update your imports to use specific category files:
+
+/*
+MIGRATION GUIDE:
+- Core HVAC types: ProjectChimera.Data.Simulation.HVAC.HVACCoreData
+- Zone management: ProjectChimera.Data.Simulation.HVAC.HVACZoneData  
+- Control systems: ProjectChimera.Data.Simulation.HVAC.HVACControlData
+- Climate management: ProjectChimera.Data.Simulation.HVAC.HVACClimateData
+- Energy management: ProjectChimera.Data.Simulation.HVAC.HVACEnergyData
+- Monitoring systems: ProjectChimera.Data.Simulation.HVAC.HVACMonitoringData
+- Analytics: ProjectChimera.Data.Simulation.HVAC.HVACAnalyticsData
+*/
+
+namespace ProjectChimera.Data.Simulation
+{
+    /// <summary>
+    /// REFACTORED: This file has been split into focused files for Single Responsibility Principle
+    /// See HVAC subdirectory for the new organized structure
+    /// </summary>
+    [System.Obsolete("Use specific HVAC category files in the HVAC subdirectory")]
+    public static class HVACDataStructuresRefactored
+    {
+        // This class exists for compilation compatibility only
+        // Update your imports to use the specific HVAC category files
+    }
+}

@@ -1,0 +1,684 @@
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Rendering
+{
+    /// <summary>
+    /// RENDERING: Custom lighting renderer for cultivation environments
+    /// Provides optimized lighting for plants and facilities with grow lights
+    /// Week 13: Advanced Rendering Pipeline Implementation
+    /// </summary>
+    public class CustomLightingRenderer : MonoBehaviour
+    {
+        [Header("Lighting Settings")]
+        [SerializeField] private bool _enableCustomLighting = true;
+        [SerializeField] private bool _enableVolumetricLighting = false;
+        [SerializeField] private bool _enableGrowLightOptimization = true;
+        [SerializeField] private float _lightingUpdateInterval = 0.1f;
+
+        [Header("Grow Light System")]
+        [SerializeField] private int _maxGrowLights = 100;
+        [SerializeField] private float _growLightRange = 10f;
+        [SerializeField] private Color _growLightColor = new Color(1f, 0.8f, 0.6f, 1f);
+        [SerializeField] private float _growLightIntensity = 2f;
+        [SerializeField] private bool _enableLightCulling = true;
+
+        [Header("Dynamic Lighting")]
+        [SerializeField] private bool _enableDynamicShadows = true;
+        [SerializeField] private bool _enableLightBaking = false;
+        [SerializeField] private float _shadowUpdateInterval = 0.2f;
+        [SerializeField] private LayerMask _shadowCasterMask = -1;
+
+        [Header("Performance Settings")]
+        [SerializeField] private int _maxDynamicLights = 50;
+        [SerializeField] private float _lightCullingDistance = 100f;
+        [SerializeField] private bool _enableLightLOD = true;
+        [SerializeField] private float _lightLODDistance = 50f;
+
+        // Lighting components
+        private readonly List<GrowLight> _growLights = new List<GrowLight>();
+        private readonly List<Light> _dynamicLights = new List<Light>();
+        private readonly Dictionary<int, LightingZone> _lightingZones = new Dictionary<int, LightingZone>();
+
+        // Volumetric lighting
+        private Material _volumetricMaterial;
+        private CommandBuffer _volumetricCommandBuffer;
+        private RenderTexture _volumetricTexture;
+
+        // Performance tracking
+        private LightingPerformanceStats _stats = new LightingPerformanceStats();
+        private float _lastLightingUpdate;
+        private float _lastShadowUpdate;
+        private Camera _mainCamera;
+
+        // Lighting optimization
+        private readonly Queue<Light> _lightPool = new Queue<Light>();
+        private readonly List<Light> _activeLights = new List<Light>();
+        private int _lightUpdateIndex = 0;
+
+        // Shader properties
+        private int _growLightPositionsProperty;
+        private int _growLightColorsProperty;
+        private int _growLightParamsProperty;
+        private int _lightingZoneDataProperty;
+
+        public bool IsInitialized { get; private set; }
+        public int ActiveLightCount => _activeLights.Count;
+        public int GrowLightCount => _growLights.Count;
+        public LightingPerformanceStats Stats => _stats;
+
+        /// <summary>
+        /// Initialize custom lighting renderer
+        /// </summary>
+        public void Initialize(bool enableVolumetric = false)
+        {
+            if (IsInitialized) return;
+
+            _enableVolumetricLighting = enableVolumetric;
+            _mainCamera = Camera.main;
+            
+            if (_mainCamera == null)
+            {
+                _mainCamera = FindObjectOfType<Camera>();
+            }
+
+            InitializeShaderProperties();
+            InitializeLightPool();
+            
+            if (_enableVolumetricLighting)
+            {
+                InitializeVolumetricLighting();
+            }
+
+            SetupLightingZones();
+            
+            _lastLightingUpdate = Time.time;
+            _lastShadowUpdate = Time.time;
+            IsInitialized = true;
+
+            ChimeraLogger.Log("OTHER", "$1", this);
+        }
+
+        /// <summary>
+        /// Add grow light to the system
+        /// </summary>
+        public GrowLight AddGrowLight(Vector3 position, Color color, float intensity, float range)
+        {
+            if (_growLights.Count >= _maxGrowLights)
+            {
+                ChimeraLogger.LogWarning("OTHER", "$1", this);
+                return null;
+            }
+
+            var growLight = new GrowLight
+            {
+                ID = _growLights.Count,
+                Position = position,
+                Color = color,
+                Intensity = intensity,
+                Range = range,
+                IsActive = true,
+                LightObject = CreateGrowLightObject(position, color, intensity, range)
+            };
+
+            _growLights.Add(growLight);
+            _stats.GrowLightsCreated++;
+
+            return growLight;
+        }
+
+        /// <summary>
+        /// Remove grow light from the system
+        /// </summary>
+        public void RemoveGrowLight(GrowLight growLight)
+        {
+            if (growLight != null && _growLights.Contains(growLight))
+            {
+                if (growLight.LightObject != null)
+                {
+                    ReturnLightToPool(growLight.LightObject);
+                }
+
+                _growLights.Remove(growLight);
+                _stats.GrowLightsDestroyed++;
+            }
+        }
+
+        /// <summary>
+        /// Update grow light parameters
+        /// </summary>
+        public void UpdateGrowLight(GrowLight growLight, Vector3? position = null, Color? color = null, 
+                                   float? intensity = null, float? range = null)
+        {
+            if (growLight == null) return;
+
+            if (position.HasValue) growLight.Position = position.Value;
+            if (color.HasValue) growLight.Color = color.Value;
+            if (intensity.HasValue) growLight.Intensity = intensity.Value;
+            if (range.HasValue) growLight.Range = range.Value;
+
+            // Update light object
+            if (growLight.LightObject != null)
+            {
+                var light = growLight.LightObject.GetComponent<Light>();
+                if (light != null)
+                {
+                    light.transform.position = growLight.Position;
+                    light.color = growLight.Color;
+                    light.intensity = growLight.Intensity;
+                    light.range = growLight.Range;
+                }
+            }
+
+            _stats.LightUpdates++;
+        }
+
+        /// <summary>
+        /// Create lighting zone for optimization
+        /// </summary>
+        public int CreateLightingZone(Bounds bounds, LightingZoneType zoneType)
+        {
+            int zoneID = _lightingZones.Count;
+            
+            var zone = new LightingZone
+            {
+                ID = zoneID,
+                Bounds = bounds,
+                ZoneType = zoneType,
+                IsActive = true,
+                AssignedLights = new List<GrowLight>(),
+                LightingLevel = 1f
+            };
+
+            _lightingZones[zoneID] = zone;
+            return zoneID;
+        }
+
+        /// <summary>
+        /// Update lighting - called every frame
+        /// </summary>
+        public void UpdateLighting()
+        {
+            if (!IsInitialized || !_enableCustomLighting) return;
+
+            float currentTime = Time.time;
+
+            // Update lighting at controlled intervals
+            if (currentTime - _lastLightingUpdate >= _lightingUpdateInterval)
+            {
+                UpdateGrowLights();
+                UpdateLightingZones();
+                CullLights();
+                UpdateShaderProperties();
+                
+                _lastLightingUpdate = currentTime;
+            }
+
+            // Update shadows at different interval
+            if (_enableDynamicShadows && currentTime - _lastShadowUpdate >= _shadowUpdateInterval)
+            {
+                UpdateDynamicShadows();
+                _lastShadowUpdate = currentTime;
+            }
+
+            UpdateStats();
+        }
+
+        /// <summary>
+        /// Force lighting optimization
+        /// </summary>
+        public void OptimizeLighting()
+        {
+            if (!IsInitialized) return;
+
+            // Reduce active lights if performance is poor
+            if (_activeLights.Count > _maxDynamicLights)
+            {
+                CullDistantLights();
+            }
+
+            // Disable volumetric lighting if needed
+            if (_enableVolumetricLighting && _stats.AverageFrameTime > 20f) // 50 FPS threshold
+            {
+                _enableVolumetricLighting = false;
+                DisableVolumetricLighting();
+            }
+
+            // Reduce shadow quality if needed
+            if (_enableDynamicShadows && _stats.AverageFrameTime > 25f) // 40 FPS threshold
+            {
+                ReduceShadowQuality();
+            }
+
+            _stats.OptimizationEvents++;
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Initialize shader properties
+        /// </summary>
+        private void InitializeShaderProperties()
+        {
+            _growLightPositionsProperty = Shader.PropertyToID("_GrowLightPositions");
+            _growLightColorsProperty = Shader.PropertyToID("_GrowLightColors");
+            _growLightParamsProperty = Shader.PropertyToID("_GrowLightParams");
+            _lightingZoneDataProperty = Shader.PropertyToID("_LightingZoneData");
+        }
+
+        /// <summary>
+        /// Initialize light object pool
+        /// </summary>
+        private void InitializeLightPool()
+        {
+            for (int i = 0; i < _maxDynamicLights; i++)
+            {
+                var lightObj = CreateLightObject();
+                lightObj.SetActive(false);
+                _lightPool.Enqueue(lightObj.GetComponent<Light>());
+            }
+        }
+
+        /// <summary>
+        /// Initialize volumetric lighting system
+        /// </summary>
+        private void InitializeVolumetricLighting()
+        {
+            if (_mainCamera == null) return;
+
+            // Create volumetric material
+            var volumetricShader = Shader.Find("ProjectChimera/Lighting/VolumetricLighting");
+            if (volumetricShader != null)
+            {
+                _volumetricMaterial = new Material(volumetricShader);
+            }
+
+            // Create command buffer for volumetric effects
+            _volumetricCommandBuffer = new CommandBuffer();
+            _volumetricCommandBuffer.name = "Volumetric Lighting";
+
+            // Create render texture for volumetric lighting
+            _volumetricTexture = new RenderTexture(
+                _mainCamera.pixelWidth / 2, 
+                _mainCamera.pixelHeight / 2, 
+                0, 
+                RenderTextureFormat.ARGBHalf
+            );
+
+            // Add command buffer to camera
+            _mainCamera.AddCommandBuffer(CameraEvent.BeforeForwardAlpha, _volumetricCommandBuffer);
+        }
+
+        /// <summary>
+        /// Setup initial lighting zones
+        /// </summary>
+        private void SetupLightingZones()
+        {
+            // Create default lighting zones for common areas
+            CreateLightingZone(new Bounds(Vector3.zero, Vector3.one * 50f), LightingZoneType.Indoor);
+        }
+
+        /// <summary>
+        /// Create grow light object
+        /// </summary>
+        private GameObject CreateGrowLightObject(Vector3 position, Color color, float intensity, float range)
+        {
+            Light light = GetLightFromPool();
+            if (light == null) return null;
+
+            light.transform.position = position;
+            light.type = LightType.Point;
+            light.color = color;
+            light.intensity = intensity;
+            light.range = range;
+            light.shadows = _enableDynamicShadows ? LightShadows.Soft : LightShadows.None;
+            light.gameObject.SetActive(true);
+
+            _activeLights.Add(light);
+            return light.gameObject;
+        }
+
+        /// <summary>
+        /// Create basic light object
+        /// </summary>
+        private GameObject CreateLightObject()
+        {
+            var lightObj = new GameObject("PooledLight");
+            lightObj.transform.SetParent(transform);
+            
+            var light = lightObj.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.cullingMask = _shadowCasterMask;
+            
+            return lightObj;
+        }
+
+        /// <summary>
+        /// Get light from pool
+        /// </summary>
+        private Light GetLightFromPool()
+        {
+            if (_lightPool.Count > 0)
+            {
+                return _lightPool.Dequeue();
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Return light to pool
+        /// </summary>
+        private void ReturnLightToPool(GameObject lightObject)
+        {
+            if (lightObject == null) return;
+
+            var light = lightObject.GetComponent<Light>();
+            if (light != null)
+            {
+                light.gameObject.SetActive(false);
+                _activeLights.Remove(light);
+                _lightPool.Enqueue(light);
+            }
+        }
+
+        /// <summary>
+        /// Update grow lights
+        /// </summary>
+        private void UpdateGrowLights()
+        {
+            Vector3 cameraPos = _mainCamera != null ? _mainCamera.transform.position : Vector3.zero;
+
+            foreach (var growLight in _growLights)
+            {
+                if (!growLight.IsActive) continue;
+
+                // Distance-based intensity adjustment
+                if (_enableLightLOD)
+                {
+                    float distance = Vector3.Distance(cameraPos, growLight.Position);
+                    float lodFactor = Mathf.Clamp01(1f - (distance / _lightLODDistance));
+                    
+                    if (growLight.LightObject != null)
+                    {
+                        var light = growLight.LightObject.GetComponent<Light>();
+                        if (light != null)
+                        {
+                            light.intensity = growLight.Intensity * lodFactor;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Update lighting zones
+        /// </summary>
+        private void UpdateLightingZones()
+        {
+            foreach (var zone in _lightingZones.Values)
+            {
+                if (!zone.IsActive) continue;
+
+                // Update zone lighting based on assigned lights
+                float totalLighting = 0f;
+                foreach (var light in zone.AssignedLights)
+                {
+                    if (light.IsActive)
+                    {
+                        totalLighting += light.Intensity;
+                    }
+                }
+
+                zone.LightingLevel = Mathf.Clamp01(totalLighting / 10f); // Normalize to 0-1
+            }
+        }
+
+        /// <summary>
+        /// Cull distant lights for performance
+        /// </summary>
+        private void CullLights()
+        {
+            if (!_enableLightCulling || _mainCamera == null) return;
+
+            Vector3 cameraPos = _mainCamera.transform.position;
+
+            foreach (var growLight in _growLights)
+            {
+                float distance = Vector3.Distance(cameraPos, growLight.Position);
+                bool shouldBeActive = distance <= _lightCullingDistance;
+
+                if (growLight.IsActive != shouldBeActive)
+                {
+                    growLight.IsActive = shouldBeActive;
+                    
+                    if (growLight.LightObject != null)
+                    {
+                        growLight.LightObject.SetActive(shouldBeActive);
+                    }
+
+                    if (shouldBeActive)
+                        _stats.LightsActivated++;
+                    else
+                        _stats.LightsCulled++;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Cull distant lights when over limit
+        /// </summary>
+        private void CullDistantLights()
+        {
+            Vector3 cameraPos = _mainCamera != null ? _mainCamera.transform.position : Vector3.zero;
+
+            // Sort lights by distance
+            _activeLights.Sort((a, b) => 
+            {
+                float distA = Vector3.Distance(cameraPos, a.transform.position);
+                float distB = Vector3.Distance(cameraPos, b.transform.position);
+                return distA.CompareTo(distB);
+            });
+
+            // Disable furthest lights
+            for (int i = _maxDynamicLights; i < _activeLights.Count; i++)
+            {
+                _activeLights[i].gameObject.SetActive(false);
+            }
+        }
+
+        /// <summary>
+        /// Update shader properties for custom lighting
+        /// </summary>
+        private void UpdateShaderProperties()
+        {
+            if (_growLights.Count == 0) return;
+
+            // Prepare arrays for shader
+            var positions = new Vector4[_maxGrowLights];
+            var colors = new Vector4[_maxGrowLights];
+            var parameters = new Vector4[_maxGrowLights];
+
+            for (int i = 0; i < _growLights.Count && i < _maxGrowLights; i++)
+            {
+                var light = _growLights[i];
+                positions[i] = new Vector4(light.Position.x, light.Position.y, light.Position.z, light.Range);
+                colors[i] = light.Color;
+                parameters[i] = new Vector4(light.Intensity, light.IsActive ? 1f : 0f, 0f, 0f);
+            }
+
+            // Set global shader properties
+            Shader.SetGlobalVectorArray(_growLightPositionsProperty, positions);
+            Shader.SetGlobalVectorArray(_growLightColorsProperty, colors);
+            Shader.SetGlobalVectorArray(_growLightParamsProperty, parameters);
+        }
+
+        /// <summary>
+        /// Update dynamic shadows
+        /// </summary>
+        private void UpdateDynamicShadows()
+        {
+            // Stagger shadow updates across multiple frames
+            int lightsPerFrame = Mathf.Max(1, _activeLights.Count / 5);
+            
+            for (int i = 0; i < lightsPerFrame && _lightUpdateIndex < _activeLights.Count; i++)
+            {
+                var light = _activeLights[_lightUpdateIndex];
+                if (light != null && light.gameObject.activeInHierarchy)
+                {
+                    // Update shadow settings based on distance
+                    Vector3 cameraPos = _mainCamera != null ? _mainCamera.transform.position : Vector3.zero;
+                    float distance = Vector3.Distance(cameraPos, light.transform.position);
+                    
+                    if (distance < _lightLODDistance)
+                    {
+                        light.shadows = LightShadows.Soft;
+                    }
+                    else if (distance < _lightLODDistance * 2f)
+                    {
+                        light.shadows = LightShadows.Hard;
+                    }
+                    else
+                    {
+                        light.shadows = LightShadows.None;
+                    }
+                }
+
+                _lightUpdateIndex++;
+            }
+
+            // Reset index when we've processed all lights
+            if (_lightUpdateIndex >= _activeLights.Count)
+            {
+                _lightUpdateIndex = 0;
+            }
+        }
+
+        /// <summary>
+        /// Disable volumetric lighting for performance
+        /// </summary>
+        private void DisableVolumetricLighting()
+        {
+            if (_volumetricCommandBuffer != null && _mainCamera != null)
+            {
+                _mainCamera.RemoveCommandBuffer(CameraEvent.BeforeForwardAlpha, _volumetricCommandBuffer);
+            }
+
+            if (_volumetricTexture != null)
+            {
+                _volumetricTexture.Release();
+                _volumetricTexture = null;
+            }
+        }
+
+        /// <summary>
+        /// Reduce shadow quality for performance
+        /// </summary>
+        private void ReduceShadowQuality()
+        {
+            foreach (var light in _activeLights)
+            {
+                if (light != null && light.shadows == LightShadows.Soft)
+                {
+                    light.shadows = LightShadows.Hard;
+                }
+            }
+
+            QualitySettings.shadowResolution = ShadowResolution.Low;
+        }
+
+        /// <summary>
+        /// Update performance statistics
+        /// </summary>
+        private void UpdateStats()
+        {
+            _stats.ActiveLights = _activeLights.Count;
+            _stats.TotalGrowLights = _growLights.Count;
+            _stats.LightingZones = _lightingZones.Count;
+            _stats.AverageFrameTime = Time.smoothDeltaTime * 1000f; // Convert to milliseconds
+            _stats.LastUpdateTime = Time.time;
+        }
+
+        #endregion
+
+        private void OnDestroy()
+        {
+            DisableVolumetricLighting();
+            
+            if (_volumetricMaterial != null)
+            {
+                DestroyImmediate(_volumetricMaterial);
+            }
+
+            if (_volumetricCommandBuffer != null)
+            {
+                _volumetricCommandBuffer.Dispose();
+            }
+        }
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// Lighting zone types
+    /// </summary>
+    public enum LightingZoneType
+    {
+        Indoor,
+        Outdoor,
+        Greenhouse,
+        Laboratory
+    }
+
+    /// <summary>
+    /// Grow light data structure
+    /// </summary>
+    [System.Serializable]
+    public class GrowLight
+    {
+        public int ID;
+        public Vector3 Position;
+        public Color Color;
+        public float Intensity;
+        public float Range;
+        public bool IsActive;
+        public GameObject LightObject;
+    }
+
+    /// <summary>
+    /// Lighting zone data structure
+    /// </summary>
+    [System.Serializable]
+    public class LightingZone
+    {
+        public int ID;
+        public Bounds Bounds;
+        public LightingZoneType ZoneType;
+        public bool IsActive;
+        public List<GrowLight> AssignedLights;
+        public float LightingLevel;
+    }
+
+    /// <summary>
+    /// Lighting performance statistics
+    /// </summary>
+    [System.Serializable]
+    public struct LightingPerformanceStats
+    {
+        public int ActiveLights;
+        public int TotalGrowLights;
+        public int GrowLightsCreated;
+        public int GrowLightsDestroyed;
+        public int LightsActivated;
+        public int LightsCulled;
+        public int LightUpdates;
+        public int LightingZones;
+        public int OptimizationEvents;
+        public float AverageFrameTime;
+        public float LastUpdateTime;
+    }
+
+    #endregion
+}

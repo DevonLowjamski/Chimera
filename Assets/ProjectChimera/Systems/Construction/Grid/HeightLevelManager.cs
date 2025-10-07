@@ -47,7 +47,7 @@ namespace ProjectChimera.Systems.Construction.Grid
             {
                 _currentVisibleHeightLevel = clampedLevel;
                 OnVisibleHeightLevelChanged?.Invoke(_currentVisibleHeightLevel);
-                ChimeraLogger.Log($"[HeightLevelManager] Visible height level set to {_currentVisibleHeightLevel}");
+                ChimeraLogger.Log("OTHER", "Height level changed", null);
             }
         }
 

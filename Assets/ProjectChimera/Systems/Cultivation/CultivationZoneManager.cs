@@ -38,7 +38,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (IsInitialized) return;
             
-            ChimeraLogger.Log("[CultivationZoneManager] Initializing zone management system...");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             
             // Initialize default environment if not set
             if (_defaultEnvironment.Temperature == 0f)
@@ -50,12 +50,12 @@ namespace ProjectChimera.Systems.Cultivation
             CreateZone("default", _defaultEnvironment);
             
             IsInitialized = true;
-            ChimeraLogger.Log($"[CultivationZoneManager] Initialized with default zone. Max zones: {_maxZones}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
         
         public void Shutdown()
         {
-            ChimeraLogger.Log("[CultivationZoneManager] Shutting down zone management...");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             
             _zoneEnvironments.Clear();
             _zonePlants.Clear();
@@ -71,19 +71,19 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (string.IsNullOrEmpty(zoneId))
             {
-                ChimeraLogger.LogWarning("[CultivationZoneManager] Cannot create zone with null or empty ID");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
             
             if (_zoneEnvironments.ContainsKey(zoneId))
             {
-                ChimeraLogger.LogWarning($"[CultivationZoneManager] Zone '{zoneId}' already exists");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
             
             if (_zoneEnvironments.Count >= _maxZones)
             {
-                ChimeraLogger.LogWarning($"[CultivationZoneManager] Maximum zone limit ({_maxZones}) reached");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
             
@@ -92,7 +92,7 @@ namespace ProjectChimera.Systems.Cultivation
             _zoneMetrics[zoneId] = new ZoneMetrics();
             
             OnZoneCreated?.Invoke(zoneId);
-            ChimeraLogger.Log($"[CultivationZoneManager] Created zone '{zoneId}'");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             
             return true;
         }
@@ -104,13 +104,13 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (zoneId == "default")
             {
-                ChimeraLogger.LogWarning("[CultivationZoneManager] Cannot remove default zone");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
             
             if (!_zoneEnvironments.ContainsKey(zoneId))
             {
-                ChimeraLogger.LogWarning($"[CultivationZoneManager] Zone '{zoneId}' does not exist");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
             
@@ -128,7 +128,7 @@ namespace ProjectChimera.Systems.Cultivation
             _zoneMetrics.Remove(zoneId);
             
             OnZoneRemoved?.Invoke(zoneId);
-            ChimeraLogger.Log($"[CultivationZoneManager] Removed zone '{zoneId}'");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             
             return true;
         }
@@ -140,7 +140,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!_zoneEnvironments.ContainsKey(zoneId))
             {
-                ChimeraLogger.LogWarning($"[CultivationZoneManager] Zone '{zoneId}' does not exist. Creating it.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 CreateZone(zoneId, environment);
                 return;
             }
@@ -148,7 +148,7 @@ namespace ProjectChimera.Systems.Cultivation
             _zoneEnvironments[zoneId] = environment;
             OnZoneEnvironmentChanged?.Invoke(zoneId, environment);
             
-            ChimeraLogger.Log($"[CultivationZoneManager] Updated environment for zone '{zoneId}'");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
         
         /// <summary>
@@ -168,7 +168,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!_zonePlants.ContainsKey(zoneId))
             {
-                ChimeraLogger.LogWarning($"[CultivationZoneManager] Zone '{zoneId}' does not exist. Using default zone.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 zoneId = "default";
             }
             
@@ -185,7 +185,7 @@ namespace ProjectChimera.Systems.Cultivation
                 LastUpdated = System.DateTime.Now
             };
             
-            ChimeraLogger.Log($"[CultivationZoneManager] Added plant '{plantId}' to zone '{zoneId}'");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
         
         /// <summary>
@@ -291,7 +291,7 @@ namespace ProjectChimera.Systems.Cultivation
         /// </summary>
         public void OptimizeZoneDistribution()
         {
-            ChimeraLogger.Log("[CultivationZoneManager] Optimizing zone distribution...");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             
             // Simple optimization: ensure no zone is overcrowded
             int totalPlants = 0;
@@ -305,7 +305,7 @@ namespace ProjectChimera.Systems.Cultivation
             // Log current distribution
             foreach (var kvp in _zonePlants)
             {
-                ChimeraLogger.Log($"[CultivationZoneManager] Zone '{kvp.Key}': {kvp.Value.Count} plants (target: {targetPlantsPerZone})");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
         

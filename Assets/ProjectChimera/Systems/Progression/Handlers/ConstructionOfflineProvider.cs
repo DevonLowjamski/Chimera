@@ -1,8 +1,10 @@
-using ProjectChimera.Core.Logging;
+using ProjectChimera.Data.Save.Structures;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+using ChimeraLogger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Systems.Progression
 {
@@ -22,46 +24,45 @@ namespace ProjectChimera.Systems.Progression
         public string GetProviderId() => "construction_offline";
         public float GetPriority() => 0.8f;
         
-        public async Task<OfflineProgressionCalculationResult> CalculateOfflineProgressionAsync(TimeSpan offlineTime)
+        public async Task<OfflineProgressionResult> CalculateOfflineProgressionAsync(TimeSpan offlineTime)
         {
             await Task.Delay(40);
             
-            var result = new OfflineProgressionCalculationResult();
+            var result = new OfflineProgressionResult
+            {
+                Domain = GetProviderId(),
+                Success = true,
+                OfflineTime = offlineTime,
+                ProcessedUntil = DateTime.Now
+            };
             var hours = (float)offlineTime.TotalHours;
-            
+
             try
             {
                 // Calculate construction project progression
                 var projectData = await CalculateConstructionProjectsAsync(hours);
-                result.ProgressionData.Add("construction_projects", projectData);
-                
+                result.Construction = projectData;
+
                 // Calculate building completion
                 var buildingData = await CalculateBuildingCompletionAsync(hours);
-                result.ProgressionData.Add("building_completion", buildingData);
-                
+                result.BuildingCompletion = buildingData;
+
                 // Calculate resource consumption for construction
                 var resourceConsumption = CalculateConstructionResourceConsumption(projectData, buildingData);
-                foreach (var consumption in resourceConsumption)
-                {
-                    result.ResourceChanges[consumption.Key] = -consumption.Value; // Negative for consumption
-                }
-                
+                result.TotalCostsIncurred = resourceConsumption.Values.Sum();
+
                 // Add construction events
-                result.Events.AddRange(_constructionEvents);
-                _constructionEvents.Clear();
-                
-                // Generate notifications
                 if (buildingData.CompletedBuildings > 0)
                 {
-                    result.Notifications.Add($"{buildingData.CompletedBuildings} construction projects completed while you were away");
+                    result.ImportantEvents.Add($"{buildingData.CompletedBuildings} construction projects completed while you were away");
                 }
-                
+
                 if (projectData.ActiveProjects > 0)
                 {
-                    result.Notifications.Add($"{projectData.ActiveProjects} construction projects made progress");
+                    result.ImportantEvents.Add($"{projectData.ActiveProjects} construction projects made progress");
                 }
-                
-                ChimeraLogger.Log($"[ConstructionOfflineProvider] Processed {hours:F1} hours of construction progression");
+
+                ChimeraLogger.Log("PROGRESSION", "Construction offline progression calculated", null);
             }
             catch (Exception ex)
             {
@@ -75,18 +76,21 @@ namespace ProjectChimera.Systems.Progression
         public async Task ApplyOfflineProgressionAsync(OfflineProgressionResult result)
         {
             await Task.Delay(25);
-            
-            if (result.ProgressionData.TryGetValue("construction_projects", out var projectObj) && projectObj is ConstructionProjectData projectData)
+
+            var progressionData = result.ProgressionData as Dictionary<string, object>;
+            if (progressionData == null) return;
+
+            if (progressionData.TryGetValue("construction_projects", out var projectObj) && projectObj is ConstructionProjectData projectData)
             {
                 await ApplyConstructionProjectProgressionAsync(projectData);
             }
-            
-            if (result.ProgressionData.TryGetValue("building_completion", out var buildingObj) && buildingObj is BuildingCompletionData buildingData)
+
+            if (progressionData.TryGetValue("building_completion", out var buildingObj) && buildingObj is BuildingCompletionData buildingData)
             {
                 await ApplyBuildingCompletionAsync(buildingData);
             }
             
-            ChimeraLogger.Log($"[ConstructionOfflineProvider] Applied construction progression for session {result.SessionId}");
+            ChimeraLogger.Log("OTHER", "$1", null);
         }
         
         private async Task<ConstructionProjectData> CalculateConstructionProjectsAsync(float hours)

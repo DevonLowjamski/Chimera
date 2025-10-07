@@ -94,7 +94,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             // if (_speedTreeInstance == null)
             // {
-            //     ChimeraLogger.LogError($"InteractivePlantComponent requires SpeedTreePlantInstance component on {gameObject.name}");
+            //     ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             // }
         }
 
@@ -145,7 +145,7 @@ namespace ProjectChimera.Systems.Cultivation
             OnPlantInteracted?.Invoke(this);
 
             // Log interaction
-            ChimeraLogger.Log($"Player interacted with plant: {(_plantStrain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown"} (Stage: {_currentGrowthStage})");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         /// <summary>
@@ -155,7 +155,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!_canHarvest)
             {
-                ChimeraLogger.LogWarning($"Cannot harvest plant {gameObject.name} - not ready for harvest");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return null;
             }
 
@@ -173,7 +173,7 @@ namespace ProjectChimera.Systems.Cultivation
                 Quality = _health / 100f
             };
 
-            ChimeraLogger.Log($"Harvested plant: {(_plantStrain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown"}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             return result;
         }
 
@@ -184,7 +184,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!_canTreat)
             {
-                ChimeraLogger.LogWarning($"Cannot treat plant {gameObject.name} - treatment not available");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
 
@@ -208,7 +208,7 @@ namespace ProjectChimera.Systems.Cultivation
             OnPlantTreated?.Invoke(this);
             UpdateInteractionCapabilities();
 
-            ChimeraLogger.Log($"Applied {treatmentType} treatment to plant: {(_plantStrain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown"}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             return true;
         }
 
@@ -219,7 +219,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!_canInspect)
             {
-                ChimeraLogger.LogWarning($"Cannot inspect plant {gameObject.name} - inspection not available");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return null;
             }
 
@@ -246,7 +246,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             OnPlantInspected?.Invoke(this);
 
-            ChimeraLogger.Log($"Inspected plant: {(_plantStrain as ProjectChimera.Data.Cultivation.PlantStrainSO)?.StrainName ?? "Unknown"} - Health: {_health:F1}%");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             return inspectionData;
         }
 
@@ -256,7 +256,7 @@ namespace ProjectChimera.Systems.Cultivation
         private bool CanPlayerInteract()
         {
             // Check if player is within interaction range
-            var player = Camera.main?.transform;
+            var player = UnityEngine.Camera.main?.transform;
             if (player != null)
             {
                 float distance = Vector3.Distance(transform.position, player.position);

@@ -44,7 +44,7 @@ namespace ProjectChimera.Systems.Services.Economy
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[TradingPostManagementService] Initialized successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -72,7 +72,7 @@ namespace ProjectChimera.Systems.Services.Economy
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[TradingPostManagementService] Purchased {item.ItemName} for {cost:F0}");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
 
                 return true;
@@ -95,7 +95,7 @@ namespace ProjectChimera.Systems.Services.Economy
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[TradingPostManagementService] Sold {item.ItemName} for {salePrice:F0}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
 
             return true;
@@ -119,7 +119,7 @@ namespace ProjectChimera.Systems.Services.Economy
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[TradingPostManagementService] Added {amount:F0} currency");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -177,7 +177,7 @@ namespace ProjectChimera.Systems.Services.Economy
             // Basic restock - could be expanded if needed
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[TradingPostManagementService] Items restocked");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -198,7 +198,7 @@ namespace ProjectChimera.Systems.Services.Economy
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[TradingPostManagementService] Set up {_availableItems.Count} basic items");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 

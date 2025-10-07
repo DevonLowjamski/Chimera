@@ -1,0 +1,220 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.DependencyInjection;
+
+namespace ProjectChimera.Core.ServiceRegistrationSystem
+{
+    /// <summary>
+    /// FOCUSED: Core service resolution functionality for Project Chimera ServiceContainer
+    /// Single responsibility: Handle service resolution and discovery operations
+    /// Extracted from ServiceContainer.cs for SRP compliance (Week 8)
+    /// </summary>
+    public class ServiceResolutionCore
+    {
+        private readonly Dictionary<Type, object> _services;
+        private readonly object _lock;
+
+        // Events
+        public event Action<Type, object> ServiceResolved;
+        public event Action<Type, Exception> ResolutionFailed;
+
+        public ServiceResolutionCore(Dictionary<Type, object> services, object lockObject)
+        {
+            _services = services ?? throw new ArgumentNullException(nameof(services));
+            _lock = lockObject ?? throw new ArgumentNullException(nameof(lockObject));
+        }
+
+        /// <summary>
+        /// Resolve service with exception on failure
+        /// </summary>
+        public T Resolve<T>()
+        {
+            var service = TryResolve<T>();
+            if (service == null)
+            {
+                var serviceType = typeof(T);
+                var exception = new InvalidOperationException($"Service of type {serviceType.Name} is not registered");
+                ResolutionFailed?.Invoke(serviceType, exception);
+                throw exception;
+            }
+            return service;
+        }
+
+        /// <summary>
+        /// Try to resolve service, return null on failure
+        /// </summary>
+        public T TryResolve<T>() where T : class
+        {
+            return TryResolve(typeof(T)) as T;
+        }
+
+        /// <summary>
+        /// Try to resolve service by type, return null on failure
+        /// </summary>
+        public object TryResolve(Type serviceType)
+        {
+            if (serviceType == null) return null;
+
+            lock (_lock)
+            {
+                if (_services.TryGetValue(serviceType, out var service))
+                {
+                    // Handle transient services (stored as factory functions)
+                    if (service is Func<object> factory)
+                    {
+                        try
+                        {
+                            var instance = factory();
+                            ServiceResolved?.Invoke(serviceType, instance);
+                            return instance;
+                        }
+                        catch (Exception ex)
+                        {
+                            UnityEngine.Debug.Log("Operation completed");
+                            ResolutionFailed?.Invoke(serviceType, ex);
+                            return null;
+                        }
+                    }
+
+                    // Handle singleton services
+                    ServiceResolved?.Invoke(serviceType, service);
+                    return service;
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Resolve service by type with exception on failure
+        /// </summary>
+        public object Resolve(Type serviceType)
+        {
+            var service = TryResolve(serviceType);
+            if (service == null)
+            {
+                var exception = new InvalidOperationException($"Service of type {serviceType.Name} is not registered");
+                ResolutionFailed?.Invoke(serviceType, exception);
+                throw exception;
+            }
+            return service;
+        }
+
+        /// <summary>
+        /// Try to resolve service with out parameter
+        /// </summary>
+        public bool TryResolve<T>(out T service) where T : class
+        {
+            service = TryResolve<T>();
+            return service != null;
+        }
+
+        /// <summary>
+        /// Try to resolve service by type with out parameter
+        /// </summary>
+        public bool TryResolve(Type serviceType, out object service)
+        {
+            service = TryResolve(serviceType);
+            return service != null;
+        }
+
+        /// <summary>
+        /// Get registered types that implement or inherit from specified type
+        /// </summary>
+        public IEnumerable<Type> GetRegisteredTypes<T>()
+        {
+            return GetRegisteredTypes(typeof(T));
+        }
+
+        /// <summary>
+        /// Get registered types that implement or inherit from specified type
+        /// </summary>
+        public IEnumerable<Type> GetRegisteredTypes(Type serviceType)
+        {
+            if (serviceType == null) return Enumerable.Empty<Type>();
+
+            lock (_lock)
+            {
+                var compatibleTypes = new List<Type>();
+                
+                foreach (var kvp in _services)
+                {
+                    var registeredType = kvp.Key;
+                    
+                    if (serviceType.IsAssignableFrom(registeredType) || registeredType.IsAssignableFrom(serviceType))
+                    {
+                        compatibleTypes.Add(registeredType);
+                    }
+                }
+
+                return compatibleTypes;
+            }
+        }
+
+        /// <summary>
+        /// Resolve all services that implement specified type
+        /// </summary>
+        public IEnumerable<T> ResolveAll<T>()
+        {
+            var serviceType = typeof(T);
+            var services = new List<T>();
+
+            lock (_lock)
+            {
+                foreach (var kvp in _services)
+                {
+                    if (serviceType.IsAssignableFrom(kvp.Key))
+                    {
+                        var resolved = TryResolve(kvp.Key);
+                        if (resolved is T typedService)
+                        {
+                            services.Add(typedService);
+                        }
+                    }
+                }
+            }
+
+            return services;
+        }
+
+        /// <summary>
+        /// Get resolution statistics
+        /// </summary>
+        public ServiceResolutionStats GetStats()
+        {
+            lock (_lock)
+            {
+                var transientCount = 0;
+                var singletonCount = 0;
+
+                foreach (var service in _services.Values)
+                {
+                    if (service is Func<object>)
+                        transientCount++;
+                    else
+                        singletonCount++;
+                }
+
+                return new ServiceResolutionStats
+                {
+                    TotalServices = _services.Count,
+                    SingletonServices = singletonCount,
+                    TransientServices = transientCount
+                };
+            }
+        }
+    }
+
+    /// <summary>
+    /// Service resolution statistics
+    /// </summary>
+    [System.Serializable]
+    public struct ServiceResolutionStats
+    {
+        public int TotalServices;
+        public int SingletonServices;
+        public int TransientServices;
+    }
+}

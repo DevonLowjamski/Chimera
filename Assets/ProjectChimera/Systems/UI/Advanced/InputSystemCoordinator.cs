@@ -1,5 +1,4 @@
 using UnityEngine;
-using ProjectChimera.Core.Logging;
 using ProjectChimera.Core;
 
 namespace ProjectChimera.Systems.UI.Advanced
@@ -39,7 +38,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[InputSystemCoordinator] Initialized successfully");
+                ChimeraLogger.LogInfo("InputSystemCoordinator", "$1");
             }
         }
 
@@ -68,7 +67,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log("[InputSystemCoordinator] Interact pressed");
+                    ChimeraLogger.LogInfo("InputSystemCoordinator", "$1");
                 }
             }
             else
@@ -83,7 +82,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log("[InputSystemCoordinator] Menu pressed");
+                    ChimeraLogger.LogInfo("InputSystemCoordinator", "$1");
                 }
             }
             else
@@ -125,7 +124,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[InputSystemCoordinator] Input sensitivity set to {_inputSensitivity:F2}");
+                ChimeraLogger.LogInfo("InputSystemCoordinator", "$1");
             }
         }
 
@@ -138,7 +137,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[InputSystemCoordinator] Basic input {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.LogInfo("InputSystemCoordinator", "$1");
             }
         }
 
@@ -169,7 +168,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[InputSystemCoordinator] Input state reset");
+                ChimeraLogger.LogInfo("InputSystemCoordinator", "$1");
             }
         }
     }

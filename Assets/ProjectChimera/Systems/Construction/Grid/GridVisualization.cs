@@ -379,5 +379,62 @@ namespace ProjectChimera.Systems.Construction.Grid
 
             _heightLevelVisualizations.Clear();
         }
+
+        /// <summary>
+        /// Event for grid visibility changes
+        /// </summary>
+        public System.Action<bool> OnGridVisibilityChanged;
+
+        /// <summary>
+        /// Update grid visibility
+        /// </summary>
+        public void UpdateGridVisibility()
+        {
+            bool shouldShow = _settings.ShowGrid;
+            SetVisibility(shouldShow);
+            OnGridVisibilityChanged?.Invoke(shouldShow);
+        }
+
+        /// <summary>
+        /// Update grid dimensions
+        /// </summary>
+        public void UpdateGridDimensions(Vector3 dimensions)
+        {
+            // Since _bounds is readonly, we can only log this for now
+            ChimeraLogger.Log("GRID", "Grid dimensions update requested - requires grid system recreation", null);
+            UpdateVisualization();
+        }
+
+        /// <summary>
+        /// Update grid color
+        /// </summary>
+        public void UpdateGridColor(Color color)
+        {
+            var newSettings = new GridTypes.GridSnapSettings
+            {
+                GridSize = _settings.GridSize,
+                SnapToGrid = _settings.SnapToGrid,
+                ShowGrid = _settings.ShowGrid,
+                GridColor = color
+            };
+            UpdateMaterials(newSettings);
+        }
+
+        /// <summary>
+        /// Set visible height level
+        /// </summary>
+        public void SetVisibleHeightLevel(int level)
+        {
+            foreach (var kvp in _heightLevelVisualizations)
+            {
+                kvp.Value.SetActive(kvp.Key == level);
+            }
+            CurrentVisibleHeightLevel = level;
+        }
+
+        /// <summary>
+        /// Current visible height level
+        /// </summary>
+        public int CurrentVisibleHeightLevel { get; private set; } = 0;
     }
 }

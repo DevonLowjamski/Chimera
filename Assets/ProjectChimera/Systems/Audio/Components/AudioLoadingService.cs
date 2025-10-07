@@ -1,21 +1,26 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
 
 namespace ProjectChimera.Systems.Audio.Components
 {
     /// <summary>
-    /// BASIC: Simple audio loading for Project Chimera.
-    /// Focuses on essential audio functionality without complex loading systems.
+    /// REAL ADDRESSABLES: Audio loading service for Project Chimera using genuine Addressables
+    /// Provides async audio loading with proper memory management and caching
     /// </summary>
     public class AudioLoadingService : MonoBehaviour
     {
-        [Header("Basic Audio Settings")]
-        [SerializeField] private bool _enableBasicAudio = true;
+        [Header("Audio Settings")]
+        [SerializeField] private bool _enableAudio = true;
         [SerializeField] private bool _enableCaching = true;
         [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private int _maxCacheSize = 50;
 
-        // Basic audio cache
+        // Audio cache with proper management
         private readonly Dictionary<string, AudioClip> _audioCache = new Dictionary<string, AudioClip>();
+        private readonly HashSet<string> _preloadedAudio = new HashSet<string>();
         private bool _isInitialized = false;
 
         /// <summary>
@@ -25,203 +30,351 @@ namespace ProjectChimera.Systems.Audio.Components
         public event System.Action<string, string> OnAudioLoadError;
 
         /// <summary>
-        /// Initialize basic audio service
+        /// Critical audio clips to preload
         /// </summary>
-        public void Initialize()
+        private readonly string[] CRITICAL_AUDIO = {
+            "UIClick",
+            "UIError",
+            "UISuccess",
+            "BackgroundAmbient"
+        };
+
+        #region Initialization
+
+        private void Start()
+        {
+            InitializeAsync();
+        }
+
+        /// <summary>
+        /// Initialize audio service with Addressables
+        /// </summary>
+        public async void InitializeAsync()
         {
             if (_isInitialized) return;
 
+            // Wait for IAssetManager to be ready via ServiceContainer
+            var serviceContainer = ServiceContainerFactory.Instance;
+            var assetManager = serviceContainer.TryResolve<IAssetManager>();
+
+            if (assetManager == null)
+            {
+                ChimeraLogger.LogError("AUDIO", "IAssetManager not available - audio service cannot initialize", this);
+                return;
+            }
+
             _isInitialized = true;
+
+            // Preload critical audio clips
+            await PreloadCriticalAudio();
 
             if (_enableLogging)
             {
-                Debug.Log("[AudioLoadingService] Initialized successfully");
+                ChimeraLogger.Log("AUDIO", "AudioLoadingService initialized with Addressables", this);
             }
         }
 
         /// <summary>
-        /// Load audio clip by name
+        /// Preload critical audio clips for immediate availability
         /// </summary>
-        public AudioClip LoadAudioClip(string clipName)
+        private async Task PreloadCriticalAudio()
         {
-            if (!_enableBasicAudio || !_isInitialized) return null;
+            if (!_enableAudio) return;
+
+            ChimeraLogger.Log("AUDIO", "Preloading critical audio clips...", this);
+            int successCount = 0;
+
+            foreach (var audioKey in CRITICAL_AUDIO)
+            {
+                try
+                {
+                    var clip = await LoadAudioClipAsync(audioKey);
+                    if (clip != null)
+                    {
+                        _preloadedAudio.Add(audioKey);
+                        successCount++;
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    ChimeraLogger.LogWarning("AUDIO", $"Failed to preload critical audio '{audioKey}': {ex.Message}", this);
+                }
+            }
+
+            ChimeraLogger.Log("AUDIO", $"Preloaded {successCount}/{CRITICAL_AUDIO.Length} critical audio clips", this);
+        }
+
+        #endregion
+
+        #region Audio Loading (Async)
+
+        /// <summary>
+        /// Load audio clip asynchronously using Addressables
+        /// </summary>
+        public async Task<AudioClip> LoadAudioClipAsync(string clipName)
+        {
+            if (!_enableAudio || !_isInitialized || string.IsNullOrEmpty(clipName))
+                return null;
 
             // Check cache first
-            if (_enableCaching && _audioCache.ContainsKey(clipName))
+            if (_enableCaching && _audioCache.TryGetValue(clipName, out var cachedClip))
             {
-                return _audioCache[clipName];
+                if (_enableLogging)
+                    ChimeraLogger.Log("AUDIO", $"Audio cache hit: {clipName}", this);
+                return cachedClip;
             }
 
-            // Load from Resources
-            AudioClip clip = Resources.Load<AudioClip>(clipName);
-            if (clip != null)
+            try
             {
-                // Cache the clip
-                if (_enableCaching)
+                // Load via Addressables
+                var serviceContainer = ServiceContainerFactory.Instance;
+                var assetManager = serviceContainer.TryResolve<IAssetManager>();
+                if (assetManager == null)
                 {
-                    _audioCache[clipName] = clip;
+                    ChimeraLogger.LogError("AUDIO", "IAssetManager not available", this);
+                    return null;
                 }
 
-                OnAudioLoaded?.Invoke(clipName);
+                var clip = await assetManager.LoadAssetAsync<AudioClip>(clipName);
 
-                if (_enableLogging)
+                if (clip != null)
                 {
-                    Debug.Log($"[AudioLoadingService] Loaded audio: {clipName}");
-                }
+                    // Cache the clip
+                    if (_enableCaching)
+                    {
+                        CacheAudioClip(clipName, clip);
+                    }
 
-                return clip;
+                    OnAudioLoaded?.Invoke(clipName);
+
+                    if (_enableLogging)
+                        ChimeraLogger.Log("AUDIO", $"Loaded audio clip: {clipName}", this);
+
+                    return clip;
+                }
+                else
+                {
+                    var errorMsg = $"Failed to load audio clip: {clipName}";
+                    ChimeraLogger.LogWarning("AUDIO", errorMsg, this);
+                    OnAudioLoadError?.Invoke(clipName, errorMsg);
+                    return null;
+                }
             }
-            else
+            catch (System.Exception ex)
             {
-                OnAudioLoadError?.Invoke(clipName, "Audio clip not found in Resources");
-
-                if (_enableLogging)
-                {
-                    Debug.LogWarning($"[AudioLoadingService] Failed to load audio: {clipName}");
-                }
-
+                var errorMsg = $"Exception loading audio clip '{clipName}': {ex.Message}";
+                ChimeraLogger.LogError("AUDIO", errorMsg, this);
+                OnAudioLoadError?.Invoke(clipName, errorMsg);
                 return null;
             }
         }
 
         /// <summary>
-        /// Load UI sound
+        /// Load multiple audio clips in batch
         /// </summary>
-        public AudioClip LoadUISound(string soundName)
+        public async Task<Dictionary<string, AudioClip>> LoadAudioClipBatchAsync(IList<string> clipNames)
         {
-            return LoadAudioClip($"UI/{soundName}");
-        }
+            var results = new Dictionary<string, AudioClip>();
 
-        /// <summary>
-        /// Load ambient sound
-        /// </summary>
-        public AudioClip LoadAmbientSound(string soundName)
-        {
-            return LoadAudioClip($"Ambient/{soundName}");
-        }
+            if (!_enableAudio || !_isInitialized)
+                return results;
 
-        /// <summary>
-        /// Load music track
-        /// </summary>
-        public AudioClip LoadMusic(string musicName)
-        {
-            return LoadAudioClip($"Music/{musicName}");
-        }
+            var tasks = new List<Task<AudioClip>>();
+            var names = new List<string>();
 
-        /// <summary>
-        /// Unload audio clip from cache
-        /// </summary>
-        public void UnloadAudioClip(string clipName)
-        {
-            if (_audioCache.Remove(clipName))
+            foreach (var clipName in clipNames)
             {
-                if (_enableLogging)
+                if (!string.IsNullOrEmpty(clipName))
                 {
-                    Debug.Log($"[AudioLoadingService] Unloaded audio: {clipName}");
+                    names.Add(clipName);
+                    tasks.Add(LoadAudioClipAsync(clipName));
                 }
             }
+
+            var clips = await Task.WhenAll(tasks);
+
+            for (int i = 0; i < names.Count; i++)
+            {
+                if (clips[i] != null)
+                {
+                    results[names[i]] = clips[i];
+                }
+            }
+
+            ChimeraLogger.Log("AUDIO", $"Batch loaded {results.Count}/{clipNames.Count} audio clips", this);
+            return results;
+        }
+
+        #endregion
+
+        #region Audio Loading (Synchronous - Legacy)
+
+        /// <summary>
+        /// Load audio clip synchronously (legacy compatibility - not recommended)
+        /// </summary>
+        [System.Obsolete("Use LoadAudioClipAsync instead for better performance")]
+        public AudioClip LoadAudioClip(string clipName)
+        {
+            if (!_enableAudio || !_isInitialized) return null;
+
+            ChimeraLogger.LogWarning("AUDIO", $"Synchronous audio loading used for '{clipName}' - consider using async version", this);
+
+            // Check cache first
+            if (_enableCaching && _audioCache.TryGetValue(clipName, out var cachedClip))
+            {
+                return cachedClip;
+            }
+
+            // Use async version and wait (not ideal but provides compatibility)
+            var task = LoadAudioClipAsync(clipName);
+            task.Wait();
+            return task.Result;
+        }
+
+        #endregion
+
+        #region Cache Management
+
+        /// <summary>
+        /// Cache audio clip with size management
+        /// </summary>
+        private void CacheAudioClip(string clipName, AudioClip clip)
+        {
+            if (_audioCache.Count >= _maxCacheSize)
+            {
+                // Remove oldest non-preloaded clip
+                string oldestKey = null;
+                foreach (var key in _audioCache.Keys)
+                {
+                    if (!_preloadedAudio.Contains(key))
+                    {
+                        oldestKey = key;
+                        break;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(oldestKey))
+                {
+                    _audioCache.Remove(oldestKey);
+
+                    // Release the asset from Addressables
+                    var serviceContainer = ServiceContainerFactory.Instance;
+                    var assetManager = serviceContainer.TryResolve<IAssetManager>();
+                    assetManager?.UnloadAsset(oldestKey);
+                }
+            }
+
+            _audioCache[clipName] = clip;
         }
 
         /// <summary>
-        /// Clear all cached audio
+        /// Check if audio clip exists in cache
+        /// </summary>
+        public bool HasAudioClip(string clipName)
+        {
+            return _audioCache.ContainsKey(clipName);
+        }
+
+        /// <summary>
+        /// Clear audio cache (except preloaded clips)
         /// </summary>
         public void ClearCache()
         {
-            _audioCache.Clear();
+            var clipsToRemove = new List<string>();
+
+            foreach (var clipName in _audioCache.Keys)
+            {
+                if (!_preloadedAudio.Contains(clipName))
+                {
+                    clipsToRemove.Add(clipName);
+                }
+            }
+
+            var serviceContainer = ServiceContainerFactory.Instance;
+            var assetManager = serviceContainer.TryResolve<IAssetManager>();
+
+            foreach (var clipName in clipsToRemove)
+            {
+                _audioCache.Remove(clipName);
+                assetManager?.UnloadAsset(clipName);
+            }
 
             if (_enableLogging)
+                ChimeraLogger.Log("AUDIO", $"Cleared {clipsToRemove.Count} audio clips from cache", this);
+        }
+
+        /// <summary>
+        /// Release specific audio clip
+        /// </summary>
+        public void ReleaseAudioClip(string clipName)
+        {
+            if (_audioCache.ContainsKey(clipName) && !_preloadedAudio.Contains(clipName))
             {
-                Debug.Log("[AudioLoadingService] Cleared audio cache");
+                _audioCache.Remove(clipName);
+                var serviceContainer = ServiceContainerFactory.Instance;
+                var assetManager = serviceContainer.TryResolve<IAssetManager>();
+                assetManager?.UnloadAsset(clipName);
+
+                if (_enableLogging)
+                    ChimeraLogger.Log("AUDIO", $"Released audio clip: {clipName}", this);
             }
         }
 
+        #endregion
+
+        #region Utilities
+
         /// <summary>
-        /// Check if audio exists
+        /// Get audio service statistics
         /// </summary>
-        public bool AudioExists(string clipName)
+        public AudioServiceStats GetStats()
         {
-            if (_enableCaching && _audioCache.ContainsKey(clipName))
+            return new AudioServiceStats
             {
-                return true;
-            }
-
-            // Check Resources
-            AudioClip clip = Resources.Load<AudioClip>(clipName);
-            if (clip != null)
-            {
-                Resources.UnloadAsset(clip);
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Get cached audio count
-        /// </summary>
-        public int GetCachedAudioCount()
-        {
-            return _audioCache.Count;
-        }
-
-        /// <summary>
-        /// Get cached audio names
-        /// </summary>
-        public List<string> GetCachedAudioNames()
-        {
-            return new List<string>(_audioCache.Keys);
-        }
-
-        /// <summary>
-        /// Get audio loading statistics
-        /// </summary>
-        public AudioStats GetAudioStats()
-        {
-            return new AudioStats
-            {
-                CachedAudioCount = _audioCache.Count,
-                IsAudioEnabled = _enableBasicAudio,
-                IsCachingEnabled = _enableCaching,
-                IsInitialized = _isInitialized
+                IsInitialized = _isInitialized,
+                CachedClips = _audioCache.Count,
+                MaxCacheSize = _maxCacheSize,
+                PreloadedClips = _preloadedAudio.Count,
+                CachingEnabled = _enableCaching
             };
         }
 
         /// <summary>
-        /// Preload common audio
+        /// Check if audio service is ready
         /// </summary>
-        public void PreloadCommonAudio()
+        public bool IsReady()
         {
-            if (!_enableBasicAudio || !_isInitialized) return;
+            var serviceContainer = ServiceContainerFactory.Instance;
+            var assetManager = serviceContainer.TryResolve<IAssetManager>();
+            return _isInitialized && _enableAudio && assetManager != null;
+        }
 
-            // Preload some common audio that might be used frequently
-            string[] commonAudio = {
-                "UI/Click",
-                "UI/Hover",
-                "Ambient/GrowRoom",
-                "Music/Background"
-            };
+        #endregion
 
-            foreach (string audioPath in commonAudio)
-            {
-                LoadAudioClip(audioPath);
-            }
+        #region Unity Lifecycle
+
+        private void OnDestroy()
+        {
+            // Release all non-preloaded audio clips
+            ClearCache();
 
             if (_enableLogging)
-            {
-                Debug.Log($"[AudioLoadingService] Preloaded {commonAudio.Length} common audio files");
-            }
+                ChimeraLogger.Log("AUDIO", "AudioLoadingService cleanup completed", this);
         }
+
+        #endregion
     }
 
     /// <summary>
-    /// Audio loading statistics
+    /// Audio service statistics
     /// </summary>
     [System.Serializable]
-    public struct AudioStats
+    public struct AudioServiceStats
     {
-        public int CachedAudioCount;
-        public bool IsAudioEnabled;
-        public bool IsCachingEnabled;
         public bool IsInitialized;
+        public int CachedClips;
+        public int MaxCacheSize;
+        public int PreloadedClips;
+        public bool CachingEnabled;
     }
 }

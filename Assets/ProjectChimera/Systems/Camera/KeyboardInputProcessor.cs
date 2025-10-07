@@ -1,6 +1,7 @@
 using UnityEngine;
 using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Camera
 {
@@ -9,7 +10,7 @@ namespace ProjectChimera.Systems.Camera
     /// Handles keyboard controls for camera movement and viewpoint switching
     /// Supports the hierarchical viewpoint system as described in gameplay document
     /// </summary>
-    public class KeyboardInputProcessor : MonoBehaviour
+    public class KeyboardInputProcessor : MonoBehaviour, ITickable
     {
         [Header("Movement Keys")]
         [SerializeField] private KeyCode _forwardKey = KeyCode.W;
@@ -60,14 +61,31 @@ namespace ProjectChimera.Systems.Camera
         // Custom shortcuts
         private Dictionary<KeyCode, System.Action> _keyboardShortcuts = new Dictionary<KeyCode, System.Action>();
 
-        private void Update()
-        {
+        // Events
+        public event System.Action<Vector3> OnKeyboardMovement;
+        public event System.Action OnFocusClearRequested;
+
+    public int TickPriority => 100;
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
             UpdateMovementInput();
             UpdateRotationInput();
             UpdateZoomInput();
             UpdateModifierKeys();
             ProcessKeyboardShortcuts();
-        }
+    }
+
+    private void Awake()
+    {
+        UpdateOrchestrator.Instance.RegisterTickable(this);
+    }
+
+    private void OnDestroy()
+    {
+        UpdateOrchestrator.Instance.UnregisterTickable(this);
+    }
 
         /// <summary>
         /// Updates movement input from keyboard
@@ -87,6 +105,12 @@ namespace ProjectChimera.Systems.Camera
             if (_movementInput.sqrMagnitude > 1f)
             {
                 _movementInput.Normalize();
+            }
+
+            // Trigger event if there's movement
+            if (_movementInput.sqrMagnitude > 0.01f)
+            {
+                OnKeyboardMovement?.Invoke(_movementInput);
             }
         }
 
@@ -139,6 +163,12 @@ namespace ProjectChimera.Systems.Camera
         /// </summary>
         private void ProcessKeyboardShortcuts()
         {
+            // Focus clear (Escape key)
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                OnFocusClearRequested?.Invoke();
+            }
+
             // Viewpoint switching (hierarchical viewpoint system)
             if (Input.GetKeyDown(_facilityViewKey))
             {
@@ -260,7 +290,7 @@ namespace ProjectChimera.Systems.Camera
                 _keyboardShortcuts.Add(key, action);
             }
 
-            ChimeraLogger.Log($"[KeyboardInputProcessor] Registered shortcut: {key}");
+            ChimeraLogger.LogInfo("KeyboardInputProcessor", "$1");
         }
 
         /// <summary>
@@ -270,7 +300,7 @@ namespace ProjectChimera.Systems.Camera
         {
             if (_keyboardShortcuts.Remove(key))
             {
-                ChimeraLogger.Log($"[KeyboardInputProcessor] Unregistered shortcut: {key}");
+                ChimeraLogger.LogInfo("KeyboardInputProcessor", "$1");
             }
         }
 
@@ -363,37 +393,37 @@ namespace ProjectChimera.Systems.Camera
 
         protected virtual void OnSwitchToFacilityView()
         {
-            ChimeraLogger.Log("[KeyboardInputProcessor] Switching to Facility View");
+            ChimeraLogger.LogInfo("KeyboardInputProcessor", "$1");
             // Would integrate with camera system to switch to facility overview
         }
 
         protected virtual void OnSwitchToRoomView()
         {
-            ChimeraLogger.Log("[KeyboardInputProcessor] Switching to Room View");
+            ChimeraLogger.LogInfo("KeyboardInputProcessor", "$1");
             // Would integrate with camera system to focus on current room
         }
 
         protected virtual void OnSwitchToTableView()
         {
-            ChimeraLogger.Log("[KeyboardInputProcessor] Switching to Table View");
+            ChimeraLogger.LogInfo("KeyboardInputProcessor", "$1");
             // Would integrate with camera system to focus on grow tables/racks
         }
 
         protected virtual void OnSwitchToPlantView()
         {
-            ChimeraLogger.Log("[KeyboardInputProcessor] Switching to Plant View");
+            ChimeraLogger.LogInfo("KeyboardInputProcessor", "$1");
             // Would integrate with camera system to close-up on plants
         }
 
         protected virtual void OnSwitchToOverview()
         {
-            ChimeraLogger.Log("[KeyboardInputProcessor] Switching to Overview");
+            ChimeraLogger.LogInfo("KeyboardInputProcessor", "$1");
             // Would integrate with camera system to main overview (as mentioned in gameplay document)
         }
 
         protected virtual void OnZoomReset()
         {
-            ChimeraLogger.Log("[KeyboardInputProcessor] Zoom reset");
+            ChimeraLogger.LogInfo("KeyboardInputProcessor", "$1");
             // Would integrate with camera system to reset zoom level
         }
     }

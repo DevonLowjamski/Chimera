@@ -1,0 +1,260 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace ProjectChimera.Core
+{
+    public class ServiceContainer
+    {
+        private readonly Dictionary<Type, object> _services = new();
+        private readonly Dictionary<Type, ServiceRegistrationData> _registrations = new();
+
+        // Events
+        public event Action<ServiceRegistrationData> ServiceRegistered;
+        public event Action<Type, object> ServiceResolved;
+        public event Action<Type, Exception> ResolutionFailed;
+
+        /// <summary>
+        /// Register a service with its implementation type
+        /// </summary>
+        public void RegisterSingleton<TInterface, TImplementation>()
+            where TInterface : class
+            where TImplementation : class, TInterface, new()
+        {
+            var serviceType = typeof(TInterface);
+            var implementationType = typeof(TImplementation);
+
+            if (_services.ContainsKey(serviceType))
+                throw new InvalidOperationException($"Service {serviceType.Name} is already registered");
+
+            var instance = new TImplementation();
+            _services[serviceType] = instance;
+
+            var registration = new ServiceRegistrationData(serviceType, implementationType, ServiceLifetime.Singleton, instance, null);
+            _registrations[serviceType] = registration;
+
+            ServiceRegistered?.Invoke(registration);
+        }
+
+        /// <summary>
+        /// Register a service instance directly
+        /// </summary>
+        public void RegisterSingleton<TInterface>(TInterface instance) where TInterface : class
+        {
+            var serviceType = typeof(TInterface);
+
+            if (_services.ContainsKey(serviceType))
+                throw new InvalidOperationException($"Service {serviceType.Name} is already registered");
+
+            _services[serviceType] = instance;
+
+            var registration = new ServiceRegistrationData(serviceType, instance.GetType(), ServiceLifetime.Singleton, instance, null);
+            _registrations[serviceType] = registration;
+
+            ServiceRegistered?.Invoke(registration);
+        }
+
+        /// <summary>
+        /// Register an instance directly
+        /// </summary>
+        public void RegisterInstance<TInterface>(TInterface instance) where TInterface : class
+        {
+            RegisterSingleton(instance);
+        }
+
+        /// <summary>
+        /// Register a transient service (new instance each time)
+        /// </summary>
+        public void RegisterTransient<TInterface, TImplementation>()
+            where TInterface : class
+            where TImplementation : class, TInterface
+        {
+            var serviceType = typeof(TInterface);
+            var implementationType = typeof(TImplementation);
+
+            var registration = new ServiceRegistrationData(serviceType, implementationType, ServiceLifetime.Transient, null,
+                (container) => Activator.CreateInstance(implementationType));
+            _registrations[serviceType] = registration;
+
+            ServiceRegistered?.Invoke(registration);
+        }
+
+        /// <summary>
+        /// Register a scoped service
+        /// </summary>
+        public void RegisterScoped<TInterface, TImplementation>()
+            where TInterface : class
+            where TImplementation : class, TInterface, new()
+        {
+            // For simplicity, treat scoped as singleton
+            RegisterSingleton<TInterface, TImplementation>();
+        }
+
+        /// <summary>
+        /// Register with factory function
+        /// </summary>
+        public void RegisterFactory<TInterface>(Func<IServiceContainer, TInterface> factory)
+            where TInterface : class
+        {
+            var serviceType = typeof(TInterface);
+
+            var registration = new ServiceRegistrationData(serviceType, typeof(TInterface), ServiceLifetime.Singleton, null, factory);
+            _registrations[serviceType] = registration;
+
+            ServiceRegistered?.Invoke(registration);
+        }
+
+        /// <summary>
+        /// Resolve a service
+        /// </summary>
+        public T Resolve<T>() where T : class
+        {
+            return (T)Resolve(typeof(T));
+        }
+
+        /// <summary>
+        /// Try to resolve a service
+        /// </summary>
+        public T TryResolve<T>() where T : class
+        {
+            return TryResolve(typeof(T)) as T;
+        }
+
+        /// <summary>
+        /// Try to resolve a service by type
+        /// </summary>
+        public object TryResolve(Type serviceType)
+        {
+            if (_services.TryGetValue(serviceType, out var instance))
+                return instance;
+
+            if (_registrations.TryGetValue(serviceType, out var registration))
+            {
+                if (registration.Instance != null)
+                    return registration.Instance;
+
+                if (registration.Factory != null)
+                {
+                    try
+                    {
+                        var instance = registration.Factory(this);
+                        if (registration.Lifetime == ServiceLifetime.Singleton)
+                        {
+                            _services[serviceType] = instance;
+                        }
+                        ServiceResolved?.Invoke(serviceType, instance);
+                        return instance;
+                    }
+                    catch (Exception ex)
+                    {
+                        ResolutionFailed?.Invoke(serviceType, ex);
+                        throw;
+                    }
+                }
+
+                // Try to create instance directly
+                try
+                {
+                    var instance = Activator.CreateInstance(registration.ImplementationType);
+                    if (registration.Lifetime == ServiceLifetime.Singleton)
+                    {
+                        _services[serviceType] = instance;
+                    }
+                    ServiceResolved?.Invoke(serviceType, instance);
+                    return instance;
+                }
+                catch (Exception ex)
+                {
+                    ResolutionFailed?.Invoke(serviceType, ex);
+                    throw;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Resolve a service by type
+        /// </summary>
+        public object Resolve(Type serviceType)
+        {
+            var instance = TryResolve(serviceType);
+            if (instance == null)
+                throw new InvalidOperationException($"Service {serviceType.Name} is not registered");
+
+            return instance;
+        }
+
+        /// <summary>
+        /// Check if a service is registered
+        /// </summary>
+        public bool IsRegistered<T>() where T : class
+        {
+            return IsRegistered(typeof(T));
+        }
+
+        /// <summary>
+        /// Check if a service type is registered
+        /// </summary>
+        public bool IsRegistered(Type serviceType)
+        {
+            return _services.ContainsKey(serviceType) || _registrations.ContainsKey(serviceType);
+        }
+
+        /// <summary>
+        /// Get all registered service types
+        /// </summary>
+        public IEnumerable<Type> GetRegisteredTypes()
+        {
+            return _services.Keys.Concat(_registrations.Keys).Distinct();
+        }
+
+        /// <summary>
+        /// Get registered types for a specific interface
+        /// </summary>
+        public IEnumerable<Type> GetRegisteredTypes<T>()
+        {
+            var interfaceType = typeof(T);
+            return _services.Keys.Concat(_registrations.Keys)
+                .Where(type => interfaceType.IsAssignableFrom(type))
+                .Distinct();
+        }
+
+        /// <summary>
+        /// Get registered types for a specific interface type
+        /// </summary>
+        public IEnumerable<Type> GetRegisteredTypes(Type interfaceType)
+        {
+            return _services.Keys.Concat(_registrations.Keys)
+                .Where(type => interfaceType.IsAssignableFrom(type))
+                .Distinct();
+        }
+
+        /// <summary>
+        /// Unregister a service
+        /// </summary>
+        public bool Unregister<T>() where T : class
+        {
+            var serviceType = typeof(T);
+            var removed = _services.Remove(serviceType) || _registrations.Remove(serviceType);
+            return removed;
+        }
+
+        /// <summary>
+        /// Clear all services
+        /// </summary>
+        public void Clear()
+        {
+            _services.Clear();
+            _registrations.Clear();
+        }
+
+        /// <summary>
+        /// Get service registration info
+        /// </summary>
+        public IEnumerable<ServiceRegistrationData> GetRegistrations()
+        {
+            return _registrations.Values;
+        }
+    }
+}

@@ -5,6 +5,7 @@ using ProjectChimera.Core;
 // Migrated to unified ServiceContainer architecture
 using ProjectChimera.Systems.Gameplay;
 using ProjectChimera.Data.Events;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Systems.Gameplay
 {
@@ -67,14 +68,14 @@ namespace ProjectChimera.Systems.Gameplay
 
                 if (_modeController == null)
                 {
-                    ChimeraLogger.LogError("[GeneticsModeOverlay] GameplayModeController service not found!");
+                    Logger.LogError("GAMEPLAY", "IGameplayModeController not available", this);
                     return;
                 }
 
                 // Validate component references
                 if (!ValidateComponents())
                 {
-                    ChimeraLogger.LogError("[GeneticsModeOverlay] Component validation failed!");
+                    Logger.LogError("GAMEPLAY", "Genetics overlay components missing", this);
                     return;
                 }
 
@@ -88,12 +89,12 @@ namespace ProjectChimera.Systems.Gameplay
 
                 if (_debugMode)
                 {
-                    ChimeraLogger.Log($"[GeneticsModeOverlay] Initialized with current mode: {_modeController.CurrentMode}");
+                    Logger.Log("GAMEPLAY", "Genetics overlay initialized", this);
                 }
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[GeneticsModeOverlay] Error during initialization: {ex.Message}");
+                Logger.LogError("GAMEPLAY", $"Genetics overlay initialization error: {ex.Message}", this);
             }
         }
 
@@ -106,13 +107,13 @@ namespace ProjectChimera.Systems.Gameplay
 
             if (_enableGeneticVisualization && _geneticVisualizationManager == null)
             {
-                ChimeraLogger.LogError("[GeneticsModeOverlay] GeneticVisualizationManager component is required but not assigned!");
+                Logger.LogWarning("GAMEPLAY", "GeneticVisualizationManager not assigned", this);
                 allValid = false;
             }
 
             if (_enableGeneticsToolbar && _geneticsToolbarManager == null)
             {
-                ChimeraLogger.LogError("[GeneticsModeOverlay] GeneticsToolbarManager component is required but not assigned!");
+                Logger.LogWarning("GAMEPLAY", "GeneticsToolbarManager not assigned", this);
                 allValid = false;
             }
 
@@ -127,7 +128,7 @@ namespace ProjectChimera.Systems.Gameplay
             }
             else
             {
-                ChimeraLogger.LogWarning("[GeneticsModeOverlay] ModeChangedEvent not assigned");
+                Logger.LogWarning("GAMEPLAY", "ModeChangedEventSO not assigned", this);
             }
         }
 
@@ -143,7 +144,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                ChimeraLogger.Log($"[GeneticsModeOverlay] Mode changed: {eventData.PreviousMode} → {eventData.NewMode}");
+                Logger.Log("GAMEPLAY", $"Genetics mode changed to {eventData.NewMode}", this);
             }
 
             UpdateOverlayVisibility(eventData.NewMode);
@@ -191,7 +192,7 @@ namespace ProjectChimera.Systems.Gameplay
 
             if (_debugMode)
             {
-                ChimeraLogger.Log($"[GeneticsModeOverlay] Genetics mode overlay {(shouldShowOverlay ? "shown" : "hidden")}");
+                Logger.Log("GAMEPLAY", $"Genetics overlay visibility set: {shouldShowOverlay}", this);
             }
         }
 
@@ -208,7 +209,7 @@ namespace ProjectChimera.Systems.Gameplay
 
                 if (_debugMode)
                 {
-                    ChimeraLogger.Log("[GeneticsModeOverlay] Overlay refreshed manually");
+                    Logger.Log("OTHER", "$1", this);
                 }
             }
         }
@@ -219,7 +220,7 @@ namespace ProjectChimera.Systems.Gameplay
         public void SetDebugMode(bool enabled)
         {
             _debugMode = enabled;
-            ChimeraLogger.Log($"[GeneticsModeOverlay] Debug mode {(enabled ? "enabled" : "disabled")}");
+            Logger.Log("GAMEPLAY", $"Genetics overlay debug mode: {(enabled ? "ON" : "OFF")}", this);
         }
 
         /// <summary>
@@ -263,8 +264,8 @@ namespace ProjectChimera.Systems.Gameplay
 
         #region ITickable Implementation
 
-        public int Priority => 0;
-        public bool Enabled => enabled && gameObject.activeInHierarchy;
+        public int TickPriority => 0;
+        public bool IsTickable => enabled && gameObject.activeInHierarchy;
 
         public virtual void OnRegistered()
         {
@@ -294,7 +295,7 @@ namespace ProjectChimera.Systems.Gameplay
             }
             else
             {
-                ChimeraLogger.Log("[GeneticsModeOverlay] Test only works during play mode with initialized controller");
+                Logger.LogWarning("GAMEPLAY", "IGameplayModeController not available for editor toggle", this);
             }
         }
 

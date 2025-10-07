@@ -4,6 +4,11 @@
     "references": [
         "ProjectChimera.Core",
         "ProjectChimera.Shared",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Data.Cultivation",
+        "ProjectChimera.Data.Genetics",
+        "ProjectChimera.Data.Environment",
+        "ProjectChimera.Systems",
         "ProjectChimera.Data.Events",
         "UnityEngine.UI",
         "Unity.TextMeshPro"

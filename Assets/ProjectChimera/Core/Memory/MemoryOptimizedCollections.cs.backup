@@ -1,0 +1,647 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using Unity.Collections;
+using UnityEngine;
+
+namespace ProjectChimera.Core.Memory
+{
+    /// <summary>
+    /// MEMORY: Memory-optimized data structures to reduce GC pressure
+    /// Provides alternatives to standard collections with better memory behavior
+    /// Week 10: Memory & GC Optimization
+    /// </summary>
+    
+    /// <summary>
+    /// Memory-optimized list that reuses internal arrays and minimizes allocations
+    /// </summary>
+    public class MemoryOptimizedList<T> : IList<T>, IDisposable
+    {
+        private T[] _items;
+        private int _size;
+        private int _capacity;
+        private const int DefaultCapacity = 4;
+
+        public int Count => _size;
+        public int Capacity => _capacity;
+        public bool IsReadOnly => false;
+
+        public MemoryOptimizedList()
+        {
+            _items = Array.Empty<T>();
+            _capacity = 0;
+            _size = 0;
+        }
+
+        public MemoryOptimizedList(int capacity)
+        {
+            if (capacity < 0) throw new ArgumentOutOfRangeException(nameof(capacity));
+            
+            if (capacity == 0)
+            {
+                _items = Array.Empty<T>();
+            }
+            else
+            {
+                _items = new T[capacity];
+            }
+            _capacity = capacity;
+            _size = 0;
+        }
+
+        public T this[int index]
+        {
+            get
+            {
+                if (index >= _size) throw new ArgumentOutOfRangeException(nameof(index));
+                return _items[index];
+            }
+            set
+            {
+                if (index >= _size) throw new ArgumentOutOfRangeException(nameof(index));
+                _items[index] = value;
+            }
+        }
+
+        public void Add(T item)
+        {
+            if (_size == _capacity)
+            {
+                EnsureCapacity(_size + 1);
+            }
+            _items[_size++] = item;
+        }
+
+        public void Insert(int index, T item)
+        {
+            if (index > _size) throw new ArgumentOutOfRangeException(nameof(index));
+            
+            if (_size == _capacity)
+            {
+                EnsureCapacity(_size + 1);
+            }
+
+            if (index < _size)
+            {
+                Array.Copy(_items, index, _items, index + 1, _size - index);
+            }
+            _items[index] = item;
+            _size++;
+        }
+
+        public bool Remove(T item)
+        {
+            int index = IndexOf(item);
+            if (index >= 0)
+            {
+                RemoveAt(index);
+                return true;
+            }
+            return false;
+        }
+
+        public void RemoveAt(int index)
+        {
+            if (index >= _size) throw new ArgumentOutOfRangeException(nameof(index));
+            
+            _size--;
+            if (index < _size)
+            {
+                Array.Copy(_items, index + 1, _items, index, _size - index);
+            }
+            _items[_size] = default(T); // Clear reference
+        }
+
+        public int IndexOf(T item)
+        {
+            return Array.IndexOf(_items, item, 0, _size);
+        }
+
+        public bool Contains(T item)
+        {
+            return IndexOf(item) >= 0;
+        }
+
+        public void Clear()
+        {
+            if (_size > 0)
+            {
+                Array.Clear(_items, 0, _size);
+                _size = 0;
+            }
+        }
+
+        public void CopyTo(T[] array, int arrayIndex)
+        {
+            Array.Copy(_items, 0, array, arrayIndex, _size);
+        }
+
+        /// <summary>
+        /// Trim excess capacity to reduce memory usage
+        /// </summary>
+        public void TrimExcess()
+        {
+            int threshold = (int)(_capacity * 0.9);
+            if (_size < threshold)
+            {
+                SetCapacity(_size);
+            }
+        }
+
+        /// <summary>
+        /// Reserve capacity without allocating if already sufficient
+        /// </summary>
+        public void Reserve(int capacity)
+        {
+            if (capacity > _capacity)
+            {
+                SetCapacity(capacity);
+            }
+        }
+
+        private void EnsureCapacity(int min)
+        {
+            if (_capacity < min)
+            {
+                int newCapacity = _capacity == 0 ? DefaultCapacity : _capacity * 2;
+                if (newCapacity < min) newCapacity = min;
+                SetCapacity(newCapacity);
+            }
+        }
+
+        private void SetCapacity(int value)
+        {
+            if (value != _capacity)
+            {
+                if (value > 0)
+                {
+                    T[] newItems = new T[value];
+                    if (_size > 0)
+                    {
+                        Array.Copy(_items, 0, newItems, 0, _size);
+                    }
+                    _items = newItems;
+                }
+                else
+                {
+                    _items = Array.Empty<T>();
+                }
+                _capacity = value;
+            }
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            for (int i = 0; i < _size; i++)
+            {
+                yield return _items[i];
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public void Dispose()
+        {
+            Clear();
+            _items = null;
+        }
+    }
+
+    /// <summary>
+    /// Memory-optimized dictionary using open addressing to reduce allocations
+    /// </summary>
+    public class MemoryOptimizedDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IDisposable
+        where TKey : IEquatable<TKey>
+    {
+        private struct Entry
+        {
+            public uint hashCode;
+            public TKey key;
+            public TValue value;
+            public bool isOccupied;
+        }
+
+        private Entry[] _entries;
+        private int _count;
+        private int _capacity;
+        private readonly IEqualityComparer<TKey> _comparer;
+
+        public int Count => _count;
+        public int Capacity => _capacity;
+        public bool IsReadOnly => false;
+
+        public ICollection<TKey> Keys
+        {
+            get
+            {
+                var keys = new MemoryOptimizedList<TKey>();
+                for (int i = 0; i < _capacity; i++)
+                {
+                    if (_entries[i].isOccupied)
+                        keys.Add(_entries[i].key);
+                }
+                return keys;
+            }
+        }
+
+        public ICollection<TValue> Values
+        {
+            get
+            {
+                var values = new MemoryOptimizedList<TValue>();
+                for (int i = 0; i < _capacity; i++)
+                {
+                    if (_entries[i].isOccupied)
+                        values.Add(_entries[i].value);
+                }
+                return values;
+            }
+        }
+
+        public MemoryOptimizedDictionary() : this(16) { }
+
+        public MemoryOptimizedDictionary(int capacity, IEqualityComparer<TKey> comparer = null)
+        {
+            _capacity = GetNextPowerOfTwo(Math.Max(capacity, 4));
+            _entries = new Entry[_capacity];
+            _count = 0;
+            _comparer = comparer ?? EqualityComparer<TKey>.Default;
+        }
+
+        public TValue this[TKey key]
+        {
+            get
+            {
+                if (TryGetValue(key, out TValue value))
+                    return value;
+                throw new KeyNotFoundException();
+            }
+            set
+            {
+                Insert(key, value, false);
+            }
+        }
+
+        public void Add(TKey key, TValue value)
+        {
+            Insert(key, value, true);
+        }
+
+        public void Add(KeyValuePair<TKey, TValue> item)
+        {
+            Add(item.Key, item.Value);
+        }
+
+        public bool Remove(TKey key)
+        {
+            uint hashCode = (uint)_comparer.GetHashCode(key);
+            int index = FindEntry(key, hashCode);
+            
+            if (index >= 0)
+            {
+                _entries[index] = default;
+                _count--;
+                return true;
+            }
+            return false;
+        }
+
+        public bool Remove(KeyValuePair<TKey, TValue> item)
+        {
+            if (TryGetValue(item.Key, out TValue value) && EqualityComparer<TValue>.Default.Equals(value, item.Value))
+            {
+                return Remove(item.Key);
+            }
+            return false;
+        }
+
+        public bool TryGetValue(TKey key, out TValue value)
+        {
+            uint hashCode = (uint)_comparer.GetHashCode(key);
+            int index = FindEntry(key, hashCode);
+            
+            if (index >= 0)
+            {
+                value = _entries[index].value;
+                return true;
+            }
+            
+            value = default;
+            return false;
+        }
+
+        public bool ContainsKey(TKey key)
+        {
+            return FindEntry(key, (uint)_comparer.GetHashCode(key)) >= 0;
+        }
+
+        public bool Contains(KeyValuePair<TKey, TValue> item)
+        {
+            return TryGetValue(item.Key, out TValue value) && EqualityComparer<TValue>.Default.Equals(value, item.Value);
+        }
+
+        public void Clear()
+        {
+            if (_count > 0)
+            {
+                Array.Clear(_entries, 0, _capacity);
+                _count = 0;
+            }
+        }
+
+        public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+        {
+            if (array == null) throw new ArgumentNullException(nameof(array));
+            if (arrayIndex < 0) throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+            if (array.Length - arrayIndex < _count) throw new ArgumentException("Array too small");
+
+            int index = arrayIndex;
+            for (int i = 0; i < _capacity; i++)
+            {
+                if (_entries[i].isOccupied)
+                {
+                    array[index++] = new KeyValuePair<TKey, TValue>(_entries[i].key, _entries[i].value);
+                }
+            }
+        }
+
+        private void Insert(TKey key, TValue value, bool add)
+        {
+            if (_count >= _capacity * 0.75) // Load factor threshold
+            {
+                Resize();
+            }
+
+            uint hashCode = (uint)_comparer.GetHashCode(key);
+            int index = FindEntry(key, hashCode);
+
+            if (index >= 0)
+            {
+                if (add) throw new ArgumentException("Key already exists");
+                _entries[index].value = value;
+                return;
+            }
+
+            // Find empty slot
+            index = (int)(hashCode % _capacity);
+            while (_entries[index].isOccupied)
+            {
+                index = (index + 1) % _capacity;
+            }
+
+            _entries[index] = new Entry
+            {
+                hashCode = hashCode,
+                key = key,
+                value = value,
+                isOccupied = true
+            };
+            _count++;
+        }
+
+        private int FindEntry(TKey key, uint hashCode)
+        {
+            int index = (int)(hashCode % _capacity);
+            int originalIndex = index;
+
+            do
+            {
+                if (_entries[index].isOccupied && _entries[index].hashCode == hashCode && _comparer.Equals(_entries[index].key, key))
+                {
+                    return index;
+                }
+                index = (index + 1) % _capacity;
+            }
+            while (index != originalIndex && _entries[index].isOccupied);
+
+            return -1;
+        }
+
+        private void Resize()
+        {
+            var oldEntries = _entries;
+            int oldCapacity = _capacity;
+
+            _capacity *= 2;
+            _entries = new Entry[_capacity];
+            _count = 0;
+
+            // Rehash all entries
+            for (int i = 0; i < oldCapacity; i++)
+            {
+                if (oldEntries[i].isOccupied)
+                {
+                    Insert(oldEntries[i].key, oldEntries[i].value, false);
+                }
+            }
+        }
+
+        private static int GetNextPowerOfTwo(int value)
+        {
+            value--;
+            value |= value >> 1;
+            value |= value >> 2;
+            value |= value >> 4;
+            value |= value >> 8;
+            value |= value >> 16;
+            return value + 1;
+        }
+
+        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
+        {
+            for (int i = 0; i < _capacity; i++)
+            {
+                if (_entries[i].isOccupied)
+                {
+                    yield return new KeyValuePair<TKey, TValue>(_entries[i].key, _entries[i].value);
+                }
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public void Dispose()
+        {
+            Clear();
+            _entries = null;
+        }
+    }
+
+    /// <summary>
+    /// Memory-optimized queue using circular buffer
+    /// </summary>
+    public class MemoryOptimizedQueue<T> : IEnumerable<T>, IDisposable
+    {
+        private T[] _array;
+        private int _head;
+        private int _tail;
+        private int _size;
+        private int _capacity;
+
+        public int Count => _size;
+        public int Capacity => _capacity;
+
+        public MemoryOptimizedQueue() : this(4) { }
+
+        public MemoryOptimizedQueue(int capacity)
+        {
+            _capacity = capacity;
+            _array = new T[capacity];
+            _head = 0;
+            _tail = 0;
+            _size = 0;
+        }
+
+        public void Enqueue(T item)
+        {
+            if (_size == _capacity)
+            {
+                Grow();
+            }
+
+            _array[_tail] = item;
+            _tail = (_tail + 1) % _capacity;
+            _size++;
+        }
+
+        public T Dequeue()
+        {
+            if (_size == 0) throw new InvalidOperationException("Queue is empty");
+
+            T item = _array[_head];
+            _array[_head] = default; // Clear reference
+            _head = (_head + 1) % _capacity;
+            _size--;
+
+            return item;
+        }
+
+        public T Peek()
+        {
+            if (_size == 0) throw new InvalidOperationException("Queue is empty");
+            return _array[_head];
+        }
+
+        public bool TryDequeue(out T result)
+        {
+            if (_size == 0)
+            {
+                result = default;
+                return false;
+            }
+
+            result = Dequeue();
+            return true;
+        }
+
+        public bool TryPeek(out T result)
+        {
+            if (_size == 0)
+            {
+                result = default;
+                return false;
+            }
+
+            result = _array[_head];
+            return true;
+        }
+
+        public void Clear()
+        {
+            if (_size > 0)
+            {
+                Array.Clear(_array, 0, _capacity);
+                _head = 0;
+                _tail = 0;
+                _size = 0;
+            }
+        }
+
+        private void Grow()
+        {
+            int newCapacity = _capacity * 2;
+            T[] newArray = new T[newCapacity];
+
+            if (_head < _tail)
+            {
+                Array.Copy(_array, _head, newArray, 0, _size);
+            }
+            else if (_size > 0)
+            {
+                Array.Copy(_array, _head, newArray, 0, _capacity - _head);
+                Array.Copy(_array, 0, newArray, _capacity - _head, _tail);
+            }
+
+            _array = newArray;
+            _head = 0;
+            _tail = _size;
+            _capacity = newCapacity;
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            for (int i = 0; i < _size; i++)
+            {
+                yield return _array[(_head + i) % _capacity];
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public void Dispose()
+        {
+            Clear();
+            _array = null;
+        }
+    }
+
+    /// <summary>
+    /// Memory pool for reusing objects and reducing allocations
+    /// </summary>
+    public class MemoryPool<T> : IDisposable where T : class, new()
+    {
+        private readonly MemoryOptimizedQueue<T> _pool;
+        private readonly Func<T> _factory;
+        private readonly Action<T> _resetAction;
+        private readonly int _maxSize;
+
+        public int Count => _pool.Count;
+        public int MaxSize => _maxSize;
+
+        public MemoryPool(int maxSize = 100, Func<T> factory = null, Action<T> resetAction = null)
+        {
+            _maxSize = maxSize;
+            _pool = new MemoryOptimizedQueue<T>(Math.Min(maxSize, 16));
+            _factory = factory ?? (() => new T());
+            _resetAction = resetAction;
+        }
+
+        public T Get()
+        {
+            if (_pool.TryDequeue(out T item))
+            {
+                return item;
+            }
+            return _factory();
+        }
+
+        public void Return(T item)
+        {
+            if (item == null || _pool.Count >= _maxSize)
+                return;
+
+            _resetAction?.Invoke(item);
+            _pool.Enqueue(item);
+        }
+
+        public void Clear()
+        {
+            _pool.Clear();
+        }
+
+        public void Dispose()
+        {
+            _pool?.Dispose();
+        }
+    }
+}

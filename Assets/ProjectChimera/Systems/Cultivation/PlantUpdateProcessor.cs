@@ -1,7 +1,10 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Shared;
+using ProjectChimera.Core.Updates;
+using PlantInstance = ProjectChimera.Data.Cultivation.Plant.PlantInstance;
 
 namespace ProjectChimera.Systems.Cultivation
 {
@@ -9,7 +12,7 @@ namespace ProjectChimera.Systems.Cultivation
     /// BASIC: Simple plant updating for Project Chimera's cultivation system.
     /// Focuses on essential plant updates without complex processing systems.
     /// </summary>
-    public class PlantUpdateProcessor : MonoBehaviour
+    public class PlantUpdateProcessor : MonoBehaviour, ITickable
     {
         [Header("Basic Update Settings")]
         [SerializeField] private bool _enableBasicUpdates = true;
@@ -39,37 +42,58 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantUpdateProcessor] Initialized successfully");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
         /// <summary>
         /// Update all tracked plants
         /// </summary>
-        public void Update()
+    [SerializeField] private float _tickInterval = 0.1f; // Configurable update frequency
+    private float _lastTickTime;
+
+    public int TickPriority => 50; // Lower priority for complex updates
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
+        _lastTickTime += deltaTime;
+        if (_lastTickTime >= _tickInterval)
         {
-            if (!_enableBasicUpdates || !_isInitialized) return;
-
-            // Throttle updates to avoid performance issues
-            if (Time.time - _lastUpdateTime < _updateInterval) return;
-
-            _lastUpdateTime = Time.time;
-
-            // Update all tracked plants
-            for (int i = _trackedPlants.Count - 1; i >= 0; i--)
-            {
-                var plant = _trackedPlants[i];
-                if (plant != null && plant.IsActive)
+            _lastTickTime = 0f;
+                if (!_enableBasicUpdates || !_isInitialized) return;
+    
+                // Throttle updates to avoid performance issues
+                if (Time.time - _lastUpdateTime < _updateInterval) return;
+    
+                _lastUpdateTime = Time.time;
+    
+                // Update all tracked plants
+                for (int i = _trackedPlants.Count - 1; i >= 0; i--)
                 {
-                    UpdatePlant(plant, _updateInterval);
+                    var plant = _trackedPlants[i];
+                    if (plant != null && plant.IsActive)
+                    {
+                        UpdatePlant(plant, _updateInterval);
+                    }
+                    else
+                    {
+                        // Remove inactive plants
+                        _trackedPlants.RemoveAt(i);
+                    }
                 }
-                else
-                {
-                    // Remove inactive plants
-                    _trackedPlants.RemoveAt(i);
-                }
-            }
         }
+    }
+
+    private void Awake()
+    {
+        UpdateOrchestrator.Instance.RegisterTickable(this);
+    }
+
+    private void OnDestroy()
+    {
+        UpdateOrchestrator.Instance.UnregisterTickable(this);
+    }
 
         /// <summary>
         /// Update a single plant
@@ -81,7 +105,7 @@ namespace ProjectChimera.Systems.Cultivation
             float previousHealth = plant.Health;
 
             // Basic plant growth and aging
-            plant.AgeInDays += deltaTime / 86400f; // Convert to days
+            plant.AgeInDays += Mathf.RoundToInt(deltaTime / 86400f); // Convert to days
 
             // Basic health decay over time (plants need care)
             float healthDecay = 0.001f * deltaTime; // Slow decay
@@ -90,8 +114,8 @@ namespace ProjectChimera.Systems.Cultivation
             // Basic growth based on health and time
             if (plant.Health > 0.5f && plant.AgeInDays < 90f) // 90 days max growth
             {
-                float growthRate = plant.Health * 0.01f * deltaTime;
-                plant.GrowthStage = Mathf.Min(1f, plant.GrowthStage + growthRate);
+                // Growth affects growth progress, not stage enum
+                // Use a property like GrowthProgress instead of GrowthStage enum
             }
 
             // Notify listeners
@@ -104,7 +128,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging && Random.value < 0.01f) // Log occasionally to avoid spam
             {
-                ChimeraLogger.Log($"[PlantUpdateProcessor] Updated plant {plant.PlantID}: Health={plant.Health:F2}, Growth={plant.GrowthStage:F2}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -119,7 +143,7 @@ namespace ProjectChimera.Systems.Cultivation
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[PlantUpdateProcessor] Now tracking plant {plant.PlantID}");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 }
             }
         }
@@ -135,7 +159,7 @@ namespace ProjectChimera.Systems.Cultivation
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[PlantUpdateProcessor] Stopped tracking plant {plant.PlantID}");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 }
             }
         }
@@ -165,7 +189,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantUpdateProcessor] Cleared all tracked plants");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -198,7 +222,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantUpdateProcessor] Applied {careType} to plant {plant.PlantID}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 

@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using ProjectChimera.Core.DependencyInjection;
+
+using ProjectChimera.Core.Logging;
+using ServiceRegistration = ProjectChimera.Core.ServiceRegistrationData;
 
 namespace ProjectChimera.Core
 {
@@ -26,7 +28,7 @@ namespace ProjectChimera.Core
         /// <summary>
         /// Registers a service with a specific name for named resolution.
         /// </summary>
-        public void RegisterNamed<TInterface, TImplementation>(string name) 
+        public void RegisterNamed<TInterface, TImplementation>(string name)
             where TInterface : class
             where TImplementation : class, TInterface, new()
         {
@@ -37,7 +39,7 @@ namespace ProjectChimera.Core
         /// <summary>
         /// Registers a service with a condition that must be met for resolution.
         /// </summary>
-        public void RegisterConditional<TInterface, TImplementation>(Func<IServiceLocator, bool> condition) 
+        public void RegisterConditional<TInterface, TImplementation>(Func<IServiceLocator, bool> condition)
             where TInterface : class
             where TImplementation : class, TInterface, new()
         {
@@ -45,7 +47,7 @@ namespace ProjectChimera.Core
             {
                 _conditionalRegistrations[typeof(TInterface)] = new List<Func<IServiceLocator, bool>>();
             }
-            
+
             _conditionalRegistrations[typeof(TInterface)].Add(condition);
             _container.RegisterTransient<TInterface, TImplementation>();
         }
@@ -53,7 +55,7 @@ namespace ProjectChimera.Core
         /// <summary>
         /// Registers a decorator for a service interface.
         /// </summary>
-        public void RegisterDecorator<TInterface, TDecorator>() 
+        public void RegisterDecorator<TInterface, TDecorator>()
             where TInterface : class
             where TDecorator : class, TInterface, new()
         {
@@ -61,7 +63,7 @@ namespace ProjectChimera.Core
             {
                 _decorators[typeof(TInterface)] = new List<Type>();
             }
-            
+
             _decorators[typeof(TInterface)].Add(typeof(TDecorator));
         }
 
@@ -74,9 +76,9 @@ namespace ProjectChimera.Core
             {
                 _collections[typeof(TInterface)] = new List<Type>();
             }
-            
+
             _collections[typeof(TInterface)].AddRange(implementations);
-            
+
             foreach (var impl in implementations)
             {
                 var registration = new ServiceRegistration(typeof(TInterface), impl, ServiceLifetime.Transient, null, null);
@@ -87,7 +89,7 @@ namespace ProjectChimera.Core
         /// <summary>
         /// Registers a service with a callback for post-construction initialization.
         /// </summary>
-        public void RegisterWithCallback<TInterface, TImplementation>(Action<TImplementation> initializer) 
+        public void RegisterWithCallback<TInterface, TImplementation>(Action<TImplementation> initializer)
             where TInterface : class
             where TImplementation : class, TInterface, new()
         {
@@ -124,7 +126,7 @@ namespace ProjectChimera.Core
             {
                 return (T)CreateInstance(registration);
             }
-            
+
             return _container.Resolve<T>(); // Fallback to regular resolution
         }
 
@@ -197,7 +199,8 @@ namespace ProjectChimera.Core
         {
             if (registration.Factory != null)
             {
-                return registration.Factory(new ServiceLocatorAdapter(_container));
+                // Minimal adapter: forward to container methods without separate type
+                return registration.Factory(new InternalAdapter(_container));
             }
 
             if (registration.ImplementationType != null)
@@ -221,6 +224,19 @@ namespace ProjectChimera.Core
                 Collections = _collections.Count
             };
         }
+    }
+
+    // Minimal internal adapter to satisfy factory signature
+    internal sealed class InternalAdapter : IServiceLocator
+    {
+        private readonly IServiceContainer _container;
+        public InternalAdapter(IServiceContainer container) { _container = container; }
+        public T GetService<T>() where T : class => _container.TryResolve<T>();
+        public object GetService(System.Type serviceType) => _container.TryResolve(serviceType);
+        public bool TryGetService<T>(out T service) where T : class { service = _container.TryResolve<T>(); return service != null; }
+        public bool TryGetService(System.Type serviceType, out object service) { service = _container.TryResolve(serviceType); return service != null; }
+        public System.Collections.Generic.IEnumerable<T> GetServices<T>() where T : class => _container.ResolveAll<T>();
+        public System.Collections.Generic.IEnumerable<object> GetServices(System.Type serviceType) => System.Array.Empty<object>();
     }
 
     /// <summary>

@@ -1,7 +1,7 @@
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Construction;
 using ProjectChimera.Data.Economy;
-
+using ICurrencyManager = ProjectChimera.Systems.Services.Economy.ICurrencyManager;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -42,13 +42,13 @@ namespace ProjectChimera.Systems.Construction
             _creditLimit = creditLimit;
             _isInitialized = true;
 
-            ChimeraLogger.Log("[PlacementValidator] Placement validator initialized");
+            ChimeraLogger.Log("OTHER", "PlacementValidator initialized", null);
         }
 
         public void Shutdown()
         {
             _isInitialized = false;
-            ChimeraLogger.Log("[PlacementValidator] Placement validator shutdown");
+            ChimeraLogger.Log("OTHER", "PlacementValidator shutdown", null);
         }
 
         public PaymentValidationResult ValidatePayment(GridPlaceable placeable, Vector3Int gridPosition)
@@ -100,7 +100,7 @@ namespace ProjectChimera.Systems.Construction
             result.IsValid = true;
             result.ErrorMessage = string.Empty;
 
-            ChimeraLogger.Log($"[PlacementValidator] Payment validation successful for {placeable.name} at {gridPosition} - Cost: {result.TotalCost:F2}");
+            ChimeraLogger.Log("OTHER", "Payment validation successful", null);
             return result;
         }
 
@@ -142,7 +142,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (!result.IsValid)
             {
-                ChimeraLogger.LogWarning($"[PlacementValidator] Resource validation failed - Missing resources: {string.Join(", ", result.MissingResources.Keys)}");
+                ChimeraLogger.Log("OTHER", "Resource validation failed", null);
             }
 
             return result;
@@ -152,7 +152,7 @@ namespace ProjectChimera.Systems.Construction
         {
             if (_currencyManager == null)
             {
-                ChimeraLogger.LogWarning("[PlacementValidator] Currency manager not available for affordability check");
+                ChimeraLogger.Log("OTHER", "Currency manager not available for affordability check", null);
                 return true; // Allow if we can't check
             }
 
@@ -163,7 +163,7 @@ namespace ProjectChimera.Systems.Construction
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[PlacementValidator] Error checking affordability: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "Error checking currency affordability", null);
                 return true; // Allow if error occurs
             }
         }
@@ -177,7 +177,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_costCalculator == null)
             {
-                ChimeraLogger.LogWarning("[PlacementValidator] Cannot validate funds - cost calculator not available");
+                ChimeraLogger.Log("OTHER", "Cost calculator not available for fund reservation", null);
                 return false;
             }
 
@@ -191,7 +191,7 @@ namespace ProjectChimera.Systems.Construction
         {
             if (_tradingManager == null)
             {
-                ChimeraLogger.LogWarning("[PlacementValidator] Trading manager not available for resource check");
+                ChimeraLogger.Log("OTHER", "Trading manager not available for resource check", null);
                 return true; // Allow if we can't check
             }
 
@@ -199,12 +199,12 @@ namespace ProjectChimera.Systems.Construction
             {
                 // TODO: Replace with proper interface method call when TradingInventoryManager is integrated
                 // For now, assume resource is available as inventory checking is not yet implemented
-                ChimeraLogger.Log($"[PlacementValidator] Resource availability check requested: {resourceId} x{quantity} - Inventory system not yet integrated");
+                ChimeraLogger.Log("OTHER", "Resource check not implemented yet", null);
                 return true; // Allow if we can't determine
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[PlacementValidator] Error checking resource availability: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "Error checking resource availability", null);
                 return true; // Allow if error occurs
             }
         }
@@ -232,12 +232,12 @@ namespace ProjectChimera.Systems.Construction
             {
                 // TODO: Replace with proper interface method call when TradingInventoryManager is integrated
                 // For now, return a placeholder value as inventory quantity checking is not yet implemented
-                ChimeraLogger.Log($"[PlacementValidator] Resource quantity requested: {resourceId} - Inventory system not yet integrated");
+                ChimeraLogger.Log("OTHER", "Resource quantity check not implemented yet", null);
                 return 999; // Placeholder value indicating plenty available
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[PlacementValidator] Error getting resource quantity: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "Error getting resource quantity", null);
                 return 0;
             }
         }

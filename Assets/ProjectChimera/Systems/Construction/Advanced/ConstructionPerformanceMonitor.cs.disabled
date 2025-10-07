@@ -1,0 +1,321 @@
+using UnityEngine;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Performance;
+
+namespace ProjectChimera.Systems.Construction.Advanced
+{
+    /// <summary>
+    /// REFACTORED: Construction Performance Monitor
+    /// Single Responsibility: Construction system performance monitoring and adaptive optimization
+    /// Extracted from AdvancedConstructionSystem for better separation of concerns
+    /// </summary>
+    public class ConstructionPerformanceMonitor : MonoBehaviour
+    {
+        [Header("Performance Monitoring Settings")]
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private bool _enablePerformanceMonitoring = true;
+        [SerializeField] private float _maxFrameTimeMs = 16.67f; // 60 FPS target
+        [SerializeField] private float _monitoringInterval = 0.1f;
+
+        // External performance systems
+        private AdvancedPerformanceMonitor _systemPerformanceMonitor;
+        private MetricsCollectionFramework _metricsFramework;
+
+        // Performance tracking
+        private float _frameStartTime;
+        private float _lastMonitoringUpdate;
+        private bool _isInitialized = false;
+
+        // Adaptive settings
+        private int _baseValidationsPerFrame = 20;
+        private int _currentValidationsPerFrame = 20;
+        private float _performanceScaleFactor = 1.0f;
+
+        // Statistics
+        private ConstructionPerformanceStats _stats = new ConstructionPerformanceStats();
+
+        // Events
+        public event System.Action<float> OnFrameTimeThresholdExceeded;
+        public event System.Action<int> OnValidationLimitAdjusted;
+        public event System.Action<ConstructionPerformanceStats> OnPerformanceStatsUpdated;
+
+        public bool IsInitialized => _isInitialized;
+        public ConstructionPerformanceStats Stats => _stats;
+        public int CurrentValidationsPerFrame => _currentValidationsPerFrame;
+        public float PerformanceScaleFactor => _performanceScaleFactor;
+
+        public void Initialize(AdvancedPerformanceMonitor performanceMonitor = null, MetricsCollectionFramework metricsFramework = null)
+        {
+            if (_isInitialized) return;
+
+            _systemPerformanceMonitor = performanceMonitor;
+            _metricsFramework = metricsFramework;
+            
+            ResetStats();
+            _currentValidationsPerFrame = _baseValidationsPerFrame;
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", "Construction Performance Monitor initialized", this);
+            }
+        }
+
+        /// <summary>
+        /// Start frame performance monitoring
+        /// </summary>
+        public void BeginFrameMonitoring()
+        {
+            if (!_enablePerformanceMonitoring) return;
+
+            _frameStartTime = Time.realtimeSinceStartup * 1000f;
+        }
+
+        /// <summary>
+        /// End frame performance monitoring and update adaptive settings
+        /// </summary>
+        public void EndFrameMonitoring()
+        {
+            if (!_enablePerformanceMonitoring) return;
+
+            var frameEndTime = Time.realtimeSinceStartup * 1000f;
+            var frameTime = frameEndTime - _frameStartTime;
+
+            _stats.LastFrameTime = frameTime;
+            _stats.AverageFrameTime = (_stats.AverageFrameTime * 0.9f) + (frameTime * 0.1f); // Rolling average
+
+            // Check if frame time exceeds threshold
+            if (frameTime > _maxFrameTimeMs)
+            {
+                _stats.FrameTimeExceedCount++;
+                OnFrameTimeThresholdExceeded?.Invoke(frameTime);
+            }
+
+            // Update adaptive settings periodically
+            if (Time.time - _lastMonitoringUpdate >= _monitoringInterval)
+            {
+                UpdateAdaptiveSettings();
+                _lastMonitoringUpdate = Time.time;
+            }
+
+            _stats.LastUpdateTime = Time.time;
+            OnPerformanceStatsUpdated?.Invoke(_stats);
+        }
+
+        /// <summary>
+        /// Check if processing should stop this frame
+        /// </summary>
+        public bool ShouldStopProcessingThisFrame()
+        {
+            if (!_enablePerformanceMonitoring) return false;
+
+            float currentFrameTime = (Time.realtimeSinceStartup * 1000f) - _frameStartTime;
+            return currentFrameTime > _maxFrameTimeMs * 0.8f; // Stop at 80% of target frame time
+        }
+
+        /// <summary>
+        /// Calculate optimal validation count for current performance
+        /// </summary>
+        public int CalculateOptimalValidationCount()
+        {
+            if (!_enablePerformanceMonitoring)
+                return _baseValidationsPerFrame;
+
+            int adaptiveCount = Mathf.RoundToInt(_baseValidationsPerFrame * _performanceScaleFactor);
+            return Mathf.Max(1, adaptiveCount);
+        }
+
+        /// <summary>
+        /// Update adaptive performance settings
+        /// </summary>
+        private void UpdateAdaptiveSettings()
+        {
+            if (_systemPerformanceMonitor != null)
+            {
+                var systemMetrics = _systemPerformanceMonitor.GetCurrentMetrics();
+                if (systemMetrics != null)
+                {
+                    AdaptToSystemPerformance(systemMetrics.FrameTime);
+                }
+            }
+            else
+            {
+                // Fallback to basic frame time adaptation
+                AdaptToFrameTime(_stats.AverageFrameTime);
+            }
+        }
+
+        /// <summary>
+        /// Adapt settings based on system performance metrics
+        /// </summary>
+        private void AdaptToSystemPerformance(float systemFrameTime)
+        {
+            float targetFrameTime = _maxFrameTimeMs;
+            float previousScaleFactor = _performanceScaleFactor;
+
+            if (systemFrameTime > targetFrameTime * 1.2f)
+            {
+                // Performance is poor - reduce workload
+                _performanceScaleFactor = Mathf.Max(0.25f, _performanceScaleFactor * 0.8f);
+            }
+            else if (systemFrameTime < targetFrameTime * 0.8f)
+            {
+                // Performance is good - can increase workload
+                _performanceScaleFactor = Mathf.Min(2.0f, _performanceScaleFactor * 1.1f);
+            }
+
+            // Update validation limits
+            int newValidationCount = CalculateOptimalValidationCount();
+            if (newValidationCount != _currentValidationsPerFrame)
+            {
+                _currentValidationsPerFrame = newValidationCount;
+                _stats.ValidationLimitAdjustments++;
+                OnValidationLimitAdjusted?.Invoke(_currentValidationsPerFrame);
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("CONSTRUCTION", $"Validation limit adjusted to {_currentValidationsPerFrame} (scale: {_performanceScaleFactor:F2})", this);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Adapt settings based on frame time
+        /// </summary>
+        private void AdaptToFrameTime(float frameTime)
+        {
+            float targetFrameTime = _maxFrameTimeMs;
+
+            if (frameTime > targetFrameTime * 1.2f)
+            {
+                // Frame time too high - reduce processing
+                _performanceScaleFactor = Mathf.Max(0.25f, _performanceScaleFactor - 0.1f);
+            }
+            else if (frameTime < targetFrameTime * 0.7f)
+            {
+                // Frame time acceptable - can increase processing
+                _performanceScaleFactor = Mathf.Min(2.0f, _performanceScaleFactor + 0.05f);
+            }
+
+            // Update validation limits
+            int newValidationCount = CalculateOptimalValidationCount();
+            if (newValidationCount != _currentValidationsPerFrame)
+            {
+                _currentValidationsPerFrame = newValidationCount;
+                _stats.ValidationLimitAdjustments++;
+                OnValidationLimitAdjusted?.Invoke(_currentValidationsPerFrame);
+            }
+        }
+
+        /// <summary>
+        /// Set base validations per frame
+        /// </summary>
+        public void SetBaseValidationsPerFrame(int baseValidations)
+        {
+            _baseValidationsPerFrame = Mathf.Max(1, baseValidations);
+            _currentValidationsPerFrame = CalculateOptimalValidationCount();
+            
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", $"Base validations per frame set to {_baseValidationsPerFrame}", this);
+            }
+        }
+
+        /// <summary>
+        /// Set maximum frame time target
+        /// </summary>
+        public void SetMaxFrameTime(float maxFrameTimeMs)
+        {
+            _maxFrameTimeMs = Mathf.Max(8.33f, maxFrameTimeMs); // Minimum 120 FPS
+            
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", $"Max frame time set to {_maxFrameTimeMs:F2}ms", this);
+            }
+        }
+
+        /// <summary>
+        /// Enable or disable performance monitoring
+        /// </summary>
+        public void SetPerformanceMonitoringEnabled(bool enabled)
+        {
+            _enablePerformanceMonitoring = enabled;
+            
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", $"Performance monitoring {(enabled ? "enabled" : "disabled")}", this);
+            }
+        }
+
+        /// <summary>
+        /// Reset performance scale factor
+        /// </summary>
+        public void ResetPerformanceScaling()
+        {
+            _performanceScaleFactor = 1.0f;
+            _currentValidationsPerFrame = _baseValidationsPerFrame;
+            
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", "Performance scaling reset to default", this);
+            }
+        }
+
+        /// <summary>
+        /// Get performance recommendations
+        /// </summary>
+        public string GetPerformanceRecommendations()
+        {
+            var recommendations = new System.Text.StringBuilder();
+
+            if (_stats.AverageFrameTime > _maxFrameTimeMs * 1.5f)
+            {
+                recommendations.AppendLine("- Consider reducing max concurrent projects");
+                recommendations.AppendLine("- Disable non-essential validation rules");
+                recommendations.AppendLine("- Increase update intervals");
+            }
+            else if (_stats.AverageFrameTime < _maxFrameTimeMs * 0.5f)
+            {
+                recommendations.AppendLine("- Can increase max concurrent projects");
+                recommendations.AppendLine("- Enable additional validation rules");
+                recommendations.AppendLine("- Decrease update intervals for better responsiveness");
+            }
+
+            if (_stats.FrameTimeExceedCount > 10)
+            {
+                recommendations.AppendLine("- Frequent frame drops detected - consider optimization");
+            }
+
+            return recommendations.ToString();
+        }
+
+        /// <summary>
+        /// Reset statistics
+        /// </summary>
+        private void ResetStats()
+        {
+            _stats = new ConstructionPerformanceStats
+            {
+                LastFrameTime = 0f,
+                AverageFrameTime = _maxFrameTimeMs,
+                FrameTimeExceedCount = 0,
+                ValidationLimitAdjustments = 0,
+                LastUpdateTime = Time.time
+            };
+        }
+    }
+
+    /// <summary>
+    /// Construction performance statistics
+    /// </summary>
+    [System.Serializable]
+    public struct ConstructionPerformanceStats
+    {
+        public float LastFrameTime;
+        public float AverageFrameTime;
+        public int FrameTimeExceedCount;
+        public int ValidationLimitAdjustments;
+        public float LastUpdateTime;
+    }
+}

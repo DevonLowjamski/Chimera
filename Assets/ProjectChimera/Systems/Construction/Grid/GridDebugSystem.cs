@@ -221,23 +221,23 @@ namespace ProjectChimera.Systems.Construction.Grid
         public void LogGridStatistics()
         {
             var stats = GetGridStatistics();
-            ChimeraLogger.Log($"[GridDebug] Grid Statistics:");
-            ChimeraLogger.Log($"[GridDebug] Total Cells: {stats.totalCells}");
-            ChimeraLogger.Log($"[GridDebug] Occupied Cells: {stats.occupiedCells}");
-            ChimeraLogger.Log($"[GridDebug] Free Cells: {stats.freeCells}");
-            ChimeraLogger.Log($"[GridDebug] Occupancy Rate: {stats.occupancyRate:P2}");
+            ChimeraLogger.Log("OTHER", "Grid debug operation", null);
+            ChimeraLogger.Log("OTHER", "Grid debug operation", null);
+            ChimeraLogger.Log("OTHER", "Grid debug operation", null);
+            ChimeraLogger.Log("OTHER", "Grid debug operation", null);
+            ChimeraLogger.Log("OTHER", "Grid debug operation", null);
 
-            ChimeraLogger.Log($"[GridDebug] Cell Type Distribution:");
+            ChimeraLogger.Log("OTHER", "Grid debug operation", null);
             foreach (var kvp in stats.cellTypeDistribution)
             {
-                ChimeraLogger.Log($"[GridDebug] {kvp.Key}: {kvp.Value}");
+                ChimeraLogger.Log("OTHER", "Grid debug operation", null);
             }
 
-            ChimeraLogger.Log($"[GridDebug] Height Distribution:");
+            ChimeraLogger.Log("OTHER", "Grid debug operation", null);
             foreach (var kvp in stats.heightDistribution)
             {
                 if (kvp.Value > 0)
-                    ChimeraLogger.Log($"[GridDebug] Level {kvp.Key}: {kvp.Value} occupied cells");
+                    ChimeraLogger.Log("OTHER", "Grid debug operation", null);
             }
         }
 
@@ -334,15 +334,15 @@ namespace ProjectChimera.Systems.Construction.Grid
 
             if (issues.Count > 0)
             {
-                ChimeraLogger.LogWarning($"[GridDebug] Found {issues.Count} integrity issues:");
+                ChimeraLogger.Log("OTHER", "Grid debug operation", null);
                 foreach (var issue in issues)
                 {
-                    ChimeraLogger.LogWarning($"[GridDebug] {issue}");
+                    ChimeraLogger.Log("OTHER", "Grid debug operation", null);
                 }
             }
             else
             {
-                ChimeraLogger.Log("[GridDebug] Grid integrity validation passed");
+                ChimeraLogger.Log("OTHER", "Grid debug operation", null);
             }
         }
 

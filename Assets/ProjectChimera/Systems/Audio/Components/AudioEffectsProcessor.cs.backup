@@ -1,0 +1,184 @@
+using ProjectChimera.Core.Logging;
+using UnityEngine;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Systems.Audio.Components
+{
+    /// <summary>
+    /// SIMPLE: Basic audio effects processor aligned with Project Chimera's audio system vision.
+    /// Focuses on essential audio playback for cultivation activities.
+    /// </summary>
+    public class AudioEffectsProcessor : MonoBehaviour
+    {
+        [Header("Basic Audio Settings")]
+        [SerializeField] private bool _enableAudio = true;
+        [SerializeField] private float _masterVolume = 1f;
+        [SerializeField] private bool _enableLogging = true;
+
+        // Basic audio sources
+        private AudioSource _effectSource;
+        private AudioSource _ambientSource;
+        private bool _isInitialized = false;
+
+        // Events
+        public System.Action<string> OnAudioPlayed;
+        public System.Action<float> OnVolumeChanged;
+
+        /// <summary>
+        /// Initialize the audio processor
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            SetupAudioSources();
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Play a sound effect
+        /// </summary>
+        public void PlayEffect(AudioClip clip, float volume = 1f)
+        {
+            if (!_enableAudio || !_isInitialized || clip == null) return;
+
+            if (_effectSource != null)
+            {
+                _effectSource.clip = clip;
+                _effectSource.volume = volume * _masterVolume;
+                _effectSource.Play();
+
+                OnAudioPlayed?.Invoke(clip.name);
+
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Play ambient audio
+        /// </summary>
+        public void PlayAmbient(AudioClip clip, bool loop = true)
+        {
+            if (!_enableAudio || !_isInitialized || clip == null) return;
+
+            if (_ambientSource != null)
+            {
+                _ambientSource.clip = clip;
+                _ambientSource.loop = loop;
+                _ambientSource.volume = _masterVolume;
+                _ambientSource.Play();
+
+                OnAudioPlayed?.Invoke($"Ambient: {clip.name}");
+
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Stop ambient audio
+        /// </summary>
+        public void StopAmbient()
+        {
+            if (_ambientSource != null && _ambientSource.isPlaying)
+            {
+                _ambientSource.Stop();
+
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Set master volume
+        /// </summary>
+        public void SetMasterVolume(float volume)
+        {
+            _masterVolume = Mathf.Clamp01(volume);
+
+            if (_effectSource != null)
+                _effectSource.volume = _masterVolume;
+            if (_ambientSource != null)
+                _ambientSource.volume = _masterVolume;
+
+            OnVolumeChanged?.Invoke(_masterVolume);
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Get master volume
+        /// </summary>
+        public float GetMasterVolume()
+        {
+            return _masterVolume;
+        }
+
+        /// <summary>
+        /// Enable or disable audio
+        /// </summary>
+        public void SetAudioEnabled(bool enabled)
+        {
+            _enableAudio = enabled;
+
+            if (!enabled)
+            {
+                StopAmbient();
+            }
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Check if audio is enabled
+        /// </summary>
+        public bool IsAudioEnabled()
+        {
+            return _enableAudio;
+        }
+
+        #region Private Methods
+
+        private void SetupAudioSources()
+        {
+            // Create effect audio source
+            if (_effectSource == null)
+            {
+                _effectSource = gameObject.AddComponent<AudioSource>();
+                _effectSource.playOnAwake = false;
+                _effectSource.spatialBlend = 0f; // 2D audio
+            }
+
+            // Create ambient audio source
+            if (_ambientSource == null)
+            {
+                _ambientSource = gameObject.AddComponent<AudioSource>();
+                _ambientSource.playOnAwake = false;
+                _ambientSource.spatialBlend = 0f; // 2D audio
+            }
+
+            SetMasterVolume(_masterVolume);
+        }
+
+        #endregion
+    }
+}

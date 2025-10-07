@@ -1,12 +1,12 @@
 using ProjectChimera.Core.Logging;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using IServiceProvider = ProjectChimera.Core.DependencyInjection.IServiceProvider;
 
-namespace ProjectChimera.Core.DependencyInjection
+namespace ProjectChimera.Core
 {
     public class ServiceCollection : IServiceCollection
     {
@@ -132,7 +132,7 @@ namespace ProjectChimera.Core.DependencyInjection
         public IServiceProvider BuildServiceProvider(ServiceProviderOptions options)
         {
             options ??= new ServiceProviderOptions();
-            var container = _container ?? new ServiceContainer();
+            var container = _container ?? (IServiceContainer)new ServiceContainer();
             foreach (var descriptor in _services)
             {
                 RegisterWithContainer(container, descriptor);
@@ -161,9 +161,9 @@ namespace ProjectChimera.Core.DependencyInjection
                 }
                 else if (descriptor.ImplementationFactory != null)
                 {
-                    var serviceProviderAdapter = new ServiceProviderAdapter(container as ServiceContainer, new ServiceProviderOptions());
+                    var serviceProviderAdapter = new ServiceProviderAdapter(container, new ServiceProviderOptions());
                     Func<IServiceLocator, object> locatorFactory = locator => descriptor.ImplementationFactory(serviceProviderAdapter);
-                    
+
                     var method = typeof(IServiceContainer).GetMethod(nameof(IServiceContainer.RegisterFactory))?.MakeGenericMethod(descriptor.ServiceType);
                     method?.Invoke(container, new object[] { locatorFactory });
                 }
@@ -185,7 +185,7 @@ namespace ProjectChimera.Core.DependencyInjection
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[ServiceCollection] Error registering service {descriptor.ServiceType?.Name}: {ex.Message}");
+                Logger.LogInfo("ServiceCollection", "$1");
                 throw;
             }
         }
@@ -197,7 +197,7 @@ namespace ProjectChimera.Core.DependencyInjection
         }
     }
 
-    public class ServiceProviderAdapter : ProjectChimera.Core.DependencyInjection.IServiceProvider, IServiceScopeFactory, IDisposable
+    public class ServiceProviderAdapter : IServiceProvider, IServiceScopeFactory, IDisposable
     {
         private readonly IServiceContainer _container;
         private readonly ServiceProviderOptions _options;
@@ -220,12 +220,12 @@ namespace ProjectChimera.Core.DependencyInjection
             if (_disposed) throw new ObjectDisposedException(nameof(ServiceProviderAdapter));
             try
             {
-                if (_options.EnableLogging) ChimeraLogger.Log($"[ServiceProviderAdapter] Resolving service: {serviceType.Name}");
+                if (_options.EnableLogging) Logger.LogInfo("ServiceCollection", "$1");
                 return _container.TryResolve<object>();
             }
             catch (Exception ex)
             {
-                if (_options.EnableLogging) ChimeraLogger.LogError($"[ServiceProviderAdapter] Error resolving {serviceType.Name}: {ex.Message}");
+                if (_options.EnableLogging) Logger.LogInfo("ServiceCollection", "$1");
                 return null;
             }
         }
@@ -241,7 +241,7 @@ namespace ProjectChimera.Core.DependencyInjection
             if (_disposed) throw new ObjectDisposedException(nameof(ServiceProviderAdapter));
             try
             {
-                if (_options.EnableLogging) ChimeraLogger.Log($"[ServiceProviderAdapter] Resolving required service: {serviceType.Name}");
+                if (_options.EnableLogging) Logger.LogInfo("ServiceCollection", "$1");
                 return _container.Resolve(serviceType);
             }
             catch (Exception ex)
@@ -263,12 +263,12 @@ namespace ProjectChimera.Core.DependencyInjection
             }
             catch (Exception ex)
             {
-                if (_options.EnableLogging) ChimeraLogger.LogError($"[ServiceProviderAdapter] Error resolving multiple services of type {serviceType.Name}: {ex.Message}");
+                if (_options.EnableLogging) Logger.LogInfo("ServiceCollection", "$1");
                 return Array.Empty<object>();
             }
         }
 
-        public IEnumerable<T> GetServices<T>() where T : class 
+        public IEnumerable<T> GetServices<T>() where T : class
         {
             try
             {
@@ -315,7 +315,7 @@ namespace ProjectChimera.Core.DependencyInjection
                         }
                         catch (Exception ex)
                         {
-                            ChimeraLogger.LogError($"[ServiceProviderAdapter] Error disposing scope: {ex.Message}");
+                            Logger.LogInfo("ServiceCollection", "$1");
                         }
                     }
                     _activeScopes.Clear();
@@ -325,7 +325,7 @@ namespace ProjectChimera.Core.DependencyInjection
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[ServiceProviderAdapter] Error during disposal: {ex.Message}");
+                Logger.LogInfo("ServiceCollection", "$1");
             }
         }
     }
@@ -342,7 +342,7 @@ namespace ProjectChimera.Core.DependencyInjection
             _parentProvider = parentProvider ?? throw new ArgumentNullException(nameof(parentProvider));
         }
 
-        public ProjectChimera.Core.DependencyInjection.IServiceProvider ServiceProvider => new ServiceProviderAdapter(_containerScope.ServiceProvider as IServiceContainer, new ServiceProviderOptions());
+        public IServiceProvider ServiceProvider => new ServiceProviderAdapter(_containerScope.ServiceProvider as IServiceContainer, new ServiceProviderOptions());
 
         public void Dispose()
         {
@@ -355,7 +355,7 @@ namespace ProjectChimera.Core.DependencyInjection
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[ServiceScopeAdapter] Error during disposal: {ex.Message}");
+                Logger.LogInfo("ServiceCollection", "$1");
             }
         }
     }

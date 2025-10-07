@@ -1,12 +1,13 @@
+
 using UnityEngine;
 
 namespace ProjectChimera.Data.Genetics
 {
     /// <summary>
-    /// Plant strain ScriptableObject for genetics namespace
+    /// Genetic plant strain ScriptableObject for genetics namespace
     /// </summary>
-    [CreateAssetMenu(fileName = "GeneticsPlantStrain", menuName = "Project Chimera/Genetics/Plant Strain")]
-    public class PlantStrainSO : ScriptableObject
+    [CreateAssetMenu(fileName = "GeneticsPlantStrain", menuName = "Project Chimera/Genetics/Genetic Plant Strain")]
+    public class GeneticPlantStrainSO : ScriptableObject
     {
         [Header("Basic Information")]
         public string strainName;
@@ -96,6 +97,17 @@ namespace ProjectChimera.Data.Genetics
         public float HeightModifier { get; set; } = 1.0f;
         public float GrowthRateModifier { get; set; } = 1.0f;
         public float WidthModifier { get; set; } = 1.0f;
+
+        // MaxHeight property for compatibility with cultivation system
+        [SerializeField] private float _maxHeight = 150.0f;
+        public float MaxHeight
+        {
+            get => _maxHeight;
+            set => _maxHeight = value;
+        }
+
+        // Additional compatibility properties
+        public float AverageHeight => _maxHeight * 0.8f; // Typical plants reach 80% of max height
 
         private void OnEnable()
         {

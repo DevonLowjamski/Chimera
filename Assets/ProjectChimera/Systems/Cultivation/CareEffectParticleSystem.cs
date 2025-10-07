@@ -2,6 +2,7 @@ using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Shared;
 using CultivationTaskType = ProjectChimera.Data.Cultivation.CultivationTaskType;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Cultivation
 {

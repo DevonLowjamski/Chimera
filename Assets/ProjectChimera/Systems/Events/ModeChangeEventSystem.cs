@@ -33,7 +33,7 @@ namespace ProjectChimera.Systems.Events
         {
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[ModeChangeEventSystem] Initialized successfully");
+                ProjectChimera.Core.Logging.ChimeraLogger.Log("EVENTS/MODE", "Mode registered", this);
             }
         }
 
@@ -66,7 +66,7 @@ namespace ProjectChimera.Systems.Events
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[ModeChangeEventSystem] Mode changed from {previousMode} to {newMode}");
+                ProjectChimera.Core.Logging.ChimeraLogger.Log("EVENTS/MODE", "Mode changed", this);
             }
         }
 
@@ -175,7 +175,7 @@ namespace ProjectChimera.Systems.Events
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[ModeChangeEventSystem] Events {(enabled ? "enabled" : "disabled")}");
+                ProjectChimera.Core.Logging.ChimeraLogger.Log("EVENTS/MODE", "Listener error", this);
             }
         }
     }

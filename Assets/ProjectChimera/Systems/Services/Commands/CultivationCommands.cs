@@ -82,7 +82,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[PlantSeedCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation command operation", null);
                 return CommandResult.Failure($"Error planting seed: {ex.Message}");
             }
         }
@@ -145,7 +145,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[WaterPlantCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation command operation", null);
                 return CommandResult.Failure($"Error watering plant: {ex.Message}");
             }
         }
@@ -199,7 +199,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[FeedPlantCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation command operation", null);
                 return CommandResult.Failure($"Error feeding plant: {ex.Message}");
             }
         }
@@ -256,7 +256,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[TrainPlantCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation command operation", null);
                 return CommandResult.Failure($"Error training plant: {ex.Message}");
             }
         }
@@ -311,7 +311,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[HarvestPlantCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation command operation", null);
                 return CommandResult.Failure($"Error harvesting plant: {ex.Message}");
             }
         }
@@ -372,7 +372,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[AdjustEnvironmentCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation command operation", null);
                 return CommandResult.Failure($"Error adjusting environment: {ex.Message}");
             }
         }

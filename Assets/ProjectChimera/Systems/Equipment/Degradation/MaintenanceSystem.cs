@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using ProjectChimera.Core.Logging;
+using System.Linq;
 
 namespace ProjectChimera.Systems.Equipment.Degradation
 {
@@ -33,9 +34,9 @@ namespace ProjectChimera.Systems.Equipment.Degradation
             _lastMaintenance[equipmentId] = DateTime.Now;
 
             // Repair the equipment
-            EquipmentInstance.RepairEquipment(equipmentId, record.EffectivenessScore, 0f);
+            EquipmentInstance.PerformMaintenance(equipmentId);
 
-            ChimeraLogger.Log($"[MaintenanceSystem] Maintenance performed: {equipmentId} ({type}) - Cost: ${record.Cost:F2}");
+            ProjectChimera.Core.Logging.ChimeraLogger.Log("EQUIPMENT", $"Maintenance performed on {equipmentId}", null);
         }
 
         /// <summary>
@@ -101,7 +102,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
             _maintenanceRecords.Clear();
             _lastMaintenance.Clear();
 
-            ChimeraLogger.Log("[MaintenanceSystem] Maintenance records cleared");
+            ProjectChimera.Core.Logging.ChimeraLogger.Log("EQUIPMENT", "Maintenance records cleared", null);
         }
 
         #region Private Methods

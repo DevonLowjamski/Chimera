@@ -3,6 +3,8 @@ using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Facilities;
 using System.Collections.Generic;
+using System.Linq;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Systems.Facilities
 {
@@ -30,6 +32,16 @@ namespace ProjectChimera.Systems.Facilities
         public string CurrentFacilityId => _currentFacilityId;
         public Facility CurrentFacility => _currentFacility;
         public int OwnedFacilitiesCount => _availableFacilities.Count;
+        public FacilityProgressionData ProgressionData => new FacilityProgressionData
+        {
+            CurrentFacilityId = _currentFacilityId,
+            FacilityCount = _availableFacilities.Count,
+            TotalSize = _availableFacilities.Sum(f => f.Size),
+            TotalCapacity = _availableFacilities.Sum(f => f.Capacity)
+        };
+        public FacilityTierSO CurrentTier => null;
+        public int CurrentTierIndex => 0;
+        public bool IsLoadingScene => false;
 
         /// <summary>
         /// Initialize the facility manager
@@ -45,7 +57,7 @@ namespace ProjectChimera.Systems.Facilities
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[FacilityManager] Initialized successfully");
+                ChimeraLogger.Log("FACILITY", "FacilityManager initialized", this);
             }
         }
 
@@ -61,7 +73,7 @@ namespace ProjectChimera.Systems.Facilities
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.LogWarning($"[FacilityManager] Facility not found: {facilityId}");
+                    ChimeraLogger.LogWarning("FACILITY", $"Facility not found: {facilityId}", this);
                 }
                 return false;
             }
@@ -73,7 +85,7 @@ namespace ProjectChimera.Systems.Facilities
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[FacilityManager] Switched to facility: {facilityId}");
+                ChimeraLogger.Log("FACILITY", $"Switched to facility: {facilityId}", this);
             }
 
             return true;
@@ -86,6 +98,47 @@ namespace ProjectChimera.Systems.Facilities
         {
             return new List<Facility>(_availableFacilities);
         }
+
+        // IFacilityManager methods - basic stubs to satisfy interface
+        public bool CanUpgradeCurrentFacility() => false;
+        public bool UpgradeCurrentFacility() => false;
+        public bool SellFacility(string facilityId) => RemoveFacility(facilityId);
+        public System.Threading.Tasks.Task<bool> QuickSwitchByTierName(string tierName)
+        {
+            // No tiers implemented; return false
+            return System.Threading.Tasks.Task.FromResult(false);
+        }
+        public string GetNextAvailableTier() => string.Empty;
+        public bool CanUpgradeToNextTier() => false;
+        public System.Threading.Tasks.Task<bool> PurchaseNewFacilityAsync(string tierName)
+        {
+            return System.Threading.Tasks.Task.FromResult(false);
+        }
+        public System.Collections.Generic.Dictionary<string, object> GetProgressionStatistics()
+        {
+            return new System.Collections.Generic.Dictionary<string, object>
+            {
+                ["facilityCount"] = _availableFacilities.Count,
+                ["totalCapacity"] = _availableFacilities.Sum(f => f.Capacity),
+                ["totalSize"] = _availableFacilities.Sum(f => f.Size)
+            };
+        }
+        public FacilityProgressionStatistics GetProgressionStatisticsTyped() => new FacilityProgressionStatistics();
+        public FacilityDisplayInfo GetCurrentFacilityDisplayInfo() => new FacilityDisplayInfo
+        {
+            DisplayName = _currentFacility?.FacilityName,
+            FacilityName = _currentFacility?.FacilityName,
+            StatusText = _currentFacility != null ? "Active" : "None",
+            TotalPlants = 0,
+            CurrentValue = 0f,
+            IsOperational = true
+        };
+        public System.Collections.Generic.List<string> GetAvailableFacilityScenes() => new System.Collections.Generic.List<string>();
+        public System.Collections.Generic.List<string> GetAvailableFacilitiesForSwitching() => _availableFacilities.ConvertAll(f => f.FacilityId);
+        public System.Collections.Generic.List<FacilitySwitchInfo> GetAvailableFacilitiesForSwitchingDetailed() => new System.Collections.Generic.List<FacilitySwitchInfo>();
+        public void CheckForUpgradeAvailability() { }
+        public void SubscribeToFacilityEvents(System.Action onFacilityUpgraded = null, System.Action onFacilitySwitch = null, System.Action onFacilityPurchased = null, System.Action onFacilitySold = null, System.Action onFacilityUpgradeAvailable = null, System.Action onFacilityValueUpdated = null) { }
+        public void UnsubscribeFromFacilityEvents(System.Action<object> onFacilityUpgraded = null, System.Action<object, object> onFacilitySwitch = null, System.Action<object> onFacilityPurchased = null, System.Action<object> onFacilitySold = null, System.Action<object> onFacilityUpgradeAvailable = null, System.Action<object> onFacilityValueUpdated = null) { }
 
         /// <summary>
         /// Add a new facility
@@ -101,7 +154,7 @@ namespace ProjectChimera.Systems.Facilities
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[FacilityManager] Added facility: {facility.FacilityId}");
+                ChimeraLogger.Log("FACILITY", $"Facility added: {facility.FacilityId}", this);
             }
 
             return true;
@@ -133,7 +186,7 @@ namespace ProjectChimera.Systems.Facilities
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[FacilityManager] Removed facility: {facilityId}");
+                ChimeraLogger.Log("FACILITY", $"Facility removed: {facilityId}", this);
             }
 
             return true;

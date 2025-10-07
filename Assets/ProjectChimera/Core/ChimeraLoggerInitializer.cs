@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectChimera.Core.Logging;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Core
 {
@@ -29,65 +30,65 @@ namespace ProjectChimera.Core
         {
             if (_showConfigurationOnStart)
             {
-                ChimeraLogger.Log("ChimeraLoggerInitializer", "Logger configuration:");
-                ChimeraLogger.Log("ChimeraLoggerInitializer", GetConfiguration());
+                Logger.LogInfo("ChimeraLoggerInitializer", "$1");
+                Logger.LogInfo("ChimeraLoggerInitializer", "$1");
             }
-            
+
             TestLogLevels();
         }
 
         private void ConfigureLogger()
         {
             // Configure the simple ChimeraLogger with boolean flags
-            ChimeraLogger.DebugEnabled = _enableDebugLogs;
-            ChimeraLogger.WarningsEnabled = _enableWarnings;
-            ChimeraLogger.ErrorsEnabled = _enableErrors;
+            Logger.DebugEnabled = _enableDebugLogs;
+            Logger.WarningsEnabled = _enableWarnings;
+            Logger.ErrorsEnabled = _enableErrors;
 
-            ChimeraLogger.Log("ChimeraLoggerInitializer", "ChimeraLogger initialized and configured");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
         }
 
         private void TestLogLevels()
         {
-            ChimeraLogger.Log("Verbose logging test - controlled by DebugEnabled flag");
-            ChimeraLogger.Log("Info logging test - controlled by DebugEnabled flag");
-            ChimeraLogger.LogWarning("Warning logging test - controlled by WarningsEnabled flag");
-            ChimeraLogger.LogError("Error logging test - controlled by ErrorsEnabled flag");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
         }
 
         [ContextMenu("Reconfigure Logger")]
         public void ReconfigureLogger()
         {
             ConfigureLogger();
-            ChimeraLogger.Log("ChimeraLoggerInitializer", "Logger reconfigured at runtime");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
         }
 
         [ContextMenu("Show Logger Configuration")]
         public void ShowConfiguration()
         {
-            ChimeraLogger.Log(GetConfiguration());
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
         }
 
         private string GetConfiguration()
         {
             return $"ChimeraLogger Configuration:\n" +
-                   $"  Debug Enabled: {ChimeraLogger.DebugEnabled}\n" +
-                   $"  Warnings Enabled: {ChimeraLogger.WarningsEnabled}\n" +
-                   $"  Errors Enabled: {ChimeraLogger.ErrorsEnabled}";
+                   $"  Debug Enabled: {Logger.DebugEnabled}\n" +
+                   $"  Warnings Enabled: {Logger.WarningsEnabled}\n" +
+                   $"  Errors Enabled: {Logger.ErrorsEnabled}";
         }
 
         /// <summary>
         /// Initialize the logger programmatically with custom settings
         /// </summary>
         /// <param name="enableDebug">Enable debug logging</param>
-        /// <param name="enableWarnings">Enable warning logging</param>  
+        /// <param name="enableWarnings">Enable warning logging</param>
         /// <param name="enableErrors">Enable error logging</param>
         public static void InitializeLogger(bool enableDebug = true, bool enableWarnings = true, bool enableErrors = true)
         {
-            ChimeraLogger.DebugEnabled = enableDebug;
-            ChimeraLogger.WarningsEnabled = enableWarnings;
-            ChimeraLogger.ErrorsEnabled = enableErrors;
-            
-            ChimeraLogger.Log("ChimeraLoggerInitializer", "Logger initialized programmatically");
+            Logger.DebugEnabled = enableDebug;
+            Logger.WarningsEnabled = enableWarnings;
+            Logger.ErrorsEnabled = enableErrors;
+
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
         }
 
         /// <summary>
@@ -97,11 +98,11 @@ namespace ProjectChimera.Core
         public static void ConfigureForEditor()
         {
             #if UNITY_EDITOR
-            ChimeraLogger.DebugEnabled = true;
-            ChimeraLogger.WarningsEnabled = true;
-            ChimeraLogger.ErrorsEnabled = true;
-            ChimeraLogger.Log("ChimeraLogger configured in editor mode");
-            ChimeraLogger.Log("Logger Configuration: Debug=true, Warnings=true, Errors=true");
+            Logger.DebugEnabled = true;
+            Logger.WarningsEnabled = true;
+            Logger.ErrorsEnabled = true;
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
             #endif
         }
 
@@ -111,15 +112,15 @@ namespace ProjectChimera.Core
         [ContextMenu("Run Logger Examples")]
         public void RunLoggerExamples()
         {
-            ChimeraLogger.Log("This is basic debug logging");
-            ChimeraLogger.LogWarning("This is warning logging");
-            ChimeraLogger.LogError("This is error logging");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
 
             // Category-based logging
-            ChimeraLogger.Log("ExampleSystem", "System initialized successfully");
-            ChimeraLogger.Log("Performance", "Operation completed successfully");
-            ChimeraLogger.LogWarning("Validation", "Minor validation warning");
-            ChimeraLogger.LogError("Critical", "Critical system error");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
         }
     }
 
@@ -130,15 +131,15 @@ namespace ProjectChimera.Core
     {
         private void Start()
         {
-            ChimeraLogger.Log("ChimeraLoggerExample", "Example component started");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
         }
 
         [ContextMenu("Test Logger")]
         public void TestLogger()
         {
-            ChimeraLogger.Log("Test message from example");
-            ChimeraLogger.LogWarning("Test warning from example");
-            ChimeraLogger.LogError("Test error from example");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
+            Logger.LogInfo("ChimeraLoggerInitializer", "$1");
         }
     }
 }

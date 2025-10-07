@@ -1,0 +1,17 @@
+{
+    "name": "ProjectChimera.Core.Performance",
+    "rootNamespace": "ProjectChimera.Core.Performance",
+    "references": [
+        "ProjectChimera.Shared",
+        "ProjectChimera.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

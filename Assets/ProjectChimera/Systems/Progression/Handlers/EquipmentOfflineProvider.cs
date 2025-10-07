@@ -1,9 +1,9 @@
-using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+using ChimeraLogger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Systems.Progression
 {
@@ -24,59 +24,55 @@ namespace ProjectChimera.Systems.Progression
         public string GetProviderId() => "equipment_offline";
         public float GetPriority() => 0.7f;
         
-        public async Task<OfflineProgressionCalculationResult> CalculateOfflineProgressionAsync(TimeSpan offlineTime)
+        public async Task<OfflineProgressionResult> CalculateOfflineProgressionAsync(TimeSpan offlineTime)
         {
             await Task.Delay(45);
-            
-            var result = new OfflineProgressionCalculationResult();
+
+            var result = new OfflineProgressionResult
+            {
+                Domain = GetProviderId(),
+                Success = true,
+                OfflineTime = offlineTime,
+                ProcessedUntil = DateTime.Now
+            };
             var hours = (float)offlineTime.TotalHours;
             
             try
             {
                 // Calculate equipment degradation
                 var degradationData = await CalculateEquipmentDegradationAsync(hours);
-                result.ProgressionData.Add("equipment_degradation", degradationData);
-                
+                result.EquipmentDegradation = degradationData;
+
                 // Calculate equipment production
                 var productionData = await CalculateEquipmentProductionAsync(hours, degradationData);
-                result.ProgressionData.Add("equipment_production", productionData);
-                
+                result.EquipmentProduction = productionData;
+
                 // Calculate maintenance requirements
                 var maintenanceData = CalculateMaintenanceRequirements(degradationData);
-                result.ProgressionData.Add("maintenance_requirements", maintenanceData);
-                
-                // Apply equipment-related resource changes
-                foreach (var production in productionData.ResourceProduction)
-                {
-                    result.ResourceChanges[production.Key] = production.Value;
-                }
-                
-                if (maintenanceData.MaintenanceCost > 0)
-                {
-                    result.ResourceChanges["maintenance_materials"] = -maintenanceData.MaintenanceCost;
-                }
-                
-                // Add equipment events
-                result.Events.AddRange(_equipmentEvents);
-                _equipmentEvents.Clear();
-                
-                // Generate notifications
+                result.MaintenanceRequirement = maintenanceData;
+
+                // Calculate totals
+                result.TotalResourcesGenerated = productionData.TotalProductionValue;
+                result.TotalCostsIncurred = maintenanceData.MaintenanceCost;
+                result.NetGain = productionData.TotalProductionValue - maintenanceData.MaintenanceCost;
+
+                // Generate important events
                 if (maintenanceData.EquipmentNeedingMaintenance > 0)
                 {
-                    result.Notifications.Add($"{maintenanceData.EquipmentNeedingMaintenance} pieces of equipment require maintenance");
+                    result.ImportantEvents.Add($"{maintenanceData.EquipmentNeedingMaintenance} pieces of equipment require maintenance");
                 }
-                
+
                 if (degradationData.CriticallyDegradedEquipment > 0)
                 {
-                    result.Notifications.Add($"{degradationData.CriticallyDegradedEquipment} pieces of equipment are in critical condition");
+                    result.ImportantEvents.Add($"{degradationData.CriticallyDegradedEquipment} pieces of equipment are in critical condition");
                 }
-                
+
                 if (productionData.TotalProductionValue > 0)
                 {
-                    result.Notifications.Add($"Equipment generated {productionData.TotalProductionValue:F0} value in resources while offline");
+                    result.ImportantEvents.Add($"Equipment generated {productionData.TotalProductionValue:F0} value in resources while offline");
                 }
                 
-                ChimeraLogger.Log($"[EquipmentOfflineProvider] Processed {hours:F1} hours of equipment progression");
+                ChimeraLogger.Log("PROGRESSION", "Equipment offline progression calculated", null);
             }
             catch (Exception ex)
             {
@@ -90,18 +86,21 @@ namespace ProjectChimera.Systems.Progression
         public async Task ApplyOfflineProgressionAsync(OfflineProgressionResult result)
         {
             await Task.Delay(30);
-            
-            if (result.ProgressionData.TryGetValue("equipment_degradation", out var degradationObj) && degradationObj is EquipmentDegradationData degradationData)
+
+            var progressionData = result.ProgressionData as Dictionary<string, object>;
+            if (progressionData == null) return;
+
+            if (progressionData.TryGetValue("equipment_degradation", out var degradationObj) && degradationObj is EquipmentDegradationData degradationData)
             {
                 await ApplyEquipmentDegradationAsync(degradationData);
             }
-            
-            if (result.ProgressionData.TryGetValue("equipment_production", out var productionObj) && productionObj is EquipmentProductionData productionData)
+
+            if (progressionData.TryGetValue("equipment_production", out var productionObj) && productionObj is EquipmentProductionData productionData)
             {
                 await ApplyEquipmentProductionAsync(productionData);
             }
             
-            ChimeraLogger.Log($"[EquipmentOfflineProvider] Applied equipment progression for session {result.SessionId}");
+            ChimeraLogger.Log("OTHER", "$1", null);
         }
         
         private async Task<EquipmentDegradationData> CalculateEquipmentDegradationAsync(float hours)

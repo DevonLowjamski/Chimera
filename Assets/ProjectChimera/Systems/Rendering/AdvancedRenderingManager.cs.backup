@@ -1,0 +1,699 @@
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using System.Collections.Generic;
+using ProjectChimera.Core.Memory;
+using System.Collections;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Rendering
+{
+    /// <summary>
+    /// RENDERING: Advanced rendering pipeline manager for cultivation environments
+    /// Manages custom shaders, render features, and performance optimization
+    /// Week 13: Advanced Rendering Pipeline Implementation
+    /// </summary>
+    public class AdvancedRenderingManager : MonoBehaviour
+    {
+        [Header("Rendering Settings")]
+        [SerializeField] private bool _enableAdvancedRendering = true;
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private RenderingQuality _renderingQuality = RenderingQuality.High;
+        [SerializeField] private bool _enableDynamicQuality = true;
+
+        [Header("Plant Rendering")]
+        [SerializeField] private bool _enableInstancingForPlants = true;
+        [SerializeField] private bool _enablePlantLODRendering = true;
+        [SerializeField] private int _maxInstancedPlants = 1000;
+        [SerializeField] private float _instanceCullingDistance = 100f;
+
+        [Header("Lighting & Shadows")]
+        [SerializeField] private bool _enableCustomLighting = true;
+        [SerializeField] private bool _enableVolumetricLighting = false;
+        [SerializeField] private ShadowQuality _shadowQuality = ShadowQuality.High;
+        [SerializeField] private float _shadowDistance = 150f;
+
+        [Header("Post-Processing")]
+        [SerializeField] private bool _enableCustomPostProcessing = true;
+        [SerializeField] private bool _enableBloom = true;
+        [SerializeField] private bool _enableToneMapping = true;
+        [SerializeField] private bool _enableColorGrading = true;
+
+        [Header("Performance Monitoring")]
+        [SerializeField] private bool _enablePerformanceMonitoring = true;
+        [SerializeField] private float _targetFrameRate = 60f;
+        [SerializeField] private float _performanceCheckInterval = 2f;
+
+        // Rendering components
+        private UniversalRenderPipelineAsset _urpAsset;
+        private Camera _mainCamera;
+        private Light _mainLight;
+        
+        // Custom render features
+        private PlantInstancedRenderer _plantRenderer;
+        private CustomLightingRenderer _lightingRenderer;
+        private EnvironmentalRenderer _environmentalRenderer;
+        
+        // Performance tracking
+        private RenderingPerformanceStats _stats = new RenderingPerformanceStats();
+        private float _lastPerformanceCheck;
+        private Queue<float> _frameTimeHistory = new Queue<float>();
+        private const int MAX_FRAME_SAMPLES = 300;
+
+        // Shader management
+        private readonly Dictionary<string, Shader> _customShaders = new Dictionary<string, Shader>();
+        private readonly Dictionary<string, Material> _sharedMaterials = new Dictionary<string, Material>();
+        
+        // Render settings
+        private RenderingSettings _currentSettings;
+        private RenderingSettings _targetSettings;
+        private bool _settingsTransitioning = false;
+
+        private static AdvancedRenderingManager _instance;
+        public static AdvancedRenderingManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = FindObjectOfType<AdvancedRenderingManager>();
+                    if (_instance == null)
+                    {
+                        var go = new GameObject("AdvancedRenderingManager");
+                        _instance = go.AddComponent<AdvancedRenderingManager>();
+                        DontDestroyOnLoad(go);
+                    }
+                }
+                return _instance;
+            }
+        }
+
+        public bool IsInitialized { get; private set; }
+        public RenderingPerformanceStats Stats => _stats;
+        public RenderingQuality CurrentQuality => _renderingQuality;
+
+        // Events
+        public System.Action<RenderingQuality> OnQualityChanged;
+        public System.Action<RenderingPerformanceStats> OnPerformanceUpdate;
+
+        private void Awake()
+        {
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+                Initialize();
+            }
+            else if (_instance != this)
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Initialize advanced rendering system
+        /// </summary>
+        public void Initialize()
+        {
+            if (IsInitialized) return;
+
+            InitializeRenderPipeline();
+            LoadCustomShaders();
+            InitializeRenderers();
+            SetupPerformanceMonitoring();
+            ApplyRenderingQuality(_renderingQuality);
+
+            _lastPerformanceCheck = Time.unscaledTime;
+            IsInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+
+        /// <summary>
+        /// Set rendering quality level
+        /// </summary>
+        public void SetRenderingQuality(RenderingQuality quality)
+        {
+            if (_renderingQuality != quality)
+            {
+                _renderingQuality = quality;
+                ApplyRenderingQuality(quality);
+                OnQualityChanged?.Invoke(quality);
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("OTHER", $1, this);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Register plant for instanced rendering
+        /// </summary>
+        public void RegisterPlantForRendering(GameObject plantObject, PlantRenderingData renderData)
+        {
+            if (_plantRenderer != null && _enableInstancingForPlants)
+            {
+                _plantRenderer.RegisterPlant(plantObject, renderData);
+                _stats.RegisteredPlants++;
+            }
+        }
+
+        /// <summary>
+        /// Unregister plant from instanced rendering
+        /// </summary>
+        public void UnregisterPlantFromRendering(GameObject plantObject)
+        {
+            if (_plantRenderer != null)
+            {
+                _plantRenderer.UnregisterPlant(plantObject);
+                _stats.RegisteredPlants = Mathf.Max(0, _stats.RegisteredPlants - 1);
+            }
+        }
+
+        /// <summary>
+        /// Update plant rendering data
+        /// </summary>
+        public void UpdatePlantRenderingData(GameObject plantObject, PlantRenderingData renderData)
+        {
+            if (_plantRenderer != null)
+            {
+                _plantRenderer.UpdatePlantData(plantObject, renderData);
+            }
+        }
+
+        /// <summary>
+        /// Create shared material for optimization
+        /// </summary>
+        public Material GetSharedMaterial(string materialKey, Shader shader, params object[] properties)
+        {
+            if (_sharedMaterials.TryGetValue(materialKey, out var cachedMaterial))
+            {
+                return cachedMaterial;
+            }
+
+            var material = new Material(shader);
+            
+            // Apply properties in pairs (property name, value)
+            for (int i = 0; i < properties.Length - 1; i += 2)
+            {
+                if (properties[i] is string propertyName)
+                {
+                    var value = properties[i + 1];
+                    
+                    if (value is float floatValue)
+                        material.SetFloat(propertyName, floatValue);
+                    else if (value is Color colorValue)
+                        material.SetColor(propertyName, colorValue);
+                    else if (value is Vector4 vectorValue)
+                        material.SetVector(propertyName, vectorValue);
+                    else if (value is Texture textureValue)
+                        material.SetTexture(propertyName, textureValue);
+                }
+            }
+
+            _sharedMaterials[materialKey] = material;
+            return material;
+        }
+
+        /// <summary>
+        /// Force rendering optimization
+        /// </summary>
+        public void OptimizeRendering()
+        {
+            if (!IsInitialized) return;
+
+            // Analyze current performance
+            float avgFrameTime = GetAverageFrameTime();
+            float targetFrameTime = 1f / _targetFrameRate;
+
+            if (avgFrameTime > targetFrameTime * 1.3f) // 30% over target
+            {
+                // Reduce quality if possible
+                if (_renderingQuality > RenderingQuality.Low)
+                {
+                    SetRenderingQuality(_renderingQuality - 1);
+                }
+
+                // Apply emergency optimizations
+                ApplyEmergencyOptimizations();
+            }
+            else if (avgFrameTime < targetFrameTime * 0.8f && _renderingQuality < RenderingQuality.Ultra)
+            {
+                // Increase quality if performance allows
+                SetRenderingQuality(_renderingQuality + 1);
+            }
+
+            _stats.OptimizationEvents++;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", $1, this);
+            }
+        }
+
+        /// <summary>
+        /// Get comprehensive rendering statistics
+        /// </summary>
+        public RenderingReport GetRenderingReport()
+        {
+            var report = new RenderingReport
+            {
+                CurrentStats = _stats,
+                CurrentQuality = _renderingQuality,
+                AverageFrameTime = GetAverageFrameTime(),
+                TargetFrameTime = 1f / _targetFrameRate,
+                RegisteredShaders = _customShaders.Count,
+                SharedMaterials = _sharedMaterials.Count,
+                IsPerformanceHealthy = GetAverageFrameTime() < (1f / _targetFrameRate) * 1.1f
+            };
+
+            return report;
+        }
+
+        private void Update()
+        {
+            if (!_enableAdvancedRendering || !IsInitialized) return;
+
+            UpdatePerformanceTracking();
+            
+            float currentTime = Time.unscaledTime;
+            if (currentTime - _lastPerformanceCheck >= _performanceCheckInterval)
+            {
+                if (_enableDynamicQuality)
+                {
+                    OptimizeRendering();
+                }
+                
+                OnPerformanceUpdate?.Invoke(_stats);
+                _lastPerformanceCheck = currentTime;
+            }
+
+            // Update renderers
+            if (_plantRenderer != null)
+            {
+                _plantRenderer.UpdateRenderer();
+            }
+
+            if (_lightingRenderer != null)
+            {
+                _lightingRenderer.UpdateLighting();
+            }
+
+            if (_environmentalRenderer != null)
+            {
+                _environmentalRenderer.UpdateEnvironmental();
+            }
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Initialize render pipeline components
+        /// </summary>
+        private void InitializeRenderPipeline()
+        {
+            _urpAsset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            _mainCamera = Camera.main;
+            
+            if (_mainCamera == null)
+            {
+                _mainCamera = FindObjectOfType<Camera>();
+            }
+
+            _mainLight = FindObjectOfType<Light>();
+
+            if (_urpAsset == null)
+            {
+                ChimeraLogger.LogWarning("OTHER", "$1", this);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// Load and cache custom shaders
+        /// </summary>
+        private void LoadCustomShaders()
+        {
+            // Load custom plant shader
+            var plantShader = Shader.Find("ProjectChimera/Plant/InstancingShader");
+            if (plantShader != null)
+            {
+                _customShaders["PlantInstancing"] = plantShader;
+            }
+
+            // Load custom lighting shader
+            var lightingShader = Shader.Find("ProjectChimera/Lighting/VolumetricLighting");
+            if (lightingShader != null)
+            {
+                _customShaders["VolumetricLighting"] = lightingShader;
+            }
+
+            // Load custom post-processing shaders
+            var bloomShader = Shader.Find("ProjectChimera/PostProcess/CustomBloom");
+            if (bloomShader != null)
+            {
+                _customShaders["CustomBloom"] = bloomShader;
+            }
+
+            _stats.LoadedShaders = _customShaders.Count;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", $1, this);
+            }
+        }
+
+        /// <summary>
+        /// Initialize custom renderers
+        /// </summary>
+        private void InitializeRenderers()
+        {
+            // Initialize plant instanced renderer
+            if (_enableInstancingForPlants)
+            {
+                var plantRendererGO = new GameObject("PlantInstancedRenderer");
+                plantRendererGO.transform.SetParent(transform);
+                _plantRenderer = plantRendererGO.AddComponent<PlantInstancedRenderer>();
+                _plantRenderer.Initialize(_maxInstancedPlants, _instanceCullingDistance);
+            }
+
+            // Initialize custom lighting renderer
+            if (_enableCustomLighting)
+            {
+                var lightingRendererGO = new GameObject("CustomLightingRenderer");
+                lightingRendererGO.transform.SetParent(transform);
+                _lightingRenderer = lightingRendererGO.AddComponent<CustomLightingRenderer>();
+                _lightingRenderer.Initialize(_enableVolumetricLighting);
+            }
+
+            // Initialize environmental renderer
+            var envRendererGO = new GameObject("EnvironmentalRenderer");
+            envRendererGO.transform.SetParent(transform);
+            _environmentalRenderer = envRendererGO.AddComponent<EnvironmentalRenderer>();
+            _environmentalRenderer.Initialize();
+        }
+
+        /// <summary>
+        /// Setup performance monitoring
+        /// </summary>
+        private void SetupPerformanceMonitoring()
+        {
+            if (!_enablePerformanceMonitoring) return;
+
+            _frameTimeHistory.Clear();
+            _stats.MonitoringStartTime = Time.unscaledTime;
+        }
+
+        /// <summary>
+        /// Apply rendering quality settings
+        /// </summary>
+        private void ApplyRenderingQuality(RenderingQuality quality)
+        {
+            if (_urpAsset == null) return;
+
+            switch (quality)
+            {
+                case RenderingQuality.Low:
+                    ApplyLowQualitySettings();
+                    break;
+                case RenderingQuality.Medium:
+                    ApplyMediumQualitySettings();
+                    break;
+                case RenderingQuality.High:
+                    ApplyHighQualitySettings();
+                    break;
+                case RenderingQuality.Ultra:
+                    ApplyUltraQualitySettings();
+                    break;
+            }
+
+            _stats.QualityChanges++;
+        }
+
+        /// <summary>
+        /// Apply low quality settings
+        /// </summary>
+        private void ApplyLowQualitySettings()
+        {
+            if (_mainCamera != null)
+            {
+                var cameraData = _mainCamera.GetUniversalAdditionalCameraData();
+                if (cameraData != null)
+                {
+                    cameraData.renderScale = 0.7f;
+                    cameraData.antialiasing = AntialiasingMode.None;
+                }
+            }
+
+            QualitySettings.shadowDistance = 50f;
+            QualitySettings.shadowResolution = ShadowResolution.Low;
+            
+            if (_plantRenderer != null)
+            {
+                _plantRenderer.SetMaxInstances(500);
+                _plantRenderer.SetCullingDistance(50f);
+            }
+        }
+
+        /// <summary>
+        /// Apply medium quality settings
+        /// </summary>
+        private void ApplyMediumQualitySettings()
+        {
+            if (_mainCamera != null)
+            {
+                var cameraData = _mainCamera.GetUniversalAdditionalCameraData();
+                if (cameraData != null)
+                {
+                    cameraData.renderScale = 0.85f;
+                    cameraData.antialiasing = AntialiasingMode.FastApproximateAntialiasing;
+                }
+            }
+
+            QualitySettings.shadowDistance = 100f;
+            QualitySettings.shadowResolution = ShadowResolution.Medium;
+            
+            if (_plantRenderer != null)
+            {
+                _plantRenderer.SetMaxInstances(750);
+                _plantRenderer.SetCullingDistance(75f);
+            }
+        }
+
+        /// <summary>
+        /// Apply high quality settings
+        /// </summary>
+        private void ApplyHighQualitySettings()
+        {
+            if (_mainCamera != null)
+            {
+                var cameraData = _mainCamera.GetUniversalAdditionalCameraData();
+                if (cameraData != null)
+                {
+                    cameraData.renderScale = 1.0f;
+                    cameraData.antialiasing = AntialiasingMode.FastApproximateAntialiasing;
+                }
+            }
+
+            QualitySettings.shadowDistance = _shadowDistance;
+            QualitySettings.shadowResolution = ShadowResolution.High;
+            
+            if (_plantRenderer != null)
+            {
+                _plantRenderer.SetMaxInstances(_maxInstancedPlants);
+                _plantRenderer.SetCullingDistance(_instanceCullingDistance);
+            }
+        }
+
+        /// <summary>
+        /// Apply ultra quality settings
+        /// </summary>
+        private void ApplyUltraQualitySettings()
+        {
+            if (_mainCamera != null)
+            {
+                var cameraData = _mainCamera.GetUniversalAdditionalCameraData();
+                if (cameraData != null)
+                {
+                    cameraData.renderScale = 1.2f;
+                    cameraData.antialiasing = AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+                }
+            }
+
+            QualitySettings.shadowDistance = _shadowDistance * 1.5f;
+            QualitySettings.shadowResolution = ShadowResolution.VeryHigh;
+            
+            if (_plantRenderer != null)
+            {
+                _plantRenderer.SetMaxInstances(_maxInstancedPlants * 2);
+                _plantRenderer.SetCullingDistance(_instanceCullingDistance * 1.5f);
+            }
+        }
+
+        /// <summary>
+        /// Apply emergency performance optimizations
+        /// </summary>
+        private void ApplyEmergencyOptimizations()
+        {
+            // Reduce shadow distance
+            QualitySettings.shadowDistance = Mathf.Max(25f, QualitySettings.shadowDistance * 0.5f);
+            
+            // Reduce render scale
+            if (_mainCamera != null)
+            {
+                var cameraData = _mainCamera.GetUniversalAdditionalCameraData();
+                if (cameraData != null)
+                {
+                    cameraData.renderScale = Mathf.Max(0.5f, cameraData.renderScale * 0.8f);
+                }
+            }
+
+            // Reduce plant instances
+            if (_plantRenderer != null)
+            {
+                _plantRenderer.SetMaxInstances(_plantRenderer.MaxInstances / 2);
+            }
+
+            _stats.EmergencyOptimizations++;
+        }
+
+        /// <summary>
+        /// Update performance tracking
+        /// </summary>
+        private void UpdatePerformanceTracking()
+        {
+            if (!_enablePerformanceMonitoring) return;
+
+            float frameTime = Time.unscaledDeltaTime;
+            _frameTimeHistory.Enqueue(frameTime);
+
+            while (_frameTimeHistory.Count > MAX_FRAME_SAMPLES)
+            {
+                _frameTimeHistory.Dequeue();
+            }
+
+            _stats.TotalFrames++;
+            _stats.CurrentFrameRate = 1f / frameTime;
+        }
+
+        /// <summary>
+        /// Get average frame time from recent samples
+        /// </summary>
+        private float GetAverageFrameTime()
+        {
+            if (_frameTimeHistory.Count == 0) return 0f;
+
+            float total = 0f;
+            foreach (float frameTime in _frameTimeHistory)
+            {
+                total += frameTime;
+            }
+
+            return total / _frameTimeHistory.Count;
+        }
+
+        #endregion
+
+        private void OnDestroy()
+        {
+            // Cleanup shared materials
+            foreach (var material in _sharedMaterials.Values)
+            {
+                if (material != null)
+                {
+                    DestroyImmediate(material);
+                }
+            }
+            _sharedMaterials.Clear();
+        }
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// Rendering quality levels
+    /// </summary>
+    public enum RenderingQuality
+    {
+        Low = 0,
+        Medium = 1,
+        High = 2,
+        Ultra = 3
+    }
+
+    /// <summary>
+    /// Shadow quality settings
+    /// </summary>
+    public enum ShadowQuality
+    {
+        Off,
+        Low,
+        Medium,
+        High,
+        Ultra
+    }
+
+    /// <summary>
+    /// Plant rendering data
+    /// </summary>
+    [System.Serializable]
+    public struct PlantRenderingData
+    {
+        public Matrix4x4 TransformMatrix;
+        public Vector4 PlantParameters; // growth, health, size, stage
+        public Color PlantColor;
+        public float LODLevel;
+        public bool IsVisible;
+    }
+
+    /// <summary>
+    /// Rendering settings
+    /// </summary>
+    [System.Serializable]
+    public struct RenderingSettings
+    {
+        public float RenderScale;
+        public bool EnableAntialiasing;
+        public float ShadowDistance;
+        public ShadowResolution ShadowResolution;
+        public int MaxPlantInstances;
+        public float PlantCullingDistance;
+    }
+
+    /// <summary>
+    /// Rendering performance statistics
+    /// </summary>
+    [System.Serializable]
+    public struct RenderingPerformanceStats
+    {
+        public float MonitoringStartTime;
+        public int TotalFrames;
+        public float CurrentFrameRate;
+        public int LoadedShaders;
+        public int RegisteredPlants;
+        public int QualityChanges;
+        public int OptimizationEvents;
+        public int EmergencyOptimizations;
+    }
+
+    /// <summary>
+    /// Comprehensive rendering report
+    /// </summary>
+    [System.Serializable]
+    public struct RenderingReport
+    {
+        public RenderingPerformanceStats CurrentStats;
+        public RenderingQuality CurrentQuality;
+        public float AverageFrameTime;
+        public float TargetFrameTime;
+        public int RegisteredShaders;
+        public int SharedMaterials;
+        public bool IsPerformanceHealthy;
+    }
+
+    #endregion
+}

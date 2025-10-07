@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using ProjectChimera.Core.Logging;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
-namespace ProjectChimera.Core.DependencyInjection
+namespace ProjectChimera.Core
 {
     /// <summary>
     /// Extension methods for IServiceProvider to provide additional functionality
@@ -57,7 +58,7 @@ namespace ProjectChimera.Core.DependencyInjection
         public static bool TryGetService<T>(this IServiceProvider provider, out T service) where T : class
         {
             service = null;
-            
+
             if (provider == null)
                 return false;
 
@@ -148,7 +149,7 @@ namespace ProjectChimera.Core.DependencyInjection
         /// <summary>
         /// Get all services that implement a specific interface
         /// </summary>
-        public static IEnumerable<TInterface> GetImplementationsOf<TInterface>(this IServiceProvider provider) 
+        public static IEnumerable<TInterface> GetImplementationsOf<TInterface>(this IServiceProvider provider)
             where TInterface : class
         {
             if (provider == null)
@@ -160,7 +161,7 @@ namespace ProjectChimera.Core.DependencyInjection
         /// <summary>
         /// Get services by predicate
         /// </summary>
-        public static IEnumerable<T> GetServicesWhere<T>(this IServiceProvider provider, Func<T, bool> predicate) 
+        public static IEnumerable<T> GetServicesWhere<T>(this IServiceProvider provider, Func<T, bool> predicate)
             where T : class
         {
             if (provider == null)
@@ -207,7 +208,7 @@ namespace ProjectChimera.Core.DependencyInjection
         /// <summary>
         /// Get the first service that matches a predicate
         /// </summary>
-        public static T GetFirstServiceWhere<T>(this IServiceProvider provider, Func<T, bool> predicate) 
+        public static T GetFirstServiceWhere<T>(this IServiceProvider provider, Func<T, bool> predicate)
             where T : class
         {
             if (provider == null)
@@ -232,7 +233,7 @@ namespace ProjectChimera.Core.DependencyInjection
         /// <summary>
         /// Execute action for each service of type T
         /// </summary>
-        public static void ForEachService<T>(this IServiceProvider provider, Action<T> action) 
+        public static void ForEachService<T>(this IServiceProvider provider, Action<T> action)
             where T : class
         {
             if (provider == null)
@@ -248,7 +249,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 }
                 catch (Exception ex)
                 {
-                    ChimeraLogger.LogError($"[ServiceProviderExtensions] Error executing action on service {typeof(T).Name}: {ex.Message}");
+                    Logger.LogError("ServiceProviderExtensions", $"Action failed: {ex.Message}");
                 }
             }
         }
@@ -256,7 +257,7 @@ namespace ProjectChimera.Core.DependencyInjection
         /// <summary>
         /// Try to resolve multiple services with error handling
         /// </summary>
-        public static bool TryGetServices<T>(this IServiceProvider provider, out IEnumerable<T> services) 
+        public static bool TryGetServices<T>(this IServiceProvider provider, out IEnumerable<T> services)
             where T : class
         {
             services = null;
@@ -271,7 +272,7 @@ namespace ProjectChimera.Core.DependencyInjection
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[ServiceProviderExtensions] Error getting services of type {typeof(T).Name}: {ex.Message}");
+                Logger.LogError("ServiceProviderExtensions", $"Resolution failed: {ex.Message}");
                 return false;
             }
         }

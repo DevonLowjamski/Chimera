@@ -40,7 +40,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
             // Create LOD materials if needed
             CreateLODMaterials();
 
-            ChimeraLogger.LogVerbose($"LOD Manager initialized with {config.Distances.Length} LOD levels");
+            ChimeraLogger.Log("SPEEDTREE/LOD", "Operation completed");
         }
 
         /// <summary>
@@ -122,7 +122,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
                 data.CurrentLOD = newLOD;
                 _totalLODSwitches++;
 
-                ChimeraLogger.LogVerbose($"LOD changed for {speedTree.name}: {data.CurrentLOD} -> {newLOD}");
+                ChimeraLogger.Log("SPEEDTREE/LOD", "Operation completed");
             }
 
             data.LastUpdateTime = Time.time;
@@ -168,7 +168,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
             // Reinitialize with new distances
             Initialize(_config);
 
-            ChimeraLogger.LogVerbose($"LOD distances updated: {string.Join(", ", distances)}");
+            ChimeraLogger.Log("SPEEDTREE/LOD", "Operation completed");
         }
 
         /// <summary>
@@ -202,7 +202,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
                 }
             }
 
-            ChimeraLogger.LogVerbose($"Forced all SpeedTrees to LOD: {lod}");
+            ChimeraLogger.Log("SPEEDTREE/LOD", "Operation completed");
         }
 
         /// <summary>
@@ -268,7 +268,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
             if (!_rendererData.ContainsKey(speedTree))
             {
                 _rendererData[speedTree] = new SpeedTreeRendererData(speedTree);
-                ChimeraLogger.LogVerbose($"Added SpeedTree to LOD tracking: {speedTree.name}");
+                ChimeraLogger.Log("SPEEDTREE/LOD", "Operation completed");
             }
         }
 
@@ -285,7 +285,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
                     lodGroup.Remove(speedTree);
                 }
 
-                ChimeraLogger.LogVerbose($"Removed SpeedTree from LOD tracking: {speedTree.name}");
+                ChimeraLogger.Log("SPEEDTREE/LOD", "Operation completed");
             }
         }
 
@@ -302,7 +302,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Performance
             }
 
             _totalLODSwitches = 0;
-            ChimeraLogger.LogVerbose("LOD data cleared");
+            ChimeraLogger.Log("SPEEDTREE/LOD", "Operation completed");
         }
 
         /// <summary>

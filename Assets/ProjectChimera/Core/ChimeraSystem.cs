@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectChimera.Core.Updates;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core
 {
@@ -33,12 +34,12 @@ namespace ProjectChimera.Core
         /// <summary>
         /// ITickable Priority property
         /// </summary>
-        public virtual int Priority => _systemPriority;
+        public virtual int TickPriority => _systemPriority;
 
         /// <summary>
         /// ITickable Enabled property
         /// </summary>
-        public virtual bool Enabled => isActiveAndEnabled;
+        public virtual bool IsTickable => isActiveAndEnabled;
 
         protected override void Start()
         {

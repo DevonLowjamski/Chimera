@@ -1,15 +1,19 @@
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using System.Linq;
+using ProjectChimera.Core;
 
 namespace ProjectChimera.Core
 {
     /// <summary>
-    /// SIMPLE: Basic service health monitoring aligned with Project Chimera's service monitoring vision.
+    /// ENHANCED: Service health monitoring with ITickable integration.
+    /// Migrated from Update() to centralized tick system for better performance.
     /// Focuses on essential service status checking without complex diagnostics.
     /// </summary>
-    public class ServiceHealthMonitor : MonoBehaviour
+    public class ServiceHealthMonitor : MonoBehaviour, Updates.ITickable
     {
         [Header("Basic Settings")]
         [SerializeField] private bool _enableLogging = true;
@@ -29,36 +33,66 @@ namespace ProjectChimera.Core
         public int TrackedServicesCount => _serviceStatus.Count;
 
         /// <summary>
-        /// Initialize the health monitor
+        /// ITickable implementation - lower priority than TimeManager but still core system
+        /// </summary>
+        public int TickPriority => -80; // High priority core system
+        public bool IsTickable => _isMonitoring && isActiveAndEnabled;
+        public bool IsActive => _isMonitoring && isActiveAndEnabled;
+
+        /// <summary>
+        /// Initialize the health monitor and register with UpdateOrchestrator
         /// </summary>
         public void Initialize()
         {
             _isMonitoring = true;
 
+            // Register with centralized update system
+            var orchestrator = ServiceContainerFactory.Instance?.TryResolve<UpdateOrchestrator>();
+            if (orchestrator != null)
+            {
+                orchestrator.RegisterTickable(this);
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogInfo("ServiceHealthMonitor", "$1");
+                }
+            }
+
+
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[ServiceHealthMonitor] Initialized successfully");
+                ChimeraLogger.LogInfo("ServiceHealthMonitor", "$1");
             }
         }
 
         /// <summary>
-        /// Shutdown the health monitor
+        /// Shutdown the health monitor and unregister from UpdateOrchestrator
         /// </summary>
         public void Shutdown()
         {
             _isMonitoring = false;
             _serviceStatus.Clear();
 
+            // Unregister from UpdateOrchestrator
+            var orchestrator = ServiceContainerFactory.Instance?.TryResolve<UpdateOrchestrator>();
+            if (orchestrator != null)
+            {
+                orchestrator.UnregisterTickable(this);
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogInfo("ServiceHealthMonitor", "$1");
+                }
+            }
+
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[ServiceHealthMonitor] Shutdown completed");
+                ChimeraLogger.LogInfo("ServiceHealthMonitor", "$1");
             }
         }
 
         /// <summary>
-        /// Update method for periodic checks
+        /// ITickable implementation - periodic health checks
         /// </summary>
-        private void Update()
+        public void Tick(float deltaTime)
         {
             if (!_isMonitoring) return;
 
@@ -88,7 +122,7 @@ namespace ProjectChimera.Core
 
                     if (_enableLogging)
                     {
-                        ChimeraLogger.Log($"[ServiceHealthMonitor] Service {serviceType.Name} status: {status}");
+                        ChimeraLogger.Log("CORE", $"Service {serviceType.Name} status changed to {status}", this);
                     }
                 }
 
@@ -101,7 +135,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging && !allHealthy)
             {
-                ChimeraLogger.LogWarning("[ServiceHealthMonitor] Some services are unhealthy");
+                ChimeraLogger.LogWarning("CORE", "One or more services reported unhealthy status", this);
             }
         }
 
@@ -116,7 +150,7 @@ namespace ProjectChimera.Core
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[ServiceHealthMonitor] Registered service: {serviceType.Name}");
+                    ChimeraLogger.LogInfo("ServiceHealthMonitor", "$1");
                 }
             }
         }
@@ -130,7 +164,7 @@ namespace ProjectChimera.Core
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[ServiceHealthMonitor] Unregistered service: {serviceType.Name}");
+                    ChimeraLogger.LogInfo("ServiceHealthMonitor", "$1");
                 }
             }
         }
@@ -164,12 +198,21 @@ namespace ProjectChimera.Core
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[ServiceHealthMonitor] Health check failed for {serviceType.Name}: {ex.Message}");
+                ChimeraLogger.LogError("CORE", $"Service health check failed: {ex.Message}", this);
                 return ServiceStatus.Failed;
             }
         }
 
         #endregion
+
+        /// <summary>
+        /// Unity lifecycle - ensure proper cleanup
+        /// </summary>
+        private void OnDestroy()
+        {
+            // Make sure we unregister from UpdateOrchestrator on destroy
+            Shutdown();
+        }
     }
 
     /// <summary>
@@ -223,16 +266,5 @@ namespace ProjectChimera.Core
             ResponseTime = TimeSpan.Zero;
             Diagnostics = new Dictionary<string, object>();
         }
-    }
-
-    /// <summary>
-    /// Simple service status enum
-    /// </summary>
-    public enum ServiceStatus
-    {
-        Unknown,
-        Healthy,
-        Warning,
-        Failed
     }
 }

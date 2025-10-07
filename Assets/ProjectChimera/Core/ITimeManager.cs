@@ -1,4 +1,5 @@
 using System;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core
 {
@@ -28,6 +29,21 @@ namespace ProjectChimera.Core
         TimeSpan ElapsedGameTime { get; }
 
         /// <summary>
+        /// Current speed level for UI display
+        /// </summary>
+        TimeSpeedLevel CurrentSpeedLevel { get; }
+
+        /// <summary>
+        /// Current time scale for UI display
+        /// </summary>
+        float CurrentTimeScale { get; }
+
+        /// <summary>
+        /// Whether time is currently paused (alternative name for IsPaused)
+        /// </summary>
+        bool IsTimePaused { get; }
+
+        /// <summary>
         /// Initialize the time manager
         /// </summary>
         void Initialize();
@@ -55,6 +71,12 @@ namespace ProjectChimera.Core
         /// <param name="format">The display format to use</param>
         /// <returns>Formatted time string</returns>
         string FormatCurrentTime(TimeDisplayFormat format);
+
+        /// <summary>
+        /// Set the current speed level
+        /// </summary>
+        /// <param name="speedLevel">The desired speed level</param>
+        void SetSpeedLevel(TimeSpeedLevel speedLevel);
 
         /// <summary>
         /// Register for offline progression listener

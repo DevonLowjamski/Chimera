@@ -257,35 +257,35 @@ namespace ProjectChimera.Editor
         public static void SetupDevelopment()
         {
             ChimeraBuildProfiles.ApplyBuildProfile("Development");
-            ChimeraLogger.Log("[ChimeraBuildPresets] Configured for Development - Full logging and debug features enabled");
+            ChimeraLogger.Log("BUILD", "Development profile applied", null);
         }
 
         [MenuItem("Project Chimera/Quick Setup/Setup for Testing")]
         public static void SetupTesting()
         {
             ChimeraBuildProfiles.ApplyBuildProfile("Testing");
-            ChimeraLogger.Log("[ChimeraBuildPresets] Configured for Testing - Mock services and testing features enabled");
+            ChimeraLogger.Log("BUILD", "Testing profile applied", null);
         }
 
         [MenuItem("Project Chimera/Quick Setup/Setup for Production")]
         public static void SetupProduction()
         {
             ChimeraBuildProfiles.ApplyBuildProfile("Production");
-            ChimeraLogger.Log("[ChimeraBuildPresets] Configured for Production - Optimized build with minimal logging");
+            ChimeraLogger.Log("BUILD", "Production profile applied", null);
         }
 
         [MenuItem("Project Chimera/Quick Setup/Enable ServiceLocator Enforcement")]
         public static void EnableServiceLocatorEnforcement()
         {
             ChimeraBuildProfiles.AddScriptDefine("CHIMERA_SERVICELOCATOR_ERROR");
-            ChimeraLogger.Log("[ChimeraBuildPresets] ServiceLocator enforcement enabled - ServiceLocator usage will now cause compile errors");
+            ChimeraLogger.Log("BUILD", "ServiceLocator enforcement enabled", null);
         }
 
         [MenuItem("Project Chimera/Quick Setup/Disable ServiceLocator Enforcement")]
         public static void DisableServiceLocatorEnforcement()
         {
             ChimeraBuildProfiles.RemoveScriptDefine("CHIMERA_SERVICELOCATOR_ERROR");
-            ChimeraLogger.Log("[ChimeraBuildPresets] ServiceLocator enforcement disabled - ServiceLocator usage will show warnings only");
+            ChimeraLogger.Log("BUILD", "ServiceLocator enforcement disabled", null);
         }
     }
 }

@@ -240,5 +240,15 @@ namespace ProjectChimera.Systems.Construction.Grid
         {
             return new Bounds(GetGridCenter(), _bounds.Dimensions);
         }
+
+        /// <summary>
+        /// Update grid parameters (for dynamic grid updates)
+        /// </summary>
+        public void UpdateParameters(Vector3 origin, float gridSize, bool snapToGrid)
+        {
+            // Note: Since _bounds and _settings are readonly, we would need to recreate the class
+            // For now, this method serves as a compatibility bridge
+            ChimeraLogger.Log("GRID", "Grid parameters update requested - requires grid system recreation", null);
+        }
     }
 }

@@ -1,7 +1,9 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using ProjectChimera.Core.Logging;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 using System.Collections.Generic;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Gameplay
 {
@@ -10,7 +12,7 @@ namespace ProjectChimera.Systems.Gameplay
     /// Provides the interface for selecting and using various plant care tools
     /// in cultivation mode as described in the gameplay document.
     /// </summary>
-    public class CareToolsInterface : MonoBehaviour
+    public class CareToolsInterface : MonoBehaviour, ITickable
     {
         [Header("UI Elements")]
         [SerializeField] private UIDocument _uiDocument;
@@ -86,10 +88,23 @@ namespace ProjectChimera.Systems.Gameplay
             InitializeToolCooldowns();
         }
 
-        private void Update()
-        {
+    public int TickPriority => 100;
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
             UpdateToolCooldowns();
-        }
+    }
+
+    private void OnEnable()
+    {
+        UpdateOrchestrator.Instance.RegisterTickable(this);
+    }
+
+    private void OnDisable()
+    {
+        UpdateOrchestrator.Instance.UnregisterTickable(this);
+    }
 
         /// <summary>
         /// Initializes the care tools UI
@@ -98,7 +113,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_uiDocument == null)
             {
-                ChimeraLogger.LogWarning("[CareToolsInterface] No UI document assigned");
+                Logger.Log("OTHER", "$1", this);
                 return;
             }
 
@@ -222,7 +237,7 @@ namespace ProjectChimera.Systems.Gameplay
             // Check if tool is on cooldown
             if (_toolCooldowns[tool.ToolType] > 0f)
             {
-                ChimeraLogger.Log($"[CareToolsInterface] Tool {tool.Name} is on cooldown: {_toolCooldowns[tool.ToolType]:F1}s remaining");
+                Logger.Log("OTHER", "$1", this);
                 return;
             }
 
@@ -236,7 +251,7 @@ namespace ProjectChimera.Systems.Gameplay
 
             _isToolActive = true;
 
-            ChimeraLogger.Log($"[CareToolsInterface] Selected tool: {tool.Name}");
+            Logger.Log("OTHER", "$1", this);
         }
 
         /// <summary>
@@ -308,14 +323,14 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (!_isToolActive || _selectedTool == CareToolType.None)
             {
-                ChimeraLogger.Log("[CareToolsInterface] No tool selected");
+                Logger.Log("OTHER", "$1", this);
                 return false;
             }
 
             // Check cooldown
             if (_toolCooldowns[_selectedTool] > 0f)
             {
-                ChimeraLogger.Log("[CareToolsInterface] Tool is on cooldown");
+                Logger.Log("OTHER", "$1", this);
                 return false;
             }
 
@@ -326,13 +341,13 @@ namespace ProjectChimera.Systems.Gameplay
             {
                 // Start cooldown
                 var toolDef = System.Array.Find(_availableTools, t => t.ToolType == _selectedTool);
-                if (toolDef != null)
+                if (toolDef.ToolType != CareToolType.None)
                 {
                     _toolCooldowns[_selectedTool] = toolDef.Cooldown;
                 }
 
                 UpdateToolStates();
-                ChimeraLogger.Log($"[CareToolsInterface] Used {_selectedTool} on {target.name}");
+                Logger.Log("OTHER", "$1", this);
             }
 
             return success;
@@ -349,36 +364,36 @@ namespace ProjectChimera.Systems.Gameplay
             {
                 case CareToolType.Watering:
                     // Apply water to plant
-                    ChimeraLogger.Log($"[CareToolsInterface] Watering plant: {target.name}");
+                    Logger.Log("OTHER", "$1", this);
                     return true;
 
                 case CareToolType.NutrientApplication:
                     // Apply nutrients to plant
-                    ChimeraLogger.Log($"[CareToolsInterface] Applying nutrients to plant: {target.name}");
+                    Logger.Log("OTHER", "$1", this);
                     return true;
 
                 case CareToolType.Pruning:
                     // Prune plant
-                    ChimeraLogger.Log($"[CareToolsInterface] Pruning plant: {target.name}");
+                    Logger.Log("OTHER", "$1", this);
                     return true;
 
                 case CareToolType.Inspection:
                     // Inspect plant
-                    ChimeraLogger.Log($"[CareToolsInterface] Inspecting plant: {target.name}");
+                    Logger.Log("OTHER", "$1", this);
                     return true;
 
                 case CareToolType.Training:
                     // Train plant
-                    ChimeraLogger.Log($"[CareToolsInterface] Training plant: {target.name}");
+                    Logger.Log("OTHER", "$1", this);
                     return true;
 
                 case CareToolType.PHAdjustment:
                     // Adjust pH
-                    ChimeraLogger.Log($"[CareToolsInterface] Adjusting pH for plant: {target.name}");
+                    Logger.Log("OTHER", "$1", this);
                     return true;
 
                 default:
-                    ChimeraLogger.LogWarning($"[CareToolsInterface] Unknown tool type: {toolType}");
+                    Logger.Log("OTHER", "$1", this);
                     return false;
             }
         }

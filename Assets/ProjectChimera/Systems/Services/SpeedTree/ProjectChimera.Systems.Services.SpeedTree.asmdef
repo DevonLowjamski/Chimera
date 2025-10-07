@@ -3,7 +3,10 @@
     "rootNamespace": "ProjectChimera.Systems.Services.SpeedTree",
     "references": [
         "ProjectChimera.Core",
-        "ProjectChimera.Data"
+        "ProjectChimera.Core.Performance",
+        "ProjectChimera.Data",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Data.Environment"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

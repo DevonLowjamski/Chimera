@@ -1,0 +1,113 @@
+using ProjectChimera.Core.DependencyInjection;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Core.ManagerRegistration
+{
+    /// <summary>
+    /// FOCUSED: Domain manager registration for Project Chimera
+    /// Single responsibility: Register game domain managers (Plant, Genetics, Environmental, Economy, etc.)
+    /// Extracted from ManagerRegistrationProvider.cs for SRP compliance (Week 8)
+    /// </summary>
+    public class DomainManagerRegistration
+    {
+        private int _registeredCount = 0;
+
+        /// <summary>
+        /// Register all domain manager interfaces with fallback implementations
+        /// </summary>
+        public int RegisterDomainManagerInterfaces(IServiceContainer serviceContainer)
+        {
+            if (serviceContainer == null) return 0;
+
+            _registeredCount = 0;
+
+            UnityEngine.Debug.Log("Operation completed");
+
+            // Register IPlantManager
+            if (!serviceContainer.IsRegistered<IPlantManager>())
+            {
+                serviceContainer.RegisterInstance<IPlantManager>(new NullPlantManager());
+                _registeredCount++;
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            // Register IGeneticsManager
+            if (!serviceContainer.IsRegistered<IGeneticsManager>())
+            {
+                serviceContainer.RegisterInstance<IGeneticsManager>(new NullGeneticsManager());
+                _registeredCount++;
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            // Register IEnvironmentalManager
+            if (!serviceContainer.IsRegistered<IEnvironmentalManager>())
+            {
+                serviceContainer.RegisterInstance<IEnvironmentalManager>(new NullEnvironmentalManager());
+                _registeredCount++;
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            // Register IEconomyManager
+            if (!serviceContainer.IsRegistered<IEconomyManager>())
+            {
+                serviceContainer.RegisterInstance<IEconomyManager>(new NullEconomyManager());
+                _registeredCount++;
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            // Register IProgressionManager
+            if (!serviceContainer.IsRegistered<IProgressionManager>())
+            {
+                serviceContainer.RegisterInstance<IProgressionManager>(new NullProgressionManager());
+                _registeredCount++;
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            // Register IResearchManager
+            if (!serviceContainer.IsRegistered<IResearchManager>())
+            {
+                serviceContainer.RegisterInstance<IResearchManager>(new NullResearchManager());
+                _registeredCount++;
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            // Register IAudioManager
+            if (!serviceContainer.IsRegistered<IAudioManager>())
+            {
+                serviceContainer.RegisterInstance<IAudioManager>(new NullAudioManager());
+                _registeredCount++;
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            UnityEngine.Debug.Log("Operation completed");
+            return _registeredCount;
+        }
+
+        /// <summary>
+        /// Get count of registered domain managers
+        /// </summary>
+        public int GetRegisteredCount()
+        {
+            return _registeredCount;
+        }
+
+        /// <summary>
+        /// Check if domain managers are properly registered
+        /// </summary>
+        public bool ValidateRegistrations(IServiceContainer serviceContainer)
+        {
+            if (serviceContainer == null) return false;
+
+            var isValid = serviceContainer.IsRegistered<IPlantManager>() &&
+                         serviceContainer.IsRegistered<IGeneticsManager>() &&
+                         serviceContainer.IsRegistered<IEnvironmentalManager>() &&
+                         serviceContainer.IsRegistered<IEconomyManager>() &&
+                         serviceContainer.IsRegistered<IProgressionManager>() &&
+                         serviceContainer.IsRegistered<IResearchManager>() &&
+                         serviceContainer.IsRegistered<IAudioManager>();
+
+            UnityEngine.Debug.Log("Operation completed");
+            return isValid;
+        }
+    }
+}

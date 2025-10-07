@@ -1,0 +1,199 @@
+using System;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.DependencyInjection;
+
+namespace ProjectChimera.Core.ServiceRegistrationSystem
+{
+    /// <summary>
+    /// FOCUSED: Core service registration functionality for Project Chimera ServiceContainer
+    /// Single responsibility: Handle basic service registration operations
+    /// Extracted from ServiceContainer.cs for SRP compliance (Week 8)
+    /// </summary>
+    public class ServiceRegistrationCore
+    {
+        private readonly Dictionary<Type, object> _services;
+        private readonly object _lock;
+
+        // Events
+        public event Action<ServiceRegistrationData> ServiceRegistered;
+
+        public ServiceRegistrationCore(Dictionary<Type, object> services, object lockObject)
+        {
+            _services = services ?? throw new ArgumentNullException(nameof(services));
+            _lock = lockObject ?? throw new ArgumentNullException(nameof(lockObject));
+        }
+
+        /// <summary>
+        /// Register singleton with implementation type
+        /// </summary>
+        public void RegisterSingleton<TInterface, TImplementation>()
+            where TImplementation : class, TInterface, new()
+        {
+            var instance = new TImplementation();
+            RegisterInstance<TInterface>(instance);
+        }
+
+        /// <summary>
+        /// Register singleton with existing instance
+        /// </summary>
+        public void RegisterSingleton<TInterface>(TInterface instance)
+        {
+            RegisterInstance<TInterface>(instance);
+        }
+
+        /// <summary>
+        /// Register instance (core registration method)
+        /// </summary>
+        public void RegisterInstance<TInterface>(TInterface instance)
+            where TInterface : class
+        {
+            if (instance == null) throw new ArgumentNullException(nameof(instance));
+
+            lock (_lock)
+            {
+                var serviceType = typeof(TInterface);
+                _services[serviceType] = instance;
+
+                // Fire registration event
+                ServiceRegistered?.Invoke(new ServiceRegistrationData 
+                { 
+                    ServiceType = serviceType, 
+                    ImplementationType = instance.GetType(),
+                    LifetimeScope = ServiceLifetimeScope.Singleton 
+                });
+
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Register transient service (creates new instance each time)
+        /// </summary>
+        public void RegisterTransient<TInterface, TImplementation>()
+            where TImplementation : class, TInterface, new()
+        {
+            lock (_lock)
+            {
+                var serviceType = typeof(TInterface);
+                var implementationType = typeof(TImplementation);
+                
+                // Store factory function for transient services
+                _services[serviceType] = new Func<TInterface>(() => new TImplementation());
+
+                ServiceRegistered?.Invoke(new ServiceRegistrationData 
+                { 
+                    ServiceType = serviceType, 
+                    ImplementationType = implementationType,
+                    LifetimeScope = ServiceLifetimeScope.Transient 
+                });
+
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Register scoped service (same instance within scope)
+        /// </summary>
+        public void RegisterScoped<TInterface, TImplementation>() 
+            where TImplementation : class, TInterface, new()
+        {
+            lock (_lock)
+            {
+                var serviceType = typeof(TInterface);
+                var implementationType = typeof(TImplementation);
+                
+                // For now, treat scoped as singleton (simplified implementation)
+                var instance = new TImplementation();
+                _services[serviceType] = instance;
+
+                ServiceRegistered?.Invoke(new ServiceRegistrationData 
+                { 
+                    ServiceType = serviceType, 
+                    ImplementationType = implementationType,
+                    LifetimeScope = ServiceLifetimeScope.Scoped 
+                });
+
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Check if service type is registered
+        /// </summary>
+        public bool IsRegistered<T>()
+        {
+            return IsRegistered(typeof(T));
+        }
+
+        /// <summary>
+        /// Check if service type is registered
+        /// </summary>
+        public bool IsRegistered(Type serviceType)
+        {
+            if (serviceType == null) return false;
+
+            lock (_lock)
+            {
+                return _services.ContainsKey(serviceType);
+            }
+        }
+
+        /// <summary>
+        /// Get all registered service types
+        /// </summary>
+        public IEnumerable<Type> GetRegisteredTypes()
+        {
+            lock (_lock)
+            {
+                return new List<Type>(_services.Keys);
+            }
+        }
+
+        /// <summary>
+        /// Get statistics about registered services
+        /// </summary>
+        public ServiceRegistrationStats GetStats()
+        {
+            lock (_lock)
+            {
+                return new ServiceRegistrationStats
+                {
+                    RegisteredServices = _services.Count,
+                    ServiceTypes = new List<Type>(_services.Keys)
+                };
+            }
+        }
+    }
+
+    /// <summary>
+    /// Service registration statistics
+    /// </summary>
+    [System.Serializable]
+    public struct ServiceRegistrationStats
+    {
+        public int RegisteredServices;
+        public List<Type> ServiceTypes;
+    }
+
+    /// <summary>
+    /// Service registration data structure
+    /// </summary>
+    [System.Serializable]
+    public struct ServiceRegistrationData
+    {
+        public Type ServiceType;
+        public Type ImplementationType;
+        public ServiceLifetimeScope LifetimeScope;
+    }
+
+    /// <summary>
+    /// Service lifetime scope enumeration
+    /// </summary>
+    public enum ServiceLifetimeScope
+    {
+        Singleton,
+        Transient,
+        Scoped
+    }
+}

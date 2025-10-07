@@ -2,7 +2,8 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System.Linq;
-using ProjectChimera.Core.DependencyInjection;
+
+using ProjectChimera.Core;
 using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Editor
@@ -175,8 +176,8 @@ namespace ProjectChimera.Editor
 
             if (GUILayout.Button("Print to Console", GUILayout.Width(120)))
             {
-                var bootstrapper = ServiceBootstrapper.Instance;
-                bootstrapper?.PrintServiceReport();
+                // TODO: Implement PrintServiceReport in ServiceBootstrapper
+                ChimeraLogger.LogInfo("ServiceReport", "Print to console not yet implemented", null);
             }
 
             EditorGUILayout.EndHorizontal();
@@ -340,19 +341,20 @@ namespace ProjectChimera.Editor
                 var bootstrapper = ServiceBootstrapper.Instance;
                 if (bootstrapper != null && bootstrapper.IsBootstrapped)
                 {
-                    _currentReport = bootstrapper.GenerateServiceReport();
+                    // TODO: Implement GenerateServiceReport in ServiceBootstrapper
+                    _currentReport = new ServiceRegistrationReport { GeneratedAt = System.DateTime.Now };
                     _lastRefreshTime = Time.realtimeSinceStartup;
                     Repaint();
                 }
                 else
                 {
                     _currentReport = null;
-                    ChimeraLogger.LogWarning("[ServiceRegistrationReportWindow] ServiceBootstrapper not available or not bootstrapped");
+                    ChimeraLogger.Log("OTHER", "$1", null);
                 }
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[ServiceRegistrationReportWindow] Failed to refresh report: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 _currentReport = null;
             }
         }
@@ -402,17 +404,20 @@ namespace ProjectChimera.Editor
     /// </summary>
     public static class ServiceReportingMenu
     {
+        // TODO: Re-enable these menu items when ServiceBootstrapper implements the methods
+        /*
         [MenuItem("Project Chimera/Services/Generate Service Report")]
         public static void GenerateServiceReport()
         {
             var bootstrapper = ServiceBootstrapper.Instance;
             if (bootstrapper != null && bootstrapper.IsBootstrapped)
             {
-                bootstrapper.PrintServiceReport();
+                // TODO: Implement PrintServiceReport in ServiceBootstrapper
+                ChimeraLogger.LogInfo("ServiceReport", "Generate Service Report not yet implemented", null);
             }
             else
             {
-                ChimeraLogger.LogWarning("ServiceBootstrapper not available. Ensure system is initialized.");
+                ChimeraLogger.Log("OTHER", "$1", null);
             }
         }
 
@@ -422,11 +427,12 @@ namespace ProjectChimera.Editor
             var bootstrapper = ServiceBootstrapper.Instance;
             if (bootstrapper != null && bootstrapper.IsBootstrapped)
             {
-                bootstrapper.RunServiceValidation();
+                // TODO: Implement RunServiceValidation in ServiceBootstrapper
+                ChimeraLogger.LogInfo("ServiceReport", "Validate Services not yet implemented", null);
             }
             else
             {
-                ChimeraLogger.LogWarning("ServiceBootstrapper not available. Ensure system is initialized.");
+                ChimeraLogger.Log("OTHER", "$1", null);
             }
         }
 
@@ -436,12 +442,14 @@ namespace ProjectChimera.Editor
             var bootstrapper = ServiceBootstrapper.Instance;
             if (bootstrapper != null && bootstrapper.IsBootstrapped)
             {
-                bootstrapper.SaveServiceReportToFile();
+                // TODO: Implement SaveServiceReportToFile in ServiceBootstrapper
+                ChimeraLogger.LogInfo("ServiceReport", "Export Service Report not yet implemented", null);
             }
             else
             {
-                ChimeraLogger.LogWarning("ServiceBootstrapper not available. Ensure system is initialized.");
+                ChimeraLogger.Log("OTHER", "$1", null);
             }
         }
+        */
     }
 }

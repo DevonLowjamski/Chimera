@@ -3,18 +3,21 @@
     "rootNamespace": "ProjectChimera.Systems",
     "references": [
         "ProjectChimera.Core",
+        "ProjectChimera.Core.Performance",
         "ProjectChimera.Data",
         "ProjectChimera.Shared",
         "ProjectChimera.Data.Shared",
-        "ProjectChimera.Data.Economy",
+        "ProjectChimera.Data.Environment",
         "ProjectChimera.Data.Genetics",
-        "ProjectChimera.Data.UI",
-        "ProjectChimera.Systems.Events",
-        "ProjectChimera.Systems.Diagnostics",
-        "ProjectChimera.Systems.Scene",
+        "ProjectChimera.Data.Cultivation",
+        "ProjectChimera.Systems.Camera",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.Mathematics",
         "UnityEngine.UI",
         "Unity.TextMeshPro",
-        "Unity.InputSystem"
+        "Unity.Addressables",
+        "Unity.ResourceManager"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -33,6 +36,11 @@
             "name": "com.unity.inputsystem",
             "expression": "1.0.0",
             "define": "UNITY_INPUT_SYSTEM"
+        },
+        {
+            "name": "com.unity.addressables",
+            "expression": "1.0.0",
+            "define": "UNITY_ADDRESSABLES"
         }
     ],
     "noEngineReferences": false

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UIElements;
-using ProjectChimera.Core.Logging;
 using System;
+using ChimeraLogger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Systems.Progression
 {
@@ -29,7 +29,7 @@ namespace ProjectChimera.Systems.Progression
         {
             if (_uiDocument == null)
             {
-                ChimeraLogger.LogWarning("[SimpleOfflineProgressionSummary] No UI document assigned");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return;
             }
 
@@ -86,7 +86,7 @@ namespace ProjectChimera.Systems.Progression
             _summaryText.text = summary;
             _summaryPanel.style.display = DisplayStyle.Flex;
 
-            ChimeraLogger.Log($"[SimpleOfflineProgressionSummary] Showed time-lapse summary: {offlineDuration.TotalHours:F1} hours offline");
+            ChimeraLogger.Log("OTHER", "$1", this);
         }
 
         /// <summary>

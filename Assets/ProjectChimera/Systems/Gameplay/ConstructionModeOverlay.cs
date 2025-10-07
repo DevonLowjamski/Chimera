@@ -1,6 +1,7 @@
 using UnityEngine;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Core;
+using ChimeraLogger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Systems.Gameplay
 {
@@ -37,7 +38,7 @@ namespace ProjectChimera.Systems.Gameplay
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[ConstructionModeOverlay] Initialized successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -57,7 +58,7 @@ namespace ProjectChimera.Systems.Gameplay
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[ConstructionModeOverlay] Construction mode activated");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -77,7 +78,7 @@ namespace ProjectChimera.Systems.Gameplay
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[ConstructionModeOverlay] Construction mode deactivated");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -90,7 +91,7 @@ namespace ProjectChimera.Systems.Gameplay
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[ConstructionModeOverlay] Blueprint visibility: {_blueprintVisible}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -103,7 +104,7 @@ namespace ProjectChimera.Systems.Gameplay
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[ConstructionModeOverlay] Grid visibility: {_gridVisible}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -119,7 +120,7 @@ namespace ProjectChimera.Systems.Gameplay
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[ConstructionModeOverlay] Placement preview at {position}: {(isValid ? "valid" : "invalid")}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -134,7 +135,7 @@ namespace ProjectChimera.Systems.Gameplay
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[ConstructionModeOverlay] Placement preview hidden");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -147,7 +148,7 @@ namespace ProjectChimera.Systems.Gameplay
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[ConstructionModeOverlay] Overlay color set to {color}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -205,7 +206,7 @@ namespace ProjectChimera.Systems.Gameplay
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[ConstructionModeOverlay] Overlay {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
     }

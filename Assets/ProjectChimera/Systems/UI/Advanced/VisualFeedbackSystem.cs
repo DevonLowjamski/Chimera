@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
-using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.UI.Advanced
 {
@@ -64,7 +63,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[VisualFeedbackSystem] Initialized successfully");
+                ChimeraLogger.LogInfo("VisualFeedbackSystem", "$1");
             }
         }
 
@@ -129,7 +128,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[VisualFeedbackSystem] Feedback hidden");
+                ChimeraLogger.LogInfo("VisualFeedbackSystem", "$1");
             }
         }
 
@@ -155,7 +154,7 @@ namespace ProjectChimera.Systems.UI.Advanced
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[VisualFeedbackSystem] Feedback {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.LogInfo("VisualFeedbackSystem", "$1");
             }
         }
 
@@ -255,16 +254,7 @@ namespace ProjectChimera.Systems.UI.Advanced
         #endregion
     }
 
-    /// <summary>
-    /// Feedback types
-    /// </summary>
-    public enum FeedbackType
-    {
-        Success,
-        Warning,
-        Error,
-        Info
-    }
+    // FeedbackType is defined in Advanced.MenuDataStructures. Use that definition to avoid duplication.
 
     /// <summary>
     /// Feedback statistics

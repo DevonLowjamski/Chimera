@@ -22,11 +22,11 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         [SerializeField] private float _lowDetailDistance = 50f;
 
         private List<GameObject> _visiblePlants = new List<GameObject>();
-        private Camera _mainCamera;
+        private UnityEngine.Camera _mainCamera;
 
         private void Awake()
         {
-            _mainCamera = Camera.main;
+            _mainCamera = UnityEngine.Camera.main;
             InitializeRendering();
         }
 
@@ -38,7 +38,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
                 SetupBasicLOD();
             }
 
-            ChimeraLogger.Log($"[SimplePlantRenderingService] Initialized with render distance {_renderDistance}m, max plants {_maxVisiblePlants}");
+            ProjectChimera.Core.Logging.ChimeraLogger.Log("SPEEDTREE/RENDER", "Initialized simple plant rendering service", this);
         }
 
         private void SetupBasicLOD()
@@ -146,14 +146,14 @@ namespace ProjectChimera.Systems.Services.SpeedTree
                 // Low performance - reduce quality
                 _renderDistance *= 0.8f;
                 _maxVisiblePlants = Mathf.FloorToInt(_maxVisiblePlants * 0.7f);
-                ChimeraLogger.Log("[SimplePlantRenderingService] Reduced quality for performance");
+                ProjectChimera.Core.Logging.ChimeraLogger.Log("SPEEDTREE/RENDER", "Reduced max visible plants for performance", this);
             }
             else if (performanceFactor > 0.8f)
             {
                 // Good performance - increase quality slightly
                 _renderDistance *= 1.1f;
                 _maxVisiblePlants = Mathf.FloorToInt(_maxVisiblePlants * 1.2f);
-                ChimeraLogger.Log("[SimplePlantRenderingService] Increased quality - good performance");
+                ProjectChimera.Core.Logging.ChimeraLogger.Log("SPEEDTREE/RENDER", "Increased max visible plants", this);
             }
         }
 

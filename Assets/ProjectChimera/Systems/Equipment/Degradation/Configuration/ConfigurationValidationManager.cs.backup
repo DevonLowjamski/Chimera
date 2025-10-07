@@ -1,0 +1,760 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+using ValidationMode = ProjectChimera.Systems.Equipment.Degradation.ValidationMode;
+
+namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
+{
+    /// <summary>
+    /// REFACTORED: Configuration Validation Manager - Focused parameter validation and constraint enforcement
+    /// Single Responsibility: Managing parameter validation, constraints, and validation rules
+    /// Extracted from CostConfigurationManager for better SRP compliance
+    /// </summary>
+    public class ConfigurationValidationManager
+    {
+        private readonly bool _enableLogging;
+        private readonly bool _enableValidation;
+        private readonly bool _enforceConstraints;
+        private readonly bool _logValidationWarnings;
+        private readonly ValidationMode _validationMode;
+
+        // Validation infrastructure
+        private readonly List<ConfigurationConstraint> _constraints = new List<ConfigurationConstraint>();
+        private readonly Dictionary<string, ParameterValidator> _validators = new Dictionary<string, ParameterValidator>();
+        private readonly List<ValidationRule> _customRules = new List<ValidationRule>();
+
+        // Validation statistics
+        private ValidationStatistics _validationStats = new ValidationStatistics();
+
+        // Events
+        public event System.Action<ValidationResult> OnValidationCompleted;
+        public event System.Action<string, ValidationFailure> OnParameterValidationFailed;
+        public event System.Action<ValidationRule, bool> OnCustomRuleValidated;
+
+        public ConfigurationValidationManager(bool enableLogging = false, bool enableValidation = true,
+                                            bool enforceConstraints = true, bool logValidationWarnings = true,
+                                            ValidationMode validationMode = ValidationMode.Strict)
+        {
+            _enableLogging = enableLogging;
+            _enableValidation = enableValidation;
+            _enforceConstraints = enforceConstraints;
+            _logValidationWarnings = logValidationWarnings;
+            _validationMode = validationMode;
+
+            InitializeDefaultConstraints();
+            InitializeDefaultValidators();
+        }
+
+        // Properties
+        public ValidationStatistics Statistics => _validationStats;
+        public bool IsValidationEnabled => _enableValidation;
+        public ValidationMode Mode => _validationMode;
+        public int ConstraintCount => _constraints.Count;
+        public int ValidatorCount => _validators.Count;
+
+        #region Initialization
+
+        /// <summary>
+        /// Initialize default validation constraints
+        /// </summary>
+        private void InitializeDefaultConstraints()
+        {
+            // Cost-related constraints
+            AddConstraint(new ConfigurationConstraint
+            {
+                ParameterName = "BaseCost",
+                MinValue = 0.0f,
+                MaxValue = 50000.0f,
+                IsRequired = true,
+                DataType = typeof(float)
+            });
+
+            AddConstraint(new ConfigurationConstraint
+            {
+                ParameterName = "LaborRatePerHour",
+                MinValue = 10.0f,
+                MaxValue = 500.0f,
+                IsRequired = true,
+                DataType = typeof(float)
+            });
+
+            AddConstraint(new ConfigurationConstraint
+            {
+                ParameterName = "MaterialMarkup",
+                MinValue = 1.0f,
+                MaxValue = 10.0f,
+                IsRequired = true,
+                DataType = typeof(float)
+            });
+
+            AddConstraint(new ConfigurationConstraint
+            {
+                ParameterName = "UrgencyMultiplier",
+                MinValue = 1.0f,
+                MaxValue = 5.0f,
+                IsRequired = true,
+                DataType = typeof(float)
+            });
+
+            AddConstraint(new ConfigurationConstraint
+            {
+                ParameterName = "ComplexityFactor",
+                MinValue = 0.1f,
+                MaxValue = 10.0f,
+                IsRequired = false,
+                DataType = typeof(float)
+            });
+
+            if (_enableLogging)
+                ChimeraLogger.LogInfo("CONFIG_VAL", $"Initialized {_constraints.Count} default constraints", null);
+        }
+
+        /// <summary>
+        /// Initialize default parameter validators
+        /// </summary>
+        private void InitializeDefaultValidators()
+        {
+            // Cost validators
+            AddValidator("BaseCost", new ParameterValidator
+            {
+                ValidatorFunction = (value) => ValidatePositiveFloat(value, "BaseCost"),
+                Description = "Validates that base cost is a positive float value"
+            });
+
+            AddValidator("LaborRatePerHour", new ParameterValidator
+            {
+                ValidatorFunction = (value) => ValidateRangeFloat(value, 10.0f, 500.0f, "LaborRatePerHour"),
+                Description = "Validates labor rate is within acceptable range"
+            });
+
+            AddValidator("MaterialMarkup", new ParameterValidator
+            {
+                ValidatorFunction = (value) => ValidateMultiplier(value, "MaterialMarkup"),
+                Description = "Validates material markup is a proper multiplier"
+            });
+
+            // Add custom business logic validators
+            AddValidator("ConsistencyCheck", new ParameterValidator
+            {
+                ValidatorFunction = ValidateParameterConsistency,
+                Description = "Validates cross-parameter consistency"
+            });
+
+            if (_enableLogging)
+                ChimeraLogger.LogInfo("CONFIG_VAL", $"Initialized {_validators.Count} default validators", null);
+        }
+
+        #endregion
+
+        #region Validation Operations
+
+        /// <summary>
+        /// Validate entire configuration profile
+        /// </summary>
+        public ValidationResult ValidateConfiguration(CostConfigurationProfile profile)
+        {
+            var result = new ValidationResult
+            {
+                StartTime = DateTime.Now,
+                ProfileName = profile?.Name ?? "Unknown"
+            };
+
+            if (!_enableValidation)
+            {
+                result.Success = true;
+                result.Message = "Validation disabled";
+                return result;
+            }
+
+            if (profile == null)
+            {
+                result.Success = false;
+                result.Message = "Profile is null";
+                return result;
+            }
+
+            try
+            {
+                var validationErrors = new List<string>();
+                var validationWarnings = new List<string>();
+
+                // Validate all required parameters exist
+                ValidateRequiredParameters(profile, validationErrors);
+
+                // Validate individual parameters
+                ValidateParameters(profile, validationErrors, validationWarnings);
+
+                // Run custom validation rules
+                ValidateCustomRules(profile, validationErrors, validationWarnings);
+
+                // Cross-parameter validation
+                ValidateCrossParameterRules(profile, validationErrors, validationWarnings);
+
+                result.ValidationErrors = validationErrors;
+                result.ValidationWarnings = validationWarnings;
+                result.Success = validationErrors.Count == 0;
+                result.ExecutionTime = (DateTime.Now - result.StartTime).TotalMilliseconds;
+
+                // Update statistics
+                _validationStats.TotalValidations++;
+                if (result.Success)
+                    _validationStats.SuccessfulValidations++;
+                else
+                    _validationStats.FailedValidations++;
+
+                _validationStats.TotalErrors += validationErrors.Count;
+                _validationStats.TotalWarnings += validationWarnings.Count;
+
+                OnValidationCompleted?.Invoke(result);
+
+                if (_enableLogging)
+                {
+                    if (result.Success)
+                    {
+                        ChimeraLogger.LogInfo("CONFIG_VAL", $"Configuration validation passed for '{profile.Name}'", null);
+                    }
+                    else
+                    {
+                        ChimeraLogger.LogWarning("CONFIG_VAL", $"Configuration validation failed for '{profile.Name}': {validationErrors.Count} errors", null);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.Message = $"Validation exception: {ex.Message}";
+                _validationStats.ValidationExceptions++;
+
+                if (_enableLogging)
+                    ChimeraLogger.LogError("CONFIG_VAL", $"Validation exception: {ex.Message}", null);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Validate a single parameter
+        /// </summary>
+        public bool ValidateParameter(string parameterName, object value)
+        {
+            if (!_enableValidation || string.IsNullOrEmpty(parameterName))
+                return true;
+
+            try
+            {
+                // Check constraints
+                if (!ValidateAgainstConstraints(parameterName, value))
+                {
+                    FireParameterValidationFailed(parameterName, "Constraint validation failed", value);
+                    return !_enforceConstraints; // Return true if not enforcing, false if enforcing
+                }
+
+                // Check custom validators
+                if (_validators.TryGetValue(parameterName, out var validator))
+                {
+                    var validationResult = validator.ValidatorFunction(value);
+                    if (!validationResult.IsValid)
+                    {
+                        FireParameterValidationFailed(parameterName, validationResult.ErrorMessage, value);
+                        return !_enforceConstraints;
+                    }
+                }
+
+                _validationStats.ParameterValidationsPassed++;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _validationStats.ParameterValidationExceptions++;
+                FireParameterValidationFailed(parameterName, $"Validation exception: {ex.Message}", value);
+
+                if (_enableLogging)
+                    ChimeraLogger.LogError("CONFIG_VAL", $"Parameter validation exception for '{parameterName}': {ex.Message}", null);
+
+                return !_enforceConstraints;
+            }
+        }
+
+        #endregion
+
+        #region Constraint Management
+
+        /// <summary>
+        /// Add a configuration constraint
+        /// </summary>
+        public void AddConstraint(ConfigurationConstraint constraint)
+        {
+            if (constraint == null || string.IsNullOrEmpty(constraint.ParameterName))
+                return;
+
+            // Remove existing constraint for the same parameter
+            _constraints.RemoveAll(c => c.ParameterName == constraint.ParameterName);
+            _constraints.Add(constraint);
+
+            if (_enableLogging)
+                ChimeraLogger.LogInfo("CONFIG_VAL", $"Added constraint for parameter '{constraint.ParameterName}'", null);
+        }
+
+        /// <summary>
+        /// Remove a constraint
+        /// </summary>
+        public bool RemoveConstraint(string parameterName)
+        {
+            var removed = _constraints.RemoveAll(c => c.ParameterName == parameterName);
+
+            if (removed > 0 && _enableLogging)
+                ChimeraLogger.LogInfo("CONFIG_VAL", $"Removed constraint for parameter '{parameterName}'", null);
+
+            return removed > 0;
+        }
+
+        /// <summary>
+        /// Get constraint for parameter
+        /// </summary>
+        public ConfigurationConstraint GetConstraint(string parameterName)
+        {
+            return _constraints.FirstOrDefault(c => c.ParameterName == parameterName);
+        }
+
+        #endregion
+
+        #region Validator Management
+
+        /// <summary>
+        /// Add a parameter validator
+        /// </summary>
+        public void AddValidator(string parameterName, ParameterValidator validator)
+        {
+            if (string.IsNullOrEmpty(parameterName) || validator == null)
+                return;
+
+            _validators[parameterName] = validator;
+
+            if (_enableLogging)
+                ChimeraLogger.LogInfo("CONFIG_VAL", $"Added validator for parameter '{parameterName}'", null);
+        }
+
+        /// <summary>
+        /// Remove a validator
+        /// </summary>
+        public bool RemoveValidator(string parameterName)
+        {
+            var removed = _validators.Remove(parameterName);
+
+            if (removed && _enableLogging)
+                ChimeraLogger.LogInfo("CONFIG_VAL", $"Removed validator for parameter '{parameterName}'", null);
+
+            return removed;
+        }
+
+        #endregion
+
+        #region Custom Rules
+
+        /// <summary>
+        /// Add a custom validation rule
+        /// </summary>
+        public void AddCustomRule(ValidationRule rule)
+        {
+            if (rule == null)
+                return;
+
+            _customRules.Add(rule);
+
+            if (_enableLogging)
+                ChimeraLogger.LogInfo("CONFIG_VAL", $"Added custom validation rule '{rule.Name}'", null);
+        }
+
+        /// <summary>
+        /// Remove a custom rule
+        /// </summary>
+        public bool RemoveCustomRule(string ruleName)
+        {
+            var removed = _customRules.RemoveAll(r => r.Name == ruleName);
+
+            if (removed > 0 && _enableLogging)
+                ChimeraLogger.LogInfo("CONFIG_VAL", $"Removed custom validation rule '{ruleName}'", null);
+
+            return removed > 0;
+        }
+
+        #endregion
+
+        #region Validation Implementation
+
+        private void ValidateRequiredParameters(CostConfigurationProfile profile, List<string> errors)
+        {
+            var requiredConstraints = _constraints.Where(c => c.IsRequired);
+
+            foreach (var constraint in requiredConstraints)
+            {
+                if (!profile.Parameters.ContainsKey(constraint.ParameterName))
+                {
+                    errors.Add($"Required parameter '{constraint.ParameterName}' is missing");
+                }
+            }
+        }
+
+        private void ValidateParameters(CostConfigurationProfile profile, List<string> errors, List<string> warnings)
+        {
+            foreach (var parameter in profile.Parameters)
+            {
+                var constraint = GetConstraint(parameter.Key);
+                if (constraint != null)
+                {
+                    var constraintResult = ValidateAgainstConstraint(parameter.Key, parameter.Value, constraint);
+                    if (!constraintResult.IsValid)
+                    {
+                        if (_validationMode == ValidationMode.Strict)
+                            errors.Add(constraintResult.ErrorMessage);
+                        else
+                            warnings.Add(constraintResult.ErrorMessage);
+                    }
+                }
+
+                if (_validators.TryGetValue(parameter.Key, out var validator))
+                {
+                    var validatorResult = validator.ValidatorFunction(parameter.Value);
+                    if (!validatorResult.IsValid)
+                    {
+                        if (_validationMode == ValidationMode.Strict)
+                            errors.Add(validatorResult.ErrorMessage);
+                        else
+                            warnings.Add(validatorResult.ErrorMessage);
+                    }
+                }
+            }
+        }
+
+        private void ValidateCustomRules(CostConfigurationProfile profile, List<string> errors, List<string> warnings)
+        {
+            foreach (var rule in _customRules)
+            {
+                try
+                {
+                    var ruleResult = rule.ValidationFunction(profile);
+                    OnCustomRuleValidated?.Invoke(rule, ruleResult.IsValid);
+
+                    if (!ruleResult.IsValid)
+                    {
+                        if (rule.Severity == ValidationSeverity.Error)
+                            errors.Add($"Custom rule '{rule.Name}': {ruleResult.ErrorMessage}");
+                        else
+                            warnings.Add($"Custom rule '{rule.Name}': {ruleResult.ErrorMessage}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors.Add($"Custom rule '{rule.Name}' threw exception: {ex.Message}");
+                }
+            }
+        }
+
+        private void ValidateCrossParameterRules(CostConfigurationProfile profile, List<string> errors, List<string> warnings)
+        {
+            // Example: Minimum cost should not exceed maximum cost
+            if (profile.Parameters.TryGetValue("MinimumCost", out var minCostObj) &&
+                profile.Parameters.TryGetValue("MaximumCost", out var maxCostObj))
+            {
+                if (minCostObj is float minCost && maxCostObj is float maxCost)
+                {
+                    if (minCost > maxCost)
+                    {
+                        errors.Add("MinimumCost cannot be greater than MaximumCost");
+                    }
+                }
+            }
+
+            // Example: Material markup should be reasonable relative to base cost
+            if (profile.Parameters.TryGetValue("BaseCost", out var baseCostObj) &&
+                profile.Parameters.TryGetValue("MaterialMarkup", out var markupObj))
+            {
+                if (baseCostObj is float baseCost && markupObj is float markup)
+                {
+                    var adjustedCost = baseCost * markup;
+                    if (adjustedCost > 100000.0f) // Arbitrary high threshold
+                    {
+                        warnings.Add("Material markup results in extremely high adjusted cost");
+                    }
+                }
+            }
+        }
+
+        private bool ValidateAgainstConstraints(string parameterName, object value)
+        {
+            var constraint = GetConstraint(parameterName);
+            if (constraint == null)
+                return true;
+
+            var result = ValidateAgainstConstraint(parameterName, value, constraint);
+            return result.IsValid;
+        }
+
+        private ParameterValidationResult ValidateAgainstConstraint(string parameterName, object value, ConfigurationConstraint constraint)
+        {
+            // Type validation
+            if (constraint.DataType != null && value != null && !constraint.DataType.IsAssignableFrom(value.GetType()))
+            {
+                return new ParameterValidationResult
+                {
+                    IsValid = false,
+                    ErrorMessage = $"Parameter '{parameterName}' expected type {constraint.DataType.Name}, got {value.GetType().Name}"
+                };
+            }
+
+            // Range validation for numeric types
+            if (value is IComparable comparableValue)
+            {
+                if (constraint.MinValue != null && comparableValue.CompareTo(constraint.MinValue) < 0)
+                {
+                    return new ParameterValidationResult
+                    {
+                        IsValid = false,
+                        ErrorMessage = $"Parameter '{parameterName}' value {value} is below minimum {constraint.MinValue}"
+                    };
+                }
+
+                if (constraint.MaxValue != null && comparableValue.CompareTo(constraint.MaxValue) > 0)
+                {
+                    return new ParameterValidationResult
+                    {
+                        IsValid = false,
+                        ErrorMessage = $"Parameter '{parameterName}' value {value} exceeds maximum {constraint.MaxValue}"
+                    };
+                }
+            }
+
+            return new ParameterValidationResult { IsValid = true };
+        }
+
+        #endregion
+
+        #region Built-in Validators
+
+        private ParameterValidationResult ValidatePositiveFloat(object value, string parameterName)
+        {
+            if (value is float floatValue)
+            {
+                if (floatValue >= 0)
+                {
+                    return new ParameterValidationResult { IsValid = true };
+                }
+                else
+                {
+                    return new ParameterValidationResult
+                    {
+                        IsValid = false,
+                        ErrorMessage = $"Parameter '{parameterName}' must be non-negative, got {floatValue}"
+                    };
+                }
+            }
+
+            return new ParameterValidationResult
+            {
+                IsValid = false,
+                ErrorMessage = $"Parameter '{parameterName}' must be a float value"
+            };
+        }
+
+        private ParameterValidationResult ValidateRangeFloat(object value, float min, float max, string parameterName)
+        {
+            if (value is float floatValue)
+            {
+                if (floatValue >= min && floatValue <= max)
+                {
+                    return new ParameterValidationResult { IsValid = true };
+                }
+                else
+                {
+                    return new ParameterValidationResult
+                    {
+                        IsValid = false,
+                        ErrorMessage = $"Parameter '{parameterName}' must be between {min} and {max}, got {floatValue}"
+                    };
+                }
+            }
+
+            return new ParameterValidationResult
+            {
+                IsValid = false,
+                ErrorMessage = $"Parameter '{parameterName}' must be a float value"
+            };
+        }
+
+        private ParameterValidationResult ValidateMultiplier(object value, string parameterName)
+        {
+            if (value is float floatValue)
+            {
+                if (floatValue >= 1.0f)
+                {
+                    return new ParameterValidationResult { IsValid = true };
+                }
+                else
+                {
+                    return new ParameterValidationResult
+                    {
+                        IsValid = false,
+                        ErrorMessage = $"Multiplier '{parameterName}' must be >= 1.0, got {floatValue}"
+                    };
+                }
+            }
+
+            return new ParameterValidationResult
+            {
+                IsValid = false,
+                ErrorMessage = $"Multiplier '{parameterName}' must be a float value"
+            };
+        }
+
+        private ParameterValidationResult ValidateParameterConsistency(object value)
+        {
+            // This is a placeholder for more complex cross-parameter validation
+            return new ParameterValidationResult { IsValid = true };
+        }
+
+        #endregion
+
+        #region Event Helpers
+
+        private void FireParameterValidationFailed(string parameterName, string errorMessage, object value)
+        {
+            var failure = new ValidationFailure
+            {
+                ParameterName = parameterName,
+                ErrorMessage = errorMessage,
+                FailedValue = value,
+                Timestamp = DateTime.Now
+            };
+
+            OnParameterValidationFailed?.Invoke(parameterName, failure);
+            _validationStats.ParameterValidationsFailed++;
+
+            if (_logValidationWarnings && _enableLogging)
+                ChimeraLogger.LogWarning("CONFIG_VAL", $"Parameter validation failed for '{parameterName}': {errorMessage}", null);
+        }
+
+        #endregion
+
+        #region Statistics
+
+        /// <summary>
+        /// Reset validation statistics
+        /// </summary>
+        public void ResetStatistics()
+        {
+            _validationStats = new ValidationStatistics();
+
+            if (_enableLogging)
+                ChimeraLogger.LogInfo("CONFIG_VAL", "Validation statistics reset", null);
+        }
+
+        #endregion
+    }
+
+    #region Data Structures
+
+
+    /// <summary>
+    /// Validation severity levels
+    /// </summary>
+    public enum ValidationSeverity
+    {
+        Warning,
+        Error
+    }
+
+    /// <summary>
+    /// Configuration constraint definition
+    /// </summary>
+    [System.Serializable]
+    public class ConfigurationConstraint
+    {
+        public string ParameterName;
+        public object MinValue;
+        public object MaxValue;
+        public bool IsRequired;
+        public Type DataType;
+        public string Description;
+    }
+
+    /// <summary>
+    /// Parameter validator definition
+    /// </summary>
+    [System.Serializable]
+    public class ParameterValidator
+    {
+        public Func<object, ParameterValidationResult> ValidatorFunction;
+        public string Description;
+    }
+
+    /// <summary>
+    /// Custom validation rule
+    /// </summary>
+    [System.Serializable]
+    public class ValidationRule
+    {
+        public string Name;
+        public Func<CostConfigurationProfile, ParameterValidationResult> ValidationFunction;
+        public ValidationSeverity Severity = ValidationSeverity.Error;
+        public string Description;
+    }
+
+    /// <summary>
+    /// Parameter validation result
+    /// </summary>
+    [System.Serializable]
+    public struct ParameterValidationResult
+    {
+        public bool IsValid;
+        public string ErrorMessage;
+    }
+
+    /// <summary>
+    /// Comprehensive validation result
+    /// </summary>
+    [System.Serializable]
+    public struct ValidationResult
+    {
+        public bool Success;
+        public string ProfileName;
+        public DateTime StartTime;
+        public double ExecutionTime;
+        public List<string> ValidationErrors;
+        public List<string> ValidationWarnings;
+        public string Message;
+    }
+
+    /// <summary>
+    /// Validation failure information
+    /// </summary>
+    [System.Serializable]
+    public struct ValidationFailure
+    {
+        public string ParameterName;
+        public string ErrorMessage;
+        public object FailedValue;
+        public DateTime Timestamp;
+    }
+
+    /// <summary>
+    /// Validation statistics tracking
+    /// </summary>
+    [System.Serializable]
+    public class ValidationStatistics
+    {
+        public int TotalValidations = 0;
+        public int SuccessfulValidations = 0;
+        public int FailedValidations = 0;
+        public int TotalErrors = 0;
+        public int TotalWarnings = 0;
+        public int ValidationExceptions = 0;
+        public int ParameterValidationsPassed = 0;
+        public int ParameterValidationsFailed = 0;
+        public int ParameterValidationExceptions = 0;
+        public DateTime LastValidation = DateTime.MinValue;
+    }
+
+    #endregion
+}

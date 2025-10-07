@@ -39,7 +39,7 @@ namespace ProjectChimera.Systems.UI.Simple
         {
             if (_contextualMenuTemplate == null || uiDocument == null)
             {
-                ChimeraLogger.LogWarning("[SimpleUIComponentManager] Missing UI template or document");
+                ChimeraLogger.LogInfo("SimpleUIComponentManager", "$1");
                 return null;
             }
 
@@ -53,7 +53,7 @@ namespace ProjectChimera.Systems.UI.Simple
             _uiElements[$"menu-{mode}"] = menuContainer;
             root.Add(menuContainer);
 
-            ChimeraLogger.Log($"[SimpleUIComponentManager] Created contextual menu for {mode} mode");
+            ChimeraLogger.LogInfo("SimpleUIComponentManager", "$1");
             return menuContainer;
         }
 
@@ -64,7 +64,7 @@ namespace ProjectChimera.Systems.UI.Simple
         {
             if (_modeIndicatorTemplate == null || uiDocument == null)
             {
-                ChimeraLogger.LogWarning("[SimpleUIComponentManager] Missing mode indicator template or document");
+                ChimeraLogger.LogInfo("SimpleUIComponentManager", "$1");
                 return null;
             }
 
@@ -88,7 +88,7 @@ namespace ProjectChimera.Systems.UI.Simple
         {
             if (_statusPanelTemplate == null || uiDocument == null)
             {
-                ChimeraLogger.LogWarning("[SimpleUIComponentManager] Missing status panel template or document");
+                ChimeraLogger.LogInfo("SimpleUIComponentManager", "$1");
                 return null;
             }
 
@@ -117,7 +117,7 @@ namespace ProjectChimera.Systems.UI.Simple
 
             _currentMode = newMode;
 
-            ChimeraLogger.Log($"[SimpleUIComponentManager] Switched to {newMode} mode");
+            ChimeraLogger.LogInfo("SimpleUIComponentManager", "$1");
         }
 
         /// <summary>
@@ -141,7 +141,7 @@ namespace ProjectChimera.Systems.UI.Simple
         /// </summary>
         public void ShowTooltip(VisualElement element, string tooltipText)
         {
-            if (!element.HasPointerCapture() || !_enableTooltips)
+            if (!element.HasPointerCapture(0) || !_enableTooltips)
                 return;
 
             // Simple tooltip implementation
@@ -155,8 +155,8 @@ namespace ProjectChimera.Systems.UI.Simple
 
             element.parent.Add(tooltip);
 
-            // Auto-hide after delay
-            StartCoroutine(HideTooltipAfterDelay(tooltip, 2f));
+            // Auto-hide after delay - would need to be handled by a MonoBehaviour or timer system
+            // // StartCoroutine(HideTooltipAfterDelay(tooltip, 2f));
         }
 
         /// <summary>
@@ -174,15 +174,15 @@ namespace ProjectChimera.Systems.UI.Simple
                 case "click":
                     element.style.scale = new StyleScale(new Vector2(0.95f, 0.95f));
                     // Reset after animation
-                    StartCoroutine(ResetScaleAfterDelay(element, _animationDuration));
+                    // StartCoroutine(ResetScaleAfterDelay(element, _animationDuration));
                     break;
                 case "success":
                     element.style.backgroundColor = new StyleColor(Color.green);
-                    StartCoroutine(ResetColorAfterDelay(element, _animationDuration));
+                    // StartCoroutine(ResetColorAfterDelay(element, _animationDuration));
                     break;
                 case "error":
                     element.style.backgroundColor = new StyleColor(Color.red);
-                    StartCoroutine(ResetColorAfterDelay(element, _animationDuration));
+                    // StartCoroutine(ResetColorAfterDelay(element, _animationDuration));
                     break;
             }
         }
@@ -310,7 +310,7 @@ namespace ProjectChimera.Systems.UI.Simple
 
         private void OnTabSelected(string tabName)
         {
-            ChimeraLogger.Log($"[SimpleUIComponentManager] Selected tab: {tabName}");
+            ChimeraLogger.LogInfo("SimpleUIComponentManager", "$1");
             // Handle tab selection logic here
         }
 

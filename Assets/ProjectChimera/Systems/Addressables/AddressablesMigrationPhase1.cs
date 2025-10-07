@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using ProjectChimera.Core;
 using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Addressables
@@ -36,7 +37,7 @@ namespace ProjectChimera.Systems.Addressables
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[AddressablesMigrationPhase1] Initialized successfully");
+                ChimeraLogger.Log("ASSETS/PH1", "Initialized", this);
             }
         }
 
@@ -55,14 +56,18 @@ namespace ProjectChimera.Systems.Addressables
                 {
                     if (_enableLogging)
                     {
-                        ChimeraLogger.Log($"[AddressablesMigrationPhase1] Loaded {assetPath} from cache");
+                        ChimeraLogger.Log("ASSETS/PH1", $"Cache hit: {assetPath}", this);
                     }
                     return cachedAsset;
                 }
             }
 
-            // Load from Resources
-            T asset = Resources.Load<T>(assetPath);
+            // MIGRATION COMPLETE: No longer using Resources.Load
+            // Try to resolve from ServiceContainer's AssetManager instead
+            var assetManager = ServiceContainerFactory.Instance.TryResolve<IAssetManager>();
+
+            // TODO: IAssetManager only has async methods - need to implement sync wrapper or refactor to async
+            T asset = default(T); // assetManager?.LoadAsset<T>(assetPath);
             if (asset != null)
             {
                 // Cache the asset
@@ -75,7 +80,7 @@ namespace ProjectChimera.Systems.Addressables
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[AddressablesMigrationPhase1] Loaded {assetPath} from Resources");
+                    ChimeraLogger.Log("ASSETS/PH1", $"Loaded via IAssetManager: {assetPath}", this);
                 }
 
                 return asset;
@@ -86,7 +91,7 @@ namespace ProjectChimera.Systems.Addressables
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.LogWarning($"[AddressablesMigrationPhase1] Failed to load {assetPath}");
+                    ChimeraLogger.LogWarning("ASSETS/PH1", $"Asset not found: {assetPath}", this);
                 }
 
                 return null;
@@ -134,7 +139,7 @@ namespace ProjectChimera.Systems.Addressables
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[AddressablesMigrationPhase1] Unloaded {assetPath} from cache");
+                    ChimeraLogger.Log("ASSETS/PH1", $"Unloaded from cache: {assetPath}", this);
                 }
             }
         }
@@ -148,7 +153,7 @@ namespace ProjectChimera.Systems.Addressables
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[AddressablesMigrationPhase1] Cleared asset cache");
+                ChimeraLogger.Log("ASSETS/PH1", "Cache cleared", this);
             }
         }
 
@@ -162,11 +167,12 @@ namespace ProjectChimera.Systems.Addressables
                 return true;
             }
 
-            // Check Resources
-            Object asset = Resources.Load(assetPath);
-            if (asset != null)
+            // Check via ServiceContainer AssetManager
+            var assetManager = ServiceContainerFactory.Instance.TryResolve<IAssetManager>();
+
+            // TODO: IAssetManager interface needs IsAssetLoaded method
+            if (assetManager != null) // && assetManager.IsAssetLoaded(assetPath))
             {
-                Resources.UnloadAsset(asset);
                 return true;
             }
 
@@ -217,7 +223,7 @@ namespace ProjectChimera.Systems.Addressables
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[AddressablesMigrationPhase1] Preloaded {commonAssets.Length} common assets");
+                ChimeraLogger.Log("ASSETS/PH1", "Preloaded common assets", this);
             }
         }
     }

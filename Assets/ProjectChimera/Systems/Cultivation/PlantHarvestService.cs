@@ -5,8 +5,10 @@ using ProjectChimera.Data.Shared;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Cultivation.Plant;
 // NOTE: Using Data layer HarvestResults
 using DataHarvestResults = ProjectChimera.Data.Cultivation.HarvestResults;
+// HarvestResults class is defined in CultivationSystemTypes.cs within the same namespace
 
 namespace ProjectChimera.Systems.Cultivation
 {
@@ -68,7 +70,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (IsInitialized) return;
 
-            ChimeraLogger.Log("[PlantHarvestService] Initializing harvest management system...");
+            ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
 
             // Get dependencies if not provided
             if (_cultivationManager == null)
@@ -78,24 +80,24 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_cultivationManager == null)
             {
-                ChimeraLogger.LogError("[PlantHarvestService] CultivationManager not found - harvest operations will be limited");
+                ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
                 return;
             }
 
             IsInitialized = true;
-            ChimeraLogger.Log($"[PlantHarvestService] Harvest management initialized (Variability: {_enableYieldVariability}, PostProcessing: {_enablePostHarvestProcessing})");
+            ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
         }
 
         public void Shutdown()
         {
             if (!IsInitialized) return;
 
-            ChimeraLogger.Log("[PlantHarvestService] Shutting down harvest management system...");
+            ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
 
             // Log final harvest statistics
             if (_enableDetailedLogging)
             {
-                ChimeraLogger.Log($"[PlantHarvestService] Final harvest stats - Total: {_totalHarvests}, Yield: {_totalYieldHarvested:F1}g, Best Quality: {_bestQualityScore:F2}");
+                ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
             }
 
             IsInitialized = false;
@@ -108,20 +110,20 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                ChimeraLogger.LogError("[PlantHarvestService] Cannot harvest plant: Service not initialized");
+                ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
                 return null;
             }
 
             var plant = _cultivationManager?.GetPlant(plantID);
             if (plant == null)
             {
-                ChimeraLogger.LogError($"[PlantHarvestService] Cannot harvest unknown plant: {plantID}");
+                ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
                 return null;
             }
 
             if (plant.CurrentGrowthStage != PlantGrowthStage.Harvest)
             {
-                ChimeraLogger.LogWarning($"[PlantHarvestService] Plant {plantID} is not ready for harvest (Stage: {plant.CurrentGrowthStage})");
+                ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
                 return null;
             }
 
@@ -165,13 +167,13 @@ namespace ProjectChimera.Systems.Cultivation
 
                 var harvestTime = (System.DateTime.Now - startTime).TotalMilliseconds;
 
-                ChimeraLogger.Log($"[PlantHarvestService] Harvested plant {plantID}: yield, quality (Time: {harvestTime:F1}ms)");
+                ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
 
                 return harvestResults;
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[PlantHarvestService] Error harvesting plant {plantID}: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
                 return null;
             }
         }
@@ -183,13 +185,13 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                ChimeraLogger.LogError("[PlantHarvestService] Cannot calculate expected yield: Service not initialized");
+                ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
                 return 0f;
             }
 
             if (plantInstance == null)
             {
-                ChimeraLogger.LogWarning("[PlantHarvestService] Cannot calculate expected yield for null plant instance");
+                ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
                 return 0f;
             }
 
@@ -222,16 +224,14 @@ namespace ProjectChimera.Systems.Cultivation
 
                 if (_enableDetailedLogging)
                 {
-                    ChimeraLogger.Log($"[PlantHarvestService] Expected yield for {plantInstance.PlantID}: {expectedYield:F1}g " +
-                             $"(Base: {baseYield:F1}g, Health: {healthModifier:F2}, Stage: {stageModifier:F2}, " +
-                             $"Stress: {stressModifier:F2}, Quality: {qualityModifier:F2}, Variability: {variabilityModifier:F2})");
+                    ChimeraLogger.Log("CULTIVATION",$"Expected yield calculated: {expectedYield:F2}", null);
                 }
 
                 return Mathf.Max(0f, expectedYield);
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[PlantHarvestService] Error calculating expected yield for {plantInstance.PlantID}: {ex.Message}");
+                ChimeraLogger.LogError("CULTIVATION", $"CalculateExpectedYield error: {ex.Message}", null);
                 return 0f;
             }
         }
@@ -274,14 +274,14 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                ChimeraLogger.LogError("[PlantHarvestService] Cannot batch harvest: Service not initialized");
+                ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
                 return new System.Collections.Generic.List<HarvestResults>();
             }
 
             var results = new System.Collections.Generic.List<HarvestResults>();
             var startTime = System.DateTime.Now;
 
-            ChimeraLogger.Log($"[PlantHarvestService] Starting batch harvest of {plantIDs.Count} plants");
+            ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
 
             foreach (var plantID in plantIDs)
             {
@@ -293,7 +293,7 @@ namespace ProjectChimera.Systems.Cultivation
             }
 
             var batchTime = (System.DateTime.Now - startTime).TotalMilliseconds;
-            ChimeraLogger.Log($"[PlantHarvestService] Batch harvest completed: {results.Count}/{plantIDs.Count} plants harvested in {batchTime:F1}ms");
+            ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
 
             return results;
         }
@@ -305,7 +305,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                ChimeraLogger.LogError("[PlantHarvestService] Cannot get harvest-ready plants: Service not initialized");
+                ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
                 return new System.Collections.Generic.List<string>();
             }
 
@@ -352,7 +352,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableDetailedLogging)
             {
-                ChimeraLogger.Log($"[PlantHarvestService] Plant {plant.PlantID} harvest readiness: Stage={stageReady}, Health={healthOk}, Active={isActive}, Ready={isReady}");
+                ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
             }
 
             return isReady;
@@ -445,7 +445,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableDetailedLogging)
             {
-                ChimeraLogger.Log($"[PlantHarvestService] Processing post-harvest operations for {results.PlantId}");
+                ChimeraLogger.Log("CULTIVATION","Cultivation system operation", null);
             }
 
             // Apply post-harvest quality adjustments

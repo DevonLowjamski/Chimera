@@ -20,14 +20,14 @@ namespace ProjectChimera.Core
 
         public void Initialize()
         {
-            ChimeraLogger.Log("[TimeEvents] Time events system initialized");
+            ChimeraLogger.LogInfo("TimeEvents", "$1");
         }
 
         public void Shutdown()
         {
             _timeScaleListeners.Clear();
             _speedPenaltyListeners.Clear();
-            ChimeraLogger.Log("[TimeEvents] Time events system shutdown");
+            ChimeraLogger.LogInfo("TimeEvents", "$1");
         }
 
         public void RegisterTimeScaleListener(ITimeScaleListener listener)
@@ -35,7 +35,7 @@ namespace ProjectChimera.Core
             if (listener != null && !_timeScaleListeners.Contains(listener))
             {
                 _timeScaleListeners.Add(listener);
-                ChimeraLogger.Log($"[TimeEvents] Registered time scale listener: {listener.GetType().Name}");
+                ChimeraLogger.LogInfo("TimeEvents", "$1");
             }
         }
 
@@ -43,7 +43,7 @@ namespace ProjectChimera.Core
         {
             if (_timeScaleListeners.Remove(listener))
             {
-                ChimeraLogger.Log($"[TimeEvents] Unregistered time scale listener: {listener.GetType().Name}");
+                ChimeraLogger.LogInfo("TimeEvents", "$1");
             }
         }
 
@@ -52,7 +52,7 @@ namespace ProjectChimera.Core
             if (listener != null && !_speedPenaltyListeners.Contains(listener))
             {
                 _speedPenaltyListeners.Add(listener);
-                ChimeraLogger.Log($"[TimeEvents] Registered speed penalty listener: {listener.GetType().Name}");
+                ChimeraLogger.LogInfo("TimeEvents", "$1");
             }
         }
 
@@ -60,7 +60,7 @@ namespace ProjectChimera.Core
         {
             if (_speedPenaltyListeners.Remove(listener))
             {
-                ChimeraLogger.Log($"[TimeEvents] Unregistered speed penalty listener: {listener.GetType().Name}");
+                ChimeraLogger.LogInfo("TimeEvents", "$1");
             }
         }
 
@@ -70,11 +70,11 @@ namespace ProjectChimera.Core
             {
                 try
                 {
-                    _timeScaleListeners[i]?.OnTimeScaleChanged(previousScale, newScale);
+                    _timeScaleListeners[i]?.OnTimeScaleChanged(newScale);
                 }
                 catch (Exception e)
                 {
-                    ChimeraLogger.LogError($"[TimeEvents] Error notifying time scale listener: {e.Message}");
+                    ChimeraLogger.LogInfo("TimeEvents", "$1");
                     _timeScaleListeners.RemoveAt(i);
                 }
             }
@@ -86,11 +86,11 @@ namespace ProjectChimera.Core
             {
                 try
                 {
-                    _speedPenaltyListeners[i]?.OnSpeedPenaltyChanged(speedLevel, penaltyMultiplier);
+                    _speedPenaltyListeners[i]?.OnSpeedPenaltyApplied(penaltyMultiplier, $"Speed level: {speedLevel}");
                 }
                 catch (Exception e)
                 {
-                    ChimeraLogger.LogError($"[TimeEvents] Error notifying speed penalty listener: {e.Message}");
+                    ChimeraLogger.LogInfo("TimeEvents", "$1");
                     _speedPenaltyListeners.RemoveAt(i);
                 }
             }

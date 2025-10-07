@@ -1,0 +1,26 @@
+using UnityEngine;
+using UnityEditor;
+
+namespace ProjectChimera.Editor
+{
+    /// <summary>
+    /// Custom inspector for ServiceValidationTest
+    /// </summary>
+    [CustomEditor(typeof(ProjectChimera.Core.ServiceValidationTest))]
+    public class ServiceValidationTestInspector : Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            DrawDefaultInspector();
+
+            EditorGUILayout.Space();
+
+            var testComponent = (ProjectChimera.Core.ServiceValidationTest)target;
+
+            if (GUILayout.Button("Run Validation Test"))
+            {
+                testComponent.RunValidationTest();
+            }
+        }
+    }
+}

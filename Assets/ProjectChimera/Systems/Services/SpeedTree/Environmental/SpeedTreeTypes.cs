@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
 {
@@ -396,5 +397,46 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         void UpdateWindSettings(float windSpeed, Vector3 windDirection, float turbulence);
         void EnableStressVisualization(bool enabled);
         SeasonalEffects GetSeasonalEffects();
+    }
+
+    // Minimal shared types used across environmental services
+    [System.Serializable]
+    public struct WindState
+    {
+        public float CurrentStrength;
+        public Vector3 CurrentDirection;
+        public float GustStrength;
+    }
+
+    [System.Serializable]
+    public struct SeasonalState
+    {
+        public Season CurrentSeason;
+        public float TransitionProgress;
+        public bool IsTransitioning;
+    }
+
+
+    [System.Serializable]
+    public class EnvironmentalStatistics
+    {
+        public int TotalPlantsMonitored;
+        public int PlantsStressed;
+        public bool SystemsEnabled;
+    }
+
+    [System.Serializable]
+    public class StressVisualizationStatistics
+    {
+        public int TotalPlants;
+        public int HealthyPlants;
+        public int StressedPlants;
+        public int TrackedPlants;
+        public float AverageHealthLevel;
+        public float AverageStressLevel;
+        public float AverageStress;
+        public float MaxStress;
+        public bool VisualizationEnabled;
+        public float UpdateFrequency;
     }
 }

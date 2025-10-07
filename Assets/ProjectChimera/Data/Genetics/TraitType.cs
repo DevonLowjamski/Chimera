@@ -1,3 +1,4 @@
+
 using UnityEngine;
 
 namespace ProjectChimera.Data.Genetics
@@ -16,7 +17,7 @@ namespace ProjectChimera.Data.Genetics
         BiomassProduction,       // Total plant biomass
         HarvestIndex,            // Ratio of flower to total biomass
         Quality,                 // Overall quality metric
-        
+
         // Plant Morphology Traits
         PlantHeight,             // Final plant height
         Height,                  // Alias for PlantHeight
@@ -26,7 +27,7 @@ namespace ProjectChimera.Data.Genetics
         LeafSize,                // Average leaf size
         StemThickness,           // Main stem diameter
         TotalBiomass,            // Total plant biomass (alias for BiomassProduction)
-        
+
         // Flowering and Development Traits
         FloweringTime,           // Days from seed to flower
         MaturationTime,          // Time to full maturity
@@ -34,7 +35,7 @@ namespace ProjectChimera.Data.Genetics
         GrowthRate,              // Alias for VegetativeGrowthRate
         FlowerDevelopmentRate,   // Rate of flower development
         PhotosyntheticEfficiency, // Photosynthetic efficiency
-        
+
         // Chemical Profile Traits
         Potency,                 // General potency reference (same as THCPotency)
         THCPotency,              // THC percentage
@@ -43,7 +44,7 @@ namespace ProjectChimera.Data.Genetics
         CBGContent,              // CBG percentage
         TerpeneProduction,       // Total terpene content
         FlavonoidContent,        // Flavonoid levels
-        
+
         // Stress Tolerance Traits
         StressResistance,        // General stress resistance
         HeatTolerance,           // Tolerance to high temperatures
@@ -51,7 +52,7 @@ namespace ProjectChimera.Data.Genetics
         DroughtTolerance,        // Water stress tolerance
         NutrientStressTolerance, // Nutrient deficiency tolerance
         LightStressTolerance,    // High light intensity tolerance
-        
+
         // Disease and Pest Resistance
         DiseaseResistance,       // General disease resistance
         PowderyMildewResistance, // Resistance to powdery mildew
@@ -59,13 +60,13 @@ namespace ProjectChimera.Data.Genetics
         RootRotResistance,       // Resistance to root diseases
         AphidResistance,         // Resistance to aphids
         SpiderMiteResistance,    // Resistance to spider mites
-        
+
         // Environmental Adaptation
         HumidityTolerance,       // Tolerance to high/low humidity
         pHAdaptability,          // Adaptation to pH variations
         SalinityTolerance,       // Salt stress tolerance
         CO2ResponseEfficiency,   // Efficiency under elevated CO2
-        
+
         // Quality Traits
         BudDensity,              // Flower compactness
         TrichomeProduction,      // Trichome density
@@ -73,27 +74,27 @@ namespace ProjectChimera.Data.Genetics
         FlavorProfile,           // Taste characteristics
         ShelfLife,               // Post-harvest stability
         StabilityIndex,          // Trait stability measurement
-        
+
         // Resource Use Efficiency
         NitrogenUseEfficiency,   // Nitrogen uptake efficiency
         PhosphorusUseEfficiency, // Phosphorus uptake efficiency
         WaterUseEfficiency,      // Water consumption efficiency
         LightUseEfficiency,      // Photosynthetic efficiency
-        
+
         // Specialized Traits
         AutofloweringTendency,   // Day-neutral flowering
         SexStability,            // Hermaphrodite resistance
         SeedProduction,          // Seed yield for breeding
         ClonabilityIndex,        // Ease of vegetative propagation
         CuringResponse,          // Response to post-harvest curing
-        
+
         // Hybrid Vigor Traits
         HeterosisEffect,         // Overall hybrid vigor
         GrowthVigor,             // Vegetative growth vigor
         YieldHeterosis,          // Yield improvement in hybrids
         StressRecovery           // Recovery from stress events
     }
-    
+
     /// <summary>
     /// Categories for organizing genes by their primary function or system involvement
     /// </summary>
@@ -115,5 +116,13 @@ namespace ProjectChimera.Data.Genetics
         Flowering,               // Flowering time and photoperiod
         Physiological,           // Physiological processes
         Specialized              // Unique or complex traits
+    }
+
+    // Added to support dominance resolution in GenotypeFactory
+    public enum DominanceType
+    {
+        Homozygous,
+        Heterozygous,
+        Codominant
     }
 }

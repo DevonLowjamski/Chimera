@@ -1,4 +1,5 @@
 using System;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core
 {

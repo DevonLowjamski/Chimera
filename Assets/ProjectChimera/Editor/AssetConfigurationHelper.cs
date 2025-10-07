@@ -36,9 +36,9 @@ namespace ProjectChimera.Editor
             
             var currencyEvent = ScriptableObject.CreateInstance<SimpleGameEventSO>();
             CreateAndSaveAsset(currencyEvent, UI_DATA_BINDING_PATH + "CurrencyEvent.asset");
-            
+
             AssetDatabase.Refresh();
-            ChimeraLogger.Log("[Chimera] Created example UI Data Binding assets");
+            ChimeraLogger.Log("OTHER", "Example UI Data Bindings created successfully");
         }
         
         [MenuItem("Project Chimera/Create Example Event Channels")]
@@ -73,9 +73,9 @@ namespace ProjectChimera.Editor
             // Create Research Completed Event
             var researchCompletedEvent = ScriptableObject.CreateInstance<SimpleGameEventSO>();
             CreateAndSaveAsset(researchCompletedEvent, EVENT_CHANNEL_PATH + "ResearchCompletedEvent.asset");
-            
+
             AssetDatabase.Refresh();
-            ChimeraLogger.Log("[Chimera] Created example Event Channel assets");
+            ChimeraLogger.Log("OTHER", "Example Event Channels created successfully");
         }
         
         [MenuItem("Project Chimera/Fix All Asset Configuration Issues")]
@@ -84,8 +84,8 @@ namespace ProjectChimera.Editor
             CreateExampleUIDataBindings();
             CreateExampleEventChannels();
             ValidateExistingAssets();
-            
-            ChimeraLogger.Log("[Chimera] Fixed all asset configuration issues");
+
+            ChimeraLogger.Log("OTHER", "All asset configuration issues fixed");
         }
         
         /// <summary>
@@ -96,7 +96,7 @@ namespace ProjectChimera.Editor
             // Check if asset already exists
             if (AssetDatabase.LoadAssetAtPath<ScriptableObject>(path) != null)
             {
-                ChimeraLogger.LogWarning($"[Chimera] Asset already exists at {path}, skipping creation");
+                ChimeraLogger.Log("OTHER", "Asset already exists at path: " + path);
                 return;
             }
             
@@ -106,8 +106,8 @@ namespace ProjectChimera.Editor
             // Mark as dirty and save
             EditorUtility.SetDirty(asset);
             AssetDatabase.SaveAssets();
-            
-            ChimeraLogger.Log($"[Chimera] Created asset: {path}");
+
+            ChimeraLogger.Log("OTHER", "Created asset at path: " + path);
         }
         
         /// <summary>
@@ -157,7 +157,7 @@ namespace ProjectChimera.Editor
             if (needsUpdate)
             {
                 EditorUtility.SetDirty(eventChannel);
-                ChimeraLogger.Log($"[Chimera] Fixed Event Channel configuration: {path}");
+                ChimeraLogger.Log("OTHER", "Validated event channel: " + path);
             }
         }
         
@@ -180,8 +180,8 @@ namespace ProjectChimera.Editor
                     if (asset == null)
                     {
                         // Asset file exists but can't be loaded - likely corrupted
-                        ChimeraLogger.LogWarning($"[Chimera] Found potentially corrupted asset: {path}");
-                        
+                        ChimeraLogger.Log("OTHER", "Found corrupted asset at path: " + path);
+
                         // You can uncomment the following line to delete corrupted assets
                         // AssetDatabase.DeleteAsset(path);
                     }
@@ -189,7 +189,7 @@ namespace ProjectChimera.Editor
             }
             
             AssetDatabase.Refresh();
-            ChimeraLogger.Log("[Chimera] Cleaned up corrupted assets");
+            ChimeraLogger.Log("OTHER", "Corrupted asset cleanup completed");
         }
     }
 }

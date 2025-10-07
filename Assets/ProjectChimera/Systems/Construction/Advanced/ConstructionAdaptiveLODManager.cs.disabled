@@ -1,0 +1,524 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Construction.Advanced
+{
+    /// <summary>
+    /// REFACTORED: Construction Adaptive LOD Manager
+    /// Single Responsibility: Adaptive Level-of-Detail management for construction elements
+    /// Extracted from AdvancedConstructionSystem for better separation of concerns
+    /// </summary>
+    public class ConstructionAdaptiveLODManager : MonoBehaviour
+    {
+        [Header("LOD Settings")]
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private bool _adaptiveLOD = true;
+        [SerializeField] private float _lodUpdateInterval = 0.2f;
+        [SerializeField] private int _maxLODUpdatesPerFrame = 10;
+
+        [Header("Distance Thresholds")]
+        [SerializeField] private float _highDetailDistance = 20f;
+        [SerializeField] private float _mediumDetailDistance = 50f;
+        [SerializeField] private float _lowDetailDistance = 100f;
+        [SerializeField] private float _cullDistance = 200f;
+
+        [Header("Performance Adaptation")]
+        [SerializeField] private bool _enablePerformanceAdaptation = true;
+        [SerializeField] private float _targetFrameTime = 16.67f; // 60 FPS
+        [SerializeField] private float _performanceCheckInterval = 1.0f;
+
+        // LOD management
+        private readonly Dictionary<string, ConstructionLODElement> _lodElements = new Dictionary<string, ConstructionLODElement>();
+        private readonly List<ConstructionLODElement> _elementsToUpdate = new List<ConstructionLODElement>();
+        
+        // Camera and performance tracking
+        private UnityEngine.Camera _mainCamera;
+        private float _lastLODUpdate;
+        private float _lastPerformanceCheck;
+        private int _lodUpdatesThisFrame;
+        private bool _isInitialized = false;
+
+        // Adaptive settings
+        private float _currentLODDistanceMultiplier = 1.0f;
+        private LODQuality _currentLODQuality = LODQuality.High;
+
+        // Statistics
+        private ConstructionLODStats _stats = new ConstructionLODStats();
+
+        // Events
+        public event System.Action<ConstructionLODElement> OnLODElementRegistered;
+        public event System.Action<ConstructionLODElement> OnLODElementUnregistered;
+        public event System.Action<ConstructionLODElement, LODLevel> OnLODLevelChanged;
+        public event System.Action<LODQuality> OnLODQualityChanged;
+
+        public bool IsInitialized => _isInitialized;
+        public ConstructionLODStats Stats => _stats;
+        public int ManagedElementCount => _lodElements.Count;
+        public LODQuality CurrentLODQuality => _currentLODQuality;
+
+        public void Initialize(object parent = null)
+        {
+            if (_isInitialized) return;
+
+            _mainCamera = Camera.main;
+            _lodElements.Clear();
+            _elementsToUpdate.Clear();
+            ResetStats();
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", "Construction Adaptive LOD Manager initialized", this);
+            }
+        }
+
+        /// <summary>
+        /// Update construction LOD (call from Update or ITickable)
+        /// </summary>
+        public void UpdateConstructionLOD()
+        {
+            if (!_isInitialized || !_adaptiveLOD) return;
+
+            _lodUpdatesThisFrame = 0;
+
+            // Update LOD at specified intervals
+            if (Time.time - _lastLODUpdate >= _lodUpdateInterval)
+            {
+                UpdatePerformanceAdaptation();
+                UpdateLODElements();
+                _lastLODUpdate = Time.time;
+                _stats.LastLODUpdateTime = Time.time;
+            }
+        }
+
+        /// <summary>
+        /// Register construction element for LOD management
+        /// </summary>
+        public bool RegisterLODElement(ConstructionLODElement element)
+        {
+            if (element == null || string.IsNullOrEmpty(element.ElementId))
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("CONSTRUCTION", "Cannot register null or invalid LOD element", this);
+                }
+                return false;
+            }
+
+            if (_lodElements.ContainsKey(element.ElementId))
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("CONSTRUCTION", $"LOD element {element.ElementId} already registered", this);
+                }
+                return false;
+            }
+
+            element.RegistrationTime = Time.time;
+            element.LastLODUpdate = Time.time;
+            
+            _lodElements[element.ElementId] = element;
+            _stats.TotalElementsRegistered++;
+            
+            OnLODElementRegistered?.Invoke(element);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", $"Registered LOD element {element.ElementId} ({_lodElements.Count} total managed)", this);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Unregister construction element from LOD management
+        /// </summary>
+        public bool UnregisterLODElement(string elementId)
+        {
+            if (!_lodElements.TryGetValue(elementId, out var element))
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("CONSTRUCTION", $"LOD element {elementId} not found for unregistration", this);
+                }
+                return false;
+            }
+
+            _lodElements.Remove(elementId);
+            OnLODElementUnregistered?.Invoke(element);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", $"Unregistered LOD element {elementId} ({_lodElements.Count} remaining managed)", this);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Update performance adaptation settings
+        /// </summary>
+        private void UpdatePerformanceAdaptation()
+        {
+            if (!_enablePerformanceAdaptation || Time.time - _lastPerformanceCheck < _performanceCheckInterval)
+                return;
+
+            float currentFrameTime = Time.deltaTime * 1000f;
+            
+            // Adapt LOD quality based on performance
+            if (currentFrameTime > _targetFrameTime * 1.5f)
+            {
+                // Performance is poor - reduce LOD quality
+                ReduceLODQuality();
+            }
+            else if (currentFrameTime < _targetFrameTime * 0.7f)
+            {
+                // Performance is good - can increase LOD quality
+                IncreaseLODQuality();
+            }
+
+            _lastPerformanceCheck = Time.time;
+        }
+
+        /// <summary>
+        /// Update LOD elements
+        /// </summary>
+        private void UpdateLODElements()
+        {
+            if (_mainCamera == null) return;
+
+            var cameraPosition = _mainCamera.transform.position;
+            _elementsToUpdate.Clear();
+            
+            // Collect elements that need LOD updates
+            foreach (var element in _lodElements.Values)
+            {
+                if (element.Transform == null) continue;
+                
+                float distance = Vector3.Distance(cameraPosition, element.Transform.position);
+                element.DistanceToCamera = distance;
+                
+                if (ShouldUpdateLOD(element, distance))
+                {
+                    _elementsToUpdate.Add(element);
+                }
+            }
+
+            // Sort by distance (closest first for better user experience)
+            _elementsToUpdate.Sort((a, b) => a.DistanceToCamera.CompareTo(b.DistanceToCamera));
+
+            // Update LOD for elements (limited per frame)
+            var elementsToProcess = _elementsToUpdate.Take(_maxLODUpdatesPerFrame);
+            
+            foreach (var element in elementsToProcess)
+            {
+                UpdateElementLOD(element);
+                _lodUpdatesThisFrame++;
+            }
+        }
+
+        /// <summary>
+        /// Check if element should be updated
+        /// </summary>
+        private bool ShouldUpdateLOD(ConstructionLODElement element, float distance)
+        {
+            // Always update if LOD level would change
+            var newLODLevel = CalculateLODLevel(distance);
+            if (newLODLevel != element.CurrentLODLevel)
+                return true;
+
+            // Update if enough time has passed
+            return Time.time - element.LastLODUpdate > _lodUpdateInterval;
+        }
+
+        /// <summary>
+        /// Update individual element LOD
+        /// </summary>
+        private void UpdateElementLOD(ConstructionLODElement element)
+        {
+            var newLODLevel = CalculateLODLevel(element.DistanceToCamera);
+            
+            if (newLODLevel != element.CurrentLODLevel)
+            {
+                var previousLevel = element.CurrentLODLevel;
+                element.CurrentLODLevel = newLODLevel;
+                element.LastLODUpdate = Time.time;
+                
+                ApplyLODLevel(element, newLODLevel);
+                
+                _stats.LODChanges++;
+                OnLODLevelChanged?.Invoke(element, newLODLevel);
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("CONSTRUCTION", $"LOD element {element.ElementId} changed from {previousLevel} to {newLODLevel} (distance: {element.DistanceToCamera:F1})", this);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Calculate appropriate LOD level based on distance
+        /// </summary>
+        private LODLevel CalculateLODLevel(float distance)
+        {
+            var adjustedDistance = distance / _currentLODDistanceMultiplier;
+            
+            if (adjustedDistance > _cullDistance)
+                return LODLevel.Culled;
+            else if (adjustedDistance > _lowDetailDistance)
+                return LODLevel.Low;
+            else if (adjustedDistance > _mediumDetailDistance)
+                return LODLevel.Medium;
+            else if (adjustedDistance > _highDetailDistance)
+                return LODLevel.High;
+            else
+                return LODLevel.VeryHigh;
+        }
+
+        /// <summary>
+        /// Apply LOD level to element
+        /// </summary>
+        private void ApplyLODLevel(ConstructionLODElement element, LODLevel lodLevel)
+        {
+            if (element.Transform == null) return;
+
+            switch (lodLevel)
+            {
+                case LODLevel.VeryHigh:
+                    SetElementDetail(element, 1.0f, true);
+                    break;
+                case LODLevel.High:
+                    SetElementDetail(element, 0.8f, true);
+                    break;
+                case LODLevel.Medium:
+                    SetElementDetail(element, 0.6f, true);
+                    break;
+                case LODLevel.Low:
+                    SetElementDetail(element, 0.4f, true);
+                    break;
+                case LODLevel.Culled:
+                    SetElementDetail(element, 0.0f, false);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Set element detail level
+        /// </summary>
+        private void SetElementDetail(ConstructionLODElement element, float detailLevel, bool isVisible)
+        {
+            // Set visibility
+            element.Transform.gameObject.SetActive(isVisible);
+            
+            // Adjust mesh renderers if available
+            if (element.MeshRenderers != null)
+            {
+                foreach (var renderer in element.MeshRenderers)
+                {
+                    if (renderer != null)
+                    {
+                        renderer.enabled = isVisible && detailLevel > 0.1f;
+                    }
+                }
+            }
+            
+            // Adjust colliders if available
+            if (element.Colliders != null)
+            {
+                foreach (var collider in element.Colliders)
+                {
+                    if (collider != null)
+                    {
+                        collider.enabled = isVisible && detailLevel > 0.3f;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Reduce LOD quality
+        /// </summary>
+        private void ReduceLODQuality()
+        {
+            var newQuality = _currentLODQuality;
+            
+            switch (_currentLODQuality)
+            {
+                case LODQuality.VeryHigh:
+                    newQuality = LODQuality.High;
+                    _currentLODDistanceMultiplier = 0.8f;
+                    break;
+                case LODQuality.High:
+                    newQuality = LODQuality.Medium;
+                    _currentLODDistanceMultiplier = 0.6f;
+                    break;
+                case LODQuality.Medium:
+                    newQuality = LODQuality.Low;
+                    _currentLODDistanceMultiplier = 0.4f;
+                    break;
+                case LODQuality.Low:
+                    newQuality = LODQuality.VeryLow;
+                    _currentLODDistanceMultiplier = 0.2f;
+                    break;
+            }
+            
+            if (newQuality != _currentLODQuality)
+            {
+                _currentLODQuality = newQuality;
+                _stats.QualityReductions++;
+                OnLODQualityChanged?.Invoke(_currentLODQuality);
+                
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("CONSTRUCTION", $"LOD quality reduced to {_currentLODQuality}", this);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Increase LOD quality
+        /// </summary>
+        private void IncreaseLODQuality()
+        {
+            var newQuality = _currentLODQuality;
+            
+            switch (_currentLODQuality)
+            {
+                case LODQuality.VeryLow:
+                    newQuality = LODQuality.Low;
+                    _currentLODDistanceMultiplier = 0.4f;
+                    break;
+                case LODQuality.Low:
+                    newQuality = LODQuality.Medium;
+                    _currentLODDistanceMultiplier = 0.6f;
+                    break;
+                case LODQuality.Medium:
+                    newQuality = LODQuality.High;
+                    _currentLODDistanceMultiplier = 0.8f;
+                    break;
+                case LODQuality.High:
+                    newQuality = LODQuality.VeryHigh;
+                    _currentLODDistanceMultiplier = 1.0f;
+                    break;
+            }
+            
+            if (newQuality != _currentLODQuality)
+            {
+                _currentLODQuality = newQuality;
+                _stats.QualityImprovements++;
+                OnLODQualityChanged?.Invoke(_currentLODQuality);
+                
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("CONSTRUCTION", $"LOD quality increased to {_currentLODQuality}", this);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Set LOD distance thresholds
+        /// </summary>
+        public void SetLODDistances(float high, float medium, float low, float cull)
+        {
+            _highDetailDistance = high;
+            _mediumDetailDistance = medium;
+            _lowDetailDistance = low;
+            _cullDistance = cull;
+            
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", $"LOD distances updated: High={high}, Medium={medium}, Low={low}, Cull={cull}", this);
+            }
+        }
+
+        /// <summary>
+        /// Clear all LOD elements
+        /// </summary>
+        public void ClearAllLODElements()
+        {
+            _lodElements.Clear();
+            _elementsToUpdate.Clear();
+            
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", "All LOD elements cleared", this);
+            }
+        }
+
+        /// <summary>
+        /// Reset statistics
+        /// </summary>
+        private void ResetStats()
+        {
+            _stats = new ConstructionLODStats
+            {
+                TotalElementsRegistered = 0,
+                LODChanges = 0,
+                QualityReductions = 0,
+                QualityImprovements = 0,
+                LastLODUpdateTime = Time.time
+            };
+        }
+
+        private void OnDestroy()
+        {
+            ClearAllLODElements();
+        }
+    }
+
+    /// <summary>
+    /// LOD quality levels
+    /// </summary>
+    public enum LODQuality
+    {
+        VeryLow,
+        Low,
+        Medium,
+        High,
+        VeryHigh
+    }
+
+    /// <summary>
+    /// LOD levels for individual elements
+    /// </summary>
+    public enum LODLevel
+    {
+        Culled,
+        Low,
+        Medium,
+        High,
+        VeryHigh
+    }
+
+    /// <summary>
+    /// Construction LOD element data
+    /// </summary>
+    [System.Serializable]
+    public class ConstructionLODElement
+    {
+        public string ElementId;
+        public Transform Transform;
+        public MeshRenderer[] MeshRenderers;
+        public Collider[] Colliders;
+        public LODLevel CurrentLODLevel;
+        public float DistanceToCamera;
+        public float RegistrationTime;
+        public float LastLODUpdate;
+    }
+
+    /// <summary>
+    /// Construction LOD statistics
+    /// </summary>
+    [System.Serializable]
+    public struct ConstructionLODStats
+    {
+        public int TotalElementsRegistered;
+        public int LODChanges;
+        public int QualityReductions;
+        public int QualityImprovements;
+        public float LastLODUpdateTime;
+    }
+}

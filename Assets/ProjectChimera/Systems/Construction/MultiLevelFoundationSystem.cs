@@ -58,7 +58,7 @@ namespace ProjectChimera.Systems.Construction
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.LogWarning($"[MultiLevelFoundationSystem] Foundation already exists at {position}");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
                 return false;
             }
@@ -68,7 +68,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[MultiLevelFoundationSystem] Foundation added at {position}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
 
             return true;
@@ -83,7 +83,7 @@ namespace ProjectChimera.Systems.Construction
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.LogWarning($"[MultiLevelFoundationSystem] No foundation found at {position}");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
                 return false;
             }
@@ -93,7 +93,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[MultiLevelFoundationSystem] Foundation removed from {position}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
 
             return true;
@@ -130,7 +130,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[MultiLevelFoundationSystem] Cleared {positionsToRemove.Count} foundations");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 

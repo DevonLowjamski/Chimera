@@ -1,0 +1,223 @@
+using System;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Core
+{
+    /// <summary>
+    /// SIMPLE: Basic null manager implementations aligned with Project Chimera's architecture vision.
+    /// Provides minimal fallback implementations for essential managers.
+    /// </summary>
+
+    /// <summary>
+    /// Basic null manager base class
+    /// </summary>
+    public abstract class NullManagerBase : IChimeraManager
+    {
+        public abstract string ManagerName { get; }
+        public bool IsInitialized { get; protected set; } = false;
+
+        public virtual void Initialize()
+        {
+            IsInitialized = true;
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public virtual void Shutdown()
+        {
+            IsInitialized = false;
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public virtual ManagerMetrics GetMetrics()
+        {
+            return new ManagerMetrics
+            {
+                ManagerName = ManagerName,
+                IsHealthy = ValidateHealth()
+            };
+        }
+
+        public virtual string GetStatus()
+        {
+            return IsInitialized ? "Active (null)" : "Inactive (null)";
+        }
+
+        public virtual bool ValidateHealth()
+        {
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Null data manager
+    /// </summary>
+    public class NullDataManager : NullManagerBase, IDataManager
+    {
+        public override string ManagerName => "NullDataManager";
+
+        public bool SaveData(string key, object data)
+        {
+            UnityEngine.Debug.Log("Operation completed");
+            return false; // Null implementation always returns false
+        }
+
+        public T LoadData<T>(string key)
+        {
+            UnityEngine.Debug.Log("Operation completed");
+            return default;
+        }
+
+        public bool HasData(string key) => false;
+
+        public bool DeleteData(string key)
+        {
+            UnityEngine.Debug.Log("Operation completed");
+            return false; // Null implementation always returns false
+        }
+
+        public List<string> GetAllKeys()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+            return new List<string>(); // Return empty list
+        }
+
+        public void ClearAll()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void ClearAllData()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public bool HasSaveData => false;
+        public string CurrentSaveFile => null;
+
+        public void SaveGame(string saveName)
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void LoadGame(string saveName)
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void AutoSave()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void DeleteSave(string saveName)
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public IEnumerable<string> GetSaveFiles() => new string[0];
+    }
+
+    /// <summary>
+    /// Null event manager
+    /// </summary>
+    public class NullEventManager : NullManagerBase, IEventManager
+    {
+        public override string ManagerName => "NullEventManager";
+
+        public void Subscribe<T>(Action<T> callback) where T : class
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void Unsubscribe<T>(Action<T> callback) where T : class
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void Publish<T>(T eventData) where T : class
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void PublishImmediate<T>(T eventData) where T : class
+        {
+            Publish(eventData);
+        }
+
+        public int GetSubscriberCount<T>() where T : class
+        {
+            return 0;
+        }
+
+        public void ClearAll()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+    }
+
+    /// <summary>
+    /// Null scene manager
+    /// </summary>
+    public class NullSceneManager : NullManagerBase, ISceneManager
+    {
+        public override string ManagerName => "NullSceneManager";
+
+        public void LoadScene(string sceneName)
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void LoadSceneAsync(string sceneName, Action onComplete = null)
+        {
+            UnityEngine.Debug.Log("Operation completed");
+            onComplete?.Invoke();
+        }
+
+        public void UnloadScene(string sceneName)
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public string GetActiveSceneName()
+        {
+            return "NullScene";
+        }
+
+        public bool IsSceneLoaded(string sceneName) => false;
+    }
+
+    /// <summary>
+    /// Factory for creating null managers
+    /// </summary>
+    public static class NullManagerFactory
+    {
+        private static readonly Dictionary<Type, Func<IChimeraManager>> _factories = new Dictionary<Type, Func<IChimeraManager>>();
+
+        static NullManagerFactory()
+        {
+            // Register basic null manager factories
+            _factories[typeof(IDataManager)] = () => new NullDataManager();
+            _factories[typeof(IEventManager)] = () => new NullEventManager();
+            _factories[typeof(ISceneManager)] = () => new NullSceneManager();
+        }
+
+        public static T CreateNullManager<T>() where T : class, IChimeraManager
+        {
+            var type = typeof(T);
+            if (_factories.TryGetValue(type, out var factory))
+            {
+                return factory() as T;
+            }
+
+            UnityEngine.Debug.Log("Operation completed");
+            return null;
+        }
+
+        public static void RegisterNullManager<T>(Func<IChimeraManager> factory) where T : class, IChimeraManager
+        {
+            _factories[typeof(T)] = factory;
+            UnityEngine.Debug.Log("Operation completed");
+        }
+    }
+}

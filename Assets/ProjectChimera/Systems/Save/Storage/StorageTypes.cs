@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ProjectChimera.Data.Save;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Save.Storage
 {

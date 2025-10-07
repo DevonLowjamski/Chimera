@@ -1,0 +1,401 @@
+using UnityEngine;
+using UnityEngine.UI;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
+// Migrated to unified ServiceContainer - old DI namespace no longer needed
+using ProjectChimera.Systems.Gameplay;
+using ProjectChimera.Data.Events;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.UI.Gameplay
+{
+    /// <summary>
+    /// UI component for gameplay mode switching toggles
+    /// Provides buttons for Cultivation, Construction, and Genetics modes
+    /// Phase 2 implementation following roadmap requirements
+    /// </summary>
+    public class ModeToggleUI : MonoBehaviour, ITickable
+    {
+        [Header("Mode Toggle Buttons")]
+        [SerializeField] private Button _cultivationButton;
+        [SerializeField] private Button _constructionButton;
+        [SerializeField] private Button _geneticsButton;
+        
+        [Header("Button Visual States")]
+        [SerializeField] private Color _activeColor = new Color(0.2f, 0.8f, 0.2f, 1f);
+        [SerializeField] private Color _inactiveColor = new Color(0.7f, 0.7f, 0.7f, 1f);
+        [SerializeField] private Color _hoverColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+        
+        [Header("Mode Labels")]
+        [SerializeField] private Text _cultivationLabel;
+        [SerializeField] private Text _constructionLabel;
+        [SerializeField] private Text _geneticsLabel;
+        
+        [Header("Event Channels")]
+        [SerializeField] private ModeChangedEventSO _modeChangedEvent;
+        
+        [Header("Configuration")]
+        [SerializeField] private bool _showTooltips = true;
+        [SerializeField] private bool _enableHotkeys = true;
+        [SerializeField] private bool _debugMode = false;
+        
+        // Services
+        private IGameplayModeController _modeController;
+        
+        // State tracking
+        private GameplayMode _currentMode = GameplayMode.Cultivation;
+        private bool _isInitialized = false;
+        
+        // Button references for easier management
+        private System.Collections.Generic.Dictionary<GameplayMode, Button> _modeButtons;
+        private System.Collections.Generic.Dictionary<GameplayMode, Text> _modeLabels;
+        
+        private void Start()
+        {
+            InitializeUI();
+            
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+        }
+        
+        private void OnDestroy()
+        {
+            if (UpdateOrchestrator.Instance != null)
+            {
+                UpdateOrchestrator.Instance.UnregisterTickable(this);
+            }
+            
+            UnsubscribeFromEvents();
+            UnsubscribeFromButtons();
+        }
+        
+        #region ITickable Implementation
+        
+        public int Priority => TickPriority.UIManager;
+        public bool Enabled => _enableHotkeys && _isInitialized;
+        
+        public void Tick(float deltaTime)
+        {
+            // Handle keyboard shortcuts if enabled
+            if (_enableHotkeys && _isInitialized)
+            {
+                HandleKeyboardInput();
+            }
+        }
+        
+        #endregion
+        
+        private void InitializeUI()
+        {
+            try
+            {
+                // Get the gameplay mode controller service
+                _modeController = ServiceContainerFactory.Instance?.TryResolve<IGameplayModeController>();
+                
+                if (_modeController == null)
+                {
+                    UnityEngine.Debug.Log("UI operation");
+                    return;
+                }
+                
+                // Initialize button and label dictionaries
+                SetupButtonDictionaries();
+                
+                // Subscribe to mode change events
+                SubscribeToEvents();
+                
+                // Subscribe to button click events
+                SubscribeToButtons();
+                
+                // Initialize visual state
+                _currentMode = _modeController.CurrentMode;
+                UpdateButtonVisuals(_currentMode);
+                
+                _isInitialized = true;
+                
+                if (_debugMode)
+                {
+                    UnityEngine.Debug.Log("UI operation");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.Log("UI operation");
+            }
+        }
+        
+        private void SetupButtonDictionaries()
+        {
+            _modeButtons = new System.Collections.Generic.Dictionary<GameplayMode, Button>
+            {
+                { GameplayMode.Cultivation, _cultivationButton },
+                { GameplayMode.Construction, _constructionButton },
+                { GameplayMode.Genetics, _geneticsButton }
+            };
+            
+            _modeLabels = new System.Collections.Generic.Dictionary<GameplayMode, Text>
+            {
+                { GameplayMode.Cultivation, _cultivationLabel },
+                { GameplayMode.Construction, _constructionLabel },
+                { GameplayMode.Genetics, _geneticsLabel }
+            };
+            
+            // Validate all required UI components are assigned
+            ValidateUIComponents();
+        }
+        
+        private void ValidateUIComponents()
+        {
+            foreach (var kvp in _modeButtons)
+            {
+                if (kvp.Value == null)
+                {
+                    UnityEngine.Debug.Log("UI operation");
+                }
+            }
+            
+            foreach (var kvp in _modeLabels)
+            {
+                if (kvp.Value == null)
+                {
+                    UnityEngine.Debug.Log("UI operation");
+                }
+            }
+        }
+        
+        private void SubscribeToEvents()
+        {
+            if (_modeChangedEvent != null)
+            {
+                _modeChangedEvent.Subscribe(OnModeChanged);
+            }
+            else
+            {
+                UnityEngine.Debug.Log("UI operation");
+            }
+        }
+        
+        private void UnsubscribeFromEvents()
+        {
+            if (_modeChangedEvent != null)
+            {
+                _modeChangedEvent.Unsubscribe(OnModeChanged);
+            }
+        }
+        
+        private void SubscribeToButtons()
+        {
+            if (_cultivationButton != null)
+            {
+                _cultivationButton.onClick.AddListener(() => OnModeButtonClicked(GameplayMode.Cultivation));
+            }
+            
+            if (_constructionButton != null)
+            {
+                _constructionButton.onClick.AddListener(() => OnModeButtonClicked(GameplayMode.Construction));
+            }
+            
+            if (_geneticsButton != null)
+            {
+                _geneticsButton.onClick.AddListener(() => OnModeButtonClicked(GameplayMode.Genetics));
+            }
+        }
+        
+        private void UnsubscribeFromButtons()
+        {
+            if (_cultivationButton != null)
+            {
+                _cultivationButton.onClick.RemoveAllListeners();
+            }
+            
+            if (_constructionButton != null)
+            {
+                _constructionButton.onClick.RemoveAllListeners();
+            }
+            
+            if (_geneticsButton != null)
+            {
+                _geneticsButton.onClick.RemoveAllListeners();
+            }
+        }
+        
+        private void HandleKeyboardInput()
+        {
+            // These hotkeys complement the GameplayModeController's keyboard handling
+            // Providing visual feedback through UI when keys are pressed
+            if (Input.GetKeyDown(KeyCode.Alpha1))
+            {
+                HighlightButtonTemporarily(GameplayMode.Cultivation);
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha2))
+            {
+                HighlightButtonTemporarily(GameplayMode.Construction);
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha3))
+            {
+                HighlightButtonTemporarily(GameplayMode.Genetics);
+            }
+        }
+        
+        private void OnModeButtonClicked(GameplayMode mode)
+        {
+            if (!_isInitialized)
+            {
+                UnityEngine.Debug.Log("UI operation");
+                return;
+            }
+            
+            if (_debugMode)
+            {
+                UnityEngine.Debug.Log("UI operation");
+            }
+            
+            // Phase 2 Verification: UI button produces identical behavior to keyboard
+            UnityEngine.Debug.Log("UI operation");
+            
+            // Set the mode through the controller (which will trigger the event)
+            // This produces the same result as keyboard shortcuts - single event, same validation, same cooldown
+            _modeController?.SetMode(mode, "UI Button");
+        }
+        
+        private void OnModeChanged(ModeChangeEventData eventData)
+        {
+            if (_debugMode)
+            {
+                UnityEngine.Debug.Log("UI operation");
+            }
+            
+            _currentMode = eventData.NewMode;
+            UpdateButtonVisuals(_currentMode);
+        }
+        
+        private void UpdateButtonVisuals(GameplayMode activeMode)
+        {
+            foreach (var kvp in _modeButtons)
+            {
+                var mode = kvp.Key;
+                var button = kvp.Value;
+                
+                if (button == null) continue;
+                
+                var isActive = mode == activeMode;
+                var targetColor = isActive ? _activeColor : _inactiveColor;
+                
+                // Update button color
+                var colors = button.colors;
+                colors.normalColor = targetColor;
+                colors.highlightedColor = isActive ? _activeColor : _hoverColor;
+                colors.selectedColor = targetColor;
+                button.colors = colors;
+                
+                // Update label text color if available
+                if (_modeLabels.TryGetValue(mode, out var label) && label != null)
+                {
+                    label.color = isActive ? Color.white : Color.black;
+                }
+            }
+        }
+        
+        private void HighlightButtonTemporarily(GameplayMode mode)
+        {
+            if (_modeButtons.TryGetValue(mode, out var button) && button != null)
+            {
+                // Visual feedback for keyboard shortcut usage
+                var colors = button.colors;
+                var originalColor = colors.normalColor;
+                
+                colors.normalColor = _hoverColor;
+                button.colors = colors;
+                
+                // Reset after brief delay
+                StartCoroutine(ResetButtonColor(button, originalColor, 0.1f));
+            }
+        }
+        
+        private System.Collections.IEnumerator ResetButtonColor(Button button, Color originalColor, float delay)
+        {
+            yield return new UnityEngine.WaitForSeconds(delay);
+            
+            if (button != null)
+            {
+                var colors = button.colors;
+                colors.normalColor = originalColor;
+                button.colors = colors;
+            }
+        }
+        
+        /// <summary>
+        /// Public method to manually refresh the UI state
+        /// Useful for debugging or if synchronization is lost
+        /// </summary>
+        public void RefreshUI()
+        {
+            if (_isInitialized && _modeController != null)
+            {
+                _currentMode = _modeController.CurrentMode;
+                UpdateButtonVisuals(_currentMode);
+                
+                if (_debugMode)
+                {
+                    UnityEngine.Debug.Log("UI operation");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Enable or disable the UI toggles
+        /// </summary>
+        public void SetUIEnabled(bool enabled)
+        {
+            foreach (var button in _modeButtons.Values)
+            {
+                if (button != null)
+                {
+                    button.interactable = enabled;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Set debug mode on/off at runtime
+        /// </summary>
+        public void SetDebugMode(bool enabled)
+        {
+            _debugMode = enabled;
+            UnityEngine.Debug.Log("UI operation");
+        }
+        
+        #if UNITY_EDITOR
+        
+        /// <summary>
+        /// Editor-only method for setting up default colors
+        /// </summary>
+        [ContextMenu("Setup Default Colors")]
+        private void SetupDefaultColors()
+        {
+            _activeColor = new Color(0.2f, 0.8f, 0.2f, 1f);      // Green
+            _inactiveColor = new Color(0.7f, 0.7f, 0.7f, 1f);    // Light Gray
+            _hoverColor = new Color(0.9f, 0.9f, 0.9f, 1f);       // Very Light Gray
+            
+            UnityEngine.Debug.Log("UI operation");
+        }
+        
+        /// <summary>
+        /// Editor-only method for testing UI state
+        /// </summary>
+        [ContextMenu("Test UI Refresh")]
+        private void TestUIRefresh()
+        {
+            if (Application.isPlaying)
+            {
+                RefreshUI();
+            }
+            else
+            {
+                UnityEngine.Debug.Log("UI operation");
+            }
+        }
+        
+        #endif
+    }
+}

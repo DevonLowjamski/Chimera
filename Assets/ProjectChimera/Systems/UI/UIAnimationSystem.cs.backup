@@ -1,0 +1,308 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.UI
+{
+    /// <summary>
+    /// BASIC: Simple UI animation system for Project Chimera.
+    /// Focuses on essential UI animations without complex queues and easing systems.
+    /// </summary>
+    public class UIAnimationSystem : MonoBehaviour
+    {
+        [Header("Basic Animation Settings")]
+        [SerializeField] private bool _enableBasicAnimations = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _defaultAnimationDuration = 0.3f;
+        [SerializeField] private float _buttonPressScale = 0.95f;
+
+        // Basic animation tracking
+        private readonly Dictionary<GameObject, AnimationCoroutine> _activeAnimations = new Dictionary<GameObject, AnimationCoroutine>();
+        private bool _isInitialized = false;
+
+        /// <summary>
+        /// Events for animation operations
+        /// </summary>
+        public event System.Action<GameObject> OnAnimationStarted;
+        public event System.Action<GameObject> OnAnimationCompleted;
+
+        /// <summary>
+        /// Initialize basic animation system
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Play button press animation
+        /// </summary>
+        public void PlayButtonPress(GameObject buttonObject)
+        {
+            if (!_enableBasicAnimations || !_isInitialized || buttonObject == null) return;
+
+            StartCoroutine(AnimateButtonPress(buttonObject));
+        }
+
+        /// <summary>
+        /// Fade in UI element
+        /// </summary>
+        public void FadeIn(GameObject uiObject, float duration = 0f)
+        {
+            if (!_enableBasicAnimations || !_isInitialized || uiObject == null) return;
+
+            duration = duration > 0 ? duration : _defaultAnimationDuration;
+            StartCoroutine(AnimateFade(uiObject, 0f, 1f, duration));
+        }
+
+        /// <summary>
+        /// Fade out UI element
+        /// </summary>
+        public void FadeOut(GameObject uiObject, float duration = 0f)
+        {
+            if (!_enableBasicAnimations || !_isInitialized || uiObject == null) return;
+
+            duration = duration > 0 ? duration : _defaultAnimationDuration;
+            StartCoroutine(AnimateFade(uiObject, 1f, 0f, duration));
+        }
+
+        /// <summary>
+        /// Scale in UI element
+        /// </summary>
+        public void ScaleIn(GameObject uiObject, float duration = 0f)
+        {
+            if (!_enableBasicAnimations || !_isInitialized || uiObject == null) return;
+
+            duration = duration > 0 ? duration : _defaultAnimationDuration;
+            StartCoroutine(AnimateScale(uiObject, Vector3.zero, Vector3.one, duration));
+        }
+
+        /// <summary>
+        /// Scale out UI element
+        /// </summary>
+        public void ScaleOut(GameObject uiObject, float duration = 0f)
+        {
+            if (!_enableBasicAnimations || !_isInitialized || uiObject == null) return;
+
+            duration = duration > 0 ? duration : _defaultAnimationDuration;
+            StartCoroutine(AnimateScale(uiObject, Vector3.one, Vector3.zero, duration));
+        }
+
+        /// <summary>
+        /// Slide in from left
+        /// </summary>
+        public void SlideInLeft(GameObject uiObject, float distance = 100f, float duration = 0f)
+        {
+            if (!_enableBasicAnimations || !_isInitialized || uiObject == null) return;
+
+            duration = duration > 0 ? duration : _defaultAnimationDuration;
+            Vector3 startPos = uiObject.transform.localPosition + Vector3.left * distance;
+            Vector3 endPos = uiObject.transform.localPosition;
+            StartCoroutine(AnimatePosition(uiObject, startPos, endPos, duration));
+        }
+
+        /// <summary>
+        /// Slide out to right
+        /// </summary>
+        public void SlideOutRight(GameObject uiObject, float distance = 100f, float duration = 0f)
+        {
+            if (!_enableBasicAnimations || !_isInitialized || uiObject == null) return;
+
+            duration = duration > 0 ? duration : _defaultAnimationDuration;
+            Vector3 startPos = uiObject.transform.localPosition;
+            Vector3 endPos = uiObject.transform.localPosition + Vector3.right * distance;
+            StartCoroutine(AnimatePosition(uiObject, startPos, endPos, duration));
+        }
+
+        /// <summary>
+        /// Stop all animations on object
+        /// </summary>
+        public void StopAnimations(GameObject uiObject)
+        {
+            if (uiObject == null || !_activeAnimations.ContainsKey(uiObject)) return;
+
+            StopCoroutine(_activeAnimations[uiObject].Coroutine);
+            _activeAnimations.Remove(uiObject);
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Stop all animations
+        /// </summary>
+        public void StopAllAnimations()
+        {
+            foreach (var animation in _activeAnimations.Values)
+            {
+                if (animation.Coroutine != null)
+                {
+                    StopCoroutine(animation.Coroutine);
+                }
+            }
+
+            _activeAnimations.Clear();
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Set animation enabled state
+        /// </summary>
+        public void SetAnimationsEnabled(bool enabled)
+        {
+            _enableBasicAnimations = enabled;
+
+            if (!enabled)
+            {
+                StopAllAnimations();
+            }
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Get animation statistics
+        /// </summary>
+        public AnimationStats GetStats()
+        {
+            return new AnimationStats
+            {
+                ActiveAnimations = _activeAnimations.Count,
+                IsAnimationsEnabled = _enableBasicAnimations,
+                DefaultDuration = _defaultAnimationDuration
+            };
+        }
+
+        #region Private Methods
+
+        private System.Collections.IEnumerator AnimateButtonPress(GameObject buttonObject)
+        {
+            OnAnimationStarted?.Invoke(buttonObject);
+
+            Vector3 originalScale = buttonObject.transform.localScale;
+            Vector3 pressedScale = originalScale * _buttonPressScale;
+
+            // Press down
+            yield return AnimateScale(buttonObject, originalScale, pressedScale, _defaultAnimationDuration * 0.3f);
+
+            // Press up
+            yield return AnimateScale(buttonObject, pressedScale, originalScale, _defaultAnimationDuration * 0.7f);
+
+            OnAnimationCompleted?.Invoke(buttonObject);
+        }
+
+        private System.Collections.IEnumerator AnimateFade(GameObject uiObject, float startAlpha, float endAlpha, float duration)
+        {
+            var canvasGroup = uiObject.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+            {
+                canvasGroup = uiObject.AddComponent<CanvasGroup>();
+            }
+
+            OnAnimationStarted?.Invoke(uiObject);
+
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                canvasGroup.alpha = Mathf.Lerp(startAlpha, endAlpha, t);
+                yield return null;
+            }
+
+            canvasGroup.alpha = endAlpha;
+            OnAnimationCompleted?.Invoke(uiObject);
+        }
+
+        private System.Collections.IEnumerator AnimateScale(GameObject uiObject, Vector3 startScale, Vector3 endScale, float duration)
+        {
+            OnAnimationStarted?.Invoke(uiObject);
+
+            var coroutine = StartCoroutine(InternalAnimateScale(uiObject, startScale, endScale, duration));
+            _activeAnimations[uiObject] = new AnimationCoroutine { Coroutine = coroutine };
+
+            yield return coroutine;
+
+            _activeAnimations.Remove(uiObject);
+            OnAnimationCompleted?.Invoke(uiObject);
+        }
+
+        private System.Collections.IEnumerator InternalAnimateScale(GameObject uiObject, Vector3 startScale, Vector3 endScale, float duration)
+        {
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                uiObject.transform.localScale = Vector3.Lerp(startScale, endScale, t);
+                yield return null;
+            }
+
+            uiObject.transform.localScale = endScale;
+        }
+
+        private System.Collections.IEnumerator AnimatePosition(GameObject uiObject, Vector3 startPos, Vector3 endPos, float duration)
+        {
+            OnAnimationStarted?.Invoke(uiObject);
+
+            var coroutine = StartCoroutine(InternalAnimatePosition(uiObject, startPos, endPos, duration));
+            _activeAnimations[uiObject] = new AnimationCoroutine { Coroutine = coroutine };
+
+            yield return coroutine;
+
+            _activeAnimations.Remove(uiObject);
+            OnAnimationCompleted?.Invoke(uiObject);
+        }
+
+        private System.Collections.IEnumerator InternalAnimatePosition(GameObject uiObject, Vector3 startPos, Vector3 endPos, float duration)
+        {
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                uiObject.transform.localPosition = Vector3.Lerp(startPos, endPos, t);
+                yield return null;
+            }
+
+            uiObject.transform.localPosition = endPos;
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Animation coroutine data
+    /// </summary>
+    public class AnimationCoroutine
+    {
+        public Coroutine Coroutine;
+    }
+
+    /// <summary>
+    /// Animation statistics
+    /// </summary>
+    [System.Serializable]
+    public struct AnimationStats
+    {
+        public int ActiveAnimations;
+        public bool IsAnimationsEnabled;
+        public float DefaultDuration;
+    }
+}

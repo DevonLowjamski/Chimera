@@ -1,0 +1,126 @@
+using Unity.Collections;
+using Unity.Mathematics;
+using ProjectChimera.Data.Shared;
+
+namespace ProjectChimera.Systems.Cultivation.Jobs
+{
+    /// <summary>
+    /// PERFORMANCE: Burst-compatible data structures for plant growth calculations
+    /// Designed for high-performance jobs system processing of multiple plants
+    /// Week 9 Day 1-3: Jobs System & Performance Foundations
+    /// </summary>
+
+    /// <summary>
+    /// Plant growth parameters for burst compilation
+    /// </summary>
+    public struct PlantGrowthParameters
+    {
+        public float baseGrowthRate;
+        public float biomassRate;
+        public float resilience;
+        public float stressTolerance;
+        public float waterRequirement;
+        public float lightRequirement;
+        public float temperatureOptimal;
+        public float temperatureTolerance;
+        public int plantStage; // PlantGrowthStage as int for burst compatibility
+    }
+
+    /// <summary>
+    /// Environmental data for burst compilation
+    /// </summary>
+    public struct EnvironmentalData
+    {
+        public float lightIntensity;
+        public float waterLevel;
+        public float temperature;
+        public float humidity;
+        public float co2Level;
+        public float airflow;
+    }
+
+    /// <summary>
+    /// Plant growth state data for burst compilation
+    /// </summary>
+    public struct PlantGrowthData
+    {
+        public float height;
+        public float biomass;
+        public float age;
+        public float growthProgress;
+        public int currentStage;
+    }
+
+    /// <summary>
+    /// Plant health data for burst compilation
+    /// </summary>
+    public struct PlantHealthData
+    {
+        public float overall;
+        public float stress;
+        public float waterStress;
+        public float lightStress;
+        public float temperatureStress;
+        public float nutrientLevel;
+    }
+
+    /// <summary>
+    /// Plant resource data for burst compilation
+    /// </summary>
+    public struct PlantResourceData
+    {
+        public float water;
+        public float nutrients;
+        public float energy;
+        public float lastWateringDelta;
+        public float lastFeedingDelta;
+    }
+
+    /// <summary>
+    /// Combined plant update data for jobs
+    /// </summary>
+    public struct PlantUpdateData
+    {
+        public PlantGrowthData growth;
+        public PlantHealthData health;
+        public PlantResourceData resources;
+        public EnvironmentalData environment;
+        public PlantGrowthParameters parameters;
+        public float deltaTime;
+        public int plantId;
+    }
+
+    /// <summary>
+    /// Utility methods for data conversion
+    /// </summary>
+    public static class PlantDataConverter
+    {
+        /// <summary>
+        /// Convert PlantGrowthStage enum to int for burst compatibility
+        /// </summary>
+        public static int StageToInt(PlantGrowthStage stage)
+        {
+            return stage switch
+            {
+                PlantGrowthStage.Seedling => 0,
+                PlantGrowthStage.Vegetative => 1,
+                PlantGrowthStage.Flowering => 2,
+                _ => 0
+            };
+        }
+
+        /// <summary>
+        /// Convert int back to PlantGrowthStage enum
+        /// </summary>
+        public static PlantGrowthStage IntToStage(int stage)
+        {
+            return stage switch
+            {
+                0 => PlantGrowthStage.Seedling,
+                1 => PlantGrowthStage.Vegetative,
+                2 => PlantGrowthStage.Flowering,
+                _ => PlantGrowthStage.Seedling
+            };
+        }
+    }
+}

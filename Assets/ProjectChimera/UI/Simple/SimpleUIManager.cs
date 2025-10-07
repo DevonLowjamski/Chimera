@@ -40,7 +40,7 @@ namespace ProjectChimera.UI.Simple
         {
             if (_mainUIDocument == null)
             {
-                ChimeraLogger.LogError("[SimpleUIManager] No UIDocument assigned!");
+                ChimeraLogger.LogInfo("SimpleUIManager", "$1");
                 return;
             }
 
@@ -69,14 +69,17 @@ namespace ProjectChimera.UI.Simple
             _notificationLabel.style.paddingBottom = 5;
             _notificationLabel.style.paddingLeft = 10;
             _notificationLabel.style.paddingRight = 10;
-            _notificationLabel.style.borderRadius = 5;
+            _notificationLabel.style.borderTopLeftRadius = 5;
+            _notificationLabel.style.borderTopRightRadius = 5;
+            _notificationLabel.style.borderBottomLeftRadius = 5;
+            _notificationLabel.style.borderBottomRightRadius = 5;
             _notificationLabel.style.display = DisplayStyle.None;
 
             notificationContainer.Add(_notificationLabel);
             _rootElement.Add(notificationContainer);
 
             _isInitialized = true;
-            ChimeraLogger.LogVerbose("[SimpleUIManager] UI initialized successfully");
+            ChimeraLogger.LogInfo("SimpleUIManager", "$1");
         }
 
         #region Screen Management
@@ -90,7 +93,7 @@ namespace ProjectChimera.UI.Simple
 
             if (_screens.ContainsKey(screenId))
             {
-                ChimeraLogger.LogWarning($"[SimpleUIManager] Screen '{screenId}' already registered, replacing");
+                ChimeraLogger.LogInfo("SimpleUIManager", "$1");
                 _mainContainer.Remove(_screens[screenId]);
             }
 
@@ -98,7 +101,7 @@ namespace ProjectChimera.UI.Simple
             screenElement.style.display = DisplayStyle.None;
             _mainContainer.Add(screenElement);
 
-            ChimeraLogger.LogVerbose($"[SimpleUIManager] Registered screen: {screenId}");
+            ChimeraLogger.LogInfo("SimpleUIManager", "$1");
         }
 
         /// <summary>
@@ -119,7 +122,7 @@ namespace ProjectChimera.UI.Simple
             _currentScreenId = screenId;
 
             OnScreenChanged?.Invoke(screenId);
-            ChimeraLogger.LogVerbose($"[SimpleUIManager] Switched to screen: {screenId}");
+            ChimeraLogger.LogInfo("SimpleUIManager", "$1");
         }
 
         /// <summary>
@@ -132,7 +135,7 @@ namespace ProjectChimera.UI.Simple
                 screen.style.display = DisplayStyle.None;
             }
             _currentScreenId = null;
-            ChimeraLogger.LogVerbose("[SimpleUIManager] All screens hidden");
+            ChimeraLogger.LogInfo("SimpleUIManager", "$1");
         }
 
         /// <summary>
@@ -163,7 +166,7 @@ namespace ProjectChimera.UI.Simple
             StartCoroutine(HideNotificationAfterDelay(actualDuration));
 
             OnNotificationShown?.Invoke(message);
-            ChimeraLogger.LogVerbose($"[SimpleUIManager] Showing notification: {message}");
+            ChimeraLogger.LogInfo("SimpleUIManager", "$1");
         }
 
         private System.Collections.IEnumerator HideNotificationAfterDelay(float delay)
@@ -180,7 +183,7 @@ namespace ProjectChimera.UI.Simple
             if (!_isInitialized) return;
 
             _notificationLabel.style.display = DisplayStyle.None;
-            ChimeraLogger.LogVerbose("[SimpleUIManager] Notification hidden");
+            ChimeraLogger.LogInfo("SimpleUIManager", "$1");
         }
 
         #endregion

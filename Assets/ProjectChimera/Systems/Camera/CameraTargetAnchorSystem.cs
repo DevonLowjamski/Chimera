@@ -40,7 +40,7 @@ namespace ProjectChimera.Systems.Camera
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[CameraTargetAnchorSystem] Initialized successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -56,7 +56,7 @@ namespace ProjectChimera.Systems.Camera
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[CameraTargetAnchorSystem] Set anchor '{anchorName}' at {position}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -101,7 +101,7 @@ namespace ProjectChimera.Systems.Camera
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[CameraTargetAnchorSystem] Removed anchor '{anchorName}'");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
             }
         }
@@ -137,16 +137,16 @@ namespace ProjectChimera.Systems.Camera
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[CameraTargetAnchorSystem] Cleared {anchorNames.Count} anchors");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
         /// <summary>
         /// Move camera to anchor
         /// </summary>
-        public void MoveCameraToAnchor(string anchorName, Camera camera = null)
+        public void MoveCameraToAnchor(string anchorName, UnityEngine.Camera camera = null)
         {
-            if (camera == null) camera = Camera.main;
+            if (camera == null) camera = UnityEngine.Camera.main;
             if (camera == null) return;
 
             Vector3 anchorPos = GetAnchor(anchorName);
@@ -156,7 +156,7 @@ namespace ProjectChimera.Systems.Camera
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[CameraTargetAnchorSystem] Moved camera to anchor '{anchorName}'");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
             }
         }

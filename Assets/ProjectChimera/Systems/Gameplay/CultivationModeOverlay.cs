@@ -1,10 +1,10 @@
-using ProjectChimera.Core.Logging;
 using ProjectChimera.Core.Updates;
 using UnityEngine;
 using ProjectChimera.Core;
 // Migrated to unified ServiceContainer architecture
 using ProjectChimera.Systems.Gameplay;
 using ProjectChimera.Data.Events;
+using ChimeraLogger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Systems.Gameplay
 {
@@ -69,14 +69,14 @@ namespace ProjectChimera.Systems.Gameplay
 
                 if (_modeController == null)
                 {
-                    ChimeraLogger.LogError("[CultivationModeOverlay] GameplayModeController service not found!");
+                    ChimeraLogger.LogError("GAMEPLAY", "IGameplayModeController not available", this);
                     return;
                 }
 
                 // Validate component references
                 if (!ValidateComponents())
                 {
-                    ChimeraLogger.LogError("[CultivationModeOverlay] Component validation failed!");
+                    ChimeraLogger.LogError("GAMEPLAY", "Cultivation overlay components missing", this);
                     return;
                 }
 
@@ -90,12 +90,12 @@ namespace ProjectChimera.Systems.Gameplay
 
                 if (_debugMode)
                 {
-                    ChimeraLogger.Log($"[CultivationModeOverlay] Initialized with current mode: {_modeController.CurrentMode}");
+                    ChimeraLogger.Log("GAMEPLAY", "Cultivation overlay initialized", this);
                 }
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[CultivationModeOverlay] Error during initialization: {ex.Message}");
+                ChimeraLogger.LogError("GAMEPLAY", $"Cultivation overlay initialization error: {ex.Message}", this);
             }
         }
 
@@ -108,19 +108,19 @@ namespace ProjectChimera.Systems.Gameplay
 
             if (_enablePlantMonitoring && _plantMonitor == null)
             {
-                ChimeraLogger.LogError("[CultivationModeOverlay] PlantMonitor component is required but not assigned!");
+                ChimeraLogger.LogWarning("GAMEPLAY", "PlantMonitor not assigned", this);
                 allValid = false;
             }
 
             if (_enableEnvironmentalControls && _environmentalDisplay == null)
             {
-                ChimeraLogger.LogError("[CultivationModeOverlay] EnvironmentalDisplay component is required but not assigned!");
+                ChimeraLogger.LogWarning("GAMEPLAY", "EnvironmentalDisplay not assigned", this);
                 allValid = false;
             }
 
             if (_enableCareTools && _careToolsInterface == null)
             {
-                ChimeraLogger.LogError("[CultivationModeOverlay] CareToolsInterface component is required but not assigned!");
+                ChimeraLogger.LogWarning("GAMEPLAY", "CareToolsInterface not assigned", this);
                 allValid = false;
             }
 
@@ -135,7 +135,7 @@ namespace ProjectChimera.Systems.Gameplay
             }
             else
             {
-                ChimeraLogger.LogWarning("[CultivationModeOverlay] ModeChangedEvent not assigned");
+                ChimeraLogger.LogWarning("GAMEPLAY", "ModeChangedEventSO not assigned", this);
             }
         }
 
@@ -151,7 +151,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_debugMode)
             {
-                ChimeraLogger.Log($"[CultivationModeOverlay] Mode changed: {eventData.PreviousMode} → {eventData.NewMode}");
+                ChimeraLogger.Log("GAMEPLAY", $"Cultivation mode changed to {eventData.NewMode}", this);
             }
 
             UpdateOverlayVisibility(eventData.NewMode);
@@ -203,7 +203,7 @@ namespace ProjectChimera.Systems.Gameplay
 
             if (_debugMode)
             {
-                ChimeraLogger.Log($"[CultivationModeOverlay] Cultivation mode overlay {(shouldShowOverlay ? "shown" : "hidden")}");
+                ChimeraLogger.Log("GAMEPLAY", $"Cultivation overlay visibility set: {shouldShowOverlay}", this);
             }
         }
 
@@ -234,7 +234,7 @@ namespace ProjectChimera.Systems.Gameplay
 
                 if (_debugMode)
                 {
-                    ChimeraLogger.Log("[CultivationModeOverlay] Overlay refreshed manually");
+                    ChimeraLogger.Log("GAMEPLAY", "Cultivation overlay refreshed", this);
                 }
             }
         }
@@ -245,7 +245,7 @@ namespace ProjectChimera.Systems.Gameplay
         public void SetDebugMode(bool enabled)
         {
             _debugMode = enabled;
-            ChimeraLogger.Log($"[CultivationModeOverlay] Debug mode {(enabled ? "enabled" : "disabled")}");
+            ChimeraLogger.Log("GAMEPLAY", $"Cultivation overlay debug mode: {(enabled ? "ON" : "OFF")}", this);
         }
 
         /// <summary>
@@ -281,8 +281,8 @@ namespace ProjectChimera.Systems.Gameplay
 
         #region ITickable Implementation
 
-        public int Priority => 0;
-        public bool Enabled => enabled && gameObject.activeInHierarchy;
+        public int TickPriority => 0;
+        public bool IsTickable => enabled && gameObject.activeInHierarchy;
 
         public virtual void OnRegistered()
         {
@@ -312,7 +312,7 @@ namespace ProjectChimera.Systems.Gameplay
             }
             else
             {
-                ChimeraLogger.Log("[CultivationModeOverlay] Test only works during play mode with initialized controller");
+                ChimeraLogger.LogWarning("GAMEPLAY", "IGameplayModeController not available for editor toggle", this);
             }
         }
 
@@ -348,7 +348,7 @@ namespace ProjectChimera.Systems.Gameplay
             }
             */
 
-            ChimeraLogger.LogVerbose($"ProgressBar set to {(progress * 100):F0}% (UI temporarily disabled)");
+            ChimeraLogger.Log("GAMEPLAY", "ProgressBar updated", this);
         }
     }
 }

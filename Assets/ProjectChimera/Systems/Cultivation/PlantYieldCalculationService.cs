@@ -2,6 +2,7 @@ using UnityEngine;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Core;
+using System.Collections.Generic;
 
 namespace ProjectChimera.Systems.Cultivation
 {
@@ -31,7 +32,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantYieldCalculationService] Initialized successfully");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -66,7 +67,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantYieldCalculationService] Plant {plant.PlantID} yield: {result.FinalYield:F1}g ({result.QualityRating})");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
 
             return result;
@@ -168,7 +169,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantYieldCalculationService] Base yield set to {_baseYieldGrams:F1}g");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -181,7 +182,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantYieldCalculationService] Yield variability set to {_yieldVariability:P0}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
     }

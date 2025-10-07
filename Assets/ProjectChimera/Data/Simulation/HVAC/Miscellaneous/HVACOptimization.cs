@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using ProjectChimera.Shared;
 
 namespace ProjectChimera.Data.Simulation.HVAC.Miscellaneous
 {
@@ -30,7 +31,7 @@ namespace ProjectChimera.Data.Simulation.HVAC.Miscellaneous
 
             if (_enableLogging)
             {
-                Debug.Log("[HVACOptimization] Initialized successfully");
+                ProjectChimera.Shared.SharedLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -54,7 +55,7 @@ namespace ProjectChimera.Data.Simulation.HVAC.Miscellaneous
 
             if (_enableLogging)
             {
-                Debug.Log($"[HVACOptimization] Updated zone {zoneId}: T={temperature:F1}°C, H={humidity:F1}%, AQ={airQuality:F1}");
+                ProjectChimera.Shared.SharedLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -141,7 +142,7 @@ namespace ProjectChimera.Data.Simulation.HVAC.Miscellaneous
 
             if (_enableLogging)
             {
-                Debug.Log("[HVACOptimization] Cleared all zone metrics");
+                ProjectChimera.Shared.SharedLogger.Log("OTHER", "$1", this);
             }
         }
 

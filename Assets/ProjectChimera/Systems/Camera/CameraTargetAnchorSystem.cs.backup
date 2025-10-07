@@ -1,0 +1,202 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Camera
+{
+    /// <summary>
+    /// BASIC: Simple camera anchoring for Project Chimera.
+    /// Focuses on essential camera positioning without complex anchor systems.
+    /// </summary>
+    public class CameraTargetAnchorSystem : MonoBehaviour
+    {
+        [Header("Basic Camera Settings")]
+        [SerializeField] private bool _enableBasicAnchoring = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _defaultDistance = 5f;
+        [SerializeField] private float _defaultHeight = 2f;
+
+        // Basic anchor tracking
+        private readonly Dictionary<string, Vector3> _cameraAnchors = new Dictionary<string, Vector3>();
+        private bool _isInitialized = false;
+
+        /// <summary>
+        /// Events for anchor operations
+        /// </summary>
+        public event System.Action<string, Vector3> OnAnchorSet;
+        public event System.Action<string> OnAnchorRemoved;
+
+        /// <summary>
+        /// Initialize basic anchoring system
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            // Set up some default anchors
+            SetDefaultAnchors();
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Set camera anchor at position
+        /// </summary>
+        public void SetAnchor(string anchorName, Vector3 position)
+        {
+            if (!_enableBasicAnchoring || !_isInitialized) return;
+
+            _cameraAnchors[anchorName] = position;
+            OnAnchorSet?.Invoke(anchorName, position);
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Set camera anchor relative to target
+        /// </summary>
+        public void SetAnchorRelativeTo(string anchorName, Transform target, float distance = -1f, float height = -1f)
+        {
+            if (target == null) return;
+
+            float dist = distance > 0 ? distance : _defaultDistance;
+            float h = height >= 0 ? height : _defaultHeight;
+
+            Vector3 position = target.position + target.forward * -dist + Vector3.up * h;
+            SetAnchor(anchorName, position);
+        }
+
+        /// <summary>
+        /// Get camera anchor position
+        /// </summary>
+        public Vector3 GetAnchor(string anchorName)
+        {
+            return _cameraAnchors.TryGetValue(anchorName, out Vector3 position) ? position : Vector3.zero;
+        }
+
+        /// <summary>
+        /// Check if anchor exists
+        /// </summary>
+        public bool HasAnchor(string anchorName)
+        {
+            return _cameraAnchors.ContainsKey(anchorName);
+        }
+
+        /// <summary>
+        /// Remove camera anchor
+        /// </summary>
+        public void RemoveAnchor(string anchorName)
+        {
+            if (_cameraAnchors.Remove(anchorName))
+            {
+                OnAnchorRemoved?.Invoke(anchorName);
+
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get all anchor names
+        /// </summary>
+        public List<string> GetAllAnchorNames()
+        {
+            return new List<string>(_cameraAnchors.Keys);
+        }
+
+        /// <summary>
+        /// Get all anchors
+        /// </summary>
+        public Dictionary<string, Vector3> GetAllAnchors()
+        {
+            return new Dictionary<string, Vector3>(_cameraAnchors);
+        }
+
+        /// <summary>
+        /// Clear all anchors
+        /// </summary>
+        public void ClearAllAnchors()
+        {
+            var anchorNames = new List<string>(_cameraAnchors.Keys);
+            _cameraAnchors.Clear();
+
+            foreach (string anchorName in anchorNames)
+            {
+                OnAnchorRemoved?.Invoke(anchorName);
+            }
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Move camera to anchor
+        /// </summary>
+        public void MoveCameraToAnchor(string anchorName, Camera camera = null)
+        {
+            if (camera == null) camera = Camera.main;
+            if (camera == null) return;
+
+            Vector3 anchorPos = GetAnchor(anchorName);
+            if (anchorPos != Vector3.zero)
+            {
+                camera.transform.position = anchorPos;
+
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get anchor statistics
+        /// </summary>
+        public AnchorStats GetAnchorStats()
+        {
+            return new AnchorStats
+            {
+                TotalAnchors = _cameraAnchors.Count,
+                IsAnchoringEnabled = _enableBasicAnchoring,
+                DefaultDistance = _defaultDistance,
+                DefaultHeight = _defaultHeight
+            };
+        }
+
+        #region Private Methods
+
+        private void SetDefaultAnchors()
+        {
+            // Set up some common default anchors
+            SetAnchor("Default", new Vector3(0, _defaultHeight, -_defaultDistance));
+            SetAnchor("Overview", new Vector3(0, 10, 0));
+            SetAnchor("CloseUp", new Vector3(0, 1, -2));
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Anchor statistics
+    /// </summary>
+    [System.Serializable]
+    public struct AnchorStats
+    {
+        public int TotalAnchors;
+        public bool IsAnchoringEnabled;
+        public float DefaultDistance;
+        public float DefaultHeight;
+    }
+}

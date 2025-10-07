@@ -45,7 +45,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantEnvironmentalSystem] Initialized successfully");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -66,7 +66,7 @@ namespace ProjectChimera.Systems.Cultivation
         /// </summary>
         public void UpdateEnvironmentalConditions(EnvironmentalConditions newConditions)
         {
-            if (newConditions == null) return;
+            // Removed null check - structs cannot be null
 
             _currentConditions = newConditions;
             UpdateEnvironmentalFitness();
@@ -75,7 +75,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantEnvironmentalSystem] Conditions updated - Temp: {_currentConditions.Temperature:F1}°C, Humidity: {_currentConditions.Humidity:F1}%");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -143,7 +143,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantEnvironmentalSystem] Optimal conditions set - Temp: {_optimalTemperature:F1}°C, Humidity: {_optimalHumidity:F1}%");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -151,7 +151,7 @@ namespace ProjectChimera.Systems.Cultivation
 
         private void UpdateEnvironmentalFitness()
         {
-            if (_currentConditions == null) return;
+            // Removed null check - structs cannot be null
 
             // Simple fitness calculation based on optimal ranges
             float tempFitness = CalculateTemperatureFitness(_currentConditions.Temperature);
@@ -192,5 +192,68 @@ namespace ProjectChimera.Systems.Cultivation
         }
 
         #endregion
+        /// <summary>
+        /// Properties required by PlantInstance integration
+        /// </summary>
+        public EnvironmentalConditions CurrentEnvironment => _currentConditions;
+        public float EnvironmentalFitness => _environmentalFitness;
+
+        /// <summary>
+        /// Additional methods for PlantInstance integration
+        /// </summary>
+        public EnvironmentalConditions GetCurrentEnvironmentalConditions()
+        {
+            return _currentConditions;
+        }
+
+        public void ProcessAdaptation(float deltaTime)
+        {
+            // Simple adaptation processing - can be expanded for biological accuracy
+            if (_currentConditions.Temperature < _optimalTemperature - 2f ||
+                _currentConditions.Temperature > _optimalTemperature + 2f)
+            {
+                _environmentalFitness *= 0.99f; // Slight fitness reduction over time
+            }
+        }
+
+        public void SetEnvironmentalFitness(float fitness)
+        {
+            _environmentalFitness = Mathf.Clamp01(fitness);
+            OnFitnessChanged?.Invoke(_environmentalFitness);
+        }
+
+        public PlantEnvironmentalMetrics GetEnvironmentalMetrics()
+        {
+            return new PlantEnvironmentalMetrics
+            {
+                Temperature = _currentConditions.Temperature,
+                Humidity = _currentConditions.Humidity,
+                LightIntensity = _currentConditions.LightIntensity,
+                EnvironmentalStress = 1f - _environmentalFitness,
+                OptimalConditions = _environmentalFitness > 0.8f,
+                LastUpdateTime = System.DateTime.Now
+            };
+        }
+
+        public void ProcessEnvironmentalConditions(float deltaTime)
+        {
+            UpdateEnvironmentalMonitoring(deltaTime);
+            ProcessAdaptation(deltaTime);
+        }
+    }
+
+    /// <summary>
+    /// Plant environmental metrics for instance integration
+    /// </summary>
+    [System.Serializable]
+    public class PlantEnvironmentalMetrics
+    {
+        public float Temperature;
+        public float Humidity;
+        public float LightIntensity;
+        public float EnvironmentalStress;
+        public bool OptimalConditions;
+        public string PlantId;
+        public System.DateTime LastUpdateTime;
     }
 }

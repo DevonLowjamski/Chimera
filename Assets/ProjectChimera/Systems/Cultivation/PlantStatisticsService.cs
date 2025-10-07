@@ -41,7 +41,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantStatisticsService] Initialized successfully");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
@@ -56,7 +56,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantStatisticsService] Shutdown completed");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
@@ -88,7 +88,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantStatisticsService] Updated - Plants: {_activePlantCount}, Avg Health: {_averageHealth:F2}, Unhealthy: {_unhealthyPlants}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
@@ -161,10 +161,10 @@ namespace ProjectChimera.Systems.Cultivation
     }
 
     /// <summary>
-    /// Simple plant instance for statistics
+    /// Simple plant instance for statistics tracking
     /// </summary>
     [System.Serializable]
-    public class PlantInstance
+    internal class StatisticsPlantInstance
     {
         public string PlantId;
         public float Health = 1f;

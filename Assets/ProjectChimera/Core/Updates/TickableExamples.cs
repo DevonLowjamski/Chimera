@@ -1,4 +1,6 @@
 using ProjectChimera.Core.Logging;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
+using TP = ProjectChimera.Core.Updates.TickPriority;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -36,7 +38,7 @@ namespace ProjectChimera.Core.Updates.Examples
     // AFTER: Modern ITickable implementation
     public class NewStyleManager : TickableMonoBehaviour
     {
-        public override int Priority => TickPriority.ConstructionSystem;
+        public override int TickPriority => TP.ConstructionSystem;
 
         private float _updateTimer = 0f;
 
@@ -71,8 +73,8 @@ namespace ProjectChimera.Core.Updates.Examples
         [SerializeField] private float _growthUpdateInterval = 1f;
 
         // ITickable implementation
-        public int Priority => TickPriority.CultivationManager; // -20, runs after environmental
-        public bool Enabled => enabled && gameObject.activeInHierarchy;
+        public int TickPriority => TP.CultivationManager; // -20, runs after environmental
+        public bool IsTickable => enabled && gameObject.activeInHierarchy;
 
         private float _growthTimer = 0f;
         private bool _isRegistered = false;
@@ -114,12 +116,12 @@ namespace ProjectChimera.Core.Updates.Examples
 
         public void OnRegistered()
         {
-            ChimeraLogger.Log("[ExampleCultivationManager] Registered with UpdateOrchestrator");
+            Logger.LogInfo("TickableExamples", "ExampleCultivationManager registered");
         }
 
         public void OnUnregistered()
         {
-            ChimeraLogger.Log("[ExampleCultivationManager] Unregistered from UpdateOrchestrator");
+            Logger.LogInfo("TickableExamples", "ExampleCultivationManager unregistered");
         }
 
         private void UpdatePlantGrowth() { /* Growth simulation */ }
@@ -142,12 +144,12 @@ namespace ProjectChimera.Core.Updates.Examples
 
         public PlantLifecycleService()
         {
-            SetPriority(TickPriority.PlantLifecycle); // -40
+            SetPriority(TP.PlantLifecycle); // -40
         }
 
         public override void Tick(float deltaTime)
         {
-            if (!Enabled) return;
+            if (!IsTickable) return;
 
             // Update all plant instances
             foreach (var plant in _plants)
@@ -164,7 +166,7 @@ namespace ProjectChimera.Core.Updates.Examples
 
         public override void OnRegistered()
         {
-            ChimeraLogger.Log("[PlantLifecycleService] Registered for centralized updates");
+            Logger.LogInfo("TickableExamples", "PlantLifecycleService registered");
         }
 
         private void UpdatePlantLifecycle(ExamplePlantData plant, float deltaTime)
@@ -196,11 +198,11 @@ namespace ProjectChimera.Core.Updates.Examples
     public class PhysicsCultivationSystem : MonoBehaviour, ITickable, IFixedTickable
     {
         // Regular update (for UI, effects, etc.)
-        public int Priority => TickPriority.CultivationManager;
-        public bool Enabled => enabled;
+        public int TickPriority => TP.CultivationManager;
+        public bool IsTickable => enabled;
 
         // Fixed update (for physics simulation)
-        public int FixedPriority => TickPriority.CultivationManager;
+        public int FixedPriority => TP.CultivationManager;
         public bool FixedEnabled => enabled;
 
         private void OnEnable()
@@ -247,7 +249,7 @@ namespace ProjectChimera.Core.Updates.Examples
     /// </summary>
     public class EnvironmentalUpdateManager : TickableMonoBehaviour
     {
-        public override int Priority => TickPriority.EnvironmentalManager; // -50 (runs first)
+        public override int TickPriority => TP.EnvironmentalManager; // -50 (runs first)
 
         public override void Tick(float deltaTime)
         {
@@ -268,7 +270,7 @@ namespace ProjectChimera.Core.Updates.Examples
 
     public class CultivationUpdateManager : TickableMonoBehaviour
     {
-        public override int Priority => TickPriority.CultivationManager; // -20 (runs after environmental)
+        public override int TickPriority => TP.CultivationManager; // -20 (runs after environmental)
 
         public override void Tick(float deltaTime)
         {

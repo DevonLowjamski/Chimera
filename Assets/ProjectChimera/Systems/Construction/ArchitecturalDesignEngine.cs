@@ -16,7 +16,7 @@ namespace ProjectChimera.Systems.Construction
     {
         void Start()
         {
-            ChimeraLogger.Log("Architectural Design Engine temporarily disabled");
+            ChimeraLogger.Log("OTHER", "$1", this);
         }
     }
 }

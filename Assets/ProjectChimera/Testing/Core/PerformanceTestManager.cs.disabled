@@ -1,0 +1,257 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Performance;
+
+namespace ProjectChimera.Testing.Core
+{
+    /// <summary>
+    /// REFACTORED: Performance Test Manager
+    /// Focused component for testing performance systems: AdvancedPerformanceMonitor, MetricsCollectionFramework
+    /// </summary>
+    public class PerformanceTestManager : MonoBehaviour
+    {
+        [Header("Performance Test Settings")]
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private float _maxAcceptableFrameTime = 20f; // 50 FPS minimum
+        [SerializeField] private long _maxAcceptableMemoryUsage = 600 * 1024 * 1024; // 600MB
+
+        // System references for testing
+        private AdvancedPerformanceMonitor _performanceMonitor;
+        private MetricsCollectionFramework _metricsFramework;
+
+        // Properties
+        public bool IsEnabled { get; private set; } = true;
+
+        // Events
+        public System.Action<IntegrationTestResult> OnTestCompleted;
+
+        private void Start()
+        {
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            _performanceMonitor = FindObjectOfType<AdvancedPerformanceMonitor>();
+            _metricsFramework = MetricsCollectionFramework.Instance;
+
+            if (_enableLogging)
+                ChimeraLogger.Log("TESTING", "✅ PerformanceTestManager initialized", this);
+        }
+
+        /// <summary>
+        /// Run all performance tests
+        /// </summary>
+        public IEnumerator RunPerformanceTests(List<IntegrationTestResult> results)
+        {
+            if (!IsEnabled) yield break;
+
+            var testResult = new IntegrationTestResult
+            {
+                TestName = "Performance Systems Validation",
+                TestCategory = "Performance",
+                StartTime = Time.time
+            };
+
+            if (_enableLogging)
+                ChimeraLogger.Log("TESTING", "⚡ Testing performance systems...", this);
+
+            try
+            {
+                yield return StartCoroutine(TestPerformanceMonitor(testResult));
+                yield return StartCoroutine(TestMetricsFramework(testResult));
+                yield return StartCoroutine(TestPerformanceMetrics(testResult));
+
+                // Evaluate overall performance test success
+                bool allPerformanceTestsPassed = testResult.TestSteps.TrueForAll(step => step.Contains("PASS"));
+                testResult.Success = allPerformanceTestsPassed;
+                testResult.CompletionTime = Time.time;
+
+                if (testResult.Success)
+                {
+                    testResult.ResultMessage = "Performance systems validated successfully";
+                }
+                else
+                {
+                    testResult.ResultMessage = "Performance system validation failed";
+                }
+            }
+            catch (System.Exception ex)
+            {
+                testResult.Success = false;
+                testResult.CompletionTime = Time.time;
+                testResult.ResultMessage = $"Performance test error: {ex.Message}";
+                testResult.TestSteps.Add($"Exception: {ex.Message}");
+
+                if (_enableLogging)
+                    ChimeraLogger.LogError("TESTING", $"Performance test exception: {ex}", this);
+            }
+
+            results.Add(testResult);
+            OnTestCompleted?.Invoke(testResult);
+        }
+
+        private IEnumerator TestPerformanceMonitor(IntegrationTestResult testResult)
+        {
+            bool performanceMonitorExists = _performanceMonitor != null;
+            testResult.TestSteps.Add($"Performance Monitor Exists: {(performanceMonitorExists ? "PASS" : "FAIL")}");
+
+            if (performanceMonitorExists)
+            {
+                bool performanceMonitorActive = _performanceMonitor.IsMonitoring;
+                testResult.TestSteps.Add($"Performance Monitor Active: {(performanceMonitorActive ? "PASS" : "FAIL")}");
+
+                if (performanceMonitorActive)
+                {
+                    // Test performance data collection
+                    yield return new WaitForSeconds(1f);
+                    var currentMetrics = _performanceMonitor.GetCurrentMetrics();
+                    bool hasMetrics = currentMetrics != null;
+                    testResult.TestSteps.Add($"Performance Metrics Available: {(hasMetrics ? "PASS" : "FAIL")}");
+                }
+            }
+        }
+
+        private IEnumerator TestMetricsFramework(IntegrationTestResult testResult)
+        {
+            bool metricsFrameworkExists = _metricsFramework != null;
+            testResult.TestSteps.Add($"Metrics Framework Exists: {(metricsFrameworkExists ? "PASS" : "FAIL")}");
+
+            if (metricsFrameworkExists)
+            {
+                // Test metrics collection
+                yield return new WaitForSeconds(1f);
+                try
+                {
+                    var aggregatedMetrics = _metricsFramework.GetAggregatedMetrics(5);
+                    bool hasAggregatedData = aggregatedMetrics != null;
+                    testResult.TestSteps.Add($"Metrics Aggregation: {(hasAggregatedData ? "PASS" : "FAIL")}");
+                }
+                catch (System.Exception ex)
+                {
+                    testResult.TestSteps.Add($"Metrics Aggregation: FAIL - {ex.Message}");
+                }
+            }
+        }
+
+        private IEnumerator TestPerformanceMetrics(IntegrationTestResult testResult)
+        {
+            if (_performanceMonitor == null)
+            {
+                testResult.TestSteps.Add("Performance Metrics: SKIP - No performance monitor");
+                yield break;
+            }
+
+            // Wait for performance data collection
+            yield return new WaitForSeconds(3f);
+
+            var currentMetrics = _performanceMonitor.GetCurrentMetrics();
+            if (currentMetrics != null)
+            {
+                bool frameTimeAcceptable = currentMetrics.FrameTime < _maxAcceptableFrameTime;
+                bool memoryAcceptable = currentMetrics.GCMemory < _maxAcceptableMemoryUsage;
+
+                testResult.TestSteps.Add($"Frame Time: {currentMetrics.FrameTime:F2}ms ({(frameTimeAcceptable ? "PASS" : "FAIL")})");
+                testResult.TestSteps.Add($"Memory Usage: {currentMetrics.GCMemory / (1024 * 1024):F1}MB ({(memoryAcceptable ? "PASS" : "FAIL")})");
+
+                // Additional performance metrics
+                testResult.TestSteps.Add($"CPU Usage: {currentMetrics.CPUUsage:F1}%");
+                testResult.TestSteps.Add($"FPS: {1000f / currentMetrics.FrameTime:F1}");
+
+                bool performanceAcceptable = frameTimeAcceptable && memoryAcceptable;
+                testResult.TestSteps.Add($"Overall Performance: {(performanceAcceptable ? "PASS" : "FAIL")}");
+            }
+            else
+            {
+                testResult.TestSteps.Add("Performance Metrics: FAIL - No metrics data available");
+            }
+        }
+
+        /// <summary>
+        /// Run performance stress test
+        /// </summary>
+        public IEnumerator RunPerformanceStressTest(List<IntegrationTestResult> results, float duration = 5f)
+        {
+            if (!IsEnabled) yield break;
+
+            var testResult = new IntegrationTestResult
+            {
+                TestName = "Performance Stress Test",
+                TestCategory = "Performance",
+                StartTime = Time.time
+            };
+
+            if (_enableLogging)
+                ChimeraLogger.Log("TESTING", $"⚡ Running performance stress test ({duration}s)...", this);
+
+            float testStartTime = Time.time;
+            float maxFrameTime = 0f;
+            long maxMemoryUsage = 0;
+            int frameCount = 0;
+
+            // Create artificial load
+            var stressObjects = new List<GameObject>();
+            for (int i = 0; i < 100; i++)
+            {
+                var obj = new GameObject($"StressTest_{i}");
+                obj.AddComponent<MeshRenderer>();
+                obj.AddComponent<MeshFilter>();
+                stressObjects.Add(obj);
+            }
+
+            testResult.TestSteps.Add($"Created stress load: {stressObjects.Count} objects");
+
+            // Monitor performance during stress test
+            while (Time.time - testStartTime < duration)
+            {
+                if (_performanceMonitor != null)
+                {
+                    var currentMetrics = _performanceMonitor.GetCurrentMetrics();
+                    if (currentMetrics != null)
+                    {
+                        maxFrameTime = Mathf.Max(maxFrameTime, currentMetrics.FrameTime);
+                        maxMemoryUsage = Mathf.Max(maxMemoryUsage, currentMetrics.GCMemory);
+                    }
+                }
+                frameCount++;
+                yield return null;
+            }
+
+            // Clean up stress objects
+            foreach (var obj in stressObjects)
+            {
+                DestroyImmediate(obj);
+            }
+
+            // Evaluate stress test results
+            bool frameTimeAcceptable = maxFrameTime < _maxAcceptableFrameTime * 1.5f; // Allow 50% overhead during stress
+            bool memoryAcceptable = maxMemoryUsage < _maxAcceptableMemoryUsage;
+
+            testResult.TestSteps.Add($"Max Frame Time: {maxFrameTime:F2}ms ({(frameTimeAcceptable ? "PASS" : "FAIL")})");
+            testResult.TestSteps.Add($"Max Memory Usage: {maxMemoryUsage / (1024 * 1024):F1}MB ({(memoryAcceptable ? "PASS" : "FAIL")})");
+            testResult.TestSteps.Add($"Frames Tested: {frameCount}");
+
+            testResult.Success = frameTimeAcceptable && memoryAcceptable;
+            testResult.CompletionTime = Time.time;
+            testResult.ResultMessage = testResult.Success ?
+                "Performance stress test passed" :
+                "Performance stress test failed - degradation detected";
+
+            results.Add(testResult);
+            OnTestCompleted?.Invoke(testResult);
+        }
+
+        /// <summary>
+        /// Set manager enabled/disabled
+        /// </summary>
+        public void SetEnabled(bool enabled)
+        {
+            IsEnabled = enabled;
+
+            if (_enableLogging)
+                ChimeraLogger.Log("TESTING", $"PerformanceTestManager: {(enabled ? "enabled" : "disabled")}", this);
+        }
+    }
+}

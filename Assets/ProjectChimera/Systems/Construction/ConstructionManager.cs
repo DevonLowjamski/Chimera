@@ -6,6 +6,7 @@ using ProjectChimera.Core;
 using ProjectChimera.Core.Events;
 using ProjectChimera.Core.Updates;
 using ProjectChimera.Data.Construction;
+using ConstructionStatus = ProjectChimera.Data.Construction.ConstructionStatus;
 
 namespace ProjectChimera.Systems.Construction
 {
@@ -16,15 +17,14 @@ namespace ProjectChimera.Systems.Construction
     /// Coordinator Structure:
     /// - GridPlacementSystem.cs: Handles grid-based placement
     /// - SchematicManager.cs: Manages schematics
-    /// - InteractiveFacilityConstructor.cs: Handles facility construction
     /// - ConstructionManager.cs: Coordinates the construction system
     /// </summary>
-    public class ConstructionManager : DIChimeraManager, ITickable
+    public class ConstructionManager : ChimeraManager, ITickable
     {
         [Header("Component References")]
         [SerializeField] private GridPlacementSystem _gridPlacementSystem;
-        [SerializeField] private SchematicManager _schematicManager;
-        [SerializeField] private InteractiveFacilityConstructor _facilityConstructor;
+        // [SerializeField] private SchematicManager _schematicManager; // DISABLED: Advanced feature
+        // [SerializeField] private InteractiveFacilityConstructor _facilityConstructor; // DISABLED: Advanced feature
         [SerializeField] private ConstructionCatalog _constructionCatalog;
 
         [Header("Construction Configuration")]
@@ -40,19 +40,23 @@ namespace ProjectChimera.Systems.Construction
 
         // Basic state tracking
         private float _lastAutoSave = 0f;
+        private bool _isInitialized = false;
+        private readonly List<ConstructionProject> _activeProjects = new List<ConstructionProject>();
+        private readonly HashSet<Vector3Int> _reservedPositions = new HashSet<Vector3Int>();
+        private readonly Dictionary<string, float> _projectProgress = new Dictionary<string, float>();
 
         public override ManagerPriority Priority => ManagerPriority.High;
 
         // Public Properties - Access to component capabilities
         public GridPlacementSystem GridPlacementSystem => _gridPlacementSystem;
-        public SchematicManager SchematicManager => _schematicManager;
-        public InteractiveFacilityConstructor FacilityConstructor => _facilityConstructor;
+        // public SchematicManager SchematicManager => _schematicManager; // DISABLED: Advanced feature
+        // public InteractiveFacilityConstructor FacilityConstructor => _facilityConstructor; // DISABLED: Advanced feature
         public ConstructionCatalog ConstructionCatalog => _constructionCatalog;
 
         // Basic status properties
         public bool IsInitialized => _isInitialized;
         public bool HasGridSystem => _gridPlacementSystem != null;
-        public bool HasFacilityConstructor => _facilityConstructor != null;
+        // public bool HasFacilityConstructor => _facilityConstructor != null; // DISABLED: Advanced feature
 
         // Events - Forwarded from components
         public event System.Action OnConstructionStarted;
@@ -86,10 +90,11 @@ namespace ProjectChimera.Systems.Construction
                 allValid = false;
             }
 
-            if (_facilityConstructor == null)
-            {
-                LogWarning("[ConstructionManager] InteractiveFacilityConstructor component not assigned - facility construction may not work");
-            }
+            // DISABLED: Advanced feature
+            // if (_facilityConstructor == null)
+            // {
+            //     LogWarning("[ConstructionManager] InteractiveFacilityConstructor component not assigned - facility construction may not work");
+            // }
 
             if (_constructionCatalog == null)
             {
@@ -107,24 +112,25 @@ namespace ProjectChimera.Systems.Construction
         /// </summary>
         private void SetupComponentReferences()
         {
+            // DISABLED: Advanced features
             // Connect components if needed
-            if (_gridPlacementSystem != null && _facilityConstructor != null)
-            {
-                // Set up coordination between grid placement and facility construction
-                _facilityConstructor.SetGridSystem(_gridPlacementSystem);
-            }
+            // if (_gridPlacementSystem != null && _facilityConstructor != null)
+            // {
+            //     // Set up coordination between grid placement and facility construction
+            //     _facilityConstructor.SetGridSystem(_gridPlacementSystem);
+            // }
 
-            if (_schematicManager != null && _enableSchematicIntegration)
-            {
-                // Enable schematic integration if available
-                LogInfo("Schematic integration enabled");
-            }
+            // if (_schematicManager != null && _enableSchematicIntegration)
+            // {
+            //     // Enable schematic integration if available
+            //     LogInfo("Schematic integration enabled");
+            // }
         }
 
         #region ITickable Implementation
 
-        int ITickable.Priority => TickPriority.ConstructionSystem;
-        bool ITickable.Enabled => IsInitialized;
+        public int TickPriority => ProjectChimera.Core.Updates.TickPriority.ConstructionSystem;
+        public bool IsTickable => IsInitialized && enabled && gameObject.activeInHierarchy;
 
         public void Tick(float deltaTime)
         {
@@ -142,12 +148,12 @@ namespace ProjectChimera.Systems.Construction
 
         public void OnRegistered()
         {
-            ChimeraLogger.Log("[ConstructionManager] Registered with UpdateOrchestrator");
+            ChimeraLogger.Log("OTHER", "$1", this);
         }
 
         public void OnUnregistered()
         {
-            ChimeraLogger.Log("[ConstructionManager] Unregistered from UpdateOrchestrator");
+            ChimeraLogger.Log("OTHER", "$1", this);
         }
 
         #endregion
@@ -175,16 +181,17 @@ namespace ProjectChimera.Systems.Construction
         /// </summary>
         public void StartPlacementMode(string templateName)
         {
-            if (_facilityConstructor != null)
-            {
-                _facilityConstructor.StartPlacement(templateName);
-                OnConstructionStarted?.Invoke();
-                LogInfo($"Started placement mode for: {templateName}");
-            }
-            else
-            {
-                HandleConstructionError("Facility constructor not available for placement");
-            }
+            // DISABLED: Advanced feature - InteractiveFacilityConstructor
+            // if (_facilityConstructor != null)
+            // {
+            //     _facilityConstructor.StartPlacement(templateName);
+            //     OnConstructionStarted?.Invoke();
+            //     LogInfo($"Started placement mode for: {templateName}");
+            // }
+            // else
+            // {
+            HandleConstructionError("Facility constructor not available - advanced feature disabled");
+            // }
         }
 
         /// <summary>
@@ -192,11 +199,13 @@ namespace ProjectChimera.Systems.Construction
         /// </summary>
         public void CancelPlacementMode()
         {
-            if (_facilityConstructor != null)
-            {
-                _facilityConstructor.CancelPlacement();
-                LogInfo("Placement mode cancelled");
-            }
+            // DISABLED: Advanced feature - InteractiveFacilityConstructor
+            // if (_facilityConstructor != null)
+            // {
+            //     _facilityConstructor.CancelPlacement();
+            //     LogInfo("Placement mode cancelled");
+            // }
+            LogInfo("Placement mode cancelled - advanced feature disabled");
         }
 
         /// <summary>
@@ -226,7 +235,9 @@ namespace ProjectChimera.Systems.Construction
         /// </summary>
         public bool IsPlacementActive()
         {
-            return _facilityConstructor != null && _facilityConstructor.IsPlacementActive();
+            // DISABLED: Advanced feature - InteractiveFacilityConstructor
+            // return _facilityConstructor != null && _facilityConstructor.IsPlacementActive();
+            return false;
         }
 
         /// <summary>
@@ -234,15 +245,16 @@ namespace ProjectChimera.Systems.Construction
         /// </summary>
         public void CreateSchematic(string schematicName)
         {
-            if (_schematicManager != null && _enableSchematicIntegration)
-            {
-                _schematicManager.CreateSchematic(schematicName);
-                LogInfo($"Created schematic: {schematicName}");
-            }
-            else
-            {
-                HandleConstructionError("Schematic manager not available");
-            }
+            // DISABLED: SchematicManager has been disabled (advanced feature)
+            // if (_schematicManager != null && _enableSchematicIntegration)
+            // {
+            //     _schematicManager.CreateSchematic(schematicName);
+            //     LogInfo($"Created schematic: {schematicName}");
+            // }
+            // else
+            // {
+            HandleConstructionError("Schematic manager not available - advanced feature disabled");
+            // }
         }
 
         /// <summary>
@@ -250,15 +262,16 @@ namespace ProjectChimera.Systems.Construction
         /// </summary>
         public void LoadSchematic(string schematicName)
         {
-            if (_schematicManager != null && _enableSchematicIntegration)
-            {
-                _schematicManager.LoadSchematic(schematicName);
-                LogInfo($"Loaded schematic: {schematicName}");
-            }
-            else
-            {
-                HandleConstructionError("Schematic manager not available");
-            }
+            // DISABLED: SchematicManager has been disabled (advanced feature)
+            // if (_schematicManager != null && _enableSchematicIntegration)
+            // {
+            //     _schematicManager.LoadSchematic(schematicName);
+            //     LogInfo($"Loaded schematic: {schematicName}");
+            // }
+            // else
+            // {
+            HandleConstructionError("Schematic manager not available - advanced feature disabled");
+            // }
         }
 
         #endregion
@@ -267,22 +280,24 @@ namespace ProjectChimera.Systems.Construction
 
         private void SubscribeToEvents()
         {
-            if (_facilityConstructor != null)
-            {
-                _facilityConstructor.OnPlacementCompleted += HandlePlacementCompleted;
-                _facilityConstructor.OnPlacementCancelled += HandlePlacementCancelled;
-                _facilityConstructor.OnError += HandleConstructionError;
-            }
+            // DISABLED: Advanced feature - InteractiveFacilityConstructor
+            // if (_facilityConstructor != null)
+            // {
+            //     _facilityConstructor.OnPlacementCompleted += HandlePlacementCompleted;
+            //     _facilityConstructor.OnPlacementCancelled += HandlePlacementCancelled;
+            //     _facilityConstructor.OnError += HandleConstructionError;
+            // }
         }
 
         private void UnsubscribeFromEvents()
         {
-            if (_facilityConstructor != null)
-            {
-                _facilityConstructor.OnPlacementCompleted -= HandlePlacementCompleted;
-                _facilityConstructor.OnPlacementCancelled -= HandlePlacementCancelled;
-                _facilityConstructor.OnError -= HandleConstructionError;
-            }
+            // DISABLED: Advanced feature - InteractiveFacilityConstructor
+            // if (_facilityConstructor != null)
+            // {
+            //     _facilityConstructor.OnPlacementCompleted -= HandlePlacementCompleted;
+            //     _facilityConstructor.OnPlacementCancelled -= HandlePlacementCancelled;
+            //     _facilityConstructor.OnError -= HandleConstructionError;
+            // }
         }
 
         private void SaveConstructionState()
@@ -294,7 +309,7 @@ namespace ProjectChimera.Systems.Construction
         private void HandlePlacementCompleted()
         {
             OnConstructionCompleted?.Invoke();
-            _onConstructionCompleted?.Raise();
+            _onProjectCompleted?.Raise();
             LogInfo("Construction placement completed");
         }
 
@@ -315,15 +330,31 @@ namespace ProjectChimera.Systems.Construction
 
     #region Supporting Data Structures
 
+
     /// <summary>
-    /// Simple construction status for basic tracking
+    /// Simple construction project for runtime tracking
     /// </summary>
-    public enum ConstructionStatus
+    public class ConstructionProject
     {
-        Idle,
-        Placing,
-        Completed,
-        Error
+        public string ProjectID { get; set; }
+        public string ProjectName { get; set; }
+        public Vector3Int GridPosition { get; set; }
+        public ConstructionStatus Status { get; set; }
+        public float Progress { get; set; }
+        public DateTime StartTime { get; set; }
+
+        public ConstructionProject(string projectId, string projectName, Vector3Int gridPosition)
+        {
+            ProjectID = projectId;
+            ProjectName = projectName;
+            GridPosition = gridPosition;
+            Status = ConstructionStatus.Planned;
+            Progress = 0f;
+            StartTime = DateTime.Now;
+        }
+
+        public bool IsCompleted() => Status == ConstructionStatus.Complete;
+        public void ProcessUpdate() { /* Placeholder for update logic */ }
     }
 
     #endregion

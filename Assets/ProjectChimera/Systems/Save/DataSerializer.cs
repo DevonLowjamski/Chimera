@@ -20,12 +20,12 @@ namespace ProjectChimera.Systems.Save
             try
             {
                 string json = JsonUtility.ToJson(data, true);
-                ChimeraLogger.Log($"[DataSerializer] Serialized {json.Length} characters");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return json;
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[DataSerializer] Serialization failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return null;
             }
         }
@@ -40,12 +40,12 @@ namespace ProjectChimera.Systems.Save
             try
             {
                 T data = JsonUtility.FromJson<T>(json);
-                ChimeraLogger.Log("[DataSerializer] Deserialized successfully");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return data;
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[DataSerializer] Deserialization failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return default;
             }
         }
@@ -68,12 +68,12 @@ namespace ProjectChimera.Systems.Save
                 }
 
                 File.WriteAllText(filePath, json);
-                ChimeraLogger.Log($"[DataSerializer] Saved to {filePath}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return true;
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[DataSerializer] Save failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return false;
             }
         }
@@ -85,7 +85,7 @@ namespace ProjectChimera.Systems.Save
         {
             if (!File.Exists(filePath))
             {
-                ChimeraLogger.LogWarning($"[DataSerializer] File not found: {filePath}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return default;
             }
 
@@ -96,14 +96,14 @@ namespace ProjectChimera.Systems.Save
 
                 if (data != null)
                 {
-                    ChimeraLogger.Log($"[DataSerializer] Loaded from {filePath}");
+                    ChimeraLogger.Log("OTHER", "$1", null);
                 }
 
                 return data;
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[DataSerializer] Load failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return default;
             }
         }
@@ -149,7 +149,7 @@ namespace ProjectChimera.Systems.Save
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[DataSerializer] Get file info failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return null;
             }
         }
@@ -183,12 +183,12 @@ namespace ProjectChimera.Systems.Save
             try
             {
                 File.Copy(originalPath, backupPath, true);
-                ChimeraLogger.Log($"[DataSerializer] Created backup: {backupPath}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return true;
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[DataSerializer] Backup failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return false;
             }
         }

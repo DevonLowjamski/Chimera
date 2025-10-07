@@ -22,7 +22,7 @@ namespace ProjectChimera.Testing
         private int _framesTested = 0;
         private float _totalFrameTime = 0f;
         private float _minFrameTime = float.MaxValue;
-        private float _maxFrameTime = 0f;
+        private float _currentMaxFrameTime = 0f;
         private bool _isRunning = false;
 
         /// <summary>
@@ -42,13 +42,13 @@ namespace ProjectChimera.Testing
             _framesTested = 0;
             _totalFrameTime = 0f;
             _minFrameTime = float.MaxValue;
-            _maxFrameTime = 0f;
+            _currentMaxFrameTime = 0f;
 
             StartCoroutine(RunPerformanceTest());
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PerformanceValidator] Started performance test with {_testIterations} iterations");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -61,7 +61,7 @@ namespace ProjectChimera.Testing
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PerformanceValidator] Stopped performance test");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -82,7 +82,7 @@ namespace ProjectChimera.Testing
                 _framesTested++;
                 _totalFrameTime += frameTime;
                 _minFrameTime = Mathf.Min(_minFrameTime, frameTime);
-                _maxFrameTime = Mathf.Max(_maxFrameTime, frameTime);
+                _currentMaxFrameTime = Mathf.Max(_currentMaxFrameTime, frameTime);
             }
 
             CompletePerformanceTest();
@@ -99,7 +99,7 @@ namespace ProjectChimera.Testing
 
             float averageFrameTime = _totalFrameTime / _framesTested;
             float averageFPS = 1000f / averageFrameTime;
-            float minFPS = 1000f / _maxFrameTime;
+            float minFPS = 1000f / _currentMaxFrameTime;
             float maxFPS = 1000f / _minFrameTime;
 
             var results = new PerformanceResults
@@ -108,7 +108,7 @@ namespace ProjectChimera.Testing
                 FramesTested = _framesTested,
                 AverageFrameTime = averageFrameTime,
                 MinFrameTime = _minFrameTime,
-                MaxFrameTime = _maxFrameTime,
+                MaxFrameTime = _currentMaxFrameTime,
                 AverageFPS = averageFPS,
                 MinFPS = minFPS,
                 MaxFPS = maxFPS,
@@ -121,7 +121,7 @@ namespace ProjectChimera.Testing
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PerformanceValidator] Test completed - Avg FPS: {averageFPS:F1}, Rating: {results.PerformanceRating}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -161,7 +161,7 @@ namespace ProjectChimera.Testing
                 IsRunning = _isRunning,
                 TestIterations = _testIterations,
                 TargetFrameRate = _targetFrameRate,
-                MaxFrameTime = _maxFrameTime,
+                MaxFrameTime = _currentMaxFrameTime,
                 FramesTested = _framesTested
             };
         }
@@ -173,11 +173,11 @@ namespace ProjectChimera.Testing
         {
             _testIterations = Mathf.Max(1, iterations);
             _targetFrameRate = Mathf.Max(1f, targetFPS);
-            _maxFrameTime = 1000f / _targetFrameRate;
+            _currentMaxFrameTime = 1000f / _targetFrameRate;
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PerformanceValidator] Updated test parameters - Iterations: {_testIterations}, Target FPS: {_targetFrameRate}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 

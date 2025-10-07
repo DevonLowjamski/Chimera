@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using ProjectChimera.Data.Save.Structures;
 
 namespace ProjectChimera.Systems.Progression
 {
@@ -11,7 +12,7 @@ namespace ProjectChimera.Systems.Progression
         string GetProviderId();
         float GetPriority();
         
-        Task<OfflineProgressionCalculationResult> CalculateOfflineProgressionAsync(TimeSpan offlineTime);
+        Task<OfflineProgressionResult> CalculateOfflineProgressionAsync(TimeSpan offlineTime);
         Task ApplyOfflineProgressionAsync(OfflineProgressionResult result);
     }
 }

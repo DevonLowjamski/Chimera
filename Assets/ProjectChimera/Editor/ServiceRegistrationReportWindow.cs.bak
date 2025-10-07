@@ -1,0 +1,448 @@
+using UnityEngine;
+using UnityEditor;
+using System.Collections.Generic;
+using System.Linq;
+
+using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Editor
+{
+    /// <summary>
+    /// Editor window for displaying service registration reports
+    /// Provides detailed view of service health, dependencies, and validation results
+    /// </summary>
+    public class ServiceRegistrationReportWindow : EditorWindow
+    {
+        private ServiceRegistrationReport _currentReport;
+        private Vector2 _scrollPosition;
+        private bool _autoRefresh = true;
+        private float _lastRefreshTime;
+        private const float RefreshInterval = 5f;
+
+        // UI State
+        private bool _showValidationDetails = true;
+        private bool _showPerformanceMetrics = true;
+        private bool _showDependencyAnalysis = true;
+        private bool _showRecommendations = true;
+        private string _searchFilter = "";
+
+        [MenuItem("Project Chimera/Service Registration Report")]
+        public static void ShowWindow()
+        {
+            var window = GetWindow<ServiceRegistrationReportWindow>("Service Registration Report");
+            window.minSize = new Vector2(600, 500);
+            window.Show();
+            window.RefreshReport();
+        }
+
+        private void OnEnable()
+        {
+            RefreshReport();
+        }
+
+        private void OnGUI()
+        {
+            DrawHeader();
+            EditorGUILayout.Space();
+
+            if (_currentReport == null)
+            {
+                EditorGUILayout.HelpBox("No service registration report available. Ensure ServiceBootstrapper is initialized.", MessageType.Info);
+                if (GUILayout.Button("Generate Report"))
+                {
+                    RefreshReport();
+                }
+                return;
+            }
+
+            DrawReportSummary();
+            EditorGUILayout.Space();
+
+            DrawFilterAndOptions();
+            EditorGUILayout.Space();
+
+            _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
+
+            if (_showValidationDetails)
+            {
+                DrawValidationResults();
+                EditorGUILayout.Space();
+            }
+
+            if (_showPerformanceMetrics && _currentReport.ServiceManagerMetrics != null)
+            {
+                DrawPerformanceMetrics();
+                EditorGUILayout.Space();
+            }
+
+            if (_showDependencyAnalysis)
+            {
+                DrawDependencyAnalysis();
+                EditorGUILayout.Space();
+            }
+
+            if (_showRecommendations)
+            {
+                DrawRecommendations();
+            }
+
+            EditorGUILayout.EndScrollView();
+        }
+
+        private void Update()
+        {
+            if (_autoRefresh && Time.realtimeSinceStartup - _lastRefreshTime > RefreshInterval)
+            {
+                RefreshReport();
+            }
+        }
+
+        private void DrawHeader()
+        {
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Label("Project Chimera Service Registration Report", EditorStyles.largeLabel);
+            GUILayout.FlexibleSpace();
+
+            if (GUILayout.Button("Refresh", GUILayout.Width(80)))
+            {
+                RefreshReport();
+            }
+
+            _autoRefresh = EditorGUILayout.Toggle("Auto Refresh", _autoRefresh, GUILayout.Width(100));
+            EditorGUILayout.EndHorizontal();
+
+            if (_currentReport != null)
+            {
+                EditorGUILayout.LabelField("Generated:", _currentReport.GeneratedAt.ToString("yyyy-MM-dd HH:mm:ss"));
+            }
+        }
+
+        private void DrawReportSummary()
+        {
+            if (_currentReport == null) return;
+
+            EditorGUILayout.BeginVertical("box");
+            GUILayout.Label("System Health Overview", EditorStyles.boldLabel);
+
+            // Health status with color coding
+            var healthColor = GetHealthColor(_currentReport.OverallHealth);
+            var originalColor = GUI.color;
+            GUI.color = healthColor;
+
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Overall Health:", GUILayout.Width(100));
+            EditorGUILayout.LabelField(_currentReport.OverallHealth.ToString(), EditorStyles.boldLabel, GUILayout.Width(100));
+            EditorGUILayout.LabelField($"({_currentReport.GetHealthPercentage():F1}%)", GUILayout.Width(60));
+            GUILayout.FlexibleSpace();
+
+            GUI.color = originalColor;
+
+            if (_currentReport.IsProductionReady())
+            {
+                EditorGUILayout.LabelField("✓ Production Ready", GUILayout.Width(120));
+            }
+            else
+            {
+                EditorGUILayout.LabelField("⚠ Not Production Ready", GUILayout.Width(120));
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            // Statistics
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField($"Services: {_currentReport.RegisteredServices}/{_currentReport.TotalServices}");
+            EditorGUILayout.LabelField($"Critical: {_currentReport.CriticalServices}", GUILayout.Width(80));
+            EditorGUILayout.LabelField($"Failures: {_currentReport.CriticalFailures}", GUILayout.Width(80));
+            EditorGUILayout.LabelField($"Warnings: {_currentReport.Warnings}", GUILayout.Width(80));
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.LabelField("Summary:", _currentReport.GetSummary());
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawFilterAndOptions()
+        {
+            EditorGUILayout.BeginHorizontal();
+            _searchFilter = EditorGUILayout.TextField("Filter Services:", _searchFilter);
+
+            GUILayout.FlexibleSpace();
+
+            if (GUILayout.Button("Export JSON", GUILayout.Width(100)))
+            {
+                ExportReportToJSON();
+            }
+
+            if (GUILayout.Button("Print to Console", GUILayout.Width(120)))
+            {
+                var bootstrapper = ServiceBootstrapper.Instance;
+                bootstrapper?.PrintServiceReport();
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            _showValidationDetails = EditorGUILayout.Toggle("Validation Details", _showValidationDetails);
+            _showPerformanceMetrics = EditorGUILayout.Toggle("Performance", _showPerformanceMetrics);
+            _showDependencyAnalysis = EditorGUILayout.Toggle("Dependencies", _showDependencyAnalysis);
+            _showRecommendations = EditorGUILayout.Toggle("Recommendations", _showRecommendations);
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void DrawValidationResults()
+        {
+            EditorGUILayout.BeginVertical("box");
+            GUILayout.Label("Service Validation Results", EditorStyles.boldLabel);
+
+            var filteredResults = _currentReport.ValidationResults;
+            if (!string.IsNullOrEmpty(_searchFilter))
+            {
+                filteredResults = filteredResults.Where(r => r.ServiceName.ToLower().Contains(_searchFilter.ToLower())).ToList();
+            }
+
+            // Group by status
+            var criticalFailures = filteredResults.Where(r => r.IsCritical && !r.IsRegistered).ToList();
+            var nullImplementations = filteredResults.Where(r => r.IsNullImplementation).ToList();
+            var healthyServices = filteredResults.Where(r => r.IsRegistered && !r.IsNullImplementation).ToList();
+            var warnings = filteredResults.Where(r => !r.IsCritical && !r.IsRegistered).ToList();
+
+            if (criticalFailures.Any())
+            {
+                GUILayout.Label("Critical Failures:", EditorStyles.miniBoldLabel);
+                foreach (var failure in criticalFailures)
+                {
+                    EditorGUILayout.BeginHorizontal("helpbox");
+                    EditorGUILayout.LabelField("❌", GUILayout.Width(20));
+                    EditorGUILayout.LabelField(failure.ServiceName, GUILayout.Width(200));
+                    EditorGUILayout.LabelField(failure.ErrorMessage ?? "Not registered", EditorStyles.wordWrappedLabel);
+                    EditorGUILayout.EndHorizontal();
+                }
+                EditorGUILayout.Space();
+            }
+
+            if (warnings.Any())
+            {
+                GUILayout.Label("Warnings (Non-Critical):", EditorStyles.miniBoldLabel);
+                foreach (var warning in warnings)
+                {
+                    EditorGUILayout.BeginHorizontal("helpbox");
+                    EditorGUILayout.LabelField("⚠️", GUILayout.Width(20));
+                    EditorGUILayout.LabelField(warning.ServiceName, GUILayout.Width(200));
+                    EditorGUILayout.LabelField(warning.ErrorMessage ?? "Not registered", EditorStyles.wordWrappedLabel);
+                    EditorGUILayout.EndHorizontal();
+                }
+                EditorGUILayout.Space();
+            }
+
+            if (nullImplementations.Any())
+            {
+                GUILayout.Label("Null Implementations:", EditorStyles.miniBoldLabel);
+                foreach (var nullService in nullImplementations)
+                {
+                    EditorGUILayout.BeginHorizontal("helpbox");
+                    EditorGUILayout.LabelField("🔄", GUILayout.Width(20));
+                    EditorGUILayout.LabelField(nullService.ServiceName, GUILayout.Width(200));
+                    EditorGUILayout.LabelField("Null implementation (expected in development)", EditorStyles.wordWrappedLabel);
+                    EditorGUILayout.EndHorizontal();
+                }
+                EditorGUILayout.Space();
+            }
+
+            if (healthyServices.Any())
+            {
+                GUILayout.Label("Healthy Services:", EditorStyles.miniBoldLabel);
+                foreach (var service in healthyServices.Take(10)) // Show first 10
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField("✅", GUILayout.Width(20));
+                    EditorGUILayout.LabelField(service.ServiceName, GUILayout.Width(200));
+                    EditorGUILayout.LabelField("Registered successfully");
+                    EditorGUILayout.EndHorizontal();
+                }
+
+                if (healthyServices.Count > 10)
+                {
+                    EditorGUILayout.LabelField($"... and {healthyServices.Count - 10} more healthy services", EditorStyles.centeredGreyMiniLabel);
+                }
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawPerformanceMetrics()
+        {
+            var metrics = _currentReport.ServiceManagerMetrics;
+            if (metrics == null) return;
+
+            EditorGUILayout.BeginVertical("box");
+            GUILayout.Label("Performance Metrics", EditorStyles.boldLabel);
+
+            EditorGUILayout.LabelField("Initialization Time:", $"{metrics.InitializationTime:F2} ms");
+            EditorGUILayout.LabelField("Registered Modules:", metrics.RegisteredModules.ToString());
+            EditorGUILayout.LabelField("Initialized Modules:", metrics.InitializedModules.ToString());
+            EditorGUILayout.LabelField("Validated Modules:", metrics.ValidatedModules.ToString());
+            EditorGUILayout.LabelField("Total Services:", metrics.TotalServicesRegistered.ToString());
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawDependencyAnalysis()
+        {
+            EditorGUILayout.BeginVertical("box");
+            GUILayout.Label("Dependency Analysis", EditorStyles.boldLabel);
+
+            if (_currentReport.DependencyIssues.Any())
+            {
+                foreach (var issue in _currentReport.DependencyIssues)
+                {
+                    EditorGUILayout.BeginHorizontal("helpbox");
+                    EditorGUILayout.LabelField("⚠️", GUILayout.Width(20));
+                    EditorGUILayout.LabelField(issue, EditorStyles.wordWrappedLabel);
+                    EditorGUILayout.EndHorizontal();
+                }
+            }
+            else
+            {
+                EditorGUILayout.LabelField("No dependency issues detected.", EditorStyles.centeredGreyMiniLabel);
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawRecommendations()
+        {
+            EditorGUILayout.BeginVertical("box");
+            GUILayout.Label("Recommendations", EditorStyles.boldLabel);
+
+            var recommendations = _currentReport.GenerateRecommendations();
+            if (recommendations.Any())
+            {
+                foreach (var recommendation in recommendations)
+                {
+                    EditorGUILayout.BeginHorizontal("helpbox");
+                    EditorGUILayout.LabelField("💡", GUILayout.Width(20));
+                    EditorGUILayout.LabelField(recommendation, EditorStyles.wordWrappedLabel);
+                    EditorGUILayout.EndHorizontal();
+                }
+            }
+            else
+            {
+                EditorGUILayout.LabelField("No recommendations - system appears healthy!", EditorStyles.centeredGreyMiniLabel);
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void RefreshReport()
+        {
+            try
+            {
+                var bootstrapper = ServiceBootstrapper.Instance;
+                if (bootstrapper != null && bootstrapper.IsBootstrapped)
+                {
+                    _currentReport = bootstrapper.GenerateServiceReport();
+                    _lastRefreshTime = Time.realtimeSinceStartup;
+                    Repaint();
+                }
+                else
+                {
+                    _currentReport = null;
+                    ChimeraLogger.Log("OTHER", "$1", this);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+                _currentReport = null;
+            }
+        }
+
+        private void ExportReportToJSON()
+        {
+            if (_currentReport == null)
+            {
+                EditorUtility.DisplayDialog("Error", "No report to export. Please refresh first.", "OK");
+                return;
+            }
+
+            var path = EditorUtility.SaveFilePanel("Export Service Report", "", $"ServiceReport_{System.DateTime.Now:yyyy-MM-dd_HH-mm-ss}", "json");
+            if (!string.IsNullOrEmpty(path))
+            {
+                try
+                {
+                    var json = JsonUtility.ToJson(_currentReport, true);
+                    System.IO.File.WriteAllText(path, json);
+                    EditorUtility.DisplayDialog("Export Complete", $"Service report exported to:\n{path}", "OK");
+                }
+                catch (System.Exception ex)
+                {
+                    EditorUtility.DisplayDialog("Export Failed", $"Failed to export report:\n{ex.Message}", "OK");
+                }
+            }
+        }
+
+        private Color GetHealthColor(ServiceHealth health)
+        {
+            switch (health)
+            {
+                case ServiceHealth.Healthy:
+                    return Color.green;
+                case ServiceHealth.Warning:
+                    return Color.yellow;
+                case ServiceHealth.Critical:
+                    return Color.red;
+                default:
+                    return Color.gray;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Menu items for quick access to service reporting functionality
+    /// </summary>
+    public static class ServiceReportingMenu
+    {
+        [MenuItem("Project Chimera/Services/Generate Service Report")]
+        public static void GenerateServiceReport()
+        {
+            var bootstrapper = ServiceBootstrapper.Instance;
+            if (bootstrapper != null && bootstrapper.IsBootstrapped)
+            {
+                bootstrapper.PrintServiceReport();
+            }
+            else
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+
+        [MenuItem("Project Chimera/Services/Validate Services")]
+        public static void ValidateServices()
+        {
+            var bootstrapper = ServiceBootstrapper.Instance;
+            if (bootstrapper != null && bootstrapper.IsBootstrapped)
+            {
+                bootstrapper.RunServiceValidation();
+            }
+            else
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+
+        [MenuItem("Project Chimera/Services/Export Service Report")]
+        public static void ExportServiceReport()
+        {
+            var bootstrapper = ServiceBootstrapper.Instance;
+            if (bootstrapper != null && bootstrapper.IsBootstrapped)
+            {
+                bootstrapper.SaveServiceReportToFile();
+            }
+            else
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+    }
+}

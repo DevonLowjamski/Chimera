@@ -36,7 +36,7 @@ namespace ProjectChimera.Systems.Save
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[OfflineProgressionCoordinator] Initialized successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -61,7 +61,7 @@ namespace ProjectChimera.Systems.Save
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[OfflineProgressionCoordinator] Offline time: {offlineTime.TotalMinutes:F1} minutes");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
 
             return offlineTime;
@@ -87,7 +87,7 @@ namespace ProjectChimera.Systems.Save
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[OfflineProgressionCoordinator] Offline progression processed");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -125,7 +125,7 @@ namespace ProjectChimera.Systems.Save
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[OfflineProgressionCoordinator] Offline progression enabled: {enabled}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -139,7 +139,7 @@ namespace ProjectChimera.Systems.Save
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[OfflineProgressionCoordinator] Last played time loaded: {_lastPlayedTime}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -149,7 +149,7 @@ namespace ProjectChimera.Systems.Save
             // For now, just log
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[OfflineProgressionCoordinator] Last played time saved: {_lastPlayedTime}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -160,7 +160,7 @@ namespace ProjectChimera.Systems.Save
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[OfflineProgressionCoordinator] Processed advancement with multiplier: {advancementMultiplier:F2}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 

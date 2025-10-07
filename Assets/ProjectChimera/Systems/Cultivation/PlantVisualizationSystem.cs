@@ -44,7 +44,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantVisualizationSystem] Initialized successfully");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -73,7 +73,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantVisualizationSystem] Updated size for stage {stage}: {sizeMultiplier:F2}x");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -89,7 +89,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantVisualizationSystem] Updated color for health {health:F2}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -105,7 +105,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantVisualizationSystem] Plant visibility set to {visible}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -142,7 +142,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantVisualizationSystem] Reset to base appearance");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -155,7 +155,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantVisualizationSystem] Base scale set to {scale}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -168,7 +168,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantVisualizationSystem] Healthy color set to {color}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -181,7 +181,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantVisualizationSystem] Unhealthy color set to {color}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -218,6 +218,48 @@ namespace ProjectChimera.Systems.Cultivation
         }
 
         #endregion
+
+        /// <summary>
+        /// Get visualization metrics for PlantInstance integration
+        /// </summary>
+        public object GetVisualizationMetrics()
+        {
+            return new
+            {
+                IsInitialized = _isInitialized,
+                CurrentSize = GetCurrentSize(),
+                CurrentColor = GetCurrentColor(),
+                IsVisible = gameObject.activeInHierarchy,
+                LastUpdate = System.DateTime.Now
+            };
+        }
+
+        /// <summary>
+        /// Update plant visual (for PlantInstance integration)
+        /// </summary>
+        private void UpdatePlantVisual()
+        {
+            // Update visual elements - placeholder for future implementation
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CULTIVATION", "Plant visual updated", this);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Plant visualization metrics for instance integration
+    /// </summary>
+    [System.Serializable]
+    public class PlantVisualizationMetrics
+    {
+        public bool IsInitialized;
+        public Vector3 CurrentSize;
+        public Color CurrentColor;
+        public Vector3 BaseScale;
+        public bool IsVisible;
+        public string PlantId;
+        public System.DateTime LastUpdateTime;
     }
 
     /// <summary>

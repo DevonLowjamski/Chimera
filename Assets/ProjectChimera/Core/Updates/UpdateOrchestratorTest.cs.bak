@@ -1,0 +1,300 @@
+using ProjectChimera.Core.Logging;
+using UnityEngine;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
+
+namespace ProjectChimera.Core.Updates
+{
+    /// <summary>
+    /// Test component for verifying UpdateOrchestrator functionality
+    /// Demonstrates the Phase 0.5 Central Update Bus in action
+    /// </summary>
+    public class UpdateOrchestratorTest : MonoBehaviour, ITickable
+    {
+        [Header("Test Settings")]
+        [SerializeField] private bool _runTestOnStart = true;
+        [SerializeField] private bool _showPerformanceStats = true;
+        [SerializeField] private float _testDuration = 10f;
+
+        [Header("Test Actions")]
+        [SerializeField] private bool _runBasicTest = false;
+        [SerializeField] private bool _runPerformanceTest = false;
+        [SerializeField] private bool _showStatistics = false;
+
+        private UpdateOrchestrator _orchestrator;
+        private TestTickable _testTickable;
+        private float _testStartTime;
+
+        public int Priority => TickPriority.UIManager;
+        public bool Enabled => enabled;
+
+        private void Start()
+        {
+            if (_runTestOnStart)
+            {
+                RunBasicTest();
+            }
+
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
+        }
+
+        private void OnDestroy()
+        {
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (_runBasicTest)
+            {
+                _runBasicTest = false;
+                RunBasicTest();
+            }
+
+            if (_runPerformanceTest)
+            {
+                _runPerformanceTest = false;
+                RunPerformanceTest();
+            }
+
+            if (_showStatistics)
+            {
+                _showStatistics = false;
+                ShowStatistics();
+            }
+
+            // Show continuous performance stats
+            if (_showPerformanceStats && _orchestrator != null)
+            {
+                var stats = _orchestrator.GetStatistics();
+                UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", $1);
+            }
+        }
+
+        [ContextMenu("Run Basic Test")]
+        public void RunBasicTest()
+        {
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+
+            // Get UpdateOrchestrator instance
+            _orchestrator = UpdateOrchestrator.Instance;
+            if (_orchestrator == null)
+            {
+                UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+                return;
+            }
+
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+
+            // Create test tickable
+            _testTickable = new TestTickable("BasicTest", TickPriority.ConstructionSystem);
+
+            // Register with orchestrator
+            _orchestrator.RegisterTickable(_testTickable);
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+
+            // Test DI integration
+            TestDIIntegration();
+
+            // Schedule cleanup
+            Invoke(nameof(CleanupBasicTest), 5f);
+            _testStartTime = Time.time;
+
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+        }
+
+        [ContextMenu("Run Performance Test")]
+        public void RunPerformanceTest()
+        {
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+
+            _orchestrator = UpdateOrchestrator.Instance;
+            if (_orchestrator == null)
+            {
+                UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+                return;
+            }
+
+            // Create multiple test tickables with different priorities
+            var tickables = new TestTickable[]
+            {
+                new TestTickable("HighPriority", TickPriority.TimeManager),
+                new TestTickable("MediumPriority", TickPriority.CultivationManager),
+                new TestTickable("LowPriority", TickPriority.UIManager),
+                new TestTickable("EffectsPriority", TickPriority.ParticleEffects)
+            };
+
+            foreach (var tickable in tickables)
+            {
+                _orchestrator.RegisterTickable(tickable);
+            }
+
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+
+            // Schedule cleanup
+            Invoke(nameof(CleanupPerformanceTest), _testDuration);
+            _testStartTime = Time.time;
+
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+        }
+
+        private void TestDIIntegration()
+        {
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+
+            // Test service resolution through DI container
+            var orchestratorInterface = ServiceContainerFactory.Instance?.TryResolve<IUpdateOrchestrator>();
+            if (orchestratorInterface != null)
+            {
+                UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+
+                // Test interface methods
+                var stats = orchestratorInterface.GetStatistics();
+                UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+
+                var status = orchestratorInterface.GetStatus();
+                UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            }
+            else
+            {
+                UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            }
+        }
+
+        [ContextMenu("Show Statistics")]
+        public void ShowStatistics()
+        {
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+
+            _orchestrator = UpdateOrchestrator.Instance;
+            if (_orchestrator == null)
+            {
+                UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+                return;
+            }
+
+            var stats = _orchestrator.GetStatistics();
+
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+        }
+
+        private void CleanupBasicTest()
+        {
+            if (_testTickable != null && _orchestrator != null)
+            {
+                _orchestrator.UnregisterTickable(_testTickable);
+                UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+                UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            }
+        }
+
+        private void CleanupPerformanceTest()
+        {
+            if (_orchestrator != null)
+            {
+                var stats = _orchestrator.GetStatistics();
+                UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+                UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+
+                // Clear all for cleanup
+                _orchestrator.ClearAll();
+                UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Simple test implementation of ITickable for verification
+    /// </summary>
+    public class TestTickable : ITickable
+    {
+        public string Name { get; }
+        public int Priority { get; }
+        public bool Enabled { get; set; } = true;
+        public int TickCount { get; private set; } = 0;
+
+        private float _lastTickTime;
+
+        public TestTickable(string name, int priority)
+        {
+            Name = name;
+            Priority = priority;
+        }
+
+        public void Tick(float deltaTime)
+        {
+            TickCount++;
+            _lastTickTime = Time.time;
+
+            // Log periodically to verify ticking
+            if (TickCount % 60 == 0) // Every 60 ticks (~1 second at 60fps)
+            {
+                UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+            }
+        }
+
+        public void OnRegistered()
+        {
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+        }
+
+        public void OnUnregistered()
+        {
+            UnityEngine.ChimeraLogger.LogInfo("UpdateOrchestratorTest", "$1");
+        }
+    }
+}
+
+#if UNITY_EDITOR
+namespace ProjectChimera.Core.Updates.Editor
+{
+    using UnityEditor;
+
+    /// <summary>
+    /// Custom inspector for UpdateOrchestratorTest
+    /// </summary>
+    [CustomEditor(typeof(UpdateOrchestratorTest))]
+    public class UpdateOrchestratorTestInspector : Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            DrawDefaultInspector();
+
+            EditorGUILayout.Space();
+
+            var testComponent = (UpdateOrchestratorTest)target;
+
+            if (GUILayout.Button("Run Basic Test"))
+            {
+                testComponent.RunBasicTest();
+            }
+
+            if (GUILayout.Button("Run Performance Test"))
+            {
+                testComponent.RunPerformanceTest();
+            }
+
+            if (GUILayout.Button("Show Statistics"))
+            {
+                testComponent.ShowStatistics();
+            }
+        }
+    }
+}
+#endif
+// Editor code moved to Assets/ProjectChimera/Editor/Inspectors/UpdateOrchestratorTestInspector.cs

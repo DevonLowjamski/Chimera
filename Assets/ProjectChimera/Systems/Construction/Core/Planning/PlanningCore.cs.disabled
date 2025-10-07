@@ -1,0 +1,478 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+using System;
+
+namespace ProjectChimera.Systems.Construction.Core.Planning
+{
+    /// <summary>
+    /// REFACTORED: Planning Core - Central coordination for construction planning subsystems
+    /// Manages plan lifecycle, algorithm selection, request processing, and optimization
+    /// Follows Single Responsibility Principle with focused subsystem coordination
+    /// </summary>
+    public class PlanningCore : MonoBehaviour, ITickable
+    {
+        [Header("Core Planning Settings")]
+        [SerializeField] private bool _enablePlanning = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _planningUpdateInterval = 1f;
+        [SerializeField] private bool _enableOptimization = true;
+
+        // Core subsystems
+        private PlanManager _planManager;
+        private PlanningAlgorithmRegistry _algorithmRegistry;
+        private PlanningRequestProcessor _requestProcessor;
+        private PlanOptimizer _planOptimizer;
+        private PlanningMetricsCollector _metricsCollector;
+
+        // Timing
+        private float _lastUpdateTime;
+
+        // Properties
+        public bool IsEnabled { get; private set; } = true;
+        public bool IsOptimizationEnabled => _enableOptimization;
+
+        // ITickable implementation
+        public int TickPriority => 15; // Planning systems: 15-20 (after core updates)
+        public bool IsTickable => IsEnabled && _enablePlanning && gameObject.activeInHierarchy;
+
+        // Statistics aggregation
+        public PlannerStats GetCombinedStats()
+        {
+            var stats = new PlannerStats();
+
+            if (_planManager != null)
+            {
+                var planStats = _planManager.GetStats();
+                stats.PlansCreated = planStats.PlansCreated;
+                stats.PlansCompleted = planStats.PlansCompleted;
+                stats.PlansCancelled = planStats.PlansCancelled;
+                stats.ActivePlans = planStats.ActivePlans;
+            }
+
+            if (_requestProcessor != null)
+            {
+                var requestStats = _requestProcessor.GetStats();
+                stats.PlanningRequests = requestStats.PlanningRequests;
+                stats.QueuedRequests = requestStats.QueuedRequests;
+                stats.PlanningFailures = requestStats.PlanningFailures;
+            }
+
+            if (_planOptimizer != null)
+            {
+                var optimizerStats = _planOptimizer.GetStats();
+                stats.PlansOptimized = optimizerStats.PlansOptimized;
+            }
+
+            if (_metricsCollector != null)
+            {
+                var metricsStats = _metricsCollector.GetStats();
+                stats.PlanningSuccessRate = metricsStats.PlanningSuccessRate;
+                stats.IsPerformingWell = metricsStats.IsPerformingWell;
+            }
+
+            return stats;
+        }
+
+        // Events
+        public System.Action<ConstructionPlan> OnPlanCreated;
+        public System.Action<ConstructionPlan> OnPlanCompleted;
+        public System.Action<string> OnPlanningFailed;
+        public System.Action<PlannerStats> OnMetricsUpdated;
+
+        private void Start()
+        {
+            Initialize();
+
+            // Register with UpdateOrchestrator
+            var orchestrator = UpdateOrchestrator.Instance;
+            orchestrator?.RegisterTickable(this);
+        }
+
+        private void Initialize()
+        {
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "🏗️ Initializing PlanningCore subsystems...", this);
+
+            // Initialize subsystems in dependency order
+            InitializePlanManager();
+            InitializeAlgorithmRegistry();
+            InitializeRequestProcessor();
+            InitializePlanOptimizer();
+            InitializeMetricsCollector();
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "✅ PlanningCore initialized with all subsystems", this);
+        }
+
+        private void InitializePlanManager()
+        {
+            var planGO = new GameObject("PlanManager");
+            planGO.transform.SetParent(transform);
+            _planManager = planGO.AddComponent<PlanManager>();
+
+            _planManager.OnPlanCreated += (plan) => OnPlanCreated?.Invoke(plan);
+            _planManager.OnPlanCompleted += (plan) => OnPlanCompleted?.Invoke(plan);
+        }
+
+        private void InitializeAlgorithmRegistry()
+        {
+            var algorithmGO = new GameObject("PlanningAlgorithmRegistry");
+            algorithmGO.transform.SetParent(transform);
+            _algorithmRegistry = algorithmGO.AddComponent<PlanningAlgorithmRegistry>();
+        }
+
+        private void InitializeRequestProcessor()
+        {
+            var requestGO = new GameObject("PlanningRequestProcessor");
+            requestGO.transform.SetParent(transform);
+            _requestProcessor = requestGO.AddComponent<PlanningRequestProcessor>();
+
+            _requestProcessor.OnPlanningFailed += (requestId) => OnPlanningFailed?.Invoke(requestId);
+        }
+
+        private void InitializePlanOptimizer()
+        {
+            var optimizerGO = new GameObject("PlanOptimizer");
+            optimizerGO.transform.SetParent(transform);
+            _planOptimizer = optimizerGO.AddComponent<PlanOptimizer>();
+        }
+
+        private void InitializeMetricsCollector()
+        {
+            var metricsGO = new GameObject("PlanningMetricsCollector");
+            metricsGO.transform.SetParent(transform);
+            _metricsCollector = metricsGO.AddComponent<PlanningMetricsCollector>();
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (!IsEnabled || !_enablePlanning) return;
+
+            if (Time.time - _lastUpdateTime >= _planningUpdateInterval)
+            {
+                ProcessPlanningUpdate();
+                _lastUpdateTime = Time.time;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            var orchestrator = UpdateOrchestrator.Instance;
+            orchestrator?.UnregisterTickable(this);
+        }
+
+        /// <summary>
+        /// Coordinate all planning subsystem updates
+        /// </summary>
+        private void ProcessPlanningUpdate()
+        {
+            // Process planning requests
+            if (_requestProcessor != null && _algorithmRegistry != null && _planManager != null)
+            {
+                ProcessPendingRequests();
+            }
+
+            // Update active plans
+            if (_planManager != null)
+            {
+                _planManager.UpdateActivePlans();
+            }
+
+            // Update metrics
+            if (_metricsCollector != null)
+            {
+                _metricsCollector.UpdateMetrics(GetCombinedStats());
+            }
+
+            // Fire metrics event
+            OnMetricsUpdated?.Invoke(GetCombinedStats());
+        }
+
+        /// <summary>
+        /// Process pending planning requests through subsystems
+        /// </summary>
+        private void ProcessPendingRequests()
+        {
+            var requests = _requestProcessor.GetPendingRequests(5); // Process up to 5 per frame
+
+            foreach (var request in requests)
+            {
+                var algorithm = _algorithmRegistry.GetAlgorithm(request.PlanType);
+                if (algorithm != null)
+                {
+                    var plan = algorithm.GeneratePlan(request);
+                    if (plan != null)
+                    {
+                        _planManager.AddPlan(plan);
+                        _requestProcessor.MarkRequestCompleted(request.RequestId);
+                    }
+                    else
+                    {
+                        _requestProcessor.MarkRequestFailed(request.RequestId);
+                    }
+                }
+                else
+                {
+                    _requestProcessor.MarkRequestFailed(request.RequestId);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Request construction planning through RequestProcessor
+        /// </summary>
+        public string RequestPlanning(PlanningRequest request)
+        {
+            if (_requestProcessor != null)
+            {
+                return _requestProcessor.QueuePlanningRequest(request);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Create construction plan immediately
+        /// </summary>
+        public ConstructionPlan CreatePlan(PlanningRequest request)
+        {
+            if (_algorithmRegistry == null || _planManager == null) return null;
+
+            var algorithm = _algorithmRegistry.GetAlgorithm(request.PlanType);
+            if (algorithm == null) return null;
+
+            var plan = algorithm.GeneratePlan(request);
+            if (plan != null)
+            {
+                _planManager.AddPlan(plan);
+            }
+
+            return plan;
+        }
+
+        /// <summary>
+        /// Complete construction plan through PlanManager
+        /// </summary>
+        public bool CompletePlan(string planId)
+        {
+            return _planManager?.CompletePlan(planId) ?? false;
+        }
+
+        /// <summary>
+        /// Cancel construction plan through PlanManager
+        /// </summary>
+        public bool CancelPlan(string planId)
+        {
+            return _planManager?.CancelPlan(planId) ?? false;
+        }
+
+        /// <summary>
+        /// Optimize existing construction plan through PlanOptimizer
+        /// </summary>
+        public bool OptimizePlan(string planId)
+        {
+            if (!_enableOptimization || _planManager == null || _planOptimizer == null || _algorithmRegistry == null)
+                return false;
+
+            var plan = _planManager.GetPlan(planId);
+            if (plan == null) return false;
+
+            var algorithm = _algorithmRegistry.GetAlgorithm(plan.PlanType);
+            if (algorithm == null) return false;
+
+            var optimizedPlan = _planOptimizer.OptimizePlan(plan, algorithm);
+            if (optimizedPlan != null)
+            {
+                _planManager.ReplacePlan(planId, optimizedPlan);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Get active construction plans through PlanManager
+        /// </summary>
+        public ConstructionPlan[] GetActivePlans()
+        {
+            return _planManager?.GetActivePlans() ?? new ConstructionPlan[0];
+        }
+
+        /// <summary>
+        /// Get construction plan by ID through PlanManager
+        /// </summary>
+        public ConstructionPlan GetPlan(string planId)
+        {
+            return _planManager?.GetPlan(planId);
+        }
+
+        /// <summary>
+        /// Add custom planning algorithm through AlgorithmRegistry
+        /// </summary>
+        public void AddPlanningAlgorithm(string planType, IPlanningAlgorithm algorithm)
+        {
+            _algorithmRegistry?.RegisterAlgorithm(planType, algorithm);
+        }
+
+        /// <summary>
+        /// Get active plan count
+        /// </summary>
+        public int GetActivePlanCount()
+        {
+            return _planManager?.GetActivePlanCount() ?? 0;
+        }
+
+        /// <summary>
+        /// Get queued planning request count
+        /// </summary>
+        public int GetQueuedPlanningRequestCount()
+        {
+            return _requestProcessor?.GetQueuedRequestCount() ?? 0;
+        }
+
+        /// <summary>
+        /// Set system enabled/disabled
+        /// </summary>
+        public void SetEnabled(bool enabled)
+        {
+            IsEnabled = enabled;
+
+            if (_planManager != null) _planManager.SetEnabled(enabled);
+            if (_algorithmRegistry != null) _algorithmRegistry.SetEnabled(enabled);
+            if (_requestProcessor != null) _requestProcessor.SetEnabled(enabled);
+            if (_planOptimizer != null) _planOptimizer.SetEnabled(enabled);
+            if (_metricsCollector != null) _metricsCollector.SetEnabled(enabled);
+
+            if (!enabled)
+            {
+                // Cancel all active plans when disabled
+                var activePlans = GetActivePlans();
+                foreach (var plan in activePlans)
+                {
+                    CancelPlan(plan.PlanId);
+                }
+            }
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"PlanningCore: {(enabled ? "enabled" : "disabled")}", this);
+        }
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// Planning request data structure
+    /// </summary>
+    [System.Serializable]
+    public struct PlanningRequest
+    {
+        public string RequestId;
+        public string PlanType;
+        public Vector3 TargetArea;
+        public float AreaSize;
+        public ConstructionData[] RequiredBuildings;
+        public PlanningConstraints Constraints;
+        public System.DateTime RequestTime;
+    }
+
+    /// <summary>
+    /// Construction plan data structure
+    /// </summary>
+    [System.Serializable]
+    public class ConstructionPlan
+    {
+        public string PlanId;
+        public string PlanName;
+        public string PlanType;
+        public PlanStatus Status;
+        public float Progress;
+        public System.DateTime CreationTime;
+        public System.DateTime CompletionTime;
+        public PlannedBuilding[] Buildings;
+        public PlanningConstraints Constraints;
+        public float EstimatedCost;
+        public float EstimatedDuration;
+    }
+
+    /// <summary>
+    /// Planned building data structure
+    /// </summary>
+    [System.Serializable]
+    public struct PlannedBuilding
+    {
+        public string BuildingId;
+        public Vector3 Position;
+        public Quaternion Rotation;
+        public ConstructionData Data;
+        public int Priority;
+    }
+
+    /// <summary>
+    /// Planning constraints
+    /// </summary>
+    [System.Serializable]
+    public struct PlanningConstraints
+    {
+        public float MaxCost;
+        public float MaxDuration;
+        public Vector3[] ExclusionZones;
+        public string[] RequiredResources;
+    }
+
+    /// <summary>
+    /// Plan status enumeration
+    /// </summary>
+    public enum PlanStatus
+    {
+        Planning,
+        Active,
+        Completed,
+        Cancelled,
+        Failed
+    }
+
+    /// <summary>
+    /// Planner statistics
+    /// </summary>
+    [System.Serializable]
+    public struct PlannerStats
+    {
+        public int PlanningRequests;
+        public int PlansCreated;
+        public int PlansCompleted;
+        public int PlansCancelled;
+        public int PlansOptimized;
+        public int PlanningFailures;
+        public int ActivePlans;
+        public int QueuedRequests;
+        public float PlanningSuccessRate;
+        public bool IsPerformingWell;
+    }
+
+    /// <summary>
+    /// Planning algorithm interface
+    /// </summary>
+    public interface IPlanningAlgorithm
+    {
+        ConstructionPlan GeneratePlan(PlanningRequest request);
+        ConstructionPlan OptimizePlan(ConstructionPlan plan);
+    }
+
+    /// <summary>
+    /// Construction data structure
+    /// </summary>
+    [System.Serializable]
+    public struct ConstructionData
+    {
+        public string BuildingType;
+        public string BuildingName;
+        public Vector3 Size;
+        public float Cost;
+        public float BuildTime;
+        public string[] RequiredResources;
+    }
+
+    #endregion
+}

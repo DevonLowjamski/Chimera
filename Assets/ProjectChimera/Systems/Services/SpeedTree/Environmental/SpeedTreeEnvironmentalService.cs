@@ -10,13 +10,13 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
     /// Modular SpeedTree Environmental Service - Main orchestrator
     /// Coordinates environmental responses, wind, seasonal changes, and stress visualization
     /// </summary>
-    public class SpeedTreeEnvironmentalService : MonoBehaviour, ITickable, ISpeedTreeEnvironmentalService
+    public class SpeedTreeEnvironmentalService : MonoBehaviour, ITickable
     {
         #region Properties
 
         public bool IsInitialized { get; private set; }
-        public int Priority => TickPriority.SpeedTreeServices;
-        public bool Enabled => _enableEnvironmentalResponse && gameObject.activeInHierarchy;
+        public int TickPriority => ProjectChimera.Core.Updates.TickPriority.SpeedTreeServices;
+        public bool IsTickable => _enableEnvironmentalResponse && gameObject.activeInHierarchy;
 
         #endregion
 
@@ -61,7 +61,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         {
             if (IsInitialized) return;
 
-            ChimeraLogger.Log("Initializing Modular SpeedTreeEnvironmentalService...");
+            ChimeraLogger.Log("SPEEDTREE/ENV", "Initializing environmental service", this);
 
             // Initialize modular components
             InitializeModularSystems();
@@ -70,7 +70,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             UpdateEnvironmentalConditions(_currentTemperature, _currentHumidity, _currentLightIntensity, _currentWindSpeed, _currentWindDirection);
 
             IsInitialized = true;
-            ChimeraLogger.Log("Modular SpeedTreeEnvironmentalService initialized successfully");
+            ChimeraLogger.Log("SPEEDTREE/ENV", "Environmental service initialized", this);
         }
 
         #endregion
@@ -93,17 +93,30 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             // Update environmental systems
             UpdateEnvironmentalSystems(deltaTime);
 
-            // Process environmental responses
-            _environmentalSystem?.ProcessEnvironmentalResponses();
+            // Process environmental responses for known plants (none tracked here yet)
+            var plants = _environmentalSystem?.GetPlantsNeedingUpdate();
+            if (plants != null)
+            {
+                // Gather current environmental conditions snapshot
+                var conditions = new ProjectChimera.Data.Shared.EnvironmentalConditions
+                {
+                    Temperature = _currentTemperature,
+                    Humidity = _currentHumidity,
+                    LightIntensity = _currentLightIntensity,
+                    CO2Level = 1200f
+                };
+
+                _environmentalSystem.ProcessEnvironmentalResponses(plants, conditions);
+            }
 
             // Update wind system
-            _windSystem?.UpdateWind(deltaTime);
+            _windSystem?.Tick(deltaTime);
 
             // Update seasonal system
-            _seasonalSystem?.UpdateSeasonal(deltaTime);
+            _seasonalSystem?.Tick(deltaTime);
 
             // Update stress visualization
-            _stressVisualizationSystem?.UpdateVisualization(deltaTime);
+            _stressVisualizationSystem?.Tick(deltaTime);
         }
 
         #endregion
@@ -116,42 +129,22 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         private void InitializeModularSystems()
         {
             // Environmental response system
-            _environmentalSystem = new EnvironmentalResponseSystem
-            {
-                EnableEnvironmentalResponse = _enableEnvironmentalResponse,
-                UpdateFrequency = _environmentalUpdateFrequency
-            };
+            _environmentalSystem = new EnvironmentalResponseSystem();
             _environmentalSystem.Initialize();
 
             // Wind system
-            _windSystem = new WindSystem
-            {
-                EnableWindAnimation = true,
-                BaseWindStrength = 1f,
-                BaseWindDirection = _currentWindDirection,
-                WindFrequency = 1f,
-                WindTurbulence = 0.1f
-            };
+            _windSystem = new WindSystem();
             _windSystem.Initialize();
 
             // Seasonal system
-            _seasonalSystem = new SeasonalSystem
-            {
-                EnableSeasonalChanges = _enableSeasonalChanges,
-                SeasonalTransitionDuration = 30f
-            };
+            _seasonalSystem = new SeasonalSystem();
             _seasonalSystem.Initialize();
 
             // Stress visualization system
-            _stressVisualizationSystem = new StressVisualizationSystem
-            {
-                EnableStressVisualization = _enableStressVisualization,
-                VisualizationIntensity = 1f,
-                ColorTransitionSpeed = 2f
-            };
+            _stressVisualizationSystem = new StressVisualizationSystem();
             _stressVisualizationSystem.Initialize();
 
-            ChimeraLogger.LogVerbose("[SpeedTreeEnvironmentalService] All modular systems initialized");
+            ChimeraLogger.Log("SPEEDTREE/ENV", "Registered environmental systems", this);
         }
 
         #endregion
@@ -164,7 +157,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         public void RegisterPlant(int plantId, float initialHealth = 1f, float initialStress = 0f)
         {
             _environmentalSystem?.RegisterPlant(plantId);
-            _stressVisualizationSystem?.RegisterPlant(plantId, initialHealth, initialStress);
+            _stressVisualizationSystem?.RegisterPlant(plantId);
         }
 
         /// <summary>
@@ -204,7 +197,11 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         /// </summary>
         public void UpdatePlantHealth(int plantId, float health, float stress)
         {
-            _stressVisualizationSystem?.UpdatePlantStress(plantId, health, stress);
+            // Break down stress into components for visualization
+            float temperatureStress = stress * 0.3f; // Approximate distribution
+            float humidityStress = stress * 0.3f;
+            float lightStress = stress * 0.4f;
+            _stressVisualizationSystem?.UpdatePlantStress(plantId, stress, temperatureStress, humidityStress, lightStress);
             OnPlantStressChanged?.Invoke(plantId, stress);
         }
 
@@ -221,7 +218,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         /// </summary>
         public WindState GetWindState()
         {
-            return _windSystem?.GetCurrentWindState();
+            return _windSystem?.GetCurrentWindState() ?? new WindState();
         }
 
         /// <summary>
@@ -229,7 +226,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         /// </summary>
         public SeasonalState GetSeasonalState()
         {
-            return _seasonalSystem?.GetCurrentSeasonalState();
+            return _seasonalSystem?.GetCurrentSeasonalState() ?? new SeasonalState();
         }
 
         /// <summary>
@@ -269,10 +266,10 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
                 WindSpeed = _currentWindSpeed,
                 WindDirection = _currentWindDirection,
                 CurrentSeason = _seasonalSystem?.GetCurrentSeasonalState().CurrentSeason ?? Season.Spring,
-                WindState = _windSystem?.GetCurrentWindState(),
+                WindState = _windSystem?.GetCurrentWindState() ?? new WindState(),
                 EnvironmentalStats = _environmentalSystem?.GetStatistics(),
                 StressStats = _stressVisualizationSystem?.GetStatistics(),
-                SeasonalConditions = _seasonalSystem?.GetSeasonalConditions(_currentTemperature, _currentHumidity, _currentLightIntensity)
+                SeasonalConditions = _seasonalSystem?.GetSeasonalConditions() ?? new SeasonalConditions()
             };
         }
 
@@ -361,7 +358,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             if (_stressVisualizationSystem != null)
                 _stressVisualizationSystem.ResetVisualization();
 
-            ChimeraLogger.LogVerbose("[SpeedTreeEnvironmentalService] Destroyed");
+            ChimeraLogger.Log("SPEEDTREE/ENV", "Reset environmental systems", this);
         }
 
         #endregion

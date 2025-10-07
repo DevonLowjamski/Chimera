@@ -1,0 +1,400 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Core.Pooling
+{
+    /// <summary>
+    /// PERFORMANCE: Monitor and optimize object pool performance
+    /// Tracks pool usage patterns and provides optimization recommendations
+    /// Week 9 Day 4-5: Object Pooling System Implementation
+    /// </summary>
+    public class PoolPerformanceMonitor : MonoBehaviour
+    {
+        [Header("Performance Monitor Settings")]
+        [SerializeField] private bool _enableMonitoring = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _monitoringInterval = 5f;
+        [SerializeField] private int _historySize = 100;
+
+        // Performance data
+        private Dictionary<string, List<PoolPerformanceSnapshot>> _poolHistory = new Dictionary<string, List<PoolPerformanceSnapshot>>();
+        private Dictionary<string, PoolOptimizationData> _optimizationData = new Dictionary<string, PoolOptimizationData>();
+        
+        private float _lastMonitorTime;
+        private bool _isInitialized;
+
+        // Performance thresholds
+        [Header("Performance Thresholds")]
+        [SerializeField] private float _highUtilizationThreshold = 0.8f;
+        [SerializeField] private float _lowUtilizationThreshold = 0.2f;
+        [SerializeField] private int _frequentResizeThreshold = 10;
+        [SerializeField] private float _slowGetThreshold = 0.001f; // 1ms
+
+        /// <summary>
+        /// Initialize performance monitor
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _lastMonitorTime = Time.time;
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("PoolPerformanceMonitor", "$1");
+            }
+        }
+
+        private void Update()
+        {
+            if (!_enableMonitoring || !_isInitialized) return;
+
+            if (Time.time - _lastMonitorTime >= _monitoringInterval)
+            {
+                CollectPerformanceData();
+                AnalyzePerformance();
+                _lastMonitorTime = Time.time;
+            }
+        }
+
+        /// <summary>
+        /// Record pool operation
+        /// </summary>
+        public void RecordPoolOperation(string poolName, PoolOperationType operation, float duration)
+        {
+            if (!_enableMonitoring) return;
+
+            if (!_optimizationData.ContainsKey(poolName))
+            {
+                _optimizationData[poolName] = new PoolOptimizationData();
+            }
+
+            var data = _optimizationData[poolName];
+            
+            switch (operation)
+            {
+                case PoolOperationType.Get:
+                    data.TotalGets++;
+                    data.TotalGetTime += duration;
+                    if (duration > _slowGetThreshold)
+                        data.SlowGetCount++;
+                    break;
+                
+                case PoolOperationType.Return:
+                    data.TotalReturns++;
+                    data.TotalReturnTime += duration;
+                    break;
+                
+                case PoolOperationType.Create:
+                    data.TotalCreations++;
+                    data.TotalCreateTime += duration;
+                    break;
+                
+                case PoolOperationType.Resize:
+                    data.ResizeCount++;
+                    break;
+            }
+
+            _optimizationData[poolName] = data;
+        }
+
+        /// <summary>
+        /// Get performance recommendations for a pool
+        /// </summary>
+        public List<PoolRecommendation> GetPoolRecommendations(string poolName)
+        {
+            var recommendations = new List<PoolRecommendation>();
+
+            if (!_poolHistory.ContainsKey(poolName) || !_optimizationData.ContainsKey(poolName))
+                return recommendations;
+
+            var history = _poolHistory[poolName];
+            var optimization = _optimizationData[poolName];
+
+            if (history.Count == 0) return recommendations;
+
+            var latestSnapshot = history.Last();
+
+            // Check utilization
+            float utilization = latestSnapshot.CountActive / (float)latestSnapshot.CountAll;
+            
+            if (utilization > _highUtilizationThreshold)
+            {
+                recommendations.Add(new PoolRecommendation
+                {
+                    Type = RecommendationType.IncreasePoolSize,
+                    Priority = RecommendationPriority.High,
+                    Description = $"Pool utilization is {utilization:P0}. Consider increasing pool size.",
+                    SuggestedValue = Mathf.CeilToInt(latestSnapshot.CountAll * 1.5f)
+                });
+            }
+            else if (utilization < _lowUtilizationThreshold)
+            {
+                recommendations.Add(new PoolRecommendation
+                {
+                    Type = RecommendationType.DecreasePoolSize,
+                    Priority = RecommendationPriority.Medium,
+                    Description = $"Pool utilization is {utilization:P0}. Consider decreasing pool size.",
+                    SuggestedValue = Mathf.CeilToInt(latestSnapshot.CountAll * 0.7f)
+                });
+            }
+
+            // Check for frequent resizes
+            if (optimization.ResizeCount > _frequentResizeThreshold)
+            {
+                recommendations.Add(new PoolRecommendation
+                {
+                    Type = RecommendationType.OptimizeInitialSize,
+                    Priority = RecommendationPriority.High,
+                    Description = $"Pool has resized {optimization.ResizeCount} times. Optimize initial size.",
+                    SuggestedValue = GetOptimalInitialSize(history)
+                });
+            }
+
+            // Check for slow operations
+            if (optimization.TotalGets > 0)
+            {
+                float avgGetTime = optimization.TotalGetTime / optimization.TotalGets;
+                if (avgGetTime > _slowGetThreshold)
+                {
+                    recommendations.Add(new PoolRecommendation
+                    {
+                        Type = RecommendationType.OptimizeOperations,
+                        Priority = RecommendationPriority.Medium,
+                        Description = $"Average Get operation takes {avgGetTime * 1000:F2}ms. Consider optimization.",
+                        SuggestedValue = 0
+                    });
+                }
+            }
+
+            return recommendations;
+        }
+
+        /// <summary>
+        /// Get overall performance report
+        /// </summary>
+        public PoolPerformanceReport GetPerformanceReport()
+        {
+            var report = new PoolPerformanceReport
+            {
+                MonitoredPools = _poolHistory.Count,
+                TotalSnapshots = _poolHistory.Values.Sum(h => h.Count),
+                Recommendations = new Dictionary<string, List<PoolRecommendation>>()
+            };
+
+            foreach (var poolName in _poolHistory.Keys)
+            {
+                report.Recommendations[poolName] = GetPoolRecommendations(poolName);
+            }
+
+            report.HighPriorityRecommendations = report.Recommendations.Values
+                .SelectMany(r => r)
+                .Where(r => r.Priority == RecommendationPriority.High)
+                .Count();
+
+            return report;
+        }
+
+        /// <summary>
+        /// Reset performance data for specific pool
+        /// </summary>
+        public void ResetPoolData(string poolName)
+        {
+            if (_poolHistory.ContainsKey(poolName))
+                _poolHistory[poolName].Clear();
+            
+            if (_optimizationData.ContainsKey(poolName))
+                _optimizationData[poolName] = new PoolOptimizationData();
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("PoolPerformanceMonitor", $1);
+            }
+        }
+
+        /// <summary>
+        /// Clear all performance data
+        /// </summary>
+        public void ClearAllData()
+        {
+            _poolHistory.Clear();
+            _optimizationData.Clear();
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("PoolPerformanceMonitor", "$1");
+            }
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Collect current performance data
+        /// </summary>
+        private void CollectPerformanceData()
+        {
+            var poolManager = PoolManager.Instance;
+            if (poolManager == null || !poolManager.IsInitialized) return;
+
+            var allStats = poolManager.GetAllStats();
+            
+            foreach (var poolStat in allStats.PoolStats)
+            {
+                var snapshot = new PoolPerformanceSnapshot
+                {
+                    Timestamp = Time.time,
+                    CountInactive = poolStat.CountInactive,
+                    CountActive = poolStat.CountActive,
+                    CountAll = poolStat.CountAll
+                };
+
+                if (!_poolHistory.ContainsKey(poolStat.PoolName))
+                {
+                    _poolHistory[poolStat.PoolName] = new List<PoolPerformanceSnapshot>();
+                }
+
+                var history = _poolHistory[poolStat.PoolName];
+                history.Add(snapshot);
+
+                // Maintain history size
+                if (history.Count > _historySize)
+                {
+                    history.RemoveAt(0);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Analyze performance patterns
+        /// </summary>
+        private void AnalyzePerformance()
+        {
+            foreach (var poolName in _poolHistory.Keys)
+            {
+                var recommendations = GetPoolRecommendations(poolName);
+                
+                if (_enableLogging && recommendations.Count > 0)
+                {
+                    var highPriorityCount = recommendations.Count(r => r.Priority == RecommendationPriority.High);
+                    if (highPriorityCount > 0)
+                    {
+                        ChimeraLogger.LogWarning("PoolPerformanceMonitor", $1);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Calculate optimal initial size based on history
+        /// </summary>
+        private int GetOptimalInitialSize(List<PoolPerformanceSnapshot> history)
+        {
+            if (history.Count == 0) return 10; // Default
+
+            // Calculate average peak usage
+            float avgPeakUsage = history.Average(s => s.CountActive);
+            
+            // Add buffer for growth
+            return Mathf.CeilToInt(avgPeakUsage * 1.3f);
+        }
+
+        #endregion
+
+        private void OnDestroy()
+        {
+            ClearAllData();
+        }
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// Performance snapshot of a pool at a point in time
+    /// </summary>
+    [System.Serializable]
+    public struct PoolPerformanceSnapshot
+    {
+        public float Timestamp;
+        public int CountInactive;
+        public int CountActive;
+        public int CountAll;
+    }
+
+    /// <summary>
+    /// Optimization data for a pool
+    /// </summary>
+    [System.Serializable]
+    public struct PoolOptimizationData
+    {
+        public int TotalGets;
+        public int TotalReturns;
+        public int TotalCreations;
+        public int ResizeCount;
+        public int SlowGetCount;
+        public float TotalGetTime;
+        public float TotalReturnTime;
+        public float TotalCreateTime;
+    }
+
+    /// <summary>
+    /// Performance recommendation
+    /// </summary>
+    [System.Serializable]
+    public struct PoolRecommendation
+    {
+        public RecommendationType Type;
+        public RecommendationPriority Priority;
+        public string Description;
+        public int SuggestedValue;
+    }
+
+    /// <summary>
+    /// Overall performance report
+    /// </summary>
+    [System.Serializable]
+    public struct PoolPerformanceReport
+    {
+        public int MonitoredPools;
+        public int TotalSnapshots;
+        public int HighPriorityRecommendations;
+        public Dictionary<string, List<PoolRecommendation>> Recommendations;
+    }
+
+    /// <summary>
+    /// Types of pool operations
+    /// </summary>
+    public enum PoolOperationType
+    {
+        Get,
+        Return,
+        Create,
+        Resize
+    }
+
+    /// <summary>
+    /// Types of recommendations
+    /// </summary>
+    public enum RecommendationType
+    {
+        IncreasePoolSize,
+        DecreasePoolSize,
+        OptimizeInitialSize,
+        OptimizeOperations
+    }
+
+    /// <summary>
+    /// Recommendation priority levels
+    /// </summary>
+    public enum RecommendationPriority
+    {
+        Low,
+        Medium,
+        High,
+        Critical
+    }
+
+    #endregion
+}

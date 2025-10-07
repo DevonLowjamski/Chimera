@@ -37,7 +37,7 @@ namespace ProjectChimera.Systems.Audio.Components
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[AudioEffectsProcessor] Initialized successfully");
+                ChimeraLogger.Log("AUDIO", "AudioEffectsProcessor initialized", this);
             }
         }
 
@@ -58,7 +58,7 @@ namespace ProjectChimera.Systems.Audio.Components
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[AudioEffectsProcessor] Played effect: {clip.name}");
+                    ChimeraLogger.Log("AUDIO", $"Played effect {clip.name}", this);
                 }
             }
         }
@@ -81,7 +81,7 @@ namespace ProjectChimera.Systems.Audio.Components
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[AudioEffectsProcessor] Started ambient: {clip.name}");
+                    ChimeraLogger.Log("AUDIO", $"Played ambient {clip.name}", this);
                 }
             }
         }
@@ -97,7 +97,7 @@ namespace ProjectChimera.Systems.Audio.Components
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log("[AudioEffectsProcessor] Stopped ambient audio");
+                    ChimeraLogger.Log("AUDIO", "Stopped ambient", this);
                 }
             }
         }
@@ -118,7 +118,7 @@ namespace ProjectChimera.Systems.Audio.Components
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[AudioEffectsProcessor] Volume set to: {_masterVolume:F2}");
+                ChimeraLogger.Log("AUDIO", $"Master volume set to {_masterVolume:F2}", this);
             }
         }
 
@@ -144,7 +144,7 @@ namespace ProjectChimera.Systems.Audio.Components
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[AudioEffectsProcessor] Audio enabled: {enabled}");
+                ChimeraLogger.Log("AUDIO", $"Audio enabled set to {enabled}", this);
             }
         }
 

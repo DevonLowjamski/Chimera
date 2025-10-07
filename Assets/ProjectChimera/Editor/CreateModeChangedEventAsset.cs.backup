@@ -1,0 +1,93 @@
+using UnityEngine;
+using UnityEditor;
+using ProjectChimera.Data.Events;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Editor
+{
+    /// <summary>
+    /// Editor utility to create the shared ModeChangedEventSO asset for Phase 2 verification
+    /// This ensures all components use the same event channel for proper decoupling
+    /// </summary>
+    public class CreateModeChangedEventAsset : EditorWindow
+    {
+        private const string ASSET_PATH = "Assets/ProjectChimera/Data/Events/SharedModeChangedEvent.asset";
+        private const string ASSET_NAME = "SharedModeChangedEvent";
+
+        [MenuItem("Project Chimera/Phase 2 Verification/Create Shared Mode Changed Event Asset")]
+        public static void CreateSharedModeChangedEventAsset()
+        {
+            // Check if asset already exists
+            var existingAsset = AssetDatabase.LoadAssetAtPath<ModeChangedEventSO>(ASSET_PATH);
+            if (existingAsset != null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                Selection.activeObject = existingAsset;
+                EditorGUIUtility.PingObject(existingAsset);
+                return;
+            }
+
+            // Create new asset
+            var newAsset = ScriptableObject.CreateInstance<ModeChangedEventSO>();
+            newAsset.name = ASSET_NAME;
+
+            // Ensure directory exists
+            var directory = System.IO.Path.GetDirectoryName(ASSET_PATH);
+            if (!System.IO.Directory.Exists(directory))
+            {
+                System.IO.Directory.CreateDirectory(directory);
+            }
+
+            // Create and save asset
+            AssetDatabase.CreateAsset(newAsset, ASSET_PATH);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            // Select the created asset
+            Selection.activeObject = newAsset;
+            EditorGUIUtility.PingObject(newAsset);
+
+            UnityEngine.Debug.Log("Operation completed");
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        [MenuItem("Project Chimera/Phase 2 Verification/Find All Mode-Aware Components")]
+        public static void FindModeAwareComponents()
+        {
+            // Find all components that should use the shared event
+            var componentTypes = new System.Type[]
+            {
+                typeof(ProjectChimera.Systems.Gameplay.GameplayModeController),
+                // Add other types as we implement them
+            };
+
+            foreach (var componentType in componentTypes)
+            {
+                // Editor tool: Use explicit Unity API for reliable editor-time discovery
+                var components = UnityEngine.Object.FindObjectsOfType(componentType, true);
+                foreach (var component in components)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        [MenuItem("Project Chimera/Phase 2 Verification/Validate Mode Event Assignments")]
+        public static void ValidateModeEventAssignments()
+        {
+            var sharedAsset = AssetDatabase.LoadAssetAtPath<ModeChangedEventSO>(ASSET_PATH);
+            if (sharedAsset == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                return;
+            }
+
+            UnityEngine.Debug.Log("Operation completed");
+
+            // This would check all components to ensure they're using the same shared asset
+            // Implementation would depend on the specific components we create
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+    }
+}

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+
 namespace ProjectChimera.Data.Save.Structures
 {
     /// <summary>
@@ -53,7 +54,7 @@ namespace ProjectChimera.Data.Save.Structures
 
                 // Update save data
                 saveData.PlayerLevel += (int)(experienceGained / 100f); // Simple level calculation
-                saveData.Currency += currencyEarned;
+                saveData.Currency += (long)currencyEarned;
                 saveData.PlayTimeHours += offlineHours;
                 saveData.SaveTime = currentTime;
             }
@@ -118,11 +119,31 @@ namespace ProjectChimera.Data.Save.Structures
     [System.Serializable]
     public class OfflineProgressionResult
     {
-        public bool Success;
-        public string Message;
-        public TimeSpan OfflineDuration;
-        public float ExperienceGained;
-        public float CurrencyEarned;
+        public string Domain { get; set; }
+        public bool Success { get; set; }
+        public string ErrorMessage { get; set; }
+        public TimeSpan OfflineTime { get; set; }
+        public System.DateTime ProcessedUntil { get; set; }
+
+        // Legacy compatibility properties
+        public string Message
+        {
+            get => ErrorMessage;
+            set => ErrorMessage = value;
+        }
+        public TimeSpan OfflineDuration
+        {
+            get => OfflineTime;
+            set => OfflineTime = value;
+        }
+        public float ExperienceGained { get; set; }
+        public float CurrencyEarned { get; set; }
+
+        // Additional properties for domain-specific processing
+        public string SystemName { get; set; }
+        public float ProcessedHours { get; set; }
+        public string Description { get; set; }
+        public object ResultData { get; set; }
     }
 
     /// <summary>

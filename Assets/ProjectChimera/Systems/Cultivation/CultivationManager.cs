@@ -9,6 +9,7 @@ using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Environment;
 using ProjectChimera.Data.Cultivation;
 using ProjectChimera.Data.Cultivation.Plant;
+using ProjectChimera.Systems.Cultivation.Components;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
 
@@ -19,7 +20,7 @@ namespace ProjectChimera.Systems.Cultivation
     /// Maintains original interface while using modular components
     /// Refactored from monolithic 938-line class into focused components
     /// </summary>
-    public class CultivationManager : DIChimeraManager, ITickable, ProjectChimera.Core.IOfflineProgressionListener
+    public class CultivationManager : ChimeraManager, ITickable, ProjectChimera.Core.IOfflineProgressionListener
     {
         [Header("Cultivation Manager Configuration")]
         [SerializeField] private bool _enableCultivationSystem = true;
@@ -55,11 +56,11 @@ namespace ProjectChimera.Systems.Cultivation
 
         protected override void OnManagerInitialize()
         {
-            ChimeraLogger.LogInitialization("CultivationManager", "Initializing modular cultivation system...");
+            ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
 
             if (!_enableCultivationSystem)
             {
-                ChimeraLogger.Log("[CultivationManager] Cultivation system disabled.");
+                ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
                 return;
             }
 
@@ -72,29 +73,29 @@ namespace ProjectChimera.Systems.Cultivation
             // Register with GameManager
             GameManager.Instance?.RegisterManager(this);
 
-            ChimeraLogger.LogInitialization("CultivationManager", "Modular cultivation system initialized successfully.");
+            ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
         }
 
         protected override void OnManagerShutdown()
         {
-            ChimeraLogger.LogInitialization("CultivationManager", "Shutting down modular cultivation system...");
+            ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
 
             // Shutdown components in reverse order
             ShutdownComponents();
 
-            ChimeraLogger.LogInitialization("CultivationManager", "Modular cultivation system shutdown complete.");
+            ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
         }
 
         #endregion
 
         #region ITickable Implementation
 
-        public int Priority => TickPriority.CultivationManager;
-        public bool Enabled => IsInitialized && _enableCultivationSystem;
+        public int TickPriority => ProjectChimera.Core.Updates.TickPriority.CultivationManager;
+        public bool IsTickable => IsInitialized && _enableCultivationSystem;
 
         public void Tick(float deltaTime)
         {
-            if (!Enabled) return;
+            if (!IsTickable) return;
 
             // Update environmental changes
             _environmentControl?.ProcessEnvironmentalChanges(deltaTime);
@@ -108,12 +109,12 @@ namespace ProjectChimera.Systems.Cultivation
 
         public void OnRegistered()
         {
-            ChimeraLogger.LogVerbose("[CultivationManager] Registered with UpdateOrchestrator");
+            ChimeraLogger.Log("OTHER", "CultivationManager registered with UpdateOrchestrator", this);
         }
 
         public void OnUnregistered()
         {
-            ChimeraLogger.LogVerbose("[CultivationManager] Unregistered from UpdateOrchestrator");
+            ChimeraLogger.Log("OTHER", "CultivationManager unregistered from UpdateOrchestrator", this);
         }
 
         #endregion
@@ -127,7 +128,7 @@ namespace ProjectChimera.Systems.Cultivation
                 return;
             }
 
-            ChimeraLogger.Log($"[CultivationManager] Processing offline progression for {offlineHours:F1} hours");
+            ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
 
             try
             {
@@ -143,11 +144,11 @@ namespace ProjectChimera.Systems.Cultivation
                 // Check for plants ready for harvest
                 _harvestManager?.ProcessOfflineHarvestChecks(offlineHours);
 
-                ChimeraLogger.Log($"[CultivationManager] Offline progression completed for {offlineHours:F1} hours");
+                ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[CultivationManager] Error during offline progression: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
             }
         }
 
@@ -344,7 +345,7 @@ namespace ProjectChimera.Systems.Cultivation
             // Create cultivation components
             _plantLifecycle = new PlantLifecycle();
             _environmentControl = new EnvironmentControl();
-            _plantCare = new PlantCare(_plantLifecycle, _environmentControl);
+            _plantCare = (IPlantCare)new PlantCare(_plantLifecycle, _environmentControl);
             _harvestManager = new HarvestManager(_plantLifecycle);
         }
 
@@ -375,14 +376,14 @@ namespace ProjectChimera.Systems.Cultivation
                 serviceContainer?.RegisterSingleton<IPlantCare>(_plantCare);
                 serviceContainer?.RegisterSingleton<IHarvestManager>(_harvestManager);
 
-                ChimeraLogger.Log("[CultivationManager] All components registered with unified DI container");
+                ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[CultivationManager] Failed to register components with DI container: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
             }
 
-            ChimeraLogger.Log("[CultivationManager] All cultivation components initialized");
+            ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
         }
 
         private void SetupEventForwarding()
@@ -391,25 +392,25 @@ namespace ProjectChimera.Systems.Cultivation
             if (_plantLifecycle != null)
             {
                 _plantLifecycle.OnPlantAdded += (plantId, plant) => {
-                    ChimeraLogger.Log($"[CultivationManager] Plant added: {plantId}");
+                    ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
                 };
 
                 _plantLifecycle.OnPlantRemoved += (plantId, reason) => {
-                    ChimeraLogger.Log($"[CultivationManager] Plant removed: {plantId} (reason: {reason})");
+                    ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
                 };
             }
 
             if (_harvestManager != null)
             {
                 _harvestManager.OnPlantHarvested += (plantId, result) => {
-                    ChimeraLogger.Log($"[CultivationManager] Plant harvested: {plantId} - {result.YieldAmount:F1}g {result.Quality}");
+                    ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
                 };
             }
 
             if (_plantCare != null)
             {
                 _plantCare.OnMaintenanceRequired += (plantId, notes) => {
-                    ChimeraLogger.LogWarning($"[CultivationManager] Plant {plantId} requires maintenance: {notes}");
+                    ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
                 };
             }
         }
@@ -425,10 +426,10 @@ namespace ProjectChimera.Systems.Cultivation
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[CultivationManager] Error during component shutdown: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
             }
 
-            ChimeraLogger.Log("[CultivationManager] All cultivation components shutdown");
+            ChimeraLogger.Log("CULTIVATION", "CultivationManager operation", this);
         }
 
         #endregion
@@ -444,6 +445,30 @@ namespace ProjectChimera.Systems.Cultivation
             }
 
             return plants.Average(p => p.CurrentHealth);
+        }
+
+        #endregion
+
+        #region IOfflineProgressionListener Implementation
+
+        public void OnOfflineProgressionStart(System.TimeSpan offlineTime)
+        {
+            ChimeraLogger.Log("CULTIVATION", $"Starting offline progression calculation for {offlineTime.TotalHours:F1} hours", this);
+
+            // Notify cultivation components about offline progression
+            _plantLifecycle?.ProcessOfflineGrowth((float)offlineTime.TotalHours);
+        }
+
+        public void OnOfflineProgressionComplete(object progressionResults)
+        {
+            ChimeraLogger.Log("CULTIVATION", "Offline progression calculation complete", this);
+            // Handle any results from offline progression if needed
+        }
+
+        public void OnOfflineProgressionApplied()
+        {
+            ChimeraLogger.Log("CULTIVATION", "Offline progression applied to game state", this);
+            // Force update any UI or systems that need refreshing after offline progression
         }
 
         #endregion

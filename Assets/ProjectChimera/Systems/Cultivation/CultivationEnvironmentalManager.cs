@@ -36,18 +36,18 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (IsInitialized) return;
             
-            ChimeraLogger.Log("[CultivationEnvironmentalManager] Initializing environmental management...");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             
             // Register with unified ServiceContainer architecture
             try
             {
                 var serviceContainer = ServiceContainerFactory.Instance;
                 serviceContainer?.RegisterSingleton<IEnvironmentalManager>(this);
-                ChimeraLogger.Log("[CultivationEnvironmentalManager] Registered with ServiceContainer");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[CultivationEnvironmentalManager] Failed to register with ServiceContainer: {ex.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
             
             // Initialize default environment if not set
@@ -60,14 +60,14 @@ namespace ProjectChimera.Systems.Cultivation
             _zoneEnvironments["default"] = _defaultEnvironment;
             
             IsInitialized = true;
-            ChimeraLogger.Log("[CultivationEnvironmentalManager] Environmental management initialized.");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
         
         public void Shutdown()
         {
             if (!IsInitialized) return;
             
-            ChimeraLogger.Log("[CultivationEnvironmentalManager] Shutting down environmental management...");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             
             _zoneEnvironments.Clear();
             _plantZoneAssignments.Clear();
@@ -82,13 +82,13 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                ChimeraLogger.LogError("[CultivationEnvironmentalManager] Cannot set zone environment: Manager not initialized.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return;
             }
             
             if (string.IsNullOrEmpty(zoneId))
             {
-                ChimeraLogger.LogWarning("[CultivationEnvironmentalManager] Cannot set zone environment: Zone ID is null or empty.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return;
             }
             
@@ -96,7 +96,7 @@ namespace ProjectChimera.Systems.Cultivation
             environment = ValidateEnvironmentalConditions(environment);
             
             _zoneEnvironments[zoneId] = environment;
-            ChimeraLogger.Log($"[CultivationEnvironmentalManager] Updated environment for zone '{zoneId}': {environment}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             
             // Notify affected plants about environment change
             NotifyPlantsOfEnvironmentChange(zoneId);
@@ -138,25 +138,25 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                ChimeraLogger.LogError("[CultivationEnvironmentalManager] Cannot assign plant to zone: Manager not initialized.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return;
             }
             
             if (string.IsNullOrEmpty(plantId))
             {
-                ChimeraLogger.LogWarning("[CultivationEnvironmentalManager] Cannot assign plant to zone: Plant ID is null or empty.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return;
             }
             
             // Ensure zone exists
             if (!_zoneEnvironments.ContainsKey(zoneId))
             {
-                ChimeraLogger.LogWarning($"[CultivationEnvironmentalManager] Zone '{zoneId}' does not exist. Creating with default environment.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 _zoneEnvironments[zoneId] = _defaultEnvironment;
             }
             
             _plantZoneAssignments[plantId] = zoneId;
-            ChimeraLogger.Log($"[CultivationEnvironmentalManager] Assigned plant '{plantId}' to zone '{zoneId}'.");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
         
         /// <summary>
@@ -168,7 +168,7 @@ namespace ProjectChimera.Systems.Cultivation
             
             if (_plantZoneAssignments.Remove(plantId))
             {
-                ChimeraLogger.Log($"[CultivationEnvironmentalManager] Removed zone assignment for plant '{plantId}'.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
         
@@ -187,26 +187,26 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (!IsInitialized)
             {
-                ChimeraLogger.LogError("[CultivationEnvironmentalManager] Cannot create zone: Manager not initialized.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return;
             }
             
             if (string.IsNullOrEmpty(zoneId))
             {
-                ChimeraLogger.LogWarning("[CultivationEnvironmentalManager] Cannot create zone: Zone ID is null or empty.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return;
             }
             
             if (_zoneEnvironments.ContainsKey(zoneId))
             {
-                ChimeraLogger.LogWarning($"[CultivationEnvironmentalManager] Zone '{zoneId}' already exists. Updating environment.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
             
             // Validate environment conditions
             environment = ValidateEnvironmentalConditions(environment);
             
             _zoneEnvironments[zoneId] = environment;
-            ChimeraLogger.Log($"[CultivationEnvironmentalManager] Created zone '{zoneId}' with environment: {environment}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
         }
         
         /// <summary>
@@ -218,7 +218,7 @@ namespace ProjectChimera.Systems.Cultivation
             
             if (zoneId == "default")
             {
-                ChimeraLogger.LogWarning("[CultivationEnvironmentalManager] Cannot remove default zone.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return false;
             }
             
@@ -239,7 +239,7 @@ namespace ProjectChimera.Systems.Cultivation
                     _plantZoneAssignments[plantId] = "default";
                 }
                 
-                ChimeraLogger.Log($"[CultivationEnvironmentalManager] Removed zone '{zoneId}' and reassigned {plantsToReassign.Count} plants to default zone.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 return true;
             }
             
@@ -286,7 +286,7 @@ namespace ProjectChimera.Systems.Cultivation
             
             if (plantsInZone.Count > 0)
             {
-                ChimeraLogger.Log($"[CultivationEnvironmentalManager] Notified {plantsInZone.Count} plants of environment change in zone '{zoneId}'.");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
     }

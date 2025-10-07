@@ -1,7 +1,9 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Construction;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Construction
 {
@@ -43,7 +45,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                Debug.Log($"[SchematicUnlockManager] Initialized - {GetUnlockedCount()} unlocked, {GetTotalCount()} total");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -85,7 +87,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                Debug.Log($"[SchematicUnlockManager] Unlocked schematic: {schematic.SchematicName}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
 
             return true;
@@ -152,7 +154,7 @@ namespace ProjectChimera.Systems.Construction
         /// </summary>
         public int GetUnlockedCount()
         {
-            return _unlockedSchematics.Values.Count(locked => locked);
+            return _unlockedSchematics.Values.Count(locked => locked == true);
         }
 
         #region Private Methods
@@ -161,12 +163,10 @@ namespace ProjectChimera.Systems.Construction
         {
             // In a real implementation, this would load schematics from resources or database
             // For now, create some basic schematics
-            var basicSchematic = new SchematicSO
-            {
-                SchematicId = "BasicFacility",
-                SchematicName = "Basic Facility",
-                Description = "A basic facility layout"
-            };
+            var basicSchematic = ScriptableObject.CreateInstance<SchematicSO>();
+            basicSchematic.SetSchematicId("BasicFacility");
+            basicSchematic.SetSchematicName("Basic Facility");
+            basicSchematic.SetDescription("A basic facility layout");
 
             _availableSchematics.Add(basicSchematic);
         }
@@ -186,16 +186,4 @@ namespace ProjectChimera.Systems.Construction
         #endregion
     }
 
-    /// <summary>
-    /// Basic schematic data structure
-    /// </summary>
-    [System.Serializable]
-    public class SchematicSO
-    {
-        public string SchematicId;
-        public string SchematicName;
-        public string Description;
-        public int UnlockCost = 0;
-        public bool RequiresPrerequisites = false;
-    }
 }

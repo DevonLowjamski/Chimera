@@ -37,8 +37,8 @@ namespace ProjectChimera.Data.Genetics
     public class HybridVigorOpportunity
     {
         public string OpportunityID;
-        public PlantStrainSO ParentA;
-        public PlantStrainSO ParentB;
+        public GeneticPlantStrainSO ParentA;
+        public GeneticPlantStrainSO ParentB;
         public float PredictedVigor;
         public List<TraitType> BenefitingTraits = new List<TraitType>();
         public float ConfidenceLevel;
@@ -56,8 +56,8 @@ namespace ProjectChimera.Data.Genetics
     [System.Serializable]
     public class GeneticCompatibilityAnalysis
     {
-        public PlantStrainSO StrainA;
-        public PlantStrainSO StrainB;
+        public GeneticPlantStrainSO StrainA;
+        public GeneticPlantStrainSO StrainB;
         public float CompatibilityScore;
         public List<TraitCompatibility> TraitCompatibilities = new List<TraitCompatibility>();
         public bool IsRecommended;

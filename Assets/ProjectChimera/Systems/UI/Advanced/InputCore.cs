@@ -1,4 +1,3 @@
-using ProjectChimera.Core.Logging;
 using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
@@ -411,17 +410,17 @@ namespace ProjectChimera.Systems.UI.Advanced
 
         protected void LogInfo(string message)
         {
-            ChimeraLogger.Log($"[InputCore] {message}");
+            ChimeraLogger.LogInfo("InputCore", "$1");
         }
 
         protected void LogWarning(string message)
         {
-            ChimeraLogger.LogWarning($"[InputCore] {message}");
+            ChimeraLogger.LogInfo("InputCore", "$1");
         }
 
         protected void LogError(string message)
         {
-            ChimeraLogger.LogError($"[InputCore] {message}");
+            ChimeraLogger.LogInfo("InputCore", "$1");
         }
 
         #endregion

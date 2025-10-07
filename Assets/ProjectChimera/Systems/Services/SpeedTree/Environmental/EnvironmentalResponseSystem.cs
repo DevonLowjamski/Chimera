@@ -1,9 +1,11 @@
 using ProjectChimera.Core.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using ProjectChimera.Core;
 using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
 {
@@ -35,20 +37,20 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         #region Initialization
         public void Initialize()
         {
-            ChimeraLogger.Log("[EnvironmentalResponseSystem] Initializing plant environmental responses...");
+            Logger.Log("SPEEDTREE/ENV", "EnvironmentalResponseSystem Initialize", this);
             _plantResponses.Clear();
             _lastKnownConditions.Clear();
             _plantsNeedingUpdate.Clear();
-            ChimeraLogger.Log("[EnvironmentalResponseSystem] Plant environmental responses initialized");
+            Logger.Log("SPEEDTREE/ENV", "EnvironmentalResponseSystem Initialized", this);
         }
 
         public void Shutdown()
         {
-            ChimeraLogger.Log("[EnvironmentalResponseSystem] Shutting down plant environmental responses...");
+            Logger.Log("SPEEDTREE/ENV", "EnvironmentalResponseSystem Shutdown", this);
             _plantResponses.Clear();
             _lastKnownConditions.Clear();
             _plantsNeedingUpdate.Clear();
-            ChimeraLogger.Log("[EnvironmentalResponseSystem] Plant environmental responses shutdown complete");
+            Logger.Log("SPEEDTREE/ENV", "EnvironmentalResponseSystem Shutdown Complete", this);
         }
         #endregion
 
@@ -59,7 +61,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         /// </summary>
         public void UpdatePlantEnvironmentalResponse(int plantId, EnvironmentalConditions conditions)
         {
-            if (plantId <= 0 || conditions == null || !_enableEnvironmentalResponse) return;
+            if (plantId <= 0 || !_enableEnvironmentalResponse) return;
 
             try
             {
@@ -90,12 +92,12 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
                     // Trigger events
                     OnPlantEnvironmentalResponse?.Invoke(plantId, conditions);
 
-                    ChimeraLogger.Log($"[EnvironmentalResponseSystem] Updated environmental response for plant {plantId}");
+                    Logger.Log("SPEEDTREE/ENV", $"Plant {plantId} response updated", this);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                ChimeraLogger.LogError($"[EnvironmentalResponseSystem] Failed to update plant {plantId} environmental response: {ex.Message}");
+                Logger.LogWarning("SPEEDTREE/ENV", "UpdatePlantEnvironmentalResponse exception", this);
             }
         }
 
@@ -104,7 +106,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         /// </summary>
         public void ApplyEnvironmentalConditions(int plantId, EnvironmentalConditions conditions)
         {
-            if (plantId <= 0 || conditions == null) return;
+            if (plantId <= 0) return;
 
             try
             {
@@ -114,11 +116,11 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
                 float adaptationProgress = CalculateAdaptationProgress(plantId, conditions);
                 OnPlantAdaptationProgress?.Invoke(plantId, adaptationProgress);
 
-                ChimeraLogger.Log($"[EnvironmentalResponseSystem] Applied environmental conditions to plant {plantId}");
+                Logger.Log("SPEEDTREE/ENV", $"Applied env conditions to plant {plantId}", this);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                ChimeraLogger.LogError($"[EnvironmentalResponseSystem] Failed to apply conditions to plant {plantId}: {ex.Message}");
+                Logger.LogWarning("SPEEDTREE/ENV", "ApplyEnvironmentalConditions exception", this);
             }
         }
 
@@ -127,7 +129,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         /// </summary>
         public void ProcessEnvironmentalResponses(IEnumerable<int> plantIds, EnvironmentalConditions conditions)
         {
-            if (plantIds == null || conditions == null) return;
+            if (plantIds == null) return;
 
             foreach (var plantId in plantIds)
             {
@@ -336,9 +338,128 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         }
 
         #endregion
+
+        #region Missing Methods for SpeedTreeEnvironmentalService Integration
+
+        /// <summary>
+        /// Register a plant for environmental monitoring
+        /// </summary>
+        public void RegisterPlant(int plantId)
+        {
+            if (plantId <= 0) return;
+
+            if (!_plantResponses.ContainsKey(plantId))
+            {
+                var response = new PlantEnvironmentalResponse(plantId);
+                _plantResponses[plantId] = response;
+                Logger.Log("SPEEDTREE/ENV", $"Registered plant {plantId} for environmental monitoring", this);
+            }
+        }
+
+        /// <summary>
+        /// Unregister a plant from environmental monitoring
+        /// </summary>
+        public void UnregisterPlant(int plantId)
+        {
+            if (_plantResponses.ContainsKey(plantId))
+            {
+                _plantResponses.Remove(plantId);
+                _lastKnownConditions.Remove(plantId);
+                _plantsNeedingUpdate.Remove(plantId);
+                Logger.Log("SPEEDTREE/ENV", $"Unregistered plant {plantId} from environmental monitoring", this);
+            }
+        }
+
+        /// <summary>
+        /// Update environmental conditions for all registered plants
+        /// </summary>
+        public void UpdateEnvironmentalConditions(float temperature, float humidity, float lightIntensity, float windSpeed, Vector3 windDirection)
+        {
+            var conditions = new EnvironmentalConditions
+            {
+                Temperature = temperature,
+                Humidity = humidity,
+                LightIntensity = lightIntensity,
+                CO2Level = 1200f // Default CO2 level
+            };
+
+            // Apply to all registered plants
+            foreach (var plantId in _plantResponses.Keys.ToArray())
+            {
+                ApplyEnvironmentalConditions(plantId, conditions);
+            }
+        }
+
+        /// <summary>
+        /// Get plant response data for SpeedTreeEnvironmentalService
+        /// </summary>
+        public EnvironmentalResponseData GetPlantResponse(int plantId)
+        {
+            if (_plantResponses.TryGetValue(plantId, out var response))
+            {
+                var responseData = new EnvironmentalResponseData();
+                responseData.PlantId = plantId;
+                responseData.HealthResponse = 1f - response.CurrentResponse.OverallStress;
+                responseData.GrowthResponse = 1f - response.CurrentResponse.OverallStress;
+                responseData.StressResponse = response.CurrentResponse.OverallStress;
+                responseData.TemperatureInfluence = response.CurrentResponse.TemperatureStress;
+                responseData.HumidityInfluence = response.CurrentResponse.HumidityStress;
+                responseData.LightInfluence = response.CurrentResponse.LightStress;
+                responseData.OverallResponseStrength = 1f - response.CurrentResponse.OverallStress;
+                responseData.AdaptationRate = response.AdaptationFactor;
+                responseData.IsStressed = response.CurrentResponse.OverallStress > 0.5f;
+                return responseData;
+            }
+            return new EnvironmentalResponseData { PlantId = plantId };
+        }
+
+        /// <summary>
+        /// Get environmental statistics
+        /// </summary>
+        public EnvironmentalStatistics GetStatistics()
+        {
+            return new EnvironmentalStatistics
+            {
+                TotalPlantsMonitored = _plantResponses.Count,
+                PlantsStressed = _plantResponses.Values.Count(r => r.CurrentResponse.OverallStress > 0.5f),
+                SystemsEnabled = _enableEnvironmentalResponse
+            };
+        }
+
+        /// <summary>
+        /// Reset all environmental responses
+        /// </summary>
+        public void ResetResponses()
+        {
+            _plantResponses.Clear();
+            _lastKnownConditions.Clear();
+            _plantsNeedingUpdate.Clear();
+            Logger.Log("SPEEDTREE/ENV", "Reset all environmental responses", this);
+        }
+
+        /// <summary>
+        /// Update frequency property for external configuration
+        /// </summary>
+        public float UpdateFrequency
+        {
+            get { return _responseUpdateFrequency; }
+            set { _responseUpdateFrequency = value; }
+        }
+
+        /// <summary>
+        /// Enable/disable environmental response property
+        /// </summary>
+        public bool EnableEnvironmentalResponse
+        {
+            get { return _enableEnvironmentalResponse; }
+            set { _enableEnvironmentalResponse = value; }
+        }
+
+        #endregion
     }
 
     #region Data Structures
+
 
     /// <summary>
     /// Data structure for plant environmental response

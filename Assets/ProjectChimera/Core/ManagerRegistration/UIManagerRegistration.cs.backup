@@ -1,0 +1,77 @@
+using ProjectChimera.Core.DependencyInjection;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Core.ManagerRegistration
+{
+    /// <summary>
+    /// FOCUSED: UI manager registration for Project Chimera
+    /// Single responsibility: Register UI and interface managers
+    /// Extracted from ManagerRegistrationProvider.cs for SRP compliance (Week 8)
+    /// </summary>
+    public class UIManagerRegistration
+    {
+        private int _registeredCount = 0;
+
+        /// <summary>
+        /// Register all UI manager interfaces with fallback implementations
+        /// </summary>
+        public int RegisterUIManagerInterfaces(IServiceContainer serviceContainer)
+        {
+            if (serviceContainer == null) return 0;
+
+            _registeredCount = 0;
+
+            UnityEngine.Debug.Log("Operation completed");
+
+            // Register IUIManager
+            if (!serviceContainer.IsRegistered<IUIManager>())
+            {
+                serviceContainer.RegisterInstance<IUIManager>(new NullUIManager());
+                _registeredCount++;
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            // Register ISchematicLibraryPanel
+            if (!serviceContainer.IsRegistered<ISchematicLibraryPanel>())
+            {
+                serviceContainer.RegisterInstance<ISchematicLibraryPanel>(new NullSchematicLibraryPanel());
+                _registeredCount++;
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            // Register IConstructionPaletteManager (UI-related)
+            if (!serviceContainer.IsRegistered<IConstructionPaletteManager>())
+            {
+                serviceContainer.RegisterInstance<IConstructionPaletteManager>(new NullConstructionPaletteManager());
+                _registeredCount++;
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            UnityEngine.Debug.Log("Operation completed");
+            return _registeredCount;
+        }
+
+        /// <summary>
+        /// Get count of registered UI managers
+        /// </summary>
+        public int GetRegisteredCount()
+        {
+            return _registeredCount;
+        }
+
+        /// <summary>
+        /// Check if UI managers are properly registered
+        /// </summary>
+        public bool ValidateRegistrations(IServiceContainer serviceContainer)
+        {
+            if (serviceContainer == null) return false;
+
+            var isValid = serviceContainer.IsRegistered<IUIManager>() &&
+                         serviceContainer.IsRegistered<ISchematicLibraryPanel>() &&
+                         serviceContainer.IsRegistered<IConstructionPaletteManager>();
+
+            UnityEngine.Debug.Log("Operation completed");
+            return isValid;
+        }
+    }
+}

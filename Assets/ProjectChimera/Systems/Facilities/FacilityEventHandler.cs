@@ -16,7 +16,7 @@ namespace ProjectChimera.Systems.Facilities
         [SerializeField] private bool _enableEventLogging = true;
         [SerializeField] private bool _enableEventHistory = false;
         [SerializeField] private int _maxEventHistory = 50;
-        
+
         [Header("Event Channels")]
         [SerializeField] private SimpleGameEventSO _onFacilityUpgraded;
         [SerializeField] private SimpleGameEventSO _onFacilityUnlocked;
@@ -28,11 +28,11 @@ namespace ProjectChimera.Systems.Facilities
         [SerializeField] private SimpleGameEventSO _onFacilityUpgradeAvailable;
         [SerializeField] private SimpleGameEventSO _onFacilityRequirementsNotMet;
         [SerializeField] private SimpleGameEventSO _onFacilityValueUpdated;
-        
+
         // Event history
-        private System.Collections.Generic.Queue<FacilityEvent> _eventHistory = 
+        private System.Collections.Generic.Queue<FacilityEvent> _eventHistory =
             new System.Collections.Generic.Queue<FacilityEvent>();
-        
+
         // Public events for internal system coordination
         public System.Action<FacilityTierSO> OnFacilityUpgraded;
         public System.Action<FacilityTierSO> OnFacilityUnlocked;
@@ -44,11 +44,11 @@ namespace ProjectChimera.Systems.Facilities
         public System.Action OnFacilityValueUpdated;
         public System.Action<string> OnSceneTransitionStarted;
         public System.Action<string> OnSceneTransitionCompleted;
-        
+
         // Properties
         public int EventHistoryCount => _eventHistory.Count;
         public bool EventLoggingEnabled => _enableEventLogging;
-        
+
         /// <summary>
         /// Initialize the event handler
         /// </summary>
@@ -56,37 +56,37 @@ namespace ProjectChimera.Systems.Facilities
         {
             LogEvent("Facility event handler initialized");
         }
-        
+
         #region Facility Lifecycle Events
-        
+
         /// <summary>
         /// Trigger facility upgraded event
         /// </summary>
         public void TriggerFacilityUpgraded(FacilityTierSO tier)
         {
             if (tier == null) return;
-            
+
             LogEvent($"Facility upgraded to {tier.TierName}");
             RecordEvent(FacilityEventType.Upgraded, $"Upgraded to {tier.TierName}");
-            
+
             _onFacilityUpgraded?.Invoke();
             OnFacilityUpgraded?.Invoke(tier);
         }
-        
+
         /// <summary>
         /// Trigger facility unlocked event
         /// </summary>
         public void TriggerFacilityUnlocked(FacilityTierSO tier)
         {
             if (tier == null) return;
-            
+
             LogEvent($"Facility tier unlocked: {tier.TierName}");
             RecordEvent(FacilityEventType.Unlocked, $"Unlocked {tier.TierName}");
-            
+
             _onFacilityUnlocked?.Invoke();
             OnFacilityUnlocked?.Invoke(tier);
         }
-        
+
         /// <summary>
         /// Trigger facility switch event
         /// </summary>
@@ -94,57 +94,57 @@ namespace ProjectChimera.Systems.Facilities
         {
             LogEvent($"Facility switch: {fromFacilityId} -> {toFacilityId}");
             RecordEvent(FacilityEventType.Switched, $"Switched facilities");
-            
+
             _onFacilitySwitch?.Invoke();
             OnFacilitySwitch?.Invoke(fromFacilityId, toFacilityId);
         }
-        
+
         /// <summary>
         /// Trigger facility purchased event
         /// </summary>
         public void TriggerFacilityPurchased(OwnedFacility facility)
         {
             if (facility.FacilityId == null) return;
-            
+
             LogEvent($"Facility purchased: {facility.FacilityName}");
             RecordEvent(FacilityEventType.Purchased, $"Purchased {facility.FacilityName}");
-            
+
             _onFacilityPurchased?.Invoke();
             OnFacilityPurchased?.Invoke(facility);
         }
-        
+
         /// <summary>
         /// Trigger facility sold event
         /// </summary>
         public void TriggerFacilitySold(OwnedFacility facility, float salePrice)
         {
             if (facility.FacilityId == null) return;
-            
+
             LogEvent($"Facility sold: {facility.FacilityName} for ${salePrice:F0}");
             RecordEvent(FacilityEventType.Sold, $"Sold {facility.FacilityName} for ${salePrice:F0}");
-            
+
             _onFacilitySold?.Invoke();
             OnFacilitySold?.Invoke(facility, salePrice);
         }
-        
+
         #endregion
-        
+
         #region Status and Notification Events
-        
+
         /// <summary>
         /// Trigger facility upgrade available event
         /// </summary>
         public void TriggerFacilityUpgradeAvailable(FacilityTierSO tier)
         {
             if (tier == null) return;
-            
+
             LogEvent($"Facility upgrade available: {tier.TierName}");
             RecordEvent(FacilityEventType.UpgradeAvailable, $"Upgrade to {tier.TierName} available");
-            
+
             _onFacilityUpgradeAvailable?.Invoke();
             OnFacilityUpgradeAvailable?.Invoke(tier);
         }
-        
+
         /// <summary>
         /// Trigger facility requirements not met event
         /// </summary>
@@ -152,11 +152,11 @@ namespace ProjectChimera.Systems.Facilities
         {
             LogEvent($"Facility requirements not met: {reason}");
             RecordEvent(FacilityEventType.RequirementsNotMet, reason);
-            
+
             _onFacilityRequirementsNotMet?.Invoke();
             OnFacilityRequirementsNotMet?.Invoke(reason);
         }
-        
+
         /// <summary>
         /// Trigger facility value updated event
         /// </summary>
@@ -164,15 +164,15 @@ namespace ProjectChimera.Systems.Facilities
         {
             LogEvent("Facility portfolio values updated");
             RecordEvent(FacilityEventType.ValueUpdated, "Portfolio values updated");
-            
+
             _onFacilityValueUpdated?.Invoke();
             OnFacilityValueUpdated?.Invoke();
         }
-        
+
         #endregion
-        
+
         #region Scene Transition Events
-        
+
         /// <summary>
         /// Trigger scene transition started event
         /// </summary>
@@ -180,11 +180,11 @@ namespace ProjectChimera.Systems.Facilities
         {
             LogEvent($"Scene transition started: {sceneName}");
             RecordEvent(FacilityEventType.SceneTransition, $"Loading {sceneName}");
-            
+
             _onSceneTransitionStarted?.Invoke();
             OnSceneTransitionStarted?.Invoke(sceneName);
         }
-        
+
         /// <summary>
         /// Trigger scene transition completed event
         /// </summary>
@@ -192,15 +192,15 @@ namespace ProjectChimera.Systems.Facilities
         {
             LogEvent($"Scene transition completed: {sceneName}");
             RecordEvent(FacilityEventType.SceneTransition, $"Loaded {sceneName}");
-            
+
             _onSceneTransitionCompleted?.Invoke();
             OnSceneTransitionCompleted?.Invoke(sceneName);
         }
-        
+
         #endregion
-        
+
         #region Event Subscription Management
-        
+
         /// <summary>
         /// Subscribe to facility events for external systems
         /// </summary>
@@ -222,10 +222,10 @@ namespace ProjectChimera.Systems.Facilities
             if (onFacilityUpgradeAvailable != null) _onFacilityUpgradeAvailable?.Subscribe(onFacilityUpgradeAvailable);
             if (onFacilityRequirementsNotMet != null) _onFacilityRequirementsNotMet?.Subscribe(onFacilityRequirementsNotMet);
             if (onFacilityValueUpdated != null) _onFacilityValueUpdated?.Subscribe(onFacilityValueUpdated);
-            
+
             LogEvent("External event subscriptions registered");
         }
-        
+
         /// <summary>
         /// Unsubscribe from facility events
         /// </summary>
@@ -247,37 +247,37 @@ namespace ProjectChimera.Systems.Facilities
             if (onFacilityUpgradeAvailable != null) _onFacilityUpgradeAvailable?.Unsubscribe(onFacilityUpgradeAvailable);
             if (onFacilityRequirementsNotMet != null) _onFacilityRequirementsNotMet?.Unsubscribe(onFacilityRequirementsNotMet);
             if (onFacilityValueUpdated != null) _onFacilityValueUpdated?.Unsubscribe(onFacilityValueUpdated);
-            
+
             LogEvent("External event subscriptions removed");
         }
-        
+
         #endregion
-        
+
         #region Event History and Notifications
-        
+
         /// <summary>
         /// Record event in history
         /// </summary>
         private void RecordEvent(FacilityEventType eventType, string description)
         {
             if (!_enableEventHistory) return;
-            
+
             var facilityEvent = new FacilityEvent
             {
                 EventType = eventType,
                 Description = description,
                 Timestamp = System.DateTime.Now
             };
-            
+
             _eventHistory.Enqueue(facilityEvent);
-            
+
             // Maintain history size limit
             while (_eventHistory.Count > _maxEventHistory)
             {
                 _eventHistory.Dequeue();
             }
         }
-        
+
         /// <summary>
         /// Get recent event history
         /// </summary>
@@ -285,16 +285,16 @@ namespace ProjectChimera.Systems.Facilities
         {
             var events = new System.Collections.Generic.List<FacilityEvent>();
             var eventArray = _eventHistory.ToArray();
-            
+
             int startIndex = Mathf.Max(0, eventArray.Length - count);
             for (int i = startIndex; i < eventArray.Length; i++)
             {
                 events.Add(eventArray[i]);
             }
-            
+
             return events;
         }
-        
+
         /// <summary>
         /// Get formatted notification message for UI display
         /// </summary>
@@ -324,7 +324,7 @@ namespace ProjectChimera.Systems.Facilities
                     return "Facility event occurred.";
             }
         }
-        
+
         /// <summary>
         /// Clear event history
         /// </summary>
@@ -333,16 +333,16 @@ namespace ProjectChimera.Systems.Facilities
             _eventHistory.Clear();
             LogEvent("Event history cleared");
         }
-        
+
         #endregion
-        
+
         private void LogEvent(string message)
         {
             if (_enableEventLogging)
-                ChimeraLogger.Log($"[FacilityEventHandler] {message}");
+                ProjectChimera.Core.Logging.ChimeraLogger.Log("FACILITY", message, this);
         }
     }
-    
+
     /// <summary>
     /// Facility event data structure
     /// </summary>
@@ -352,7 +352,7 @@ namespace ProjectChimera.Systems.Facilities
         public FacilityEventType EventType;
         public string Description;
         public System.DateTime Timestamp;
-        
+
         public override string ToString()
         {
             return $"[{Timestamp:HH:mm:ss}] {EventType}: {Description}";

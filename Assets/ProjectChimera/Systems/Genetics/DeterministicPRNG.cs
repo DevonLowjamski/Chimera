@@ -31,7 +31,7 @@ namespace ProjectChimera.Systems.Genetics
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[DeterministicPRNG] Initialized with seed: {seed}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -102,7 +102,7 @@ namespace ProjectChimera.Systems.Genetics
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[DeterministicPRNG] Seed changed to: {newSeed}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 

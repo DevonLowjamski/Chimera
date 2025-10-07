@@ -38,13 +38,13 @@ namespace ProjectChimera.Core
             _accumulatedRealTime = 0.0f;
             _frameTimeHistory.Clear();
 
-            ChimeraLogger.Log("[SaveTime] Time tracking system initialized");
+            ChimeraLogger.LogInfo("SaveTime", "$1");
         }
 
         public void Shutdown()
         {
             _frameTimeHistory.Clear();
-            ChimeraLogger.Log("[SaveTime] Time tracking system shutdown");
+            ChimeraLogger.LogInfo("SaveTime", "$1");
         }
 
         public void SetGameStartTime(DateTime startTime)
@@ -60,7 +60,7 @@ namespace ProjectChimera.Core
         public void TrackFrameTime()
         {
             _frameTimeHistory.Enqueue(Time.unscaledDeltaTime);
-            
+
             if (_frameTimeHistory.Count > MAX_FRAME_HISTORY)
             {
                 _frameTimeHistory.Dequeue();
@@ -83,7 +83,7 @@ namespace ProjectChimera.Core
         public string GetGameTimeString()
         {
             TimeSpan gameTime = TimeSpan.FromSeconds(_accumulatedGameTime);
-            
+
             if (gameTime.TotalDays >= 1)
             {
                 return $"{(int)gameTime.TotalDays}d {gameTime.Hours:D2}h {gameTime.Minutes:D2}m";
@@ -105,7 +105,7 @@ namespace ProjectChimera.Core
         public string GetRealTimeString()
         {
             TimeSpan realTime = SessionDuration;
-            
+
             if (realTime.TotalHours >= 1)
             {
                 return $"{(int)realTime.TotalHours}h {realTime.Minutes:D2}m";
@@ -128,7 +128,7 @@ namespace ProjectChimera.Core
         public string GetTimeEfficiencyString()
         {
             if (_accumulatedRealTime <= 0) return "1:1";
-            
+
             float ratio = _accumulatedGameTime / _accumulatedRealTime;
             return $"{ratio:F1}:1";
         }
@@ -148,20 +148,20 @@ namespace ProjectChimera.Core
         public string GetDetailedTimeStatus()
         {
             var status = new StringBuilder();
-            
+
             status.AppendLine($"Game Time: {GetGameTimeString()}");
             status.AppendLine($"Real Time: {GetRealTimeString()}");
-            
+
             if (_showTimeEfficiencyRatio)
             {
                 status.AppendLine($"Efficiency: {GetTimeEfficiencyString()}");
             }
-            
+
             if (IsTimePaused)
             {
                 status.AppendLine("⏸ PAUSED");
             }
-            
+
             return status.ToString().TrimEnd();
         }
 
@@ -169,23 +169,22 @@ namespace ProjectChimera.Core
         {
             return new TimeDisplayData
             {
-                GameTime = TimeSpan.FromSeconds(_accumulatedGameTime),
-                RealTime = SessionDuration,
-                TotalGameTime = TotalGameTime,
-                TimeEfficiencyRatio = _accumulatedRealTime > 0 ? _accumulatedGameTime / _accumulatedRealTime : 1.0f,
-                IsPaused = IsTimePaused
+                GameTimeHours = _accumulatedGameTime / 3600f, // Convert to hours
+                RealTimeHours = (float)SessionDuration.TotalHours,
+                CurrentSpeedLevel = TimeSpeedLevel.Normal, // Default
+                CurrentTimeScale = 1.0f // Default
             };
         }
 
         public string FormatDurationWithConfig(float seconds)
         {
-            return TimeManager.FormatDuration(seconds, _timeFormat);
+            return RefactoredTimeManager.FormatDuration(seconds, _timeFormat);
         }
 
         public void SetTimeFormat(TimeDisplayFormat format)
         {
             _timeFormat = format;
-            ChimeraLogger.Log($"[SaveTime] Time display format set to {format}");
+            ChimeraLogger.LogInfo("SaveTime", "$1");
         }
 
         public void SetDisplayOptions(bool showCombined, bool showEfficiency, bool showPenalty)
@@ -193,8 +192,8 @@ namespace ProjectChimera.Core
             _showCombinedTimeDisplay = showCombined;
             _showTimeEfficiencyRatio = showEfficiency;
             _showPenaltyInformation = showPenalty;
-            
-            ChimeraLogger.Log($"[SaveTime] Display options updated - Combined: {showCombined}, Efficiency: {showEfficiency}, Penalty: {showPenalty}");
+
+            ChimeraLogger.LogInfo("SaveTime", "$1");
         }
 
         public float GetAccumulatedGameTime()
@@ -210,7 +209,7 @@ namespace ProjectChimera.Core
         public float GetAverageFrameTime()
         {
             if (_frameTimeHistory.Count == 0) return 0f;
-            
+
             float sum = 0f;
             foreach (float frameTime in _frameTimeHistory)
             {

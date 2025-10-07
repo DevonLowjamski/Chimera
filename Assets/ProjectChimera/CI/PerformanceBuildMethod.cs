@@ -35,12 +35,12 @@ namespace ProjectChimera.CI
 
             if (summary.result == BuildResult.Succeeded)
             {
-                ChimeraLogger.Log($"Performance build succeeded: {summary.totalSize} bytes");
+                ChimeraLogger.LogInfo("PerformanceBuildMethod", "$1");
                 GeneratePerformanceBuildReport(report);
             }
             else
             {
-                ChimeraLogger.LogError($"Performance build failed: {summary.result}");
+                ChimeraLogger.LogInfo("PerformanceBuildMethod", "$1");
                 EditorApplication.Exit(1);
             }
         }
@@ -69,7 +69,7 @@ namespace ProjectChimera.CI
                 }
                 else
                 {
-                    ChimeraLogger.LogWarning($"Performance test scene not found: {scene}");
+                    ChimeraLogger.LogInfo("PerformanceBuildMethod", "$1");
                 }
             }
 
@@ -118,7 +118,7 @@ namespace ProjectChimera.CI
 
             PlayerSettings.SetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup, string.Join(";", defines));
 
-            ChimeraLogger.Log("Configured build settings for performance testing");
+            ChimeraLogger.LogInfo("PerformanceBuildMethod", "$1");
         }
 
         /// <summary>
@@ -178,8 +178,8 @@ namespace ProjectChimera.CI
             var reportPath = "performance-build-report.json";
             File.WriteAllText(reportPath, reportJson);
 
-            ChimeraLogger.Log($"Performance build report generated: {reportPath}");
-            ChimeraLogger.Log($"Build completed in {report.summary.totalTime.TotalSeconds:F2}s with {report.summary.totalWarnings} warnings");
+            ChimeraLogger.LogInfo("PerformanceBuildMethod", "$1");
+            ChimeraLogger.LogInfo("PerformanceBuildMethod", "$1");
         }
     }
 

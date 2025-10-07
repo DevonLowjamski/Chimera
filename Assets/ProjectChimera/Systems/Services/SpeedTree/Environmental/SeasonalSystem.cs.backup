@@ -1,0 +1,471 @@
+using ProjectChimera.Core.Logging;
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using ProjectChimera.Core;
+
+namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
+{
+    /// <summary>
+    /// Seasonal System for SpeedTree Plants
+    /// Manages seasonal changes, transitions, and effects on plants
+    /// in the cannabis cultivation simulation.
+    /// </summary>
+    public class SeasonalSystem : MonoBehaviour
+    {
+        [Header("Seasonal Configuration")]
+        [SerializeField] private bool _enableSeasonalChanges = true;
+        [SerializeField] private float _seasonalTransitionDuration = 30f; // Days
+        [SerializeField] private float _seasonalUpdateFrequency = 1f; // Updates per day
+
+        // Seasonal state
+        private Season _currentSeason = Season.Spring;
+        private float _seasonalTransitionProgress = 0f;
+        private float _seasonTimer = 0f;
+
+        // Seasonal effects data
+        private Dictionary<Season, SeasonalEffects> _seasonalEffects = new Dictionary<Season, SeasonalEffects>();
+        private Dictionary<int, PlantSeasonalData> _plantSeasonalData = new Dictionary<int, PlantSeasonalData>();
+
+        // Shader property IDs
+        private int _seasonalTintPropertyId;
+        private int _seasonalBrightnessPropertyId;
+        private int _seasonalContrastPropertyId;
+
+        #region Public Events
+        public event Action<Season> OnSeasonChanged;
+        public event Action<Season, float> OnSeasonalTransition;
+        public event Action<int, Season, float> OnPlantSeasonalEffect;
+        #endregion
+
+        #region Initialization
+        public void Initialize()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+
+            // Cache shader properties
+            CacheShaderProperties();
+
+            // Initialize seasonal effects
+            InitializeSeasonalEffects();
+
+            // Start with current season
+            _seasonTimer = 0f;
+            _seasonalTransitionProgress = 1f; // Start fully transitioned
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void Shutdown()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+
+            _seasonalEffects.Clear();
+            _plantSeasonalData.Clear();
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        private void CacheShaderProperties()
+        {
+            _seasonalTintPropertyId = Shader.PropertyToID("_SeasonalTint");
+            _seasonalBrightnessPropertyId = Shader.PropertyToID("_SeasonalBrightness");
+            _seasonalContrastPropertyId = Shader.PropertyToID("_SeasonalContrast");
+        }
+
+        private void InitializeSeasonalEffects()
+        {
+            // Spring effects - growth and renewal
+            _seasonalEffects[Season.Spring] = new SeasonalEffects
+            {
+                Tint = new Color(0.8f, 1.0f, 0.8f, 1.0f), // Slight green tint
+                Brightness = 1.1f,
+                Contrast = 1.0f,
+                GrowthMultiplier = 1.2f,
+                StressMultiplier = 0.8f,
+                Description = "Spring: Growth and renewal season"
+            };
+
+            // Summer effects - peak growth and heat
+            _seasonalEffects[Season.Summer] = new SeasonalEffects
+            {
+                Tint = new Color(1.0f, 1.0f, 0.9f, 1.0f), // Warm yellow tint
+                Brightness = 1.2f,
+                Contrast = 1.1f,
+                GrowthMultiplier = 1.0f,
+                StressMultiplier = 1.2f,
+                Description = "Summer: Peak growth with heat stress"
+            };
+
+            // Autumn effects - maturation and color change
+            _seasonalEffects[Season.Autumn] = new SeasonalEffects
+            {
+                Tint = new Color(1.0f, 0.8f, 0.6f, 1.0f), // Orange-brown tint
+                Brightness = 0.9f,
+                Contrast = 0.9f,
+                GrowthMultiplier = 0.8f,
+                StressMultiplier = 1.1f,
+                Description = "Autumn: Maturation and harvest preparation"
+            };
+
+            // Winter effects - dormancy and cold
+            _seasonalEffects[Season.Winter] = new SeasonalEffects
+            {
+                Tint = new Color(0.9f, 0.9f, 1.0f, 1.0f), // Cool blue tint
+                Brightness = 0.7f,
+                Contrast = 0.8f,
+                GrowthMultiplier = 0.3f,
+                StressMultiplier = 1.5f,
+                Description = "Winter: Dormancy and cold stress"
+            };
+        }
+        #endregion
+
+        #region Seasonal Management
+
+        /// <summary>
+        /// Updates the seasonal system
+        /// </summary>
+        public void UpdateSeasonalSystem()
+        {
+            if (!_enableSeasonalChanges) return;
+
+            try
+            {
+                // Update season timer
+                _seasonTimer += Time.deltaTime;
+
+                // Check for season transition
+                if (_seasonTimer >= _seasonalTransitionDuration)
+                {
+                    TransitionToNextSeason();
+                    _seasonTimer = 0f;
+                }
+
+                // Update seasonal transition progress
+                if (_seasonalTransitionProgress < 1f)
+                {
+                    _seasonalTransitionProgress += Time.deltaTime / _seasonalTransitionDuration;
+                    _seasonalTransitionProgress = Mathf.Clamp01(_seasonalTransitionProgress);
+
+                    OnSeasonalTransition?.Invoke(_currentSeason, _seasonalTransitionProgress);
+                }
+
+                // Apply seasonal effects to all plants
+                ApplySeasonalEffectsToAllPlants();
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        private void TransitionToNextSeason()
+        {
+            Season previousSeason = _currentSeason;
+            _currentSeason = GetNextSeason(_currentSeason);
+
+            _seasonalTransitionProgress = 0f; // Start transition
+
+            OnSeasonChanged?.Invoke(_currentSeason);
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        private Season GetNextSeason(Season currentSeason)
+        {
+            switch (currentSeason)
+            {
+                case Season.Spring: return Season.Summer;
+                case Season.Summer: return Season.Autumn;
+                case Season.Autumn: return Season.Winter;
+                case Season.Winter: return Season.Spring;
+                default: return Season.Spring;
+            }
+        }
+
+        /// <summary>
+        /// Forces a specific season
+        /// </summary>
+        public void SetSeason(Season season)
+        {
+            if (_currentSeason == season) return;
+
+            Season previousSeason = _currentSeason;
+            _currentSeason = season;
+            _seasonalTransitionProgress = 1f; // Instant transition
+
+            OnSeasonChanged?.Invoke(_currentSeason);
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        #endregion
+
+        #region Plant Seasonal Effects
+
+        /// <summary>
+        /// Applies seasonal effects to a specific plant
+        /// </summary>
+        public void ApplySeasonalEffects(int plantId, Season season)
+        {
+            if (plantId <= 0 || !_seasonalEffects.TryGetValue(season, out var effects)) return;
+
+            try
+            {
+                // Get or create plant seasonal data
+                if (!_plantSeasonalData.TryGetValue(plantId, out var plantData))
+                {
+                    plantData = new PlantSeasonalData(plantId);
+                    _plantSeasonalData[plantId] = plantData;
+                }
+
+                // Apply seasonal effects
+                ApplySeasonalEffectsToPlant(plantId, effects, plantData);
+
+                // Update plant data
+                plantData.LastSeasonUpdate = Time.time;
+                plantData.CurrentSeason = season;
+
+                OnPlantSeasonalEffect?.Invoke(plantId, season, effects.GrowthMultiplier);
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Applies seasonal effects to multiple plants
+        /// </summary>
+        public void ApplySeasonalEffects(IEnumerable<int> plantIds)
+        {
+            if (plantIds == null) return;
+
+            foreach (var plantId in plantIds)
+            {
+                ApplySeasonalEffects(plantId, _currentSeason);
+            }
+        }
+
+        private void ApplySeasonalEffectsToPlant(int plantId, SeasonalEffects effects, PlantSeasonalData plantData)
+        {
+            // Find SpeedTree renderers for this plant
+            var renderers = FindPlantRenderers(plantId);
+
+            foreach (var renderer in renderers)
+            {
+                ApplySeasonalEffectsToRenderer(renderer, effects, _seasonalTransitionProgress);
+            }
+
+            // Update plant seasonal adaptation
+            plantData.SeasonalAdaptation = CalculateSeasonalAdaptation(plantData, effects);
+        }
+
+        private void ApplySeasonalEffectsToRenderer(Renderer renderer, SeasonalEffects effects, float transitionProgress)
+        {
+            if (renderer == null || renderer.sharedMaterial == null) return;
+
+            try
+            {
+                var material = renderer.material;
+
+                // Interpolate effects based on transition progress
+                Color interpolatedTint = Color.Lerp(Color.white, effects.Tint, transitionProgress);
+                float interpolatedBrightness = Mathf.Lerp(1f, effects.Brightness, transitionProgress);
+                float interpolatedContrast = Mathf.Lerp(1f, effects.Contrast, transitionProgress);
+
+                // Apply shader properties
+                if (material.HasProperty(_seasonalTintPropertyId))
+                {
+                    material.SetColor(_seasonalTintPropertyId, interpolatedTint);
+                }
+
+                if (material.HasProperty(_seasonalBrightnessPropertyId))
+                {
+                    material.SetFloat(_seasonalBrightnessPropertyId, interpolatedBrightness);
+                }
+
+                if (material.HasProperty(_seasonalContrastPropertyId))
+                {
+                    material.SetFloat(_seasonalContrastPropertyId, interpolatedContrast);
+                }
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        private Renderer[] FindPlantRenderers(int plantId)
+        {
+            // Find renderers by plant ID (this would need to be implemented based on your plant identification system)
+            // For now, return empty array - this should be connected to your plant management system
+            return new Renderer[0];
+        }
+
+        private void ApplySeasonalEffectsToAllPlants()
+        {
+            // This would iterate through all plants in the scene
+            // For now, we'll skip implementation until connected to plant management system
+        }
+
+        #endregion
+
+        #region Seasonal Calculations
+
+        private float CalculateSeasonalAdaptation(PlantSeasonalData plantData, SeasonalEffects effects)
+        {
+            // Calculate how well the plant adapts to seasonal conditions
+            float adaptation = plantData.SeasonalAdaptation;
+
+            // Better adaptation in optimal seasons
+            if (effects.StressMultiplier < 1.1f)
+            {
+                adaptation = Mathf.Min(adaptation + 0.01f * Time.deltaTime, 1f);
+            }
+            else
+            {
+                adaptation = Mathf.Max(adaptation - 0.005f * Time.deltaTime, 0f);
+            }
+
+            return adaptation;
+        }
+
+        /// <summary>
+        /// Gets the growth multiplier for current season
+        /// </summary>
+        public float GetSeasonalGrowthMultiplier()
+        {
+            if (_seasonalEffects.TryGetValue(_currentSeason, out var effects))
+            {
+                return effects.GrowthMultiplier;
+            }
+            return 1f;
+        }
+
+        /// <summary>
+        /// Gets the stress multiplier for current season
+        /// </summary>
+        public float GetSeasonalStressMultiplier()
+        {
+            if (_seasonalEffects.TryGetValue(_currentSeason, out var effects))
+            {
+                return effects.StressMultiplier;
+            }
+            return 1f;
+        }
+
+        #endregion
+
+        #region Public Interface
+
+        /// <summary>
+        /// Gets the current season
+        /// </summary>
+        public Season GetCurrentSeason()
+        {
+            return _currentSeason;
+        }
+
+        /// <summary>
+        /// Gets the seasonal transition progress (0-1)
+        /// </summary>
+        public float GetSeasonalTransitionProgress()
+        {
+            return _seasonalTransitionProgress;
+        }
+
+        /// <summary>
+        /// Gets seasonal effects for a specific season
+        /// </summary>
+        public SeasonalEffects GetSeasonalEffects(Season season)
+        {
+            if (_seasonalEffects.TryGetValue(season, out var effects))
+            {
+                return effects;
+            }
+            return new SeasonalEffects();
+        }
+
+        /// <summary>
+        /// Gets plant seasonal data
+        /// </summary>
+        public PlantSeasonalData GetPlantSeasonalData(int plantId)
+        {
+            if (_plantSeasonalData.TryGetValue(plantId, out var data))
+            {
+                return data;
+            }
+            return new PlantSeasonalData(plantId);
+        }
+
+        #endregion
+
+        #region Update Loop
+
+        public void Tick(float deltaTime)
+        {
+            if (!_enableSeasonalChanges) return;
+
+            try
+            {
+                UpdateSeasonalSystem();
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        #endregion
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// Seasons enumeration
+    /// </summary>
+    public enum Season
+    {
+        Spring,
+        Summer,
+        Autumn,
+        Winter
+    }
+
+    /// <summary>
+    /// Seasonal effects data
+    /// </summary>
+    [Serializable]
+    public struct SeasonalEffects
+    {
+        public Color Tint;
+        public float Brightness;
+        public float Contrast;
+        public float GrowthMultiplier;
+        public float StressMultiplier;
+        public string Description;
+    }
+
+    /// <summary>
+    /// Plant seasonal data tracking
+    /// </summary>
+    [Serializable]
+    public class PlantSeasonalData
+    {
+        public int PlantId;
+        public Season CurrentSeason;
+        public float SeasonalAdaptation; // 0-1, how well adapted to current season
+        public float LastSeasonUpdate;
+
+        public PlantSeasonalData(int plantId)
+        {
+            PlantId = plantId;
+            SeasonalAdaptation = 0.5f; // Start at 50% adaptation
+            LastSeasonUpdate = Time.time;
+        }
+    }
+
+    #endregion
+}

@@ -1,5 +1,5 @@
-using UnityEngine;
 
+using UnityEngine;
 namespace ProjectChimera.Data.Shared
 {
     [System.Serializable]

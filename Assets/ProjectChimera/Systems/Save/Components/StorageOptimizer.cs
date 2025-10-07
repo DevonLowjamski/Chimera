@@ -31,7 +31,7 @@ namespace ProjectChimera.Systems.Save.Components
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[StorageOptimizer] Initialized successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -52,13 +52,13 @@ namespace ProjectChimera.Systems.Save.Components
                 // For now, just log it
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[StorageOptimizer] Would clean up old save: {oldestFile}");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
             }
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[StorageOptimizer] Cleaned up old saves. Current files: {_saveFiles.Count}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -90,7 +90,7 @@ namespace ProjectChimera.Systems.Save.Components
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[StorageOptimizer] Removed save file: {fileName}");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
             }
         }
@@ -128,7 +128,7 @@ namespace ProjectChimera.Systems.Save.Components
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[StorageOptimizer] Cleared all save files");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -151,7 +151,7 @@ namespace ProjectChimera.Systems.Save.Components
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[StorageOptimizer] Basic optimization completed");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -170,7 +170,7 @@ namespace ProjectChimera.Systems.Save.Components
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[StorageOptimizer] Max save files set to {_maxSaveFiles}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 

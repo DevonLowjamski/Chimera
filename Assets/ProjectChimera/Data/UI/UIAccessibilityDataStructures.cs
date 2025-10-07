@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 
+
 namespace ProjectChimera.Data.UI
 {
     /// <summary>
@@ -156,13 +157,7 @@ namespace ProjectChimera.Data.UI
         public int PendingAnnouncements;
     }
     
-    /// <summary>
-    /// Interface for UI elements that can be updated
-    /// </summary>
-    public interface IUIUpdatable
-    {
-        void UpdateElement();
-    }
+    // Note: IUIUpdatable interface is defined in ProjectChimera.Systems.UI.Core.UIBatchUpdateManager
     
     /// <summary>
     /// Update priority for batched UI updates

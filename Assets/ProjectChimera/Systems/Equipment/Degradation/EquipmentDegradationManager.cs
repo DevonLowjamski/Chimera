@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Equipment;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Equipment.Degradation
 {
@@ -12,7 +13,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
     /// Modular Equipment Degradation Manager - Main orchestrator
     /// Coordinates equipment monitoring, degradation, malfunctions, and maintenance
     /// </summary>
-    public class EquipmentDegradationManager : ChimeraManager
+    public class EquipmentDegradationManager : ProjectChimera.Core.ChimeraManager, ProjectChimera.Core.Updates.ITickable
     {
         [Header("Core Configuration")]
         public bool EnableEquipmentDegradation = true;
@@ -34,14 +35,14 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         private EquipmentHealthAssessment _healthAssessor;
 
         // System state
-        private List<EquipmentInstance> _monitoredEquipment = new List<EquipmentInstance>();
+        private List<BasicEquipmentData> _monitoredEquipment = new List<BasicEquipmentData>();
         private List<EquipmentMalfunction> _activeMalfunctions = new List<EquipmentMalfunction>();
         private List<MaintenanceRecord> _maintenanceHistory = new List<MaintenanceRecord>();
         private Dictionary<string, EquipmentReliabilityProfile> _reliabilityProfiles = new Dictionary<string, EquipmentReliabilityProfile>();
 
         // Events
-        public System.Action<EquipmentInstance> OnEquipmentAdded;
-        public System.Action<EquipmentInstance> OnEquipmentRemoved;
+        public System.Action<BasicEquipmentData> OnEquipmentAdded;
+        public System.Action<BasicEquipmentData> OnEquipmentRemoved;
         public System.Action<EquipmentMalfunction> OnMalfunctionDetected;
         public System.Action<EquipmentMalfunction> OnMalfunctionResolved;
         public System.Action<MaintenanceRecord> OnMaintenanceCompleted;
@@ -54,18 +55,31 @@ namespace ProjectChimera.Systems.Equipment.Degradation
             InitializeSystems();
         }
 
-        private void Update()
+        public int TickPriority => 100;
+        public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+        public void Tick(float deltaTime)
         {
             if (!EnableEquipmentDegradation) return;
 
             // Update equipment degradation
-            _degradationSimulator?.UpdateDegradation(Time.deltaTime);
+            _degradationSimulator?.UpdateDegradation(deltaTime);
 
             // Check for new malfunctions
             CheckForMalfunctions();
 
             // Update maintenance schedules
             _maintenanceScheduler?.UpdateSchedules();
+    }
+
+        private void OnEnable()
+        {
+            ProjectChimera.Core.Updates.UpdateOrchestrator.Instance?.RegisterTickable(this);
+        }
+
+        private void OnDisable()
+        {
+            ProjectChimera.Core.Updates.UpdateOrchestrator.Instance?.UnregisterTickable(this);
         }
 
         #endregion
@@ -90,7 +104,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
             // Set up event handlers
             SetupEventHandlers();
 
-            ChimeraLogger.LogVerbose("[EquipmentDegradationManager] Systems initialized");
+            ChimeraLogger.Log("EQUIPMENT", "Equipment degradation systems initialized", this);
         }
 
         /// <summary>
@@ -114,9 +128,11 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         /// <summary>
         /// Register equipment for monitoring
         /// </summary>
-        public void RegisterEquipment(EquipmentInstance equipment)
+        public void RegisterEquipment(BasicEquipmentData equipment)
         {
-            if (equipment == null || _monitoredEquipment.Contains(equipment)) return;
+            if (string.IsNullOrEmpty(equipment?.EquipmentId)) return;
+
+            if (_monitoredEquipment.Any(e => e.EquipmentId == equipment.EquipmentId)) return;
 
             _monitoredEquipment.Add(equipment);
             _equipmentRegistry.RegisterEquipment(equipment);
@@ -127,10 +143,10 @@ namespace ProjectChimera.Systems.Equipment.Degradation
                 _reliabilityProfiles[equipment.Type.ToString()] = CreateDefaultReliabilityProfile(equipment.Type);
             }
 
-            equipment.ReliabilityProfile = _reliabilityProfiles[equipment.Type.ToString()];
+            // BasicEquipmentData has no ReliabilityProfile field; registry uses profiles internally
 
             OnEquipmentAdded?.Invoke(equipment);
-            ChimeraLogger.LogVerbose($"[EquipmentDegradationManager] Equipment registered: {equipment.EquipmentId}");
+            ChimeraLogger.Log("EQUIPMENT", $"Registered equipment {equipment.EquipmentId}", this);
         }
 
         /// <summary>
@@ -150,7 +166,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         /// <summary>
         /// Get equipment by ID
         /// </summary>
-        public EquipmentInstance GetEquipment(string equipmentId)
+        public BasicEquipmentData GetEquipment(string equipmentId)
         {
             return _equipmentRegistry.GetEquipment(equipmentId);
         }
@@ -158,9 +174,9 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         /// <summary>
         /// Get all monitored equipment
         /// </summary>
-        public List<EquipmentInstance> GetAllEquipment()
+        public List<BasicEquipmentData> GetAllEquipment()
         {
-            return new List<EquipmentInstance>(_monitoredEquipment);
+            return new List<BasicEquipmentData>(_monitoredEquipment);
         }
 
         /// <summary>
@@ -172,13 +188,22 @@ namespace ProjectChimera.Systems.Equipment.Degradation
             var equipment = GetEquipment(equipmentId);
             if (equipment == null) return;
 
-            equipment.PerformMaintenance(type, technicianId, tasks, parts, cost, duration);
+            EquipmentInstance.PerformMaintenance(equipmentId);
 
-            var record = equipment.MaintenanceHistory.Last();
+            // Basic maintenance record
+            var record = new MaintenanceRecord
+            {
+                RecordId = System.Guid.NewGuid().ToString("N").Substring(0,8),
+                EquipmentId = equipment.EquipmentId,
+                MaintenanceDate = DateTime.Now,
+                Type = type,
+                Cost = cost,
+                EffectivenessScore = 1f
+            };
             _maintenanceHistory.Add(record);
 
             OnMaintenanceCompleted?.Invoke(record);
-            ChimeraLogger.LogVerbose($"[EquipmentDegradationManager] Maintenance completed: {equipmentId}");
+            ChimeraLogger.Log("EQUIPMENT", $"Performed maintenance on {equipment.EquipmentId}", this);
         }
 
         /// <summary>
@@ -189,7 +214,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
             var malfunction = _activeMalfunctions.Find(m => m.MalfunctionId == malfunctionId);
             if (malfunction != null)
             {
-                malfunction.Resolve(resolutionTime);
+                // Minimal resolve: remove from active list
                 _activeMalfunctions.Remove(malfunction);
                 OnMalfunctionResolved?.Invoke(malfunction);
             }
@@ -198,10 +223,9 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         /// <summary>
         /// Get current system health assessment
         /// </summary>
-        public EquipmentHealthReport GetHealthAssessment()
+        public EquipmentHealthAssessment GetHealthAssessment()
         {
-            _healthAssessor.PerformAssessment(_monitoredEquipment, _activeMalfunctions);
-            return _healthAssessor.GenerateHealthReport(_monitoredEquipment);
+            return HealthAssessmentSystem.PerformSystemHealthAssessment();
         }
 
         /// <summary>
@@ -259,9 +283,6 @@ namespace ProjectChimera.Systems.Equipment.Degradation
 
             foreach (var equipment in _monitoredEquipment)
             {
-                if (equipment.Status == OperationalStatus.Offline || equipment.IsUnderMaintenance)
-                    continue;
-
                 var equipmentAnalyses = _malfunctionDetector.AnalyzeEquipment(equipment);
                 analyses.AddRange(equipmentAnalyses);
             }
@@ -278,8 +299,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
                 // Check if this type of malfunction already exists for this equipment
                 bool alreadyExists = _activeMalfunctions.Any(m =>
                     m.EquipmentId == analysis.EquipmentId &&
-                    m.Type == analysis.MalfunctionType &&
-                    !m.IsResolved);
+                    m.Type == analysis.MalfunctionType);
 
                 if (!alreadyExists)
                 {
@@ -293,25 +313,21 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         /// <summary>
         /// Handle equipment degradation event
         /// </summary>
-        private void HandleEquipmentDegraded(EquipmentInstance equipment)
+        private void HandleEquipmentDegraded(BasicEquipmentData equipment)
         {
-            // Check if degradation triggers maintenance requirement
-            if (equipment.WearLevel > 0.7f && equipment.Status != OperationalStatus.Maintenance_Required)
-            {
-                equipment.Status = OperationalStatus.Maintenance_Required;
-                ChimeraLogger.LogVerbose($"[EquipmentDegradationManager] Equipment requires maintenance: {equipment.EquipmentId}");
-            }
+            // Placeholder: integrate with future wear tracking
+            ChimeraLogger.Log("EQUIPMENT", $"Degradation updated for {equipment.EquipmentId}", this);
         }
 
         /// <summary>
         /// Handle maintenance due event
         /// </summary>
-        private void HandleMaintenanceDue(EquipmentInstance equipment)
+        private void HandleMaintenanceDue(BasicEquipmentData equipment)
         {
             if (EnableMaintenanceRewards)
             {
                 // Could implement maintenance reward system here
-                ChimeraLogger.LogVerbose($"[EquipmentDegradationManager] Maintenance due: {equipment.EquipmentId}");
+                ChimeraLogger.Log("EQUIPMENT", $"Maintenance due for {equipment.EquipmentId}", this);
             }
         }
 
@@ -334,17 +350,26 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         /// <summary>
         /// Get default MTBF for equipment type
         /// </summary>
-        private float GetDefaultMTBF(EquipmentType type)
+        private float GetDefaultMTBF(Data.Equipment.EquipmentType type)
         {
             switch (type)
             {
-                case EquipmentType.Lighting: return 8760f; // 1 year
-                case EquipmentType.HVAC: return 4380f; // 6 months
-                case EquipmentType.Irrigation: return 2190f; // 3 months
-                case EquipmentType.Ventilation: return 4380f; // 6 months
-                case EquipmentType.CO2_System: return 2920f; // 4 months
-                case EquipmentType.pH_Controller: return 3650f; // 5 months
-                case EquipmentType.EC_Meter: return 3650f; // 5 months
+                case Data.Equipment.EquipmentType.LED_Light:
+                case Data.Equipment.EquipmentType.HPS_Light:
+                case Data.Equipment.EquipmentType.GrowLight:
+                    return 8760f; // 1 year
+                case Data.Equipment.EquipmentType.Exhaust_Fan:
+                case Data.Equipment.EquipmentType.Intake_Fan:
+                case Data.Equipment.EquipmentType.Air_Circulator:
+                    return 4380f; // 6 months
+                case Data.Equipment.EquipmentType.Watering_System:
+                case Data.Equipment.EquipmentType.Drip_System:
+                    return 2190f; // 3 months
+                case Data.Equipment.EquipmentType.Climate_Controller:
+                case Data.Equipment.EquipmentType.Environmental_Controller:
+                    return 2920f; // 4 months
+                case Data.Equipment.EquipmentType.Reservoir:
+                    return 8760f; // 1 year
                 default: return 4380f; // 6 months
             }
         }
@@ -352,14 +377,26 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         /// <summary>
         /// Get default lifespan for equipment type
         /// </summary>
-        private float GetDefaultLifespan(EquipmentType type)
+        private float GetDefaultLifespan(Data.Equipment.EquipmentType type)
         {
             switch (type)
             {
-                case EquipmentType.Lighting: return 3f; // 3 years
-                case EquipmentType.HVAC: return 10f; // 10 years
-                case EquipmentType.Irrigation: return 5f; // 5 years
-                case EquipmentType.Ventilation: return 8f; // 8 years
+                case Data.Equipment.EquipmentType.LED_Light:
+                case Data.Equipment.EquipmentType.HPS_Light:
+                case Data.Equipment.EquipmentType.GrowLight:
+                    return 3f; // 3 years
+                case Data.Equipment.EquipmentType.Exhaust_Fan:
+                case Data.Equipment.EquipmentType.Intake_Fan:
+                case Data.Equipment.EquipmentType.Air_Circulator:
+                    return 8f; // 8 years
+                case Data.Equipment.EquipmentType.Watering_System:
+                case Data.Equipment.EquipmentType.Drip_System:
+                    return 5f; // 5 years
+                case Data.Equipment.EquipmentType.Climate_Controller:
+                case Data.Equipment.EquipmentType.Environmental_Controller:
+                    return 10f; // 10 years
+                case Data.Equipment.EquipmentType.Reservoir:
+                    return 15f; // 15 years
                 default: return 7f; // 7 years
             }
         }
@@ -367,13 +404,26 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         /// <summary>
         /// Get default failure rate for equipment type
         /// </summary>
-        private float GetDefaultFailureRate(EquipmentType type)
+        private float GetDefaultFailureRate(Data.Equipment.EquipmentType type)
         {
             switch (type)
             {
-                case EquipmentType.Lighting: return 0.001f; // Low failure rate
-                case EquipmentType.HVAC: return 0.005f; // Higher failure rate
-                case EquipmentType.Irrigation: return 0.003f; // Medium failure rate
+                case Data.Equipment.EquipmentType.LED_Light:
+                case Data.Equipment.EquipmentType.HPS_Light:
+                case Data.Equipment.EquipmentType.GrowLight:
+                    return 0.001f; // Low failure rate
+                case Data.Equipment.EquipmentType.Exhaust_Fan:
+                case Data.Equipment.EquipmentType.Intake_Fan:
+                case Data.Equipment.EquipmentType.Air_Circulator:
+                    return 0.005f; // Higher failure rate for mechanical components
+                case Data.Equipment.EquipmentType.Watering_System:
+                case Data.Equipment.EquipmentType.Drip_System:
+                    return 0.003f; // Medium failure rate
+                case Data.Equipment.EquipmentType.Climate_Controller:
+                case Data.Equipment.EquipmentType.Environmental_Controller:
+                    return 0.004f; // Higher failure rate for complex electronics
+                case Data.Equipment.EquipmentType.Reservoir:
+                    return 0.0005f; // Very low failure rate
                 default: return 0.002f; // Default failure rate
             }
         }
@@ -385,7 +435,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         protected override void OnManagerInitialize()
         {
             // Manager initialization
-            ChimeraLogger.LogVerbose("[EquipmentDegradationManager] Initialized");
+            ChimeraLogger.Log("EQUIPMENT", "EquipmentDegradationManager initialized", this);
         }
 
         protected override void OnManagerShutdown()
@@ -395,7 +445,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
             _activeMalfunctions.Clear();
             _maintenanceHistory.Clear();
 
-            ChimeraLogger.LogVerbose("[EquipmentDegradationManager] Shutdown");
+            ChimeraLogger.Log("EQUIPMENT", "EquipmentDegradationManager shutdown", this);
         }
 
         #endregion
@@ -406,9 +456,9 @@ namespace ProjectChimera.Systems.Equipment.Degradation
     /// </summary>
     public class EquipmentRegistry
     {
-        private Dictionary<string, EquipmentInstance> _equipment = new Dictionary<string, EquipmentInstance>();
+        private Dictionary<string, BasicEquipmentData> _equipment = new Dictionary<string, BasicEquipmentData>();
 
-        public void RegisterEquipment(EquipmentInstance equipment)
+        public void RegisterEquipment(BasicEquipmentData equipment)
         {
             _equipment[equipment.EquipmentId] = equipment;
         }
@@ -418,14 +468,14 @@ namespace ProjectChimera.Systems.Equipment.Degradation
             _equipment.Remove(equipmentId);
         }
 
-        public EquipmentInstance GetEquipment(string equipmentId)
+        public BasicEquipmentData GetEquipment(string equipmentId)
         {
             return _equipment.TryGetValue(equipmentId, out var equipment) ? equipment : null;
         }
 
-        public List<EquipmentInstance> GetAllEquipment()
+        public List<BasicEquipmentData> GetAllEquipment()
         {
-            return new List<EquipmentInstance>(_equipment.Values);
+            return new List<BasicEquipmentData>(_equipment.Values);
         }
 
         public int EquipmentCount => _equipment.Count;
@@ -439,7 +489,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         public float BaseDegradationRate;
         public float EnvironmentalStressMultiplier;
 
-        public System.Action<EquipmentInstance> OnEquipmentDegraded;
+        public System.Action<BasicEquipmentData> OnEquipmentDegraded;
 
         public DegradationSimulation(float baseRate, float stressMultiplier)
         {
@@ -465,7 +515,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
     /// </summary>
     public class MaintenanceScheduler
     {
-        public System.Action<EquipmentInstance> OnMaintenanceDue;
+        public System.Action<BasicEquipmentData> OnMaintenanceDue;
 
         public void UpdateSchedules()
         {

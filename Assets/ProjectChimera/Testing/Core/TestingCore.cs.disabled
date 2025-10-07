@@ -1,0 +1,307 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+
+namespace ProjectChimera.Testing.Core
+{
+    /// <summary>
+    /// REFACTORED: Testing Core - Central coordination for testing subsystems
+    /// Manages foundation tests, performance tests, system integration tests, and load testing
+    /// Follows Single Responsibility Principle with focused subsystem coordination
+    /// </summary>
+    public class TestingCore : MonoBehaviour, ITickable
+    {
+        [Header("Core Testing Settings")]
+        [SerializeField] private bool _enableIntegrationTesting = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private bool _runTestsOnStart = false;
+
+        // Core subsystems
+        private FoundationTestManager _foundationTestManager;
+        private PerformanceTestManager _performanceTestManager;
+        private SystemIntegrationTestManager _integrationTestManager;
+        private LoadTestManager _loadTestManager;
+
+        // Test state
+        private IntegrationTestSuite _currentTestSuite;
+        private bool _testingInProgress = false;
+        private List<IntegrationTestResult> _testResults = new List<IntegrationTestResult>();
+
+        // Properties
+        public bool IsEnabled { get; private set; } = true;
+        public int TickPriority => -200; // Very low priority for testing
+        public bool IsTickable => enabled && gameObject.activeInHierarchy && IsEnabled && _enableIntegrationTesting;
+        public bool IsTestingInProgress => _testingInProgress;
+
+        // Events
+        public System.Action<IntegrationTestResult> OnTestCompleted;
+        public System.Action<IntegrationTestSuite> OnTestSuiteCompleted;
+
+        private void Start()
+        {
+            Initialize();
+
+            if (_runTestsOnStart)
+            {
+                StartCoroutine(RunFullIntegrationTestSuite());
+            }
+        }
+
+        private void Initialize()
+        {
+            if (_enableLogging)
+                ChimeraLogger.Log("TESTING", "🧪 Initializing TestingCore subsystems...", this);
+
+            // Initialize subsystems in dependency order
+            InitializeFoundationTestManager();
+            InitializePerformanceTestManager();
+            InitializeSystemIntegrationTestManager();
+            InitializeLoadTestManager();
+
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance.RegisterTickable(this);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("TESTING", "✅ TestingCore initialized with all subsystems", this);
+        }
+
+        private void InitializeFoundationTestManager()
+        {
+            var foundationGO = new GameObject("FoundationTestManager");
+            foundationGO.transform.SetParent(transform);
+            _foundationTestManager = foundationGO.AddComponent<FoundationTestManager>();
+
+            _foundationTestManager.OnTestCompleted += (result) => OnTestCompleted?.Invoke(result);
+        }
+
+        private void InitializePerformanceTestManager()
+        {
+            var performanceGO = new GameObject("PerformanceTestManager");
+            performanceGO.transform.SetParent(transform);
+            _performanceTestManager = performanceGO.AddComponent<PerformanceTestManager>();
+
+            _performanceTestManager.OnTestCompleted += (result) => OnTestCompleted?.Invoke(result);
+        }
+
+        private void InitializeSystemIntegrationTestManager()
+        {
+            var integrationGO = new GameObject("SystemIntegrationTestManager");
+            integrationGO.transform.SetParent(transform);
+            _integrationTestManager = integrationGO.AddComponent<SystemIntegrationTestManager>();
+
+            _integrationTestManager.OnTestCompleted += (result) => OnTestCompleted?.Invoke(result);
+        }
+
+        private void InitializeLoadTestManager()
+        {
+            var loadGO = new GameObject("LoadTestManager");
+            loadGO.transform.SetParent(transform);
+            _loadTestManager = loadGO.AddComponent<LoadTestManager>();
+
+            _loadTestManager.OnTestCompleted += (result) => OnTestCompleted?.Invoke(result);
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (!IsEnabled || !_enableIntegrationTesting || !_testingInProgress) return;
+
+            // Monitor test progress
+            if (_currentTestSuite != null && _currentTestSuite.IsCompleted)
+            {
+                CompleteTestSuite();
+            }
+        }
+
+        /// <summary>
+        /// Run complete Phase 1 integration test suite
+        /// </summary>
+        public void RunFullIntegrationTestSuite()
+        {
+            StartCoroutine(ExecuteFullTestSuite());
+        }
+
+        private IEnumerator ExecuteFullTestSuite()
+        {
+            if (_testingInProgress)
+            {
+                if (_enableLogging)
+                    ChimeraLogger.LogWarning("TESTING", "Integration testing already in progress", this);
+                yield break;
+            }
+
+            _testingInProgress = true;
+            _testResults.Clear();
+
+            if (_enableLogging)
+                ChimeraLogger.Log("TESTING", "=== STARTING PHASE 1 INTEGRATION TEST SUITE ===", this);
+
+            _currentTestSuite = new IntegrationTestSuite
+            {
+                SuiteName = "Phase 1 Complete Integration Test",
+                StartTime = Time.time,
+                TestResults = new List<IntegrationTestResult>()
+            };
+
+            // Run tests through subsystem managers
+            yield return StartCoroutine(_foundationTestManager.RunFoundationTests(_testResults));
+            yield return StartCoroutine(_performanceTestManager.RunPerformanceTests(_testResults));
+            yield return StartCoroutine(_integrationTestManager.RunIntegrationTests(_testResults));
+            yield return StartCoroutine(_loadTestManager.RunLoadTests(_testResults));
+
+            // Complete test suite
+            _currentTestSuite.CompletionTime = Time.time;
+            _currentTestSuite.IsCompleted = true;
+            _currentTestSuite.TestResults = new List<IntegrationTestResult>(_testResults);
+
+            CompleteTestSuite();
+        }
+
+        /// <summary>
+        /// Run specific test category
+        /// </summary>
+        public IEnumerator RunTestCategory(string category)
+        {
+            var results = new List<IntegrationTestResult>();
+
+            switch (category.ToLower())
+            {
+                case "foundation":
+                    yield return StartCoroutine(_foundationTestManager.RunFoundationTests(results));
+                    break;
+                case "performance":
+                    yield return StartCoroutine(_performanceTestManager.RunPerformanceTests(results));
+                    break;
+                case "integration":
+                    yield return StartCoroutine(_integrationTestManager.RunIntegrationTests(results));
+                    break;
+                case "load":
+                    yield return StartCoroutine(_loadTestManager.RunLoadTests(results));
+                    break;
+                default:
+                    if (_enableLogging)
+                        ChimeraLogger.LogWarning("TESTING", $"Unknown test category: {category}", this);
+                    break;
+            }
+
+            foreach (var result in results)
+            {
+                OnTestCompleted?.Invoke(result);
+            }
+        }
+
+        /// <summary>
+        /// Get test results from all subsystems
+        /// </summary>
+        public List<IntegrationTestResult> GetTestResults()
+        {
+            return new List<IntegrationTestResult>(_testResults);
+        }
+
+        /// <summary>
+        /// Set testing enabled/disabled
+        /// </summary>
+        public void SetEnabled(bool enabled)
+        {
+            IsEnabled = enabled;
+
+            if (_foundationTestManager != null) _foundationTestManager.SetEnabled(enabled);
+            if (_performanceTestManager != null) _performanceTestManager.SetEnabled(enabled);
+            if (_integrationTestManager != null) _integrationTestManager.SetEnabled(enabled);
+            if (_loadTestManager != null) _loadTestManager.SetEnabled(enabled);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("TESTING", $"TestingCore: {(enabled ? "enabled" : "disabled")}", this);
+        }
+
+        private void CompleteTestSuite()
+        {
+            _testingInProgress = false;
+
+            if (_enableLogging)
+            {
+                GenerateTestReport();
+            }
+
+            OnTestSuiteCompleted?.Invoke(_currentTestSuite);
+        }
+
+        private void GenerateTestReport()
+        {
+            ChimeraLogger.Log("TESTING", "=== PHASE 1 INTEGRATION TEST RESULTS ===", this);
+            ChimeraLogger.Log("TESTING", $"Test Suite: {_currentTestSuite.SuiteName}", this);
+            ChimeraLogger.Log("TESTING", $"Duration: {_currentTestSuite.CompletionTime - _currentTestSuite.StartTime:F2}s", this);
+
+            int passedTests = 0;
+            foreach (var result in _testResults)
+            {
+                if (result.Success) passedTests++;
+            }
+
+            int totalTests = _testResults.Count;
+            float successRate = totalTests > 0 ? (float)passedTests / totalTests * 100f : 0f;
+
+            ChimeraLogger.Log("TESTING", $"Results: {passedTests}/{totalTests} tests passed ({successRate:F1}%)", this);
+
+            foreach (var result in _testResults)
+            {
+                string status = result.Success ? "✅ PASS" : "❌ FAIL";
+                ChimeraLogger.Log("TESTING", $"{status} {result.TestName} ({result.CompletionTime - result.StartTime:F2}s)", this);
+
+                if (!result.Success)
+                {
+                    ChimeraLogger.LogError("TESTING", $"  Error: {result.ResultMessage}", this);
+                }
+            }
+
+            if (successRate >= 80f)
+            {
+                ChimeraLogger.Log("TESTING", "🎉 PHASE 1 INTEGRATION TESTS SUCCESSFUL!", this);
+            }
+            else
+            {
+                ChimeraLogger.LogError("TESTING", "⚠️ PHASE 1 INTEGRATION TESTS FAILED - Issues detected", this);
+            }
+
+            ChimeraLogger.Log("TESTING", "=== END INTEGRATION TEST REPORT ===", this);
+        }
+
+        private void OnDestroy()
+        {
+            UpdateOrchestrator.Instance.UnregisterTickable(this);
+        }
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// Integration test suite container
+    /// </summary>
+    [System.Serializable]
+    public class IntegrationTestSuite
+    {
+        public string SuiteName;
+        public float StartTime;
+        public float CompletionTime;
+        public bool IsCompleted;
+        public List<IntegrationTestResult> TestResults;
+    }
+
+    /// <summary>
+    /// Individual integration test result
+    /// </summary>
+    [System.Serializable]
+    public class IntegrationTestResult
+    {
+        public string TestName;
+        public string TestCategory;
+        public float StartTime;
+        public float CompletionTime;
+        public bool Success;
+        public string ResultMessage;
+        public List<string> TestSteps = new List<string>();
+    }
+
+    #endregion
+}

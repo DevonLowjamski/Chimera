@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Shared;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Services.Core
 {
@@ -103,8 +104,8 @@ namespace ProjectChimera.Systems.Services.Core
         bool Micropropagate(string cultureId, int quantity, out string[] seedIds);
         
         // Strain Management
-        PlantStrainSO GetStrain(string strainId);
-        PlantStrainSO[] GetAvailableStrains();
+        GeneticPlantStrainSO GetStrain(string strainId);
+        GeneticPlantStrainSO[] GetAvailableStrains();
         bool IsStrainUnlocked(string strainId);
         bool HasStrain(string strainId);
         

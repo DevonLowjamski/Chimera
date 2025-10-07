@@ -33,7 +33,7 @@ namespace ProjectChimera.Core.SimpleDI
             // These can be replaced with real implementations as needed
 
             if (_enableLogging)
-                ChimeraLogger.LogVerbose("[SimpleDIContainer] Core services registered");
+                ChimeraLogger.LogInfo("SimpleDIContainer", "$1");
         }
 
         #region Service Registration
@@ -47,7 +47,7 @@ namespace ProjectChimera.Core.SimpleDI
             _services[typeof(TInterface)] = instance;
 
             if (_enableLogging)
-                ChimeraLogger.LogVerbose($"[SimpleDIContainer] Registered singleton: {typeof(TInterface).Name}");
+                ChimeraLogger.LogInfo("SimpleDIContainer", "$1");
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace ProjectChimera.Core.SimpleDI
             _factories[typeof(TInterface)] = () => factory();
 
             if (_enableLogging)
-                ChimeraLogger.LogVerbose($"[SimpleDIContainer] Registered factory: {typeof(TInterface).Name}");
+                ChimeraLogger.LogInfo("SimpleDIContainer", "$1");
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace ProjectChimera.Core.SimpleDI
             _services[typeof(TService)] = instance;
 
             if (_enableLogging)
-                ChimeraLogger.LogVerbose($"[SimpleDIContainer] Registered service: {typeof(TService).Name}");
+                ChimeraLogger.LogInfo("SimpleDIContainer", "$1");
         }
 
         #endregion
@@ -98,7 +98,7 @@ namespace ProjectChimera.Core.SimpleDI
             }
 
             if (_enableLogging)
-                ChimeraLogger.LogWarning($"[SimpleDIContainer] Service not found: {serviceType.Name}");
+                ChimeraLogger.LogInfo("SimpleDIContainer", "$1");
 
             return default;
         }
@@ -151,7 +151,7 @@ namespace ProjectChimera.Core.SimpleDI
             if (_services.Remove(serviceType))
             {
                 if (_enableLogging)
-                    ChimeraLogger.LogVerbose($"[SimpleDIContainer] Unregistered service: {serviceType.Name}");
+                    ChimeraLogger.LogInfo("SimpleDIContainer", "$1");
             }
 
             _factories.Remove(serviceType);
@@ -166,7 +166,7 @@ namespace ProjectChimera.Core.SimpleDI
             _factories.Clear();
 
             if (_enableLogging)
-                ChimeraLogger.LogVerbose("[SimpleDIContainer] All services cleared");
+                ChimeraLogger.LogInfo("SimpleDIContainer", "$1");
         }
 
         /// <summary>
@@ -195,7 +195,7 @@ namespace ProjectChimera.Core.SimpleDI
                     property.SetValue(target, service);
 
                     if (_enableLogging)
-                        ChimeraLogger.LogVerbose($"[SimpleDIContainer] Injected {property.PropertyType.Name} into {targetType.Name}.{property.Name}");
+                        ChimeraLogger.LogInfo("SimpleDIContainer", "$1");
                 }
             }
         }
@@ -225,7 +225,7 @@ namespace ProjectChimera.Core.SimpleDI
         {
             if (_container == null)
             {
-                ChimeraLogger.LogError("[ServiceLocator] Container not initialized!");
+                ChimeraLogger.LogInfo("SimpleDIContainer", "$1");
                 return default;
             }
 
@@ -239,7 +239,7 @@ namespace ProjectChimera.Core.SimpleDI
         {
             if (_container == null)
             {
-                ChimeraLogger.LogError("[ServiceLocator] Container not initialized!");
+                ChimeraLogger.LogInfo("SimpleDIContainer", "$1");
                 service = default;
                 return false;
             }

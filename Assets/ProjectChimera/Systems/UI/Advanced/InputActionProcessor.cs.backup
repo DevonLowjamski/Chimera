@@ -1,0 +1,260 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.UI.Advanced
+{
+    /// <summary>
+    /// BASIC: Simple input action processor for Project Chimera's UI system.
+    /// Focuses on essential input processing without complex action systems and search modes.
+    /// </summary>
+    public class InputActionProcessor : MonoBehaviour
+    {
+        [Header("Basic Input Settings")]
+        [SerializeField] private bool _enableBasicProcessing = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _inputCooldown = 0.2f;
+
+        // Basic input tracking
+        private float _lastInputTime = 0f;
+        private bool _isInitialized = false;
+
+        /// <summary>
+        /// Events for input actions
+        /// </summary>
+        public event System.Action OnMenuToggle;
+        public event System.Action OnSelect;
+        public event System.Action OnCancel;
+        public event System.Action OnNavigateUp;
+        public event System.Action OnNavigateDown;
+        public event System.Action OnNavigateLeft;
+        public event System.Action OnNavigateRight;
+
+        /// <summary>
+        /// Initialize basic input processor
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Process menu toggle input
+        /// </summary>
+        public void ProcessMenuToggle()
+        {
+            if (!CanProcessInput()) return;
+
+            OnMenuToggle?.Invoke();
+            _lastInputTime = Time.time;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Process select input
+        /// </summary>
+        public void ProcessSelect()
+        {
+            if (!CanProcessInput()) return;
+
+            OnSelect?.Invoke();
+            _lastInputTime = Time.time;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Process cancel input
+        /// </summary>
+        public void ProcessCancel()
+        {
+            if (!CanProcessInput()) return;
+
+            OnCancel?.Invoke();
+            _lastInputTime = Time.time;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Process navigation inputs
+        /// </summary>
+        public void ProcessNavigateUp()
+        {
+            if (!CanProcessInput()) return;
+
+            OnNavigateUp?.Invoke();
+            _lastInputTime = Time.time;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        public void ProcessNavigateDown()
+        {
+            if (!CanProcessInput()) return;
+
+            OnNavigateDown?.Invoke();
+            _lastInputTime = Time.time;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        public void ProcessNavigateLeft()
+        {
+            if (!CanProcessInput()) return;
+
+            OnNavigateLeft?.Invoke();
+            _lastInputTime = Time.time;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        public void ProcessNavigateRight()
+        {
+            if (!CanProcessInput()) return;
+
+            OnNavigateRight?.Invoke();
+            _lastInputTime = Time.time;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Process keyboard input automatically
+        /// </summary>
+        private void Update()
+        {
+            if (!_enableBasicProcessing || !_isInitialized) return;
+
+            // Menu toggle
+            if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.Escape))
+            {
+                ProcessMenuToggle();
+            }
+
+            // Select
+            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
+            {
+                ProcessSelect();
+            }
+
+            // Cancel
+            if (Input.GetKeyDown(KeyCode.Backspace) || Input.GetMouseButtonDown(1))
+            {
+                ProcessCancel();
+            }
+
+            // Navigation
+            if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
+            {
+                ProcessNavigateUp();
+            }
+
+            if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S))
+            {
+                ProcessNavigateDown();
+            }
+
+            if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
+            {
+                ProcessNavigateLeft();
+            }
+
+            if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
+            {
+                ProcessNavigateRight();
+            }
+        }
+
+        /// <summary>
+        /// Set input processing enabled state
+        /// </summary>
+        public void SetInputProcessingEnabled(bool enabled)
+        {
+            _enableBasicProcessing = enabled;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Check if input can be processed (cooldown check)
+        /// </summary>
+        public bool CanProcessInput()
+        {
+            return _enableBasicProcessing && _isInitialized && (Time.time - _lastInputTime) >= _inputCooldown;
+        }
+
+        /// <summary>
+        /// Get input processor statistics
+        /// </summary>
+        public InputProcessorStats GetStats()
+        {
+            return new InputProcessorStats
+            {
+                IsEnabled = _enableBasicProcessing,
+                IsInitialized = _isInitialized,
+                CanProcessInput = CanProcessInput(),
+                InputCooldown = _inputCooldown,
+                TimeSinceLastInput = Time.time - _lastInputTime
+            };
+        }
+
+        /// <summary>
+        /// Force reset input cooldown
+        /// </summary>
+        public void ResetCooldown()
+        {
+            _lastInputTime = 0f;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Input processor statistics
+    /// </summary>
+    [System.Serializable]
+    public struct InputProcessorStats
+    {
+        public bool IsEnabled;
+        public bool IsInitialized;
+        public bool CanProcessInput;
+        public float InputCooldown;
+        public float TimeSinceLastInput;
+    }
+}

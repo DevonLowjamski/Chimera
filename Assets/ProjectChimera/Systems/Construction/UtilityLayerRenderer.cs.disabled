@@ -1,0 +1,160 @@
+using ProjectChimera.Data.Construction;
+using ProjectChimera.Core.Logging;
+using ConstructionUtilityType = ProjectChimera.Systems.Construction.ConstructionUtilityType;
+
+namespace ProjectChimera.Systems.Construction
+{
+    /// <summary>
+    /// DEPRECATED: Utility Layer Renderer has been broken down into focused components.
+    /// This file now serves as a reference point for the decomposed utility rendering system structure.
+    ///
+    /// New Component Structure:
+    /// - UtilityRenderingCore.cs: Core utility rendering infrastructure and component coordination
+    /// - UtilityNodeRenderer.cs: Utility nodes and connection points visualization
+    /// - UtilityConnectionRenderer.cs: Utility connections and flow lines rendering
+    /// - UtilityAnimationController.cs: Flow animations and visual effects
+    /// - UtilityValidationRenderer.cs: Validation feedback and system health visualization
+    /// </summary>
+
+    // The UtilityLayerRenderer functionality has been moved to focused component files.
+    // This file is kept for reference and to prevent breaking changes during migration.
+    //
+    // To use the new component structure, inherit from UtilityRenderingCore:
+    //
+    // public class UtilityLayerRenderer : UtilityRenderingCore
+    // {
+    //     // Your custom utility layer renderer implementation
+    // }
+    //
+    // The following classes are now available in their focused components:
+    //
+    // From UtilityRenderingCore.cs:
+    // - UtilityRenderingCore (base class with core functionality)
+    // - Rendering configuration and material management
+    // - Component orchestration and camera setup
+    //
+    // From UtilityNodeRenderer.cs:
+    // - UtilityNodeRenderer (utility node visualization)
+    // - Node creation, positioning, and LOD management
+    // - Node pooling and interaction handling
+    //
+    // From UtilityConnectionRenderer.cs:
+    // - UtilityConnectionRenderer (connection line rendering)
+    // - Connection generation and line visualization
+    // - Connection pooling and flow management
+    //
+    // From UtilityAnimationController.cs:
+    // - UtilityAnimationController (flow animations and effects)
+    // - Flow indicators and pulse animations
+    // - Dynamic visual feedback systems
+    //
+    // From UtilityValidationRenderer.cs:
+    // - UtilityValidationRenderer (validation feedback rendering)
+    // - Error indicators and system health visualization
+    // - Validation state management and reporting
+
+    /// <summary>
+    /// Concrete implementation of UtilityLayerRenderer using the new component structure.
+    /// Inherits all functionality from UtilityRenderingCore and specialized renderers.
+    /// </summary>
+    public class UtilityLayerRenderer : UtilityRenderingCore
+    {
+        // This class inherits all functionality from UtilityRenderingCore
+        // Individual rendering components are automatically initialized in the base class
+        // Add any custom UtilityLayerRenderer-specific functionality here if needed
+
+        /// <summary>
+        /// Legacy support methods for backward compatibility
+        /// </summary>
+        public void CreateUtilityVisualization(SchematicSO schematic, UnityEngine.Vector3 position, UnityEngine.Quaternion rotation)
+        {
+            if (!UtilityVisualizationEnabled || schematic == null)
+            {
+                LogWarning("Cannot create utility visualization - disabled or invalid schematic");
+                return;
+            }
+
+            ClearUtilityVisualization();
+
+            // Analyze schematic for utility requirements
+            var utilityData = AnalyzeSchematicUtilities(schematic);
+
+            // Create utility nodes for each item
+            foreach (var item in schematic.Items)
+            {
+                _nodeRenderer?.CreateUtilityNodesForItem(item, position, rotation);
+            }
+
+            // Create connections between nodes
+            _connectionRenderer?.GenerateUtilityConnections(_nodeRenderer, utilityData);
+
+            // Create flow indicators
+            _animationController?.GenerateFlowIndicators(_connectionRenderer);
+
+            // Validate connections
+            _validationRenderer?.ValidateUtilityLayout(_nodeRenderer, _connectionRenderer);
+
+            LogInfo($"Created utility visualization for '{schematic.SchematicName}' with {_connectionRenderer?.GetActiveConnectionCount() ?? 0} connections");
+        }
+
+        public void UpdateUtilityPosition(UnityEngine.Vector3 newPosition, UnityEngine.Quaternion newRotation)
+        {
+            _nodeRenderer?.UpdateNodePositions(newPosition, newRotation);
+            _connectionRenderer?.UpdateConnections();
+        }
+
+        public System.Collections.Generic.List<UtilityValidationResult> ValidateUtilityLayout()
+        {
+            return _validationRenderer?.ValidateUtilityLayout(_nodeRenderer, _connectionRenderer) ?? new System.Collections.Generic.List<UtilityValidationResult>();
+        }
+
+        public void ClearUtilityVisualization()
+        {
+            _nodeRenderer?.ClearAllNodes();
+            _connectionRenderer?.ClearAllConnections();
+            _animationController?.ClearFlowIndicators();
+            _validationRenderer?.ClearValidationIndicators();
+            LogInfo("Cleared all utility visualizations");
+        }
+
+        public System.Collections.Generic.List<UtilityConnectionInfo> GetConnectionInfoAtPosition(UnityEngine.Vector3 worldPosition, float radius = 1f)
+        {
+            return _connectionRenderer?.GetConnectionInfoAtPosition(worldPosition, radius) ?? new System.Collections.Generic.List<UtilityConnectionInfo>();
+        }
+
+        // Helper methods
+        private SchematicUtilityData AnalyzeSchematicUtilities(SchematicSO schematic)
+        {
+            var utilityData = new SchematicUtilityData();
+            foreach (var item in schematic.Items)
+            {
+                var requirements = GetUtilityRequirementsForItem(item);
+                utilityData.AddRequirements(item.ItemId, requirements);
+            }
+            return utilityData;
+        }
+
+        private System.Collections.Generic.List<UtilityRequirement> GetUtilityRequirementsForItem(SchematicItem item)
+        {
+            var requirements = new System.Collections.Generic.List<UtilityRequirement>();
+            switch (item.ItemCategory)
+            {
+                case nameof(ConstructionCategory.Equipment):
+                    requirements.Add(new UtilityRequirement { Type = ConstructionUtilityType.Electrical, Capacity = 10f });
+                    break;
+                case nameof(ConstructionCategory.Utility):
+                    requirements.Add(new UtilityRequirement { Type = ConstructionUtilityType.Water, Capacity = 5f });
+                    requirements.Add(new UtilityRequirement { Type = ConstructionUtilityType.Air, Capacity = 3f });
+                    break;
+                case nameof(ConstructionCategory.Structure):
+                    requirements.Add(new UtilityRequirement { Type = ConstructionUtilityType.Data, Capacity = 1f });
+                    break;
+            }
+            return requirements;
+        }
+
+        // Legacy property support
+        public int ActiveConnectionCount => _connectionRenderer?.GetActiveConnectionCount() ?? 0;
+        public System.Collections.Generic.Dictionary<ConstructionUtilityType, int> UtilityNodeCounts => _nodeRenderer?.GetNodeCounts() ?? new System.Collections.Generic.Dictionary<ConstructionUtilityType, int>();
+    }
+}

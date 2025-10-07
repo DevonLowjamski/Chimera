@@ -3,6 +3,7 @@ using ProjectChimera.Shared;
 using System.Collections.Generic;
 using ProjectChimera.Data.Shared;
 
+
 namespace ProjectChimera.Data.Equipment
 {
     /// <summary>
@@ -311,22 +312,28 @@ namespace ProjectChimera.Data.Equipment
     
     public enum EquipmentType
     {
+        // Generic/Unknown
+        Generic,
+
         // Lighting
         LED_Light,
         HPS_Light,
         CMH_Light,
         Fluorescent_Light,
         GrowLight, // Generic grow light category
+        Lighting, // Generic lighting category
         
         // HVAC
         Exhaust_Fan,
         Intake_Fan,
         Circulation_Fan,
+        Air_Circulator, // Added missing enum value
         Air_Conditioner,
         Heater,
         Dehumidifier,
         Humidifier,
         HVAC, // Generic HVAC category
+        Climate, // Generic climate control category
         
         // Irrigation
         Water_Pump,
@@ -334,6 +341,7 @@ namespace ProjectChimera.Data.Equipment
         Sprinkler_System,
         Nutrient_Doser,
         pH_Controller,
+        Watering_System, // Generic watering system
         Irrigation, // Generic irrigation category
         
         // Monitoring
@@ -344,6 +352,7 @@ namespace ProjectChimera.Data.Equipment
         CO2_Sensor,
         Light_Sensor,
         Sensor, // Generic sensor category
+        Monitoring, // Generic monitoring category
         
         // Processing
         Trimming_Machine,
@@ -360,22 +369,35 @@ namespace ProjectChimera.Data.Equipment
         // Automation
         Timer_Controller,
         Environmental_Controller,
+        Climate_Controller, // Alias for Environmental_Controller
         Irrigation_Controller,
         
         // Utilities
         Electrical_Panel,
         UPS_System,
         Generator,
+        Power, // Generic power category
         
         // Storage
         Seed_Storage,
         Nutrient_Storage,
         Tool_Storage,
+        Reservoir, // Water reservoir storage
         
         // Safety
         Fire_Suppression,
         Eye_Wash_Station,
-        First_Aid_Kit
+        First_Aid_Kit,
+
+        // Additional equipment types for cost database
+        PumpSystem,
+        ValveAssembly,
+        SensorArray,
+        ControlUnit,
+        HeatExchanger,
+        Compressor,
+        FilterSystem,
+        PowerDistribution
     }
     
     public enum EnvironmentalFactor

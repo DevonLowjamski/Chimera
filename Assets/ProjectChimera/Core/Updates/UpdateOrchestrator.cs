@@ -1,4 +1,5 @@
 using ProjectChimera.Core.Logging;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 using System.Collections.Generic;
 using UnityEngine;
 using ProjectChimera.Core;
@@ -22,6 +23,7 @@ namespace ProjectChimera.Core.Updates
         private static UpdateOrchestrator _instance;
         public static UpdateOrchestrator Instance => _instance;
 
+
         private void Awake()
         {
             // Singleton enforcement
@@ -38,7 +40,7 @@ namespace ProjectChimera.Core.Updates
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[UpdateOrchestrator] Initialized");
+                Logger.LogInfo("UpdateOrchestrator", "Initialized");
             }
         }
 
@@ -46,10 +48,13 @@ namespace ProjectChimera.Core.Updates
         {
             if (!_isInitialized) return;
 
-            // Update all registered tickables
+            // Sort tickables by priority (lower numbers first)
+            _tickables.Sort((a, b) => a.TickPriority.CompareTo(b.TickPriority));
+
+            // Update all registered tickables in priority order
             foreach (var tickable in _tickables)
             {
-                if (tickable != null && tickable.Enabled)
+                if (tickable != null && tickable.IsTickable)
                 {
                     try
                     {
@@ -57,7 +62,7 @@ namespace ProjectChimera.Core.Updates
                     }
                     catch (System.Exception ex)
                     {
-                        ChimeraLogger.LogError($"[UpdateOrchestrator] Error updating {tickable.GetType().Name}: {ex.Message}");
+                        Logger.LogError("UpdateOrchestrator", $"Error in tickable {tickable.GetType().Name}: {ex.Message}", this);
                     }
                 }
             }
@@ -77,7 +82,7 @@ namespace ProjectChimera.Core.Updates
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[UpdateOrchestrator] Registered {tickable.GetType().Name}");
+                    Logger.LogInfo("UpdateOrchestrator", $"Registered tickable: {tickable.GetType().Name}", this);
                 }
             }
         }
@@ -95,10 +100,11 @@ namespace ProjectChimera.Core.Updates
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[UpdateOrchestrator] Unregistered {tickable.GetType().Name}");
+                    Logger.LogInfo("UpdateOrchestrator", $"Unregistered tickable: {tickable.GetType().Name}", this);
                 }
             }
         }
+
 
         /// <summary>
         /// Get all registered tickables
@@ -134,8 +140,90 @@ namespace ProjectChimera.Core.Updates
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[UpdateOrchestrator] Cleared {count} tickables");
+                Logger.LogInfo("UpdateOrchestrator", "Cleared all tickables");
             }
         }
+
+        /// <summary>
+        /// Get statistics about the orchestrator
+        /// </summary>
+        public UpdateOrchestratorStatistics GetStatistics()
+        {
+            return new UpdateOrchestratorStatistics
+            {
+                RegisteredTickables = _tickables.Count,
+                IsInitialized = _isInitialized,
+                EnableLogging = _enableLogging
+            };
+        }
+
+        /// <summary>
+        /// Get status information
+        /// </summary>
+        public UpdateOrchestratorStatus GetStatus()
+        {
+            return new UpdateOrchestratorStatus
+            {
+                Status = _isInitialized ? "Initialized" : "Not Initialized",
+                TickableCount = _tickables.Count,
+                IsActive = isActiveAndEnabled
+            };
+        }
+
+        /// <summary>
+        /// Clear all registered tickables (alias for ClearAllTickables)
+        /// </summary>
+        public void ClearAll()
+        {
+            ClearAllTickables();
+        }
+
+        /// <summary>
+        /// Register a fixed tickable for FixedUpdate calls
+        /// </summary>
+        public void RegisterFixedTickable(IFixedTickable fixedTickable)
+        {
+            // For now, just register as regular tickable
+            // In a full implementation, this would use FixedUpdate
+            if (fixedTickable is ITickable tickable)
+            {
+                RegisterTickable(tickable);
+            }
+        }
+
+        /// <summary>
+        /// Unregister a fixed tickable
+        /// </summary>
+        public void UnregisterFixedTickable(IFixedTickable fixedTickable)
+        {
+            // For now, just unregister as regular tickable
+            // In a full implementation, this would handle FixedUpdate
+            if (fixedTickable is ITickable tickable)
+            {
+                UnregisterTickable(tickable);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Statistics for the update orchestrator
+    /// </summary>
+    [System.Serializable]
+    public class UpdateOrchestratorStatistics
+    {
+        public int RegisteredTickables;
+        public bool IsInitialized;
+        public bool EnableLogging;
+    }
+
+    /// <summary>
+    /// Status information for the update orchestrator
+    /// </summary>
+    [System.Serializable]
+    public class UpdateOrchestratorStatus
+    {
+        public string Status;
+        public int TickableCount;
+        public bool IsActive;
     }
 }

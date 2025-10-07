@@ -18,24 +18,24 @@ namespace ProjectChimera.Editor
 
         public void OnPreprocessBuild(BuildReport report)
         {
-            ChimeraLogger.Log("[ChimeraAutomatedBuild] Starting pre-build process...");
+            ChimeraLogger.Log("BUILD", "🚀 Starting automated build preprocessing", null);
 
             ValidateBuildConfiguration();
             ApplyBuildSpecificSettings(report.summary.platform);
             LogBuildConfiguration();
 
-            ChimeraLogger.Log("[ChimeraAutomatedBuild] Pre-build process completed.");
+            ChimeraLogger.Log("BUILD", "✅ Build preprocessing completed successfully", null);
         }
 
         public void OnPostprocessBuild(BuildReport report)
         {
-            ChimeraLogger.Log("[ChimeraAutomatedBuild] Starting post-build process...");
+            ChimeraLogger.Log("BUILD", "📋 Starting automated build postprocessing", null);
 
             LogBuildResults(report);
             GenerateBuildReport(report);
             CleanupTempSettings();
 
-            ChimeraLogger.Log("[ChimeraAutomatedBuild] Post-build process completed.");
+            ChimeraLogger.Log("BUILD", "🎯 Build postprocessing completed successfully", null);
         }
 
         private void ValidateBuildConfiguration()
@@ -48,12 +48,12 @@ namespace ProjectChimera.Editor
             // Warn about potentially problematic configurations
             if (activeProfile == "Development" && EditorUserBuildSettings.development == false)
             {
-                ChimeraLogger.LogWarning("[ChimeraAutomatedBuild] Development profile active but Unity Development Build is disabled");
+                ChimeraLogger.LogWarning("BUILD", "⚠️ Development profile active but Unity development build disabled", null);
             }
 
             if (activeDefines.Contains("CHIMERA_PRODUCTION") && EditorUserBuildSettings.development == true)
             {
-                ChimeraLogger.LogWarning("[ChimeraAutomatedBuild] Production defines active but Unity Development Build is enabled");
+                ChimeraLogger.LogWarning("BUILD", "⚠️ Production defines active but Unity development build enabled", null);
             }
         }
 
@@ -61,7 +61,7 @@ namespace ProjectChimera.Editor
         {
             var activeProfile = ChimeraBuildProfiles.GetActiveBuildProfile();
 
-            ChimeraLogger.Log($"[ChimeraAutomatedBuild] Applying settings for {activeProfile} profile on {buildTarget}");
+            ChimeraLogger.Log("BUILD", $"⚙️ Applying {activeProfile} profile settings for {buildTarget}", null);
 
             // Apply profile-specific Unity settings
             switch (activeProfile)
@@ -96,7 +96,7 @@ namespace ProjectChimera.Editor
                 PlayerSettings.SetIl2CppCompilerConfiguration(buildTargetGroup, Il2CppCompilerConfiguration.Release);
             }
 
-            ChimeraLogger.Log("[ChimeraAutomatedBuild] Applied production build settings");
+            ChimeraLogger.Log("BUILD", "✅ Production settings applied: optimizations enabled, debugging disabled", null);
         }
 
         private void ApplyDevelopmentSettings()
@@ -106,7 +106,7 @@ namespace ProjectChimera.Editor
             EditorUserBuildSettings.connectProfiler = true;
             PlayerSettings.stripEngineCode = false;
 
-            ChimeraLogger.Log("[ChimeraAutomatedBuild] Applied development build settings");
+            ChimeraLogger.Log("BUILD", "🔧 Development settings applied: debugging enabled, profiler connected", null);
         }
 
         private void ApplyTestingSettings()
@@ -115,7 +115,7 @@ namespace ProjectChimera.Editor
             EditorUserBuildSettings.allowDebugging = true;
             PlayerSettings.stripEngineCode = false;
 
-            ChimeraLogger.Log("[ChimeraAutomatedBuild] Applied testing build settings");
+            ChimeraLogger.Log("BUILD", "🧪 Testing settings applied: debugging enabled, no code stripping", null);
         }
 
         private void LogBuildConfiguration()
@@ -125,31 +125,31 @@ namespace ProjectChimera.Editor
             var buildTarget = EditorUserBuildSettings.activeBuildTarget;
             var buildTargetGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
 
-            ChimeraLogger.Log($"[ChimeraAutomatedBuild] Build Configuration:");
-            ChimeraLogger.Log($"  Profile: {activeProfile}");
-            ChimeraLogger.Log($"  Target: {buildTarget} ({buildTargetGroup})");
-            ChimeraLogger.Log($"  Defines: {string.Join(", ", activeDefines)}");
-            ChimeraLogger.Log($"  Development Build: {EditorUserBuildSettings.development}");
-            ChimeraLogger.Log($"  Script Debugging: {EditorUserBuildSettings.allowDebugging}");
-            ChimeraLogger.Log($"  IL2CPP: {PlayerSettings.GetScriptingBackend(buildTargetGroup) == ScriptingImplementation.IL2CPP}");
+            ChimeraLogger.Log("BUILD", "📋 Build Configuration Summary:", null);
+            ChimeraLogger.Log("BUILD", $"   🎯 Active Profile: {activeProfile}", null);
+            ChimeraLogger.Log("BUILD", $"   📱 Build Target: {buildTarget}", null);
+            ChimeraLogger.Log("BUILD", $"   📱 Target Group: {buildTargetGroup}", null);
+            ChimeraLogger.Log("BUILD", $"   🔧 Script Defines: {string.Join(", ", activeDefines)}", null);
+            ChimeraLogger.Log("BUILD", $"   🚀 Development Build: {EditorUserBuildSettings.development}", null);
+            ChimeraLogger.Log("BUILD", $"   🐛 Allow Debugging: {EditorUserBuildSettings.allowDebugging}", null);
         }
 
         private void LogBuildResults(BuildReport report)
         {
             var summary = report.summary;
 
-            ChimeraLogger.Log($"[ChimeraAutomatedBuild] Build Results:");
-            ChimeraLogger.Log($"  Result: {summary.result}");
-            ChimeraLogger.Log($"  Platform: {summary.platform}");
-            ChimeraLogger.Log($"  Total Time: {summary.totalTime}");
-            ChimeraLogger.Log($"  Total Size: {summary.totalSize} bytes");
-            ChimeraLogger.Log($"  Output Path: {summary.outputPath}");
-            ChimeraLogger.Log($"  Total Errors: {summary.totalErrors}");
-            ChimeraLogger.Log($"  Total Warnings: {summary.totalWarnings}");
+            ChimeraLogger.Log("BUILD", "📊 Build Results Summary:", null);
+            ChimeraLogger.Log("BUILD", $"   🎯 Result: {summary.result}", null);
+            ChimeraLogger.Log("BUILD", $"   ⏱️ Total Time: {summary.totalTime}", null);
+            ChimeraLogger.Log("BUILD", $"   📦 Total Size: {summary.totalSize / (1024 * 1024):F2} MB", null);
+            ChimeraLogger.Log("BUILD", $"   📁 Output Path: {summary.outputPath}", null);
+            ChimeraLogger.Log("BUILD", $"   ❌ Errors: {summary.totalErrors}", null);
+            ChimeraLogger.Log("BUILD", $"   ⚠️ Warnings: {summary.totalWarnings}", null);
+            ChimeraLogger.Log("BUILD", $"   🏗️ Platform: {summary.platform}", null);
 
             if (summary.result != BuildResult.Succeeded)
             {
-                ChimeraLogger.LogError($"[ChimeraAutomatedBuild] Build failed with result: {summary.result}");
+                ChimeraLogger.LogError("BUILD", $"❌ Build failed with result: {summary.result}. Check build logs for details.", null);
             }
         }
 
@@ -194,18 +194,18 @@ namespace ProjectChimera.Editor
                     }
                 }
 
-                ChimeraLogger.Log($"[ChimeraAutomatedBuild] Build report saved to: {fullPath}");
+                ChimeraLogger.Log("BUILD", $"📄 Build report generated successfully: {fullPath}", null);
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[ChimeraAutomatedBuild] Failed to generate build report: {ex.Message}");
+                ChimeraLogger.LogError("BUILD", $"❌ Failed to generate build report: {ex.Message}", null);
             }
         }
 
         private void CleanupTempSettings()
         {
             // Clean up any temporary settings that were applied during build
-            ChimeraLogger.Log("[ChimeraAutomatedBuild] Cleaning up temporary build settings");
+            ChimeraLogger.Log("BUILD", "🧹 Temporary build settings cleaned up", null);
         }
 
         /// <summary>
@@ -218,7 +218,7 @@ namespace ProjectChimera.Editor
             var profileArg = System.Array.Find(args, arg => arg.StartsWith("-profile="));
             var profile = profileArg?.Substring("-profile=".Length) ?? "Production";
 
-            ChimeraLogger.Log($"[ChimeraAutomatedBuild] Starting command line build with profile: {profile}");
+            ChimeraLogger.Log("BUILD", $"🚀 Starting command line build with profile: {profile}", null);
 
             // Apply the requested profile
             ChimeraBuildProfiles.ApplyBuildProfile(profile);
@@ -242,12 +242,12 @@ namespace ProjectChimera.Editor
 
             if (report.summary.result != BuildResult.Succeeded)
             {
-                ChimeraLogger.LogError($"[ChimeraAutomatedBuild] Command line build failed: {report.summary.result}");
+                ChimeraLogger.LogError("BUILD", $"❌ Command line build failed with result: {report.summary.result}", null);
                 EditorApplication.Exit(1);
             }
             else
             {
-                ChimeraLogger.Log($"[ChimeraAutomatedBuild] Command line build succeeded");
+                ChimeraLogger.Log("BUILD", $"✅ Command line build completed successfully. Output: {report.summary.outputPath}", null);
                 EditorApplication.Exit(0);
             }
         }

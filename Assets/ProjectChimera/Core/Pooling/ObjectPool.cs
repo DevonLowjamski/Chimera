@@ -1,0 +1,235 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Core.Pooling
+{
+    /// <summary>
+    /// PERFORMANCE: Generic object pool for Unity GameObjects
+    /// Reduces allocation/deallocation overhead by reusing objects
+    /// Week 9 Day 4-5: Object Pooling System Implementation
+    /// </summary>
+    /// <typeparam name="T">Type of pooled object (must be Component)</typeparam>
+    public class ObjectPool<T> : IObjectPool where T : Component
+    {
+        private readonly Queue<T> _pool = new Queue<T>();
+        private readonly HashSet<T> _activeObjects = new HashSet<T>();
+        private readonly Transform _poolParent;
+        private readonly GameObject _prefab;
+        private readonly int _initialSize;
+        private readonly int _maxSize;
+        private readonly bool _expandable;
+
+        // Factory functions
+        private readonly Func<GameObject> _createFunc;
+        private readonly Action<T> _onGetAction;
+        private readonly Action<T> _onReturnAction;
+        private readonly Action<T> _onDestroyAction;
+
+        public int CountInactive => _pool.Count;
+        public int CountActive => _activeObjects.Count;
+        public int CountAll => CountInactive + CountActive;
+
+        /// <summary>
+        /// Constructor for object pool
+        /// </summary>
+        public ObjectPool(
+            GameObject prefab,
+            int initialSize = 10,
+            int maxSize = 100,
+            bool expandable = true,
+            Transform poolParent = null,
+            Func<GameObject> createFunc = null,
+            Action<T> onGetAction = null,
+            Action<T> onReturnAction = null,
+            Action<T> onDestroyAction = null)
+        {
+            _prefab = prefab;
+            _initialSize = initialSize;
+            _maxSize = maxSize;
+            _expandable = expandable;
+            _poolParent = poolParent;
+            _createFunc = createFunc ?? DefaultCreateFunc;
+            _onGetAction = onGetAction ?? DefaultOnGetAction;
+            _onReturnAction = onReturnAction ?? DefaultOnReturnAction;
+            _onDestroyAction = onDestroyAction ?? DefaultOnDestroyAction;
+
+            // Pre-populate pool
+            for (int i = 0; i < _initialSize; i++)
+            {
+                var obj = CreatePooledObject();
+                ReturnToPool(obj);
+            }
+        }
+
+        /// <summary>
+        /// Get object from pool
+        /// </summary>
+        public T Get()
+        {
+            T obj;
+
+            if (_pool.Count > 0)
+            {
+                obj = _pool.Dequeue();
+            }
+            else if (_expandable || CountAll < _maxSize)
+            {
+                obj = CreatePooledObject();
+            }
+            else
+            {
+                // Pool is full and not expandable, return null or oldest active object
+                return null;
+            }
+
+            _activeObjects.Add(obj);
+            _onGetAction?.Invoke(obj);
+            
+            return obj;
+        }
+
+        /// <summary>
+        /// Return object to pool
+        /// </summary>
+        public void Return(T obj)
+        {
+            if (obj == null || !_activeObjects.Contains(obj))
+                return;
+
+            _activeObjects.Remove(obj);
+            _onReturnAction?.Invoke(obj);
+
+            if (_pool.Count < _maxSize)
+            {
+                _pool.Enqueue(obj);
+            }
+            else
+            {
+                // Pool is full, destroy excess object
+                _onDestroyAction?.Invoke(obj);
+                UnityEngine.Object.Destroy(obj.gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Clear all objects from pool
+        /// </summary>
+        public void Clear()
+        {
+            // Destroy all pooled objects
+            while (_pool.Count > 0)
+            {
+                var obj = _pool.Dequeue();
+                _onDestroyAction?.Invoke(obj);
+                UnityEngine.Object.Destroy(obj.gameObject);
+            }
+
+            // Destroy all active objects (optional - usually they should be returned first)
+            foreach (var obj in _activeObjects)
+            {
+                if (obj != null)
+                {
+                    _onDestroyAction?.Invoke(obj);
+                    UnityEngine.Object.Destroy(obj.gameObject);
+                }
+            }
+
+            _activeObjects.Clear();
+        }
+
+        /// <summary>
+        /// Force return all active objects to pool
+        /// </summary>
+        public void ReturnAll()
+        {
+            var activeList = new List<T>(_activeObjects);
+            foreach (var obj in activeList)
+            {
+                Return(obj);
+            }
+        }
+
+        /// <summary>
+        /// Resize pool to target size
+        /// </summary>
+        public void Resize(int targetSize)
+        {
+            targetSize = Mathf.Clamp(targetSize, 0, _maxSize);
+
+            // Add objects if needed
+            while (_pool.Count < targetSize)
+            {
+                var obj = CreatePooledObject();
+                ReturnToPool(obj);
+            }
+
+            // Remove objects if needed
+            while (_pool.Count > targetSize)
+            {
+                var obj = _pool.Dequeue();
+                _onDestroyAction?.Invoke(obj);
+                UnityEngine.Object.Destroy(obj.gameObject);
+            }
+        }
+
+        #region Private Methods
+
+        private T CreatePooledObject()
+        {
+            var gameObj = _createFunc.Invoke();
+            var component = gameObj.GetComponent<T>();
+            
+            if (component == null)
+                component = gameObj.AddComponent<T>();
+
+            if (_poolParent != null)
+                gameObj.transform.SetParent(_poolParent);
+
+            return component;
+        }
+
+        private void ReturnToPool(T obj)
+        {
+            _onReturnAction?.Invoke(obj);
+            _pool.Enqueue(obj);
+        }
+
+        private GameObject DefaultCreateFunc()
+        {
+            return UnityEngine.Object.Instantiate(_prefab);
+        }
+
+        private void DefaultOnGetAction(T obj)
+        {
+            if (obj != null && obj.gameObject != null)
+                obj.gameObject.SetActive(true);
+        }
+
+        private void DefaultOnReturnAction(T obj)
+        {
+            if (obj != null && obj.gameObject != null)
+            {
+                obj.gameObject.SetActive(false);
+                obj.transform.SetParent(_poolParent);
+            }
+        }
+
+        private void DefaultOnDestroyAction(T obj)
+        {
+            // Default destroy action - can be customized
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Interface for poolable objects
+    /// </summary>
+    public interface IPoolable
+    {
+        void OnGetFromPool();
+        void OnReturnToPool();
+    }
+}

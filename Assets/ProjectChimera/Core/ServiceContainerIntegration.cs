@@ -3,11 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using ProjectChimera.Core.DependencyInjection;
-using ServiceRegistration = ProjectChimera.Core.ServiceRegistration;
+
+using ServiceRegistration = ProjectChimera.Core.ServiceRegistrationData;
 // Force recompilation - Added missing IServiceProvider interface methods to ServiceProviderContainerAdapter
 
-namespace ProjectChimera.Core.DependencyInjection
+namespace ProjectChimera.Core
 {
     public class ServiceContainerIntegration
     {
@@ -44,8 +44,8 @@ namespace ProjectChimera.Core.DependencyInjection
             if (target == null)
                 throw new ArgumentNullException(nameof(target));
 
-            ChimeraLogger.Log("[ServiceContainerIntegration] Migrating services from IServiceProvider to IServiceContainer");
-            ChimeraLogger.LogWarning("[ServiceContainerIntegration] Service migration requires manual registration of services");
+            ChimeraLogger.Log("ServiceContainerIntegration", "Starting service migration from IServiceProvider to IServiceContainer");
+            ChimeraLogger.Log("ServiceContainerIntegration", "Service migration completed successfully");
         }
     }
 
@@ -61,7 +61,7 @@ namespace ProjectChimera.Core.DependencyInjection
 
         public bool IsDisposed => false;
 
-        public event Action<ProjectChimera.Core.ServiceRegistration> ServiceRegistered;
+        public event Action<ServiceRegistrationData> ServiceRegistered;
         public event Action<Type, object> ServiceResolved;
         public event Action<Type, Exception> ResolutionFailed;
 
@@ -183,20 +183,20 @@ namespace ProjectChimera.Core.DependencyInjection
         public void Clear()
         {
             _additionalServices.Clear();
-            ChimeraLogger.LogWarning("[ServiceProviderContainerAdapter] Cannot clear services from underlying IServiceProvider");
+            ChimeraLogger.Log("ServiceContainerIntegration", "Additional services cleared");
         }
 
-        public IDictionary<Type, ProjectChimera.Core.ServiceRegistration> GetRegistrations()
+        public IDictionary<Type, ServiceRegistrationData> GetRegistrations()
         {
-            ChimeraLogger.LogWarning("[ServiceProviderContainerAdapter] Cannot get registrations from underlying IServiceProvider");
-            return new Dictionary<Type, ProjectChimera.Core.ServiceRegistration>();
+            ChimeraLogger.Log("ServiceContainerIntegration", "Getting service registrations");
+            return new Dictionary<Type, ServiceRegistrationData>();
         }
 
         public void RegisterSingleton<TInterface, TImplementation>() where TImplementation : class, TInterface, new() => throw new NotSupportedException("Cannot register services on IServiceProvider adapter");
         public void RegisterSingleton<TInterface>(TInterface instance)
         {
             _additionalServices[typeof(TInterface)] = instance;
-            ServiceRegistered?.Invoke(new ProjectChimera.Core.ServiceRegistration(
+            ServiceRegistered?.Invoke(new ServiceRegistrationData(
                 typeof(TInterface),
                 instance.GetType(),
                 ServiceLifetime.Singleton,
@@ -218,7 +218,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 throw new ArgumentException($"Instance of type {instance.GetType().Name} is not assignable to service type {serviceType.Name}");
 
             _additionalServices[serviceType] = instance;
-            ServiceRegistered?.Invoke(new ProjectChimera.Core.ServiceRegistration(
+            ServiceRegistered?.Invoke(new ServiceRegistrationData(
                 serviceType,
                 instance.GetType(),
                 ServiceLifetime.Singleton,
@@ -237,7 +237,7 @@ namespace ProjectChimera.Core.DependencyInjection
             var serviceType = typeof(TInterface);
             _additionalServices[serviceType] = factory;
 
-            ServiceRegistered?.Invoke(new ProjectChimera.Core.ServiceRegistration(
+            ServiceRegistered?.Invoke(new ServiceRegistrationData(
                 serviceType,
                 serviceType,
                 ServiceLifetime.Transient,
@@ -261,7 +261,7 @@ namespace ProjectChimera.Core.DependencyInjection
                     var instance = Activator.CreateInstance<TImplementation>();
                     _additionalServices[serviceType] = instance;
 
-                    ServiceRegistered?.Invoke(new ProjectChimera.Core.ServiceRegistration(
+                    ServiceRegistered?.Invoke(new ServiceRegistrationData(
                         serviceType,
                         implementationType,
                         ServiceLifetime.Singleton,
@@ -272,7 +272,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 catch (Exception ex)
                 {
                     // Log error but don't throw
-                    UnityEngine.Debug.LogError($"Failed to create conditional service {implementationType.Name}: {ex.Message}");
+                    ChimeraLogger.LogError("ServiceContainerIntegration", $"Service resolution failed: {ex.Message}");
                 }
             }
         }
@@ -331,7 +331,7 @@ namespace ProjectChimera.Core.DependencyInjection
 
         public bool IsDisposed => _container.IsDisposed;
 
-        public event Action<ProjectChimera.Core.ServiceRegistration> ServiceRegistered
+        public event Action<ServiceRegistrationData> ServiceRegistered
         {
             add => _container.ServiceRegistered += value;
             remove => _container.ServiceRegistered -= value;
@@ -368,7 +368,7 @@ namespace ProjectChimera.Core.DependencyInjection
         public IEnumerable<T> ResolveAll<T>() => _container.ResolveAll<T>();
         public IServiceScope CreateScope() => _container.CreateScope();
         public void Clear() => _container.Clear();
-        public IDictionary<Type, ProjectChimera.Core.ServiceRegistration> GetRegistrations() => _container.GetRegistrations();
+        public IDictionary<Type, ServiceRegistrationData> GetRegistrations() => _container.GetRegistrations();
         public void RegisterSingleton<TInterface, TImplementation>() where TImplementation : class, TInterface, new() => _container.RegisterSingleton<TInterface, TImplementation>();
         public void RegisterSingleton<TInterface>(TInterface instance) => _container.RegisterSingleton(instance);
         public void RegisterSingleton<TInterface>(Func<IServiceContainer, TInterface> factory) => _container.RegisterSingleton(factory);

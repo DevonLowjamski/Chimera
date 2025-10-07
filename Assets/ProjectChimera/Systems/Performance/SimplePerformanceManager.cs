@@ -1,6 +1,9 @@
 using UnityEngine;
+using ProjectChimera.Core;
 using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Performance
 {
@@ -9,7 +12,7 @@ namespace ProjectChimera.Systems.Performance
     /// Provides basic performance optimizations as described in gameplay document
     /// Focuses on LOD systems and occlusion culling for rendering optimization
     /// </summary>
-    public class SimplePerformanceManager : MonoBehaviour
+    public class SimplePerformanceManager : MonoBehaviour, ITickable
     {
         [Header("LOD Settings")]
         [SerializeField] private float _lodNearDistance = 5f;
@@ -29,7 +32,7 @@ namespace ProjectChimera.Systems.Performance
         // LOD management
         private Dictionary<GameObject, LODGroup> _lodGroups = new Dictionary<GameObject, LODGroup>();
         private Dictionary<GameObject, MeshRenderer> _renderers = new Dictionary<GameObject, MeshRenderer>();
-        private Camera _mainCamera;
+        private UnityEngine.Camera _mainCamera;
         private float _lastOcclusionCheck;
 
         private void Awake()
@@ -38,19 +41,28 @@ namespace ProjectChimera.Systems.Performance
             FindMainCamera();
         }
 
-        private void Update()
-        {
+    public int TickPriority => 100;
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
             if (_enableLOD)
-            {
                 UpdateLOD();
-            }
 
             if (_enableOcclusionCulling && Time.time - _lastOcclusionCheck >= _occlusionCheckInterval)
-            {
                 UpdateOcclusionCulling();
                 _lastOcclusionCheck = Time.time;
-            }
-        }
+    }
+
+    private void OnEnable()
+    {
+        UpdateOrchestrator.Instance?.RegisterTickable(this);
+    }
+
+    private void OnDisable()
+    {
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
+    }
 
         /// <summary>
         /// Initializes basic performance settings
@@ -67,7 +79,7 @@ namespace ProjectChimera.Systems.Performance
                 QualitySettings.shadowResolution = ShadowResolution.Medium;
             }
 
-            ChimeraLogger.Log($"[SimplePerformanceManager] Initialized with target FPS: {_targetFrameRate}");
+            ChimeraLogger.Log("PERFORMANCE", "Initialized performance settings", this);
         }
 
         /// <summary>
@@ -75,10 +87,10 @@ namespace ProjectChimera.Systems.Performance
         /// </summary>
         private void FindMainCamera()
         {
-            _mainCamera = Camera.main;
+            _mainCamera = UnityEngine.Camera.main;
             if (_mainCamera == null)
             {
-                ChimeraLogger.LogWarning("[SimplePerformanceManager] No main camera found for LOD calculations");
+                ChimeraLogger.LogWarning("PERFORMANCE", "Main camera not found", this);
             }
         }
 
@@ -115,7 +127,7 @@ namespace ProjectChimera.Systems.Performance
                 lodGroup.RecalculateBounds();
             }
 
-            ChimeraLogger.Log($"[SimplePerformanceManager] Registered {obj.name} for LOD management");
+            ChimeraLogger.Log("OTHER", "$1", this);
         }
 
         /// <summary>
@@ -217,24 +229,18 @@ namespace ProjectChimera.Systems.Performance
         /// </summary>
         public void OptimizeCurrentScene()
         {
-            // Primary: Try ServiceContainer resolution for registered renderers
-            var renderers = ServiceContainerFactory.Instance.ResolveAll<MeshRenderer>();
-            if (renderers?.Any() != true)
+            // Primary: Try GameObjectRegistry for registered renderers
+            var registry = ServiceContainerFactory.Instance?.TryResolve<ProjectChimera.Core.Performance.IGameObjectRegistry>();
+            var renderers = registry?.GetAll<MeshRenderer>();
+
+            if (renderers == null || !renderers.Any())
             {
-                // Fallback: Find all renderers in the scene and register them for LOD
-                renderers = UnityEngine.Object.FindObjectsOfType<MeshRenderer>();
-                
-                // Auto-register discovered renderers in ServiceContainer for future use
-                foreach (var renderer in renderers)
-                {
-                    ServiceContainerFactory.Instance.RegisterInstance<MeshRenderer>(renderer);
-                }
-                
-                ChimeraLogger.Log($"[SimplePerformanceManager] Registered {renderers.Length} MeshRenderers in ServiceContainer");
+                ChimeraLogger.LogWarning("PERFORMANCE", "No MeshRenderers found - ensure they are registered with GameObjectRegistry in Awake()", this);
+                return;
             }
             else
             {
-                ChimeraLogger.Log("[SimplePerformanceManager] Using MeshRenderers from ServiceContainer");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
             foreach (var renderer in renderers)
             {
@@ -245,7 +251,7 @@ namespace ProjectChimera.Systems.Performance
                 }
             }
 
-            ChimeraLogger.Log($"[SimplePerformanceManager] Optimized scene with {renderers.Length} renderers");
+            ChimeraLogger.Log("PERFORMANCE", "Quality level set", this);
         }
 
         /// <summary>
@@ -275,7 +281,7 @@ namespace ProjectChimera.Systems.Performance
                     break;
             }
 
-            ChimeraLogger.Log($"[SimplePerformanceManager] Set quality level to {level}");
+            ChimeraLogger.Log("PERFORMANCE", "Cleanup complete", this);
         }
 
         /// <summary>
@@ -306,7 +312,7 @@ namespace ProjectChimera.Systems.Performance
             _renderers.Clear();
             _lodGroups.Clear();
 
-            ChimeraLogger.Log("[SimplePerformanceManager] Cleaned up resources");
+            ChimeraLogger.Log("OTHER", "$1", this);
         }
     }
 

@@ -1,0 +1,65 @@
+using UnityEngine;
+using UnityEditor;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Editor
+{
+    /// <summary>
+    /// Auto-executes BuildSettingsConfigurator when Unity starts up
+    /// Ensures Build Settings are always properly configured for Project Chimera
+    /// </summary>
+    [InitializeOnLoad]
+    public static class AutoConfigureBuildSettings
+    {
+        static AutoConfigureBuildSettings()
+        {
+            // Use EditorApplication.delayCall to ensure Unity is fully initialized
+            EditorApplication.delayCall += ConfigureBuildSettingsOnStartup;
+        }
+
+        private static void ConfigureBuildSettingsOnStartup()
+        {
+            // Only run this once per editor session
+            EditorApplication.delayCall -= ConfigureBuildSettingsOnStartup;
+
+            // Check if Build Settings need configuration
+            if (ShouldConfigureBuildSettings())
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+                BuildSettingsConfigurator.ConfigureBuildSettings();
+            }
+            else
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+
+        private static bool ShouldConfigureBuildSettings()
+        {
+            var currentScenes = EditorBuildSettings.scenes;
+            
+            // If no scenes configured, definitely need to configure
+            if (currentScenes == null || currentScenes.Length == 0)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+                return true;
+            }
+
+            // Check if first scene is our Boot scene
+            if (currentScenes.Length > 0 && !currentScenes[0].path.Contains("01_Boot"))
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+                return true;
+            }
+
+            // If we have the expected number of scenes, probably configured correctly
+            if (currentScenes.Length == 9) // Our 9 Project Chimera scenes
+            {
+                return false;
+            }
+
+            ChimeraLogger.Log("OTHER", "$1", this);
+            return true;
+        }
+    }
+}

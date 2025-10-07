@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectChimera.Core.Logging;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Core
 {
@@ -17,16 +18,16 @@ namespace ProjectChimera.Core
         /// Unique identifier for this component instance.
         /// Generated automatically if not set.
         /// </summary>
-        public string ComponentID 
-        { 
-            get 
-            { 
+        public string ComponentID
+        {
+            get
+            {
                 if (string.IsNullOrEmpty(_componentID))
                 {
                     _componentID = System.Guid.NewGuid().ToString();
                 }
-                return _componentID; 
-            } 
+                return _componentID;
+            }
         }
 
         /// <summary>
@@ -109,7 +110,7 @@ namespace ProjectChimera.Core
         /// <param name="message">The message to log</param>
         protected void LogInfo(string message)
         {
-            ChimeraLogger.Log($"[Chimera][{GetType().Name}] {message}", this);
+            Logger.LogInfo("ChimeraMonoBehaviour", "$1");
         }
 
         /// <summary>
@@ -120,7 +121,7 @@ namespace ProjectChimera.Core
         {
             if (_enableDebugLogging)
             {
-                ChimeraLogger.Log($"[Chimera][{GetType().Name}] {message}", this);
+                Logger.LogInfo("ChimeraMonoBehaviour", "$1");
             }
         }
 
@@ -130,7 +131,7 @@ namespace ProjectChimera.Core
         /// <param name="message">The warning message to log</param>
         protected void LogWarning(string message)
         {
-            ChimeraLogger.LogWarning($"[Chimera][{GetType().Name}] {message}", this);
+            Logger.LogInfo("ChimeraMonoBehaviour", "$1");
         }
 
         /// <summary>
@@ -139,7 +140,7 @@ namespace ProjectChimera.Core
         /// <param name="message">The error message to log</param>
         protected void LogError(string message)
         {
-            ChimeraLogger.LogError($"[Chimera][{GetType().Name}] {message}", this);
+            Logger.LogInfo("ChimeraMonoBehaviour", "$1");
         }
 
         /// <summary>

@@ -66,7 +66,7 @@ namespace ProjectChimera.Systems.Construction
             InitializeBaseCosts();
             _isInitialized = true;
 
-            ChimeraLogger.Log("[CostCalculator] Cost calculator initialized");
+            ChimeraLogger.Log("OTHER", "CostCalculator initialized", null);
         }
 
         public void Shutdown()
@@ -75,7 +75,7 @@ namespace ProjectChimera.Systems.Construction
             _positionCostModifiers.Clear();
             _isInitialized = false;
 
-            ChimeraLogger.Log("[CostCalculator] Cost calculator shutdown");
+            ChimeraLogger.Log("OTHER", "CostCalculator shutdown", null);
         }
 
         public CostCalculationResult CalculatePlacementCost(GridPlaceable placeable, Vector3Int gridPosition)
@@ -85,7 +85,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (!_isInitialized)
             {
-                ChimeraLogger.LogWarning("[CostCalculator] Cost calculator not initialized");
+                ChimeraLogger.Log("OTHER", "CostCalculator not initialized", null);
                 result.TotalCost = 100f; // Default fallback cost
                 result.ResourceCosts = new List<ResourceCost>();
                 result.Breakdown = breakdown;
@@ -95,7 +95,7 @@ namespace ProjectChimera.Systems.Construction
             // Get base cost profile
             if (!_baseCosts.ContainsKey(placeable.Type))
             {
-                ChimeraLogger.LogWarning($"[CostCalculator] No cost profile found for {placeable.Type}, using default");
+                ChimeraLogger.Log("OTHER", "Unknown placeable type in cost calculation", null);
                 result.TotalCost = 100f; // Default cost
                 result.ResourceCosts = new List<ResourceCost>();
                 result.Breakdown = breakdown;
@@ -143,7 +143,7 @@ namespace ProjectChimera.Systems.Construction
             result.ResourceCosts = new List<ResourceCost>(costProfile.resourceCosts);
             result.Breakdown = breakdown;
 
-            ChimeraLogger.Log($"[CostCalculator] Cost calculated for {placeable.name} at {gridPosition}: {result.TotalCost:F2}");
+            ChimeraLogger.Log("OTHER", "Placement cost calculated", null);
             return result;
         }
 
@@ -201,14 +201,14 @@ namespace ProjectChimera.Systems.Construction
         public void SetPositionCostModifier(Vector3Int position, float modifier)
         {
             _positionCostModifiers[position] = modifier;
-            ChimeraLogger.Log($"[CostCalculator] Position cost modifier set for {position}: {modifier:F2}");
+            ChimeraLogger.Log("OTHER", "Position cost modifier set", null);
         }
 
         public void RemovePositionCostModifier(Vector3Int position)
         {
             if (_positionCostModifiers.Remove(position))
             {
-                ChimeraLogger.Log($"[CostCalculator] Position cost modifier removed for {position}");
+                ChimeraLogger.Log("OTHER", "Position cost modifier removed", null);
             }
         }
 
@@ -293,13 +293,13 @@ namespace ProjectChimera.Systems.Construction
                 complexityMultiplier = 0.8f
             };
 
-            ChimeraLogger.Log($"[CostCalculator] Initialized {_baseCosts.Count} base cost profiles");
+            ChimeraLogger.Log("OTHER", "Base costs initialized", null);
         }
 
         public void UpdateCostProfile(PlaceableType type, CostProfile profile)
         {
             _baseCosts[type] = profile;
-            ChimeraLogger.Log($"[CostCalculator] Updated cost profile for {type}");
+            ChimeraLogger.Log("OTHER", "Cost profile updated", null);
         }
 
         public CostProfile GetCostProfile(PlaceableType type)
@@ -309,7 +309,7 @@ namespace ProjectChimera.Systems.Construction
                 return profile;
             }
 
-            ChimeraLogger.LogWarning($"[CostCalculator] No cost profile found for {type}");
+            ChimeraLogger.Log("OTHER", "Cost profile not found, returning default", null);
             return new CostProfile(); // Return default profile
         }
     }

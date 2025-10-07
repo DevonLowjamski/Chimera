@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Shared;
+using ProjectChimera.Shared;
 
 namespace ProjectChimera.Data.Genetics
 {

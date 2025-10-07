@@ -4,8 +4,9 @@ using System.Linq;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Core.Logging;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
-namespace ProjectChimera.Core.DependencyInjection
+namespace ProjectChimera.Core
 {
     public class ServiceManager : ChimeraManager
     {
@@ -48,15 +49,15 @@ namespace ProjectChimera.Core.DependencyInjection
                     }
                     catch (Exception ex)
                     {
-                        ChimeraLogger.LogWarning($"[ServiceManager] Failed to resolve from DI container: {ex.Message}");
+                        Logger.LogError("ServiceManager", $"ServiceContainer resolve failed: {ex.Message}");
                     }
-                    
+
                     if (_instance == null)
                     {
                         var gameObject = new GameObject("ServiceManager");
                         _instance = gameObject.AddComponent<ServiceManager>();
                         DontDestroyOnLoad(gameObject);
-                        
+
                         // Register with DI container
                         try
                         {
@@ -64,7 +65,7 @@ namespace ProjectChimera.Core.DependencyInjection
                         }
                         catch (Exception ex)
                         {
-                            ChimeraLogger.LogWarning($"[ServiceManager] Failed to register with DI container: {ex.Message}");
+                            Logger.LogError("ServiceManager", $"ServiceContainer registration failed: {ex.Message}");
                         }
                     }
                 }
@@ -78,10 +79,10 @@ namespace ProjectChimera.Core.DependencyInjection
             {
                 _instance = this;
                 DontDestroyOnLoad(gameObject);
-                
+
                 // Initialize ServiceContainer integration as standard DI route
                 InitializeServiceContainerIntegration();
-                
+
                 if (_enableAutoInitialization)
                 {
                     InitializeServiceManager();
@@ -145,7 +146,7 @@ namespace ProjectChimera.Core.DependencyInjection
                 // Register ServiceManager itself with ServiceContainer
                 _serviceContainer.RegisterSingleton<IServiceContainer>(_serviceContainer);
                 _serviceContainer.RegisterSingleton<ServiceManager>(this);
-                
+
                 LogServiceAction("ServiceManager registered with ServiceContainer as standard DI route");
             }
             catch (Exception ex)
@@ -441,13 +442,13 @@ namespace ProjectChimera.Core.DependencyInjection
         {
             if (_enableServiceLogging)
             {
-                ChimeraLogger.Log($"[ServiceManager] {message}");
+                Logger.LogInfo("ServiceManager", message);
             }
         }
 
         private void LogServiceError(string message)
         {
-            ChimeraLogger.LogError($"[ServiceManager] ERROR: {message}");
+            Logger.LogError("ServiceManager", message);
         }
 
         protected override void OnManagerInitialize()
@@ -471,6 +472,6 @@ namespace ProjectChimera.Core.DependencyInjection
         public double InitializationTime { get; set; }
         // ServiceLocatorMetrics removed - migrated to ServiceContainer
     }
-    
-    
+
+
 }

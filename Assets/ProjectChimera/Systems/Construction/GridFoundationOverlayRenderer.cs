@@ -40,7 +40,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[GridFoundationOverlayRenderer] Initialized successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -77,7 +77,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[GridFoundationOverlayRenderer] Foundation overlay hidden");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 

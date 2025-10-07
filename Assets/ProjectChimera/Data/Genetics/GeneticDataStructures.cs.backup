@@ -1,0 +1,165 @@
+using System.Collections.Generic;
+using System;
+using ProjectChimera.Data.Genetics;
+using MutationRecord = ProjectChimera.Data.Genetics.MutationRecord;
+using TraitExpressionResult = ProjectChimera.Data.Genetics.TraitExpressionResult;
+using TraitType = ProjectChimera.Data.Genetics.TraitType;
+using BreedingStrategyType = ProjectChimera.Data.Genetics.BreedingStrategyType;
+
+// Removed problematic using statements for non-existent types
+
+namespace ProjectChimera.Data.Genetics
+{
+    /// <summary>
+    /// PC014-2c: Additional data structures needed for genetic service interfaces
+    /// These complement existing data structures without duplicating them
+    /// </summary>
+    
+
+
+    [Serializable]
+    public class AlleleData
+    {
+        public string AlleleId;
+        public string GeneLocus;
+        public float EffectValue;
+        public float Dominance;
+        public bool IsWildType;
+        public string OriginStrain;
+        public DateTime FirstObserved;
+    }
+
+
+
+
+
+    [Serializable]
+    public class GenerationSnapshot
+    {
+        public int Generation;
+        public int PopulationSize;
+        public float AverageFitness;
+        public float GeneticDiversity;
+    }
+
+
+
+
+
+
+
+
+
+
+    [Serializable]
+    public class OptimalBreedingPlan
+    {
+        public List<BreedingPair> Phase1Crosses;
+        public List<BreedingPair> Phase2Crosses;
+        public List<BreedingPair> Phase3Crosses;
+        public float ExpectedGeneticGain;
+        public int EstimatedTimeToCompletion;
+        public List<string> CriticalDecisionPoints;
+    }
+
+
+
+    [Serializable]
+    public class PopulationGeneticAnalysis
+    {
+        public int PopulationSize;
+        public float AlleleFrequency;
+        public float HeterozygosityObserved;
+        public float HeterozygosityExpected;
+        public float InbreedingCoefficient;
+        public List<string> RareAlleles;
+        public float GeneticDiversity;
+    }
+
+    [Serializable]
+    public class GeneticDiversityMetrics
+    {
+        public float ShannonIndex;
+        public float SimpsonIndex;
+        public int NumberOfAlleles;
+        public float EffectivePopulationSize;
+        public float NucleotideDiversity;
+    }
+
+    [Serializable]
+    public class QTLMapping
+    {
+        public string ChromosomeLocation;
+        public string TraitName;
+        public float EffectSize;
+        public float SignificanceLevel;
+        public float VarianceExplained;
+    }
+
+    [Serializable]
+    public class SelectionCriteria
+    {
+        public Dictionary<string, float> TraitWeights;
+        public float SelectionIntensity;
+        public int NumberOfGenerations;
+        public bool EnableCorrelatedResponse;
+    }
+
+    [Serializable]
+    public class SelectionResponse
+    {
+        public string TraitName;
+        public float ResponsePerGeneration;
+        public float CumulativeResponse;
+        public float Heritability;
+        public float SelectionIntensity;
+    }
+
+
+
+
+
+
+
+
+
+
+    [Serializable]
+    public enum OptimizationAlgorithm
+    {
+        GeneticAlgorithm,
+        SimulatedAnnealing,
+        ParticleSwarm,
+        DifferentialEvolution,
+        Bayesian
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // Additional data structures for genetics analysis
+
+
+
+
+
+}

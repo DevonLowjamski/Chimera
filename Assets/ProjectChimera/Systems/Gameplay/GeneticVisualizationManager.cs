@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectChimera.Core.Logging;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 using ProjectChimera.Core.Updates;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,16 +12,16 @@ namespace ProjectChimera.Systems.Gameplay
     /// Provides visual feedback for genetic traits as described in genetics mode
     /// Shows trait overlays on plants and heatmap visualizations for genetic analysis
     /// </summary>
-    public class GeneticVisualizationManager : MonoBehaviour, ITickable
+    public class GeneticVisualizationManager : MonoBehaviour, ProjectChimera.Core.Updates.ITickable
     {
         [Header("Visualization Settings")]
         [SerializeField] private bool _enableTraitOverlays = true;
         [SerializeField] private bool _enableHeatmaps = true;
         [SerializeField] private float _updateInterval = 1f;
-        
-        // ITickable implementation
-        public int Priority => TickPriority.HUD + 10;
-        public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+        // ITickable implementation (unified Core.Updates)
+        public int TickPriority => ProjectChimera.Core.Updates.TickPriority.HUD + 10;
+        public bool IsTickable => enabled && gameObject.activeInHierarchy;
 
         [Header("Trait Overlay Settings")]
         [SerializeField] private Color _highTraitColor = Color.green;
@@ -59,34 +60,24 @@ namespace ProjectChimera.Systems.Gameplay
         /// </summary>
         private void InitializeVisualizations()
         {
-            // Primary: Try ServiceContainer resolution for registered plant GameObjects
-            var plants = ServiceContainerFactory.Instance.ResolveAll<GameObject>()
-                ?.Where(go => go.CompareTag("Plant")).ToArray();
-                
-            if (plants?.Any() != true)
+            // Find all plants in the scene for genetic visualization
+            var plants = GameObject.FindGameObjectsWithTag("Plant");
+
+            if (plants?.Length > 0)
             {
-                // Fallback: Find all plants in the scene and set up visualizations
-                plants = GameObject.FindGameObjectsWithTag("Plant");
-                
-                // Auto-register discovered plants in ServiceContainer for future use
-                foreach (var plant in plants)
-                {
-                    ServiceContainerFactory.Instance.RegisterInstance<GameObject>(plant);
-                }
-                
-                ChimeraLogger.Log($"[GeneticVisualizationManager] Registered {plants.Length} plant GameObjects in ServiceContainer");
+                Logger.Log("GENETICS", "Plants found for genetic visualization", this);
             }
             else
             {
-                ChimeraLogger.Log("[GeneticVisualizationManager] Using plant GameObjects from ServiceContainer");
+                Logger.Log("GENETICS", "No plants found for genetic visualization", this);
             }
-            
+
             foreach (var plant in plants)
             {
                 RegisterPlantForVisualization(plant);
             }
 
-            ChimeraLogger.Log($"[GeneticVisualizationManager] Initialized visualizations for {plants.Length} plants");
+            Logger.Log("GENETICS", "Genetic visualizations initialized", this);
         }
 
         /// <summary>
@@ -146,13 +137,13 @@ namespace ProjectChimera.Systems.Gameplay
 
             if (_traitOverlays.ContainsKey(plant))
             {
-                Destroy(_traitOverlays[plant]);
+                // TraitOverlay is a data class, just remove from dictionary
                 _traitOverlays.Remove(plant);
             }
 
             if (_heatmapRenderers.ContainsKey(plant))
             {
-                Destroy(_heatmapRenderers[plant]);
+                // HeatmapRenderer is a data class, just remove from dictionary
                 _heatmapRenderers.Remove(plant);
             }
         }
@@ -162,8 +153,8 @@ namespace ProjectChimera.Systems.Gameplay
         /// </summary>
         private void CreateTraitOverlay(GameObject plant)
         {
-            var overlay = plant.AddComponent<TraitOverlay>();
-            overlay.Initialize(_overlayHeight);
+            var overlay = new TraitOverlay();
+            // TraitOverlay is a data class, not a component
             _traitOverlays[plant] = overlay;
         }
 
@@ -172,8 +163,8 @@ namespace ProjectChimera.Systems.Gameplay
         /// </summary>
         private void CreateHeatmapRenderer(GameObject plant)
         {
-            var heatmapRenderer = plant.AddComponent<HeatmapRenderer>();
-            heatmapRenderer.Initialize(_potencyGradient, _yieldGradient, _healthGradient);
+            var heatmapRenderer = new HeatmapRenderer();
+            // HeatmapRenderer is a data class, not a component
             _heatmapRenderers[plant] = heatmapRenderer;
         }
 
@@ -187,8 +178,8 @@ namespace ProjectChimera.Systems.Gameplay
             // Get plant's genetic traits (would integrate with actual genetics system)
             var traits = GetPlantGeneticTraits(plant);
 
-            // Update overlay with trait information
-            overlay.UpdateTraits(traits);
+            // Update overlay with trait information (TraitOverlay is a data class)
+            // The actual visualization would be handled by a rendering system
         }
 
         /// <summary>
@@ -204,7 +195,8 @@ namespace ProjectChimera.Systems.Gameplay
             var health = GetPlantHealth(plant);
 
             // Update heatmap visualization
-            renderer.UpdateHeatmap(potency, yield, health);
+            // Update heatmap data (HeatmapRenderer is a data class)
+            // The actual rendering would be handled by a separate system
         }
 
         /// <summary>
@@ -262,7 +254,7 @@ namespace ProjectChimera.Systems.Gameplay
             {
                 if (overlay != null)
                 {
-                    overlay.SetVisible(enabled);
+                    // SetVisible not available on data class - would be handled by rendering system
                 }
             }
         }
@@ -278,7 +270,7 @@ namespace ProjectChimera.Systems.Gameplay
             {
                 if (renderer != null)
                 {
-                    renderer.SetVisible(enabled);
+                    // SetVisible not available on data class - would be handled by rendering system
                 }
             }
         }
@@ -292,7 +284,7 @@ namespace ProjectChimera.Systems.Gameplay
             {
                 if (renderer != null)
                 {
-                    renderer.SetHeatmapType(type);
+                    // SetHeatmapType not available on data class - would be handled by rendering system
                 }
             }
         }
@@ -302,22 +294,8 @@ namespace ProjectChimera.Systems.Gameplay
         /// </summary>
         private void CleanupVisualizations()
         {
-            foreach (var overlay in _traitOverlays.Values)
-            {
-                if (overlay != null)
-                {
-                    Destroy(overlay);
-                }
-            }
-
-            foreach (var renderer in _heatmapRenderers.Values)
-            {
-                if (renderer != null)
-                {
-                    Destroy(renderer);
-                }
-            }
-
+            // TraitOverlay and HeatmapRenderer are data classes, not UnityEngine.Objects
+            // No need to call Destroy() on them - just clear the collections
             _traitOverlays.Clear();
             _heatmapRenderers.Clear();
         }

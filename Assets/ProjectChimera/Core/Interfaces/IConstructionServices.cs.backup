@@ -1,0 +1,92 @@
+using UnityEngine;
+using System.Threading.Tasks;
+using System;
+
+namespace ProjectChimera.Systems.Construction
+{
+    /// <summary>
+    /// Construction service interfaces for dependency injection
+    /// Eliminates FindObjectOfType anti-patterns in construction systems
+    /// </summary>
+
+    // Placeholder types for missing construction classes
+    [System.Serializable]
+    public class SchematicSO : ScriptableObject
+    {
+        public string SchematicId;
+        public string Name;
+        public Vector3Int Size;
+    }
+
+    [System.Serializable]
+    public class GridItem
+    {
+        public string ItemId;
+        public Vector3Int Position;
+        public SchematicSO Schematic;
+    }
+
+    [System.Serializable]
+    public class ConstructionSaveData
+    {
+        public string SaveId;
+        public DateTime SaveTime;
+        public GridItem[] PlacedItems;
+    }
+
+    public interface IGridInputHandler
+    {
+        bool IsInputEnabled { get; set; }
+        bool IsInitialized { get; }
+        void Initialize();
+        void EnableInput();
+        void DisableInput();
+        Vector3Int GetMouseGridPosition();
+        bool IsValidGridPosition(Vector3Int position);
+    }
+
+    public interface IGridPlacementController
+    {
+        bool IsInitialized { get; }
+        void Initialize();
+        Task<bool> PlaceItemAsync(Vector3Int gridPosition, SchematicSO schematic);
+        bool CanPlaceItem(Vector3Int gridPosition, SchematicSO schematic);
+        bool RemoveItem(Vector3Int gridPosition);
+        GridItem GetItemAt(Vector3Int gridPosition);
+    }
+
+    public interface IConstructionSaveProvider
+    {
+        bool IsInitialized { get; }
+        void Initialize();
+        Task SaveConstructionDataAsync();
+        Task LoadConstructionDataAsync();
+        ConstructionSaveData GetCurrentSaveData();
+        void ApplySaveData(ConstructionSaveData saveData);
+    }
+
+    public interface IGridSystem
+    {
+        bool IsInitialized { get; }
+        Vector3Int GridSize { get; }
+        void Initialize();
+        bool IsValidPosition(Vector3Int position);
+        bool IsOccupied(Vector3Int position);
+        bool CanPlace(SchematicSO schematic, Vector3Int position);
+        void SetOccupied(Vector3Int position, GridItem item);
+        void SetEmpty(Vector3Int position);
+        GridItem GetItemAt(Vector3Int position);
+        Vector3 GridToWorld(Vector3Int gridPosition);
+        Vector3Int WorldToGrid(Vector3 worldPosition);
+    }
+
+    public interface IConstructionManager
+    {
+        bool IsInitialized { get; }
+        void Initialize();
+        Task<bool> PlaceStructureAsync(SchematicSO schematic, Vector3Int position);
+        bool RemoveStructure(Vector3Int position);
+        bool CanPlaceStructure(SchematicSO schematic, Vector3Int position);
+        GridItem[] GetAllPlacedItems();
+    }
+}

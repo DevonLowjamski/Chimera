@@ -1,9 +1,10 @@
 using System;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core
 {
     public interface IServiceScope : IDisposable
     {
-        ProjectChimera.Core.DependencyInjection.IServiceProvider ServiceProvider { get; }
+        IServiceProvider ServiceProvider { get; }
     }
 }

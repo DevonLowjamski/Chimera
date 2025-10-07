@@ -1,0 +1,240 @@
+using ProjectChimera.Core.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using UnityEngine;
+
+namespace ProjectChimera.Systems.Progression
+{
+    /// <summary>
+    /// Handles equipment degradation, maintenance requirements, and equipment-based production during offline periods
+    /// </summary>
+    public class EquipmentOfflineProvider : IOfflineProgressionProvider
+    {
+        [Header("Equipment Configuration")]
+        [SerializeField] private float _degradationRate = 0.02f; // 2% per hour
+        [SerializeField] private float _maintenanceThreshold = 0.3f; // Maintenance needed below 30%
+        [SerializeField] private bool _enableAutoMaintenance = false;
+        [SerializeField] private bool _enableEquipmentProduction = true;
+        [SerializeField] private int _maxEquipmentToProcess = 50;
+        
+        private readonly List<OfflineProgressionEvent> _equipmentEvents = new List<OfflineProgressionEvent>();
+        
+        public string GetProviderId() => "equipment_offline";
+        public float GetPriority() => 0.7f;
+        
+        public async Task<OfflineProgressionCalculationResult> CalculateOfflineProgressionAsync(TimeSpan offlineTime)
+        {
+            await Task.Delay(45);
+            
+            var result = new OfflineProgressionCalculationResult();
+            var hours = (float)offlineTime.TotalHours;
+            
+            try
+            {
+                // Calculate equipment degradation
+                var degradationData = await CalculateEquipmentDegradationAsync(hours);
+                result.ProgressionData.Add("equipment_degradation", degradationData);
+                
+                // Calculate equipment production
+                var productionData = await CalculateEquipmentProductionAsync(hours, degradationData);
+                result.ProgressionData.Add("equipment_production", productionData);
+                
+                // Calculate maintenance requirements
+                var maintenanceData = CalculateMaintenanceRequirements(degradationData);
+                result.ProgressionData.Add("maintenance_requirements", maintenanceData);
+                
+                // Apply equipment-related resource changes
+                foreach (var production in productionData.ResourceProduction)
+                {
+                    result.ResourceChanges[production.Key] = production.Value;
+                }
+                
+                if (maintenanceData.MaintenanceCost > 0)
+                {
+                    result.ResourceChanges["maintenance_materials"] = -maintenanceData.MaintenanceCost;
+                }
+                
+                // Add equipment events
+                result.Events.AddRange(_equipmentEvents);
+                _equipmentEvents.Clear();
+                
+                // Generate notifications
+                if (maintenanceData.EquipmentNeedingMaintenance > 0)
+                {
+                    result.Notifications.Add($"{maintenanceData.EquipmentNeedingMaintenance} pieces of equipment require maintenance");
+                }
+                
+                if (degradationData.CriticallyDegradedEquipment > 0)
+                {
+                    result.Notifications.Add($"{degradationData.CriticallyDegradedEquipment} pieces of equipment are in critical condition");
+                }
+                
+                if (productionData.TotalProductionValue > 0)
+                {
+                    result.Notifications.Add($"Equipment generated {productionData.TotalProductionValue:F0} value in resources while offline");
+                }
+                
+                UnityEngine.Debug.Log("Operation completed");
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.ErrorMessage = $"Equipment calculation failed: {ex.Message}";
+            }
+            
+            return result;
+        }
+        
+        public async Task ApplyOfflineProgressionAsync(OfflineProgressionResult result)
+        {
+            await Task.Delay(30);
+            
+            if (result.ProgressionData.TryGetValue("equipment_degradation", out var degradationObj) && degradationObj is EquipmentDegradationData degradationData)
+            {
+                await ApplyEquipmentDegradationAsync(degradationData);
+            }
+            
+            if (result.ProgressionData.TryGetValue("equipment_production", out var productionObj) && productionObj is EquipmentProductionData productionData)
+            {
+                await ApplyEquipmentProductionAsync(productionData);
+            }
+            
+            UnityEngine.Debug.Log("Operation completed");
+        }
+        
+        private async Task<EquipmentDegradationData> CalculateEquipmentDegradationAsync(float hours)
+        {
+            await Task.Delay(20);
+            
+            var degradationData = new EquipmentDegradationData();
+            
+            // Simulate equipment degradation
+            var totalEquipment = Mathf.Min(_maxEquipmentToProcess, UnityEngine.Random.Range(10, 30));
+            var degradationAmount = hours * _degradationRate;
+            
+            degradationData.ProcessedEquipment = totalEquipment;
+            degradationData.AverageDegradation = degradationAmount;
+            
+            // Calculate equipment in various condition states
+            for (int i = 0; i < totalEquipment; i++)
+            {
+                var currentCondition = UnityEngine.Random.Range(0.2f, 1.0f);
+                var newCondition = Mathf.Max(0.05f, currentCondition - degradationAmount);
+                
+                degradationData.EquipmentConditions.Add(newCondition);
+                
+                if (newCondition < _maintenanceThreshold)
+                {
+                    degradationData.EquipmentNeedingMaintenance++;
+                }
+                
+                if (newCondition < 0.15f)
+                {
+                    degradationData.CriticallyDegradedEquipment++;
+                }
+            }
+            
+            if (degradationData.CriticallyDegradedEquipment > 0)
+            {
+                _equipmentEvents.Add(new OfflineProgressionEvent
+                {
+                    EventType = "equipment_critical",
+                    Title = "Critical Equipment Condition",
+                    Description = $"{degradationData.CriticallyDegradedEquipment} pieces of equipment are in critical condition",
+                    Priority = EventPriority.Critical,
+                    Timestamp = DateTime.UtcNow.AddHours(-hours * 0.8)
+                });
+            }
+            
+            return degradationData;
+        }
+        
+        private async Task<EquipmentProductionData> CalculateEquipmentProductionAsync(float hours, EquipmentDegradationData degradationData)
+        {
+            await Task.Delay(25);
+            
+            var productionData = new EquipmentProductionData();
+            
+            if (!_enableEquipmentProduction)
+            {
+                productionData.ProductionDisabled = true;
+                return productionData;
+            }
+            
+            // Calculate production based on equipment condition
+            var averageCondition = degradationData.EquipmentConditions.Count > 0 ? 
+                degradationData.EquipmentConditions.Average() : 0.8f;
+            
+            var baseProductionRate = 3f; // Units per hour per equipment
+            var conditionMultiplier = Mathf.Clamp01(averageCondition);
+            var actualProductionRate = baseProductionRate * conditionMultiplier;
+            
+            // Calculate different resource productions
+            productionData.ResourceProduction["processed_materials"] = hours * actualProductionRate * degradationData.ProcessedEquipment * 0.5f;
+            productionData.ResourceProduction["energy_generated"] = hours * actualProductionRate * degradationData.ProcessedEquipment * 0.3f;
+            productionData.ResourceProduction["automation_points"] = hours * actualProductionRate * degradationData.ProcessedEquipment * 0.2f;
+            
+            productionData.TotalProductionValue = productionData.ResourceProduction.Values.Sum() * 10f; // Assume 10 currency per unit
+            productionData.ProductionEfficiency = conditionMultiplier;
+            
+            if (productionData.TotalProductionValue > 100f)
+            {
+                _equipmentEvents.Add(new OfflineProgressionEvent
+                {
+                    EventType = "equipment_production",
+                    Title = "Equipment Production",
+                    Description = $"Equipment generated {productionData.TotalProductionValue:F0} in resources",
+                    Priority = EventPriority.Normal,
+                    Timestamp = DateTime.UtcNow.AddHours(-hours * 0.3)
+                });
+            }
+            
+            return productionData;
+        }
+        
+        private MaintenanceRequirementData CalculateMaintenanceRequirements(EquipmentDegradationData degradationData)
+        {
+            var maintenanceData = new MaintenanceRequirementData();
+            
+            maintenanceData.EquipmentNeedingMaintenance = degradationData.EquipmentNeedingMaintenance;
+            maintenanceData.CriticalEquipmentCount = degradationData.CriticallyDegradedEquipment;
+            
+            // Calculate maintenance costs
+            var standardMaintenanceCost = maintenanceData.EquipmentNeedingMaintenance * 50f;
+            var criticalMaintenanceCost = maintenanceData.CriticalEquipmentCount * 150f;
+            
+            maintenanceData.MaintenanceCost = standardMaintenanceCost + criticalMaintenanceCost;
+            
+            // Auto-maintenance if enabled
+            if (_enableAutoMaintenance && maintenanceData.MaintenanceCost > 0)
+            {
+                maintenanceData.AutoMaintenancePerformed = true;
+                
+                _equipmentEvents.Add(new OfflineProgressionEvent
+                {
+                    EventType = "auto_maintenance",
+                    Title = "Automatic Maintenance",
+                    Description = $"Performed maintenance on {maintenanceData.EquipmentNeedingMaintenance} pieces of equipment",
+                    Priority = EventPriority.Normal,
+                    Timestamp = DateTime.UtcNow.AddHours(-1)
+                });
+            }
+            
+            return maintenanceData;
+        }
+        
+        private async Task ApplyEquipmentDegradationAsync(EquipmentDegradationData degradationData)
+        {
+            await Task.Delay(15);
+            // Apply condition changes to actual equipment instances
+        }
+        
+        private async Task ApplyEquipmentProductionAsync(EquipmentProductionData productionData)
+        {
+            await Task.Delay(10);
+            // Add produced resources to inventory
+        }
+    }
+}

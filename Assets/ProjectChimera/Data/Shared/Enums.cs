@@ -1,3 +1,4 @@
+
 namespace ProjectChimera.Data.Shared
 {
     public enum EnvironmentalFactor

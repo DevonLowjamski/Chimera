@@ -21,12 +21,12 @@ namespace ProjectChimera.Systems.Save.Storage
             try
             {
                 string json = JsonUtility.ToJson(data, true);
-                ChimeraLogger.Log($"[SerializationHelpers] Serialized {json.Length} characters");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return json;
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[SerializationHelpers] Serialization failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return null;
             }
         }
@@ -41,12 +41,12 @@ namespace ProjectChimera.Systems.Save.Storage
             try
             {
                 GameSaveData data = JsonUtility.FromJson<GameSaveData>(json);
-                ChimeraLogger.Log("[SerializationHelpers] Deserialized game data successfully");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return data;
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[SerializationHelpers] Deserialization failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return null;
             }
         }
@@ -71,12 +71,12 @@ namespace ProjectChimera.Systems.Save.Storage
                 }
 
                 File.WriteAllText(filePath, json);
-                ChimeraLogger.Log($"[SerializationHelpers] Saved to {filePath}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return true;
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[SerializationHelpers] Save failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return false;
             }
         }
@@ -95,14 +95,14 @@ namespace ProjectChimera.Systems.Save.Storage
 
                 if (data != null)
                 {
-                    ChimeraLogger.Log($"[SerializationHelpers] Loaded from {filePath}");
+                    ChimeraLogger.Log("OTHER", "$1", null);
                 }
 
                 return data;
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[SerializationHelpers] Load failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return null;
             }
         }
@@ -125,12 +125,12 @@ namespace ProjectChimera.Systems.Save.Storage
             try
             {
                 File.Delete(filePath);
-                ChimeraLogger.Log($"[SerializationHelpers] Deleted {filePath}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return true;
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[SerializationHelpers] Delete failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return false;
             }
         }
@@ -155,7 +155,7 @@ namespace ProjectChimera.Systems.Save.Storage
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[SerializationHelpers] Get file info failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return null;
             }
         }
@@ -185,12 +185,12 @@ namespace ProjectChimera.Systems.Save.Storage
             try
             {
                 File.Copy(originalPath, backupPath, true);
-                ChimeraLogger.Log($"[SerializationHelpers] Created backup: {backupPath}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return true;
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[SerializationHelpers] Backup failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return false;
             }
         }

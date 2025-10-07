@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Shared;
 
@@ -38,7 +39,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantEnvironmentalService] Initialized successfully");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -54,7 +55,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging && Random.value < 0.01f) // Log occasionally
             {
-                ChimeraLogger.Log($"[PlantEnvironmentalService] Updated {plantId}: T={conditions.Temperature:F1}, H={conditions.Humidity:F1}, L={conditions.LightIntensity:F0}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -135,7 +136,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantEnvironmentalService] Removed plant {plantId} from tracking");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -148,7 +149,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantEnvironmentalService] Cleared all environmental data");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 

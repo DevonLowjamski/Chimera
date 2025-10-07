@@ -1,14 +1,18 @@
 using UnityEngine;
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Core;
 using ProjectChimera.Data.Shared;
+using System;
 
 namespace ProjectChimera.Systems.Cultivation
 {
     /// <summary>
-    /// BASIC: Simple plant growth system for Project Chimera's cultivation system.
+    /// ENHANCED: Plant growth system with ITickable integration.
+    /// Migrated from Update() to centralized tick system for better performance.
     /// Focuses on essential plant growth without complex calculators and yield calculations.
     /// </summary>
-    public class PlantGrowthSystem : MonoBehaviour
+    public class PlantGrowthSystem : MonoBehaviour, ITickable
     {
         [Header("Basic Growth Settings")]
         [SerializeField] private bool _enableBasicGrowth = true;
@@ -24,14 +28,38 @@ namespace ProjectChimera.Systems.Cultivation
         private bool _isInitialized = false;
         private float _lastUpdateTime = 0f;
 
+        // Additional plant properties needed by PlantInstance
+        private float _daysSincePlanted = 0f;
+        private float _plantSize = 1f;
+        private float _yieldPotential = 100f;
+        private float _qualityPotential = 80f;
+        private bool _isHarvestable = false;
+
         /// <summary>
         /// Events for growth changes
         /// </summary>
         public event System.Action<string, PlantGrowthStage> OnStageChanged;
         public event System.Action<string, float> OnGrowthProgressChanged;
+        public event System.Action<PlantGrowthStage, PlantGrowthStage> OnGrowthStageChanged;
+
+        // Properties accessed by PlantInstance
+        public PlantGrowthStage CurrentGrowthStage => _currentStage;
+        public float GrowthProgress => _growthProgress;
+        public float OverallGrowthProgress => (_growthProgress + (int)_currentStage) / 4f; // Assuming 4 stages
+        public float DaysSincePlanted => _daysSincePlanted;
+        public float PlantSize => _plantSize;
+        public float YieldPotential => _yieldPotential;
+        public float QualityPotential => _qualityPotential;
+        public bool IsHarvestable => _isHarvestable;
 
         /// <summary>
-        /// Initialize basic growth system
+        /// ITickable implementation - high priority for plant systems
+        /// </summary>
+        public int TickPriority => 100; // High priority plant system
+        public bool IsTickable => _isInitialized && _enableBasicGrowth && isActiveAndEnabled;
+
+        /// <summary>
+        /// Initialize basic growth system and register with UpdateOrchestrator
         /// </summary>
         public void Initialize(string plantId, PlantGrowthStage initialStage = PlantGrowthStage.Seedling)
         {
@@ -42,24 +70,48 @@ namespace ProjectChimera.Systems.Cultivation
             _lastUpdateTime = Time.time;
             _isInitialized = true;
 
+            // Register with centralized update system
+            var orchestrator = ServiceContainerFactory.Instance.TryResolve<UpdateOrchestrator>();
+            if (orchestrator != null)
+            {
+                orchestrator.RegisterTickable(this);
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
+                }
+            }
+            else
+            {
+                // Fallback: Find orchestrator in scene if ServiceContainer unavailable
+                var fallbackOrchestrator = ServiceContainerFactory.Instance.TryResolve<UpdateOrchestrator>();
+                if (fallbackOrchestrator != null)
+                {
+                    fallbackOrchestrator.RegisterTickable(this);
+                    if (_enableLogging)
+                    {
+                        ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
+                    }
+                }
+            }
+
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantGrowthSystem] Initialized plant {plantId} in {initialStage} stage");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
         /// <summary>
-        /// Update growth system
+        /// ITickable implementation - update growth system
         /// </summary>
-        private void Update()
+        public void Tick(float deltaTime)
         {
             if (!_enableBasicGrowth || !_isInitialized) return;
 
             float currentTime = Time.time;
             if (currentTime - _lastUpdateTime >= _updateInterval)
             {
-                float deltaTime = currentTime - _lastUpdateTime;
-                UpdateGrowth(deltaTime);
+                float actualDeltaTime = currentTime - _lastUpdateTime;
+                UpdateGrowth(actualDeltaTime);
                 _lastUpdateTime = currentTime;
             }
         }
@@ -97,7 +149,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantGrowthSystem] Plant {_plantId} advanced from {oldStage} to {_currentStage}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
 
             // Check if plant is ready for harvest
@@ -105,7 +157,7 @@ namespace ProjectChimera.Systems.Cultivation
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[PlantGrowthSystem] Plant {_plantId} is ready for harvest");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 }
             }
         }
@@ -124,7 +176,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantGrowthSystem] Plant {_plantId} stage manually set to {newStage}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -172,7 +224,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantGrowthSystem] Plant {_plantId} harvested with yield {yield:F2}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
 
             // Reset for potential re-growth or remove
@@ -211,7 +263,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantGrowthSystem] Plant {_plantId} growth reset");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -243,6 +295,119 @@ namespace ProjectChimera.Systems.Cultivation
         }
 
         #endregion
+
+        #region PlantInstance Compatibility Methods
+
+        /// <summary>
+        /// Set days since planted
+        /// </summary>
+        public void SetDaysSincePlanted(float days)
+        {
+            _daysSincePlanted = days;
+        }
+
+        /// <summary>
+        /// Set growth progress
+        /// </summary>
+        public void SetGrowthProgress(float progress)
+        {
+            _growthProgress = Mathf.Clamp01(progress);
+        }
+
+        /// <summary>
+        /// Update growth progress
+        /// </summary>
+        public void UpdateGrowthProgress(float deltaTime)
+        {
+            ProcessGrowth(deltaTime);
+        }
+
+        /// <summary>
+        /// Advance growth stage
+        /// </summary>
+        public void AdvanceGrowthStage()
+        {
+            var oldStage = _currentStage;
+            _currentStage = GetNextStage(_currentStage);
+            _growthProgress = 0f;
+            OnGrowthStageChanged?.Invoke(oldStage, _currentStage);
+        }
+
+        /// <summary>
+        /// Apply growth rate modifier
+        /// </summary>
+        public void ApplyGrowthRate(float rateModifier)
+        {
+            _baseGrowthRate *= rateModifier;
+        }
+
+        /// <summary>
+        /// Sprout the plant (seedling stage)
+        /// </summary>
+        public void Sprout()
+        {
+            _currentStage = PlantGrowthStage.Seedling;
+            _growthProgress = 0f;
+            _daysSincePlanted = 0f;
+        }
+
+        /// <summary>
+        /// Get growth metrics
+        /// </summary>
+        public object GetGrowthMetrics()
+        {
+            return new
+            {
+                CurrentStage = _currentStage,
+                GrowthProgress = _growthProgress,
+                DaysSincePlanted = _daysSincePlanted,
+                PlantSize = _plantSize,
+                YieldPotential = _yieldPotential,
+                QualityPotential = _qualityPotential
+            };
+        }
+
+        /// <summary>
+        /// Process growth (compatibility method)
+        /// </summary>
+        private void ProcessGrowth(float deltaTime)
+        {
+            UpdateGrowth(deltaTime);
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Unity lifecycle - ensure proper cleanup
+        /// </summary>
+        private void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator if available
+            var orchestrator = ServiceContainerFactory.Instance.TryResolve<UpdateOrchestrator>();
+            if (orchestrator != null)
+            {
+                orchestrator.UnregisterTickable(this);
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Plant growth metrics for instance integration
+    /// </summary>
+    [System.Serializable]
+    public class PlantGrowthMetrics
+    {
+        public PlantGrowthStage CurrentStage;
+        public float GrowthProgress;
+        public float TotalGrowthTime;
+        public bool IsReadyForHarvest;
+        public bool IsGrowthEnabled;
+        public string PlantId;
+        public DateTime LastUpdateTime;
     }
 
     /// <summary>

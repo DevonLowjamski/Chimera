@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Cultivation
@@ -32,7 +33,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableBasicMonitoring)
             {
-                ChimeraLogger.Log("[PlantEnvironmentalProcessingService] Initialized");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
@@ -99,7 +100,7 @@ namespace ProjectChimera.Systems.Cultivation
         public void ClearAllData()
         {
             _plantHealth.Clear();
-            ChimeraLogger.Log("[PlantEnvironmentalProcessingService] Cleared all data");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         /// <summary>
@@ -108,8 +109,8 @@ namespace ProjectChimera.Systems.Cultivation
         public EnvironmentalStats GetStatistics()
         {
             int totalPlants = _plantHealth.Count;
-            int healthyPlants = _plantHealth.Count(kvp => kvp.Value >= 0.8f);
-            int stressedPlants = _plantHealth.Count(kvp => kvp.Value < 0.6f);
+            int healthyPlants = _plantHealth.Where(kvp => kvp.Value >= 0.8f).Count();
+            int stressedPlants = _plantHealth.Where(kvp => kvp.Value < 0.6f).Count();
 
             return new EnvironmentalStats
             {
@@ -125,7 +126,7 @@ namespace ProjectChimera.Systems.Cultivation
         private BasicEnvironmentalConditions GetBasicEnvironmentalConditions(PlantInstance plant)
         {
             // Get basic conditions from plant or use defaults
-            if (plant != null && plant.EnvironmentData != null)
+            if (plant != null)
             {
                 return new BasicEnvironmentalConditions
                 {
@@ -165,7 +166,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableBasicMonitoring)
             {
-                ChimeraLogger.Log($"[PlantEnvironmentalProcessingService] Applied stress to {plant.PlantID}: {stressAmount:F2}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 

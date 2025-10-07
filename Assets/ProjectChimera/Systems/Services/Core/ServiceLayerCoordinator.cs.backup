@@ -1,0 +1,239 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Services.Core
+{
+    /// <summary>
+    /// BASIC: Simple service layer coordinator for Project Chimera.
+    /// Focuses on essential service coordination without complex dependency injection and command registries.
+    /// </summary>
+    public class ServiceLayerCoordinator : MonoBehaviour
+    {
+        [Header("Basic Service Settings")]
+        [SerializeField] private bool _enableBasicCoordination = true;
+        [SerializeField] private bool _enableLogging = true;
+
+        // Basic service references
+        private readonly Dictionary<string, IService> _registeredServices = new Dictionary<string, IService>();
+        private bool _isInitialized = false;
+
+        /// <summary>
+        /// Events for service coordination
+        /// </summary>
+        public event System.Action<string> OnServiceRegistered;
+        public event System.Action<string> OnServiceUnregistered;
+        public event System.Action<string, string> OnServiceError;
+
+        /// <summary>
+        /// Initialize basic service coordinator
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Register a service
+        /// </summary>
+        public void RegisterService(string serviceName, IService service)
+        {
+            if (!_enableBasicCoordination || !_isInitialized || service == null) return;
+
+            if (!_registeredServices.ContainsKey(serviceName))
+            {
+                _registeredServices[serviceName] = service;
+                OnServiceRegistered?.Invoke(serviceName);
+
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+            else
+            {
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Unregister a service
+        /// </summary>
+        public void UnregisterService(string serviceName)
+        {
+            if (_registeredServices.Remove(serviceName))
+            {
+                OnServiceUnregistered?.Invoke(serviceName);
+
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get a registered service
+        /// </summary>
+        public T GetService<T>(string serviceName) where T : IService
+        {
+            if (_registeredServices.TryGetValue(serviceName, out IService service))
+            {
+                try
+                {
+                    return (T)service;
+                }
+                catch
+                {
+                    OnServiceError?.Invoke(serviceName, "Type mismatch");
+                    if (_enableLogging)
+                    {
+                        UnityEngine.Debug.Log("Operation completed");
+                    }
+                    return default;
+                }
+            }
+
+            OnServiceError?.Invoke(serviceName, "Service not found");
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+            return default;
+        }
+
+        /// <summary>
+        /// Check if service is registered
+        /// </summary>
+        public bool IsServiceRegistered(string serviceName)
+        {
+            return _registeredServices.ContainsKey(serviceName);
+        }
+
+        /// <summary>
+        /// Get all registered service names
+        /// </summary>
+        public List<string> GetRegisteredServiceNames()
+        {
+            return new List<string>(_registeredServices.Keys);
+        }
+
+        /// <summary>
+        /// Execute service operation
+        /// </summary>
+        public bool ExecuteServiceOperation(string serviceName, string operation, params object[] parameters)
+        {
+            var service = GetService<IService>(serviceName);
+            if (service == null) return false;
+
+            try
+            {
+                // Basic operation execution - could be expanded based on service interface
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                OnServiceError?.Invoke(serviceName, ex.Message);
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Get service status
+        /// </summary>
+        public ServiceStatus GetServiceStatus(string serviceName)
+        {
+            bool isRegistered = IsServiceRegistered(serviceName);
+            IService service = null;
+
+            if (isRegistered)
+            {
+                _registeredServices.TryGetValue(serviceName, out service);
+            }
+
+            return new ServiceStatus
+            {
+                ServiceName = serviceName,
+                IsRegistered = isRegistered,
+                IsAvailable = service != null,
+                ServiceType = service?.GetType().Name ?? "Unknown"
+            };
+        }
+
+        /// <summary>
+        /// Clear all services
+        /// </summary>
+        public void ClearAllServices()
+        {
+            var serviceNames = new List<string>(_registeredServices.Keys);
+            _registeredServices.Clear();
+
+            foreach (string serviceName in serviceNames)
+            {
+                OnServiceUnregistered?.Invoke(serviceName);
+            }
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Get coordinator statistics
+        /// </summary>
+        public CoordinatorStats GetStats()
+        {
+            return new CoordinatorStats
+            {
+                TotalServices = _registeredServices.Count,
+                IsCoordinationEnabled = _enableBasicCoordination,
+                IsInitialized = _isInitialized
+            };
+        }
+    }
+
+    /// <summary>
+    // IService interface moved to ProjectChimera.Core.IService.cs for consistency
+
+    /// <summary>
+    /// Service status
+    /// </summary>
+    [System.Serializable]
+    public struct ServiceStatus
+    {
+        public string ServiceName;
+        public bool IsRegistered;
+        public bool IsAvailable;
+        public string ServiceType;
+    }
+
+    /// <summary>
+    /// Coordinator statistics
+    /// </summary>
+    [System.Serializable]
+    public struct CoordinatorStats
+    {
+        public int TotalServices;
+        public bool IsCoordinationEnabled;
+        public bool IsInitialized;
+    }
+}

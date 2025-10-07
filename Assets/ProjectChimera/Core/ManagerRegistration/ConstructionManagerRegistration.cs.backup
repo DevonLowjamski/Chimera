@@ -1,0 +1,86 @@
+using ProjectChimera.Core.DependencyInjection;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Core.ManagerRegistration
+{
+    /// <summary>
+    /// FOCUSED: Construction manager registration for Project Chimera
+    /// Single responsibility: Register construction and building-related managers
+    /// Extracted from ManagerRegistrationProvider.cs for SRP compliance (Week 8)
+    /// </summary>
+    public class ConstructionManagerRegistration
+    {
+        private int _registeredCount = 0;
+
+        /// <summary>
+        /// Register all construction manager interfaces with fallback implementations
+        /// </summary>
+        public int RegisterConstructionManagerInterfaces(IServiceContainer serviceContainer)
+        {
+            if (serviceContainer == null) return 0;
+
+            _registeredCount = 0;
+
+            UnityEngine.Debug.Log("Operation completed");
+
+            // Register IGridPlacementController
+            if (!serviceContainer.IsRegistered<IGridPlacementController>())
+            {
+                serviceContainer.RegisterInstance<IGridPlacementController>(new NullGridPlacementController());
+                _registeredCount++;
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            // Register IGridSystem
+            if (!serviceContainer.IsRegistered<IGridSystem>())
+            {
+                serviceContainer.RegisterInstance<IGridSystem>(new NullGridSystem());
+                _registeredCount++;
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            // Register IInteractiveFacilityConstructor
+            if (!serviceContainer.IsRegistered<IInteractiveFacilityConstructor>())
+            {
+                serviceContainer.RegisterInstance<IInteractiveFacilityConstructor>(new NullInteractiveFacilityConstructor());
+                _registeredCount++;
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            // Register IConstructionCostManager
+            if (!serviceContainer.IsRegistered<IConstructionCostManager>())
+            {
+                serviceContainer.RegisterInstance<IConstructionCostManager>(new NullConstructionCostManager());
+                _registeredCount++;
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            UnityEngine.Debug.Log("Operation completed");
+            return _registeredCount;
+        }
+
+        /// <summary>
+        /// Get count of registered construction managers
+        /// </summary>
+        public int GetRegisteredCount()
+        {
+            return _registeredCount;
+        }
+
+        /// <summary>
+        /// Check if construction managers are properly registered
+        /// </summary>
+        public bool ValidateRegistrations(IServiceContainer serviceContainer)
+        {
+            if (serviceContainer == null) return false;
+
+            var isValid = serviceContainer.IsRegistered<IGridPlacementController>() &&
+                         serviceContainer.IsRegistered<IGridSystem>() &&
+                         serviceContainer.IsRegistered<IInteractiveFacilityConstructor>() &&
+                         serviceContainer.IsRegistered<IConstructionCostManager>();
+
+            UnityEngine.Debug.Log("Operation completed");
+            return isValid;
+        }
+    }
+}

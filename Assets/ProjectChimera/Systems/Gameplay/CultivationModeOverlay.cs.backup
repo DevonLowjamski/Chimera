@@ -1,0 +1,354 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+using UnityEngine;
+using ProjectChimera.Core;
+// Migrated to unified ServiceContainer architecture
+using ProjectChimera.Systems.Gameplay;
+using ProjectChimera.Data.Events;
+
+namespace ProjectChimera.Systems.Gameplay
+{
+    /// <summary>
+    /// REFACTORED: Cultivation mode overlay system decomposed into focused components.
+    /// This file now serves as a coordinator for specialized cultivation overlay components.
+    ///
+    /// New Component Structure:
+    /// - PlantMonitor.cs: Handles plant monitoring and visualization
+    /// - EnvironmentalDisplay.cs: Shows environmental readings and controls
+    /// - CareToolsInterface.cs: Manages plant care tool selection and usage
+    /// </summary>
+    public class CultivationModeOverlay : MonoBehaviour, ITickable
+    {
+        [Header("Overlay Configuration")]
+        [SerializeField] private bool _enablePlantMonitoring = true;
+        [SerializeField] private bool _enableCareTools = true;
+        [SerializeField] private bool _enableEnvironmentalControls = true;
+        [SerializeField] private bool _debugMode = false;
+
+        [Header("Component References")]
+        [SerializeField] private PlantMonitor _plantMonitor;
+        [SerializeField] private EnvironmentalDisplay _environmentalDisplay;
+        [SerializeField] private CareToolsInterface _careToolsInterface;
+
+        [Header("Event Channels")]
+        [SerializeField] private ModeChangedEventSO _modeChangedEvent;
+
+        // Services
+        private IGameplayModeController _modeController;
+
+        // State tracking
+        private bool _isInitialized = false;
+        private bool _isCultivationModeActive = false;
+
+        private void Start()
+        {
+            // Register with UpdateOrchestrator
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
+            InitializeOverlay();
+        }
+
+        public void Tick(float deltaTime)
+        {
+            // Component updates are handled by their respective systems
+            // This coordinator ensures proper orchestration between components
+        }
+
+        private void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
+            UnsubscribeFromEvents();
+        }
+
+        private void InitializeOverlay()
+        {
+            try
+            {
+                // Get the gameplay mode controller service
+                _modeController = ServiceContainerFactory.Instance?.TryResolve<IGameplayModeController>();
+
+                if (_modeController == null)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                    return;
+                }
+
+                // Validate component references
+                if (!ValidateComponents())
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                    return;
+                }
+
+                // Subscribe to mode change events
+                SubscribeToEvents();
+
+                // Initialize overlay visibility based on current mode
+                UpdateOverlayVisibility(_modeController.CurrentMode);
+
+                _isInitialized = true;
+
+                if (_debugMode)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Validates that all required components are properly assigned
+        /// </summary>
+        private bool ValidateComponents()
+        {
+            bool allValid = true;
+
+            if (_enablePlantMonitoring && _plantMonitor == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                allValid = false;
+            }
+
+            if (_enableEnvironmentalControls && _environmentalDisplay == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                allValid = false;
+            }
+
+            if (_enableCareTools && _careToolsInterface == null)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                allValid = false;
+            }
+
+            return allValid;
+        }
+
+        private void SubscribeToEvents()
+        {
+            if (_modeChangedEvent != null)
+            {
+                _modeChangedEvent.Subscribe(OnModeChanged);
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        private void UnsubscribeFromEvents()
+        {
+            if (_modeChangedEvent != null)
+            {
+                _modeChangedEvent.Unsubscribe(OnModeChanged);
+            }
+        }
+
+        private void OnModeChanged(ModeChangeEventData eventData)
+        {
+            if (_debugMode)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            UpdateOverlayVisibility(eventData.NewMode);
+        }
+
+        private void UpdateOverlayVisibility(GameplayMode currentMode)
+        {
+            bool shouldShowOverlay = currentMode == GameplayMode.Cultivation;
+
+            if (_isCultivationModeActive == shouldShowOverlay) return;
+
+            _isCultivationModeActive = shouldShowOverlay;
+
+            // Control component visibility through their respective interfaces
+            if (shouldShowOverlay)
+            {
+                // Show plant monitoring
+                if (_plantMonitor != null && _enablePlantMonitoring)
+                {
+                    _plantMonitor.RefreshPlantList();
+                }
+
+                // Show environmental controls
+                if (_environmentalDisplay != null && _enableEnvironmentalControls)
+                {
+                    _environmentalDisplay.ShowEnvironmentalPanel();
+                }
+
+                // Show care tools
+                if (_careToolsInterface != null && _enableCareTools)
+                {
+                    _careToolsInterface.ShowToolsPanel();
+                }
+            }
+            else
+            {
+                // Hide environmental controls
+                if (_environmentalDisplay != null)
+                {
+                    _environmentalDisplay.HideEnvironmentalPanel();
+                }
+
+                // Hide care tools
+                if (_careToolsInterface != null)
+                {
+                    _careToolsInterface.HideToolsPanel();
+                }
+            }
+
+            if (_debugMode)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+
+
+        #region Public Interface
+
+        /// <summary>
+        /// Manually refresh the cultivation overlay
+        /// </summary>
+        public void RefreshOverlay()
+        {
+            if (_isInitialized && _modeController != null)
+            {
+                // Refresh plant monitoring
+                if (_plantMonitor != null && _enablePlantMonitoring)
+                {
+                    _plantMonitor.RefreshPlantList();
+                }
+
+                // Refresh environmental display
+                if (_environmentalDisplay != null && _enableEnvironmentalControls)
+                {
+                    _environmentalDisplay.UpdateDisplayValues();
+                }
+
+                UpdateOverlayVisibility(_modeController.CurrentMode);
+
+                if (_debugMode)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Enable/disable debug mode at runtime
+        /// </summary>
+        public void SetDebugMode(bool enabled)
+        {
+            _debugMode = enabled;
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        /// <summary>
+        /// Get current cultivation state
+        /// </summary>
+        public bool IsCultivationModeActive => _isCultivationModeActive;
+
+        /// <summary>
+        /// Get plant monitoring statistics
+        /// </summary>
+        public PlantMonitoringStats GetPlantMonitoringStats()
+        {
+            return _plantMonitor != null ? _plantMonitor.GetMonitoringStats() : default;
+        }
+
+        /// <summary>
+        /// Get environmental recommendations
+        /// </summary>
+        public string GetEnvironmentalRecommendations()
+        {
+            return _environmentalDisplay != null ? _environmentalDisplay.GetEnvironmentalRecommendations() : "Environmental display not available";
+        }
+
+        /// <summary>
+        /// Get currently selected care tool
+        /// </summary>
+        public CareToolType GetSelectedCareTool()
+        {
+            return _careToolsInterface != null ? _careToolsInterface.GetSelectedTool() : CareToolType.None;
+        }
+
+        #endregion
+
+        #region ITickable Implementation
+
+        public int Priority => 0;
+        public bool Enabled => enabled && gameObject.activeInHierarchy;
+
+        public virtual void OnRegistered()
+        {
+            // Override in derived classes if needed
+        }
+
+        public virtual void OnUnregistered()
+        {
+            // Override in derived classes if needed
+        }
+
+        #endregion
+
+        #if UNITY_EDITOR
+
+        /// <summary>
+        /// Editor-only method for testing cultivation mode
+        /// </summary>
+        [ContextMenu("Test Cultivation Mode Toggle")]
+        private void TestCultivationModeToggle()
+        {
+            if (Application.isPlaying && _modeController != null)
+            {
+                var currentMode = _modeController.CurrentMode;
+                var newMode = currentMode == GameplayMode.Cultivation ? GameplayMode.Construction : GameplayMode.Cultivation;
+                _modeController.SetMode(newMode, "Debug Test");
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        #endif
+    }
+
+    /// <summary>
+    /// Simple progress bar component for cultivation overview (DEPRECATED - use EnvironmentalDisplay instead)
+    /// </summary>
+    [System.Serializable]
+    public class ProgressBar : MonoBehaviour
+    {
+        // UI components temporarily disabled due to assembly reference issues
+        // [SerializeField] private UnityEngine.UI.Image _fillImage;
+        // [SerializeField] private UnityEngine.UI.Text _percentageText;
+        [System.NonSerialized] private object _fillImage;
+        [System.NonSerialized] private object _percentageText;
+
+        public void SetProgress(float progress)
+        {
+            progress = Mathf.Clamp01(progress);
+
+            // UI components temporarily disabled due to assembly reference issues
+            /*
+            if (_fillImage != null)
+            {
+                _fillImage.fillAmount = progress;
+            }
+
+            if (_percentageText != null)
+            {
+                _percentageText.text = $"{(progress * 100):F0}%";
+            }
+            */
+
+            UnityEngine.Debug.Log("Operation completed");
+        }
+    }
+}

@@ -33,7 +33,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[SettingsManager] Initialized successfully");
+                ChimeraLogger.LogInfo("SettingsManager", "$1");
             }
         }
 
@@ -52,7 +52,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[SettingsManager] Set setting {key} = {value}");
+                ChimeraLogger.LogInfo("SettingsManager", "$1");
             }
         }
 
@@ -71,7 +71,7 @@ namespace ProjectChimera.Core
                 {
                     if (_enableLogging)
                     {
-                        ChimeraLogger.LogWarning($"[SettingsManager] Type mismatch for setting {key}");
+                        ChimeraLogger.LogInfo("SettingsManager", "$1");
                     }
                     return defaultValue;
                 }
@@ -104,7 +104,7 @@ namespace ProjectChimera.Core
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[SettingsManager] Removed setting {key}");
+                    ChimeraLogger.LogInfo("SettingsManager", "$1");
                 }
             }
         }
@@ -126,7 +126,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[SettingsManager] Cleared all settings");
+                ChimeraLogger.LogInfo("SettingsManager", "$1");
             }
         }
 
@@ -140,7 +140,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[SettingsManager] Reset to default settings");
+                ChimeraLogger.LogInfo("SettingsManager", "$1");
             }
         }
 
@@ -164,14 +164,14 @@ namespace ProjectChimera.Core
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[SettingsManager] Settings saved to {filePath}");
+                    ChimeraLogger.LogInfo("SettingsManager", "$1");
                 }
             }
             catch (System.Exception ex)
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.LogError($"[SettingsManager] Failed to save settings: {ex.Message}");
+                    ChimeraLogger.LogInfo("SettingsManager", "$1");
                 }
             }
         }
@@ -207,7 +207,7 @@ namespace ProjectChimera.Core
 
                     if (_enableLogging)
                     {
-                        ChimeraLogger.Log($"[SettingsManager] Settings loaded from {filePath}");
+                        ChimeraLogger.LogInfo("SettingsManager", "$1");
                     }
                 }
             }
@@ -215,7 +215,7 @@ namespace ProjectChimera.Core
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.LogError($"[SettingsManager] Failed to load settings: {ex.Message}");
+                    ChimeraLogger.LogInfo("SettingsManager", "$1");
                 }
             }
 

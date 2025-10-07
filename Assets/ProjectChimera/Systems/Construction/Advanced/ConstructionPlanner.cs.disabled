@@ -1,0 +1,554 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Construction.Advanced
+{
+    /// <summary>
+    /// REFACTORED: Construction Planner
+    /// Single Responsibility: Automated construction planning and optimization
+    /// Extracted from AdvancedConstructionSystem for better separation of concerns
+    /// </summary>
+    public class ConstructionPlanner : MonoBehaviour
+    {
+        [Header("Planning Settings")]
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private bool _enableAutomatedPlanning = true;
+        [SerializeField] private float _planningInterval = 1.0f;
+        [SerializeField] private int _maxPlanningOperationsPerFrame = 5;
+
+        [Header("Planning Algorithms")]
+        [SerializeField] private PlanningAlgorithm _defaultAlgorithm = PlanningAlgorithm.Greedy;
+        [SerializeField] private bool _enableMultiLevelOptimization = true;
+        [SerializeField] private bool _enableResourceOptimization = true;
+
+        // Planning state
+        private readonly Dictionary<string, ConstructionPlan> _activePlans = new Dictionary<string, ConstructionPlan>();
+        private readonly Queue<PlanningRequest> _planningQueue = new Queue<PlanningRequest>();
+        private readonly List<PlanningResult> _completedPlans = new List<PlanningResult>();
+
+        // Planning algorithms
+        private readonly Dictionary<PlanningAlgorithm, IPlanningAlgorithm> _planningAlgorithms = new Dictionary<PlanningAlgorithm, IPlanningAlgorithm>();
+
+        // Performance tracking
+        private float _lastPlanningUpdate;
+        private int _planningOperationsThisFrame;
+        private bool _isInitialized = false;
+
+        // Statistics
+        private ConstructionPlannerStats _stats = new ConstructionPlannerStats();
+
+        // Events
+        public event System.Action<PlanningRequest> OnPlanningStarted;
+        public event System.Action<PlanningResult> OnPlanningCompleted;
+        public event System.Action<ConstructionPlan> OnPlanOptimized;
+
+        public bool IsInitialized => _isInitialized;
+        public ConstructionPlannerStats Stats => _stats;
+        public int ActivePlanCount => _activePlans.Count;
+        public int QueuedRequestCount => _planningQueue.Count;
+
+        public void Initialize(object parent = null)
+        {
+            if (_isInitialized) return;
+
+            InitializePlanningAlgorithms();
+            _activePlans.Clear();
+            _planningQueue.Clear();
+            _completedPlans.Clear();
+            ResetStats();
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", "Construction Planner initialized", this);
+            }
+        }
+
+        /// <summary>
+        /// Initialize planning algorithms
+        /// </summary>
+        private void InitializePlanningAlgorithms()
+        {
+            _planningAlgorithms.Clear();
+
+            // Register available planning algorithms
+            _planningAlgorithms[PlanningAlgorithm.Greedy] = new GreedyPlanningAlgorithm();
+            _planningAlgorithms[PlanningAlgorithm.AStar] = new AStarPlanningAlgorithm();
+            _planningAlgorithms[PlanningAlgorithm.Genetic] = new GeneticPlanningAlgorithm();
+            _planningAlgorithms[PlanningAlgorithm.Dynamic] = new DynamicPlanningAlgorithm();
+        }
+
+        /// <summary>
+        /// Process planning requests (call from Update or ITickable)
+        /// </summary>
+        public void ProcessPlanning()
+        {
+            if (!_isInitialized || !_enableAutomatedPlanning) return;
+
+            _planningOperationsThisFrame = 0;
+
+            // Process planning at specified intervals
+            if (Time.time - _lastPlanningUpdate >= _planningInterval)
+            {
+                ProcessPlanningQueue();
+                OptimizeActivePlans();
+                _lastPlanningUpdate = Time.time;
+                _stats.LastPlanningTime = Time.time;
+            }
+        }
+
+        /// <summary>
+        /// Request construction planning
+        /// </summary>
+        public bool RequestPlanning(PlanningRequest request)
+        {
+            if (request == null)
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("CONSTRUCTION", "Cannot process null planning request", this);
+                }
+                return false;
+            }
+
+            request.RequestId = System.Guid.NewGuid().ToString();
+            request.RequestTime = Time.time;
+            
+            _planningQueue.Enqueue(request);
+            _stats.PlanningRequestsQueued++;
+
+            OnPlanningStarted?.Invoke(request);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", $"Queued planning request {request.RequestId} ({_planningQueue.Count} pending)", this);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Get construction plan by ID
+        /// </summary>
+        public ConstructionPlan GetPlan(string planId)
+        {
+            _activePlans.TryGetValue(planId, out var plan);
+            return plan;
+        }
+
+        /// <summary>
+        /// Cancel construction plan
+        /// </summary>
+        public bool CancelPlan(string planId)
+        {
+            if (_activePlans.Remove(planId))
+            {
+                _stats.PlansCancelled++;
+                
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("CONSTRUCTION", $"Cancelled construction plan {planId}", this);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Process planning queue
+        /// </summary>
+        private void ProcessPlanningQueue()
+        {
+            while (_planningQueue.Count > 0 && _planningOperationsThisFrame < _maxPlanningOperationsPerFrame)
+            {
+                var request = _planningQueue.Dequeue();
+                ProcessPlanningRequest(request);
+                _planningOperationsThisFrame++;
+            }
+        }
+
+        /// <summary>
+        /// Process individual planning request
+        /// </summary>
+        private void ProcessPlanningRequest(PlanningRequest request)
+        {
+            try
+            {
+                var planningStartTime = Time.realtimeSinceStartup;
+
+                // Select appropriate algorithm
+                var algorithm = SelectPlanningAlgorithm(request);
+                
+                // Generate construction plan
+                var plan = algorithm.GeneratePlan(request);
+                
+                if (plan != null)
+                {
+                    plan.PlanId = System.Guid.NewGuid().ToString();
+                    plan.CreationTime = Time.time;
+                    plan.PlanningTime = Time.realtimeSinceStartup - planningStartTime;
+                    
+                    _activePlans[plan.PlanId] = plan;
+                    
+                    // Create result
+                    var result = new PlanningResult
+                    {
+                        RequestId = request.RequestId,
+                        PlanId = plan.PlanId,
+                        Plan = plan,
+                        Success = true,
+                        ProcessingTime = plan.PlanningTime
+                    };
+                    
+                    _completedPlans.Add(result);
+                    _stats.PlanningRequestsCompleted++;
+                    
+                    OnPlanningCompleted?.Invoke(result);
+                    
+                    if (_enableLogging)
+                    {
+                        ChimeraLogger.Log("CONSTRUCTION", $"Generated construction plan {plan.PlanId} in {plan.PlanningTime:F3}s", this);
+                    }
+                }
+                else
+                {
+                    // Planning failed
+                    var result = new PlanningResult
+                    {
+                        RequestId = request.RequestId,
+                        Success = false,
+                        ErrorMessage = "Failed to generate construction plan",
+                        ProcessingTime = Time.realtimeSinceStartup - planningStartTime
+                    };
+                    
+                    _completedPlans.Add(result);
+                    _stats.PlanningRequestsFailed++;
+                    
+                    OnPlanningCompleted?.Invoke(result);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                var result = new PlanningResult
+                {
+                    RequestId = request.RequestId,
+                    Success = false,
+                    ErrorMessage = ex.Message,
+                    ProcessingTime = Time.realtimeSinceStartup - request.RequestTime
+                };
+                
+                _completedPlans.Add(result);
+                _stats.PlanningErrors++;
+                
+                OnPlanningCompleted?.Invoke(result);
+                
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogError("CONSTRUCTION", $"Planning request {request.RequestId} failed: {ex.Message}", this);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Select appropriate planning algorithm
+        /// </summary>
+        private IPlanningAlgorithm SelectPlanningAlgorithm(PlanningRequest request)
+        {
+            // Use specified algorithm or default
+            var algorithmType = request.PreferredAlgorithm ?? _defaultAlgorithm;
+            
+            if (_planningAlgorithms.TryGetValue(algorithmType, out var algorithm))
+            {
+                return algorithm;
+            }
+            
+            // Fallback to greedy algorithm
+            return _planningAlgorithms[PlanningAlgorithm.Greedy];
+        }
+
+        /// <summary>
+        /// Optimize active construction plans
+        /// </summary>
+        private void OptimizeActivePlans()
+        {
+            var plansToOptimize = _activePlans.Values.Where(p => p.NeedsOptimization).Take(_maxPlanningOperationsPerFrame).ToList();
+            
+            foreach (var plan in plansToOptimize)
+            {
+                if (_planningOperationsThisFrame >= _maxPlanningOperationsPerFrame)
+                    break;
+                    
+                OptimizePlan(plan);
+                _planningOperationsThisFrame++;
+            }
+        }
+
+        /// <summary>
+        /// Optimize individual construction plan
+        /// </summary>
+        private void OptimizePlan(ConstructionPlan plan)
+        {
+            try
+            {
+                var optimizationStartTime = Time.realtimeSinceStartup;
+                
+                // Resource optimization
+                if (_enableResourceOptimization)
+                {
+                    OptimizeResourceUsage(plan);
+                }
+                
+                // Multi-level optimization
+                if (_enableMultiLevelOptimization && plan.HasMultipleLevels)
+                {
+                    OptimizeMultiLevelConstruction(plan);
+                }
+                
+                plan.LastOptimizationTime = Time.time;
+                plan.OptimizationCount++;
+                
+                var optimizationTime = Time.realtimeSinceStartup - optimizationStartTime;
+                plan.TotalOptimizationTime += optimizationTime;
+                
+                _stats.PlansOptimized++;
+                
+                OnPlanOptimized?.Invoke(plan);
+                
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("CONSTRUCTION", $"Optimized plan {plan.PlanId} in {optimizationTime:F3}s", this);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogError("CONSTRUCTION", $"Plan optimization failed for {plan.PlanId}: {ex.Message}", this);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Optimize resource usage in plan
+        /// </summary>
+        private void OptimizeResourceUsage(ConstructionPlan plan)
+        {
+            // Implement resource optimization logic
+            plan.ResourceEfficiency = Mathf.Min(1.0f, plan.ResourceEfficiency + 0.01f);
+        }
+
+        /// <summary>
+        /// Optimize multi-level construction
+        /// </summary>
+        private void OptimizeMultiLevelConstruction(ConstructionPlan plan)
+        {
+            // Implement multi-level optimization logic
+            foreach (var step in plan.ConstructionSteps)
+            {
+                step.OptimizationLevel++;
+            }
+        }
+
+        /// <summary>
+        /// Clear completed plans
+        /// </summary>
+        public int ClearCompletedPlans()
+        {
+            var count = _completedPlans.Count;
+            _completedPlans.Clear();
+            
+            if (_enableLogging && count > 0)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", $"Cleared {count} completed plans", this);
+            }
+            
+            return count;
+        }
+
+        /// <summary>
+        /// Reset statistics
+        /// </summary>
+        private void ResetStats()
+        {
+            _stats = new ConstructionPlannerStats
+            {
+                PlanningRequestsQueued = 0,
+                PlanningRequestsCompleted = 0,
+                PlanningRequestsFailed = 0,
+                PlansOptimized = 0,
+                PlansCancelled = 0,
+                PlanningErrors = 0,
+                LastPlanningTime = Time.time
+            };
+        }
+
+        private void OnDestroy()
+        {
+            _activePlans.Clear();
+            _planningQueue.Clear();
+            _completedPlans.Clear();
+        }
+    }
+
+    /// <summary>
+    /// Planning algorithm types
+    /// </summary>
+    public enum PlanningAlgorithm
+    {
+        Greedy,
+        AStar,
+        Genetic,
+        Dynamic
+    }
+
+    /// <summary>
+    /// Planning request data
+    /// </summary>
+    [System.Serializable]
+    public class PlanningRequest
+    {
+        public string RequestId;
+        public Vector3 StartPosition;
+        public Vector3 EndPosition;
+        public List<string> RequiredResources;
+        public List<string> ConstructionTypes;
+        public PlanningAlgorithm? PreferredAlgorithm;
+        public float RequestTime;
+        public object CustomData;
+    }
+
+    /// <summary>
+    /// Planning result data
+    /// </summary>
+    [System.Serializable]
+    public class PlanningResult
+    {
+        public string RequestId;
+        public string PlanId;
+        public ConstructionPlan Plan;
+        public bool Success;
+        public string ErrorMessage;
+        public float ProcessingTime;
+    }
+
+    /// <summary>
+    /// Construction plan data
+    /// </summary>
+    [System.Serializable]
+    public class ConstructionPlan
+    {
+        public string PlanId;
+        public float CreationTime;
+        public float PlanningTime;
+        public float LastOptimizationTime;
+        public int OptimizationCount;
+        public float TotalOptimizationTime;
+        public float ResourceEfficiency;
+        public bool HasMultipleLevels;
+        public List<ConstructionStep> ConstructionSteps;
+        
+        public bool NeedsOptimization => Time.time - LastOptimizationTime > 5.0f; // Optimize every 5 seconds
+    }
+
+    /// <summary>
+    /// Construction step data
+    /// </summary>
+    [System.Serializable]
+    public class ConstructionStep
+    {
+        public string StepId;
+        public Vector3 Position;
+        public string ConstructionType;
+        public List<string> RequiredResources;
+        public int OptimizationLevel;
+        public float EstimatedDuration;
+    }
+
+    /// <summary>
+    /// Planning algorithm interface
+    /// </summary>
+    public interface IPlanningAlgorithm
+    {
+        ConstructionPlan GeneratePlan(PlanningRequest request);
+    }
+
+    /// <summary>
+    /// Greedy planning algorithm
+    /// </summary>
+    public class GreedyPlanningAlgorithm : IPlanningAlgorithm
+    {
+        public ConstructionPlan GeneratePlan(PlanningRequest request)
+        {
+            return new ConstructionPlan
+            {
+                ResourceEfficiency = 0.7f,
+                HasMultipleLevels = false,
+                ConstructionSteps = new List<ConstructionStep>
+                {
+                    new ConstructionStep
+                    {
+                        StepId = System.Guid.NewGuid().ToString(),
+                        Position = request.StartPosition,
+                        ConstructionType = request.ConstructionTypes?.FirstOrDefault() ?? "Generic",
+                        RequiredResources = request.RequiredResources ?? new List<string>(),
+                        EstimatedDuration = 10.0f
+                    }
+                }
+            };
+        }
+    }
+
+    /// <summary>
+    /// A* planning algorithm
+    /// </summary>
+    public class AStarPlanningAlgorithm : IPlanningAlgorithm
+    {
+        public ConstructionPlan GeneratePlan(PlanningRequest request)
+        {
+            // Implement A* algorithm
+            return new GreedyPlanningAlgorithm().GeneratePlan(request); // Placeholder
+        }
+    }
+
+    /// <summary>
+    /// Genetic planning algorithm
+    /// </summary>
+    public class GeneticPlanningAlgorithm : IPlanningAlgorithm
+    {
+        public ConstructionPlan GeneratePlan(PlanningRequest request)
+        {
+            // Implement genetic algorithm
+            return new GreedyPlanningAlgorithm().GeneratePlan(request); // Placeholder
+        }
+    }
+
+    /// <summary>
+    /// Dynamic planning algorithm
+    /// </summary>
+    public class DynamicPlanningAlgorithm : IPlanningAlgorithm
+    {
+        public ConstructionPlan GeneratePlan(PlanningRequest request)
+        {
+            // Implement dynamic programming algorithm
+            return new GreedyPlanningAlgorithm().GeneratePlan(request); // Placeholder
+        }
+    }
+
+    /// <summary>
+    /// Construction planner statistics
+    /// </summary>
+    [System.Serializable]
+    public struct ConstructionPlannerStats
+    {
+        public int PlanningRequestsQueued;
+        public int PlanningRequestsCompleted;
+        public int PlanningRequestsFailed;
+        public int PlansOptimized;
+        public int PlansCancelled;
+        public int PlanningErrors;
+        public float LastPlanningTime;
+    }
+}

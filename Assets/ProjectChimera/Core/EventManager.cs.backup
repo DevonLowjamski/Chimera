@@ -1,0 +1,196 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Core
+{
+    /// <summary>
+    /// SIMPLE: Basic event management aligned with Project Chimera's event handling needs.
+    /// Focuses on essential event communication without complex management systems.
+    /// </summary>
+    public class EventManager : MonoBehaviour
+    {
+        [Header("Basic Event Settings")]
+        [SerializeField] private bool _enableBasicEvents = true;
+        [SerializeField] private bool _enableLogging = true;
+
+        // Basic event tracking
+        private readonly Dictionary<string, System.Action> _eventHandlers = new Dictionary<string, System.Action>();
+        private bool _isInitialized = false;
+
+        /// <summary>
+        /// Initialize basic event management
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Subscribe to an event
+        /// </summary>
+        public void Subscribe(string eventName, System.Action handler)
+        {
+            if (!_enableBasicEvents || string.IsNullOrEmpty(eventName) || handler == null) return;
+
+            if (!_eventHandlers.ContainsKey(eventName))
+            {
+                _eventHandlers[eventName] = handler;
+            }
+            else
+            {
+                _eventHandlers[eventName] += handler;
+            }
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Unsubscribe from an event
+        /// </summary>
+        public void Unsubscribe(string eventName, System.Action handler)
+        {
+            if (!_enableBasicEvents || string.IsNullOrEmpty(eventName) || handler == null) return;
+
+            if (_eventHandlers.ContainsKey(eventName))
+            {
+                _eventHandlers[eventName] -= handler;
+
+                // Remove empty handlers
+                if (_eventHandlers[eventName] == null)
+                {
+                    _eventHandlers.Remove(eventName);
+                }
+
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Raise an event
+        /// </summary>
+        public void RaiseEvent(string eventName)
+        {
+            if (!_enableBasicEvents || string.IsNullOrEmpty(eventName)) return;
+
+            if (_eventHandlers.TryGetValue(eventName, out var handler))
+            {
+                handler?.Invoke();
+
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Check if event has subscribers
+        /// </summary>
+        public bool HasSubscribers(string eventName)
+        {
+            return _eventHandlers.ContainsKey(eventName) && _eventHandlers[eventName] != null;
+        }
+
+        /// <summary>
+        /// Get subscriber count for an event
+        /// </summary>
+        public int GetSubscriberCount(string eventName)
+        {
+            if (_eventHandlers.TryGetValue(eventName, out var handler))
+            {
+                return handler?.GetInvocationList()?.Length ?? 0;
+            }
+            return 0;
+        }
+
+        /// <summary>
+        /// Get all event names
+        /// </summary>
+        public List<string> GetAllEventNames()
+        {
+            return new List<string>(_eventHandlers.Keys);
+        }
+
+        /// <summary>
+        /// Clear all event handlers
+        /// </summary>
+        public void ClearAllEvents()
+        {
+            _eventHandlers.Clear();
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Set event system enabled/disabled
+        /// </summary>
+        public void SetEventSystemEnabled(bool enabled)
+        {
+            _enableBasicEvents = enabled;
+
+            if (!enabled)
+            {
+                ClearAllEvents();
+            }
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Get event system statistics
+        /// </summary>
+        public EventStatistics GetEventStatistics()
+        {
+            int totalEvents = _eventHandlers.Count;
+            int totalSubscribers = 0;
+
+            foreach (var handler in _eventHandlers.Values)
+            {
+                if (handler != null)
+                {
+                    totalSubscribers += handler.GetInvocationList()?.Length ?? 0;
+                }
+            }
+
+            return new EventStatistics
+            {
+                TotalEvents = totalEvents,
+                TotalSubscribers = totalSubscribers,
+                IsInitialized = _isInitialized,
+                EventsEnabled = _enableBasicEvents
+            };
+        }
+    }
+
+    /// <summary>
+    /// Basic event statistics
+    /// </summary>
+    [System.Serializable]
+    public class EventStatistics
+    {
+        public int TotalEvents;
+        public int TotalSubscribers;
+        public bool IsInitialized;
+        public bool EventsEnabled;
+    }
+}

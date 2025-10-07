@@ -17,7 +17,7 @@ namespace ProjectChimera.Data.Construction
         public GridConstructionTemplate Template;
         public DateTime EstimateDate;
         public DateTime EstimateValidUntil;
-        
+
         // Cost breakdown
         public float BaseCost;
         public float ResourceCost;
@@ -26,7 +26,7 @@ namespace ProjectChimera.Data.Construction
         public float SubtotalCost;
         public float ContingencyCost;
         public float TotalCost;
-        
+
         // Additional info
         public string Notes;
         public bool IsApproved;
@@ -41,22 +41,22 @@ namespace ProjectChimera.Data.Construction
         public float EstimatedCost;
         public float RemainingAmount;
         public DateTime CreatedDate;
-        
+
         // Budget categories
         public float LaborBudget;
         public float MaterialBudget;
         public float BaseBudget;
         public float ContingencyBudget;
-        
+
         // Spending tracking
         public float LaborSpent;
         public float MaterialSpent;
         public float BaseSpent;
         public float ContingencySpent;
-        
+
         public float ContingencyReserve;
         public List<GridCostRecord> CostRecords = new List<GridCostRecord>();
-        
+
         // Properties
         public float TotalSpent => LaborSpent + MaterialSpent + BaseSpent + ContingencySpent;
         public float BudgetUtilization => ApprovedAmount > 0 ? TotalSpent / ApprovedAmount : 0f;
@@ -97,7 +97,7 @@ namespace ProjectChimera.Data.Construction
         public float ActualCost;
         public DateTime StartDate;
         public DateTime LastUpdate;
-        
+
         // Performance metrics
         public float CostVariance => PlannedCost - ActualCost;
         public float CostPerformanceIndex => ActualCost > 0 ? PlannedCost / ActualCost : 1f;
@@ -113,7 +113,7 @@ namespace ProjectChimera.Data.Construction
         public int ActiveProjects;
         public float AverageCostPerProject;
         public DateTime LastUpdated;
-        
+
         // Performance metrics
         public int ProjectsOnBudget;
         public int ProjectsOverBudget;
@@ -185,7 +185,7 @@ namespace ProjectChimera.Data.Construction
         Rejected,
         Expired
     }
-    
+
     [System.Serializable]
     public class GridCostSummary
     {
@@ -197,5 +197,47 @@ namespace ProjectChimera.Data.Construction
         public bool IsOverBudget;
         public Dictionary<GridCostCategory, float> CostBreakdown = new Dictionary<GridCostCategory, float>();
         public DateTime LastUpdated;
+    }
+
+    [System.Serializable]
+    public class PaymentValidationResult
+    {
+        public bool IsValid;
+        public float TotalCost;
+        public string ErrorMessage;
+        public List<ResourceCost> ResourceCosts = new List<ResourceCost>();
+        public Dictionary<string, float> CostBreakdown = new Dictionary<string, float>();
+        public Dictionary<string, int> MissingResources = new Dictionary<string, int>();
+    }
+
+    [System.Serializable]
+    public class ResourceValidationResult
+    {
+        public bool IsValid;
+        public string ErrorMessage;
+        public Dictionary<string, int> MissingResources = new Dictionary<string, int>();
+        public Dictionary<string, int> AvailableResources = new Dictionary<string, int>();
+    }
+
+    [System.Serializable]
+    public class ResourceCost
+    {
+        public string resourceId;
+        public int quantity;
+        public float costPerUnit;
+        public bool isRequired = true;
+        public string categoryName;
+        public float totalCost => quantity * costPerUnit;
+    }
+
+    [System.Serializable]
+    public class PlacementCost
+    {
+        public float TotalCost;
+        public Dictionary<string, float> Breakdown = new Dictionary<string, float>();
+        public List<ResourceCost> ResourceCosts = new List<ResourceCost>();
+        public string PlaceableType;
+        public Vector3Int GridPosition;
+        public DateTime CalculatedAt = DateTime.Now;
     }
 }

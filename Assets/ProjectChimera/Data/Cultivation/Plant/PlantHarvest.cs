@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 
+
 namespace ProjectChimera.Data.Cultivation.Plant
 {
     /// <summary>
@@ -28,41 +29,11 @@ namespace ProjectChimera.Data.Cultivation.Plant
         private const float ENVIRONMENTAL_YIELD_FACTOR = 0.2f;
         private const float CULTIVATION_YIELD_FACTOR = 0.1f;
 
-        /// <summary>
-        /// Determines if plant is ready for harvest
-        /// </summary>
-        public static HarvestReadiness AssessHarvestReadiness(PlantStateData plantState)
-        {
-            // Delegate to HarvestReadinessCalculator
-            return HarvestReadinessCalculator.AssessHarvestReadiness(plantState);
-        }
-
-        /// <summary>
-        /// Calculates yield prediction for a plant
-        /// </summary>
-        public static YieldPrediction CalculateYieldPrediction(PlantStateData plantState)
-        {
-            // Delegate to YieldCalculator
-            return YieldCalculator.CalculateYieldPrediction(plantState);
-        }
-
-        /// <summary>
-        /// Calculates harvest quality based on plant state
-        /// </summary>
-        public static HarvestQuality CalculateHarvestQuality(PlantStateData plantState)
-        {
-            // Delegate to QualityAssessor
-            return QualityAssessor.CalculateHarvestQuality(plantState);
-        }
-
-        /// <summary>
-        /// Calculates harvest window based on plant state
-        /// </summary>
-        public static HarvestWindow CalculateHarvestWindow(PlantStateData plantState)
-        {
-            // Delegate to HarvestReadinessCalculator
-            return HarvestReadinessCalculator.CalculateHarvestWindow(plantState);
-        }
+        // Note: Harvest calculations are now performed by specialized component classes:
+        // - HarvestReadinessCalculator: Readiness and window calculations
+        // - YieldCalculator: Yield predictions
+        // - QualityAssessor: Quality assessments
+        // These are instantiated and used by PlantHarvestOperator
     }
 
     /// <summary>
@@ -93,6 +64,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
     {
         public float GeneticFactor;
         public float EnvironmentalFactor;
+        public float CultivationFactor;
         public float NutrientFactor;
         public float WaterFactor;
         public float PestFactor;
@@ -141,12 +113,23 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public DateTime AssessmentDate;
 
         // Additional properties for compatibility
-        public float OverallQualityScore => OverallQuality;
-        public QualityGrade QualityGradeEnum => QualityGrade == "Excellent" ? QualityGrade.Excellent :
-                                                QualityGrade == "Good" ? QualityGrade.Good :
-                                                QualityGrade == "Fair" ? QualityGrade.Fair : QualityGrade.Poor;
+        public float OverallQualityScore { get; set; } = 0f;
+        public HarvestQualityGrade QualityGradeEnum
+        {
+            get
+            {
+                switch (QualityGrade)
+                {
+                    case "Excellent": return HarvestQualityGrade.Excellent;
+                    case "Good": return HarvestQualityGrade.Good;
+                    case "Fair": return HarvestQualityGrade.Fair;
+                    case "Poor": return HarvestQualityGrade.Poor;
+                    default: return HarvestQualityGrade.Poor;
+                }
+            }
+        }
         public QualityFactors QualityFactors { get; set; } = new QualityFactors();
-        public string QualityDescription => $"Quality: {QualityGrade}";
+        public string QualityDescription { get; set; } = "Unknown";
         public QualityMetrics QualityMetrics { get; set; } = new QualityMetrics();
     }
 
@@ -184,16 +167,24 @@ namespace ProjectChimera.Data.Cultivation.Plant
     [System.Serializable]
     public class QualityComparison
     {
-        public HarvestQuality BaselineQuality;
-        public HarvestQuality CurrentQuality;
-        public float ImprovementScore;
-        public string ComparisonNotes;
+        public HarvestQuality Quality1;
+        public HarvestQuality Quality2;
+        public float ScoreDifference;
+        public int GradeDifference;
+        public string ImprovementDirection;
+        public UnityEngine.Color ImprovementColor;
+
+        // Backward compatibility properties
+        public HarvestQuality BaselineQuality => Quality1;
+        public HarvestQuality CurrentQuality => Quality2;
+        public float ImprovementScore => ScoreDifference;
+        public string ComparisonNotes => $"{ImprovementDirection} - Score difference: {ScoreDifference}";
     }
 
     /// <summary>
     /// Quality grade enumeration
     /// </summary>
-    public enum QualityGrade
+    public enum HarvestQualityGrade
     {
         Poor,
         Fair,

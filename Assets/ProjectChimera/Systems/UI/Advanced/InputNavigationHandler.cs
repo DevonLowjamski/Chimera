@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.UI.Advanced
 {
@@ -95,8 +96,15 @@ namespace ProjectChimera.Systems.UI.Advanced
                 {
                     element.Focus();
                     // Trigger click event if element supports it
-                    var clickable = element as Clickable;
-                    clickable?.Invoke();
+                    var clickable = element.GetFirstOfType<Clickable>();
+                    if (clickable != null)
+                    {
+                        // Simulate a click event
+                        using (var evt = new ClickEvent() { target = element })
+                        {
+                            element.SendEvent(evt);
+                        }
+                    }
                 }
             }
         }

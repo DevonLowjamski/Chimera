@@ -1,8 +1,10 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectChimera.Data.Facilities;
 using ProjectChimera.Data.Shared;
+
 
 namespace ProjectChimera.Data.Cultivation.Plant
 {
@@ -17,6 +19,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public string PlantId;
         public string StrainName;
         public string Species;
+        public PlantStrainSO Strain; // Plant strain reference
         public ProjectChimera.Data.Shared.PlantGrowthStage GrowthStage;
 
         [Header("Location")]
@@ -57,10 +60,10 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public bool HasDisease;
 
         // Additional properties for compatibility
-        public string PlantID => $"{Strain?.Name ?? "Unknown"}_{PlantedDate.Ticks}";
+        public string PlantID { get; set; } = string.Empty;
         public float CurrentHeight { get; set; } = 10f; // Default seedling height
         public PlantGrowthStage CurrentGrowthStage { get; set; } = PlantGrowthStage.Seedling;
-        public float AgeInDays => GetAgeInDays();
+        public float AgeInDays { get; set; } = 0f;
 
         /// <summary>
         /// Get plant age in days
@@ -120,6 +123,10 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public float OptimalLightIntensity;
         public float OptimalCO2Level;
         public Dictionary<string, float> GeneticModifiers;
+
+        // Methods for compatibility
+        public void ProcessDailyGrowth() { /* Daily growth processing logic */ }
+        public void CurrentEnvironment() { /* Environment setting logic */ }
     }
 
     /// <summary>
@@ -135,6 +142,23 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public float MaxNutrientCapacity;
         public float MaxEnergyCapacity;
         public Dictionary<string, float> NutrientComposition;
+
+        // Additional properties for compatibility
+        public float WaterLevel => CurrentWaterLevel;
+        public float NutrientLevel => CurrentNutrientLevel;
+        public float EnergyReserves => CurrentEnergyLevel;
+        public DateTime LastWatering;
+        public DateTime LastFeeding;
+        public DateTime LastTraining;
+
+        // Methods for compatibility
+        public void Water(float amount) => CurrentWaterLevel = System.Math.Min(CurrentWaterLevel + amount, MaxWaterCapacity);
+        public void Feed(Dictionary<string, float> nutrients) => CurrentNutrientLevel = System.Math.Min(CurrentNutrientLevel + nutrients.Values.Sum(), MaxNutrientCapacity);
+        public void ApplyTraining() { /* Training logic */ }
+        public float GetResourceStatus() => (CurrentWaterLevel + CurrentNutrientLevel + CurrentEnergyLevel) / 3f;
+        public float GetOptimalWateringSchedule() => MaxWaterCapacity - CurrentWaterLevel;
+        public float GetOptimalFeedingSchedule() => MaxNutrientCapacity - CurrentNutrientLevel;
+        public void UpdateResources() { /* Update logic */ }
     }
 
     /// <summary>
@@ -150,6 +174,18 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public float QualityScore; // 0-1 scale
         public string HarvestNotes;
         public Dictionary<string, float> TerpeneProfile;
+
+        // Methods for compatibility
+        public float CalculateYieldPotential() => TotalYield * QualityScore;
+        public HarvestResult Harvest() => new HarvestResult
+        {
+            PlantID = "Unknown", // Would be set from plant data
+            TotalWeightGrams = TotalYield,
+            QualityScore = QualityScore
+        };
+        public bool CheckHarvestReadiness() => QualityScore > 0.7f;
+        public string[] GetHarvestRecommendations() => new[] { "Monitor trichome development", "Check pistil browning" };
+        public string[] GetPostHarvestProcess() => new[] { "Dry for 5-7 days", "Cure for 2-4 weeks" };
     }
 
     /// <summary>

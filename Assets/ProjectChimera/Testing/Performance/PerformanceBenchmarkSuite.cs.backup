@@ -1,0 +1,257 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
+
+namespace ProjectChimera.Testing.Performance
+{
+    /// <summary>
+    /// SIMPLE: Basic performance benchmark suite aligned with Project Chimera's testing vision.
+    /// Focuses on essential performance validation without complex monitoring.
+    /// </summary>
+    public class PerformanceBenchmarkSuite : MonoBehaviour
+    {
+        [Header("Basic Performance Settings")]
+        [SerializeField] private bool _runTestsOnStart = false;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private int _targetFrameRate = 60;
+        [SerializeField] private float _testDuration = 10f;
+
+        // Basic performance tracking
+        private readonly List<float> _frameTimes = new List<float>();
+        private bool _testsRunning = false;
+
+        /// <summary>
+        /// Events for test completion
+        /// </summary>
+        public event System.Action<PerformanceResults> OnTestsCompleted;
+
+        private void Start()
+        {
+            if (_runTestsOnStart)
+            {
+                StartCoroutine(RunBasicTests());
+            }
+        }
+
+        /// <summary>
+        /// Run basic performance tests
+        /// </summary>
+        public IEnumerator RunBasicTests()
+        {
+            if (_testsRunning) yield break;
+
+            _testsRunning = true;
+            _frameTimes.Clear();
+
+            LogTest("=== Starting Basic Performance Tests ===");
+
+            // Test 1: Frame rate test
+            yield return StartCoroutine(TestFrameRate());
+
+            // Test 2: Memory test
+            yield return StartCoroutine(TestMemory());
+
+            // Test 3: Basic functionality test
+            yield return StartCoroutine(TestBasicFunctionality());
+
+            // Generate results
+            var results = GenerateResults();
+
+            OnTestsCompleted?.Invoke(results);
+            _testsRunning = false;
+            LogTest("=== Basic Performance Tests Completed ===");
+        }
+
+        /// <summary>
+        /// Test frame rate performance
+        /// </summary>
+        private IEnumerator TestFrameRate()
+        {
+            LogTest("Testing frame rate performance...");
+
+            _frameTimes.Clear();
+            float startTime = Time.time;
+            int frames = 0;
+
+            while (Time.time - startTime < _testDuration)
+            {
+                _frameTimes.Add(Time.deltaTime);
+                frames++;
+                yield return null;
+            }
+
+            float averageFrameTime = _frameTimes.Average();
+            float averageFPS = 1f / averageFrameTime;
+            float minFPS = 1f / _frameTimes.Max();
+
+            LogTest($"Frame rate test: {averageFPS:F1} FPS average, {minFPS:F1} FPS minimum");
+        }
+
+        /// <summary>
+        /// Test memory performance
+        /// </summary>
+        private IEnumerator TestMemory()
+        {
+            LogTest("Testing memory performance...");
+
+            // Force garbage collection
+            System.GC.Collect();
+
+            // Basic memory check
+            long memoryUsage = System.GC.GetTotalMemory(false);
+
+            LogTest($"Memory test: {memoryUsage / 1024 / 1024} MB used");
+
+            yield return null;
+        }
+
+        /// <summary>
+        /// Test basic functionality performance
+        /// </summary>
+        private IEnumerator TestBasicFunctionality()
+        {
+            LogTest("Testing basic functionality performance...");
+
+            // Simple performance test - create some objects
+            var testObjects = new List<GameObject>();
+            for (int i = 0; i < 10; i++)
+            {
+                var obj = new GameObject($"TestObject_{i}");
+                testObjects.Add(obj);
+            }
+
+            // Clean up
+            foreach (var obj in testObjects)
+            {
+                Destroy(obj);
+            }
+
+            LogTest("Basic functionality test completed");
+
+            yield return null;
+        }
+
+        /// <summary>
+        /// Generate performance results
+        /// </summary>
+        private PerformanceResults GenerateResults()
+        {
+            var results = new PerformanceResults();
+
+            if (_frameTimes.Count > 0)
+            {
+                float averageFrameTime = _frameTimes.Average();
+                results.AverageFPS = 1f / averageFrameTime;
+                results.MinFPS = 1f / _frameTimes.Max();
+                results.MaxFPS = 1f / _frameTimes.Min();
+                results.FrameTimeVariance = CalculateVariance(_frameTimes, averageFrameTime);
+            }
+
+            results.MemoryUsage = System.GC.GetTotalMemory(false);
+            results.TestDuration = _testDuration;
+            results.TargetFrameRate = _targetFrameRate;
+            results.OverallPass = results.AverageFPS >= _targetFrameRate * 0.8f; // 80% of target
+
+            return results;
+        }
+
+        /// <summary>
+        /// Calculate variance of frame times
+        /// </summary>
+        private float CalculateVariance(List<float> values, float mean)
+        {
+            if (values.Count == 0) return 0f;
+
+            float sumOfSquares = 0f;
+            foreach (float value in values)
+            {
+                float diff = value - mean;
+                sumOfSquares += diff * diff;
+            }
+
+            return sumOfSquares / values.Count;
+        }
+
+        /// <summary>
+        /// Get current performance status
+        /// </summary>
+        public PerformanceStatus GetCurrentStatus()
+        {
+            return new PerformanceStatus
+            {
+                CurrentFPS = 1f / Time.deltaTime,
+                TargetFPS = _targetFrameRate,
+                MemoryUsage = System.GC.GetTotalMemory(false),
+                IsTestRunning = _testsRunning
+            };
+        }
+
+        /// <summary>
+        /// Set target frame rate
+        /// </summary>
+        public void SetTargetFrameRate(int targetFPS)
+        {
+            _targetFrameRate = Mathf.Max(1, targetFPS);
+
+            if (_enableLogging)
+            {
+                LogTest($"Target frame rate set to {_targetFrameRate}");
+            }
+        }
+
+        /// <summary>
+        /// Set test duration
+        /// </summary>
+        public void SetTestDuration(float duration)
+        {
+            _testDuration = Mathf.Max(1f, duration);
+
+            if (_enableLogging)
+            {
+                LogTest($"Test duration set to {_testDuration:F1}s");
+            }
+        }
+
+        #region Private Methods
+
+        private void LogTest(string message)
+        {
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Basic performance results
+    /// </summary>
+    [System.Serializable]
+    public class PerformanceResults
+    {
+        public float AverageFPS;
+        public float MinFPS;
+        public float MaxFPS;
+        public float FrameTimeVariance;
+        public long MemoryUsage;
+        public float TestDuration;
+        public int TargetFrameRate;
+        public bool OverallPass;
+    }
+
+    /// <summary>
+    /// Performance status
+    /// </summary>
+    [System.Serializable]
+    public class PerformanceStatus
+    {
+        public float CurrentFPS;
+        public int TargetFPS;
+        public long MemoryUsage;
+        public bool IsTestRunning;
+    }
+}

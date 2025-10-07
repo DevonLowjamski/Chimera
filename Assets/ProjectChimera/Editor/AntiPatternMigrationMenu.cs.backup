@@ -1,0 +1,79 @@
+using UnityEngine;
+using UnityEditor;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Editor
+{
+    /// <summary>
+    /// Editor menu items for anti-pattern migration
+    /// </summary>
+    public static class AntiPatternMigrationMenu
+    {
+        [MenuItem("Project Chimera/Roadmap Compliance/Generate Violation Report")]
+        public static void GenerateViolationReport()
+        {
+            Debug.Log("Generating anti-pattern violation report...");
+            
+            var report = AntiPatternMigrationTool.GetViolationReport();
+            
+            Debug.Log("=== PROJECT CHIMERA ROADMAP COMPLIANCE REPORT ===");
+            Debug.Log(report.ToString());
+            
+            if (report.IsCompliant)
+            {
+                Debug.Log("🎉 PROJECT CHIMERA IS ROADMAP COMPLIANT!");
+            }
+            else
+            {
+                Debug.Log($"❌ {report.TotalViolations} violations must be resolved for Phase 1 completion");
+            }
+        }
+
+        [MenuItem("Project Chimera/Roadmap Compliance/Execute Migration (CAREFUL!)")]
+        public static void ExecuteMigration()
+        {
+            if (EditorUtility.DisplayDialog("Execute Anti-Pattern Migration", 
+                "This will modify ALL C# files in the project. Backups will be created. Continue?", 
+                "Yes, Execute", "Cancel"))
+            {
+                Debug.Log("Executing anti-pattern migration...");
+                
+                // Get initial report
+                var initialReport = AntiPatternMigrationTool.GetViolationReport();
+                Debug.Log($"Initial violations: {initialReport.TotalViolations}");
+                
+                // Execute migration
+                AntiPatternMigrationTool.MigrateAllAntiPatterns();
+                
+                // Get final report
+                var finalReport = AntiPatternMigrationTool.GetViolationReport();
+                Debug.Log($"Final violations: {finalReport.TotalViolations}");
+                
+                var improvement = initialReport.TotalViolations - finalReport.TotalViolations;
+                Debug.Log($"✅ Eliminated {improvement} violations");
+                
+                if (finalReport.IsCompliant)
+                {
+                    Debug.Log("🎉 PROJECT CHIMERA IS NOW ROADMAP COMPLIANT!");
+                }
+                
+                // Refresh assets
+                AssetDatabase.Refresh();
+            }
+        }
+
+        [MenuItem("Project Chimera/Roadmap Compliance/Restore from Backups")]
+        public static void RestoreFromBackups()
+        {
+            if (EditorUtility.DisplayDialog("Restore from Backups", 
+                "This will restore all files from their .backup versions. Continue?", 
+                "Yes, Restore", "Cancel"))
+            {
+                AntiPatternMigrationTool.RestoreFromBackups();
+                AssetDatabase.Refresh();
+                Debug.Log("Restored all files from backups");
+            }
+        }
+    }
+}

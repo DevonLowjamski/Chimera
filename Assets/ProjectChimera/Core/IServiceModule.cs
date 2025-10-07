@@ -1,7 +1,7 @@
 using System;
 using ProjectChimera.Core.Logging;
 
-namespace ProjectChimera.Core.DependencyInjection
+namespace ProjectChimera.Core
 {
     /// <summary>
     /// Interface for service modules that configure dependency injection
@@ -74,7 +74,7 @@ namespace ProjectChimera.Core.DependencyInjection
 
         protected void LogModuleAction(string action)
         {
-            ChimeraLogger.Log($"[ServiceModule:{ModuleName}] {action}");
+            ChimeraLogger.LogInfo("IServiceModule", "$1");
         }
     }
 

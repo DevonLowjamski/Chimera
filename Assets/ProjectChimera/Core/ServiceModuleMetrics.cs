@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using UnityEngine;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core
 {
@@ -22,6 +25,15 @@ namespace ProjectChimera.Core
         public int TotalServices;
         public Dictionary<string, ServiceMetrics> ServiceMetrics = new();
         public List<PerformanceSnapshot> PerformanceHistory = new();
+
+        // Additional properties for ChimeraServiceModule
+        public string ModuleVersion = "1.0.0";
+        public bool IsConfigured = false;
+        public bool IsInitialized = false;
+        public float ConfigurationTime = 0f;
+        public float InitializationTime = 0f;
+        public int DependencyCount = 0;
+        public int ComponentCount = 0;
 
         /// <summary>
         /// Record a service request

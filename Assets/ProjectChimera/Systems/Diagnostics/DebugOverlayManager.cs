@@ -2,6 +2,9 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
+using ProjectChimera.Core.Updates;
+using System.Linq;
+using ProjectChimera.Core;
 
 namespace ProjectChimera.Systems.Diagnostics
 {
@@ -10,7 +13,7 @@ namespace ProjectChimera.Systems.Diagnostics
     /// Provides development-time debug information overlays and visual debugging tools
     /// Only active in development builds (#if DEVELOPMENT_BUILD || UNITY_EDITOR)
     /// </summary>
-    public class DebugOverlayManager : MonoBehaviour
+    public class DebugOverlayManager : MonoBehaviour, ITickable
     {
         [Header("UI Documents")]
         [SerializeField] private UIDocument _debugUIDocument;
@@ -48,12 +51,26 @@ namespace ProjectChimera.Systems.Diagnostics
 #endif
         }
 
-        private void Update()
+        public int TickPriority => 100;
+        public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+        public void Tick(float deltaTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             HandleInput();
             UpdateOverlay();
 #endif
+        }
+
+        // Registration handled in OnEnable to avoid duplicate Awake definitions
+        private void OnEnable()
+        {
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
+        }
+
+        private void OnDisable()
+        {
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
         }
 
         private void OnDestroy()
@@ -70,7 +87,7 @@ namespace ProjectChimera.Systems.Diagnostics
         {
             if (_debugUIDocument == null)
             {
-                ChimeraLogger.LogWarning("[DebugOverlayManager] No UI document assigned for debug overlay");
+                ChimeraLogger.Log("DEV", "DebugOverlayManager: UIDocument not assigned", this);
                 return;
             }
 
@@ -128,7 +145,7 @@ namespace ProjectChimera.Systems.Diagnostics
             // Initially hide overlay
             SetOverlayVisibility(false);
 
-            ChimeraLogger.Log("[DebugOverlayManager] Debug overlay initialized");
+            ChimeraLogger.Log("DEV", "Debug overlay initialized", this);
         }
 
         /// <summary>
@@ -229,7 +246,17 @@ namespace ProjectChimera.Systems.Diagnostics
             {
                 _debugOverlay.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
             }
-            ChimeraLogger.Log($"[DebugOverlayManager] Debug overlay {(visible ? "shown" : "hidden")}");
+            ChimeraLogger.Log("DEV", $"Debug overlay {(visible ? "shown" : "hidden")}", this);
+#endif
+        }
+
+        /// <summary>
+        /// Toggles the overlay visibility (compatibility for callers)
+        /// </summary>
+        public void ToggleOverlay()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            SetOverlayVisibility(!_overlayVisible);
 #endif
         }
 
@@ -241,21 +268,21 @@ namespace ProjectChimera.Systems.Diagnostics
             // Primary: Try ServiceContainer resolution for registered plant GameObjects
             var plants = ServiceContainerFactory.Instance.ResolveAll<GameObject>()
                 ?.Where(go => go.CompareTag("Plant")).ToArray();
-                
+
             if (plants?.Any() != true)
             {
                 // Fallback: Placeholder - would integrate with actual cultivation system
                 plants = GameObject.FindGameObjectsWithTag("Plant");
-                
+
                 // Auto-register discovered plants in ServiceContainer for future debug queries
                 foreach (var plant in plants)
                 {
                     ServiceContainerFactory.Instance.RegisterInstance<GameObject>(plant);
                 }
-                
-                Debug.Log($"[DebugOverlayManager] Registered {plants.Length} plant GameObjects in ServiceContainer for debug display");
+
+                ChimeraLogger.Log("DEV", "Registered discovered plants in ServiceContainer", this);
             }
-            
+
             return plants.Length;
         }
 
@@ -325,7 +352,7 @@ namespace ProjectChimera.Systems.Diagnostics
             {
                 _debugOverlay.parent.Remove(_debugOverlay);
             }
-            ChimeraLogger.Log("[DebugOverlayManager] Debug overlay cleaned up");
+            ChimeraLogger.Log("DEV", "Debug overlay cleaned up", this);
 #endif
         }
 

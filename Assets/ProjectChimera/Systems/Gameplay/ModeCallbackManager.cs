@@ -1,4 +1,5 @@
 using ProjectChimera.Core.Logging;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 using UnityEngine;
 using ProjectChimera.Core;
 // Migrated to unified ServiceContainer architecture
@@ -40,14 +41,14 @@ namespace ProjectChimera.Systems.Gameplay
             
             if (_modeController == null)
             {
-                ChimeraLogger.LogError("[ModeCallbackManager] GameplayModeController service not found!");
+                Logger.LogError("GAMEPLAY", "Failed to resolve IGameplayModeController from ServiceContainer", this);
                 return;
             }
             
             RegisterAllModeCallbacks();
             _isInitialized = true;
-            
-            ChimeraLogger.Log("[ModeCallbackManager] Mode callbacks registered successfully");
+
+            Logger.Log("GAMEPLAY", "ModeCallbackManager initialized successfully", this);
         }
         
         private void RegisterAllModeCallbacks()
@@ -77,7 +78,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_enableCallbackLogging)
             {
-                ChimeraLogger.Log("[ModeCallbackManager] Entering Cultivation Mode - Activating plant monitoring systems");
+                Logger.Log("GAMEPLAY", "Mode operation completed", this);
             }
             
             try
@@ -87,7 +88,7 @@ namespace ProjectChimera.Systems.Gameplay
                 {
                     _cultivationUIRoot.SetActive(true);
                     if (_enableCallbackLogging)
-                        ChimeraLogger.Log("[ModeCallbackManager] Cultivation UI activated");
+                        Logger.Log("GAMEPLAY", "Mode operation completed", this);
                 }
                 
                 // Enable plant monitoring and care tool systems
@@ -104,7 +105,7 @@ namespace ProjectChimera.Systems.Gameplay
             {
                 if (_enableErrorHandling)
                 {
-                    ChimeraLogger.LogError($"[ModeCallbackManager] Error entering Cultivation mode: {ex.Message}");
+                    Logger.Log("GAMEPLAY", "Mode operation completed", this);
                 }
             }
         }
@@ -113,7 +114,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_enableCallbackLogging)
             {
-                ChimeraLogger.Log("[ModeCallbackManager] Exiting Cultivation Mode - Deactivating plant monitoring systems");
+                Logger.Log("GAMEPLAY", "Mode operation completed", this);
             }
             
             try
@@ -135,7 +136,7 @@ namespace ProjectChimera.Systems.Gameplay
             {
                 if (_enableErrorHandling)
                 {
-                    ChimeraLogger.LogError($"[ModeCallbackManager] Error exiting Cultivation mode: {ex.Message}");
+                    Logger.Log("GAMEPLAY", "Mode operation completed", this);
                 }
             }
         }
@@ -157,7 +158,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_enableCallbackLogging)
             {
-                ChimeraLogger.Log("[ModeCallbackManager] Entering Construction Mode - Activating blueprint systems");
+                Logger.Log("GAMEPLAY", "Mode operation completed", this);
             }
             
             try
@@ -167,7 +168,7 @@ namespace ProjectChimera.Systems.Gameplay
                 {
                     _constructionUIRoot.SetActive(true);
                     if (_enableCallbackLogging)
-                        ChimeraLogger.Log("[ModeCallbackManager] Construction UI activated");
+                        Logger.Log("GAMEPLAY", "Mode operation completed", this);
                 }
                 
                 // Enable blueprint system
@@ -175,7 +176,7 @@ namespace ProjectChimera.Systems.Gameplay
                 {
                     _blueprintSystemRoot.SetActive(true);
                     if (_enableCallbackLogging)
-                        ChimeraLogger.Log("[ModeCallbackManager] Blueprint system activated");
+                        Logger.Log("GAMEPLAY", "Mode operation completed", this);
                 }
                 
                 // Enable construction tools and placement systems
@@ -192,7 +193,7 @@ namespace ProjectChimera.Systems.Gameplay
             {
                 if (_enableErrorHandling)
                 {
-                    ChimeraLogger.LogError($"[ModeCallbackManager] Error entering Construction mode: {ex.Message}");
+                    Logger.Log("GAMEPLAY", "Mode operation completed", this);
                 }
             }
         }
@@ -201,7 +202,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_enableCallbackLogging)
             {
-                ChimeraLogger.Log("[ModeCallbackManager] Exiting Construction Mode - Deactivating blueprint systems");
+                Logger.Log("GAMEPLAY", "Mode operation completed", this);
             }
             
             try
@@ -229,7 +230,7 @@ namespace ProjectChimera.Systems.Gameplay
             {
                 if (_enableErrorHandling)
                 {
-                    ChimeraLogger.LogError($"[ModeCallbackManager] Error exiting Construction mode: {ex.Message}");
+                    Logger.Log("GAMEPLAY", "Mode operation completed", this);
                 }
             }
         }
@@ -251,7 +252,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_enableCallbackLogging)
             {
-                ChimeraLogger.Log("[ModeCallbackManager] Entering Genetics Mode - Activating genetic analysis systems");
+                Logger.Log("GAMEPLAY", "Mode operation completed", this);
             }
             
             try
@@ -261,7 +262,7 @@ namespace ProjectChimera.Systems.Gameplay
                 {
                     _geneticsUIRoot.SetActive(true);
                     if (_enableCallbackLogging)
-                        ChimeraLogger.Log("[ModeCallbackManager] Genetics UI activated");
+                        Logger.Log("GAMEPLAY", "Mode operation completed", this);
                 }
                 
                 // Enable heatmap visualization system
@@ -269,7 +270,7 @@ namespace ProjectChimera.Systems.Gameplay
                 {
                     _heatmapSystemRoot.SetActive(true);
                     if (_enableCallbackLogging)
-                        ChimeraLogger.Log("[ModeCallbackManager] Heatmap system activated");
+                        Logger.Log("GAMEPLAY", "Mode operation completed", this);
                 }
                 
                 // Enable genetic analysis tools
@@ -286,7 +287,7 @@ namespace ProjectChimera.Systems.Gameplay
             {
                 if (_enableErrorHandling)
                 {
-                    ChimeraLogger.LogError($"[ModeCallbackManager] Error entering Genetics mode: {ex.Message}");
+                    Logger.Log("GAMEPLAY", "Mode operation completed", this);
                 }
             }
         }
@@ -295,7 +296,7 @@ namespace ProjectChimera.Systems.Gameplay
         {
             if (_enableCallbackLogging)
             {
-                ChimeraLogger.Log("[ModeCallbackManager] Exiting Genetics Mode - Deactivating genetic analysis systems");
+                Logger.Log("GAMEPLAY", "Mode operation completed", this);
             }
             
             try
@@ -323,7 +324,7 @@ namespace ProjectChimera.Systems.Gameplay
             {
                 if (_enableErrorHandling)
                 {
-                    ChimeraLogger.LogError($"[ModeCallbackManager] Error exiting Genetics mode: {ex.Message}");
+                    Logger.Log("GAMEPLAY", "Mode operation completed", this);
                 }
             }
         }
@@ -336,93 +337,93 @@ namespace ProjectChimera.Systems.Gameplay
         private void EnablePlantMonitoringSystems()
         {
             // Enable plant health monitoring, growth tracking, care reminders
-            ChimeraLogger.Log("[ModeCallbackManager] Plant monitoring systems enabled");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
         }
         
         private void DisablePlantMonitoringSystems()
         {
             // Disable intensive plant monitoring to save performance
-            ChimeraLogger.Log("[ModeCallbackManager] Plant monitoring systems disabled");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
         }
         
         private void ShowCultivationHUD()
         {
             // Show plant care tools, environmental readings, harvest notifications
-            ChimeraLogger.Log("[ModeCallbackManager] Cultivation HUD elements shown");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
         }
         
         private void HideCultivationHUD()
         {
             // Hide cultivation-specific HUD elements
-            ChimeraLogger.Log("[ModeCallbackManager] Cultivation HUD elements hidden");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
         }
         
         private void EnableEnvironmentalMonitoring()
         {
             // Enable real-time environmental data collection and alerts
-            ChimeraLogger.Log("[ModeCallbackManager] Environmental monitoring enabled");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
         }
         
         // Construction System Methods
         private void EnableConstructionSystems()
         {
             // Enable placement tools, material calculations, cost estimation
-            ChimeraLogger.Log("[ModeCallbackManager] Construction systems enabled");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
         }
         
         private void DisableConstructionSystems()
         {
             // Disable construction tools and calculations
-            ChimeraLogger.Log("[ModeCallbackManager] Construction systems disabled");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
         }
         
         private void ShowInfrastructureOverlays()
         {
             // Show utility lines, structural elements, zone boundaries
-            ChimeraLogger.Log("[ModeCallbackManager] Infrastructure overlays shown");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
         }
         
         private void HideInfrastructureOverlays()
         {
             // Hide infrastructure visualization overlays
-            ChimeraLogger.Log("[ModeCallbackManager] Infrastructure overlays hidden");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
         }
         
         private void EnableConstructionTools()
         {
             // Enable grid snapping, measurement tools, placement guides
-            ChimeraLogger.Log("[ModeCallbackManager] Construction tools enabled");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
         }
         
         // Genetics System Methods
         private void EnableGeneticAnalysisSystems()
         {
             // Enable trait analysis, breeding calculators, genetic predictions
-            ChimeraLogger.Log("[ModeCallbackManager] Genetic analysis systems enabled");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
         }
         
         private void DisableGeneticAnalysisSystems()
         {
             // Disable intensive genetic calculations
-            ChimeraLogger.Log("[ModeCallbackManager] Genetic analysis systems disabled");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
         }
         
         private void ShowGeneticOverlays()
         {
             // Show trait heatmaps, breeding compatibility, genetic diversity
-            ChimeraLogger.Log("[ModeCallbackManager] Genetic overlays shown");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
         }
         
         private void HideGeneticOverlays()
         {
             // Hide genetic visualization overlays
-            ChimeraLogger.Log("[ModeCallbackManager] Genetic overlays hidden");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
         }
         
         private void EnableGeneticVisualizations()
         {
             // Enable advanced genetic visualization systems
-            ChimeraLogger.Log("[ModeCallbackManager] Genetic visualizations enabled");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
         }
         
         #endregion
@@ -453,7 +454,7 @@ namespace ProjectChimera.Systems.Gameplay
         [ContextMenu("Test All Mode Callbacks")]
         public void TestAllModeCallbacks()
         {
-            ChimeraLogger.Log("[ModeCallbackManager] Testing all mode callbacks...");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
             
             // Test each mode's entry and exit
             OnEnterCultivationMode();
@@ -465,7 +466,7 @@ namespace ProjectChimera.Systems.Gameplay
             OnEnterGeneticsMode();
             OnExitGeneticsMode();
             
-            ChimeraLogger.Log("[ModeCallbackManager] All callback tests completed");
+            Logger.Log("GAMEPLAY", "Mode operation completed", this);
         }
         
         /// <summary>

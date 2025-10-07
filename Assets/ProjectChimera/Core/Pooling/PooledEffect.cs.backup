@@ -1,0 +1,318 @@
+using UnityEngine;
+using System.Collections;
+
+namespace ProjectChimera.Core.Pooling
+{
+    /// <summary>
+    /// PERFORMANCE: Component for pooled particle effects and animations
+    /// Handles lifecycle and automatic return to pool when complete
+    /// Week 9 Day 4-5: Object Pooling System Implementation
+    /// </summary>
+    public class PooledEffect : MonoBehaviour, IPoolable
+    {
+        [Header("Effect Settings")]
+        [SerializeField] private bool _autoReturn = true;
+        [SerializeField] private float _defaultDuration = 2f;
+        [SerializeField] private bool _enableLogging = false;
+
+        // Components
+        private ParticleSystem _particleSystem;
+        private Animator _animator;
+        private AudioSource _audioSource;
+        private Coroutine _effectCoroutine;
+
+        // State
+        private bool _isPlaying = false;
+        private float _remainingTime = 0f;
+
+        // Events
+        public event System.Action OnEffectComplete;
+
+        public bool IsPlaying => _isPlaying;
+        public float RemainingTime => _remainingTime;
+
+        private void Awake()
+        {
+            // Cache components
+            _particleSystem = GetComponent<ParticleSystem>();
+            _animator = GetComponent<Animator>();
+            _audioSource = GetComponent<AudioSource>();
+        }
+
+        /// <summary>
+        /// Play effect with specified duration
+        /// </summary>
+        public void Play(float duration = -1f)
+        {
+            if (_isPlaying) Stop();
+
+            _isPlaying = true;
+            _remainingTime = duration > 0 ? duration : _defaultDuration;
+
+            // Start particle system
+            if (_particleSystem != null)
+            {
+                _particleSystem.Play();
+            }
+
+            // Start animation
+            if (_animator != null)
+            {
+                _animator.enabled = true;
+                _animator.Play("Play", 0, 0f);
+            }
+
+            // Play audio
+            if (_audioSource != null && _audioSource.clip != null)
+            {
+                _audioSource.Play();
+            }
+
+            // Start timer coroutine
+            if (_autoReturn)
+            {
+                _effectCoroutine = StartCoroutine(EffectTimer());
+            }
+
+            if (_enableLogging)
+            {
+                Debug.Log($"[PooledEffect] Playing effect {name} for {_remainingTime} seconds");
+            }
+        }
+
+        /// <summary>
+        /// Stop effect immediately
+        /// </summary>
+        public void Stop()
+        {
+            if (!_isPlaying) return;
+
+            _isPlaying = false;
+            _remainingTime = 0f;
+
+            // Stop particle system
+            if (_particleSystem != null)
+            {
+                _particleSystem.Stop();
+            }
+
+            // Stop animation
+            if (_animator != null)
+            {
+                _animator.enabled = false;
+            }
+
+            // Stop audio
+            if (_audioSource != null)
+            {
+                _audioSource.Stop();
+            }
+
+            // Stop timer
+            if (_effectCoroutine != null)
+            {
+                StopCoroutine(_effectCoroutine);
+                _effectCoroutine = null;
+            }
+
+            if (_enableLogging)
+            {
+                Debug.Log($"[PooledEffect] Stopped effect {name}");
+            }
+        }
+
+        /// <summary>
+        /// Reset effect to initial state
+        /// </summary>
+        public void Reset()
+        {
+            Stop();
+
+            // Reset transform
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+            transform.localScale = Vector3.one;
+
+            // Reset particle system
+            if (_particleSystem != null)
+            {
+                _particleSystem.Clear();
+                _particleSystem.Stop();
+            }
+
+            // Reset animator
+            if (_animator != null)
+            {
+                _animator.enabled = false;
+            }
+
+            // Reset audio
+            if (_audioSource != null)
+            {
+                _audioSource.Stop();
+                _audioSource.time = 0f;
+            }
+        }
+
+        /// <summary>
+        /// Pause effect
+        /// </summary>
+        public void Pause()
+        {
+            if (!_isPlaying) return;
+
+            // Pause particle system
+            if (_particleSystem != null)
+            {
+                _particleSystem.Pause();
+            }
+
+            // Pause animation
+            if (_animator != null)
+            {
+                _animator.speed = 0f;
+            }
+
+            // Pause audio
+            if (_audioSource != null)
+            {
+                _audioSource.Pause();
+            }
+
+            // Pause timer
+            if (_effectCoroutine != null)
+            {
+                StopCoroutine(_effectCoroutine);
+                _effectCoroutine = null;
+            }
+        }
+
+        /// <summary>
+        /// Resume effect
+        /// </summary>
+        public void Resume()
+        {
+            if (!_isPlaying) return;
+
+            // Resume particle system
+            if (_particleSystem != null)
+            {
+                _particleSystem.Play();
+            }
+
+            // Resume animation
+            if (_animator != null)
+            {
+                _animator.speed = 1f;
+            }
+
+            // Resume audio
+            if (_audioSource != null)
+            {
+                _audioSource.UnPause();
+            }
+
+            // Resume timer
+            if (_autoReturn && _effectCoroutine == null)
+            {
+                _effectCoroutine = StartCoroutine(EffectTimer());
+            }
+        }
+
+        /// <summary>
+        /// Set effect volume
+        /// </summary>
+        public void SetVolume(float volume)
+        {
+            if (_audioSource != null)
+            {
+                _audioSource.volume = Mathf.Clamp01(volume);
+            }
+        }
+
+        /// <summary>
+        /// Set effect scale
+        /// </summary>
+        public void SetScale(float scale)
+        {
+            transform.localScale = Vector3.one * scale;
+        }
+
+        /// <summary>
+        /// Set effect color (if supported)
+        /// </summary>
+        public void SetColor(Color color)
+        {
+            if (_particleSystem != null)
+            {
+                var main = _particleSystem.main;
+                main.startColor = color;
+            }
+        }
+
+        #region IPoolable Implementation
+
+        public void OnGetFromPool()
+        {
+            gameObject.SetActive(true);
+            Reset();
+        }
+
+        public void OnReturnToPool()
+        {
+            Stop();
+            OnEffectComplete = null; // Clear delegates
+            gameObject.SetActive(false);
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        /// <summary>
+        /// Timer coroutine for automatic return
+        /// </summary>
+        private IEnumerator EffectTimer()
+        {
+            while (_remainingTime > 0f && _isPlaying)
+            {
+                _remainingTime -= Time.deltaTime;
+                yield return null;
+            }
+
+            // Effect completed
+            if (_isPlaying)
+            {
+                Complete();
+            }
+        }
+
+        /// <summary>
+        /// Complete effect and trigger callback
+        /// </summary>
+        private void Complete()
+        {
+            Stop();
+            
+            if (_enableLogging)
+            {
+                Debug.Log($"[PooledEffect] Effect {name} completed");
+            }
+
+            OnEffectComplete?.Invoke();
+        }
+
+        #endregion
+
+        private void OnDisable()
+        {
+            Stop();
+        }
+
+        private void OnDestroy()
+        {
+            Stop();
+            OnEffectComplete = null;
+        }
+    }
+}

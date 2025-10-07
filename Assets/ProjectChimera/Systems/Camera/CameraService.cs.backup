@@ -1,0 +1,47 @@
+using ProjectChimera.Core;
+using UnityEngine;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Camera
+{
+    public class CameraService : ChimeraSystem, ICameraProvider
+    {
+        public UnityEngine.Camera main { get; private set; }
+
+        protected override void OnSystemInitialize()
+        {
+            // Primary: Try ServiceContainer resolution
+            if (ServiceContainerFactory.Instance.TryResolve<UnityEngine.Camera>(out var serviceCamera))
+            {
+                main = serviceCamera;
+                LogInfo("[CameraService] Using camera from ServiceContainer");
+            }
+            else
+            {
+                // Fallback: Standard Unity camera discovery
+                main = UnityEngine.Camera.main;
+                if (main == null)
+                {
+                    main = UnityEngine.Object.FindObjectOfType<UnityEngine.Camera>();
+                }
+
+                // Auto-register discovered camera in ServiceContainer for other systems
+                if (main != null)
+                {
+                    ServiceContainerFactory.Instance.RegisterInstance<UnityEngine.Camera>(main);
+                    LogInfo("[CameraService] Camera registered in ServiceContainer for system-wide access");
+                }
+            }
+
+            if (main == null)
+            {
+                LogError("Could not find main camera");
+            }
+        }
+
+        protected override void OnSystemShutdown()
+        {
+            main = null;
+        }
+    }
+}

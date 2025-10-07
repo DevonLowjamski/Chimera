@@ -1,4 +1,5 @@
 using ProjectChimera.Core.Events;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Core
 {

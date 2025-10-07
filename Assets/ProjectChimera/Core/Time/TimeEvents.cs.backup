@@ -1,0 +1,139 @@
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Events;
+using System;
+using System.Collections.Generic;
+
+namespace ProjectChimera.Core
+{
+    /// <summary>
+    /// Implementation for time-related event management and listener registration
+    /// </summary>
+    public class TimeEvents : ITimeEvents
+    {
+        private readonly List<ITimeScaleListener> _timeScaleListeners = new List<ITimeScaleListener>();
+        private readonly List<ISpeedPenaltyListener> _speedPenaltyListeners = new List<ISpeedPenaltyListener>();
+
+        private FloatGameEventSO _onTimeScaleChanged;
+        private SimpleGameEventSO _onTimePaused;
+        private SimpleGameEventSO _onTimeResumed;
+        private SimpleGameEventSO _onSpeedPenaltyChanged;
+
+        public void Initialize()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void Shutdown()
+        {
+            _timeScaleListeners.Clear();
+            _speedPenaltyListeners.Clear();
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void RegisterTimeScaleListener(ITimeScaleListener listener)
+        {
+            if (listener != null && !_timeScaleListeners.Contains(listener))
+            {
+                _timeScaleListeners.Add(listener);
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        public void UnregisterTimeScaleListener(ITimeScaleListener listener)
+        {
+            if (_timeScaleListeners.Remove(listener))
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        public void RegisterSpeedPenaltyListener(ISpeedPenaltyListener listener)
+        {
+            if (listener != null && !_speedPenaltyListeners.Contains(listener))
+            {
+                _speedPenaltyListeners.Add(listener);
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        public void UnregisterSpeedPenaltyListener(ISpeedPenaltyListener listener)
+        {
+            if (_speedPenaltyListeners.Remove(listener))
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        public void NotifyTimeScaleListeners(float previousScale, float newScale)
+        {
+            for (int i = _timeScaleListeners.Count - 1; i >= 0; i--)
+            {
+                try
+                {
+                    _timeScaleListeners[i]?.OnTimeScaleChanged(newScale);
+                }
+                catch (Exception e)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                    _timeScaleListeners.RemoveAt(i);
+                }
+            }
+        }
+
+        public void NotifySpeedPenaltyListeners(TimeSpeedLevel speedLevel, float penaltyMultiplier)
+        {
+            for (int i = _speedPenaltyListeners.Count - 1; i >= 0; i--)
+            {
+                try
+                {
+                    _speedPenaltyListeners[i]?.OnSpeedPenaltyApplied(penaltyMultiplier, $"Speed level: {speedLevel}");
+                }
+                catch (Exception e)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                    _speedPenaltyListeners.RemoveAt(i);
+                }
+            }
+        }
+
+        public void SetTimeScaleEvent(FloatGameEventSO timeScaleEvent)
+        {
+            _onTimeScaleChanged = timeScaleEvent;
+        }
+
+        public void SetTimePausedEvent(SimpleGameEventSO timePausedEvent)
+        {
+            _onTimePaused = timePausedEvent;
+        }
+
+        public void SetTimeResumedEvent(SimpleGameEventSO timeResumedEvent)
+        {
+            _onTimeResumed = timeResumedEvent;
+        }
+
+        public void SetSpeedPenaltyEvent(SimpleGameEventSO speedPenaltyEvent)
+        {
+            _onSpeedPenaltyChanged = speedPenaltyEvent;
+        }
+
+        public void TriggerTimeScaleChanged(float newScale)
+        {
+            _onTimeScaleChanged?.Raise(newScale);
+        }
+
+        public void TriggerTimePaused()
+        {
+            _onTimePaused?.Raise();
+        }
+
+        public void TriggerTimeResumed()
+        {
+            _onTimeResumed?.Raise();
+        }
+
+        public void TriggerSpeedPenaltyChanged()
+        {
+            _onSpeedPenaltyChanged?.Raise();
+        }
+    }
+}

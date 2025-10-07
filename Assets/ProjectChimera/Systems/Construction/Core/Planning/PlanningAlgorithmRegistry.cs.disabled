@@ -1,0 +1,418 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using System;
+
+namespace ProjectChimera.Systems.Construction.Core.Planning
+{
+    /// <summary>
+    /// REFACTORED: Planning Algorithm Registry - Focused algorithm management and selection
+    /// Handles algorithm registration, retrieval, and dynamic algorithm switching
+    /// Single Responsibility: Algorithm registry and management
+    /// </summary>
+    public class PlanningAlgorithmRegistry : MonoBehaviour
+    {
+        [Header("Algorithm Registry Settings")]
+        [SerializeField] private bool _enableAlgorithmRegistry = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private bool _enableAlgorithmValidation = true;
+
+        // Algorithm storage
+        private readonly Dictionary<string, IPlanningAlgorithm> _registeredAlgorithms = new Dictionary<string, IPlanningAlgorithm>();
+        private readonly Dictionary<string, string> _algorithmDescriptions = new Dictionary<string, string>();
+        private readonly Dictionary<string, AlgorithmPerformanceData> _algorithmPerformance = new Dictionary<string, AlgorithmPerformanceData>();
+
+        // Default algorithms
+        private readonly Dictionary<string, IPlanningAlgorithm> _defaultAlgorithms = new Dictionary<string, IPlanningAlgorithm>();
+
+        // Statistics
+        private AlgorithmRegistryStats _stats = new AlgorithmRegistryStats();
+
+        // Properties
+        public bool IsEnabled { get; private set; } = true;
+        public AlgorithmRegistryStats GetStats() => _stats;
+
+        // Events
+        public System.Action<string, IPlanningAlgorithm> OnAlgorithmRegistered;
+        public System.Action<string> OnAlgorithmRemoved;
+
+        private void Start()
+        {
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            _stats = new AlgorithmRegistryStats();
+            RegisterDefaultAlgorithms();
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "🧮 PlanningAlgorithmRegistry initialized", this);
+        }
+
+        /// <summary>
+        /// Register planning algorithm for a specific plan type
+        /// </summary>
+        public bool RegisterAlgorithm(string planType, IPlanningAlgorithm algorithm, string description = null)
+        {
+            if (!IsEnabled || !_enableAlgorithmRegistry)
+                return false;
+
+            if (string.IsNullOrEmpty(planType) || algorithm == null)
+            {
+                if (_enableLogging)
+                    ChimeraLogger.LogWarning("CONSTRUCTION", "Invalid algorithm registration parameters", this);
+                return false;
+            }
+
+            // Validate algorithm if enabled
+            if (_enableAlgorithmValidation && !ValidateAlgorithm(algorithm))
+            {
+                if (_enableLogging)
+                    ChimeraLogger.LogError("CONSTRUCTION", $"Algorithm validation failed for: {planType}", this);
+                return false;
+            }
+
+            _registeredAlgorithms[planType] = algorithm;
+
+            if (!string.IsNullOrEmpty(description))
+            {
+                _algorithmDescriptions[planType] = description;
+            }
+
+            // Initialize performance tracking
+            if (!_algorithmPerformance.ContainsKey(planType))
+            {
+                _algorithmPerformance[planType] = new AlgorithmPerformanceData
+                {
+                    PlanType = planType,
+                    RegistrationTime = Time.time
+                };
+            }
+
+            _stats.RegisteredAlgorithms++;
+            OnAlgorithmRegistered?.Invoke(planType, algorithm);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Registered planning algorithm for: {planType}", this);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Get algorithm for specific plan type
+        /// </summary>
+        public IPlanningAlgorithm GetAlgorithm(string planType)
+        {
+            if (!IsEnabled || string.IsNullOrEmpty(planType))
+                return null;
+
+            if (_registeredAlgorithms.TryGetValue(planType, out var algorithm))
+            {
+                // Update performance tracking
+                if (_algorithmPerformance.ContainsKey(planType))
+                {
+                    var perfData = _algorithmPerformance[planType];
+                    perfData.UsageCount++;
+                    perfData.LastUsed = Time.time;
+                    _algorithmPerformance[planType] = perfData;
+                }
+
+                return algorithm;
+            }
+
+            // Try to get default algorithm
+            if (_defaultAlgorithms.TryGetValue(planType, out var defaultAlgorithm))
+            {
+                if (_enableLogging)
+                    ChimeraLogger.Log("CONSTRUCTION", $"Using default algorithm for: {planType}", this);
+                return defaultAlgorithm;
+            }
+
+            if (_enableLogging)
+                ChimeraLogger.LogWarning("CONSTRUCTION", $"No algorithm found for plan type: {planType}", this);
+
+            return null;
+        }
+
+        /// <summary>
+        /// Remove algorithm for specific plan type
+        /// </summary>
+        public bool RemoveAlgorithm(string planType)
+        {
+            if (!IsEnabled || string.IsNullOrEmpty(planType))
+                return false;
+
+            bool removed = _registeredAlgorithms.Remove(planType);
+            if (removed)
+            {
+                _algorithmDescriptions.Remove(planType);
+                _algorithmPerformance.Remove(planType);
+                _stats.RegisteredAlgorithms--;
+
+                OnAlgorithmRemoved?.Invoke(planType);
+
+                if (_enableLogging)
+                    ChimeraLogger.Log("CONSTRUCTION", $"Removed planning algorithm for: {planType}", this);
+            }
+
+            return removed;
+        }
+
+        /// <summary>
+        /// Get all registered algorithm types
+        /// </summary>
+        public string[] GetRegisteredAlgorithmTypes()
+        {
+            var types = new List<string>(_registeredAlgorithms.Keys);
+            return types.ToArray();
+        }
+
+        /// <summary>
+        /// Get algorithm description
+        /// </summary>
+        public string GetAlgorithmDescription(string planType)
+        {
+            _algorithmDescriptions.TryGetValue(planType, out var description);
+            return description ?? "No description available";
+        }
+
+        /// <summary>
+        /// Get algorithm performance data
+        /// </summary>
+        public AlgorithmPerformanceData GetAlgorithmPerformance(string planType)
+        {
+            _algorithmPerformance.TryGetValue(planType, out var performance);
+            return performance;
+        }
+
+        /// <summary>
+        /// Get all algorithm performance data
+        /// </summary>
+        public AlgorithmPerformanceData[] GetAllPerformanceData()
+        {
+            var performanceData = new List<AlgorithmPerformanceData>();
+            foreach (var kvp in _algorithmPerformance)
+            {
+                performanceData.Add(kvp.Value);
+            }
+            return performanceData.ToArray();
+        }
+
+        /// <summary>
+        /// Clear all registered algorithms
+        /// </summary>
+        public void ClearAllAlgorithms()
+        {
+            _registeredAlgorithms.Clear();
+            _algorithmDescriptions.Clear();
+            _algorithmPerformance.Clear();
+            _stats.RegisteredAlgorithms = 0;
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "Cleared all registered algorithms", this);
+        }
+
+        /// <summary>
+        /// Set system enabled/disabled
+        /// </summary>
+        public void SetEnabled(bool enabled)
+        {
+            IsEnabled = enabled;
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"PlanningAlgorithmRegistry: {(enabled ? "enabled" : "disabled")}", this);
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Register default planning algorithms
+        /// </summary>
+        private void RegisterDefaultAlgorithms()
+        {
+            // Register basic default algorithms
+            _defaultAlgorithms["facility"] = new BasicFacilityPlanningAlgorithm();
+            _defaultAlgorithms["infrastructure"] = new BasicInfrastructurePlanningAlgorithm();
+            _defaultAlgorithms["utility"] = new BasicUtilityPlanningAlgorithm();
+
+            // Register them in the main registry as well
+            foreach (var kvp in _defaultAlgorithms)
+            {
+                RegisterAlgorithm(kvp.Key, kvp.Value, $"Default {kvp.Key} planning algorithm");
+            }
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "Registered default planning algorithms", this);
+        }
+
+        /// <summary>
+        /// Validate algorithm implementation
+        /// </summary>
+        private bool ValidateAlgorithm(IPlanningAlgorithm algorithm)
+        {
+            try
+            {
+                // Basic validation - ensure algorithm can handle null requests gracefully
+                var testResult = algorithm.GeneratePlan(new PlanningRequest());
+
+                // Algorithm should either return null or a valid plan for empty request
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (_enableLogging)
+                    ChimeraLogger.LogError("CONSTRUCTION", $"Algorithm validation failed: {ex.Message}", this);
+                return false;
+            }
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Algorithm performance tracking data
+    /// </summary>
+    [System.Serializable]
+    public struct AlgorithmPerformanceData
+    {
+        public string PlanType;
+        public float RegistrationTime;
+        public float LastUsed;
+        public int UsageCount;
+        public float AverageExecutionTime;
+        public int SuccessfulPlans;
+        public int FailedPlans;
+    }
+
+    /// <summary>
+    /// Algorithm registry statistics
+    /// </summary>
+    [System.Serializable]
+    public struct AlgorithmRegistryStats
+    {
+        public int RegisteredAlgorithms;
+        public int AlgorithmExecutions;
+        public int SuccessfulExecutions;
+        public int FailedExecutions;
+    }
+
+    #region Default Algorithm Implementations
+
+    /// <summary>
+    /// Basic facility planning algorithm
+    /// </summary>
+    public class BasicFacilityPlanningAlgorithm : IPlanningAlgorithm
+    {
+        public ConstructionPlan GeneratePlan(PlanningRequest request)
+        {
+            if (request.RequiredBuildings == null || request.RequiredBuildings.Length == 0)
+                return null;
+
+            var plan = new ConstructionPlan
+            {
+                PlanId = System.Guid.NewGuid().ToString(),
+                PlanName = "Basic Facility Plan",
+                PlanType = "facility",
+                Status = PlanStatus.Planning,
+                Progress = 0f,
+                CreationTime = System.DateTime.Now,
+                Buildings = CreatePlannedBuildings(request),
+                Constraints = request.Constraints,
+                EstimatedCost = CalculateEstimatedCost(request),
+                EstimatedDuration = CalculateEstimatedDuration(request)
+            };
+
+            return plan;
+        }
+
+        public ConstructionPlan OptimizePlan(ConstructionPlan plan)
+        {
+            // Basic optimization - just return the original plan
+            // Real implementation would optimize building placement, resource usage, etc.
+            return plan;
+        }
+
+        private PlannedBuilding[] CreatePlannedBuildings(PlanningRequest request)
+        {
+            var buildings = new List<PlannedBuilding>();
+
+            for (int i = 0; i < request.RequiredBuildings.Length; i++)
+            {
+                var building = new PlannedBuilding
+                {
+                    BuildingId = $"building_{i}",
+                    Position = request.TargetArea + new Vector3(i * 5f, 0, 0),
+                    Rotation = Quaternion.identity,
+                    Data = request.RequiredBuildings[i],
+                    Priority = i
+                };
+                buildings.Add(building);
+            }
+
+            return buildings.ToArray();
+        }
+
+        private float CalculateEstimatedCost(PlanningRequest request)
+        {
+            return request.RequiredBuildings != null ? request.RequiredBuildings.Length * 100f : 0f;
+        }
+
+        private float CalculateEstimatedDuration(PlanningRequest request)
+        {
+            return request.RequiredBuildings != null ? request.RequiredBuildings.Length * 30f : 0f;
+        }
+    }
+
+    /// <summary>
+    /// Basic infrastructure planning algorithm
+    /// </summary>
+    public class BasicInfrastructurePlanningAlgorithm : IPlanningAlgorithm
+    {
+        public ConstructionPlan GeneratePlan(PlanningRequest request)
+        {
+            return new ConstructionPlan
+            {
+                PlanId = System.Guid.NewGuid().ToString(),
+                PlanName = "Basic Infrastructure Plan",
+                PlanType = "infrastructure",
+                Status = PlanStatus.Planning,
+                Buildings = new PlannedBuilding[0],
+                EstimatedCost = 200f,
+                EstimatedDuration = 60f
+            };
+        }
+
+        public ConstructionPlan OptimizePlan(ConstructionPlan plan)
+        {
+            return plan;
+        }
+    }
+
+    /// <summary>
+    /// Basic utility planning algorithm
+    /// </summary>
+    public class BasicUtilityPlanningAlgorithm : IPlanningAlgorithm
+    {
+        public ConstructionPlan GeneratePlan(PlanningRequest request)
+        {
+            return new ConstructionPlan
+            {
+                PlanId = System.Guid.NewGuid().ToString(),
+                PlanName = "Basic Utility Plan",
+                PlanType = "utility",
+                Status = PlanStatus.Planning,
+                Buildings = new PlannedBuilding[0],
+                EstimatedCost = 150f,
+                EstimatedDuration = 45f
+            };
+        }
+
+        public ConstructionPlan OptimizePlan(ConstructionPlan plan)
+        {
+            return plan;
+        }
+    }
+
+    #endregion
+}

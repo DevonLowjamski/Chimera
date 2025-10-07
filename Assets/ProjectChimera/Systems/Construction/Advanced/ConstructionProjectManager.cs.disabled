@@ -1,0 +1,459 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Construction.Advanced
+{
+    /// <summary>
+    /// REFACTORED: Construction Project Manager
+    /// Single Responsibility: Construction project lifecycle management and coordination
+    /// Extracted from AdvancedConstructionSystem for better separation of concerns
+    /// </summary>
+    public class ConstructionProjectManager : MonoBehaviour
+    {
+        [Header("Project Management Settings")]
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private int _maxConcurrentProjects = 10;
+        [SerializeField] private float _projectUpdateInterval = 0.1f;
+
+        // Project management
+        private readonly Dictionary<string, ConstructionProject> _activeProjects = new Dictionary<string, ConstructionProject>();
+        private readonly Queue<ConstructionProject> _processingQueue = new Queue<ConstructionProject>();
+        private readonly List<ConstructionProject> _completedProjects = new List<ConstructionProject>();
+
+        // State tracking
+        private float _lastProjectUpdate;
+        private bool _isInitialized = false;
+
+        // Statistics
+        private ConstructionProjectStats _stats = new ConstructionProjectStats();
+
+        // Events
+        public event System.Action<ConstructionProject> OnProjectStarted;
+        public event System.Action<ConstructionProject> OnProjectCompleted;
+        public event System.Action<ConstructionProject> OnProjectCancelled;
+        public event System.Action<ConstructionProject> OnProjectProgressUpdated;
+
+        public bool IsInitialized => _isInitialized;
+        public ConstructionProjectStats Stats => _stats;
+        public int ActiveProjectCount => _activeProjects.Count;
+        public int QueuedProjectCount => _processingQueue.Count;
+
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _activeProjects.Clear();
+            _processingQueue.Clear();
+            _completedProjects.Clear();
+            ResetStats();
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", "Construction Project Manager initialized", this);
+            }
+        }
+
+        /// <summary>
+        /// Process project updates (call from Update or ITickable)
+        /// </summary>
+        public void ProcessProjects(float deltaTime)
+        {
+            if (!_isInitialized) return;
+
+            // Update projects at specified intervals
+            if (Time.time - _lastProjectUpdate >= _projectUpdateInterval)
+            {
+                ProcessActiveProjects();
+                ProcessProjectQueue();
+                _lastProjectUpdate = Time.time;
+                _stats.LastUpdateTime = Time.time;
+            }
+        }
+
+        /// <summary>
+        /// Start a new construction project
+        /// </summary>
+        public bool StartProject(ConstructionProject project)
+        {
+            if (project == null || string.IsNullOrEmpty(project.ProjectId))
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("CONSTRUCTION", "Cannot start project: invalid project data", this);
+                }
+                return false;
+            }
+
+            if (_activeProjects.ContainsKey(project.ProjectId))
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("CONSTRUCTION", $"Project {project.ProjectId} already exists", this);
+                }
+                return false;
+            }
+
+            if (_activeProjects.Count >= _maxConcurrentProjects)
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("CONSTRUCTION", $"Maximum concurrent projects ({_maxConcurrentProjects}) reached. Queueing project.", this);
+                }
+                _processingQueue.Enqueue(project);
+                _stats.ProjectsQueued++;
+                return true;
+            }
+
+            return StartProjectInternal(project);
+        }
+
+        /// <summary>
+        /// Cancel an active project
+        /// </summary>
+        public bool CancelProject(string projectId)
+        {
+            if (!_activeProjects.TryGetValue(projectId, out var project))
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("CONSTRUCTION", $"Project {projectId} not found for cancellation", this);
+                }
+                return false;
+            }
+
+            project.Cancel();
+            _activeProjects.Remove(projectId);
+            _stats.ProjectsCancelled++;
+
+            OnProjectCancelled?.Invoke(project);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", $"Project {projectId} cancelled successfully", this);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Get project by ID
+        /// </summary>
+        public ConstructionProject GetProject(string projectId)
+        {
+            _activeProjects.TryGetValue(projectId, out var project);
+            return project;
+        }
+
+        /// <summary>
+        /// Check if project exists
+        /// </summary>
+        public bool HasProject(string projectId)
+        {
+            return _activeProjects.ContainsKey(projectId);
+        }
+
+        /// <summary>
+        /// Get all active projects
+        /// </summary>
+        public List<ConstructionProject> GetActiveProjects()
+        {
+            return new List<ConstructionProject>(_activeProjects.Values);
+        }
+
+        /// <summary>
+        /// Get projects by status
+        /// </summary>
+        public List<ConstructionProject> GetProjectsByStatus(ProjectStatus status)
+        {
+            return _activeProjects.Values.Where(p => p.Status == status).ToList();
+        }
+
+        /// <summary>
+        /// Update project progress
+        /// </summary>
+        public bool UpdateProjectProgress(string projectId, float progress)
+        {
+            if (_activeProjects.TryGetValue(projectId, out var project))
+            {
+                project.UpdateProgress(progress);
+                OnProjectProgressUpdated?.Invoke(project);
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Process active projects
+        /// </summary>
+        private void ProcessActiveProjects()
+        {
+            var projectsToUpdate = new List<ConstructionProject>(_activeProjects.Values);
+            var completedProjects = new List<ConstructionProject>();
+
+            foreach (var project in projectsToUpdate)
+            {
+                if (project == null || !project.IsActive)
+                    continue;
+
+                try
+                {
+                    // Update project
+                    project.ProcessUpdate();
+
+                    // Check if completed
+                    if (project.IsCompleted)
+                    {
+                        completedProjects.Add(project);
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    if (_enableLogging)
+                    {
+                        ChimeraLogger.LogError("CONSTRUCTION", $"Error updating project {project.ProjectId}: {ex.Message}", this);
+                    }
+                }
+            }
+
+            // Handle completed projects
+            foreach (var completedProject in completedProjects)
+            {
+                CompleteProject(completedProject);
+            }
+        }
+
+        /// <summary>
+        /// Process project queue
+        /// </summary>
+        private void ProcessProjectQueue()
+        {
+            // Start queued projects if we have capacity
+            while (_processingQueue.Count > 0 && _activeProjects.Count < _maxConcurrentProjects)
+            {
+                var queuedProject = _processingQueue.Dequeue();
+                StartProjectInternal(queuedProject);
+            }
+        }
+
+        /// <summary>
+        /// Start project internally
+        /// </summary>
+        private bool StartProjectInternal(ConstructionProject project)
+        {
+            try
+            {
+                _activeProjects[project.ProjectId] = project;
+                project.Start();
+
+                _stats.ProjectsStarted++;
+                _stats.TotalProjectsCreated++;
+
+                OnProjectStarted?.Invoke(project);
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("CONSTRUCTION", $"Project {project.ProjectId} started successfully ({_activeProjects.Count} active)", this);
+                }
+
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogError("CONSTRUCTION", $"Failed to start project {project.ProjectId}: {ex.Message}", this);
+                }
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Complete a project
+        /// </summary>
+        private void CompleteProject(ConstructionProject project)
+        {
+            project.Complete();
+            _activeProjects.Remove(project.ProjectId);
+            _completedProjects.Add(project);
+
+            _stats.ProjectsCompleted++;
+
+            OnProjectCompleted?.Invoke(project);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", $"Project {project.ProjectId} completed successfully ({_activeProjects.Count} remaining active)", this);
+            }
+        }
+
+        /// <summary>
+        /// Clear completed projects
+        /// </summary>
+        public int ClearCompletedProjects()
+        {
+            var count = _completedProjects.Count;
+            _completedProjects.Clear();
+
+            if (_enableLogging && count > 0)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", $"Cleared {count} completed projects", this);
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Cancel all active projects
+        /// </summary>
+        public void CancelAllProjects()
+        {
+            var projectIds = new List<string>(_activeProjects.Keys);
+            
+            foreach (var projectId in projectIds)
+            {
+                CancelProject(projectId);
+            }
+
+            _processingQueue.Clear();
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", "All projects cancelled", this);
+            }
+        }
+
+        /// <summary>
+        /// Set maximum concurrent projects
+        /// </summary>
+        public void SetMaxConcurrentProjects(int maxProjects)
+        {
+            _maxConcurrentProjects = Mathf.Max(1, maxProjects);
+            
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CONSTRUCTION", $"Max concurrent projects set to {_maxConcurrentProjects}", this);
+            }
+        }
+
+        /// <summary>
+        /// Reset statistics
+        /// </summary>
+        private void ResetStats()
+        {
+            _stats = new ConstructionProjectStats
+            {
+                ProjectsStarted = 0,
+                ProjectsCompleted = 0,
+                ProjectsCancelled = 0,
+                ProjectsQueued = 0,
+                TotalProjectsCreated = 0,
+                LastUpdateTime = Time.time
+            };
+        }
+
+        private void OnDestroy()
+        {
+            CancelAllProjects();
+        }
+    }
+
+    /// <summary>
+    /// Construction project statistics
+    /// </summary>
+    [System.Serializable]
+    public struct ConstructionProjectStats
+    {
+        public int ProjectsStarted;
+        public int ProjectsCompleted;
+        public int ProjectsCancelled;
+        public int ProjectsQueued;
+        public int TotalProjectsCreated;
+        public float LastUpdateTime;
+    }
+
+    /// <summary>
+    /// Construction project data structure
+    /// </summary>
+    [System.Serializable]
+    public class ConstructionProject
+    {
+        public string ProjectId;
+        public string ProjectName;
+        public ProjectStatus Status;
+        public float Progress;
+        public Vector3 Position;
+        public bool HasMultipleLevels;
+        public List<ConstructionLevel> ConstructionLevels;
+
+        public bool IsActive => Status == ProjectStatus.InProgress;
+        public bool IsCompleted => Status == ProjectStatus.Completed;
+
+        public virtual void Start()
+        {
+            Status = ProjectStatus.InProgress;
+            Progress = 0f;
+        }
+
+        public virtual void Complete()
+        {
+            Status = ProjectStatus.Completed;
+            Progress = 1f;
+        }
+
+        public virtual void Cancel()
+        {
+            Status = ProjectStatus.Cancelled;
+        }
+
+        public virtual void UpdateProgress(float newProgress)
+        {
+            Progress = Mathf.Clamp01(newProgress);
+            if (Progress >= 1f)
+            {
+                Status = ProjectStatus.Completed;
+            }
+        }
+
+        public virtual void ProcessUpdate()
+        {
+            // Override in derived classes for custom update logic
+        }
+
+        public virtual bool NeedsUpdate()
+        {
+            return IsActive;
+        }
+    }
+
+    /// <summary>
+    /// Project status enumeration
+    /// </summary>
+    public enum ProjectStatus
+    {
+        Queued,
+        InProgress,
+        Completed,
+        Cancelled,
+        Failed
+    }
+
+    /// <summary>
+    /// Construction level data
+    /// </summary>
+    [System.Serializable]
+    public class ConstructionLevel
+    {
+        public int LevelIndex;
+        public float Progress;
+        public bool IsCompleted;
+
+        public virtual void ProcessLevelUpdate()
+        {
+            // Override in derived classes for custom level logic
+        }
+    }
+}

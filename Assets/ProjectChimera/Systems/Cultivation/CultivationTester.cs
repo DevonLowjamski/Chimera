@@ -6,6 +6,9 @@ using ProjectChimera.Core;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Genetics;
 using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Cultivation.Plant;
+using CultivationPlantStrainSO = ProjectChimera.Data.Cultivation.PlantStrainSO;
+using GeneticPlantStrainSO = ProjectChimera.Data.Genetics.GeneticPlantStrainSO;
 using DataEnvironmental = ProjectChimera.Data.Shared.EnvironmentalConditions;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
 
@@ -61,7 +64,7 @@ namespace ProjectChimera.Systems.Cultivation
         [ContextMenu("Run Cultivation Tests")]
         public void RunCultivationTests()
         {
-            ChimeraLogger.Log("[CultivationTester] Starting cultivation system tests...");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             _testRunCount++;
 
             string results = $"=== CULTIVATION TEST RUN #{_testRunCount} ===\n";
@@ -79,12 +82,12 @@ namespace ProjectChimera.Systems.Cultivation
             if (allTestsPassed)
             {
                 results += "\n✅ ALL CULTIVATION TESTS PASSED!\n";
-                ChimeraLogger.Log("[CultivationTester] ✅ All cultivation tests PASSED!");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
             else
             {
                 results += "\n❌ SOME CULTIVATION TESTS FAILED!\n";
-                ChimeraLogger.LogError("[CultivationTester] ❌ Some cultivation tests FAILED!");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
 
             _lastTestResults = results;
@@ -97,14 +100,14 @@ namespace ProjectChimera.Systems.Cultivation
             if (_cultivationManager == null)
             {
                 results += "❌ CultivationManager not found!\n";
-                ChimeraLogger.LogError("[CultivationTester] CultivationManager not found!");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
 
             if (!_cultivationManager.IsInitialized)
             {
                 results += "❌ CultivationManager not initialized!\n";
-                ChimeraLogger.LogError("[CultivationTester] CultivationManager not initialized!");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
 
@@ -142,7 +145,7 @@ namespace ProjectChimera.Systems.Cultivation
                 results += $"✅ Plant created successfully\n";
                 results += $"   - Plant ID: {testPlant.PlantID}\n";
                 results += $"   - Name: {testPlant.PlantName}\n";
-                results += $"   - Strain: {testPlant.Strain?.name ?? "None"}\n";
+                results += $"   - Strain: {GetStrainName(testPlant.Strain) ?? "None"}\n";
                 results += $"   - Current stage: {testPlant.CurrentGrowthStage}\n";
                 results += $"   - Health: {testPlant.OverallHealth:F2}\n";
                 results += $"   - Height: {testPlant.CurrentHeight:F1}cm\n";
@@ -155,7 +158,7 @@ namespace ProjectChimera.Systems.Cultivation
             catch (System.Exception e)
             {
                 results += $"❌ Exception during plant creation: {e.Message}\n";
-                ChimeraLogger.LogError($"[CultivationTester] Exception during plant creation: {e.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
         }
@@ -200,7 +203,7 @@ namespace ProjectChimera.Systems.Cultivation
             catch (System.Exception e)
             {
                 results += $"❌ Exception during environmental testing: {e.Message}\n";
-                ChimeraLogger.LogError($"[CultivationTester] Exception during environmental testing: {e.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
         }
@@ -219,7 +222,7 @@ namespace ProjectChimera.Systems.Cultivation
             {
                 // Create a test plant for calculations
                 var testPlant = ScriptableObject.CreateInstance<PlantInstanceSO>();
-                testPlant.InitializePlant("test_calc", "Test Calc Plant", _testStrain as ProjectChimera.Data.Cultivation.PlantStrainSO, _testGenotype, Vector3.zero);
+                testPlant.InitializePlant("test_calc", "Test Calc Plant", _testStrain as ProjectChimera.Data.Cultivation.Plant.PlantStrainSO, _testGenotype, Vector3.zero);
 
                 var testEnvironment = DataEnvironmental.CreateIndoorDefault();
 
@@ -256,7 +259,7 @@ namespace ProjectChimera.Systems.Cultivation
             catch (System.Exception e)
             {
                 results += $"❌ Exception during growth calculation testing: {e.Message}\n";
-                ChimeraLogger.LogError($"[CultivationTester] Exception during growth calculation testing: {e.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
         }
@@ -312,7 +315,7 @@ namespace ProjectChimera.Systems.Cultivation
             catch (System.Exception e)
             {
                 results += $"❌ Exception during lifecycle testing: {e.Message}\n";
-                ChimeraLogger.LogError($"[CultivationTester] Exception during lifecycle testing: {e.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
         }
@@ -350,7 +353,7 @@ namespace ProjectChimera.Systems.Cultivation
             catch (System.Exception e)
             {
                 results += $"❌ Exception during resource management testing: {e.Message}\n";
-                ChimeraLogger.LogError($"[CultivationTester] Exception during resource management testing: {e.Message}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return false;
             }
         }
@@ -360,7 +363,7 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (_cultivationManager == null || _testStrain == null)
             {
-                ChimeraLogger.LogWarning("[CultivationTester] Cannot create test plants: Missing manager or strain");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 return;
             }
 
@@ -372,7 +375,7 @@ namespace ProjectChimera.Systems.Cultivation
                 _cultivationManager.AddPlant(_testStrain, position);
             }
 
-            ChimeraLogger.Log("[CultivationTester] Created 5 test plants");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         [ContextMenu("Water All Test Plants")]
@@ -381,7 +384,7 @@ namespace ProjectChimera.Systems.Cultivation
             if (_cultivationManager == null) return;
 
             _cultivationManager.WaterAllPlants(0.5f);
-            ChimeraLogger.Log("[CultivationTester] Watered all test plants");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         [ContextMenu("Feed All Test Plants")]
@@ -390,7 +393,7 @@ namespace ProjectChimera.Systems.Cultivation
             if (_cultivationManager == null) return;
 
             _cultivationManager.FeedAllPlants(0.4f);
-            ChimeraLogger.Log("[CultivationTester] Fed all test plants");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         [ContextMenu("Force Growth Update")]
@@ -399,7 +402,7 @@ namespace ProjectChimera.Systems.Cultivation
             if (_cultivationManager == null) return;
 
             _cultivationManager.ForceGrowthUpdate();
-            ChimeraLogger.Log("[CultivationTester] Forced growth update for all plants");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         [ContextMenu("Clear Test Results")]
@@ -409,8 +412,8 @@ namespace ProjectChimera.Systems.Cultivation
         }
 
     // ITickable implementation
-    public int Priority => 0;
-    public bool Enabled => enabled && gameObject.activeInHierarchy;
+    public int TickPriority => ProjectChimera.Core.Updates.TickPriority.DebugSystems;
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
 
     public virtual void OnRegistered()
     {
@@ -421,6 +424,18 @@ namespace ProjectChimera.Systems.Cultivation
     {
         // Override in derived classes if needed
     }
+
+        /// <summary>
+        /// Helper method to get strain name from either type of PlantStrainSO
+        /// </summary>
+        private string GetStrainName(object strain)
+        {
+            if (strain is CultivationPlantStrainSO cultivationStrain)
+                return cultivationStrain.StrainName;
+            if (strain is GeneticPlantStrainSO geneticStrain)
+                return geneticStrain.StrainName;
+            return null;
+        }
 
         protected virtual void OnDestroy()
         {

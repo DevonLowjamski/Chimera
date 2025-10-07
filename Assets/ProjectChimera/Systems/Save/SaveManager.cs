@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Save
 {
@@ -9,7 +10,7 @@ namespace ProjectChimera.Systems.Save
     /// SIMPLE: Basic save system aligned with Project Chimera's save needs.
     /// Focuses on essential save/load functionality without complex systems.
     /// </summary>
-    public class SaveManager : MonoBehaviour
+    public class SaveManager : ChimeraManager, ITickable
     {
         [Header("Basic Save Settings")]
         [SerializeField] private bool _enableAutoSave = true;
@@ -22,6 +23,7 @@ namespace ProjectChimera.Systems.Save
         private bool _isLoading = false;
         private float _lastAutoSaveTime;
         private bool _isInitialized = false;
+        private readonly List<object> _registeredSaveServices = new List<object>();
 
         /// <summary>
         /// Events for save/load operations
@@ -49,7 +51,7 @@ namespace ProjectChimera.Systems.Save
                 LoadGame();
             }
 
-            ChimeraLogger.Log("[SaveManager] Initialized successfully");
+            ChimeraLogger.Log("OTHER", "$1", this);
         }
 
         /// <summary>
@@ -83,12 +85,12 @@ namespace ProjectChimera.Systems.Save
                 string filePath = System.IO.Path.Combine(Application.persistentDataPath, _saveFileName + ".json");
                 System.IO.File.WriteAllText(filePath, jsonData);
 
-                ChimeraLogger.Log($"[SaveManager] Game saved successfully to {filePath}");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 OnSaveCompleted?.Invoke();
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[SaveManager] Save failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 OnSaveError?.Invoke(ex.Message);
             }
             finally
@@ -119,20 +121,20 @@ namespace ProjectChimera.Systems.Save
                     // Apply loaded data to game systems
                     ApplyGameData(_currentGameData);
 
-                    ChimeraLogger.Log($"[SaveManager] Game loaded successfully from {filePath}");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                     OnLoadCompleted?.Invoke();
                 }
                 else
                 {
                     // No save file exists, start new game
-                    ChimeraLogger.Log("[SaveManager] No save file found, starting new game");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                     _currentGameData = null;
                     OnLoadCompleted?.Invoke();
                 }
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[SaveManager] Load failed: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 OnLoadError?.Invoke(ex.Message);
             }
             finally
@@ -144,16 +146,27 @@ namespace ProjectChimera.Systems.Save
         /// <summary>
         /// Update auto-save functionality
         /// </summary>
-        public void Update()
-        {
+    public int TickPriority => 100;
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
             if (!_enableAutoSave || !_isInitialized) return;
 
             if (Time.time - _lastAutoSaveTime >= _autoSaveInterval)
-            {
                 _lastAutoSaveTime = Time.time;
                 SaveGame();
-            }
-        }
+    }
+
+    private void Awake()
+    {
+        UpdateOrchestrator.Instance.RegisterTickable(this);
+    }
+
+    private void OnDestroy()
+    {
+        UpdateOrchestrator.Instance.UnregisterTickable(this);
+    }
 
         /// <summary>
         /// Check if save file exists
@@ -175,12 +188,12 @@ namespace ProjectChimera.Systems.Save
                 if (System.IO.File.Exists(filePath))
                 {
                     System.IO.File.Delete(filePath);
-                    ChimeraLogger.Log("[SaveManager] Save file deleted");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[SaveManager] Failed to delete save file: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -205,6 +218,44 @@ namespace ProjectChimera.Systems.Save
             return new SaveFileInfo { Exists = false };
         }
 
+        /// <summary>
+        /// Register a save service provider
+        /// </summary>
+        public void RegisterSaveService(object saveService)
+        {
+            if (saveService == null)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+                return;
+            }
+
+            if (!_registeredSaveServices.Contains(saveService))
+            {
+                _registeredSaveServices.Add(saveService);
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+
+        /// <summary>
+        /// Unregister a save service provider
+        /// </summary>
+        public void UnregisterSaveService(object saveService)
+        {
+            if (saveService != null && _registeredSaveServices.Contains(saveService))
+            {
+                _registeredSaveServices.Remove(saveService);
+                ChimeraLogger.Log("OTHER", "$1", this);
+            }
+        }
+
+        /// <summary>
+        /// Get all registered save services
+        /// </summary>
+        public IReadOnlyList<object> GetRegisteredSaveServices()
+        {
+            return _registeredSaveServices.AsReadOnly();
+        }
+
         #region Private Methods
 
         private void CollectGameData(GameData gameData)
@@ -219,7 +270,31 @@ namespace ProjectChimera.Systems.Save
             // Apply loaded data to various game systems
             // This would be implemented to restore data to cultivation, construction, economy systems
             // For now, just logging
-            ChimeraLogger.Log("[SaveManager] Applying loaded game data");
+            ChimeraLogger.Log("OTHER", "$1", this);
+        }
+
+        #endregion
+
+        #region ChimeraManager Implementation
+
+        /// <summary>
+        /// ChimeraManager initialization hook
+        /// </summary>
+        protected override void OnManagerInitialize()
+        {
+            Initialize();
+        }
+
+        /// <summary>
+        /// ChimeraManager shutdown hook
+        /// </summary>
+        protected override void OnManagerShutdown()
+        {
+            // Save before shutdown if auto-save is enabled
+            if (_enableAutoSave && _isInitialized)
+            {
+                SaveGame();
+            }
         }
 
         #endregion

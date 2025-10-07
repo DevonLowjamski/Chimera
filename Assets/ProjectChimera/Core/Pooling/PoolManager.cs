@@ -1,0 +1,374 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Updates;
+
+namespace ProjectChimera.Core.Pooling
+{
+    /// <summary>
+    /// PERFORMANCE: Central pool manager for all object pools
+    /// Manages multiple pools and provides unified interface
+    /// Week 9 Day 4-5: Object Pooling System Implementation
+    /// </summary>
+    public class PoolManager : MonoBehaviour, ITickable
+    {
+        [Header("Pool Manager Settings")]
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private bool _autoCleanup = true;
+        [SerializeField] private float _cleanupInterval = 30f;
+
+        // Pool storage
+        private readonly Dictionary<string, object> _pools = new Dictionary<string, object>();
+        private readonly Dictionary<Type, string> _typeToPoolName = new Dictionary<Type, string>();
+
+        // Pool parents for organization
+        private Transform _poolParent;
+        private float _lastCleanupTime;
+
+        // Singleton
+        private static PoolManager _instance;
+        public static PoolManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = ServiceContainerFactory.Instance?.TryResolve<PoolManager>();
+                    if (_instance == null)
+                    {
+                        var go = new GameObject("PoolManager");
+                        _instance = go.AddComponent<PoolManager>();
+                        DontDestroyOnLoad(go);
+                    }
+                }
+                return _instance;
+            }
+        }
+
+        public bool IsInitialized { get; private set; }
+
+        private void Awake()
+        {
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+                ProjectChimera.Core.Updates.UpdateOrchestrator.Instance?.RegisterTickable((ProjectChimera.Core.Updates.ITickable)this);
+            }
+            else if (_instance != this)
+            {
+                Destroy(gameObject);
+            }
+        }
+
+    public int TickPriority => 100;
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
+        if (_autoCleanup && Time.time - _lastCleanupTime >= _cleanupInterval)
+        {
+            PerformCleanup();
+            _lastCleanupTime = Time.time;
+        }
+    }
+
+        /// <summary>
+        /// Initialize pool manager
+        /// </summary>
+        public void Initialize()
+        {
+            if (IsInitialized) return;
+
+            // Create pool parent
+            _poolParent = new GameObject("Pools").transform;
+            _poolParent.SetParent(transform);
+
+            _lastCleanupTime = Time.time;
+            IsInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("PoolManager", "Pool manager initialized");
+            }
+        }
+
+        /// <summary>
+        /// Create a new pool for specified type
+        /// </summary>
+        public ObjectPool<T> CreatePool<T>(
+            string poolName,
+            GameObject prefab,
+            int initialSize = 10,
+            int maxSize = 100,
+            bool expandable = true,
+            Func<GameObject> createFunc = null,
+            Action<T> onGetAction = null,
+            Action<T> onReturnAction = null,
+            Action<T> onDestroyAction = null) where T : Component
+        {
+            if (_pools.ContainsKey(poolName))
+            {
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogWarning("PoolManager", $"Pool {poolName} already exists");
+                }
+                return GetPool<T>(poolName);
+            }
+
+            // Create pool parent
+            var poolParent = new GameObject($"Pool_{poolName}").transform;
+            poolParent.SetParent(_poolParent);
+
+            // Create pool
+            var pool = new ObjectPool<T>(
+                prefab,
+                initialSize,
+                maxSize,
+                expandable,
+                poolParent,
+                createFunc,
+                onGetAction,
+                onReturnAction,
+                onDestroyAction
+            );
+
+            _pools[poolName] = pool;
+            _typeToPoolName[typeof(T)] = poolName;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("PoolManager", $"Created pool for {typeof(T).Name}");
+            }
+
+            return pool;
+        }
+
+        /// <summary>
+        /// Get existing pool by name
+        /// </summary>
+        public ObjectPool<T> GetPool<T>(string poolName) where T : Component
+        {
+            if (_pools.TryGetValue(poolName, out var pool))
+            {
+                return pool as ObjectPool<T>;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Get pool by component type
+        /// </summary>
+        public ObjectPool<T> GetPool<T>() where T : Component
+        {
+            if (_typeToPoolName.TryGetValue(typeof(T), out var poolName))
+            {
+                return GetPool<T>(poolName);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Get object from pool by name
+        /// </summary>
+        public T Get<T>(string poolName) where T : Component
+        {
+            var pool = GetPool<T>(poolName);
+            return pool?.Get();
+        }
+
+        /// <summary>
+        /// Get object from pool by type
+        /// </summary>
+        public T Get<T>() where T : Component
+        {
+            var pool = GetPool<T>();
+            return pool?.Get();
+        }
+
+        /// <summary>
+        /// Return object to appropriate pool
+        /// </summary>
+        public void Return<T>(T obj) where T : Component
+        {
+            var pool = GetPool<T>();
+            if (pool != null)
+            {
+                pool.Return(obj);
+            }
+            else if (_enableLogging)
+            {
+                ChimeraLogger.LogWarning("PoolManager", $"Pool not found for type {typeof(T).Name}");
+            }
+        }
+
+        /// <summary>
+        /// Return object to specific pool
+        /// </summary>
+        public void Return<T>(string poolName, T obj) where T : Component
+        {
+            var pool = GetPool<T>(poolName);
+            if (pool != null)
+            {
+                pool.Return(obj);
+            }
+            else if (_enableLogging)
+            {
+                ChimeraLogger.LogWarning("PoolManager", $"Pool {poolName} not found");
+            }
+        }
+
+        /// <summary>
+        /// Remove and destroy a pool
+        /// </summary>
+        public void RemovePool(string poolName)
+        {
+            if (_pools.TryGetValue(poolName, out var poolObj))
+            {
+                // Find and remove type mapping
+                Type typeToRemove = null;
+                foreach (var kvp in _typeToPoolName)
+                {
+                    if (kvp.Value == poolName)
+                    {
+                        typeToRemove = kvp.Key;
+                        break;
+                    }
+                }
+
+                if (typeToRemove != null)
+                    _typeToPoolName.Remove(typeToRemove);
+
+                // Clear pool if it's an ObjectPool
+                if (poolObj is ObjectPool<Component> pool)
+                {
+                    pool.Clear();
+                }
+
+                _pools.Remove(poolName);
+
+                // Destroy pool parent
+                var poolParent = _poolParent.Find($"Pool_{poolName}");
+                if (poolParent != null)
+                    Destroy(poolParent.gameObject);
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("PoolManager", $"Removed pool {poolName}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get pool statistics
+        /// </summary>
+        public PoolStats GetPoolStats(string poolName)
+        {
+            if (_pools.TryGetValue(poolName, out var poolObj))
+            {
+                // Use IObjectPool interface to get stats without reflection
+                if (poolObj is IObjectPool pool)
+                {
+                    return new PoolStats
+                    {
+                        PoolName = poolName,
+                        CountInactive = pool.CountInactive,
+                        CountActive = pool.CountActive,
+                        CountAll = pool.CountAll
+                    };
+                }
+            }
+
+            return new PoolStats { PoolName = poolName };
+        }
+
+        /// <summary>
+        /// Get all pool statistics
+        /// </summary>
+        public PoolManagerStats GetAllStats()
+        {
+            var stats = new PoolManagerStats
+            {
+                TotalPools = _pools.Count,
+                PoolStats = new List<PoolStats>()
+            };
+
+            foreach (var poolName in _pools.Keys)
+            {
+                stats.PoolStats.Add(GetPoolStats(poolName));
+            }
+
+            return stats;
+        }
+
+        /// <summary>
+        /// Clear all pools
+        /// </summary>
+        public void ClearAllPools()
+        {
+            foreach (var kvp in _pools)
+            {
+                if (kvp.Value is ObjectPool<Component> pool)
+                {
+                    pool.Clear();
+                }
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("PoolManager", "All pools cleared");
+            }
+        }
+
+        /// <summary>
+        /// Perform automatic cleanup of unused objects
+        /// </summary>
+        private void PerformCleanup()
+        {
+            // This could be expanded to include more sophisticated cleanup logic
+            // For now, we just log the cleanup event
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("PoolManager", "Automatic cleanup performed");
+            }
+        }
+
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (pauseStatus && _autoCleanup)
+            {
+                PerformCleanup();
+            }
+        }
+
+        private void OnDestroy()
+        {
+            ClearAllPools();
+            ProjectChimera.Core.Updates.UpdateOrchestrator.Instance?.UnregisterTickable((ProjectChimera.Core.Updates.ITickable)this);
+    }
+    }
+
+    /// <summary>
+    /// Statistics for individual pool
+    /// </summary>
+    [System.Serializable]
+    public struct PoolStats
+    {
+        public string PoolName;
+        public int CountInactive;
+        public int CountActive;
+        public int CountAll;
+    }
+
+    /// <summary>
+    /// Statistics for pool manager
+    /// </summary>
+    [System.Serializable]
+    public struct PoolManagerStats
+    {
+        public int TotalPools;
+        public List<PoolStats> PoolStats;
+    }
+}

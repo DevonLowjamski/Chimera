@@ -1,5 +1,5 @@
-using UnityEngine;
 
+using UnityEngine;
 namespace ProjectChimera.Data.Environment
 {
     // Minimal shared environmental types used by legacy cultivation systems

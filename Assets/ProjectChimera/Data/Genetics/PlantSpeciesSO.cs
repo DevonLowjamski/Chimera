@@ -1,3 +1,4 @@
+
 using UnityEngine;
 
 namespace ProjectChimera.Data.Genetics
@@ -12,6 +13,9 @@ namespace ProjectChimera.Data.Genetics
         public string speciesName;
         public string scientificName;
         public string description;
+
+        // Compatibility property for code expecting StrainName
+        public string StrainName => speciesName;
 
         [Header("Genetic Properties")]
         public int chromosomeCount = 20;

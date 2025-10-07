@@ -1,74 +1,11 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+// NOTE: Data structures split into individual files in CultivationDataStructures_Split/ folder:
+
+// Original file backed up as: CultivationDataStructures.cs.backup
+
 namespace ProjectChimera.Data.Cultivation
 {
-    /// <summary>
-    /// Contains core data structures for cultivation systems,
-    /// including plant nutrition and water status.
-    /// </summary>
-    
-    #region Missing Data Structures
-
-    [System.Serializable]
-    public enum CultivationApproach
-    {
-        Organic,
-        Hydroponic,
-        Aeroponic,
-        Hybrid
-    }
-
-    [System.Serializable]
-    public enum SkillBranch
-    {
-        Botany,
-        Chemistry,
-        Engineering,
-        Business
-    }
-
-    [System.Serializable]
-    public class FacilityDesignData
-    {
-        public string DesignId;
-        public FacilityDesignApproach Approach;
-        public Dictionary<string, float> EfficiencyMetrics;
-        public Dictionary<string, string> DesignParameters;
-    }
-
-    [System.Serializable]
-    public enum FacilityDesignApproach
-    {
-        Efficiency,
-        Aesthetics,
-        Sustainability,
-        HighTech
-    }
-
-    [System.Serializable]
-    public class FacilityDesignEffects
-    {
-        public string EffectId;
-        public FacilityDesignApproach Approach;
-        public Dictionary<string, float> EfficiencyModifiers;
-        public Dictionary<string, bool> DesignFeatures;
-        public float Duration;
-        public bool IsActive;
-        public float ActivationTime;
-    }
-
-    [System.Serializable]
-    public class CultivationPathEffects
-    {
-        public string EffectId;
-        public CultivationApproach Approach;
-        public Dictionary<string, float> StatModifiers;
-        public Dictionary<string, bool> FeatureUnlocks;
-        public float Duration;
-        public bool IsActive;
-        public System.DateTime ActivationTime;
-    }
-
-    #endregion
+    // Data structures moved to individual files - see comments above
 }

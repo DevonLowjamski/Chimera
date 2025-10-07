@@ -16,29 +16,29 @@ namespace ProjectChimera.Systems.Scene
         {
             bool isValid = true;
 
-            ChimeraLogger.Log("[BootSceneValidator] Starting Boot scene validation...");
+            ChimeraLogger.Log("SCENE", "Validating Boot Scene", null);
 
             // Check for BootManager - try ServiceContainer first, fall back to direct search for validation
             var bootManager = ServiceContainerFactory.Instance?.TryResolve<BootManager>();
             if (bootManager == null)
             {
-                ChimeraLogger.LogError("[BootSceneValidator] BootManager not found in Boot scene!");
+                ChimeraLogger.LogError("SCENE", "BootManager not resolved", null);
                 isValid = false;
             }
             else
             {
-                ChimeraLogger.Log("[BootSceneValidator] ✅ BootManager found");
+                ChimeraLogger.Log("SCENE", "BootManager resolved", null);
             }
 
             // Check for existing GameManager (should not exist in Boot scene initially)
             var existingGameManager = ServiceContainerFactory.Instance?.TryResolve<GameManager>();
             if (existingGameManager != null)
             {
-                ChimeraLogger.LogWarning("[BootSceneValidator] ⚠️ GameManager already exists in Boot scene - this may indicate a previous boot");
+                ChimeraLogger.LogWarning("SCENE", "GameManager exists in Boot scene", null);
             }
             else
             {
-                ChimeraLogger.Log("[BootSceneValidator] ✅ No existing GameManager in Boot scene (expected)");
+                ChimeraLogger.Log("SCENE", "No GameManager in Boot scene (expected)", null);
             }
 
             // Check ServiceLocator availability (should not exist yet)
@@ -47,48 +47,48 @@ namespace ProjectChimera.Systems.Scene
                 var serviceContainer = ServiceContainerFactory.Instance;
                 if (serviceContainer != null)
                 {
-                    ChimeraLogger.LogWarning("[BootSceneValidator] ⚠️ ServiceContainer already exists - this may indicate a previous boot");
+                    ChimeraLogger.Log("SCENE", "ServiceContainer available", null);
                 }
                 else
                 {
-                    ChimeraLogger.Log("[BootSceneValidator] ✅ ServiceContainer not yet initialized (expected)");
+                    ChimeraLogger.LogError("SCENE", "ServiceContainer not available", null);
                 }
             }
             catch
             {
-                ChimeraLogger.Log("[BootSceneValidator] ✅ ServiceLocator not yet available (expected)");
+                ChimeraLogger.LogError("SCENE", "Exception while checking ServiceContainer", null);
             }
 
             // Check scene name
             var currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             if (currentScene.name != SceneConstants.BOOT_SCENE)
             {
-                ChimeraLogger.LogError($"[BootSceneValidator] Current scene name '{currentScene.name}' does not match expected Boot scene name '{SceneConstants.BOOT_SCENE}'");
+                ChimeraLogger.LogError("SCENE", "Wrong active scene", null);
                 isValid = false;
             }
             else
             {
-                ChimeraLogger.Log("[BootSceneValidator] ✅ Scene name matches expected Boot scene name");
+                ChimeraLogger.Log("SCENE", "Active scene is Boot", null);
             }
 
             // Validate target scenes exist
             if (!SceneConstants.IsValidScene(SceneConstants.MAIN_MENU_SCENE))
             {
-                ChimeraLogger.LogError($"[BootSceneValidator] Target scene '{SceneConstants.MAIN_MENU_SCENE}' is not a valid scene!");
+                ChimeraLogger.LogError("SCENE", "Main Menu scene missing from constants", null);
                 isValid = false;
             }
             else
             {
-                ChimeraLogger.Log($"[BootSceneValidator] ✅ Target scene '{SceneConstants.MAIN_MENU_SCENE}' is valid");
+                ChimeraLogger.Log("SCENE", "Main Menu scene present in constants", null);
             }
 
             if (isValid)
             {
-                ChimeraLogger.Log("[BootSceneValidator] 🎉 Boot scene validation PASSED!");
+                ChimeraLogger.Log("SCENE", "Boot validation passed", null);
             }
             else
             {
-                ChimeraLogger.LogError("[BootSceneValidator] ❌ Boot scene validation FAILED!");
+                ChimeraLogger.LogError("SCENE", "Boot validation failed", null);
             }
 
             return isValid;
@@ -96,7 +96,7 @@ namespace ProjectChimera.Systems.Scene
 
         public static void RunRuntimeValidation()
         {
-            ChimeraLogger.Log("[BootSceneValidator] === RUNTIME BOOT VALIDATION ===");
+            ChimeraLogger.Log("SCENE", "RunRuntimeValidation invoked", null);
             ValidateBootScene();
         }
 
@@ -104,29 +104,29 @@ namespace ProjectChimera.Systems.Scene
         {
             bool isValid = true;
 
-            ChimeraLogger.Log("[BootSceneValidator] Starting post-boot validation...");
+            ProjectChimera.Core.Logging.ChimeraLogger.Log("SCENE/BOOT", "Validation start", null);
 
             // Check if GameManager exists and is initialized - try ServiceContainer first
             var gameManager = ServiceContainerFactory.Instance?.TryResolve<GameManager>();
             if (gameManager == null)
             {
-                ChimeraLogger.LogError("[BootSceneValidator] GameManager not found after boot!");
+                ProjectChimera.Core.Logging.ChimeraLogger.Log("SCENE/BOOT", "Validation warning", null);
                 isValid = false;
             }
             else if (!gameManager.IsInitialized)
             {
-                ChimeraLogger.LogError("[BootSceneValidator] GameManager found but not initialized!");
+                ProjectChimera.Core.Logging.ChimeraLogger.Log("SCENE/BOOT", "Validation error", null);
                 isValid = false;
             }
             else
             {
-                ChimeraLogger.Log("[BootSceneValidator] ✅ GameManager exists and is initialized");
-                
+                ChimeraLogger.Log("SCENE", "GameManager initialized");
+
                 // Game state validation completed (removed CurrentGameState dependency)
-                ChimeraLogger.Log("[BootSceneValidator] ✅ GameManager validation complete");
+                ChimeraLogger.Log("SCENE", "Game state validation completed");
 
                 // Service health validation simplified for now
-                ChimeraLogger.Log("[BootSceneValidator] ✅ Service validation complete");
+                ChimeraLogger.Log("SCENE", "Service health validation completed");
             }
 
             // Check ServiceLocator availability
@@ -135,39 +135,39 @@ namespace ProjectChimera.Systems.Scene
                 var serviceContainer = ServiceContainerFactory.Instance;
                 if (serviceContainer != null)
                 {
-                    ChimeraLogger.Log("[BootSceneValidator] ✅ ServiceContainer is available after boot");
-                    
+                    ChimeraLogger.Log("SCENE", "ServiceContainer available");
+
                     // Try to get SceneLoader service
                     var sceneLoader = serviceContainer.TryResolve<ISceneLoader>();
                     if (sceneLoader != null)
                     {
-                        ChimeraLogger.Log("[BootSceneValidator] ✅ SceneLoader service is available");
+                        ChimeraLogger.Log("SCENE", "ISceneLoader available");
                     }
                     else
                     {
-                        ChimeraLogger.LogError("[BootSceneValidator] SceneLoader service not available!");
+                        ChimeraLogger.LogError("SCENE", "ISceneLoader not available");
                         isValid = false;
                     }
                 }
                 else
                 {
-                    ChimeraLogger.LogError("[BootSceneValidator] ServiceLocator not available after boot!");
+                    ChimeraLogger.LogError("SCENE", "ServiceContainer not initialized");
                     isValid = false;
                 }
             }
             catch (System.Exception e)
             {
-                ChimeraLogger.LogError($"[BootSceneValidator] Error accessing ServiceLocator: {e.Message}");
+                ChimeraLogger.LogError("SCENE", $"Exception checking ServiceContainer: {e.Message}");
                 isValid = false;
             }
 
             if (isValid)
             {
-                ChimeraLogger.Log("[BootSceneValidator] 🎉 Post-boot validation PASSED!");
+                ChimeraLogger.Log("SCENE", "Post-boot validation passed");
             }
             else
             {
-                ChimeraLogger.LogError("[BootSceneValidator] ❌ Post-boot validation FAILED!");
+                ChimeraLogger.LogError("SCENE", "Post-boot validation failed");
             }
 
             return isValid;

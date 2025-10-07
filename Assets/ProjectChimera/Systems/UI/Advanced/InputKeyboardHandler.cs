@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.UI.Advanced
 {
@@ -7,7 +9,7 @@ namespace ProjectChimera.Systems.UI.Advanced
     /// BASIC: Simple keyboard input handling for Project Chimera's UI system.
     /// Focuses on essential keyboard operations without complex shortcut management and search functionality.
     /// </summary>
-    public class InputKeyboardHandler : MonoBehaviour
+    public class InputKeyboardHandler : MonoBehaviour, ITickable
     {
         [Header("Basic Keyboard Settings")]
         [SerializeField] private bool _enableBasicKeyboard = true;
@@ -47,49 +49,64 @@ namespace ProjectChimera.Systems.UI.Advanced
         /// <summary>
         /// Update keyboard input processing
         /// </summary>
-        public void Update()
-        {
-            if (!_enableBasicKeyboard || !_isInitialized) return;
+    [SerializeField] private float _tickInterval = 0.1f; // Configurable update frequency
+    private float _lastTickTime;
 
-            // Check for key presses with repeat handling
-            foreach (var kvp in _keyActions)
+    public int TickPriority => 50; // Lower priority for complex updates
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
+        _lastTickTime += deltaTime;
+        if (_lastTickTime < _tickInterval) return;
+        _lastTickTime = 0f;
+
+        if (!_enableBasicKeyboard || !_isInitialized) return;
+
+        foreach (var kvp in _keyActions)
+        {
+            var key = kvp.Key;
+            if (Input.GetKeyDown(key))
             {
-                KeyCode key = kvp.Key;
-                if (Input.GetKeyDown(key))
+                _keyPressTimes[key] = Time.time;
+                OnKeyPressed?.Invoke(key);
+                kvp.Value?.Invoke();
+            }
+            else if (Input.GetKey(key) && _keyPressTimes.ContainsKey(key))
+            {
+                var timeSincePress = Time.time - _keyPressTimes[key];
+                if (timeSincePress >= _keyRepeatDelay)
                 {
-                    // Handle initial press
                     _keyPressTimes[key] = Time.time;
                     OnKeyPressed?.Invoke(key);
                     kvp.Value?.Invoke();
                 }
-                else if (Input.GetKey(key) && _keyPressTimes.ContainsKey(key))
-                {
-                    // Handle key repeat
-                    float timeSincePress = Time.time - _keyPressTimes[key];
-                    if (timeSincePress >= _keyRepeatDelay)
-                    {
-                        _keyPressTimes[key] = Time.time;
-                        OnKeyPressed?.Invoke(key);
-                        kvp.Value?.Invoke();
-                    }
-                }
-            }
-
-            // Clear released keys
-            var keysToRemove = new List<KeyCode>();
-            foreach (var kvp in _keyPressTimes)
-            {
-                if (!Input.GetKey(kvp.Key))
-                {
-                    keysToRemove.Add(kvp.Key);
-                }
-            }
-
-            foreach (var key in keysToRemove)
-            {
-                _keyPressTimes.Remove(key);
             }
         }
+
+        var keysToRemove = new List<KeyCode>();
+        foreach (var press in _keyPressTimes)
+        {
+            if (!Input.GetKey(press.Key))
+            {
+                keysToRemove.Add(press.Key);
+            }
+        }
+        foreach (var key in keysToRemove)
+        {
+            _keyPressTimes.Remove(key);
+        }
+    }
+
+    private void OnEnable()
+    {
+        ProjectChimera.Core.Updates.UpdateOrchestrator.Instance?.RegisterTickable(this);
+    }
+
+    private void OnDisable()
+    {
+        ProjectChimera.Core.Updates.UpdateOrchestrator.Instance?.UnregisterTickable(this);
+    }
 
         /// <summary>
         /// Register a custom key action

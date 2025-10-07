@@ -1,13 +1,17 @@
 using UnityEngine;
+using System;
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Core;
 
 namespace ProjectChimera.Core
 {
     /// <summary>
-    /// BASIC: Simple time manager for Project Chimera.
+    /// ENHANCED: Time manager for Project Chimera with ITickable integration.
+    /// Migrated from Update() to centralized tick system for better performance.
     /// Focuses on essential time control without complex offline progression and speed penalties.
     /// </summary>
-    public class TimeManager : MonoBehaviour
+    public class TimeManager : MonoBehaviour, Updates.ITickable, ITimeManager
     {
         [Header("Basic Time Settings")]
         [SerializeField] private bool _enableTimeControl = true;
@@ -17,6 +21,9 @@ namespace ProjectChimera.Core
 
         // Basic time tracking
         private float _currentTimeScale = 1.0f;
+        private TimeSpeedLevel _currentSpeedLevel = TimeSpeedLevel.Normal;
+
+        // ITickable implementation
         private bool _isPaused = false;
         private float _sessionStartTime;
         private float _totalPausedTime = 0f;
@@ -29,7 +36,14 @@ namespace ProjectChimera.Core
         public event System.Action<bool> OnPauseStateChanged;
 
         /// <summary>
-        /// Initialize basic time manager
+        /// ITickable implementation - high priority for core time management
+        /// </summary>
+        public int TickPriority => -90; // High priority core system
+        public bool IsTickable => _isInitialized && isActiveAndEnabled;
+        public bool IsActive => _isInitialized && isActiveAndEnabled;
+
+        /// <summary>
+        /// Initialize basic time manager and register with UpdateOrchestrator
         /// </summary>
         public void Initialize()
         {
@@ -39,9 +53,21 @@ namespace ProjectChimera.Core
             _sessionStartTime = Time.realtimeSinceStartup;
             _isInitialized = true;
 
+            // Register with centralized update system
+            var orchestrator = ServiceContainerFactory.Instance?.TryResolve<UpdateOrchestrator>();
+            if (orchestrator != null)
+            {
+                orchestrator.RegisterTickable(this);
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogInfo("TimeManager", "$1");
+                }
+            }
+
+
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[TimeManager] Initialized successfully");
+                ChimeraLogger.LogInfo("TimeManager", "$1");
             }
         }
 
@@ -62,7 +88,7 @@ namespace ProjectChimera.Core
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[TimeManager] Time scale set to {_currentTimeScale:F2}");
+                    ChimeraLogger.LogInfo("TimeManager", "$1");
                 }
             }
         }
@@ -91,7 +117,7 @@ namespace ProjectChimera.Core
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[TimeManager] Time {(paused ? "paused" : "resumed")}");
+                    ChimeraLogger.LogInfo("TimeManager", "$1");
                 }
             }
         }
@@ -173,16 +199,96 @@ namespace ProjectChimera.Core
         }
 
         /// <summary>
-        /// Force update paused time tracking
+        /// ITickable implementation - track paused time for accurate session time calculation
         /// </summary>
-        private void Update()
+        public void Tick(float deltaTime)
         {
-            // Track paused time for accurate session time calculation
+            // Track paused time using unscaled delta time for accuracy
             if (_isPaused)
             {
                 _totalPausedTime += Time.unscaledDeltaTime;
             }
         }
+
+        /// <summary>
+        /// Unity lifecycle - ensure proper cleanup
+        /// </summary>
+        private void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator if available
+            var orchestrator = ServiceContainerFactory.Instance?.TryResolve<UpdateOrchestrator>();
+            if (orchestrator != null)
+            {
+                orchestrator.UnregisterTickable(this);
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogInfo("TimeManager", "$1");
+                }
+            }
+        }
+    // Explicit ITimeManager implementation to satisfy DI registrations
+    float ITimeManager.TimeScale
+    {
+        get => _currentTimeScale;
+        set => SetTimeScale(value);
+    }
+
+    bool ITimeManager.IsPaused => _isPaused;
+
+    DateTime ITimeManager.CurrentGameTime => DateTime.Now;
+
+    TimeSpan ITimeManager.ElapsedGameTime => TimeSpan.FromSeconds(GetSessionPlayTime());
+
+    void ITimeManager.Initialize() => Initialize();
+
+    void ITimeManager.Pause() => SetPaused(true);
+
+    void ITimeManager.Resume() => SetPaused(false);
+
+    bool ITimeManager.SetTimeScale(float scale)
+    {
+        SetTimeScale(scale);
+        return true;
+    }
+
+    string ITimeManager.FormatCurrentTime(TimeDisplayFormat format)
+    {
+        return DateTime.Now.ToString();
+    }
+
+    void ITimeManager.RegisterOfflineProgressionListener(IOfflineProgressionListener listener) { }
+    void ITimeManager.UnregisterOfflineProgressionListener(IOfflineProgressionListener listener) { }
+    void ITimeManager.RegisterSpeedPenaltyListener(ISpeedPenaltyListener listener) { }
+    void ITimeManager.UnregisterSpeedPenaltyListener(ISpeedPenaltyListener listener) { }
+
+    // New interface members
+    TimeSpeedLevel ITimeManager.CurrentSpeedLevel => _currentSpeedLevel;
+    float ITimeManager.CurrentTimeScale => _currentTimeScale;
+    bool ITimeManager.IsTimePaused => _isPaused;
+
+    void ITimeManager.SetSpeedLevel(TimeSpeedLevel speedLevel)
+    {
+        _currentSpeedLevel = speedLevel;
+
+        // Convert speed level to time scale based on the enum values
+        float newTimeScale = speedLevel switch
+        {
+            TimeSpeedLevel.Slow => 0.5f,        // Slow = 0
+            TimeSpeedLevel.Normal => 1.0f,      // Normal = 1
+            TimeSpeedLevel.Fast => 2.0f,        // Fast = 2
+            TimeSpeedLevel.VeryFast => 4.0f,    // VeryFast = 4
+            TimeSpeedLevel.Maximum => 8.0f,     // Maximum = 8
+            _ => 1.0f
+        };
+
+        SetTimeScale(newTimeScale);
+
+        if (_enableLogging)
+        {
+            ChimeraLogger.LogInfo("TimeManager", $"Speed level changed to {speedLevel} (scale: {newTimeScale}x)");
+        }
+    }
+
     }
 
     /// <summary>

@@ -32,7 +32,7 @@ namespace ProjectChimera.Systems.Construction
         {
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[CascadingRemovalHandler] Initialized successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -55,7 +55,7 @@ namespace ProjectChimera.Systems.Construction
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[CascadingRemovalHandler] Queued {obj.name} for removal");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
             }
         }
@@ -88,7 +88,7 @@ namespace ProjectChimera.Systems.Construction
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[CascadingRemovalHandler] Processed {removedObjects.Count} removals");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
             }
 
@@ -106,7 +106,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[CascadingRemovalHandler] Removed {obj.name} immediately");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -120,7 +120,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[CascadingRemovalHandler] Cleared all pending removals");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -149,7 +149,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[CascadingRemovalHandler] Removal delay set to {_removalDelay:F2}s");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -167,7 +167,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[CascadingRemovalHandler] Removal enabled: {enabled}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -184,7 +184,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[CascadingRemovalHandler] Removed object: {obj.name}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 

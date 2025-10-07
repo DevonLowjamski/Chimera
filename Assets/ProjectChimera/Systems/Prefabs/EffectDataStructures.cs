@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Prefabs
 {

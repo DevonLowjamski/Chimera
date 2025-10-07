@@ -1,0 +1,368 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
+using ProjectChimera.Data.Shared;
+using ProjectChimera.Data.Cultivation.Plant;
+using ProjectChimera.Data.Genetics;
+
+namespace ProjectChimera.Systems.Cultivation.Jobs
+{
+    /// <summary>
+    /// PERFORMANCE: Integration service bridging legacy plant system with new Job System
+    /// Provides seamless transition from MonoBehaviour updates to burst-compiled jobs
+    /// Week 9 Day 1-3: Jobs System & Performance Foundations
+    /// </summary>
+    public class PlantJobSystemIntegration : MonoBehaviour
+    {
+        [Header("Integration Settings")]
+        [SerializeField] private bool _enableJobSystem = true;
+        [SerializeField] private bool _enableHybridMode = false; // Run both systems for comparison
+        [SerializeField] private bool _enableLogging = true;
+
+        // Job system components
+        private PlantSystemJobManager _jobManager;
+        
+        // Plant tracking
+        private readonly Dictionary<string, PlantInstance> _trackedPlants = new Dictionary<string, PlantInstance>();
+        private readonly Dictionary<string, GameObject> _plantGameObjects = new Dictionary<string, GameObject>();
+
+        // Performance comparison
+        private float _legacyUpdateTime = 0f;
+        private float _jobSystemUpdateTime = 0f;
+        private int _performanceComparisonSamples = 0;
+
+        public bool IsInitialized { get; private set; }
+
+        /// <summary>
+        /// Initialize the integration service
+        /// </summary>
+        public void Initialize()
+        {
+            if (IsInitialized) return;
+
+            if (_enableJobSystem)
+            {
+                InitializeJobSystem();
+            }
+
+            IsInitialized = true;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
+            }
+        }
+
+        /// <summary>
+        /// Register a plant with the job system
+        /// </summary>
+        public async Task<bool> RegisterPlant(PlantInstance plantInstance, GameObject plantGameObject = null)
+        {
+            if (!IsInitialized || !_enableJobSystem) return false;
+
+            string plantId = plantInstance.PlantId ?? System.Guid.NewGuid().ToString();
+            
+            // Convert PlantInstance to job system data structures
+            var parameters = ConvertToGrowthParameters(plantInstance);
+            var environment = ConvertToEnvironmentalData(plantInstance);
+            var growth = ConvertToGrowthData(plantInstance);
+            var health = ConvertToHealthData(plantInstance);
+            var resources = ConvertToResourceData(plantInstance);
+
+            // Register with job manager
+            bool registered = _jobManager.RegisterPlant(plantId, parameters, environment, growth, health, resources);
+
+            if (registered)
+            {
+                _trackedPlants[plantId] = plantInstance;
+                if (plantGameObject != null)
+                {
+                    _plantGameObjects[plantId] = plantGameObject;
+                }
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
+                }
+            }
+
+            return registered;
+        }
+
+        /// <summary>
+        /// Unregister a plant from the job system
+        /// </summary>
+        public bool UnregisterPlant(string plantId)
+        {
+            if (!IsInitialized || !_enableJobSystem) return false;
+
+            bool unregistered = _jobManager.UnregisterPlant(plantId);
+
+            if (unregistered)
+            {
+                _trackedPlants.Remove(plantId);
+                _plantGameObjects.Remove(plantId);
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
+                }
+            }
+
+            return unregistered;
+        }
+
+        /// <summary>
+        /// Sync plant data back to PlantInstance objects
+        /// </summary>
+        public async Task SyncPlantsFromJobSystem()
+        {
+            if (!IsInitialized || !_enableJobSystem) return;
+
+            var allPlantData = await _jobManager.GetAllPlantDataAsync();
+
+            for (int i = 0; i < allPlantData.Length; i++)
+            {
+                var jobData = allPlantData[i];
+                string plantId = GetPlantIdByIndex(i);
+                
+                if (plantId != null && _trackedPlants.TryGetValue(plantId, out var plantInstance))
+                {
+                    SyncJobDataToPlantInstance(jobData, plantInstance);
+                    
+                    // Update GameObject if available
+                    if (_plantGameObjects.TryGetValue(plantId, out var gameObj))
+                    {
+                        UpdatePlantGameObject(gameObj, plantInstance, jobData);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Update environmental conditions for a specific plant
+        /// </summary>
+        public bool UpdatePlantEnvironment(string plantId, EnvironmentalConditions conditions)
+        {
+            if (!IsInitialized || !_enableJobSystem) return false;
+
+            var environmentData = ConvertEnvironmentalConditions(conditions);
+            return _jobManager.UpdatePlantEnvironment(plantId, environmentData);
+        }
+
+        /// <summary>
+        /// Get performance statistics
+        /// </summary>
+        public PlantJobSystemStats GetPerformanceStats()
+        {
+            var jobStats = _jobManager?.GetStats() ?? default;
+            
+            return new PlantJobSystemStats
+            {
+                JobManagerStats = jobStats,
+                TrackedPlantsCount = _trackedPlants.Count,
+                LegacyUpdateTime = _legacyUpdateTime,
+                JobSystemUpdateTime = _jobSystemUpdateTime,
+                PerformanceGain = _legacyUpdateTime > 0 ? (_legacyUpdateTime - _jobSystemUpdateTime) / _legacyUpdateTime : 0f,
+                HybridModeEnabled = _enableHybridMode
+            };
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Initialize job system components
+        /// </summary>
+        private void InitializeJobSystem()
+        {
+            // Create job manager
+            var jobManagerGO = new GameObject("PlantSystemJobManager");
+            jobManagerGO.transform.SetParent(transform);
+            _jobManager = jobManagerGO.AddComponent<PlantSystemJobManager>();
+            _jobManager.Initialize();
+
+            // Register with UpdateOrchestrator if available
+            var updateOrchestrator = ServiceContainerFactory.Instance?.TryResolve<IUpdateOrchestrator>();
+            updateOrchestrator?.RegisterTickable(_jobManager);
+        }
+
+        /// <summary>
+        /// Convert PlantInstance to PlantGrowthParameters
+        /// </summary>
+        private PlantGrowthParameters ConvertToGrowthParameters(PlantInstance plant)
+        {
+            return new PlantGrowthParameters
+            {
+                baseGrowthRate = 1.0f, // Default or extract from strain
+                biomassRate = 0.5f,
+                resilience = plant.Health,
+                stressTolerance = 0.7f,
+                waterRequirement = 0.8f,
+                lightRequirement = 100f,
+                temperatureOptimal = 24f,
+                temperatureTolerance = 5f,
+                plantStage = PlantDataConverter.StageToInt(plant.GrowthStage)
+            };
+        }
+
+        /// <summary>
+        /// Convert PlantInstance to EnvironmentalData
+        /// </summary>
+        private EnvironmentalData ConvertToEnvironmentalData(PlantInstance plant)
+        {
+            return new EnvironmentalData
+            {
+                lightIntensity = plant.LightIntensity,
+                waterLevel = plant.WaterLevel * 100f,
+                temperature = plant.Temperature,
+                humidity = plant.Humidity,
+                co2Level = plant.CO2Level,
+                airflow = 1.0f // Default
+            };
+        }
+
+        /// <summary>
+        /// Convert EnvironmentalConditions to EnvironmentalData
+        /// </summary>
+        private EnvironmentalData ConvertEnvironmentalConditions(EnvironmentalConditions conditions)
+        {
+            return new EnvironmentalData
+            {
+                lightIntensity = conditions.LightIntensity,
+                waterLevel = conditions.Humidity, // Use humidity as proxy for water
+                temperature = conditions.Temperature,
+                humidity = conditions.Humidity,
+                co2Level = conditions.CO2Level,
+                airflow = 1.0f // Default
+            };
+        }
+
+        /// <summary>
+        /// Convert PlantInstance to PlantGrowthData
+        /// </summary>
+        private PlantGrowthData ConvertToGrowthData(PlantInstance plant)
+        {
+            return new PlantGrowthData
+            {
+                height = plant.Height,
+                biomass = plant.Biomass,
+                age = plant.Age,
+                growthProgress = 0.5f, // Calculate based on stage
+                currentStage = PlantDataConverter.StageToInt(plant.GrowthStage)
+            };
+        }
+
+        /// <summary>
+        /// Convert PlantInstance to PlantHealthData
+        /// </summary>
+        private PlantHealthData ConvertToHealthData(PlantInstance plant)
+        {
+            return new PlantHealthData
+            {
+                overall = plant.Health,
+                stress = plant.Stress,
+                waterStress = 0.2f,
+                lightStress = 0.1f,
+                temperatureStress = 0.1f,
+                nutrientLevel = plant.NutrientLevel
+            };
+        }
+
+        /// <summary>
+        /// Convert PlantInstance to PlantResourceData
+        /// </summary>
+        private PlantResourceData ConvertToResourceData(PlantInstance plant)
+        {
+            return new PlantResourceData
+            {
+                water = plant.WaterLevel,
+                nutrients = plant.NutrientLevel,
+                energy = plant.EnergyLevel,
+                lastWateringDelta = (float)(System.DateTime.Now - plant.LastWatering).TotalHours,
+                lastFeedingDelta = (float)(System.DateTime.Now - plant.LastFeeding).TotalHours
+            };
+        }
+
+        /// <summary>
+        /// Sync job system data back to PlantInstance
+        /// </summary>
+        private void SyncJobDataToPlantInstance(PlantUpdateData jobData, PlantInstance plantInstance)
+        {
+            // Update growth data
+            plantInstance.Height = jobData.growth.height;
+            plantInstance.Biomass = jobData.growth.biomass;
+            plantInstance.Age = jobData.growth.age;
+            plantInstance.GrowthStage = PlantDataConverter.IntToStage(jobData.growth.currentStage);
+
+            // Update health data
+            plantInstance.Health = jobData.health.overall;
+            plantInstance.Stress = jobData.health.stress;
+
+            // Update resource data
+            plantInstance.WaterLevel = jobData.resources.water;
+            plantInstance.NutrientLevel = jobData.resources.nutrients;
+            plantInstance.EnergyLevel = jobData.resources.energy;
+        }
+
+        /// <summary>
+        /// Update GameObject visual representation
+        /// </summary>
+        private void UpdatePlantGameObject(GameObject plantGO, PlantInstance plantInstance, PlantUpdateData jobData)
+        {
+            // Update scale based on height
+            float normalizedHeight = jobData.growth.height / 150f; // Max height assumption
+            plantGO.transform.localScale = Vector3.one * Mathf.Clamp(normalizedHeight, 0.1f, 2f);
+
+            // Update any visual components
+            var plantComponent = plantGO.GetComponent<PlantInstanceComponent>();
+            if (plantComponent != null)
+            {
+                // Trigger visual updates if needed
+                plantComponent.UpdateVisuals(plantInstance);
+            }
+        }
+
+        /// <summary>
+        /// Get plant ID by job system index
+        /// </summary>
+        private string GetPlantIdByIndex(int index)
+        {
+            int currentIndex = 0;
+            foreach (var kvp in _trackedPlants)
+            {
+                if (currentIndex == index)
+                {
+                    return kvp.Key;
+                }
+                currentIndex++;
+            }
+            return null;
+        }
+
+        #endregion
+
+        private void OnDestroy()
+        {
+            if (_jobManager != null)
+            {
+                Destroy(_jobManager.gameObject);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Performance statistics for the job system integration
+    /// </summary>
+    [System.Serializable]
+    public struct PlantJobSystemStats
+    {
+        public PlantJobManagerStats JobManagerStats;
+        public int TrackedPlantsCount;
+        public float LegacyUpdateTime;
+        public float JobSystemUpdateTime;
+        public float PerformanceGain;
+        public bool HybridModeEnabled;
+    }
+}

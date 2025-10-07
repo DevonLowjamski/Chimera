@@ -35,7 +35,7 @@ namespace ProjectChimera.Testing.Phase2_3
 
         public void RunTests()
         {
-            ChimeraLogger.Log("[InputSystemTests] Starting input system tests...");
+            ChimeraLogger.Log("OTHER", "$1", this);
 
             _testResults.Clear();
             _totalTests = 0;
@@ -46,7 +46,7 @@ namespace ProjectChimera.Testing.Phase2_3
 #if UNITY_INPUT_SYSTEM
             TestInputSystemIntegration();
 #else
-            ChimeraLogger.LogWarning("[InputSystemTests] Unity Input System not available - skipping tests");
+            ChimeraLogger.Log("OTHER", "$1", this);
 #endif
 
             LogResults();
@@ -180,7 +180,7 @@ namespace ProjectChimera.Testing.Phase2_3
         {
             if (_enableDetailedLogging)
             {
-                ChimeraLogger.Log($"[InputSystemTests] === {categoryName} ===");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -195,11 +195,11 @@ namespace ProjectChimera.Testing.Phase2_3
             {
                 if (passed)
                 {
-                    ChimeraLogger.Log($"✅ {logMessage}");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
                 else
                 {
-                    ChimeraLogger.LogError($"❌ {logMessage}");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
             }
         }
@@ -208,15 +208,15 @@ namespace ProjectChimera.Testing.Phase2_3
         {
             bool allTestsPassed = (_passedTests == _totalTests);
 
-            ChimeraLogger.Log($"[InputSystemTests] Tests completed: {_passedTests}/{_totalTests} passed");
+            ChimeraLogger.Log("OTHER", "$1", this);
 
             if (allTestsPassed)
             {
-                ChimeraLogger.Log("✅ Input System Tests - ALL TESTS PASSED!");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
             else
             {
-                ChimeraLogger.LogWarning($"⚠️ Input System Tests - {_totalTests - _passedTests} tests failed");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
     }

@@ -1,0 +1,236 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Systems.Addressables
+{
+    /// <summary>
+    /// BASIC: Simple asset management for Project Chimera.
+    /// Focuses on essential asset loading without complex migration and addressables systems.
+    /// </summary>
+    public class AddressablesMigrationPhase1 : MonoBehaviour
+    {
+        [Header("Basic Asset Settings")]
+        [SerializeField] private bool _enableBasicLoading = true;
+        [SerializeField] private bool _enableCaching = true;
+        [SerializeField] private bool _enableLogging = true;
+
+        // Basic asset cache
+        private readonly Dictionary<string, Object> _assetCache = new Dictionary<string, Object>();
+        private bool _isInitialized = false;
+
+        /// <summary>
+        /// Events for asset operations
+        /// </summary>
+        public event System.Action<string> OnAssetLoaded;
+        public event System.Action<string, string> OnAssetLoadError;
+
+        /// <summary>
+        /// Initialize basic asset management
+        /// </summary>
+        public void Initialize()
+        {
+            if (_isInitialized) return;
+
+            _isInitialized = true;
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Load asset from Resources folder
+        /// </summary>
+        public T LoadAsset<T>(string assetPath) where T : Object
+        {
+            if (!_enableBasicLoading || !_isInitialized) return null;
+
+            // Check cache first
+            if (_enableCaching && _assetCache.ContainsKey(assetPath))
+            {
+                T cachedAsset = _assetCache[assetPath] as T;
+                if (cachedAsset != null)
+                {
+                    if (_enableLogging)
+                    {
+                        UnityEngine.Debug.Log("Operation completed");
+                    }
+                    return cachedAsset;
+                }
+            }
+
+            // Load from Resources
+            T asset = Resources.Load<T>(assetPath);
+            if (asset != null)
+            {
+                // Cache the asset
+                if (_enableCaching)
+                {
+                    _assetCache[assetPath] = asset;
+                }
+
+                OnAssetLoaded?.Invoke(assetPath);
+
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+
+                return asset;
+            }
+            else
+            {
+                OnAssetLoadError?.Invoke(assetPath, "Asset not found in Resources");
+
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Load prefab
+        /// </summary>
+        public GameObject LoadPrefab(string prefabPath)
+        {
+            return LoadAsset<GameObject>(prefabPath);
+        }
+
+        /// <summary>
+        /// Load texture
+        /// </summary>
+        public Texture2D LoadTexture(string texturePath)
+        {
+            return LoadAsset<Texture2D>(texturePath);
+        }
+
+        /// <summary>
+        /// Load audio clip
+        /// </summary>
+        public AudioClip LoadAudioClip(string audioPath)
+        {
+            return LoadAsset<AudioClip>(audioPath);
+        }
+
+        /// <summary>
+        /// Load scriptable object
+        /// </summary>
+        public ScriptableObject LoadScriptableObject(string soPath)
+        {
+            return LoadAsset<ScriptableObject>(soPath);
+        }
+
+        /// <summary>
+        /// Unload asset from cache
+        /// </summary>
+        public void UnloadAsset(string assetPath)
+        {
+            if (_assetCache.Remove(assetPath))
+            {
+                if (_enableLogging)
+                {
+                    UnityEngine.Debug.Log("Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Clear all cached assets
+        /// </summary>
+        public void ClearCache()
+        {
+            _assetCache.Clear();
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Check if asset exists
+        /// </summary>
+        public bool AssetExists(string assetPath)
+        {
+            if (_enableCaching && _assetCache.ContainsKey(assetPath))
+            {
+                return true;
+            }
+
+            // Check Resources
+            Object asset = Resources.Load(assetPath);
+            if (asset != null)
+            {
+                Resources.UnloadAsset(asset);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Get cached asset count
+        /// </summary>
+        public int GetCachedAssetCount()
+        {
+            return _assetCache.Count;
+        }
+
+        /// <summary>
+        /// Get asset loading statistics
+        /// </summary>
+        public AssetLoadingStats GetLoadingStats()
+        {
+            return new AssetLoadingStats
+            {
+                CachedAssets = _assetCache.Count,
+                IsLoadingEnabled = _enableBasicLoading,
+                IsCachingEnabled = _enableCaching,
+                IsInitialized = _isInitialized
+            };
+        }
+
+        /// <summary>
+        /// Preload common assets
+        /// </summary>
+        public void PreloadCommonAssets()
+        {
+            if (!_enableBasicLoading || !_isInitialized) return;
+
+            // Preload some common assets that might be used frequently
+            // This could be expanded based on game needs
+            string[] commonAssets = {
+                "Prefabs/Plant",
+                "Prefabs/Equipment/Light",
+                "UI/Icon_Default"
+            };
+
+            foreach (string assetPath in commonAssets)
+            {
+                LoadAsset<Object>(assetPath);
+            }
+
+            if (_enableLogging)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Asset loading statistics
+    /// </summary>
+    [System.Serializable]
+    public struct AssetLoadingStats
+    {
+        public int CachedAssets;
+        public bool IsLoadingEnabled;
+        public bool IsCachingEnabled;
+        public bool IsInitialized;
+    }
+}

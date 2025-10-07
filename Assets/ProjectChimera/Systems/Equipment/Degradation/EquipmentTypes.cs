@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Data.Equipment;
 
 namespace ProjectChimera.Systems.Equipment.Degradation
 {
@@ -12,22 +14,46 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         /// <summary>
         /// Basic equipment type definitions
         /// </summary>
-        public static readonly Dictionary<EquipmentType, EquipmentProfile> EquipmentProfiles = new Dictionary<EquipmentType, EquipmentProfile>
+        public static readonly Dictionary<Data.Equipment.EquipmentType, EquipmentProfile> EquipmentProfiles = new Dictionary<Data.Equipment.EquipmentType, EquipmentProfile>
         {
-            [EquipmentType.Light] = new EquipmentProfile
+            // Lighting Equipment
+            [Data.Equipment.EquipmentType.LED_Light] = new EquipmentProfile
             {
-                Type = EquipmentType.Light,
+                Type = Data.Equipment.EquipmentType.LED_Light,
+                BaseLifespan = 5f, // years
+                BaseEfficiency = 0.92f,
+                BaseCost = 250f,
+                MaintenanceInterval = 12f, // months
+                PowerConsumption = 120f, // watts
+                Description = "High-efficiency LED grow light"
+            },
+
+            [Data.Equipment.EquipmentType.HPS_Light] = new EquipmentProfile
+            {
+                Type = Data.Equipment.EquipmentType.HPS_Light,
+                BaseLifespan = 2f,
+                BaseEfficiency = 0.75f,
+                BaseCost = 180f,
+                MaintenanceInterval = 6f,
+                PowerConsumption = 400f,
+                Description = "High Pressure Sodium grow light"
+            },
+
+            [Data.Equipment.EquipmentType.GrowLight] = new EquipmentProfile
+            {
+                Type = Data.Equipment.EquipmentType.GrowLight,
                 BaseLifespan = 3f, // years
                 BaseEfficiency = 0.9f,
                 BaseCost = 200f,
                 MaintenanceInterval = 6f, // months
                 PowerConsumption = 150f, // watts
-                Description = "LED grow light for plant cultivation"
+                Description = "Generic grow light for plant cultivation"
             },
 
-            [EquipmentType.Ventilation] = new EquipmentProfile
+            // Ventilation Equipment
+            [Data.Equipment.EquipmentType.Exhaust_Fan] = new EquipmentProfile
             {
-                Type = EquipmentType.Ventilation,
+                Type = Data.Equipment.EquipmentType.Exhaust_Fan,
                 BaseLifespan = 5f,
                 BaseEfficiency = 0.85f,
                 BaseCost = 300f,
@@ -36,9 +62,32 @@ namespace ProjectChimera.Systems.Equipment.Degradation
                 Description = "Air circulation and ventilation system"
             },
 
-            [EquipmentType.Irrigation] = new EquipmentProfile
+            [Data.Equipment.EquipmentType.Intake_Fan] = new EquipmentProfile
             {
-                Type = EquipmentType.Irrigation,
+                Type = Data.Equipment.EquipmentType.Intake_Fan,
+                BaseLifespan = 5f,
+                BaseEfficiency = 0.85f,
+                BaseCost = 280f,
+                MaintenanceInterval = 12f,
+                PowerConsumption = 90f,
+                Description = "Air intake fan for ventilation system"
+            },
+
+            [Data.Equipment.EquipmentType.Air_Circulator] = new EquipmentProfile
+            {
+                Type = Data.Equipment.EquipmentType.Air_Circulator,
+                BaseLifespan = 4f,
+                BaseEfficiency = 0.82f,
+                BaseCost = 150f,
+                MaintenanceInterval = 6f,
+                PowerConsumption = 60f,
+                Description = "Air circulation fan for improved airflow"
+            },
+
+            // Irrigation Equipment
+            [Data.Equipment.EquipmentType.Watering_System] = new EquipmentProfile
+            {
+                Type = Data.Equipment.EquipmentType.Watering_System,
                 BaseLifespan = 2.5f,
                 BaseEfficiency = 0.8f,
                 BaseCost = 150f,
@@ -47,9 +96,21 @@ namespace ProjectChimera.Systems.Equipment.Degradation
                 Description = "Water delivery and irrigation system"
             },
 
-            [EquipmentType.ClimateControl] = new EquipmentProfile
+            [Data.Equipment.EquipmentType.Drip_System] = new EquipmentProfile
             {
-                Type = EquipmentType.ClimateControl,
+                Type = Data.Equipment.EquipmentType.Drip_System,
+                BaseLifespan = 3f,
+                BaseEfficiency = 0.88f,
+                BaseCost = 120f,
+                MaintenanceInterval = 2f,
+                PowerConsumption = 25f,
+                Description = "Precision drip irrigation system"
+            },
+
+            // Climate Control Equipment
+            [Data.Equipment.EquipmentType.Climate_Controller] = new EquipmentProfile
+            {
+                Type = Data.Equipment.EquipmentType.Climate_Controller,
                 BaseLifespan = 4f,
                 BaseEfficiency = 0.75f,
                 BaseCost = 500f,
@@ -58,40 +119,84 @@ namespace ProjectChimera.Systems.Equipment.Degradation
                 Description = "Temperature and humidity control system"
             },
 
-            [EquipmentType.Storage] = new EquipmentProfile
+            [Data.Equipment.EquipmentType.Environmental_Controller] = new EquipmentProfile
             {
-                Type = EquipmentType.Storage,
+                Type = Data.Equipment.EquipmentType.Environmental_Controller,
+                BaseLifespan = 4f,
+                BaseEfficiency = 0.78f,
+                BaseCost = 550f,
+                MaintenanceInterval = 6f,
+                PowerConsumption = 180f,
+                Description = "Advanced environmental control system"
+            },
+
+            // Storage Equipment
+            [Data.Equipment.EquipmentType.Reservoir] = new EquipmentProfile
+            {
+                Type = Data.Equipment.EquipmentType.Reservoir,
                 BaseLifespan = 10f,
                 BaseEfficiency = 0.95f,
                 BaseCost = 100f,
                 MaintenanceInterval = 24f,
                 PowerConsumption = 10f,
-                Description = "Storage container for equipment and supplies"
+                Description = "Water storage reservoir"
             }
         };
 
         /// <summary>
         /// Get equipment profile
         /// </summary>
-        public static EquipmentProfile GetProfile(EquipmentType type)
+        public static EquipmentProfile GetProfile(Data.Equipment.EquipmentType type)
         {
             return EquipmentProfiles.TryGetValue(type, out var profile) ? profile : null;
         }
 
         /// <summary>
+        /// Provide a synthesized reliability profile for an equipment type
+        /// to support malfunction analysis APIs.
+        /// </summary>
+        public static EquipmentReliabilityProfile GetReliabilityProfile(Data.Equipment.EquipmentType type)
+        {
+            var baseProfile = GetProfile(type);
+            var reliability = new EquipmentReliabilityProfile
+            {
+                Type = type,
+                MeanTimeBetweenFailures = baseProfile != null ? baseProfile.BaseLifespan * 365f * 24f : 4380f,
+                AverageLifespan = baseProfile != null ? baseProfile.BaseLifespan : 5f,
+                FailureRate = 0.002f,
+                WearProgressionRate = 0.02f,
+                CriticalWearThreshold = 0.8f,
+                CommonFailureModes = new Dictionary<MalfunctionType, float>
+                {
+                    { MalfunctionType.WearAndTear, 1f },
+                    { MalfunctionType.MechanicalFailure, 0.5f },
+                    { MalfunctionType.ElectricalFailure, 0.5f },
+                    { MalfunctionType.SensorDrift, 0.25f }
+                },
+                EnvironmentalSensitivity = new Dictionary<string, float>
+                {
+                    { "Temperature", 1f },
+                    { "Humidity", 1f }
+                }
+            };
+
+            return reliability;
+        }
+
+        /// <summary>
         /// Get all equipment types
         /// </summary>
-        public static List<EquipmentType> GetAllTypes()
+        public static List<Data.Equipment.EquipmentType> GetAllTypes()
         {
-            return new List<EquipmentType>(EquipmentProfiles.Keys);
+            return new List<Data.Equipment.EquipmentType>(EquipmentProfiles.Keys);
         }
 
         /// <summary>
         /// Get equipment by cost range
         /// </summary>
-        public static List<EquipmentType> GetByCostRange(float minCost, float maxCost)
+        public static List<Data.Equipment.EquipmentType> GetByCostRange(float minCost, float maxCost)
         {
-            var result = new List<EquipmentType>();
+            var result = new List<Data.Equipment.EquipmentType>();
             foreach (var kvp in EquipmentProfiles)
             {
                 if (kvp.Value.BaseCost >= minCost && kvp.Value.BaseCost <= maxCost)
@@ -105,9 +210,9 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         /// <summary>
         /// Get equipment by power consumption
         /// </summary>
-        public static List<EquipmentType> GetByPowerConsumption(float maxPower)
+        public static List<Data.Equipment.EquipmentType> GetByPowerConsumption(float maxPower)
         {
-            var result = new List<EquipmentType>();
+            var result = new List<Data.Equipment.EquipmentType>();
             foreach (var kvp in EquipmentProfiles)
             {
                 if (kvp.Value.PowerConsumption <= maxPower)
@@ -121,7 +226,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         /// <summary>
         /// Calculate degradation rate for equipment
         /// </summary>
-        public static float CalculateDegradationRate(EquipmentType type, float age)
+        public static float CalculateDegradationRate(Data.Equipment.EquipmentType type, float age)
         {
             var profile = GetProfile(type);
             if (profile == null) return 0.01f; // Default degradation
@@ -134,7 +239,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         /// <summary>
         /// Calculate maintenance cost
         /// </summary>
-        public static float CalculateMaintenanceCost(EquipmentType type)
+        public static float CalculateMaintenanceCost(Data.Equipment.EquipmentType type)
         {
             var profile = GetProfile(type);
             if (profile == null) return 10f;
@@ -171,15 +276,24 @@ namespace ProjectChimera.Systems.Equipment.Degradation
     }
 
     /// <summary>
-    /// Equipment types
+    /// Equipment type mapping to Data layer enum
     /// </summary>
-    public enum EquipmentType
+    public static class EquipmentTypeMapper
     {
-        Light,
-        Ventilation,
-        Irrigation,
-        ClimateControl,
-        Storage
+        public static readonly Dictionary<Data.Equipment.EquipmentType, string> TypeCategories = new Dictionary<Data.Equipment.EquipmentType, string>
+        {
+            [Data.Equipment.EquipmentType.LED_Light] = "Light",
+            [Data.Equipment.EquipmentType.HPS_Light] = "Light",
+            [Data.Equipment.EquipmentType.GrowLight] = "Light",
+            [Data.Equipment.EquipmentType.Exhaust_Fan] = "Ventilation",
+            [Data.Equipment.EquipmentType.Intake_Fan] = "Ventilation",
+            [Data.Equipment.EquipmentType.Air_Circulator] = "Ventilation",
+            [Data.Equipment.EquipmentType.Watering_System] = "Irrigation",
+            [Data.Equipment.EquipmentType.Drip_System] = "Irrigation",
+            [Data.Equipment.EquipmentType.Reservoir] = "Storage",
+            [Data.Equipment.EquipmentType.Climate_Controller] = "ClimateControl",
+            [Data.Equipment.EquipmentType.Environmental_Controller] = "ClimateControl"
+        };
     }
 
     /// <summary>
@@ -188,7 +302,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
     [System.Serializable]
     public class EquipmentProfile
     {
-        public EquipmentType Type;
+        public Data.Equipment.EquipmentType Type;
         public float BaseLifespan; // years
         public float BaseEfficiency; // 0-1
         public float BaseCost;

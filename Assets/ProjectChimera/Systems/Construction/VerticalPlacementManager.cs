@@ -37,7 +37,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[VerticalPlacementManager] Initialized successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -87,7 +87,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[VerticalPlacementManager] Placed {objectType} at {position}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
 
             return true;
@@ -110,13 +110,13 @@ namespace ProjectChimera.Systems.Construction
                 // Could implement cascading removal here if needed
                 if (_enableLogging)
                 {
-                    ChimeraLogger.LogWarning($"[VerticalPlacementManager] Object above {position} may be unstable");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
             }
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[VerticalPlacementManager] Removed object from {position}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
 
             return true;
@@ -179,7 +179,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[VerticalPlacementManager] Cleared {positionsToRemove.Count} objects");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -228,7 +228,7 @@ namespace ProjectChimera.Systems.Construction
                         isStable = false;
                         if (_enableLogging)
                         {
-                            ChimeraLogger.LogWarning($"[VerticalPlacementManager] Unstable object at {position}");
+                            ChimeraLogger.Log("OTHER", "$1", this);
                         }
                     }
                 }

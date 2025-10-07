@@ -1,0 +1,312 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using System;
+using System.Linq;
+
+namespace ProjectChimera.Systems.Construction.Core.Planning
+{
+    /// <summary>
+    /// REFACTORED: Plan Manager - Focused plan lifecycle and state management
+    /// Handles plan creation, tracking, completion, cancellation, and persistence
+    /// Single Responsibility: Plan lifecycle management
+    /// </summary>
+    public class PlanManager : MonoBehaviour
+    {
+        [Header("Plan Management Settings")]
+        [SerializeField] private bool _enablePlanManagement = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private int _maxActivePlans = 10;
+        [SerializeField] private bool _enablePersistence = true;
+
+        // Plan tracking
+        private readonly Dictionary<string, ConstructionPlan> _activePlans = new Dictionary<string, ConstructionPlan>();
+        private readonly Dictionary<string, ConstructionPlan> _completedPlans = new Dictionary<string, ConstructionPlan>();
+        private readonly Dictionary<string, ConstructionPlan> _cancelledPlans = new Dictionary<string, ConstructionPlan>();
+
+        // Statistics
+        private PlanManagerStats _stats = new PlanManagerStats();
+
+        // Properties
+        public bool IsEnabled { get; private set; } = true;
+        public PlanManagerStats GetStats() => _stats;
+
+        // Events
+        public System.Action<ConstructionPlan> OnPlanCreated;
+        public System.Action<ConstructionPlan> OnPlanCompleted;
+        public System.Action<ConstructionPlan> OnPlanCancelled;
+        public System.Action<ConstructionPlan> OnPlanProgressed;
+
+        private void Start()
+        {
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            _stats = new PlanManagerStats();
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "📋 PlanManager initialized", this);
+        }
+
+        /// <summary>
+        /// Add new construction plan
+        /// </summary>
+        public bool AddPlan(ConstructionPlan plan)
+        {
+            if (!IsEnabled || !_enablePlanManagement || plan == null)
+                return false;
+
+            if (string.IsNullOrEmpty(plan.PlanId))
+            {
+                plan.PlanId = GeneratePlanId();
+            }
+
+            if (_activePlans.ContainsKey(plan.PlanId))
+            {
+                if (_enableLogging)
+                    ChimeraLogger.LogWarning("CONSTRUCTION", $"Plan already exists: {plan.PlanId}", this);
+                return false;
+            }
+
+            if (_activePlans.Count >= _maxActivePlans)
+            {
+                if (_enableLogging)
+                    ChimeraLogger.LogWarning("CONSTRUCTION", $"Maximum active plans reached: {_maxActivePlans}", this);
+                return false;
+            }
+
+            plan.Status = PlanStatus.Active;
+            plan.CreationTime = System.DateTime.Now;
+            _activePlans[plan.PlanId] = plan;
+
+            _stats.PlansCreated++;
+            _stats.ActivePlans++;
+
+            OnPlanCreated?.Invoke(plan);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Added construction plan: {plan.PlanName} ({plan.PlanId})", this);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Get construction plan by ID
+        /// </summary>
+        public ConstructionPlan GetPlan(string planId)
+        {
+            if (string.IsNullOrEmpty(planId))
+                return null;
+
+            _activePlans.TryGetValue(planId, out var plan);
+            return plan;
+        }
+
+        /// <summary>
+        /// Get all active construction plans
+        /// </summary>
+        public ConstructionPlan[] GetActivePlans()
+        {
+            return _activePlans.Values.ToArray();
+        }
+
+        /// <summary>
+        /// Update active plans progress
+        /// </summary>
+        public void UpdateActivePlans()
+        {
+            if (!IsEnabled || !_enablePlanManagement)
+                return;
+
+            var plansToUpdate = new List<ConstructionPlan>(_activePlans.Values);
+
+            foreach (var plan in plansToUpdate)
+            {
+                UpdatePlanProgress(plan);
+            }
+        }
+
+        /// <summary>
+        /// Complete construction plan
+        /// </summary>
+        public bool CompletePlan(string planId)
+        {
+            if (!IsEnabled || string.IsNullOrEmpty(planId))
+                return false;
+
+            if (!_activePlans.TryGetValue(planId, out var plan))
+                return false;
+
+            plan.Status = PlanStatus.Completed;
+            plan.Progress = 1.0f;
+            plan.CompletionTime = System.DateTime.Now;
+
+            _activePlans.Remove(planId);
+            if (_enablePersistence)
+            {
+                _completedPlans[planId] = plan;
+            }
+
+            _stats.PlansCompleted++;
+            _stats.ActivePlans--;
+
+            OnPlanCompleted?.Invoke(plan);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Completed construction plan: {plan.PlanName} ({planId})", this);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Cancel construction plan
+        /// </summary>
+        public bool CancelPlan(string planId)
+        {
+            if (!IsEnabled || string.IsNullOrEmpty(planId))
+                return false;
+
+            if (!_activePlans.TryGetValue(planId, out var plan))
+                return false;
+
+            plan.Status = PlanStatus.Cancelled;
+            plan.CompletionTime = System.DateTime.Now;
+
+            _activePlans.Remove(planId);
+            if (_enablePersistence)
+            {
+                _cancelledPlans[planId] = plan;
+            }
+
+            _stats.PlansCancelled++;
+            _stats.ActivePlans--;
+
+            OnPlanCancelled?.Invoke(plan);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Cancelled construction plan: {plan.PlanName} ({planId})", this);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Replace existing plan with optimized version
+        /// </summary>
+        public bool ReplacePlan(string planId, ConstructionPlan optimizedPlan)
+        {
+            if (!IsEnabled || string.IsNullOrEmpty(planId) || optimizedPlan == null)
+                return false;
+
+            if (!_activePlans.ContainsKey(planId))
+                return false;
+
+            var oldPlan = _activePlans[planId];
+
+            // Preserve original plan metadata
+            optimizedPlan.PlanId = planId;
+            optimizedPlan.CreationTime = oldPlan.CreationTime;
+            optimizedPlan.Status = oldPlan.Status;
+
+            _activePlans[planId] = optimizedPlan;
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Replaced plan with optimized version: {planId}", this);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Get active plan count
+        /// </summary>
+        public int GetActivePlanCount()
+        {
+            return _activePlans.Count;
+        }
+
+        /// <summary>
+        /// Clear completed plans history
+        /// </summary>
+        public void ClearCompletedPlans()
+        {
+            _completedPlans.Clear();
+            _cancelledPlans.Clear();
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "Cleared completed plans history", this);
+        }
+
+        /// <summary>
+        /// Set system enabled/disabled
+        /// </summary>
+        public void SetEnabled(bool enabled)
+        {
+            IsEnabled = enabled;
+
+            if (!enabled)
+            {
+                // Cancel all active plans when disabled
+                var activePlanIds = new List<string>(_activePlans.Keys);
+                foreach (var planId in activePlanIds)
+                {
+                    CancelPlan(planId);
+                }
+            }
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"PlanManager: {(enabled ? "enabled" : "disabled")}", this);
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Generate unique plan ID
+        /// </summary>
+        private string GeneratePlanId()
+        {
+            return $"PLAN_{System.DateTime.Now:yyyyMMdd_HHmmss}_{UnityEngine.Random.Range(1000, 9999)}";
+        }
+
+        /// <summary>
+        /// Update individual plan progress
+        /// </summary>
+        private void UpdatePlanProgress(ConstructionPlan plan)
+        {
+            if (plan == null || plan.Buildings == null)
+                return;
+
+            // Calculate progress based on building completion
+            // This is a simplified example - real implementation would track actual building states
+            float totalBuildings = plan.Buildings.Length;
+            if (totalBuildings == 0)
+            {
+                plan.Progress = 1.0f;
+                return;
+            }
+
+            // For now, simulate gradual progress over time
+            float timeElapsed = (float)(System.DateTime.Now - plan.CreationTime).TotalSeconds;
+            float estimatedDuration = plan.EstimatedDuration > 0 ? plan.EstimatedDuration : 60f; // Default 1 minute
+
+            plan.Progress = Mathf.Clamp01(timeElapsed / estimatedDuration);
+
+            // Fire progress event if progress changed significantly
+            OnPlanProgressed?.Invoke(plan);
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Plan manager statistics
+    /// </summary>
+    [System.Serializable]
+    public struct PlanManagerStats
+    {
+        public int PlansCreated;
+        public int PlansCompleted;
+        public int PlansCancelled;
+        public int ActivePlans;
+    }
+}

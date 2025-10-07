@@ -1,5 +1,4 @@
 using UnityEngine;
-using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
 
 namespace ProjectChimera.Systems.UI.Advanced
@@ -224,7 +223,7 @@ namespace ProjectChimera.Systems.UI.Advanced
             }
             else
             {
-                ChimeraLogger.Log("[InputSystemIntegration] Test only works during play mode");
+                ChimeraLogger.LogInfo("InputSystemIntegration", "$1");
             }
         }
         #endif

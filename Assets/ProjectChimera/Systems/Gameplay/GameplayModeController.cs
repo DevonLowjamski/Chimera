@@ -1,9 +1,9 @@
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Core.Updates;
-using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Events;
 using System.Collections.Generic;
+using ChimeraLogger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Systems.Gameplay
 {
@@ -17,7 +17,7 @@ namespace ProjectChimera.Systems.Gameplay
         [SerializeField] private GameplayMode _defaultMode = GameplayMode.Cultivation;
         [SerializeField] private bool _enableModeLogging = true;
         [SerializeField] private bool _enableKeyboardShortcuts = true;
-        
+
         [Header("State Management")]
         [SerializeField] private bool _enableTransitionValidation = true;
         [SerializeField] private bool _enableModeHistory = true;
@@ -29,45 +29,45 @@ namespace ProjectChimera.Systems.Gameplay
         // Additional event channels can be added when implemented
         // [SerializeField] private ModeTransitionEventSO _modeTransitionEvent;
         // [SerializeField] private InputModeEventSO _inputModeEvent;
-        
+
         #region State Management
-        
+
         private GameplayMode _currentMode;
         private GameplayMode _previousMode;
         private float _lastTransitionTime;
         private List<GameplayMode> _modeHistory = new List<GameplayMode>();
-        
+
         private Dictionary<GameplayMode, System.Action> _modeEntryCallbacks = new Dictionary<GameplayMode, System.Action>();
         private Dictionary<GameplayMode, System.Action> _modeExitCallbacks = new Dictionary<GameplayMode, System.Action>();
-        
+
         #endregion
-        
+
         #region Properties
-        
+
         public GameplayMode CurrentMode => _currentMode;
         public GameplayMode PreviousMode => _previousMode;
         public bool CanTransition => Time.time - _lastTransitionTime >= _transitionCooldown;
         public List<GameplayMode> BasicModeHistory => new List<GameplayMode>(_modeHistory);
-        
+
         // IGameplayModeController implementation
         public bool IsInitialized => isActiveAndEnabled;
         public IReadOnlyList<ModeTransitionRecord> ModeHistory => _transitionHistory;
-        
+
         private List<ModeTransitionRecord> _transitionHistory = new List<ModeTransitionRecord>();
-        
+
         #endregion
-        
+
         #region Unity Lifecycle
-        
+
         protected override void Awake()
         {
             base.Awake();
             _currentMode = _defaultMode;
             _previousMode = _defaultMode;
-            
+
             if (_enableModeLogging)
             {
-                ChimeraLogger.Log($"[GameplayModeController] Initialized with default mode: {_defaultMode}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -84,119 +84,119 @@ namespace ProjectChimera.Systems.Gameplay
             UpdateOrchestrator.Instance?.UnregisterTickable(this);
             base.OnDestroy();
         }
-        
-        
+
+
         #endregion
-        
+
         #region Mode Transition
-        
+
         public bool SetMode(GameplayMode newMode, string triggerSource = "Manual")
         {
             return TrySetMode(newMode, triggerSource);
         }
-        
+
         public bool TrySetMode(GameplayMode newMode, string triggerSource = "Manual")
         {
             if (!CanTransition)
             {
                 if (_enableModeLogging)
                 {
-                    ChimeraLogger.LogWarning($"[GameplayModeController] Mode transition blocked by cooldown. Current: {_currentMode}, Requested: {newMode}");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
                 return false;
             }
-            
+
             if (_currentMode == newMode)
             {
                 if (_enableModeLogging)
                 {
-                    ChimeraLogger.LogWarning($"[GameplayModeController] Already in mode: {newMode}");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
                 return false;
             }
-            
+
             if (_enableTransitionValidation && !ValidateTransition(_currentMode, newMode))
             {
                 if (_enableModeLogging)
                 {
-                    ChimeraLogger.LogWarning($"[GameplayModeController] Invalid transition: {_currentMode} -> {newMode}");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
                 return false;
             }
-            
+
             // Execute transition
             _previousMode = _currentMode;
             _currentMode = newMode;
             _lastTransitionTime = Time.time;
-            
+
             // Update history
             if (_enableModeHistory)
             {
                 UpdateModeHistory(newMode);
                 _transitionHistory.Add(new ModeTransitionRecord(_previousMode, newMode, triggerSource));
             }
-            
+
             // Execute callbacks
             ExecuteModeExitCallbacks(_previousMode);
             ExecuteModeEntryCallbacks(_currentMode);
-            
+
             // Fire events
             EmitModeChangedEvent(triggerSource);
-            
+
             if (_enableModeLogging)
             {
-                ChimeraLogger.Log($"[GameplayModeController] Mode changed: {_previousMode} -> {_currentMode} (Source: {triggerSource})");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
-            
+
             return true;
         }
-        
+
         public void ForceSetMode(GameplayMode mode, string triggerSource = "Force")
         {
             _previousMode = _currentMode;
             _currentMode = mode;
             _lastTransitionTime = Time.time;
-            
+
             if (_enableModeHistory)
             {
                 UpdateModeHistory(mode);
             }
-            
+
             ExecuteModeExitCallbacks(_previousMode);
             ExecuteModeEntryCallbacks(_currentMode);
             EmitModeChangedEvent(triggerSource);
-            
+
             if (_enableModeLogging)
             {
-                ChimeraLogger.Log($"[GameplayModeController] Mode forced: {_previousMode} -> {_currentMode} (Source: {triggerSource})");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
-        
+
         #endregion
-        
+
         #region Private Methods
-        
+
         public bool IsValidModeTransition(GameplayMode fromMode, GameplayMode toMode)
         {
             return ValidateTransition(fromMode, toMode);
         }
-        
+
         private bool ValidateTransition(GameplayMode from, GameplayMode to)
         {
             // Basic validation - can be extended based on game rules
             return true;
         }
-        
+
         private void UpdateModeHistory(GameplayMode mode)
         {
             _modeHistory.Add(mode);
-            
+
             if (_modeHistory.Count > _maxHistorySize)
             {
                 _modeHistory.RemoveAt(0);
             }
         }
-        
+
         private void HandleModeShortcuts()
         {
             if (Input.GetKeyDown(KeyCode.F1))
@@ -210,7 +210,7 @@ namespace ProjectChimera.Systems.Gameplay
             else if (Input.GetKeyDown(KeyCode.F5))
                 TrySetMode(GameplayMode.Research, "Keyboard");
         }
-        
+
         private void ExecuteModeEntryCallbacks(GameplayMode mode)
         {
             if (_modeEntryCallbacks.TryGetValue(mode, out var callback))
@@ -218,7 +218,7 @@ namespace ProjectChimera.Systems.Gameplay
                 callback?.Invoke();
             }
         }
-        
+
         private void ExecuteModeExitCallbacks(GameplayMode mode)
         {
             if (_modeExitCallbacks.TryGetValue(mode, out var callback))
@@ -226,7 +226,7 @@ namespace ProjectChimera.Systems.Gameplay
                 callback?.Invoke();
             }
         }
-        
+
         private void EmitModeChangedEvent(string triggerSource)
         {
             if (_modeChangedEvent != null)
@@ -244,7 +244,7 @@ namespace ProjectChimera.Systems.Gameplay
             }
             else if (_enableModeLogging)
             {
-                ChimeraLogger.LogWarning("[GameplayModeController] ModeChangedEvent not assigned - event not fired");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -273,9 +273,9 @@ namespace ProjectChimera.Systems.Gameplay
         }
 
         // ITickable implementation
-        public int Priority => 0;
-        public bool Enabled => enabled && gameObject.activeInHierarchy;
-        
+        public int TickPriority => 0;
+        public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
         public void Tick(float deltaTime)
         {
             if (_enableKeyboardShortcuts)
@@ -283,14 +283,14 @@ namespace ProjectChimera.Systems.Gameplay
                 HandleModeShortcuts();
             }
         }
-        
-        public virtual void OnRegistered() 
-        { 
+
+        public virtual void OnRegistered()
+        {
             // Override in derived classes if needed
         }
-        
-        public virtual void OnUnregistered() 
-        { 
+
+        public virtual void OnUnregistered()
+        {
             // Override in derived classes if needed
         }
 
@@ -300,7 +300,7 @@ namespace ProjectChimera.Systems.Gameplay
             // Manager initialization logic
             if (_enableModeLogging)
             {
-                ChimeraLogger.Log("[GameplayModeController] Manager initialized successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -311,10 +311,10 @@ namespace ProjectChimera.Systems.Gameplay
             _transitionHistory.Clear();
             _modeEntryCallbacks.Clear();
             _modeExitCallbacks.Clear();
-            
+
             if (_enableModeLogging)
             {
-                ChimeraLogger.Log("[GameplayModeController] Manager shutdown completed");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 

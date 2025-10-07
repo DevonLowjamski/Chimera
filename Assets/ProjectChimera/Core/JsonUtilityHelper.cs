@@ -23,7 +23,7 @@ namespace ProjectChimera.Core
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"Failed to serialize object to JSON: {ex.Message}");
+                ChimeraLogger.LogInfo("JsonUtilityHelper", "$1");
                 return string.Empty;
             }
         }
@@ -46,7 +46,7 @@ namespace ProjectChimera.Core
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"Failed to deserialize JSON to {typeof(T).Name}: {ex.Message}");
+                ChimeraLogger.LogInfo("JsonUtilityHelper", "$1");
                 return default(T);
             }
         }
@@ -69,7 +69,7 @@ namespace ProjectChimera.Core
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"Failed to overwrite {typeof(T).Name} from JSON: {ex.Message}");
+                ChimeraLogger.LogInfo("JsonUtilityHelper", "$1");
             }
         }
 
@@ -206,14 +206,14 @@ namespace ProjectChimera.Core
                     {
                         // Invalid high surrogate, replace with Unicode replacement character
                         stringBuilder.Append('\uFFFD');
-                        ChimeraLogger.LogWarning($"Invalid Unicode high surrogate at position {i}, replaced with Unicode replacement character");
+                        ChimeraLogger.LogInfo("JsonUtilityHelper", "$1");
                     }
                 }
                 else if (char.IsLowSurrogate(c))
                 {
                     // Orphaned low surrogate, replace with Unicode replacement character
                     stringBuilder.Append('\uFFFD');
-                    ChimeraLogger.LogWarning($"Orphaned Unicode low surrogate at position {i}, replaced with Unicode replacement character");
+                    ChimeraLogger.LogInfo("JsonUtilityHelper", "$1");
                 }
                 else
                 {

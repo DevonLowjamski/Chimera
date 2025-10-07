@@ -41,13 +41,13 @@ namespace ProjectChimera.Systems.Save.Storage
             _fullBackupDirectory = Path.Combine(_baseSaveDirectory, backupDirectory);
 
             _isInitialized = true;
-            ChimeraLogger.Log($"[LoadCore] Initialized - Directory: {_baseSaveDirectory}");
+            ChimeraLogger.Log("OTHER", "$1", null);
         }
 
         public void Shutdown()
         {
             _isInitialized = false;
-            ChimeraLogger.Log("[LoadCore] Load core system shutdown");
+            ChimeraLogger.Log("OTHER", "$1", null);
         }
 
         public async Task<StorageDataResult> ReadFileAsync(string slotName)
@@ -68,14 +68,14 @@ namespace ProjectChimera.Systems.Save.Storage
 
                 if (!File.Exists(filePath))
                 {
-                    ChimeraLogger.LogWarning($"[LoadCore] File not found: {slotName}");
+                    ChimeraLogger.Log("OTHER", "$1", null);
                     return StorageDataResult.CreateFailure($"File not found: {slotName}");
                 }
 
                 // Check file integrity before reading
                 if (_serializationHelpers != null && !await _serializationHelpers.CheckDataIntegrityAsync(filePath))
                 {
-                    ChimeraLogger.LogWarning($"[LoadCore] File integrity check failed: {slotName}");
+                    ChimeraLogger.Log("OTHER", "$1", null);
 
                     // Try to restore from backup
                     var backupResult = await TryRestoreFromBackup(slotName);
@@ -101,12 +101,12 @@ namespace ProjectChimera.Systems.Save.Storage
                 _metrics.TotalReads++;
                 _metrics.TotalBytesRead += data.Length;
 
-                ChimeraLogger.Log($"[LoadCore] Successfully read {data.Length} bytes from slot {slotName}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return StorageDataResult.CreateSuccess(data);
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[LoadCore] Read operation failed for slot {slotName}: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return StorageDataResult.CreateFailure(ex.Message);
             }
         }
@@ -145,7 +145,7 @@ namespace ProjectChimera.Systems.Save.Storage
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[LoadCore] Failed to get storage info: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return new ProjectChimera.Data.Save.StorageInfo { IsValid = false, ErrorMessage = ex.Message };
             }
         }
@@ -178,7 +178,7 @@ namespace ProjectChimera.Systems.Save.Storage
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[LoadCore] Failed to get file size for slot {slotName}: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return 0;
             }
         }
@@ -201,7 +201,7 @@ namespace ProjectChimera.Systems.Save.Storage
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[LoadCore] Failed to get file modification time for slot {slotName}: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return DateTime.MinValue;
             }
         }
@@ -224,12 +224,12 @@ namespace ProjectChimera.Systems.Save.Storage
                     .OrderBy(name => name)
                     .ToList();
 
-                ChimeraLogger.Log($"[LoadCore] Found {files.Count} save slots");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return files;
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[LoadCore] Failed to get save slot list: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return new List<string>();
             }
         }
@@ -253,12 +253,12 @@ namespace ProjectChimera.Systems.Save.Storage
                     .OrderByDescending(name => name) // Most recent first
                     .ToList();
 
-                ChimeraLogger.Log($"[LoadCore] Found {backupFiles.Count} backups for slot {slotName}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return backupFiles;
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[LoadCore] Failed to get backup list for slot {slotName}: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return new List<string>();
             }
         }
@@ -307,12 +307,12 @@ namespace ProjectChimera.Systems.Save.Storage
                     data = processedResult.Data;
                 }
 
-                ChimeraLogger.Log($"[LoadCore] Successfully read backup {backupFileName ?? "latest"} for slot {slotName} ({data.Length} bytes)");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return new StorageDataResult { Success = true, Data = data, Message = "Backup loaded successfully" };
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[LoadCore] Failed to read backup for slot {slotName}: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return new StorageDataResult { Success = false, Message = ex.Message };
             }
         }
@@ -334,7 +334,7 @@ namespace ProjectChimera.Systems.Save.Storage
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[LoadCore] File integrity validation failed for slot {slotName}: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return false;
             }
         }
@@ -372,7 +372,7 @@ namespace ProjectChimera.Systems.Save.Storage
                 // Validate backup integrity first
                 if (_serializationHelpers != null && !await _serializationHelpers.CheckDataIntegrityAsync(backupPath))
                 {
-                    ChimeraLogger.LogWarning($"[LoadCore] Latest backup is also corrupted, trying older backups");
+                    ChimeraLogger.Log("OTHER", "$1", null);
 
                     // Try older backups
                     foreach (var backup in backups.Skip(1))
@@ -381,7 +381,7 @@ namespace ProjectChimera.Systems.Save.Storage
                         if (await _serializationHelpers.CheckDataIntegrityAsync(backupFilePath))
                         {
                             File.Copy(backupFilePath, savePath, true);
-                            ChimeraLogger.Log($"[LoadCore] Successfully restored from backup: {backup}");
+                            ChimeraLogger.Log("OTHER", "$1", null);
                             return StorageResult.CreateSuccess($"Restored from backup: {backup}");
                         }
                     }
@@ -390,12 +390,12 @@ namespace ProjectChimera.Systems.Save.Storage
                 }
 
                 File.Copy(backupPath, savePath, true);
-                ChimeraLogger.Log($"[LoadCore] Successfully restored from latest backup: {latestBackup}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return StorageResult.CreateSuccess($"Restored from backup: {latestBackup}");
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[LoadCore] Failed to restore from backup: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return StorageResult.CreateFailure($"Backup restoration failed: {ex.Message}");
             }
         }
@@ -434,7 +434,7 @@ namespace ProjectChimera.Systems.Save.Storage
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[LoadCore] Failed to get storage info for {slotName}: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
                 return new ProjectChimera.Data.Save.StorageInfo { Exists = false, FileName = slotName };
             }
         }

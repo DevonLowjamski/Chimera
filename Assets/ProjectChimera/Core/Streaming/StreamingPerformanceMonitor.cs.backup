@@ -1,0 +1,502 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Memory;
+
+using ProjectChimera.Core.Logging;
+namespace ProjectChimera.Core.Streaming
+{
+    /// <summary>
+    /// STREAMING: Performance monitoring and optimization for streaming systems
+    /// Tracks rendering performance and automatically adjusts streaming parameters
+    /// Week 11: Asset Streaming & LOD System
+    /// </summary>
+    public class StreamingPerformanceMonitor : MonoBehaviour
+    {
+        [Header("Performance Monitor Settings")]
+        [SerializeField] private bool _enableMonitoring = true;
+        [SerializeField] private bool _enableAutoOptimization = true;
+        [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private float _monitoringInterval = 1f;
+
+        [Header("Performance Targets")]
+        [SerializeField] private float _targetFrameRate = 60f;
+        [SerializeField] private float _acceptableFrameRate = 45f;
+        [SerializeField] private float _criticalFrameRate = 30f;
+        [SerializeField] private long _memoryWarningThreshold = 400 * 1024 * 1024; // 400MB
+
+        [Header("Optimization Settings")]
+        [SerializeField] private float _optimizationReactionTime = 2f;
+        [SerializeField] private float _maxStreamingRadiusReduction = 0.5f;
+        [SerializeField] private float _maxLODDistanceReduction = 0.3f;
+
+        // Performance tracking
+        private readonly Queue<float> _frameTimeHistory = new Queue<float>();
+        private readonly Queue<long> _memoryHistory = new Queue<long>();
+        private readonly List<PerformanceSnapshot> _performanceSnapshots = new List<PerformanceSnapshot>();
+        
+        // Optimization state
+        private StreamingOptimizationState _currentState = StreamingOptimizationState.Optimal;
+        private float _lastOptimizationTime;
+        private float _streamingRadiusMultiplier = 1f;
+        private float _lodDistanceMultiplier = 1f;
+        
+        // References
+        private AssetStreamingManager _streamingManager;
+        private LODManager _lodManager;
+        private MemoryProfiler _memoryProfiler;
+
+        // Statistics
+        private StreamingPerformanceStats _stats = new StreamingPerformanceStats();
+
+        public enum StreamingOptimizationState
+        {
+            Optimal,           // Performance is good
+            Warning,          // Performance is declining
+            Degraded,         // Performance is poor, optimizations active
+            Critical          // Performance is very poor, aggressive optimizations
+        }
+
+        private static StreamingPerformanceMonitor _instance;
+        public static StreamingPerformanceMonitor Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = FindObjectOfType<StreamingPerformanceMonitor>();
+                    if (_instance == null)
+                    {
+                        var go = new GameObject("StreamingPerformanceMonitor");
+                        _instance = go.AddComponent<StreamingPerformanceMonitor>();
+                        DontDestroyOnLoad(go);
+                    }
+                }
+                return _instance;
+            }
+        }
+
+        private void Awake()
+        {
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+                Initialize();
+            }
+            else if (_instance != this)
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Initialize performance monitor
+        /// </summary>
+        public void Initialize()
+        {
+            // Get references
+            _streamingManager = AssetStreamingManager.Instance;
+            _lodManager = LODManager.Instance;
+            _memoryProfiler = MemoryProfiler.Instance;
+
+            _lastOptimizationTime = Time.time;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("StreamingPerformanceMonitor", "Operation completed");
+            }
+        }
+
+        private void Update()
+        {
+            if (!_enableMonitoring) return;
+
+            UpdatePerformanceTracking();
+
+            if (Time.time - _lastOptimizationTime >= _monitoringInterval)
+            {
+                AnalyzePerformance();
+                if (_enableAutoOptimization)
+                {
+                    OptimizeStreaming();
+                }
+                _lastOptimizationTime = Time.time;
+            }
+        }
+
+        /// <summary>
+        /// Get current performance statistics
+        /// </summary>
+        public StreamingPerformanceStats GetStats()
+        {
+            _stats.CurrentFrameRate = _frameTimeHistory.Count > 0 ? 1f / _frameTimeHistory.Average() : 0f;
+            _stats.AverageFrameTime = _frameTimeHistory.Count > 0 ? _frameTimeHistory.Average() : 0f;
+            _stats.CurrentMemoryUsage = _memoryHistory.Count > 0 ? _memoryHistory.Last() : 0L;
+            _stats.OptimizationState = _currentState;
+            _stats.StreamingRadiusMultiplier = _streamingRadiusMultiplier;
+            _stats.LODDistanceMultiplier = _lodDistanceMultiplier;
+
+            // Get streaming system stats
+            if (_streamingManager != null)
+            {
+                var streamingStats = _streamingManager.GetStats();
+                _stats.LoadedAssets = streamingStats.LoadedAssets;
+                _stats.LoadingAssets = streamingStats.LoadingAssets;
+            }
+
+            if (_lodManager != null)
+            {
+                var lodStats = _lodManager.GetStats();
+                _stats.VisibleObjects = lodStats.VisibleObjects;
+                _stats.RegisteredLODObjects = lodStats.RegisteredObjects;
+            }
+
+            return _stats;
+        }
+
+        /// <summary>
+        /// Force performance optimization
+        /// </summary>
+        public void ForceOptimization(StreamingOptimizationState targetState)
+        {
+            _currentState = targetState;
+            OptimizeStreaming();
+            
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("StreamingPerformanceMonitor", "Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Reset optimizations to default
+        /// </summary>
+        public void ResetOptimizations()
+        {
+            _streamingRadiusMultiplier = 1f;
+            _lodDistanceMultiplier = 1f;
+            _currentState = StreamingOptimizationState.Optimal;
+            
+            ApplyOptimizations();
+            
+            if (_enableLogging)
+            {
+                ChimeraLogger.LogInfo("StreamingPerformanceMonitor", "Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Get performance recommendations
+        /// </summary>
+        public List<PerformanceRecommendation> GetRecommendations()
+        {
+            var recommendations = new List<PerformanceRecommendation>();
+            
+            float avgFrameRate = _frameTimeHistory.Count > 0 ? 1f / _frameTimeHistory.Average() : 0f;
+            long currentMemory = _memoryHistory.Count > 0 ? _memoryHistory.Last() : 0L;
+
+            // Frame rate recommendations
+            if (avgFrameRate < _criticalFrameRate)
+            {
+                recommendations.Add(new PerformanceRecommendation
+                {
+                    Priority = RecommendationPriority.Critical,
+                    Category = "Performance",
+                    Title = "Critical Frame Rate",
+                    Description = $"Frame rate ({avgFrameRate:F1} FPS) is critically low. Consider reducing streaming distance and LOD quality.",
+                    Impact = "Gameplay Experience"
+                });
+            }
+            else if (avgFrameRate < _acceptableFrameRate)
+            {
+                recommendations.Add(new PerformanceRecommendation
+                {
+                    Priority = RecommendationPriority.High,
+                    Category = "Performance",
+                    Title = "Low Frame Rate",
+                    Description = $"Frame rate ({avgFrameRate:F1} FPS) is below acceptable threshold. Consider optimizations.",
+                    Impact = "User Experience"
+                });
+            }
+
+            // Memory recommendations
+            if (currentMemory > _memoryWarningThreshold)
+            {
+                recommendations.Add(new PerformanceRecommendation
+                {
+                    Priority = RecommendationPriority.High,
+                    Category = "Memory",
+                    Title = "High Memory Usage",
+                    Description = $"Memory usage ({currentMemory / 1024 / 1024}MB) is high. Consider reducing asset cache size.",
+                    Impact = "System Stability"
+                });
+            }
+
+            // Streaming-specific recommendations
+            if (_streamingManager != null)
+            {
+                var streamingStats = _streamingManager.GetStats();
+                if (streamingStats.LoadingAssets > 10)
+                {
+                    recommendations.Add(new PerformanceRecommendation
+                    {
+                        Priority = RecommendationPriority.Medium,
+                        Category = "Streaming",
+                        Title = "High Asset Loading",
+                        Description = $"{streamingStats.LoadingAssets} assets currently loading. Consider reducing streaming aggressiveness.",
+                        Impact = "Loading Performance"
+                    });
+                }
+            }
+
+            return recommendations;
+        }
+
+        #region Private Methods
+
+        /// <summary>
+        /// Update performance tracking data
+        /// </summary>
+        private void UpdatePerformanceTracking()
+        {
+            // Track frame time
+            _frameTimeHistory.Enqueue(Time.unscaledDeltaTime);
+            if (_frameTimeHistory.Count > 60) // Keep last 60 frames
+            {
+                _frameTimeHistory.Dequeue();
+            }
+
+            // Track memory usage
+            _memoryHistory.Enqueue(System.GC.GetTotalMemory(false));
+            if (_memoryHistory.Count > 60) // Keep last 60 samples
+            {
+                _memoryHistory.Dequeue();
+            }
+        }
+
+        /// <summary>
+        /// Analyze current performance and determine optimization state
+        /// </summary>
+        private void AnalyzePerformance()
+        {
+            float avgFrameRate = _frameTimeHistory.Count > 0 ? 1f / _frameTimeHistory.Average() : 0f;
+            long currentMemory = _memoryHistory.Count > 0 ? _memoryHistory.Last() : 0L;
+
+            // Create performance snapshot
+            var snapshot = new PerformanceSnapshot
+            {
+                Timestamp = Time.time,
+                FrameRate = avgFrameRate,
+                MemoryUsage = currentMemory,
+                LoadedAssets = _streamingManager?.GetStats().LoadedAssets ?? 0,
+                VisibleObjects = _lodManager?.GetStats().VisibleObjects ?? 0
+            };
+
+            _performanceSnapshots.Add(snapshot);
+            if (_performanceSnapshots.Count > 300) // Keep 5 minutes of history
+            {
+                _performanceSnapshots.RemoveAt(0);
+            }
+
+            // Determine optimization state
+            StreamingOptimizationState newState = DetermineOptimizationState(avgFrameRate, currentMemory);
+            
+            if (newState != _currentState)
+            {
+                _currentState = newState;
+                _stats.StateChanges++;
+                
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogInfo("StreamingPerformanceMonitor", "Operation completed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Determine optimization state based on performance metrics
+        /// </summary>
+        private StreamingOptimizationState DetermineOptimizationState(float frameRate, long memoryUsage)
+        {
+            // Critical state conditions
+            if (frameRate < _criticalFrameRate || memoryUsage > _memoryWarningThreshold * 1.5f)
+            {
+                return StreamingOptimizationState.Critical;
+            }
+            
+            // Degraded state conditions
+            if (frameRate < _acceptableFrameRate || memoryUsage > _memoryWarningThreshold)
+            {
+                return StreamingOptimizationState.Degraded;
+            }
+            
+            // Warning state conditions
+            if (frameRate < _targetFrameRate * 0.9f || memoryUsage > _memoryWarningThreshold * 0.8f)
+            {
+                return StreamingOptimizationState.Warning;
+            }
+            
+            // Check if we can improve from current degraded state
+            if (_currentState != StreamingOptimizationState.Optimal &&
+                frameRate > _targetFrameRate * 1.1f && 
+                memoryUsage < _memoryWarningThreshold * 0.6f)
+            {
+                return StreamingOptimizationState.Optimal;
+            }
+
+            return _currentState; // Keep current state if no clear transition
+        }
+
+        /// <summary>
+        /// Apply streaming optimizations based on current state
+        /// </summary>
+        private void OptimizeStreaming()
+        {
+            float targetStreamingMultiplier = 1f;
+            float targetLODMultiplier = 1f;
+
+            switch (_currentState)
+            {
+                case StreamingOptimizationState.Critical:
+                    targetStreamingMultiplier = 1f - _maxStreamingRadiusReduction;
+                    targetLODMultiplier = 1f - _maxLODDistanceReduction;
+                    break;
+
+                case StreamingOptimizationState.Degraded:
+                    targetStreamingMultiplier = 1f - (_maxStreamingRadiusReduction * 0.7f);
+                    targetLODMultiplier = 1f - (_maxLODDistanceReduction * 0.7f);
+                    break;
+
+                case StreamingOptimizationState.Warning:
+                    targetStreamingMultiplier = 1f - (_maxStreamingRadiusReduction * 0.3f);
+                    targetLODMultiplier = 1f - (_maxLODDistanceReduction * 0.3f);
+                    break;
+
+                case StreamingOptimizationState.Optimal:
+                    targetStreamingMultiplier = 1f;
+                    targetLODMultiplier = 1f;
+                    break;
+            }
+
+            // Smoothly adjust multipliers
+            float adjustmentSpeed = 2f * Time.deltaTime;
+            _streamingRadiusMultiplier = Mathf.Lerp(_streamingRadiusMultiplier, targetStreamingMultiplier, adjustmentSpeed);
+            _lodDistanceMultiplier = Mathf.Lerp(_lodDistanceMultiplier, targetLODMultiplier, adjustmentSpeed);
+
+            ApplyOptimizations();
+            _stats.OptimizationChanges++;
+        }
+
+        /// <summary>
+        /// Apply current optimization multipliers to streaming systems
+        /// </summary>
+        private void ApplyOptimizations()
+        {
+            // Note: This would require extending the streaming and LOD managers 
+            // to accept runtime multiplier adjustments
+            
+            // For now, we log what would be applied
+            if (_enableLogging && (_streamingRadiusMultiplier != 1f || _lodDistanceMultiplier != 1f))
+            {
+                ChimeraLogger.LogInfo("StreamingPerformanceMonitor", "Operation completed");
+            }
+        }
+
+        /// <summary>
+        /// Check if performance has been stable
+        /// </summary>
+        private bool IsPerformanceStable(int sampleCount = 10)
+        {
+            if (_performanceSnapshots.Count < sampleCount) return false;
+
+            var recentSnapshots = _performanceSnapshots.TakeLast(sampleCount).ToArray();
+            float frameRateVariance = CalculateVariance(recentSnapshots.Select(s => s.FrameRate));
+            
+            return frameRateVariance < 5f; // Less than 5 FPS variance
+        }
+
+        /// <summary>
+        /// Calculate variance for a set of values
+        /// </summary>
+        private float CalculateVariance(IEnumerable<float> values)
+        {
+            var valueList = values.ToList();
+            if (valueList.Count == 0) return 0f;
+
+            float mean = valueList.Average();
+            float sumSquaredDeviations = valueList.Sum(x => (x - mean) * (x - mean));
+            return sumSquaredDeviations / valueList.Count;
+        }
+
+        #endregion
+
+        private void OnDestroy()
+        {
+            _frameTimeHistory.Clear();
+            _memoryHistory.Clear();
+            _performanceSnapshots.Clear();
+        }
+    }
+
+    #region Data Structures
+
+    /// <summary>
+    /// Performance snapshot at a point in time
+    /// </summary>
+    [System.Serializable]
+    public struct PerformanceSnapshot
+    {
+        public float Timestamp;
+        public float FrameRate;
+        public long MemoryUsage;
+        public int LoadedAssets;
+        public int VisibleObjects;
+    }
+
+    /// <summary>
+    /// Performance recommendation
+    /// </summary>
+    [System.Serializable]
+    public struct PerformanceRecommendation
+    {
+        public RecommendationPriority Priority;
+        public string Category;
+        public string Title;
+        public string Description;
+        public string Impact;
+    }
+
+    /// <summary>
+    /// Streaming performance statistics
+    /// </summary>
+    [System.Serializable]
+    public struct StreamingPerformanceStats
+    {
+        public float CurrentFrameRate;
+        public float AverageFrameTime;
+        public long CurrentMemoryUsage;
+        public StreamingPerformanceMonitor.StreamingOptimizationState OptimizationState;
+        public float StreamingRadiusMultiplier;
+        public float LODDistanceMultiplier;
+        public int LoadedAssets;
+        public int LoadingAssets;
+        public int VisibleObjects;
+        public int RegisteredLODObjects;
+        public int StateChanges;
+        public int OptimizationChanges;
+    }
+
+    /// <summary>
+    /// Recommendation priority levels
+    /// </summary>
+    public enum RecommendationPriority
+    {
+        Low,
+        Medium,
+        High,
+        Critical
+    }
+
+    #endregion
+}

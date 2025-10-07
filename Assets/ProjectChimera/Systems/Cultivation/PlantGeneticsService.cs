@@ -1,5 +1,6 @@
 using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Genetics;
@@ -30,7 +31,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantGeneticsService] Initialized successfully");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
@@ -46,7 +47,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantGeneticsService] Shutdown completed");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
@@ -61,7 +62,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantGeneticsService] Registered plant {plantId} with genotype {genotype.StrainName}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
@@ -85,7 +86,7 @@ namespace ProjectChimera.Systems.Cultivation
             // For now, just log the update
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantGeneticsService] Updated genetics for plant {plantId} with factor {environmentalFactor:F2}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
         }
 
@@ -127,7 +128,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantGeneticsService] Bred offspring {offspringId} from {parent1Id} and {parent2Id}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
             }
 
             return offspring;
@@ -150,7 +151,7 @@ namespace ProjectChimera.Systems.Cultivation
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[PlantGeneticsService] Removed genotype for plant {plantId}");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", null);
                 }
             }
         }
@@ -158,9 +159,9 @@ namespace ProjectChimera.Systems.Cultivation
         /// <summary>
         /// Get genetics statistics
         /// </summary>
-        public GeneticsStatistics GetGeneticsStatistics()
+        public ServiceGeneticsStatistics GetGeneticsStatistics()
         {
-            return new GeneticsStatistics
+            return new ServiceGeneticsStatistics
             {
                 TotalPlants = _plantGenotypes.Count,
                 AverageYield = _plantGenotypes.Count > 0 ? _plantGenotypes.Values.Average(g => g.YieldPotential) : 0f,
@@ -174,7 +175,7 @@ namespace ProjectChimera.Systems.Cultivation
     /// Basic genetics statistics
     /// </summary>
     [System.Serializable]
-    public class GeneticsStatistics
+    public class ServiceGeneticsStatistics
     {
         public int TotalPlants;
         public float AverageYield;

@@ -229,7 +229,7 @@ namespace ProjectChimera.Editor
 
             EditorUtility.ClearProgressBar();
 
-            ChimeraLogger.Log("SYSTEM", $"[ChimeraLoggerMigration] Scan completed. Found {_migrationResults.Sum(r => r.Matches.Count)} Debug.Log calls in {_migrationResults.Count} files.");
+            ChimeraLogger.Log("OTHER", "$1", null);
         }
 
         private void ScanFile(string filePath)
@@ -279,7 +279,7 @@ namespace ProjectChimera.Editor
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[ChimeraLoggerMigration] Error scanning file {filePath}: {ex.Message}");
+                ChimeraLogger.Log("OTHER", "$1", null);
             }
         }
 
@@ -327,7 +327,7 @@ namespace ProjectChimera.Editor
                 }
                 catch (System.Exception ex)
                 {
-                    ChimeraLogger.LogError($"[ChimeraLoggerMigration] Error migrating file {result.FilePath}: {ex.Message}");
+                    ChimeraLogger.Log("OTHER", "$1", null);
                 }
             }
 
@@ -338,7 +338,7 @@ namespace ProjectChimera.Editor
                 (_backupFiles ? "Backup files (.bak) have been created." : "No backup files were created."),
                 "OK");
 
-            ChimeraLogger.Log($"[ChimeraLoggerMigration] Migration completed. {totalMatches} calls migrated in {migratedFiles} files.");
+            ChimeraLogger.Log("OTHER", "$1", null);
         }
 
         private void ExportResultsToCSV()
@@ -410,7 +410,7 @@ namespace ProjectChimera.Editor
             }
 
             AssetDatabase.Refresh();
-            ChimeraLogger.Log($"[ChimeraLoggerMigration] Added using statements to {modifiedFiles} files.");
+            ChimeraLogger.Log("OTHER", "$1", null);
         }
 
         [MenuItem("Project Chimera/Tools/Quick Actions/Validate ChimeraLogger Usage")]
@@ -453,7 +453,7 @@ namespace ProjectChimera.Editor
                 }
             }
 
-            ChimeraLogger.Log($"[ChimeraLoggerMigration] {report}");
+            ChimeraLogger.Log("OTHER", "$1", null);
             EditorUtility.DisplayDialog("ChimeraLogger Usage Report", report, "OK");
         }
     }

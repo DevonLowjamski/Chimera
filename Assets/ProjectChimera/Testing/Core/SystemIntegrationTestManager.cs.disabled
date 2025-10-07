@@ -1,0 +1,323 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Core.Performance;
+using ProjectChimera.Systems.Cultivation.Advanced;
+using ProjectChimera.Systems.Construction.Advanced;
+
+namespace ProjectChimera.Testing.Core
+{
+    /// <summary>
+    /// REFACTORED: System Integration Test Manager
+    /// Focused component for testing integration between different subsystems
+    /// </summary>
+    public class SystemIntegrationTestManager : MonoBehaviour
+    {
+        [Header("Integration Test Settings")]
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private bool _testCultivationSystem = true;
+        [SerializeField] private bool _testConstructionSystem = true;
+
+        // System references for testing
+        private AdvancedCultivationManager _cultivationManager;
+        private AdvancedConstructionSystem _constructionSystem;
+        private AdvancedPerformanceMonitor _performanceMonitor;
+        private MetricsCollectionFramework _metricsFramework;
+
+        // Properties
+        public bool IsEnabled { get; private set; } = true;
+
+        // Events
+        public System.Action<IntegrationTestResult> OnTestCompleted;
+
+        private void Start()
+        {
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            _cultivationManager = AdvancedCultivationManager.Instance;
+            _constructionSystem = AdvancedConstructionSystem.Instance;
+            _performanceMonitor = FindObjectOfType<AdvancedPerformanceMonitor>();
+            _metricsFramework = MetricsCollectionFramework.Instance;
+
+            if (_enableLogging)
+                ChimeraLogger.Log("TESTING", "✅ SystemIntegrationTestManager initialized", this);
+        }
+
+        /// <summary>
+        /// Run all integration tests
+        /// </summary>
+        public IEnumerator RunIntegrationTests(List<IntegrationTestResult> results)
+        {
+            if (!IsEnabled) yield break;
+
+            // Test cultivation system integration
+            if (_testCultivationSystem)
+            {
+                yield return StartCoroutine(RunCultivationSystemTests(results));
+            }
+
+            // Test construction system integration
+            if (_testConstructionSystem)
+            {
+                yield return StartCoroutine(RunConstructionSystemTests(results));
+            }
+
+            // Test cross-system integration
+            yield return StartCoroutine(RunCrossSystemIntegrationTests(results));
+        }
+
+        private IEnumerator RunCultivationSystemTests(List<IntegrationTestResult> results)
+        {
+            var testResult = new IntegrationTestResult
+            {
+                TestName = "Cultivation Systems Integration",
+                TestCategory = "Integration",
+                StartTime = Time.time
+            };
+
+            if (_enableLogging)
+                ChimeraLogger.Log("TESTING", "🌱 Testing cultivation system integration...", this);
+
+            try
+            {
+                bool cultivationManagerExists = _cultivationManager != null;
+                testResult.TestSteps.Add($"Cultivation Manager: {(cultivationManagerExists ? "PASS" : "FAIL")}");
+
+                if (cultivationManagerExists)
+                {
+                    // Test cultivation metrics
+                    var cultivationMetrics = _cultivationManager.GetMetrics();
+                    bool metricsValid = cultivationMetrics != null;
+                    testResult.TestSteps.Add($"Cultivation Metrics: {(metricsValid ? "PASS" : "FAIL")}");
+
+                    // Test plant registration/unregistration
+                    yield return StartCoroutine(TestPlantManagement(testResult));
+
+                    testResult.Success = cultivationManagerExists && metricsValid;
+                }
+                else
+                {
+                    testResult.Success = false;
+                }
+
+                testResult.CompletionTime = Time.time;
+                testResult.ResultMessage = testResult.Success ?
+                    "Cultivation systems integrated successfully" :
+                    "Cultivation system integration failed";
+            }
+            catch (System.Exception ex)
+            {
+                testResult.Success = false;
+                testResult.CompletionTime = Time.time;
+                testResult.ResultMessage = $"Cultivation integration test error: {ex.Message}";
+                testResult.TestSteps.Add($"Exception: {ex.Message}");
+            }
+
+            results.Add(testResult);
+            OnTestCompleted?.Invoke(testResult);
+        }
+
+        private IEnumerator TestPlantManagement(IntegrationTestResult testResult)
+        {
+            // Create test plant for validation
+            var testPlant = new AdvancedPlantInstance
+            {
+                PlantId = "TEST_PLANT_INTEGRATION_001",
+                IsActive = true
+            };
+
+            _cultivationManager.RegisterPlant(testPlant);
+            yield return new WaitForSeconds(2f); // Allow processing
+
+            var managedPlants = _cultivationManager.GetManagedPlants();
+            bool plantRegistered = managedPlants.ContainsKey("TEST_PLANT_INTEGRATION_001");
+            testResult.TestSteps.Add($"Plant Registration: {(plantRegistered ? "PASS" : "FAIL")}");
+
+            // Test plant updates
+            if (plantRegistered)
+            {
+                yield return new WaitForSeconds(1f);
+                bool plantStillActive = managedPlants["TEST_PLANT_INTEGRATION_001"].IsActive;
+                testResult.TestSteps.Add($"Plant Active Status: {(plantStillActive ? "PASS" : "FAIL")}");
+            }
+
+            // Clean up test plant
+            _cultivationManager.UnregisterPlant("TEST_PLANT_INTEGRATION_001");
+            yield return new WaitForSeconds(1f);
+
+            var plantsAfterCleanup = _cultivationManager.GetManagedPlants();
+            bool plantRemoved = !plantsAfterCleanup.ContainsKey("TEST_PLANT_INTEGRATION_001");
+            testResult.TestSteps.Add($"Plant Cleanup: {(plantRemoved ? "PASS" : "FAIL")}");
+        }
+
+        private IEnumerator RunConstructionSystemTests(List<IntegrationTestResult> results)
+        {
+            var testResult = new IntegrationTestResult
+            {
+                TestName = "Construction Systems Integration",
+                TestCategory = "Integration",
+                StartTime = Time.time
+            };
+
+            if (_enableLogging)
+                ChimeraLogger.Log("TESTING", "🏗️ Testing construction system integration...", this);
+
+            try
+            {
+                bool constructionSystemExists = _constructionSystem != null;
+                testResult.TestSteps.Add($"Construction System: {(constructionSystemExists ? "PASS" : "FAIL")}");
+
+                if (constructionSystemExists)
+                {
+                    // Test construction metrics
+                    var constructionMetrics = _constructionSystem.GetMetrics();
+                    bool metricsValid = constructionMetrics != null;
+                    testResult.TestSteps.Add($"Construction Metrics: {(metricsValid ? "PASS" : "FAIL")}");
+
+                    // Test construction validation
+                    yield return StartCoroutine(TestConstructionValidation(testResult));
+
+                    testResult.Success = constructionSystemExists && metricsValid;
+                }
+                else
+                {
+                    testResult.Success = false;
+                }
+
+                testResult.CompletionTime = Time.time;
+                testResult.ResultMessage = testResult.Success ?
+                    "Construction systems integrated successfully" :
+                    "Construction system integration failed";
+            }
+            catch (System.Exception ex)
+            {
+                testResult.Success = false;
+                testResult.CompletionTime = Time.time;
+                testResult.ResultMessage = $"Construction integration test error: {ex.Message}";
+                testResult.TestSteps.Add($"Exception: {ex.Message}");
+            }
+
+            results.Add(testResult);
+            OnTestCompleted?.Invoke(testResult);
+        }
+
+        private IEnumerator TestConstructionValidation(IntegrationTestResult testResult)
+        {
+            var testValidation = new ConstructionValidation
+            {
+                ValidationId = "TEST_VALIDATION_INTEGRATION_001",
+                Position = Vector3.zero,
+                ConstructionType = "TestStructure"
+            };
+
+            _constructionSystem.RequestValidation(testValidation);
+            yield return new WaitForSeconds(3f); // Allow processing
+
+            bool validationProcessed = testValidation.IsProcessed;
+            testResult.TestSteps.Add($"Construction Validation Processing: {(validationProcessed ? "PASS" : "FAIL")}");
+
+            if (validationProcessed)
+            {
+                bool validationHasResult = !string.IsNullOrEmpty(testValidation.ErrorMessage) || testValidation.IsValid;
+                testResult.TestSteps.Add($"Construction Validation Result: {(validationHasResult ? "PASS" : "FAIL")}");
+            }
+        }
+
+        private IEnumerator RunCrossSystemIntegrationTests(List<IntegrationTestResult> results)
+        {
+            var testResult = new IntegrationTestResult
+            {
+                TestName = "Cross-System Integration",
+                TestCategory = "Integration",
+                StartTime = Time.time
+            };
+
+            if (_enableLogging)
+                ChimeraLogger.Log("TESTING", "🔗 Testing cross-system integration...", this);
+
+            try
+            {
+                yield return StartCoroutine(TestMetricsIntegration(testResult));
+                yield return StartCoroutine(TestPerformanceIntegration(testResult));
+                yield return StartCoroutine(TestUpdateOrchestratorIntegration(testResult));
+
+                // Evaluate overall cross-system integration
+                bool allCrossSystemTestsPassed = testResult.TestSteps.TrueForAll(step => step.Contains("PASS") || step.Contains("SKIP"));
+                testResult.Success = allCrossSystemTestsPassed;
+                testResult.CompletionTime = Time.time;
+
+                testResult.ResultMessage = testResult.Success ?
+                    "Cross-system integration validated successfully" :
+                    "Cross-system integration validation failed";
+            }
+            catch (System.Exception ex)
+            {
+                testResult.Success = false;
+                testResult.CompletionTime = Time.time;
+                testResult.ResultMessage = $"Cross-system integration test error: {ex.Message}";
+                testResult.TestSteps.Add($"Exception: {ex.Message}");
+            }
+
+            results.Add(testResult);
+            OnTestCompleted?.Invoke(testResult);
+        }
+
+        private IEnumerator TestMetricsIntegration(IntegrationTestResult testResult)
+        {
+            bool allSystemsReporting = true;
+            if (_metricsFramework != null)
+            {
+                yield return new WaitForSeconds(2f); // Allow metrics collection
+                var aggregatedMetrics = _metricsFramework.GetAggregatedMetrics(10);
+                allSystemsReporting = aggregatedMetrics.SystemMetrics.Count >= 2; // At least 2 systems reporting
+                testResult.TestSteps.Add($"Metrics Integration ({aggregatedMetrics.SystemMetrics.Count} systems): {(allSystemsReporting ? "PASS" : "FAIL")}");
+            }
+            else
+            {
+                testResult.TestSteps.Add("Metrics Integration: SKIP - No metrics framework");
+            }
+        }
+
+        private IEnumerator TestPerformanceIntegration(IntegrationTestResult testResult)
+        {
+            bool performanceIntegrated = false;
+            if (_performanceMonitor != null)
+            {
+                yield return new WaitForSeconds(2f); // Allow metrics collection
+                var performanceHistory = _performanceMonitor.GetPerformanceHistory(10);
+                performanceIntegrated = performanceHistory.Count > 5;
+                testResult.TestSteps.Add($"Performance Integration ({performanceHistory.Count} samples): {(performanceIntegrated ? "PASS" : "FAIL")}");
+            }
+            else
+            {
+                testResult.TestSteps.Add("Performance Integration: SKIP - No performance monitor");
+            }
+        }
+
+        private IEnumerator TestUpdateOrchestratorIntegration(IntegrationTestResult testResult)
+        {
+            var orchestrator = UpdateOrchestrator.Instance;
+            bool orchestratorIntegrated = orchestrator != null && orchestrator.GetTickableCount() >= 3;
+            testResult.TestSteps.Add($"Update Orchestrator Integration ({orchestrator?.GetTickableCount() ?? 0} tickables): {(orchestratorIntegrated ? "PASS" : "FAIL")}");
+
+            yield return new WaitForSeconds(0.1f); // Brief pause
+        }
+
+        /// <summary>
+        /// Set manager enabled/disabled
+        /// </summary>
+        public void SetEnabled(bool enabled)
+        {
+            IsEnabled = enabled;
+
+            if (_enableLogging)
+                ChimeraLogger.Log("TESTING", $"SystemIntegrationTestManager: {(enabled ? "enabled" : "disabled")}", this);
+        }
+    }
+}

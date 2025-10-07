@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Core.Logging;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Core
 {
@@ -29,7 +30,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[EventManager] Initialized successfully");
+                Logger.LogInfo("EventManager", "Initialized");
             }
         }
 
@@ -51,7 +52,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[EventManager] Subscribed to event: {eventName}");
+                Logger.LogInfo("EventManager", $"Subscribed to '{eventName}'");
             }
         }
 
@@ -74,7 +75,7 @@ namespace ProjectChimera.Core
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[EventManager] Unsubscribed from event: {eventName}");
+                    Logger.LogInfo("EventManager", $"Unsubscribed from '{eventName}'");
                 }
             }
         }
@@ -92,7 +93,7 @@ namespace ProjectChimera.Core
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[EventManager] Raised event: {eventName}");
+                    Logger.LogInfo("EventManager", $"Raised '{eventName}'");
                 }
             }
         }
@@ -134,7 +135,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[EventManager] Cleared all events");
+                Logger.LogInfo("EventManager", "Cleared all events");
             }
         }
 
@@ -152,7 +153,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[EventManager] Event system {(enabled ? "enabled" : "disabled")}");
+                Logger.LogInfo("EventManager", $"Events {(enabled ? "enabled" : "disabled")}");
             }
         }
 

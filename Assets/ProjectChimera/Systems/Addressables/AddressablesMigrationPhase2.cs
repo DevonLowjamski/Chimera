@@ -31,7 +31,7 @@ namespace ProjectChimera.Systems.Addressables
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[AddressablesMigrationPhase2] Initialized successfully");
+                ChimeraLogger.Log("ASSETS/PH2", "Initialized", this);
             }
         }
 
@@ -51,7 +51,7 @@ namespace ProjectChimera.Systems.Addressables
             // For now, just log and return null
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[AddressablesMigrationPhase2] Would load asset: {address}");
+                ChimeraLogger.Log("ASSETS/PH2", $"Requested load: {address}", this);
             }
 
             // Add to tracking
@@ -72,7 +72,7 @@ namespace ProjectChimera.Systems.Addressables
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[AddressablesMigrationPhase2] Unloaded asset: {address}");
+                    ChimeraLogger.Log("ASSETS/PH2", $"Unloaded: {address}", this);
                 }
             }
         }
@@ -118,7 +118,7 @@ namespace ProjectChimera.Systems.Addressables
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[AddressablesMigrationPhase2] Cleared all assets");
+                ChimeraLogger.Log("ASSETS/PH2", "Cleared all assets", this);
             }
         }
 
@@ -133,7 +133,7 @@ namespace ProjectChimera.Systems.Addressables
             // For now, just log
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[AddressablesMigrationPhase2] Would preload common assets");
+                ChimeraLogger.Log("ASSETS/PH2", "PreloadCommonAssets invoked", this);
             }
         }
 
@@ -146,7 +146,7 @@ namespace ProjectChimera.Systems.Addressables
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[AddressablesMigrationPhase2] Asset loading {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.Log("ASSETS/PH2", $"Asset loading {(enabled ? "enabled" : "disabled")}", this);
             }
         }
 

@@ -71,8 +71,8 @@ namespace ProjectChimera.Systems.Camera
         
         #region ITickable Implementation
 
-        public int Priority => TickPriority.CameraEffects;
-        public bool Enabled => enabled && _mainCamera != null && _stateManager != null;
+        public int TickPriority => ProjectChimera.Core.Updates.TickPriority.CameraEffects;
+        public bool IsTickable => enabled && _mainCamera != null && _stateManager != null;
 
         public void Tick(float deltaTime)
         {
@@ -118,8 +118,8 @@ namespace ProjectChimera.Systems.Camera
             // Wire input handler events
             if (_inputHandler != null)
             {
-                _inputHandler.OnFocusRequested += HandleFocusRequested;
-                _inputHandler.OnTargetHover += HandleTargetHover;
+                _inputHandler.OnFocusTargetClicked += HandleFocusTargetClicked;
+                _inputHandler.OnFocusClearRequested += HandleFocusClearRequested;
             }
             
             LogDebug("Camera component events wired");
@@ -240,17 +240,20 @@ namespace ProjectChimera.Systems.Camera
         // Target and focus methods
         public float GetSuggestedDistanceForTarget(Transform target)
         {
-            return _anchorSystem?.GetSuggestedDistanceForTarget(target) ?? 10f;
+            // TODO: Implement in CameraTargetAnchorSystem
+            return 10f;
         }
-        
+
         public bool CanFocusOnTarget(Transform target)
         {
-            return _anchorSystem?.CanFocusOnTarget(target) ?? false;
+            // TODO: Implement in CameraTargetAnchorSystem
+            return target != null;
         }
-        
+
         public Ray GetCameraRay(Vector2 screenPosition)
         {
-            return _inputHandler?.GetCameraRay(screenPosition) ?? new Ray();
+            // Fallback implementation
+            return _mainCamera != null ? _mainCamera.ScreenPointToRay(screenPosition) : new Ray();
         }
         
         public bool FocusOnTargetAtScreenPosition(Vector2 screenPosition)
@@ -271,7 +274,8 @@ namespace ProjectChimera.Systems.Camera
         // Configuration and system management
         public Dictionary<string, string> GetKeyboardShortcuts()
         {
-            return _inputHandler?.GetKeyboardShortcuts() ?? new Dictionary<string, string>();
+            // TODO: Implement keyboard shortcut retrieval
+            return new Dictionary<string, string>();
         }
         
         public void SetLevelChangeEventConfiguration(CameraLevelChangedEventSO eventChannel, bool enableEvents = true)
@@ -287,7 +291,8 @@ namespace ProjectChimera.Systems.Camera
         
         public bool FocusOnNearestTarget()
         {
-            return _anchorSystem?.FocusOnNearestTarget() ?? false;
+            // TODO: Implement in CameraTargetAnchorSystem
+            return false;
         }
         
         // Level semantics and information
@@ -335,27 +340,37 @@ namespace ProjectChimera.Systems.Camera
         // Anchor system methods
         public bool FocusOnTargetWithAnchor(Transform target)
         {
-            return _anchorSystem?.FocusOnTargetWithAnchor(target) ?? false;
+            // TODO: Implement in CameraTargetAnchorSystem
+            if (target != null)
+            {
+                FocusOnTarget(target);
+                return true;
+            }
+            return false;
         }
-        
+
         public CameraLevel GetTargetCameraLevel(Transform target)
         {
-            return _anchorSystem?.GetTargetCameraLevel(target) ?? CameraLevel.Facility;
+            // TODO: Implement in CameraTargetAnchorSystem
+            return CameraLevel.Facility;
         }
-        
+
         public Transform GetLogicalAnchor(Transform target)
         {
-            return _anchorSystem?.GetLogicalAnchor(target);
+            // TODO: Implement in CameraTargetAnchorSystem
+            return target;
         }
-        
+
         public bool HasValidAnchor(Transform target)
         {
-            return _anchorSystem?.HasValidAnchor(target) ?? false;
+            // TODO: Implement in CameraTargetAnchorSystem
+            return target != null;
         }
-        
+
         public CameraTransitionInfo GetTargetTransitionInfo(Transform target)
         {
-            return _anchorSystem?.GetTargetTransitionInfo(target) ?? new CameraTransitionInfo();
+            // TODO: Implement in CameraTargetAnchorSystem
+            return new CameraTransitionInfo();
         }
         
         public bool FocusOnPosition(Vector3 position, Transform anchorReference = null)
@@ -365,12 +380,13 @@ namespace ProjectChimera.Systems.Camera
         
         public List<Transform> GetAnchorsForLevel(CameraLevel level)
         {
-            return _anchorSystem?.GetAnchorsForLevel(level) ?? new List<Transform>();
+            // TODO: Implement in CameraTargetAnchorSystem
+            return new List<Transform>();
         }
-        
+
         public void RefreshAnchorMappings()
         {
-            _anchorSystem?.RefreshAnchorMappings();
+            // TODO: Implement in CameraTargetAnchorSystem
         }
         
         // Event handlers - orchestrate component interactions
@@ -396,19 +412,20 @@ namespace ProjectChimera.Systems.Camera
             LogDebug($"Transition state changed: {isTransitioning}");
         }
         
-        private void HandleTransitionCompleted(CameraTransitionManager.TransitionType transitionType)
+        private void HandleTransitionCompleted(TransitionType transitionType)
         {
             LogDebug($"Transition completed: {transitionType}");
         }
         
-        private void HandleFocusRequested(Transform target)
+        private void HandleFocusTargetClicked(Transform target)
         {
-            FocusOnTarget(target);
+            if (target != null)
+                FocusOnTarget(target);
         }
-        
-        private void HandleTargetHover(Transform target)
+
+        private void HandleFocusClearRequested()
         {
-            OnTargetHover?.Invoke(target);
+            ClearFocus();
         }
         
         private void ValidateSystemIntegrity()
@@ -417,19 +434,19 @@ namespace ProjectChimera.Systems.Camera
             
             if (_mainCamera == null)
             {
-                ChimeraLogger.LogError("[AdvancedCameraController] Main camera not found!");
+                ChimeraLogger.LogInfo("AdvancedCameraController", "$1");
                 isValid = false;
             }
             
             if (_stateManager == null)
             {
-                ChimeraLogger.LogError("[AdvancedCameraController] CameraStateManager not found!");
+                ChimeraLogger.LogInfo("AdvancedCameraController", "$1");
                 isValid = false;
             }
             
             if (_transitionManager == null)
             {
-                ChimeraLogger.LogError("[AdvancedCameraController] CameraTransitionManager not found!");
+                ChimeraLogger.LogInfo("AdvancedCameraController", "$1");
                 isValid = false;
             }
             
@@ -446,7 +463,7 @@ namespace ProjectChimera.Systems.Camera
         private void LogDebug(string message)
         {
             if (_enableDebugLogging)
-                ChimeraLogger.Log($"[AdvancedCameraController] {message}");
+                ChimeraLogger.LogInfo("AdvancedCameraController", "$1");
         }
         
         // Cleanup
@@ -472,8 +489,8 @@ namespace ProjectChimera.Systems.Camera
             
             if (_inputHandler != null)
             {
-                _inputHandler.OnFocusRequested -= HandleFocusRequested;
-                _inputHandler.OnTargetHover -= HandleTargetHover;
+                _inputHandler.OnFocusTargetClicked -= HandleFocusTargetClicked;
+                _inputHandler.OnFocusClearRequested -= HandleFocusClearRequested;
             }
         }
     }

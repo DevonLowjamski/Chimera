@@ -108,7 +108,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[BreedPlantsCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.Log("GENETICS", "Genetics command operation", null);
                 return CommandResult.Failure($"Error breeding plants: {ex.Message}");
             }
         }
@@ -187,7 +187,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[CreateTissueCultureCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.Log("GENETICS", "Genetics command operation", null);
                 return CommandResult.Failure($"Error creating tissue culture: {ex.Message}");
             }
         }
@@ -266,7 +266,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[MicropropagateCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.Log("GENETICS", "Genetics command operation", null);
                 return CommandResult.Failure($"Error micropropagating: {ex.Message}");
             }
         }
@@ -325,7 +325,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[PurchaseSeedsCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.Log("GENETICS", "Genetics command operation", null);
                 return CommandResult.Failure($"Error purchasing seeds: {ex.Message}");
             }
         }
@@ -388,7 +388,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[ResearchTraitCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.Log("GENETICS", "Genetics command operation", null);
                 return CommandResult.Failure($"Error researching trait: {ex.Message}");
             }
         }
@@ -437,7 +437,7 @@ namespace ProjectChimera.Systems.Services.Commands
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[SelectStrainCommand] Error executing command: {ex.Message}");
+                ChimeraLogger.Log("GENETICS", "Genetics command operation", null);
                 return CommandResult.Failure($"Error selecting strain: {ex.Message}");
             }
         }

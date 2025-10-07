@@ -1,0 +1,330 @@
+using ProjectChimera.Core.Logging;
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Events;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Data.Construction;
+
+namespace ProjectChimera.Systems.Construction
+{
+    /// <summary>
+    /// SIMPLIFIED: Basic construction coordinator aligned with Project Chimera's direct player control vision.
+    /// Focuses on essential construction mechanics while maintaining simple, focused functionality.
+    ///
+    /// Coordinator Structure:
+    /// - GridPlacementSystem.cs: Handles grid-based placement
+    /// - SchematicManager.cs: Manages schematics
+    /// - InteractiveFacilityConstructor.cs: Handles facility construction
+    /// - ConstructionManager.cs: Coordinates the construction system
+    /// </summary>
+    public class ConstructionManager : DIChimeraManager, ITickable
+    {
+        [Header("Component References")]
+        [SerializeField] private GridPlacementSystem _gridPlacementSystem;
+        [SerializeField] private SchematicManager _schematicManager;
+        [SerializeField] private InteractiveFacilityConstructor _facilityConstructor;
+        [SerializeField] private ConstructionCatalog _constructionCatalog;
+
+        [Header("Construction Configuration")]
+        [SerializeField] private bool _enableSchematicIntegration = true;
+        [SerializeField] private bool _enableCostTracking = true;
+        [SerializeField] private float _autoSaveInterval = 300f; // 5 minutes
+
+        [Header("Event Channels")]
+        [SerializeField] private SimpleGameEventSO _onProjectStarted;
+        [SerializeField] private SimpleGameEventSO _onProjectCompleted;
+        [SerializeField] private SimpleGameEventSO _onConstructionProgress;
+        [SerializeField] private SimpleGameEventSO _onConstructionError;
+
+        // Basic state tracking
+        private float _lastAutoSave = 0f;
+
+        public override ManagerPriority Priority => ManagerPriority.High;
+
+        // Public Properties - Access to component capabilities
+        public GridPlacementSystem GridPlacementSystem => _gridPlacementSystem;
+        public SchematicManager SchematicManager => _schematicManager;
+        public InteractiveFacilityConstructor FacilityConstructor => _facilityConstructor;
+        public ConstructionCatalog ConstructionCatalog => _constructionCatalog;
+
+        // Basic status properties
+        public bool IsInitialized => _isInitialized;
+        public bool HasGridSystem => _gridPlacementSystem != null;
+        public bool HasFacilityConstructor => _facilityConstructor != null;
+
+        // Events - Forwarded from components
+        public event System.Action OnConstructionStarted;
+        public event System.Action OnConstructionCompleted;
+        public event System.Action<string> OnConstructionError;
+
+        protected override void OnManagerInitialize()
+        {
+            ValidateComponents();
+            SetupComponentReferences();
+            SubscribeToEvents();
+
+            // Register with UpdateOrchestrator for centralized ticking
+            var orchestrator = UpdateOrchestrator.Instance;
+            orchestrator?.RegisterTickable(this);
+
+            _isInitialized = true;
+            LogInfo("Construction coordinator initialized successfully");
+        }
+
+        /// <summary>
+        /// Validates that all required components are properly assigned
+        /// </summary>
+        private void ValidateComponents()
+        {
+            bool allValid = true;
+
+            if (_gridPlacementSystem == null)
+            {
+                LogError("[ConstructionManager] GridPlacementSystem component is required but not assigned!");
+                allValid = false;
+            }
+
+            if (_facilityConstructor == null)
+            {
+                LogWarning("[ConstructionManager] InteractiveFacilityConstructor component not assigned - facility construction may not work");
+            }
+
+            if (_constructionCatalog == null)
+            {
+                LogWarning("[ConstructionManager] ConstructionCatalog not assigned - no construction templates available");
+            }
+
+            if (!allValid)
+            {
+                LogError("[ConstructionManager] Component validation failed - construction system may not function properly");
+            }
+        }
+
+        /// <summary>
+        /// Sets up references and coordination between components
+        /// </summary>
+        private void SetupComponentReferences()
+        {
+            // Connect components if needed
+            if (_gridPlacementSystem != null && _facilityConstructor != null)
+            {
+                // Set up coordination between grid placement and facility construction
+                _facilityConstructor.SetGridSystem(_gridPlacementSystem);
+            }
+
+            if (_schematicManager != null && _enableSchematicIntegration)
+            {
+                // Enable schematic integration if available
+                LogInfo("Schematic integration enabled");
+            }
+        }
+
+        #region ITickable Implementation
+
+        int ITickable.Priority => TickPriority.ConstructionSystem;
+        bool ITickable.Enabled => IsInitialized;
+
+        public void Tick(float deltaTime)
+        {
+            if (!IsInitialized) return;
+
+            float currentTime = Time.time;
+
+            // Auto-save periodically
+            if (currentTime - _lastAutoSave >= _autoSaveInterval)
+            {
+                SaveConstructionState();
+                _lastAutoSave = currentTime;
+            }
+        }
+
+        public void OnRegistered()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        public void OnUnregistered()
+        {
+            UnityEngine.Debug.Log("Operation completed");
+        }
+
+        #endregion
+
+        protected override void OnManagerShutdown()
+        {
+            // Unregister from UpdateOrchestrator
+            var orchestrator = UpdateOrchestrator.Instance;
+            orchestrator?.UnregisterTickable(this);
+
+            UnsubscribeFromEvents();
+            SaveConstructionState();
+
+            _activeProjects.Clear();
+            _reservedPositions.Clear();
+            _projectProgress.Clear();
+
+            LogInfo("Grid-based ConstructionManager shutdown completed");
+        }
+
+        #region Public API - Construction Coordination
+
+        /// <summary>
+        /// Start placement mode for a construction template
+        /// </summary>
+        public void StartPlacementMode(string templateName)
+        {
+            if (_facilityConstructor != null)
+            {
+                _facilityConstructor.StartPlacement(templateName);
+                OnConstructionStarted?.Invoke();
+                LogInfo($"Started placement mode for: {templateName}");
+            }
+            else
+            {
+                HandleConstructionError("Facility constructor not available for placement");
+            }
+        }
+
+        /// <summary>
+        /// Cancel current placement mode
+        /// </summary>
+        public void CancelPlacementMode()
+        {
+            if (_facilityConstructor != null)
+            {
+                _facilityConstructor.CancelPlacement();
+                LogInfo("Placement mode cancelled");
+            }
+        }
+
+        /// <summary>
+        /// Get all available construction templates
+        /// </summary>
+        public List<GridConstructionTemplate> GetAvailableTemplates()
+        {
+            if (_constructionCatalog == null)
+                return new List<GridConstructionTemplate>();
+
+            return _constructionCatalog.Templates;
+        }
+
+        /// <summary>
+        /// Get construction template by name
+        /// </summary>
+        public GridConstructionTemplate GetTemplate(string templateName)
+        {
+            if (_constructionCatalog == null)
+                return null;
+
+            return _constructionCatalog.FindTemplate(templateName);
+        }
+
+        /// <summary>
+        /// Check if placement is currently active
+        /// </summary>
+        public bool IsPlacementActive()
+        {
+            return _facilityConstructor != null && _facilityConstructor.IsPlacementActive();
+        }
+
+        /// <summary>
+        /// Create a schematic from current construction
+        /// </summary>
+        public void CreateSchematic(string schematicName)
+        {
+            if (_schematicManager != null && _enableSchematicIntegration)
+            {
+                _schematicManager.CreateSchematic(schematicName);
+                LogInfo($"Created schematic: {schematicName}");
+            }
+            else
+            {
+                HandleConstructionError("Schematic manager not available");
+            }
+        }
+
+        /// <summary>
+        /// Load and apply a schematic
+        /// </summary>
+        public void LoadSchematic(string schematicName)
+        {
+            if (_schematicManager != null && _enableSchematicIntegration)
+            {
+                _schematicManager.LoadSchematic(schematicName);
+                LogInfo($"Loaded schematic: {schematicName}");
+            }
+            else
+            {
+                HandleConstructionError("Schematic manager not available");
+            }
+        }
+
+        #endregion
+
+        #region Private Implementation
+
+        private void SubscribeToEvents()
+        {
+            if (_facilityConstructor != null)
+            {
+                _facilityConstructor.OnPlacementCompleted += HandlePlacementCompleted;
+                _facilityConstructor.OnPlacementCancelled += HandlePlacementCancelled;
+                _facilityConstructor.OnError += HandleConstructionError;
+            }
+        }
+
+        private void UnsubscribeFromEvents()
+        {
+            if (_facilityConstructor != null)
+            {
+                _facilityConstructor.OnPlacementCompleted -= HandlePlacementCompleted;
+                _facilityConstructor.OnPlacementCancelled -= HandlePlacementCancelled;
+                _facilityConstructor.OnError -= HandleConstructionError;
+            }
+        }
+
+        private void SaveConstructionState()
+        {
+            // Simple auto-save - delegate to components if needed
+            LogInfo("Construction state auto-saved");
+        }
+
+        private void HandlePlacementCompleted()
+        {
+            OnConstructionCompleted?.Invoke();
+            _onConstructionCompleted?.Raise();
+            LogInfo("Construction placement completed");
+        }
+
+        private void HandlePlacementCancelled()
+        {
+            LogInfo("Construction placement cancelled");
+        }
+
+        private void HandleConstructionError(string error)
+        {
+            LogError($"Construction Error: {error}");
+            OnConstructionError?.Invoke(error);
+            _onConstructionError?.Raise();
+        }
+
+        #endregion
+    }
+
+    #region Supporting Data Structures
+
+    /// <summary>
+    /// Simple construction status for basic tracking
+    /// </summary>
+    public enum ConstructionStatus
+    {
+        Idle,
+        Placing,
+        Completed,
+        Error
+    }
+
+    #endregion
+}

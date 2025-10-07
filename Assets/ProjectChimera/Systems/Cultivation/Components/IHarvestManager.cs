@@ -1,8 +1,10 @@
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Cultivation.Plant;
 using System;
 using System.Collections.Generic;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Cultivation
 {

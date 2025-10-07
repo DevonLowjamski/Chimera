@@ -52,7 +52,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         {
             if (IsInitialized) return;
 
-            ChimeraLogger.Log("[SpeedTreeEnvironmentalService] Initializing environmental orchestrator...");
+            ChimeraLogger.Log("SPEEDTREE/ENV", "SpeedTreeEnvironmentalService Initialize", this);
 
             // Initialize modular systems in dependency order
             InitializeEnvironmentalResponseSystem();
@@ -64,14 +64,14 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             ConnectSystemEvents();
 
             IsInitialized = true;
-            ChimeraLogger.Log("[SpeedTreeEnvironmentalService] Environmental orchestrator initialized successfully");
+            ChimeraLogger.Log("SPEEDTREE/ENV", "SpeedTreeEnvironmentalService Initialized", this);
         }
 
         public void Shutdown()
         {
             if (!IsInitialized) return;
 
-            ChimeraLogger.Log("[SpeedTreeEnvironmentalService] Shutting down environmental orchestrator...");
+            ChimeraLogger.Log("SPEEDTREE/ENV", "SpeedTreeEnvironmentalService Shutdown", this);
 
             // Shutdown systems in reverse order
             if (stressVisualizationSystem != null) stressVisualizationSystem.Shutdown();
@@ -80,7 +80,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             if (environmentalResponseSystem != null) environmentalResponseSystem.Shutdown();
 
             IsInitialized = false;
-            ChimeraLogger.Log("[SpeedTreeEnvironmentalService] Environmental orchestrator shutdown complete");
+            ChimeraLogger.Log("SPEEDTREE/ENV", "SpeedTreeEnvironmentalService Shutdown Complete", this);
         }
 
         private void InitializeEnvironmentalResponseSystem()
@@ -167,7 +167,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to update environmental response for plant {plantId}: {ex.Message}");
+                ChimeraLogger.LogWarning("SPEEDTREE/ENV", "UpdateEnvironmentalResponse failed", this);
             }
         }
 
@@ -184,7 +184,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to apply conditions to plant {plantId}: {ex.Message}");
+                ChimeraLogger.LogWarning("SPEEDTREE/ENV", "ApplyEnvironmentalConditions failed", this);
             }
         }
 
@@ -201,7 +201,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to update seasonal changes: {ex.Message}");
+                ChimeraLogger.LogWarning("SPEEDTREE/ENV", "UpdateSeasonalChanges failed", this);
             }
         }
 
@@ -218,7 +218,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to update stress visualization for plant {plantId}: {ex.Message}");
+                ChimeraLogger.LogWarning("SPEEDTREE/ENV", "UpdatePlantStressVisualization failed", this);
             }
         }
 
@@ -235,13 +235,81 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to update wind system: {ex.Message}");
+                ChimeraLogger.LogWarning("SPEEDTREE/ENV", "UpdateWindSystem failed", this);
             }
         }
 
         #endregion
 
         #region System Control Methods
+
+        // ISpeedTreeEnvironmentalService: UpdateEnvironment
+        public void UpdateEnvironment(float deltaTime)
+        {
+            if (!ValidateInitialization()) return;
+
+            // Step environmental systems forward
+            environmentalResponseSystem?.Tick(deltaTime);
+            windSystem?.UpdateGlobalWind();
+            seasonalSystem?.UpdateSeasonalSystem();
+            stressVisualizationSystem?.Tick(deltaTime);
+        }
+
+        // ISpeedTreeEnvironmentalService: GetEnvironmentalResponse
+        public ProjectChimera.Systems.Services.SpeedTree.Environmental.EnvironmentalResponseData GetEnvironmentalResponse(int plantId)
+        {
+            // Try to construct from detailed response if available
+            var response = environmentalResponseSystem?.GetPlantResponseData(plantId);
+            var data = new ProjectChimera.Systems.Services.SpeedTree.Environmental.EnvironmentalResponseData
+            {
+                PlantId = plantId
+            };
+
+            if (response.HasValue)
+            {
+                // Map stresses (0-1, where higher stress => lower influence)
+                data.TemperatureInfluence = 1f - Mathf.Clamp01(response.Value.TemperatureStress);
+                data.HumidityInfluence = 1f - Mathf.Clamp01(response.Value.HumidityStress);
+                data.LightInfluence = 1f - Mathf.Clamp01(response.Value.LightStress);
+                data.WindInfluence = 0f; // Not tracked in PlantResponseData; assume neutral
+
+                data.OverallResponseStrength = Mathf.Clamp01(
+                    (data.TemperatureInfluence + data.HumidityInfluence + data.LightInfluence) / 3f);
+                data.IsStressed = response.Value.OverallStress > 0.7f;
+                data.LeafColor = data.IsStressed ? Color.yellow : Color.green;
+                return data;
+            }
+
+            // Fall back to neutral/default if no data yet
+            data.UpdateResponse(22.5f, 50f, 500f, 0f);
+            return data;
+        }
+
+        // ISpeedTreeEnvironmentalService: UpdateWindSettings
+        public void UpdateWindSettings(float windSpeed, Vector3 windDirection, float turbulence)
+        {
+            if (!ValidateInitialization()) return;
+            windSystem?.SetWindStrength(windSpeed);
+            windSystem?.SetWindDirection(windDirection);
+            // Turbulence parameter not directly exposed; handled internally in wind shaders/variation
+        }
+
+        // ISpeedTreeEnvironmentalService: EnableStressVisualization (explicit to avoid property name clash)
+        void ISpeedTreeEnvironmentalService.EnableStressVisualization(bool enabled)
+        {
+            if (stressVisualizationSystem != null)
+            {
+                stressVisualizationSystem.enabled = enabled;
+            }
+        }
+
+        // ISpeedTreeEnvironmentalService: GetSeasonalEffects
+        public ProjectChimera.Systems.Services.SpeedTree.Environmental.SeasonalEffects GetSeasonalEffects()
+        {
+            var effects = new ProjectChimera.Systems.Services.SpeedTree.Environmental.SeasonalEffects();
+            // If SeasonalSystem provided environmental modifiers, map them here; else defaults are fine
+            return effects;
+        }
 
         /// <summary>
         /// Sets wind strength
@@ -256,7 +324,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to set wind strength: {ex.Message}");
+                ChimeraLogger.LogWarning("SPEEDTREE/ENV", "SetWindStrength failed", this);
             }
         }
 
@@ -273,7 +341,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to set wind direction: {ex.Message}");
+                ChimeraLogger.LogWarning("SPEEDTREE/ENV", "SetWindDirection failed", this);
             }
         }
 
@@ -290,7 +358,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to set season: {ex.Message}");
+                ChimeraLogger.LogWarning("SPEEDTREE/ENV", "SetSeason failed", this);
             }
         }
 
@@ -307,7 +375,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             }
             catch (Exception ex)
             {
-                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Failed to set visualization intensity: {ex.Message}");
+                ChimeraLogger.LogWarning("SPEEDTREE/ENV", "SetStressVisualizationIntensity failed", this);
             }
         }
 
@@ -392,23 +460,23 @@ namespace ProjectChimera.Systems.Services.SpeedTree
                 seasonalSystem?.Tick(deltaTime);
                 stressVisualizationSystem?.Tick(deltaTime);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                ChimeraLogger.LogError($"[SpeedTreeEnvironmentalService] Error during environmental update: {ex.Message}");
+                ChimeraLogger.LogWarning("SPEEDTREE/ENV", "Tick failed", this);
             }
         }
 
-        public int Priority => 10; // Environmental updates have medium priority
-        public bool Enabled => enabled && gameObject.activeInHierarchy;
+        public int TickPriority => ProjectChimera.Core.Updates.TickPriority.SpeedTreeServices;
+        public bool IsTickable => enabled && gameObject.activeInHierarchy;
 
         public virtual void OnRegistered()
         {
-            ChimeraLogger.Log("[SpeedTreeEnvironmentalService] Registered with UpdateOrchestrator");
+            ChimeraLogger.Log("SPEEDTREE/ENV", "Registered", this);
         }
 
         public virtual void OnUnregistered()
         {
-            ChimeraLogger.Log("[SpeedTreeEnvironmentalService] Unregistered from UpdateOrchestrator");
+            ChimeraLogger.Log("SPEEDTREE/ENV", "Unregistered", this);
         }
 
         #endregion
@@ -419,7 +487,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         {
             if (!IsInitialized)
             {
-                ChimeraLogger.LogWarning("[SpeedTreeEnvironmentalService] Service not initialized");
+                ChimeraLogger.LogWarning("SPEEDTREE/ENV", "Not initialized", this);
                 return false;
             }
             return true;

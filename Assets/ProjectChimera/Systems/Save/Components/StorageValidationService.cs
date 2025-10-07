@@ -30,7 +30,7 @@ namespace ProjectChimera.Systems.Save.Components
 
             if (_enableLogging)
             {
-                Debug.Log("[StorageValidationService] Initialized successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -41,7 +41,7 @@ namespace ProjectChimera.Systems.Save.Components
         {
             if (!_enableValidation)
             {
-                return ValidationResult.Success();
+                return ValidationResult.CreateSuccess();
             }
 
             if (data == null || data.Length == 0)
@@ -63,10 +63,10 @@ namespace ProjectChimera.Systems.Save.Components
 
             if (_enableLogging)
             {
-                Debug.Log($"[StorageValidationService] Validation successful for {slotName}: {data.Length} bytes");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
 
-            return ValidationResult.Success();
+            return ValidationResult.CreateSuccess();
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace ProjectChimera.Systems.Save.Components
         {
             if (!_enableValidation)
             {
-                return ValidationResult.Success();
+                return ValidationResult.CreateSuccess();
             }
 
             if (data == null || data.Length == 0)
@@ -92,10 +92,10 @@ namespace ProjectChimera.Systems.Save.Components
 
             if (_enableLogging)
             {
-                Debug.Log($"[StorageValidationService] Load validation successful for {slotName}: {data.Length} bytes");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
 
-            return ValidationResult.Success();
+            return ValidationResult.CreateSuccess();
         }
 
         /// <summary>
@@ -153,7 +153,7 @@ namespace ProjectChimera.Systems.Save.Components
         public string ErrorMessage { get; private set; }
         public string SlotName { get; set; }
 
-        public static ValidationResult Success()
+        public static ValidationResult CreateSuccess()
         {
             return new ValidationResult { Success = true };
         }

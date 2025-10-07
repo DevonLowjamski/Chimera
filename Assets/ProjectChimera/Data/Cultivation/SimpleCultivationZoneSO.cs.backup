@@ -1,0 +1,316 @@
+using UnityEngine;
+using System.Collections.Generic;
+using ProjectChimera.Shared;
+using ProjectChimera.Data.Genetics;
+using System;
+using ProjectChimera.Data.Shared;
+using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
+
+
+namespace ProjectChimera.Data.Cultivation
+{
+    /// <summary>
+    /// Simplified Cultivation Zone - Aligned with Project Chimera's vision
+    /// Provides basic zone configuration and equipment placement as described in gameplay document
+    /// Focuses on player control and simple room management without complex automation
+    /// </summary>
+    [CreateAssetMenu(fileName = "New Simple Cultivation Zone", menuName = "Project Chimera/Cultivation/Simple Cultivation Zone")]
+    public class SimpleCultivationZoneSO : ChimeraConfigSO
+    {
+        [Header("Zone Identity")]
+        [SerializeField] private string _zoneID;
+        [SerializeField] private string _zoneName;
+        [SerializeField] private ZoneType _zoneType = ZoneType.FloweringRoom;
+        [SerializeField, TextArea(2, 4)] private string _zoneDescription;
+
+        [Header("Physical Layout")]
+        [SerializeField] private Vector3 _zoneDimensions = new Vector3(4f, 3f, 4f); // meters (L x H x W)
+        [SerializeField, Range(1f, 1000f)] private float _floorArea = 16f; // square meters
+        [SerializeField, Range(1f, 50f)] private float _ceilingHeight = 3f; // meters
+        [SerializeField] private Vector2Int _gridSize = new Vector2Int(4, 4); // plant positions
+
+        [Header("Capacity & Plants")]
+        [SerializeField, Range(1, 1000)] private int _maxPlantCapacity = 16;
+        [SerializeField] private PlantSpacing _plantSpacing = PlantSpacing.Standard;
+        [SerializeField] private GrowingMethod _growingMethod = GrowingMethod.Hydroponic;
+        [SerializeField] private ContainerType _containerType = ContainerType.FlexiblePots;
+
+        [Header("Equipment Tracking")]
+        [SerializeField] private List<EquipmentItem> _placedEquipment = new List<EquipmentItem>();
+        [SerializeField] private List<string> _equipmentIDs = new List<string>();
+
+        [Header("Environmental Settings")]
+        [SerializeField] private EnvironmentalConditions _targetConditions = new EnvironmentalConditions
+        {
+            Temperature = 25f,    // °C
+            Humidity = 60f,       // %RH
+            CO2Level = 800f,      // ppm
+            LightIntensity = 0.8f // 0-1 scale
+        };
+
+        [Header("Current Status")]
+        [SerializeField] private EnvironmentalConditions _currentConditions;
+        [SerializeField] private int _currentPlantCount = 0;
+        [SerializeField] private ZoneStatus _currentStatus = ZoneStatus.Empty;
+
+        // Properties
+        public string ZoneID => _zoneID;
+        public string ZoneName => _zoneName;
+        public ZoneType ZoneType => _zoneType;
+        public string ZoneDescription => _zoneDescription;
+
+        public Vector3 ZoneDimensions => _zoneDimensions;
+        public float FloorArea => _floorArea;
+        public float CeilingHeight => _ceilingHeight;
+        public Vector2Int GridSize => _gridSize;
+
+        public int MaxPlantCapacity => _maxPlantCapacity;
+        public int CurrentPlantCount => _currentPlantCount;
+        public PlantSpacing PlantSpacing => _plantSpacing;
+        public GrowingMethod GrowingMethod => _growingMethod;
+        public ContainerType ContainerType => _containerType;
+
+        public EnvironmentalConditions TargetConditions => _targetConditions;
+        public EnvironmentalConditions CurrentConditions => _currentConditions;
+        public ZoneStatus CurrentStatus => _currentStatus;
+
+        public IReadOnlyList<EquipmentItem> PlacedEquipment => _placedEquipment;
+        public IReadOnlyList<string> EquipmentIDs => _equipmentIDs;
+
+        /// <summary>
+        /// Adds equipment to the zone
+        /// </summary>
+        public bool AddEquipment(string equipmentID, EquipmentType equipmentType, Vector3 position)
+        {
+            if (string.IsNullOrEmpty(equipmentID))
+                return false;
+
+            // Check if equipment already exists
+            if (_equipmentIDs.Contains(equipmentID))
+                return false;
+
+            var equipment = new EquipmentItem
+            {
+                EquipmentID = equipmentID,
+                EquipmentType = equipmentType,
+                Position = position,
+                InstallDate = DateTime.Now,
+                IsActive = true
+            };
+
+            _placedEquipment.Add(equipment);
+            _equipmentIDs.Add(equipmentID);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Removes equipment from the zone
+        /// </summary>
+        public bool RemoveEquipment(string equipmentID)
+        {
+            var equipment = _placedEquipment.Find(e => e.EquipmentID == equipmentID);
+            if (equipment.EquipmentID == null)
+                return false;
+
+            _placedEquipment.Remove(equipment);
+            _equipmentIDs.Remove(equipmentID);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Gets equipment by ID
+        /// </summary>
+        public EquipmentItem? GetEquipment(string equipmentID)
+        {
+            return _placedEquipment.Find(e => e.EquipmentID == equipmentID);
+        }
+
+        /// <summary>
+        /// Checks if zone has specific equipment type
+        /// </summary>
+        public bool HasEquipmentType(EquipmentType equipmentType)
+        {
+            return _placedEquipment.Exists(e => e.EquipmentType == equipmentType);
+        }
+
+        /// <summary>
+        /// Gets count of specific equipment type
+        /// </summary>
+        public int GetEquipmentCount(EquipmentType equipmentType)
+        {
+            int count = 0;
+            foreach (var equipment in _placedEquipment)
+            {
+                if (equipment.EquipmentType == equipmentType)
+                    count++;
+            }
+            return count;
+        }
+
+        /// <summary>
+        /// Updates current plant count
+        /// </summary>
+        public void UpdatePlantCount(int newCount)
+        {
+            _currentPlantCount = Mathf.Clamp(newCount, 0, _maxPlantCapacity);
+            UpdateZoneStatus();
+        }
+
+        /// <summary>
+        /// Updates current environmental conditions
+        /// </summary>
+        public void UpdateEnvironmentalConditions(EnvironmentalConditions conditions)
+        {
+            _currentConditions = conditions;
+            UpdateZoneStatus();
+        }
+
+        /// <summary>
+        /// Updates zone status based on current state
+        /// </summary>
+        private void UpdateZoneStatus()
+        {
+            if (_currentPlantCount == 0)
+            {
+                _currentStatus = ZoneStatus.Empty;
+            }
+            else if (_currentPlantCount < _maxPlantCapacity)
+            {
+                _currentStatus = ZoneStatus.Partial;
+            }
+            else
+            {
+                _currentStatus = ZoneStatus.Full;
+            }
+        }
+
+        /// <summary>
+        /// Calculates available space for new plants
+        /// </summary>
+        public int GetAvailableSpace()
+        {
+            return _maxPlantCapacity - _currentPlantCount;
+        }
+
+        /// <summary>
+        /// Checks if zone can accommodate more plants
+        /// </summary>
+        public bool CanAddPlants(int count)
+        {
+            return (_currentPlantCount + count) <= _maxPlantCapacity;
+        }
+
+        /// <summary>
+        /// Gets zone utilization percentage
+        /// </summary>
+        public float GetUtilizationPercentage()
+        {
+            if (_maxPlantCapacity == 0) return 0f;
+            return (float)_currentPlantCount / _maxPlantCapacity;
+        }
+
+        /// <summary>
+        /// Validates zone configuration
+        /// </summary>
+        public override bool ValidateData()
+        {
+            bool isValid = true;
+
+            // Validate basic properties
+            if (string.IsNullOrEmpty(_zoneID))
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                isValid = false;
+            }
+
+            if (string.IsNullOrEmpty(_zoneName))
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                isValid = false;
+            }
+
+            // Validate dimensions
+            if (_zoneDimensions.x <= 0 || _zoneDimensions.y <= 0 || _zoneDimensions.z <= 0)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                isValid = false;
+            }
+
+            // Validate capacity
+            if (_maxPlantCapacity <= 0)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                isValid = false;
+            }
+
+            // Validate grid size
+            if (_gridSize.x <= 0 || _gridSize.y <= 0)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+                isValid = false;
+            }
+
+            // Validate environmental ranges
+            if (_targetConditions.Temperature < 10f || _targetConditions.Temperature > 40f)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            if (_targetConditions.Humidity < 20f || _targetConditions.Humidity > 90f)
+            {
+                UnityEngine.Debug.Log("Operation completed");
+            }
+
+            return isValid;
+        }
+
+        /// <summary>
+        /// Gets a summary of the zone status
+        /// </summary>
+        public string GetStatusSummary()
+        {
+            return $"{_zoneName} ({_zoneType}): {_currentPlantCount}/{_maxPlantCapacity} plants, {_placedEquipment.Count} equipment items";
+        }
+    }
+
+    /// <summary>
+    /// Equipment item in the zone
+    /// </summary>
+    [Serializable]
+    public struct EquipmentItem
+    {
+        public string EquipmentID;
+        public EquipmentType EquipmentType;
+        public Vector3 Position;
+        public DateTime InstallDate;
+        public bool IsActive;
+    }
+
+    /// <summary>
+    /// Equipment types available in cultivation zones
+    /// </summary>
+    public enum EquipmentType
+    {
+        Lighting,
+        HVAC,
+        Irrigation,
+        Monitoring,
+        Safety,
+        Other
+    }
+
+    /// <summary>
+    /// Zone status
+    /// </summary>
+    public enum ZoneStatus
+    {
+        Empty,
+        Partial,
+        Full
+    }
+
+    // Cultivation enums are defined in CultivationZoneSO.cs to avoid duplication
+    // (ZoneType, PlantSpacing, GrowingMethod, ContainerType)
+}

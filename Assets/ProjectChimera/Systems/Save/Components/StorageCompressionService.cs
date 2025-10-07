@@ -317,19 +317,19 @@ namespace ProjectChimera.Systems.Save.Components
         private void LogInfo(string message)
         {
             if (_enableDebugLogging)
-                ChimeraLogger.Log($"[StorageCompressionService] {message}");
+                ChimeraLogger.Log("OTHER", "$1", this);
         }
         
         private void LogWarning(string message)
         {
             if (_enableDebugLogging)
-                ChimeraLogger.LogWarning($"[StorageCompressionService] {message}");
+                ChimeraLogger.Log("OTHER", "$1", this);
         }
         
         private void LogError(string message)
         {
             if (_enableDebugLogging)
-                ChimeraLogger.LogError($"[StorageCompressionService] {message}");
+                ChimeraLogger.Log("OTHER", "$1", this);
         }
     }
     

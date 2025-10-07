@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectChimera.Core.Logging;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Core
 {
@@ -13,38 +14,38 @@ namespace ProjectChimera.Core
         [Header("Audio Focus Configuration")]
         [SerializeField] private bool _runInBackground = true;
         [SerializeField] private bool _muteOtherAudioSources = false;
-        
+
         private bool _wasAudioMuted = false;
         private float _previousMasterVolume = 1f;
-        
+
         private void Awake()
         {
             // Prevent audio system reinitialization issues
             Application.runInBackground = _runInBackground;
-            
+
             // Disable automatic audio source management to prevent FMOD conflicts
             if (AudioSettings.driverCapabilities.ToString().Contains("FMOD"))
             {
                 // For FMOD systems, prevent Unity from managing audio output switching
                 AudioSettings.OnAudioConfigurationChanged += OnAudioConfigurationChanged;
             }
-            
+
             // Don't destroy this handler when loading new scenes
             DontDestroyOnLoad(gameObject);
-            
+
             LogInfo("Audio Focus Handler initialized with FMOD compatibility");
         }
-        
+
         private void OnApplicationFocus(bool hasFocus)
         {
             HandleAudioFocus(hasFocus);
         }
-        
+
         private void OnApplicationPause(bool pauseStatus)
         {
             HandleAudioFocus(!pauseStatus);
         }
-        
+
         /// <summary>
         /// Handles audio focus changes to prevent FMOD errors
         /// </summary>
@@ -64,7 +65,7 @@ namespace ProjectChimera.Core
                 }
             }
         }
-        
+
         /// <summary>
         /// Mutes audio to prevent conflicts when application loses focus
         /// </summary>
@@ -78,7 +79,7 @@ namespace ProjectChimera.Core
                 LogInfo("Audio muted due to focus loss");
             }
         }
-        
+
         /// <summary>
         /// Restores audio when application regains focus
         /// </summary>
@@ -91,15 +92,15 @@ namespace ProjectChimera.Core
                 LogInfo("Audio restored after focus gain");
             }
         }
-        
+
         /// <summary>
         /// Logs information about audio focus handling
         /// </summary>
         private void LogInfo(string message)
         {
-            ChimeraLogger.Log($"[AudioFocusHandler] {message}");
+            Logger.LogInfo("AudioFocusHandler", message);
         }
-        
+
         /// <summary>
         /// Handles audio configuration changes to prevent FMOD reinitialization
         /// </summary>
@@ -112,12 +113,12 @@ namespace ProjectChimera.Core
                 // This prevents the "Cannot call this command after System::init" error
             }
         }
-        
+
         private void OnDestroy()
         {
             // Unsubscribe from events
             AudioSettings.OnAudioConfigurationChanged -= OnAudioConfigurationChanged;
-            
+
             // Restore audio if this handler is destroyed while muted
             if (_wasAudioMuted)
             {

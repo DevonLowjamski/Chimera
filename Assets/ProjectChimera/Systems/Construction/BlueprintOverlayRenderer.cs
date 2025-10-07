@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Core;
+using ProjectChimera.Data.Construction;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Construction
 {
@@ -52,7 +54,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                Debug.Log("[BlueprintOverlayRenderer] Initialized successfully");
+                ChimeraLogger.Log("OTHER", "Blueprint overlay renderer initialized", this);
             }
         }
 
@@ -85,7 +87,7 @@ namespace ProjectChimera.Systems.Construction
 
                 if (_enableLogging)
                 {
-                    Debug.Log($"[BlueprintOverlayRenderer] Created overlay for {targetObject.name}");
+                    ChimeraLogger.Log("OTHER", $"Created overlay for {targetObject.name}", this);
                 }
             }
         }
@@ -111,7 +113,7 @@ namespace ProjectChimera.Systems.Construction
 
                 if (_enableLogging)
                 {
-                    Debug.Log($"[BlueprintOverlayRenderer] Removed overlay from {targetObject.name}");
+                    ChimeraLogger.Log("OTHER", $"Removed overlay from {targetObject.name}", this);
                 }
             }
         }
@@ -130,7 +132,7 @@ namespace ProjectChimera.Systems.Construction
 
                 if (_enableLogging)
                 {
-                    Debug.Log($"[BlueprintOverlayRenderer] Updated validity for {targetObject.name}: {isValid}");
+                    ChimeraLogger.Log("OTHER", $"Updated overlay validity for {targetObject.name}: {isValid}", this);
                 }
             }
         }
@@ -149,7 +151,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                Debug.Log($"[BlueprintOverlayRenderer] Cleared all overlays ({objectsToRemove.Count} objects)");
+                ChimeraLogger.Log("OTHER", "Cleared all overlays", this);
             }
         }
 
@@ -183,9 +185,125 @@ namespace ProjectChimera.Systems.Construction
 
             if (_enableLogging)
             {
-                Debug.Log($"[BlueprintOverlayRenderer] Rendering enabled: {enabled}");
+                ChimeraLogger.Log("OTHER", $"Rendering enabled: {enabled}", this);
             }
         }
+
+        /// <summary>
+        /// Create schematic overlay with position and rotation
+        /// </summary>
+        public OverlayInstance CreateSchematicOverlay(SchematicSO schematic, Vector3 position, Quaternion rotation, OverlayType overlayType = OverlayType.Blueprint)
+        {
+            if (!_enableRendering || !_isInitialized || schematic == null) return null;
+
+            // Create a visual representation of the schematic
+            var overlayObject = new GameObject($"SchematicOverlay_{schematic.name}");
+            overlayObject.transform.position = position;
+            overlayObject.transform.rotation = rotation;
+
+            // Add visual components based on schematic
+            var renderer = overlayObject.AddComponent<MeshRenderer>();
+            var meshFilter = overlayObject.AddComponent<MeshFilter>();
+
+            // Use a simple cube mesh for now - could be enhanced with schematic-specific meshes
+            meshFilter.mesh = CreateSchematicMesh();
+            renderer.material = _blueprintMaterial;
+
+            var overlayInstance = new OverlayInstance
+            {
+                TargetObject = overlayObject,
+                OriginalMaterial = _blueprintMaterial,
+                IsValidPlacement = true
+            };
+
+            _activeOverlays[overlayObject] = _blueprintMaterial;
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", $"Created schematic overlay for {schematic.name}", this);
+            }
+
+            return overlayInstance;
+        }
+
+        /// <summary>
+        /// Move existing overlay to new position and rotation
+        /// </summary>
+        public void MoveOverlay(OverlayInstance overlay, Vector3 newPosition, Quaternion newRotation, bool isValidPlacement)
+        {
+            if (overlay?.TargetObject == null) return;
+
+            overlay.TargetObject.transform.position = newPosition;
+            overlay.TargetObject.transform.rotation = newRotation;
+            overlay.IsValidPlacement = isValidPlacement;
+
+            // Update material based on validity
+            var renderer = overlay.TargetObject.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material = isValidPlacement ? _validPlacementMaterial : _invalidPlacementMaterial;
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", $"Moved overlay to {newPosition}", this);
+            }
+        }
+
+        /// <summary>
+        /// Update overlay validation state
+        /// </summary>
+        public void UpdateOverlayValidation(OverlayInstance overlay, bool isValid)
+        {
+            if (overlay?.TargetObject == null) return;
+
+            overlay.IsValidPlacement = isValid;
+            var renderer = overlay.TargetObject.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material = isValid ? _validPlacementMaterial : _invalidPlacementMaterial;
+            }
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", $"Updated overlay validation: {isValid}", this);
+            }
+        }
+
+        /// <summary>
+        /// Destroy overlay instance
+        /// </summary>
+        public void DestroyOverlay(OverlayInstance overlay)
+        {
+            if (overlay?.TargetObject == null) return;
+
+            if (_activeOverlays.ContainsKey(overlay.TargetObject))
+            {
+                _activeOverlays.Remove(overlay.TargetObject);
+            }
+
+            if (overlay.TargetObject != null)
+            {
+                DestroyImmediate(overlay.TargetObject);
+            }
+
+            OnOverlayDestroyed?.Invoke(overlay.TargetObject);
+
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("OTHER", "Destroyed overlay instance", this);
+            }
+        }
+
+        /// <summary>
+        /// Get blueprint material property
+        /// </summary>
+        public Material BlueprintMaterial => _blueprintMaterial;
+
+        /// <summary>
+        /// Get overlay camera (placeholder for compatibility)
+        /// </summary>
+        public UnityEngine.Camera OverlayCamera { get; set; }
 
         #region Private Methods
 
@@ -204,6 +322,40 @@ namespace ProjectChimera.Systems.Construction
             return material;
         }
 
+        private Mesh CreateSchematicMesh()
+        {
+            // Create a simple cube mesh for schematic visualization
+            var mesh = new Mesh();
+
+            Vector3[] vertices = new Vector3[8]
+            {
+                new Vector3(-0.5f, -0.5f, -0.5f),
+                new Vector3(0.5f, -0.5f, -0.5f),
+                new Vector3(0.5f, 0.5f, -0.5f),
+                new Vector3(-0.5f, 0.5f, -0.5f),
+                new Vector3(-0.5f, -0.5f, 0.5f),
+                new Vector3(0.5f, -0.5f, 0.5f),
+                new Vector3(0.5f, 0.5f, 0.5f),
+                new Vector3(-0.5f, 0.5f, 0.5f)
+            };
+
+            int[] triangles = new int[36]
+            {
+                0, 2, 1, 0, 3, 2, // front
+                1, 6, 5, 1, 2, 6, // right
+                5, 7, 4, 5, 6, 7, // back
+                4, 3, 0, 4, 7, 3, // left
+                3, 6, 2, 3, 7, 6, // top
+                0, 5, 4, 0, 1, 5  // bottom
+            };
+
+            mesh.vertices = vertices;
+            mesh.triangles = triangles;
+            mesh.RecalculateNormals();
+
+            return mesh;
+        }
+
         #endregion
     }
 
@@ -215,5 +367,16 @@ namespace ProjectChimera.Systems.Construction
         public GameObject TargetObject;
         public Material OriginalMaterial;
         public bool IsValidPlacement;
+    }
+
+    /// <summary>
+    /// Overlay type enumeration
+    /// </summary>
+    public enum OverlayType
+    {
+        Blueprint,
+        Preview,
+        Selection,
+        Highlight
     }
 }

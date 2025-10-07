@@ -3,6 +3,7 @@ using UnityEngine.Profiling;
 using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
 using System.Diagnostics;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Diagnostics
 {
@@ -11,7 +12,7 @@ namespace ProjectChimera.Systems.Diagnostics
     /// Provides development-time performance metrics and profiling data
     /// Only active in development builds (#if DEVELOPMENT_BUILD || UNITY_EDITOR)
     /// </summary>
-    public class PerformanceProfiler : MonoBehaviour
+    public class PerformanceProfiler : MonoBehaviour, ITickable
     {
         [Header("Profiling Settings")]
         [SerializeField] private float _profilingInterval = 1f;
@@ -41,9 +42,13 @@ namespace ProjectChimera.Systems.Diagnostics
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             InitializeProfiling();
 #endif
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
         }
 
-        private void Update()
+        public int TickPriority => 100;
+        public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+        public void Tick(float deltaTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             UpdatePerformanceMetrics();
@@ -52,6 +57,7 @@ namespace ProjectChimera.Systems.Diagnostics
 
         private void OnDestroy()
         {
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             CleanupProfiling();
 #endif
@@ -66,7 +72,7 @@ namespace ProjectChimera.Systems.Diagnostics
             _frameCount = 0;
             _totalFrameTime = 0f;
 
-            ChimeraLogger.Log("[PerformanceProfiler] Initialized performance profiling");
+            ChimeraLogger.Log("DIAGNOSTICS", "Profiler initialized", this);
         }
 
         /// <summary>
@@ -111,8 +117,8 @@ namespace ProjectChimera.Systems.Diagnostics
                 TotalReservedMemory = Profiler.GetTotalReservedMemoryLong(),
                 MonoUsedSize = Profiler.GetMonoUsedSizeLong(),
                 MonoHeapSize = Profiler.GetMonoHeapSizeLong(),
-                UsedHeapSize = Profiler.GetUsedHeapSizeLong(),
-                TotalHeapSize = Profiler.GetTotalHeapSizeLong()
+                UsedHeapSize = 0,
+                TotalHeapSize = 0
             };
 
             // Add GPU profiling if enabled
@@ -139,11 +145,11 @@ namespace ProjectChimera.Systems.Diagnostics
         {
             if (_currentFPS <= _fpsCriticalThreshold)
             {
-                ChimeraLogger.LogWarning($"[PerformanceProfiler] CRITICAL FPS: {_currentFPS:F1} (below {_fpsCriticalThreshold})");
+                ChimeraLogger.LogWarning("DIAGNOSTICS", "FPS critical", this);
             }
             else if (_currentFPS <= _fpsWarningThreshold)
             {
-                ChimeraLogger.Log($"[PerformanceProfiler] WARNING FPS: {_currentFPS:F1} (below {_fpsWarningThreshold})");
+                ChimeraLogger.LogWarning("DIAGNOSTICS", "FPS warning", this);
             }
         }
 
@@ -153,7 +159,7 @@ namespace ProjectChimera.Systems.Diagnostics
         private void CleanupProfiling()
         {
             _profileSamples.Clear();
-            ChimeraLogger.Log("[PerformanceProfiler] Cleaned up performance profiling");
+            ChimeraLogger.Log("DIAGNOSTICS", "Profiler data cleared", this);
         }
 
         /// <summary>
@@ -200,11 +206,25 @@ namespace ProjectChimera.Systems.Diagnostics
                 TotalReservedMemory = Profiler.GetTotalReservedMemoryLong(),
                 MonoUsedSize = Profiler.GetMonoUsedSizeLong(),
                 MonoHeapSize = Profiler.GetMonoHeapSizeLong(),
-                UsedHeapSize = Profiler.GetUsedHeapSizeLong(),
-                TotalHeapSize = Profiler.GetTotalHeapSizeLong()
+                UsedHeapSize = 0,
+                TotalHeapSize = 0
             };
 #else
             return new MemoryMetrics { TotalAllocatedMemory = 0L };
+#endif
+        }
+
+        /// <summary>
+        /// Returns a concise human-readable summary of current performance
+        /// </summary>
+        public string GetPerformanceSummary()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            var fps = GetFPSMetrics();
+            var mem = GetMemoryMetrics();
+            return $"FPS: {fps.CurrentFPS:F1} (avg {fps.AverageFPS:F1}, min {fps.MinFPS:F1}, max {fps.MaxFPS:F1}) | Mem: {mem.TotalAllocatedMemory / (1024 * 1024)}MB";
+#else
+            return "Performance data unavailable in release builds";
 #endif
         }
 
@@ -220,7 +240,7 @@ namespace ProjectChimera.Systems.Diagnostics
             _minFPS = float.MaxValue;
             _maxFPS = 0f;
 
-            ChimeraLogger.Log("[PerformanceProfiler] Cleared performance data");
+            ChimeraLogger.Log("DIAGNOSTICS", "Profiler data cleared", this);
 #endif
         }
 

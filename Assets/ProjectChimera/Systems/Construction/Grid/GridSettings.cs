@@ -8,10 +8,10 @@ namespace ProjectChimera.Systems.Construction.Grid
     /// Manages grid configuration settings and parameters
     /// Handles loading, saving, and validation of grid settings
     /// </summary>
-    public class GridSettings
+    public class GridSettingsManager
     {
         // Grid configuration
-        private GridSnapSettings _gridSettings = new GridSnapSettings
+        private GridTypes.GridSnapSettings _gridSettings = new GridTypes.GridSnapSettings
         {
             GridSize = 1.0f,
             SnapToGrid = true,
@@ -81,7 +81,7 @@ namespace ProjectChimera.Systems.Construction.Grid
             _validatePlacement = PlayerPrefs.GetInt("ValidatePlacement", 1) == 1;
             _preventOverlap = PlayerPrefs.GetInt("PreventOverlap", 1) == 1;
 
-            ChimeraLogger.LogVerbose("Grid settings loaded from PlayerPrefs");
+            ChimeraLogger.Log("OTHER", "Grid settings operation", null);
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace ProjectChimera.Systems.Construction.Grid
 
             PlayerPrefs.Save();
 
-            ChimeraLogger.LogVerbose("Grid settings saved to PlayerPrefs");
+            ChimeraLogger.Log("OTHER", "Grid settings operation", null);
         }
 
         /// <summary>
@@ -128,7 +128,7 @@ namespace ProjectChimera.Systems.Construction.Grid
         /// </summary>
         public void ResetToDefaults()
         {
-            _gridSettings = new GridSnapSettings
+            _gridSettings = new GridTypes.GridSnapSettings
             {
                 GridSize = 1.0f,
                 SnapToGrid = true,
@@ -149,7 +149,7 @@ namespace ProjectChimera.Systems.Construction.Grid
             _snapLayers = -1;
 
             OnSettingsChanged?.Invoke();
-            ChimeraLogger.LogVerbose("Grid settings reset to defaults");
+            ChimeraLogger.Log("OTHER", "Grid settings operation", null);
         }
 
         /// <summary>
@@ -177,12 +177,12 @@ namespace ProjectChimera.Systems.Construction.Grid
         /// <summary>
         /// Update grid snap settings
         /// </summary>
-        public void UpdateGridSnapSettings(GridSnapSettings newSettings)
+        public void UpdateGridSnapSettings(GridTypes.GridSnapSettings newSettings)
         {
             _gridSettings = newSettings;
             ValidateSettings();
             OnSettingsChanged?.Invoke();
-            ChimeraLogger.LogVerbose("Grid snap settings updated");
+            ChimeraLogger.Log("OTHER", "Grid settings operation", null);
         }
 
         /// <summary>
@@ -194,7 +194,7 @@ namespace ProjectChimera.Systems.Construction.Grid
             _gridDimensions = dimensions;
             ValidateSettings();
             OnSettingsChanged?.Invoke();
-            ChimeraLogger.LogVerbose("Grid bounds updated");
+            ChimeraLogger.Log("OTHER", "Grid settings operation", null);
         }
 
         /// <summary>
@@ -207,7 +207,7 @@ namespace ProjectChimera.Systems.Construction.Grid
             _heightLevelSpacing = spacing;
             ValidateSettings();
             OnSettingsChanged?.Invoke();
-            ChimeraLogger.LogVerbose("Height settings updated");
+            ChimeraLogger.Log("OTHER", "Grid settings operation", null);
         }
 
         /// <summary>
@@ -220,19 +220,19 @@ namespace ProjectChimera.Systems.Construction.Grid
             _preventOverlap = preventOverlap;
             ValidateSettings();
             OnSettingsChanged?.Invoke();
-            ChimeraLogger.LogVerbose("Placement settings updated");
+            ChimeraLogger.Log("OTHER", "Grid settings operation", null);
         }
 
         /// <summary>
         /// Get a copy of current grid settings
         /// </summary>
-        public GridSnapSettings GetGridSnapSettings()
+        public GridTypes.GridSnapSettings GetGridSnapSettings()
         {
             return _gridSettings;
         }
 
         // Public properties
-        public GridSnapSettings GridSettings => _gridSettings;
+        public GridTypes.GridSnapSettings GridSettings => _gridSettings;
         public Vector3 GridOrigin => _gridOrigin;
         public Vector3 GridDimensions => _gridDimensions;
         public float GridHeight => _gridHeight;

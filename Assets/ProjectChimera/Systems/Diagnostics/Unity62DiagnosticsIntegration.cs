@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Core;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Diagnostics
 {
@@ -31,7 +32,7 @@ namespace ProjectChimera.Systems.Diagnostics
 
             if (_enableBasicLogging)
             {
-                Debug.Log("[Unity62DiagnosticsIntegration] Basic diagnostics initialized");
+                ChimeraLogger.Log("DIAGNOSTICS", "Unity62DiagnosticsIntegration initialized", this);
             }
         }
 
@@ -43,7 +44,7 @@ namespace ProjectChimera.Systems.Diagnostics
             if (!_enableBasicLogging) return;
 
             var formattedMessage = $"[{level.ToString().ToUpper()}] {message}";
-            Debug.Log(formattedMessage);
+            ChimeraLogger.Log("DIAGNOSTICS", formattedMessage, this);
 
             _loggedMessages.Add(formattedMessage);
 
@@ -65,7 +66,7 @@ namespace ProjectChimera.Systems.Diagnostics
                 $"Error: {errorMessage}" :
                 $"Error in {context}: {errorMessage}";
 
-            Debug.LogError(fullErrorMessage);
+            ChimeraLogger.LogError("DIAGNOSTICS", fullErrorMessage, this);
             _errorMessages.Add(fullErrorMessage);
 
             // Keep only recent errors
@@ -122,7 +123,7 @@ namespace ProjectChimera.Systems.Diagnostics
 
             if (_enableBasicLogging)
             {
-                Debug.Log("[Unity62DiagnosticsIntegration] Logs cleared");
+                ChimeraLogger.Log("DIAGNOSTICS", "Diagnostics logs cleared", this);
             }
         }
 
@@ -151,7 +152,7 @@ namespace ProjectChimera.Systems.Diagnostics
 
             if (_enableBasicLogging)
             {
-                Debug.Log($"[Unity62DiagnosticsIntegration] Logging {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.Log("DIAGNOSTICS", "Diagnostics logging enabled", this);
             }
         }
 
@@ -164,20 +165,9 @@ namespace ProjectChimera.Systems.Diagnostics
 
             if (_enableBasicLogging)
             {
-                Debug.Log($"[Unity62DiagnosticsIntegration] Error reporting {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.Log("DIAGNOSTICS", "Error reporting setting updated", this);
             }
         }
-    }
-
-    /// <summary>
-    /// Log level enum
-    /// </summary>
-    public enum LogLevel
-    {
-        Info,
-        Warning,
-        Error,
-        Critical
     }
 
     /// <summary>

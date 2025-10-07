@@ -2,6 +2,7 @@ using UnityEngine;
 using ProjectChimera.Core.Logging;
 using System.Collections.Generic;
 using System.Linq;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Construction
 {
@@ -10,7 +11,7 @@ namespace ProjectChimera.Systems.Construction
     /// Provides the grid-based construction system as described in gameplay document
     /// Manages precise control and modular design for equipment and facility placement
     /// </summary>
-    public class GridPlacementSystem : MonoBehaviour
+    public class GridPlacementSystem : MonoBehaviour, ITickable
     {
         [Header("Grid Settings")]
         [SerializeField] private float _gridSize = 0.5f;
@@ -38,13 +39,23 @@ namespace ProjectChimera.Systems.Construction
         private void Awake()
         {
             InitializeGrid();
+            // Register tickable on awake
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
         }
 
-        private void Update()
-        {
+    public int TickPriority => 100;
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
             HandlePlacementInput();
             UpdatePlacementPreview();
-        }
+    }
+
+    private void OnDestroy()
+    {
+        UpdateOrchestrator.Instance?.UnregisterTickable(this);
+    }
 
         private void OnDrawGizmos()
         {
@@ -82,7 +93,7 @@ namespace ProjectChimera.Systems.Construction
             // Initialize occupied cells array
             _occupiedCells = new bool[_gridDimensions.x, _gridDimensions.z];
 
-            ChimeraLogger.Log($"[GridPlacementSystem] Initialized grid: {_gridDimensions.x}x{_gridDimensions.z} cells, size {_gridSize}");
+            ChimeraLogger.Log("OTHER", "$1", this);
         }
 
         /// <summary>
@@ -92,7 +103,7 @@ namespace ProjectChimera.Systems.Construction
         {
             if (constructionObject == null)
             {
-                ChimeraLogger.LogWarning("[GridPlacementSystem] No construction object provided");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return;
             }
 
@@ -101,7 +112,7 @@ namespace ProjectChimera.Systems.Construction
             _currentRotation = 0;
 
             CreatePlacementPreview();
-            ChimeraLogger.Log($"[GridPlacementSystem] Started placing: {constructionObject.ObjectName}");
+            ChimeraLogger.Log("OTHER", "$1", this);
         }
 
         /// <summary>
@@ -113,7 +124,7 @@ namespace ProjectChimera.Systems.Construction
             _currentPlacementObject = null;
             DestroyPlacementPreview();
 
-            ChimeraLogger.Log("[GridPlacementSystem] Placement cancelled");
+            ChimeraLogger.Log("OTHER", "$1", this);
         }
 
         /// <summary>
@@ -126,7 +137,7 @@ namespace ProjectChimera.Systems.Construction
 
             if (!CanPlaceAtPosition(_currentGridPosition, _currentPlacementObject))
             {
-                ChimeraLogger.LogWarning("[GridPlacementSystem] Cannot place object at current position");
+                ChimeraLogger.Log("OTHER", "$1", this);
                 return false;
             }
 
@@ -155,7 +166,7 @@ namespace ProjectChimera.Systems.Construction
             if (!_isPlacingObject) return;
 
             // Handle mouse input for grid position
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Ray ray = UnityEngine.Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, _placementLayerMask))
             {
                 Vector3 rawPosition = hit.point;
@@ -264,7 +275,7 @@ namespace ProjectChimera.Systems.Construction
             // Store reference
             _placedObjects[gridPos] = constructionObject;
 
-            ChimeraLogger.Log($"[GridPlacementSystem] Placed {constructionObject.ObjectName} at grid {gridPos}");
+            ChimeraLogger.Log("OTHER", "$1", this);
         }
 
         /// <summary>
@@ -305,7 +316,7 @@ namespace ProjectChimera.Systems.Construction
 
             _placedObjects.Remove(gridPos);
 
-            ChimeraLogger.Log($"[GridPlacementSystem] Removed object at grid {gridPos}");
+            ChimeraLogger.Log("OTHER", "$1", this);
             return true;
         }
 

@@ -1,0 +1,178 @@
+using UnityEngine;
+using UnityEditor;
+using System.IO;
+using ProjectChimera.Core.Logging;
+
+namespace ProjectChimera.Editor
+{
+    /// <summary>
+    /// Unity cache management utilities for Project Chimera.
+    /// Helps resolve persistent asset reference and configuration issues.
+    /// </summary>
+    public static class UnityCacheManager
+    {
+        [MenuItem("Project Chimera/Cache Management/Clear Asset Database")]
+        public static void ClearAssetDatabase()
+        {
+            ChimeraLogger.Log("OTHER", "$1", this);
+            
+            // Force reimport of all assets
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+            
+            ChimeraLogger.Log("OTHER", "$1", this);
+        }
+        
+        [MenuItem("Project Chimera/Cache Management/Clear Script Cache")]
+        public static void ClearScriptCache()
+        {
+            ChimeraLogger.Log("OTHER", "$1", this);
+            
+            // Request script compilation
+            EditorUtility.RequestScriptReload();
+            
+            ChimeraLogger.Log("OTHER", "$1", this);
+        }
+        
+        [MenuItem("Project Chimera/Cache Management/Clear All Unity Caches")]
+        public static void ClearAllUnityCaches()
+        {
+            ChimeraLogger.Log("OTHER", "$1", this);
+            
+            // Clear Asset Database
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+            
+            // Clear script compilation cache
+            EditorUtility.RequestScriptReload();
+            
+            // Note: Console clearing requires Unity's internal API which may not be reliable across versions
+            // Users can manually clear console if needed - focusing on cache clearing which is the primary function
+            ChimeraLogger.Log("OTHER", "$1", this);
+            
+            ChimeraLogger.Log("OTHER", "$1", this);
+        }
+        
+        [MenuItem("Project Chimera/Cache Management/Force Reimport ProjectChimera Assets")]
+        public static void ForceReimportProjectChimeraAssets()
+        {
+            ChimeraLogger.Log("OTHER", "$1", this);
+            
+            // Find all assets in ProjectChimera folders
+            string[] assetPaths = AssetDatabase.GetAllAssetPaths();
+            
+            int reimportedCount = 0;
+            foreach (string path in assetPaths)
+            {
+                if (path.StartsWith("Assets/ProjectChimera/"))
+                {
+                    AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+                    reimportedCount++;
+                }
+            }
+            
+            ChimeraLogger.Log("OTHER", "$1", this);
+        }
+        
+        [MenuItem("Project Chimera/Cache Management/Validate Asset References")]
+        public static void ValidateAssetReferences()
+        {
+            ChimeraLogger.Log("OTHER", "$1", this);
+            
+            // Find all ScriptableObject assets
+            string[] guids = AssetDatabase.FindAssets("t:ScriptableObject");
+            
+            int validAssets = 0;
+            int invalidAssets = 0;
+            
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                
+                if (path.StartsWith("Assets/ProjectChimera/"))
+                {
+                    var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(path);
+                    
+                    if (asset != null)
+                    {
+                        validAssets++;
+                    }
+                    else
+                    {
+                        invalidAssets++;
+                        ChimeraLogger.Log("OTHER", "$1", this);
+                    }
+                }
+            }
+            
+            ChimeraLogger.Log("OTHER", "$1", this);
+        }
+        
+        [MenuItem("Project Chimera/Cache Management/Fix Asset GUID References")]
+        public static void FixAssetGUIDReferences()
+        {
+            ChimeraLogger.Log("OTHER", "$1", this);
+            
+            // This is a more advanced operation that would require careful handling
+            // For now, we'll just refresh the asset database
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+            
+            ChimeraLogger.Log("OTHER", "$1", this);
+        }
+        
+        [MenuItem("Project Chimera/Cache Management/Emergency Asset Recovery")]
+        public static void EmergencyAssetRecovery()
+        {
+            if (!EditorUtility.DisplayDialog("Emergency Asset Recovery", 
+                "This will perform a complete asset system reset. This may take several minutes. Continue?", 
+                "Yes", "Cancel"))
+            {
+                return;
+            }
+            
+            ChimeraLogger.Log("OTHER", "$1", this);
+            
+            try
+            {
+                // Step 1: Clear all caches
+                ClearAllUnityCaches();
+                
+                // Step 2: Force reimport all ProjectChimera assets
+                ForceReimportProjectChimeraAssets();
+                
+                // Step 3: Validate references
+                ValidateAssetReferences();
+                
+                // Step 4: Request script reload
+                EditorUtility.RequestScriptReload();
+                
+                ChimeraLogger.Log("OTHER", "$1", this);
+                
+                EditorUtility.DisplayDialog("Recovery Complete", 
+                    "Emergency asset recovery completed successfully. Unity will recompile scripts.", 
+                    "OK");
+            }
+            catch (System.Exception e)
+            {
+                ChimeraLogger.Log("OTHER", "$1", this);
+                
+                EditorUtility.DisplayDialog("Recovery Failed", 
+                    $"Emergency asset recovery failed: {e.Message}", 
+                    "OK");
+            }
+        }
+        
+        [MenuItem("Project Chimera/Cache Management/Optimize Asset Database")]
+        public static void OptimizeAssetDatabase()
+        {
+            ChimeraLogger.Log("OTHER", "$1", this);
+            
+            // Remove unused assets from the database
+            AssetDatabase.Refresh();
+            
+            // Force garbage collection
+            System.GC.Collect();
+            System.GC.WaitForPendingFinalizers();
+            
+            ChimeraLogger.Log("OTHER", "$1", this);
+        }
+    }
+}

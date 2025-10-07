@@ -14,25 +14,25 @@ namespace ProjectChimera.Systems.Prefabs
     {
         [Header("Plant Prefab Configuration")]
         [SerializeField] private List<GameObject> _plantPrefabs = new List<GameObject>();
-        
+
         [Header("Basic Settings")]
         [SerializeField] private bool _enableRandomVariations = true;
         [SerializeField] private int _maxVariationsPerStrain = 5;
-        
+
         public List<GameObject> PlantPrefabs => _plantPrefabs;
         public bool EnableRandomVariations => _enableRandomVariations;
         public int MaxVariationsPerStrain => _maxVariationsPerStrain;
 
         public void InitializeDefaults()
         {
-            ChimeraLogger.Log("[PlantPrefabLibrary] Minimal initialization - full implementation pending PlantGrowthStage resolution");
+            ChimeraLogger.LogInfo("Prefabs", "PlantPrefabLibrary defaults initialized");
         }
 
         public GameObject GetRandomPlantPrefab()
         {
             if (_plantPrefabs.Count == 0)
                 return null;
-                
+
             int randomIndex = Random.Range(0, _plantPrefabs.Count);
             return _plantPrefabs[randomIndex];
         }
@@ -41,7 +41,7 @@ namespace ProjectChimera.Systems.Prefabs
         {
             return _plantPrefabs.Count;
         }
-        
+
         private void OnValidate()
         {
             // Basic validation without complex enum dependencies

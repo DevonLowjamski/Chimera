@@ -1,3 +1,6 @@
+using UnityEngine;
+using ProjectChimera.Core.Logging;
+
 namespace ProjectChimera.Systems.Camera
 {
     public interface ICameraProvider

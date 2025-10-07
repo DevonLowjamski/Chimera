@@ -37,7 +37,7 @@ namespace ProjectChimera.UI.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[NotificationManager] Initialized successfully");
+                ChimeraLogger.LogInfo("NotificationManager", "Basic notification system initialized");
             }
         }
 
@@ -68,7 +68,7 @@ namespace ProjectChimera.UI.Core
             // For now, just log it
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[NotificationManager] Showing {type} notification: {message}");
+                ChimeraLogger.LogInfo("NotificationManager", $"Showing {type} notification: {message}");
             }
 
             // Auto-hide after duration
@@ -118,7 +118,7 @@ namespace ProjectChimera.UI.Core
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[NotificationManager] Hidden notification: {notification.Message}");
+                    ChimeraLogger.LogInfo("NotificationManager", $"Hiding notification: {notification.Message}");
                 }
             }
         }
@@ -138,7 +138,7 @@ namespace ProjectChimera.UI.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[NotificationManager] Cleared {notificationsToHide.Count} notifications");
+                ChimeraLogger.LogInfo("NotificationManager", "Cleared all notifications");
             }
         }
 
@@ -180,7 +180,7 @@ namespace ProjectChimera.UI.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[NotificationManager] Notifications {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.LogInfo("NotificationManager", $"Notifications {(enabled ? "enabled" : "disabled")}");
             }
         }
 

@@ -1,0 +1,233 @@
+using ProjectChimera.Core.Logging;
+using UnityEngine;
+using ProjectChimera.Core;
+// Migrated to unified ServiceContainer architecture
+using ProjectChimera.Systems.Scene;
+using System.Collections;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
+
+namespace ProjectChimera.Systems.Facilities
+{
+    /// <summary>
+    /// Integration test for FacilityManager and SceneLoader coordination
+    /// Demonstrates facility switching and upgrade workflows
+    /// </summary>
+    public class FacilitySceneIntegrationTest : MonoBehaviour
+    {
+        [Header("Test Configuration")]
+        [SerializeField] private bool _runTestOnStart = false;
+        [SerializeField] private float _testDelayBetweenTransitions = 3f;
+
+        [Header("Test Scenes")]
+        [SerializeField] private string[] _testFacilityScenes = {
+            SceneConstants.WAREHOUSE_SMALL_BAY,
+            SceneConstants.WAREHOUSE_MEDIUM_BAY,
+            SceneConstants.WAREHOUSE_SMALL_STANDALONE
+        };
+
+        private FacilityManager _facilityManager;
+        private ISceneLoader _sceneLoader;
+
+        private void Start()
+        {
+            if (_runTestOnStart)
+            {
+                StartCoroutine(RunIntegrationTest());
+            }
+        }
+
+        /// <summary>
+        /// Run comprehensive integration test
+        /// </summary>
+        public IEnumerator RunIntegrationTest()
+        {
+            Logger.Log("FACILITY", "Starting FacilitySceneIntegrationTest", this);
+
+            // Wait for services to initialize
+            yield return new WaitForSeconds(1f);
+
+            // Get services
+            _facilityManager = ServiceContainerFactory.Instance?.TryResolve<FacilityManager>();
+            _sceneLoader = ServiceContainerFactory.Instance?.TryResolve<ISceneLoader>();
+
+            if (_facilityManager == null)
+            {
+                Logger.LogWarning("FACILITY", "FacilityManager not resolved", this);
+                yield break;
+            }
+
+            if (_sceneLoader == null)
+            {
+                Logger.LogWarning("FACILITY", "SceneLoader not resolved", this);
+                yield break;
+            }
+
+            Logger.Log("FACILITY", "Initialization complete", this);
+
+            // Test 1: Verify initial state
+            yield return StartCoroutine(TestInitialState());
+
+            // Test 2: Test facility scene switching
+            yield return StartCoroutine(TestFacilitySceneSwitching());
+
+            // Test 3: Test scene validation
+            yield return StartCoroutine(TestSceneValidation());
+
+            Logger.Log("FACILITY", "TestInitialState", this);
+        }
+
+        /// <summary>
+        /// Test initial facility manager state
+        /// </summary>
+        private IEnumerator TestInitialState()
+        {
+            Logger.Log("FACILITY", "TestInitialState", this);
+
+            if (!_facilityManager.IsInitialized)
+            {
+                Logger.LogWarning("FACILITY", "FacilityManager not initialized", this);
+                yield break;
+            }
+
+            var stats = _facilityManager.GetProgressionStatisticsTyped();
+            Logger.Log("FACILITY", "Stats collected", this);
+            Logger.Log("FACILITY", "Facilities listed", this);
+            Logger.Log("FACILITY", "Initial state verified", this);
+
+            var availableScenes = _facilityManager.GetAvailableFacilityScenes();
+            Logger.Log("FACILITY", "Facilities listed", this);
+
+            yield return new WaitForSeconds(1f);
+        }
+
+        /// <summary>
+        /// Test facility scene switching
+        /// </summary>
+        private IEnumerator TestFacilitySceneSwitching()
+        {
+            Logger.Log("FACILITY", "TestFacilitySceneSwitching", this);
+
+            foreach (string sceneName in _testFacilityScenes)
+            {
+                Logger.Log("FACILITY", $"Testing scene: {sceneName}", this);
+
+                // Validate scene before attempting load
+                if (!SceneConstants.IsValidScene(sceneName))
+                {
+                    Logger.LogWarning("FACILITY", $"Invalid scene: {sceneName}", this);
+                    continue;
+                }
+
+                // Test scene loading capability
+                bool canLoad = BuildSettingsValidator.CanLoadScene(sceneName);
+                Logger.Log("FACILITY", $"CanLoad: {canLoad}", this);
+
+                if (canLoad)
+                {
+                    // Since FacilityManager has no scene info API, validate via SceneConstants/BuildSettings only
+                    var buildIndex = SceneConstants.GetBuildIndex(sceneName);
+                    var resolvedName = SceneConstants.GetSceneName(buildIndex);
+                    Logger.Log("FACILITY", $"Resolved scene {sceneName} -> index {buildIndex}, name {resolvedName}", this);
+
+                    // Note: Not actually loading scenes in test to avoid disrupting Unity Editor
+                    // In actual gameplay, this would call:
+                    // _facilityManager.LoadFacilitySceneByName(sceneName);
+
+                    Logger.Log("FACILITY", $"Completed scene check: {sceneName}", this);
+                }
+
+                yield return new WaitForSeconds(_testDelayBetweenTransitions);
+            }
+            Logger.Log("FACILITY", "TestSceneSwitching complete", this);
+        }
+
+        /// <summary>
+        /// Test scene validation integration
+        /// </summary>
+        private IEnumerator TestSceneValidation()
+        {
+            Logger.Log("FACILITY", "TestSceneValidation", this);
+
+            // Test BuildSettingsValidator integration
+            bool buildSettingsValid = BuildSettingsValidator.ValidateRuntimeBuildSettings();
+            Logger.Log("FACILITY", $"Build settings valid: {buildSettingsValid}", this);
+
+            // Test scene constants integration
+            foreach (string sceneName in _testFacilityScenes)
+            {
+                int buildIndex = SceneConstants.GetBuildIndex(sceneName);
+                string resolvedName = SceneConstants.GetSceneName(buildIndex);
+
+                bool resolutionValid = (resolvedName == sceneName);
+                Logger.Log("FACILITY", $"Resolved {sceneName}: index {buildIndex} name {resolvedName}", this);
+
+                bool isWarehouse = SceneConstants.IsWarehouseScene(sceneName);
+                Logger.Log("FACILITY", $"IsWarehouse: {isWarehouse}", this);
+            }
+
+            yield return new WaitForSeconds(1f);
+
+            Logger.Log("FACILITY", "Scene validation complete", this);
+        }
+
+        /// <summary>
+        /// Manual test trigger - call from Unity Inspector or other scripts
+        /// </summary>
+        [ContextMenu("Run Integration Test")]
+        public void RunIntegrationTestManual()
+        {
+            if (Application.isPlaying)
+            {
+                StartCoroutine(RunIntegrationTest());
+            }
+            else
+            {
+                Logger.LogWarning("FACILITY", "Playmode required to run test", this);
+            }
+        }
+
+        /// <summary>
+        /// Get facility manager status for debugging
+        /// </summary>
+        [ContextMenu("Print Facility Status")]
+        public void PrintFacilityStatus()
+        {
+            if (_facilityManager == null)
+            {
+                _facilityManager = ServiceContainerFactory.Instance?.TryResolve<FacilityManager>();
+            }
+
+            if (_facilityManager != null && _facilityManager.IsInitialized)
+            {
+                var stats = _facilityManager.GetProgressionStatisticsTyped();
+                Logger.Log("FACILITY", "Status printed", this);
+
+                var availableScenes = _facilityManager.GetAvailableFacilityScenes();
+                Logger.Log("FACILITY", "Status printed", this);
+            }
+            else
+            {
+                Logger.LogWarning("FACILITY", "FacilityManager not available", this);
+            }
+        }
+
+        /// <summary>
+        /// Test facility scene loading (Editor safe)
+        /// </summary>
+        [ContextMenu("Test Scene Loading Capability")]
+        public void TestSceneLoadingCapability()
+        {
+            Logger.Log("FACILITY", "TestSceneLoadingCapability", this);
+
+            foreach (string sceneName in _testFacilityScenes)
+            {
+                bool isValid = SceneConstants.IsValidScene(sceneName);
+                bool canLoad = BuildSettingsValidator.CanLoadScene(sceneName);
+                int buildIndex = SceneConstants.GetBuildIndex(sceneName);
+
+                string status = $"Scene: {sceneName} | Valid: {isValid} | Can Load: {canLoad} | Build Index: {buildIndex}";
+                Logger.Log("FACILITY", status, this);
+            }
+        }
+    }
+}

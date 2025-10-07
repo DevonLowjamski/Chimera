@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+using ChimeraLogger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.UI.Components
 {
@@ -8,7 +10,7 @@ namespace ProjectChimera.UI.Components
     /// BASIC: Simple time display component for Project Chimera's UI.
     /// Focuses on essential time display without complex penalty signaling and audio alerts.
     /// </summary>
-    public class TimeDisplayComponent : MonoBehaviour
+    public class TimeDisplayComponent : MonoBehaviour, ITickable
     {
         [Header("Basic Time Display Settings")]
         [SerializeField] private bool _enableBasicDisplay = true;
@@ -52,36 +54,55 @@ namespace ProjectChimera.UI.Components
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[TimeDisplayComponent] Initialized successfully");
+                ChimeraLogger.Log("UI/TIME", "TimeDisplayComponent initialized", this);
             }
         }
 
         /// <summary>
         /// Update time display
         /// </summary>
-        private void Update()
+    [SerializeField] private float _tickInterval = 0.1f; // Configurable update frequency
+    private float _lastTickTime;
+
+    public int TickPriority => 50; // Lower priority for complex updates
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
+        _lastTickTime += deltaTime;
+        if (_lastTickTime >= _tickInterval)
         {
-            if (!_enableBasicDisplay || !_isInitialized) return;
+            _lastTickTime = 0f;
+                if (!_enableBasicDisplay || !_isInitialized) return;
 
-            // Update game time (simulated)
-            _gameTime += Time.deltaTime;
+                // Update game time (simulated)
+                _gameTime += deltaTime;
 
-            // Check for day change (simple 24-hour days)
-            int newDay = Mathf.FloorToInt(_gameTime / 86400f) + 1;
-            if (newDay != _currentDay)
-            {
-                _currentDay = newDay;
-                OnDayChanged?.Invoke(_currentDay);
-
-                if (_enableLogging)
+                // Check for day change (simple 24-hour days)
+                int newDay = Mathf.FloorToInt(_gameTime / 86400f) + 1;
+                if (newDay != _currentDay)
                 {
-                    ChimeraLogger.Log($"[TimeDisplayComponent] New day: {_currentDay}");
+                    _currentDay = newDay;
+                    OnDayChanged?.Invoke(_currentDay);
                 }
-            }
 
-            UpdateDisplay();
-            OnGameTimeUpdated?.Invoke(_gameTime);
+                    if (_enableLogging)
+                        ChimeraLogger.Log("UI/TIME", "Day changed", this);
+
+                UpdateDisplay();
+                OnGameTimeUpdated?.Invoke(_gameTime);
         }
+    }
+
+    private void Awake()
+    {
+        UpdateOrchestrator.Instance.RegisterTickable(this);
+    }
+
+    private void OnDestroy()
+    {
+        UpdateOrchestrator.Instance.UnregisterTickable(this);
+    }
 
         /// <summary>
         /// Set game time manually
@@ -94,7 +115,7 @@ namespace ProjectChimera.UI.Components
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[TimeDisplayComponent] Game time set to {_gameTime:F0} seconds (Day {_currentDay})");
+                ChimeraLogger.Log("UI/TIME", "Game time set", this);
             }
         }
 
@@ -108,7 +129,7 @@ namespace ProjectChimera.UI.Components
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[TimeDisplayComponent] Day set to {_currentDay}");
+                ChimeraLogger.Log("UI/TIME", "Current day set", this);
             }
         }
 
@@ -154,7 +175,7 @@ namespace ProjectChimera.UI.Components
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[TimeDisplayComponent] Display options updated");
+                ChimeraLogger.Log("UI/TIME", "Display options updated", this);
             }
         }
 
@@ -168,7 +189,7 @@ namespace ProjectChimera.UI.Components
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[TimeDisplayComponent] Time format set to {format}");
+                ChimeraLogger.Log("UI/TIME", "Time format updated", this);
             }
         }
 

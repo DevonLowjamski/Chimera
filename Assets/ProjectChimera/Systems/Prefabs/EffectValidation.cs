@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectChimera.Systems.Prefabs;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Prefabs
 {

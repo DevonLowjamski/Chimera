@@ -1,5 +1,7 @@
 using UnityEngine;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Genetics;
 using ProjectChimera.Core;
@@ -20,6 +22,11 @@ namespace ProjectChimera.Systems.Cultivation
         private readonly Dictionary<string, CannabisGenotype> _plantGenotypes = new Dictionary<string, CannabisGenotype>();
         private bool _isInitialized = false;
 
+        // Properties for PlantInstance integration
+        public Dictionary<string, object> ExpressedTraits { get; private set; } = new Dictionary<string, object>();
+        public CannabisGenotype Genotype { get; private set; }
+        public DateTime LastTraitExpression { get; private set; } = DateTime.Now;
+
         /// <summary>
         /// Initialize basic genetics system
         /// </summary>
@@ -31,7 +38,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[PlantGeneticsSystem] Initialized successfully");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -46,7 +53,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantGeneticsSystem] Registered plant {plantId} with genotype {genotype.StrainName}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -70,9 +77,9 @@ namespace ProjectChimera.Systems.Cultivation
 
             // Simple genetics update - could be expanded based on environmental factors
             // For now, just maintain the genotype
-            if (_enableLogging && Random.value < 0.01f) // Log occasionally
+            if (_enableLogging && UnityEngine.Random.value < 0.01f) // Log occasionally
             {
-                ChimeraLogger.Log($"[PlantGeneticsSystem] Plant {plantId} genetics stable");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -93,17 +100,17 @@ namespace ProjectChimera.Systems.Cultivation
             {
                 GenotypeId = offspringId,
                 StrainName = $"Hybrid_{offspringId}",
-                YieldPotential = (parent1.YieldPotential + parent2.YieldPotential) / 2f + Random.Range(-20f, 20f),
-                PotencyPotential = (parent1.PotencyPotential + parent2.PotencyPotential) / 2f + Random.Range(-2f, 2f),
+                YieldPotential = (parent1.YieldPotential + parent2.YieldPotential) / 2f + UnityEngine.Random.Range(-20f, 20f),
+                PotencyPotential = (parent1.PotencyPotential + parent2.PotencyPotential) / 2f + UnityEngine.Random.Range(-2f, 2f),
                 FloweringTime = Mathf.RoundToInt((parent1.FloweringTime + parent2.FloweringTime) / 2f),
-                MaxHeight = (parent1.MaxHeight + parent2.MaxHeight) / 2f + Random.Range(-0.2f, 0.2f),
-                PlantType = Random.value > 0.5f ? parent1.PlantType : parent2.PlantType,
+                MaxHeight = (parent1.MaxHeight + parent2.MaxHeight) / 2f + UnityEngine.Random.Range(-0.2f, 0.2f),
+                PlantType = UnityEngine.Random.value > 0.5f ? parent1.PlantType : parent2.PlantType,
                 IsCustomStrain = true
             };
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantGeneticsSystem] Bred offspring {offspringId} from {parent1Id} and {parent2Id}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
 
             return offspring;
@@ -139,7 +146,7 @@ namespace ProjectChimera.Systems.Cultivation
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[PlantGeneticsSystem] Removed genotype for plant {plantId}");
+                    ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
                 }
             }
         }
@@ -170,6 +177,207 @@ namespace ProjectChimera.Systems.Cultivation
                 UpdatePlantGenetics(plantId, deltaTime);
             }
         }
+
+        /// <summary>
+        /// Set the last trait expression timestamp
+        /// </summary>
+        public void SetLastTraitExpression(DateTime timestamp)
+        {
+            LastTraitExpression = timestamp;
+        }
+
+        /// <summary>
+        /// Apply height growth modifier based on genetics
+        /// </summary>
+        public void ApplyHeightGrowthModifier(float modifier)
+        {
+            ExpressedTraits["HeightModifier"] = modifier;
+        }
+
+        /// <summary>
+        /// Apply potency modifier based on genetics
+        /// </summary>
+        public void ApplyPotencyModifier(float modifier)
+        {
+            ExpressedTraits["PotencyModifier"] = modifier;
+        }
+
+        /// <summary>
+        /// Apply CBD modifier based on genetics
+        /// </summary>
+        public void ApplyCBDModifier(float modifier)
+        {
+            ExpressedTraits["CBDModifier"] = modifier;
+        }
+
+        /// <summary>
+        /// Apply yield modifier based on genetics
+        /// </summary>
+        public void ApplyYieldModifier(float modifier)
+        {
+            ExpressedTraits["YieldModifier"] = modifier;
+        }
+
+        /// <summary>
+        /// Apply genetic fitness modifier
+        /// </summary>
+        public void ApplyGeneticFitnessModifier(float modifier)
+        {
+            ExpressedTraits["FitnessModifier"] = modifier;
+        }
+
+        /// <summary>
+        /// Calculate breeding value for plant
+        /// </summary>
+        public float CalculateBreedingValue()
+        {
+            if (Genotype == null) return 0f;
+
+            // Simple breeding value calculation
+            float value = 0f;
+            if (ExpressedTraits.ContainsKey("YieldModifier"))
+                value += (float)ExpressedTraits["YieldModifier"] * 0.4f;
+            if (ExpressedTraits.ContainsKey("PotencyModifier"))
+                value += (float)ExpressedTraits["PotencyModifier"] * 0.3f;
+            if (ExpressedTraits.ContainsKey("FitnessModifier"))
+                value += (float)ExpressedTraits["FitnessModifier"] * 0.3f;
+
+            return Mathf.Clamp01(value);
+        }
+
+        /// <summary>
+        /// Get genetics metrics for debugging and analysis
+        /// </summary>
+        public object GetGeneticsMetrics()
+        {
+            return new
+            {
+                GenotypeId = Genotype?.GenotypeId ?? "None",
+                ExpressedTraitCount = ExpressedTraits.Count,
+                LastExpression = LastTraitExpression,
+                BreedingValue = CalculateBreedingValue()
+            };
+        }
+
+        /// <summary>
+        /// Set the main genotype for this system
+        /// </summary>
+        public void SetGenotype(CannabisGenotype genotype)
+        {
+            Genotype = genotype;
+        }
+    }
+
+    /// <summary>
+    /// Plant genetics metrics for instance integration
+    /// </summary>
+    [System.Serializable]
+    public class PlantGeneticsMetrics
+    {
+        public float YieldPotential;
+        public float Potency;
+        public string StrainName;
+        public float GeneticVariation;
+        public bool IsCustomStrain;
+        public string PlantId;
+        public System.DateTime LastUpdateTime;
+        /// <summary>
+        /// Properties and methods required by PlantInstance integration
+        /// </summary>
+        public Dictionary<string, object> ExpressedTraits { get; private set; } = new Dictionary<string, object>();
+        public CannabisGenotype Genotype { get; private set; }
+        public DateTime LastTraitExpression { get; private set; } = DateTime.Now;
+
+        /// <summary>
+        /// Set the genotype for this genetics system
+        /// </summary>
+        public void SetGenotype(CannabisGenotype genotype)
+        {
+            Genotype = genotype;
+        }
+
+        /// <summary>
+        /// Update trait expression timestamp
+        /// </summary>
+        public void SetLastTraitExpression(DateTime timestamp)
+        {
+            LastTraitExpression = timestamp;
+        }
+
+        /// <summary>
+        /// Apply height growth modifier based on genetics
+        /// </summary>
+        public void ApplyHeightGrowthModifier(float modifier)
+        {
+            ExpressedTraits["HeightModifier"] = modifier;
+        }
+
+        /// <summary>
+        /// Apply potency modifier based on genetics
+        /// </summary>
+        public void ApplyPotencyModifier(float modifier)
+        {
+            ExpressedTraits["PotencyModifier"] = modifier;
+        }
+
+        /// <summary>
+        /// Apply CBD modifier based on genetics
+        /// </summary>
+        public void ApplyCBDModifier(float modifier)
+        {
+            ExpressedTraits["CBDModifier"] = modifier;
+        }
+
+        /// <summary>
+        /// Apply yield modifier based on genetics
+        /// </summary>
+        public void ApplyYieldModifier(float modifier)
+        {
+            ExpressedTraits["YieldModifier"] = modifier;
+        }
+
+        /// <summary>
+        /// Apply genetic fitness modifier
+        /// </summary>
+        public void ApplyGeneticFitnessModifier(float modifier)
+        {
+            ExpressedTraits["FitnessModifier"] = modifier;
+        }
+
+        /// <summary>
+        /// Calculate breeding value for plant
+        /// </summary>
+        public float CalculateBreedingValue()
+        {
+            if (Genotype == null) return 0f;
+
+            // Simple breeding value calculation - can be made more complex for biological accuracy
+            float value = 0f;
+            if (ExpressedTraits.ContainsKey("YieldModifier"))
+                value += (float)ExpressedTraits["YieldModifier"] * 0.4f;
+            if (ExpressedTraits.ContainsKey("PotencyModifier"))
+                value += (float)ExpressedTraits["PotencyModifier"] * 0.3f;
+            if (ExpressedTraits.ContainsKey("FitnessModifier"))
+                value += (float)ExpressedTraits["FitnessModifier"] * 0.3f;
+
+            return Mathf.Clamp01(value);
+        }
+
+        /// <summary>
+        /// Get genetics metrics for debugging and analysis
+        /// </summary>
+        public object GetGeneticsMetrics()
+        {
+            return new
+            {
+                GenotypeId = Genotype?.ToString() ?? "None",
+                ExpressedTraitCount = ExpressedTraits.Count,
+                LastExpression = LastTraitExpression,
+                BreedingValue = CalculateBreedingValue()
+            };
+        }
+
+        // Note: UpdateAllGenetics is implemented in the main PlantGeneticsSystem class above
     }
 
     /// <summary>

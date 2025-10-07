@@ -43,7 +43,7 @@ namespace ProjectChimera.Systems.Environment
                 Timestamp = DateTime.Now
             };
 
-            ChimeraLogger.Log($"[EnvironmentalController] Initialized with: Temp {_temperature}°C, Humidity {_humidity}%, CO2 {_co2Level}ppm");
+            ChimeraLogger.Log("ENV", "EnvironmentalController initialized", this);
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace ProjectChimera.Systems.Environment
             _currentConditions.Temperature = _temperature;
             _currentConditions.Timestamp = DateTime.Now;
 
-            ChimeraLogger.Log($"[EnvironmentalController] Temperature set to {_temperature}°C");
+            ChimeraLogger.Log("ENV", $"Temperature set to {_temperature:F1}", this);
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace ProjectChimera.Systems.Environment
             _currentConditions.Humidity = _humidity;
             _currentConditions.Timestamp = DateTime.Now;
 
-            ChimeraLogger.Log($"[EnvironmentalController] Humidity set to {_humidity}%");
+            ChimeraLogger.Log("ENV", $"Humidity set to {_humidity:F1}", this);
         }
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace ProjectChimera.Systems.Environment
             _currentConditions.CO2Level = _co2Level;
             _currentConditions.Timestamp = DateTime.Now;
 
-            ChimeraLogger.Log($"[EnvironmentalController] CO2 level set to {_co2Level}ppm");
+            ChimeraLogger.Log("ENV", $"CO2 set to {_co2Level:F0}ppm", this);
         }
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace ProjectChimera.Systems.Environment
             _currentConditions.LightIntensity = _lightIntensity;
             _currentConditions.Timestamp = DateTime.Now;
 
-            ChimeraLogger.Log($"[EnvironmentalController] Light intensity set to {_lightIntensity}");
+            ChimeraLogger.Log("ENV", $"Light intensity set to {_lightIntensity:F2}", this);
         }
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace ProjectChimera.Systems.Environment
 
             InitializeEnvironmentalConditions();
 
-            ChimeraLogger.Log("[EnvironmentalController] Reset to optimal conditions");
+            ChimeraLogger.Log("ENV", "Environmental settings reset to optimal", this);
         }
 
         /// <summary>

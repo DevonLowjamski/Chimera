@@ -2,18 +2,51 @@ using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Core.Logging;
 
+
 namespace ProjectChimera.Core
 {
     /// <summary>
     /// BASIC: Simple service module core for Project Chimera.
     /// Focuses on essential service management without complex providers and validation systems.
     /// </summary>
-    public abstract class ServiceModuleCore : MonoBehaviour
+    public abstract class ServiceModuleCore : MonoBehaviour, IServiceModule
     {
         [Header("Basic Service Settings")]
         [SerializeField] private bool _enableBasicServices = true;
         [SerializeField] private bool _enableLogging = true;
         [SerializeField] private string _moduleName = "Basic Service Module";
+
+        // IServiceModule implementation
+        public virtual string ModuleName => _moduleName;
+        public virtual System.Version ModuleVersion => new System.Version(1, 0, 0);
+        public virtual string[] Dependencies => new string[0];
+
+        public virtual void ConfigureServices(IServiceContainer serviceContainer)
+        {
+            // Basic service configuration - override in derived classes
+            if (_enableLogging)
+            {
+                // Register basic logging if available
+            }
+        }
+
+        public virtual void Initialize(IServiceContainer serviceContainer)
+        {
+            // Basic initialization - override in derived classes
+            InitializeServiceComponents();
+        }
+
+        public virtual void Shutdown(IServiceContainer serviceContainer)
+        {
+            // Basic shutdown - override in derived classes
+            // Cleanup resources here
+        }
+
+        public virtual bool ValidateServices(IServiceContainer serviceContainer)
+        {
+            // Basic validation - override in derived classes
+            return _isInitialized;
+        }
 
         // Basic service tracking
         private readonly Dictionary<string, IService> _registeredServices = new Dictionary<string, IService>();
@@ -37,7 +70,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[ServiceModuleCore] {_moduleName} initialized successfully");
+                ChimeraLogger.LogInfo("ServiceModuleCore", "$1");
             }
         }
 
@@ -53,7 +86,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[ServiceModuleCore] Registered service: {serviceName}");
+                ChimeraLogger.LogInfo("ServiceModuleCore", "$1");
             }
         }
 
@@ -72,7 +105,7 @@ namespace ProjectChimera.Core
                 {
                     if (_enableLogging)
                     {
-                        ChimeraLogger.LogWarning($"[ServiceModuleCore] Type mismatch for service: {serviceName}");
+                        ChimeraLogger.LogInfo("ServiceModuleCore", "$1");
                     }
                     return default;
                 }
@@ -80,7 +113,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.LogWarning($"[ServiceModuleCore] Service not found: {serviceName}");
+                ChimeraLogger.LogInfo("ServiceModuleCore", "$1");
             }
             return default;
         }
@@ -110,7 +143,7 @@ namespace ProjectChimera.Core
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[ServiceModuleCore] Removed service: {serviceName}");
+                    ChimeraLogger.LogInfo("ServiceModuleCore", "$1");
                 }
             }
         }
@@ -125,7 +158,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[ServiceModuleCore] Cleared {serviceNames.Count} services");
+                ChimeraLogger.LogInfo("ServiceModuleCore", "$1");
             }
         }
 
@@ -143,7 +176,7 @@ namespace ProjectChimera.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[ServiceModuleCore] Services {(enabled ? "enabled" : "disabled")}");
+                ChimeraLogger.LogInfo("ServiceModuleCore", "$1");
             }
         }
 
@@ -175,10 +208,6 @@ namespace ProjectChimera.Core
             };
         }
 
-        /// <summary>
-        /// Get the module name (virtual for subclasses to override)
-        /// </summary>
-        public virtual string ModuleName => _moduleName;
 
         /// <summary>
         /// Initialize service components (virtual for subclasses to override)

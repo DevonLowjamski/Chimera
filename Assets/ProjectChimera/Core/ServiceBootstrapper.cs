@@ -15,10 +15,24 @@ namespace ProjectChimera.Core
 
         private bool _isBootstrapped = false;
 
+        // Singleton pattern
+        private static ServiceBootstrapper _instance;
+        public static ServiceBootstrapper Instance => _instance;
+
         #region Unity Lifecycle
 
         private void Awake()
         {
+            // Singleton enforcement
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
+
             if (_initializeOnAwake)
             {
                 BootstrapServices();
@@ -60,7 +74,7 @@ namespace ProjectChimera.Core
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[ServiceBootstrapper] Bootstrap failed: {ex.Message}");
+                ChimeraLogger.LogInfo("ServiceBootstrapper", "$1");
                 throw;
             }
         }
@@ -91,7 +105,7 @@ namespace ProjectChimera.Core
             // This could include things like logging, configuration, etc.
 
             // Example: Initialize logging system
-            if (ChimeraLogger.Instance == null)
+            // UnityEngine.Debug is always available, no instance check needed
             {
                 // Create basic logger if needed
                 LogBootstrap("Basic logger initialized");
@@ -104,7 +118,7 @@ namespace ProjectChimera.Core
         {
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[ServiceBootstrapper] {message}");
+                ChimeraLogger.LogInfo("ServiceBootstrapper", "$1");
             }
         }
 

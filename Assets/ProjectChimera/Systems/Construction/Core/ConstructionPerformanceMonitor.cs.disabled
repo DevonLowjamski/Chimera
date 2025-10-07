@@ -1,0 +1,512 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+
+namespace ProjectChimera.Systems.Construction.Core
+{
+    /// <summary>
+    /// REFACTORED: Construction Performance Monitor
+    /// Focused component for tracking and reporting construction system performance
+    /// </summary>
+    public class ConstructionPerformanceMonitor : MonoBehaviour, ITickable
+    {
+        [Header("Performance Monitoring Settings")]
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private bool _enableDetailedTracking = true;
+        [SerializeField] private float _metricsUpdateInterval = 1f;
+        [SerializeField] private int _performanceHistorySize = 60;
+
+        // Performance tracking
+        private ConstructionMetrics _currentMetrics = new ConstructionMetrics();
+        private readonly Queue<PerformanceSnapshot> _performanceHistory = new Queue<PerformanceSnapshot>();
+        private float _lastMetricsUpdate;
+
+        // System references for monitoring
+        private ConstructionProjectManager _projectManager;
+        private ConstructionValidator _validator;
+        private ConstructionPlanner _planner;
+        private ConstructionLODManager _lodManager;
+
+        // Properties
+        public bool IsEnabled { get; private set; } = true;
+        public ConstructionMetrics CurrentMetrics => _currentMetrics;
+        public bool IsPerformingWell => _currentMetrics.IsPerformingWell;
+
+        // ITickable implementation
+        public int TickPriority => -5; // Performance monitors: early priority (around -10 to 0)
+        public bool IsTickable => IsEnabled && gameObject.activeInHierarchy;
+
+        // Events
+        public System.Action<ConstructionMetrics> OnMetricsUpdated;
+        public System.Action<PerformanceWarning> OnPerformanceWarning;
+
+        private void Start()
+        {
+            Initialize();
+
+            // Register with UpdateOrchestrator
+            var orchestrator = UpdateOrchestrator.Instance;
+            orchestrator?.RegisterTickable(this);
+        }
+
+        private void Initialize()
+        {
+            ResetMetrics();
+            _lastMetricsUpdate = Time.time;
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "✅ Construction Performance Monitor initialized", this);
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (!IsEnabled) return;
+
+            if (Time.time - _lastMetricsUpdate >= _metricsUpdateInterval)
+            {
+                UpdateMetrics();
+                _lastMetricsUpdate = Time.time;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            var orchestrator = UpdateOrchestrator.Instance;
+            orchestrator?.UnregisterTickable(this);
+        }
+
+        /// <summary>
+        /// Set system references for monitoring
+        /// </summary>
+        public void SetSystemReferences(ConstructionProjectManager projectManager, ConstructionValidator validator,
+            ConstructionPlanner planner, ConstructionLODManager lodManager)
+        {
+            _projectManager = projectManager;
+            _validator = validator;
+            _planner = planner;
+            _lodManager = lodManager;
+        }
+
+        /// <summary>
+        /// Update performance metrics
+        /// </summary>
+        public void UpdateMetrics()
+        {
+            if (!IsEnabled) return;
+
+            CollectSystemMetrics();
+            AnalyzePerformance();
+            UpdatePerformanceHistory();
+
+            OnMetricsUpdated?.Invoke(_currentMetrics);
+
+            if (_enableLogging)
+            {
+                LogPerformanceMetrics();
+            }
+        }
+
+        /// <summary>
+        /// Get performance metrics
+        /// </summary>
+        public ConstructionMetrics GetMetrics()
+        {
+            return _currentMetrics;
+        }
+
+        /// <summary>
+        /// Get detailed performance report
+        /// </summary>
+        public ConstructionPerformanceReport GetDetailedReport()
+        {
+            var report = new ConstructionPerformanceReport
+            {
+                CurrentMetrics = _currentMetrics,
+                PerformanceHistory = _performanceHistory.ToArray(),
+                SystemStatus = GetSystemStatus(),
+                RecommendedActions = GenerateRecommendations()
+            };
+
+            return report;
+        }
+
+        /// <summary>
+        /// Record construction event for metrics
+        /// </summary>
+        public void RecordEvent(ConstructionEventType eventType, float value = 1f)
+        {
+            if (!IsEnabled) return;
+
+            switch (eventType)
+            {
+                case ConstructionEventType.ProjectStarted:
+                    _currentMetrics.ActiveProjects++;
+                    break;
+                case ConstructionEventType.ProjectCompleted:
+                    _currentMetrics.CompletedProjects++;
+                    _currentMetrics.ActiveProjects = Mathf.Max(0, _currentMetrics.ActiveProjects - 1);
+                    break;
+                case ConstructionEventType.ProjectFailed:
+                    _currentMetrics.FailedProjects++;
+                    _currentMetrics.ActiveProjects = Mathf.Max(0, _currentMetrics.ActiveProjects - 1);
+                    break;
+                case ConstructionEventType.ValidationCompleted:
+                    _currentMetrics.ValidationsCompleted++;
+                    UpdateAverageValidationTime(value);
+                    break;
+                case ConstructionEventType.ValidationFailed:
+                    _currentMetrics.ValidationErrors++;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Set performance monitoring enabled/disabled
+        /// </summary>
+        public void SetEnabled(bool enabled)
+        {
+            IsEnabled = enabled;
+
+            if (!enabled)
+            {
+                _performanceHistory.Clear();
+                ResetMetrics();
+            }
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Performance Monitor: {(enabled ? "enabled" : "disabled")}", this);
+        }
+
+        /// <summary>
+        /// Check for performance issues and trigger warnings
+        /// </summary>
+        public void CheckPerformanceIssues()
+        {
+            var warnings = new List<PerformanceWarning>();
+
+            // Check project success rate
+            int totalProjects = _currentMetrics.CompletedProjects + _currentMetrics.FailedProjects;
+            if (totalProjects > 0)
+            {
+                float successRate = (float)_currentMetrics.CompletedProjects / totalProjects;
+                if (successRate < 0.8f) // Less than 80% success rate
+                {
+                    warnings.Add(new PerformanceWarning
+                    {
+                        Type = WarningType.LowSuccessRate,
+                        Severity = WarningLevel.High,
+                        Message = $"Project success rate is low: {successRate:P1}",
+                        RecommendedAction = "Review project validation and planning processes"
+                    });
+                }
+            }
+
+            // Check validation error rate
+            if (_currentMetrics.ValidationsCompleted > 0)
+            {
+                float errorRate = (float)_currentMetrics.ValidationErrors / _currentMetrics.ValidationsCompleted;
+                if (errorRate > 0.3f) // More than 30% error rate
+                {
+                    warnings.Add(new PerformanceWarning
+                    {
+                        Type = WarningType.HighErrorRate,
+                        Severity = WarningLevel.Medium,
+                        Message = $"Validation error rate is high: {errorRate:P1}",
+                        RecommendedAction = "Review validation rules and input data quality"
+                    });
+                }
+            }
+
+            // Check average project duration
+            if (_currentMetrics.AverageProjectDuration > 300f) // More than 5 minutes
+            {
+                warnings.Add(new PerformanceWarning
+                {
+                    Type = WarningType.SlowPerformance,
+                    Severity = WarningLevel.Medium,
+                    Message = $"Average project duration is high: {_currentMetrics.AverageProjectDuration:F1}s",
+                    RecommendedAction = "Consider optimizing construction processes or increasing resources"
+                });
+            }
+
+            // Trigger warnings
+            foreach (var warning in warnings)
+            {
+                OnPerformanceWarning?.Invoke(warning);
+            }
+        }
+
+        private void CollectSystemMetrics()
+        {
+            // Collect metrics from project manager
+            if (_projectManager != null)
+            {
+                var projectStats = _projectManager.GetStats();
+                _currentMetrics.ActiveProjects = projectStats.ActiveProjects;
+                _currentMetrics.CompletedProjects = projectStats.CompletedProjects;
+                _currentMetrics.FailedProjects = projectStats.FailedProjects;
+                _currentMetrics.AverageProjectDuration = projectStats.AverageProjectDuration;
+            }
+
+            // Collect metrics from validator
+            if (_validator != null)
+            {
+                var validationStats = _validator.GetStats();
+                _currentMetrics.ValidationsCompleted = validationStats.ValidationsCompleted;
+                _currentMetrics.ValidationErrors = validationStats.FailedValidations;
+                _currentMetrics.AverageValidationTime = CalculateAverageValidationTime(validationStats);
+            }
+
+            // Collect metrics from planner
+            if (_planner != null)
+            {
+                var plannerStats = _planner.GetStats();
+                // Additional planner metrics could be added here
+            }
+
+            // Collect metrics from LOD manager
+            if (_lodManager != null)
+            {
+                var lodStats = _lodManager.GetStats();
+                // Additional LOD metrics could be added here
+            }
+        }
+
+        private void AnalyzePerformance()
+        {
+            // Calculate overall performance score
+            float performanceScore = CalculatePerformanceScore();
+
+            // Determine if system is performing well
+            _currentMetrics.IsPerformingWell = performanceScore > 0.7f; // 70% threshold
+
+            // Check for performance issues
+            if (_enableDetailedTracking)
+            {
+                CheckPerformanceIssues();
+            }
+        }
+
+        private float CalculatePerformanceScore()
+        {
+            float score = 1f;
+
+            // Project success rate component
+            int totalProjects = _currentMetrics.CompletedProjects + _currentMetrics.FailedProjects;
+            if (totalProjects > 0)
+            {
+                float successRate = (float)_currentMetrics.CompletedProjects / totalProjects;
+                score *= successRate;
+            }
+
+            // Validation accuracy component
+            if (_currentMetrics.ValidationsCompleted > 0)
+            {
+                float validationAccuracy = 1f - ((float)_currentMetrics.ValidationErrors / _currentMetrics.ValidationsCompleted);
+                score *= validationAccuracy;
+            }
+
+            // Performance component (based on duration)
+            if (_currentMetrics.AverageProjectDuration > 0)
+            {
+                float targetDuration = 60f; // 1 minute target
+                float durationScore = Mathf.Clamp01(targetDuration / _currentMetrics.AverageProjectDuration);
+                score *= durationScore;
+            }
+
+            return Mathf.Clamp01(score);
+        }
+
+        private void UpdatePerformanceHistory()
+        {
+            var snapshot = new PerformanceSnapshot
+            {
+                Timestamp = System.DateTime.Now,
+                Metrics = _currentMetrics,
+                PerformanceScore = CalculatePerformanceScore()
+            };
+
+            _performanceHistory.Enqueue(snapshot);
+
+            // Maintain history size
+            while (_performanceHistory.Count > _performanceHistorySize)
+            {
+                _performanceHistory.Dequeue();
+            }
+        }
+
+        private void UpdateAverageValidationTime(float validationTime)
+        {
+            // Simple running average calculation
+            if (_currentMetrics.ValidationsCompleted > 0)
+            {
+                float totalTime = _currentMetrics.AverageValidationTime * (_currentMetrics.ValidationsCompleted - 1);
+                _currentMetrics.AverageValidationTime = (totalTime + validationTime) / _currentMetrics.ValidationsCompleted;
+            }
+            else
+            {
+                _currentMetrics.AverageValidationTime = validationTime;
+            }
+        }
+
+        private float CalculateAverageValidationTime(ValidationStats validationStats)
+        {
+            // Placeholder calculation - would use actual timing data in real implementation
+            return validationStats.ValidationsCompleted > 0 ? 0.1f : 0f; // 100ms average
+        }
+
+        private SystemStatus GetSystemStatus()
+        {
+            return new SystemStatus
+            {
+                ProjectManagerActive = _projectManager != null && _projectManager.IsEnabled,
+                ValidatorActive = _validator != null && _validator.IsEnabled,
+                PlannerActive = _planner != null && _planner.IsEnabled,
+                LODManagerActive = _lodManager != null && _lodManager.IsEnabled,
+                OverallHealth = _currentMetrics.IsPerformingWell ? "Healthy" : "Warning"
+            };
+        }
+
+        private string[] GenerateRecommendations()
+        {
+            var recommendations = new List<string>();
+
+            if (_currentMetrics.FailedProjects > _currentMetrics.CompletedProjects * 0.2f)
+            {
+                recommendations.Add("Review project validation criteria to reduce failure rate");
+            }
+
+            if (_currentMetrics.ValidationErrors > _currentMetrics.ValidationsCompleted * 0.3f)
+            {
+                recommendations.Add("Improve input validation to reduce validation errors");
+            }
+
+            if (_currentMetrics.AverageProjectDuration > 180f)
+            {
+                recommendations.Add("Consider optimizing construction workflows for better performance");
+            }
+
+            if (recommendations.Count == 0)
+            {
+                recommendations.Add("System is performing well - no immediate actions required");
+            }
+
+            return recommendations.ToArray();
+        }
+
+        private void LogPerformanceMetrics()
+        {
+            ChimeraLogger.Log("CONSTRUCTION",
+                $"Construction Metrics - Active: {_currentMetrics.ActiveProjects}, " +
+                $"Completed: {_currentMetrics.CompletedProjects}, " +
+                $"Failed: {_currentMetrics.FailedProjects}, " +
+                $"Validations: {_currentMetrics.ValidationsCompleted}, " +
+                $"Performing Well: {_currentMetrics.IsPerformingWell}", this);
+        }
+
+        private void ResetMetrics()
+        {
+            _currentMetrics = new ConstructionMetrics
+            {
+                ActiveProjects = 0,
+                CompletedProjects = 0,
+                FailedProjects = 0,
+                ValidationsCompleted = 0,
+                ValidationErrors = 0,
+                AverageProjectDuration = 0f,
+                AverageValidationTime = 0f,
+                IsPerformingWell = true
+            };
+
+            _performanceHistory.Clear();
+        }
+    }
+
+    /// <summary>
+    /// Performance snapshot for historical tracking
+    /// </summary>
+    [System.Serializable]
+    public struct PerformanceSnapshot
+    {
+        public System.DateTime Timestamp;
+        public ConstructionMetrics Metrics;
+        public float PerformanceScore;
+    }
+
+    /// <summary>
+    /// Construction performance report
+    /// </summary>
+    [System.Serializable]
+    public struct ConstructionPerformanceReport
+    {
+        public ConstructionMetrics CurrentMetrics;
+        public PerformanceSnapshot[] PerformanceHistory;
+        public SystemStatus SystemStatus;
+        public string[] RecommendedActions;
+    }
+
+    /// <summary>
+    /// System status information
+    /// </summary>
+    [System.Serializable]
+    public struct SystemStatus
+    {
+        public bool ProjectManagerActive;
+        public bool ValidatorActive;
+        public bool PlannerActive;
+        public bool LODManagerActive;
+        public string OverallHealth;
+    }
+
+    /// <summary>
+    /// Performance warning data structure
+    /// </summary>
+    [System.Serializable]
+    public struct PerformanceWarning
+    {
+        public WarningType Type;
+        public WarningLevel Severity;
+        public string Message;
+        public string RecommendedAction;
+    }
+
+    /// <summary>
+    /// Construction event types for performance tracking
+    /// </summary>
+    public enum ConstructionEventType
+    {
+        ProjectStarted,
+        ProjectCompleted,
+        ProjectFailed,
+        ValidationCompleted,
+        ValidationFailed,
+        PlanCreated,
+        PlanOptimized
+    }
+
+    /// <summary>
+    /// Warning types
+    /// </summary>
+    public enum WarningType
+    {
+        LowSuccessRate,
+        HighErrorRate,
+        SlowPerformance,
+        ResourceExhaustion,
+        SystemOverload
+    }
+
+    /// <summary>
+    /// Warning severity levels
+    /// </summary>
+    public enum WarningLevel
+    {
+        Low,
+        Medium,
+        High,
+        Critical
+    }
+}

@@ -14,6 +14,7 @@ namespace ProjectChimera.Systems.Facilities
     {
         [Header("Upgrade Settings")]
         [SerializeField] private bool _enableLogging = true;
+        [SerializeField] private PlayerCurrency _playerCurrency; // Simple currency source until ICurrencyManager is available
 
         // Basic tier list
         [SerializeField] private List<FacilityTierSO> _facilityTiers = new List<FacilityTierSO>();
@@ -34,7 +35,7 @@ namespace ProjectChimera.Systems.Facilities
         {
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[FacilityUpgradeService] Initialized successfully");
+                ChimeraLogger.Log("FACILITY", "FacilityUpgradeService initialized", this);
             }
         }
 
@@ -45,9 +46,9 @@ namespace ProjectChimera.Systems.Facilities
         {
             if (targetTier == null) return false;
 
-            // Check if player has enough resources
-            var playerCurrency = PlayerCurrency.GetCurrent();
-            return playerCurrency.CashBalance >= targetTier.UpgradeCost;
+            // Check if player has enough resources (fallback to serialized currency data)
+            if (_playerCurrency == null) return false;
+            return _playerCurrency.CashBalance >= (decimal)targetTier.UnlockCost;
         }
 
         /// <summary>
@@ -78,7 +79,7 @@ namespace ProjectChimera.Systems.Facilities
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[FacilityUpgradeService] Upgrade to {targetTier.TierName}: {(success ? "Success" : "Failed")}");
+                ChimeraLogger.Log("FACILITY", $"Upgrade attempt completed. Success={(success ? "YES" : "NO")}", this);
             }
 
             return success;
@@ -97,7 +98,7 @@ namespace ProjectChimera.Systems.Facilities
         /// </summary>
         public decimal GetUpgradeCost(FacilityTierSO tier)
         {
-            return tier?.UpgradeCost ?? 0;
+            return tier != null ? (decimal)tier.UnlockCost : 0m;
         }
 
         #region Private Methods
@@ -107,8 +108,8 @@ namespace ProjectChimera.Systems.Facilities
             try
             {
                 // Deduct cost
-                var playerCurrency = PlayerCurrency.GetCurrent();
-                playerCurrency.CashBalance -= targetTier.UpgradeCost;
+                if (_playerCurrency == null) throw new System.InvalidOperationException("Player currency not set");
+                _playerCurrency.CashBalance -= (decimal)targetTier.UnlockCost;
 
                 // Apply upgrade effects
                 ApplyUpgradeEffects(targetTier);
@@ -117,7 +118,7 @@ namespace ProjectChimera.Systems.Facilities
             }
             catch (System.Exception ex)
             {
-                ChimeraLogger.LogError($"[FacilityUpgradeService] Upgrade failed: {ex.Message}");
+                ChimeraLogger.LogError("FACILITY", $"Upgrade failed: {ex.Message}", this);
                 return false;
             }
         }
@@ -126,7 +127,10 @@ namespace ProjectChimera.Systems.Facilities
         {
             // Apply basic upgrade effects
             // This would be expanded based on what each tier provides
-            ChimeraLogger.Log($"[FacilityUpgradeService] Applied effects for tier: {tier.TierName}");
+            if (_enableLogging)
+            {
+                ChimeraLogger.Log("FACILITY", $"Applied upgrade effects for tier '{tier?.TierName}'", this);
+            }
         }
 
         #endregion

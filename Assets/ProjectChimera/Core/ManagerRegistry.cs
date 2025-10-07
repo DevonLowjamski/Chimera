@@ -42,7 +42,7 @@ namespace ProjectChimera.Core
         public void Initialize(SimpleDIContainer serviceContainer = null)
         {
             _serviceContainer = serviceContainer;
-            ChimeraLogger.LogVerbose("Manager registry initialized");
+            ChimeraLogger.LogInfo("ManagerRegistry", "$1");
 
             if (_autoRegisterWithDI && _serviceContainer != null)
             {
@@ -54,42 +54,24 @@ namespace ProjectChimera.Core
         }
 
         /// <summary>
-        /// Discover and register managers in the scene
+        /// Discover and register managers via ServiceContainer
+        /// NOTE: Managers should self-register during Awake() - this is a transitional fallback
         /// </summary>
         private void DiscoverAndRegisterManagers()
         {
-            ChimeraManager[] managers;
-            
-            // Try to use ServiceContainer first, fallback to FindObjectsOfType for compatibility
-            if (_serviceContainer != null)
-            {
-                managers = _serviceContainer.ResolveAll<ChimeraManager>().ToArray();
-                
-                // If no managers found via ServiceContainer, fallback to scene discovery
-                if (managers.Length == 0)
-                {
-                    // Fallback to scene discovery and register them in ServiceContainer
-                    var sceneManagers = UnityEngine.Object.FindObjectsByType<ChimeraManager>(FindObjectsSortMode.None);
-                    foreach (var manager in sceneManagers)
-                    {
-                        _serviceContainer.RegisterInstance<ChimeraManager>(manager);
-                    }
-                    managers = sceneManagers;
-                }
-            }
-            else
-            {
-                // Fallback for when ServiceContainer is not available
-                managers = UnityEngine.Object.FindObjectsByType<ChimeraManager>(FindObjectsSortMode.None);
-            }
-            
-            foreach (var manager in managers)
-            {
-                RegisterManager(manager);
-            }
+            // Modern approach: Managers self-register via ServiceContainer during Awake()
+            // This method is now a no-op placeholder for backward compatibility
+            // All managers should implement the pattern:
+            //   void Awake() { ServiceContainer.Instance?.RegisterSingleton<IManagerType>(this); }
 
             if (_enableRegistryLogging)
-                ChimeraLogger.LogVerbose($"Auto-discovered and registered {managers.Length} managers via {(_serviceContainer != null ? "ServiceContainer" : "scene discovery")}");
+            {
+                ChimeraLogger.LogInfo("ManagerRegistry",
+                    "Manager discovery skipped - managers should self-register via ServiceContainer");
+            }
+
+            // If you need to manually register managers, use explicit references:
+            // RegisterManager(myManagerReference);
         }
 
         /// <summary>
@@ -107,13 +89,13 @@ namespace ProjectChimera.Core
                 if (_managerRegistry[managerType] == manager)
                 {
                     if (_enableRegistryLogging)
-                        ChimeraLogger.LogVerbose($"Manager {managerType.Name} already registered");
+                        ChimeraLogger.LogInfo("ManagerRegistry", "$1");
                     return;
                 }
                 else
                 {
                     if (_enableRegistryLogging)
-                        ChimeraLogger.LogWarning($"Replacing existing manager registration for {managerType.Name}");
+                        ChimeraLogger.LogInfo("ManagerRegistry", "$1");
                 }
             }
 
@@ -131,7 +113,7 @@ namespace ProjectChimera.Core
             OnManagerRegistered?.Invoke(manager);
 
             if (_enableRegistryLogging)
-                ChimeraLogger.LogVerbose($"Registered manager: {managerType.Name}");
+                ChimeraLogger.LogInfo("ManagerRegistry", "$1");
         }
 
         /// <summary>
@@ -145,7 +127,7 @@ namespace ProjectChimera.Core
             }
 
             if (_enableRegistryLogging)
-                ChimeraLogger.LogWarning($"Manager not found: {managerType.Name}");
+                ChimeraLogger.LogInfo("ManagerRegistry", "$1");
 
             return null;
         }
@@ -207,7 +189,7 @@ namespace ProjectChimera.Core
                 OnManagerUnregistered?.Invoke(manager);
 
                 if (_enableRegistryLogging)
-                    ChimeraLogger.LogVerbose($"Unregistered manager: {managerType.Name}");
+                    ChimeraLogger.LogInfo("ManagerRegistry", "$1");
             }
         }
 
@@ -234,11 +216,11 @@ namespace ProjectChimera.Core
                 {
                     manager.Shutdown();
                     if (_enableRegistryLogging)
-                        ChimeraLogger.LogVerbose($"Shut down manager: {manager.ManagerName}");
+                        ChimeraLogger.LogInfo("ManagerRegistry", "$1");
                 }
                 catch (Exception ex)
                 {
-                    ChimeraLogger.LogError($"Error shutting down {manager.ManagerName}: {ex.Message}");
+                    ChimeraLogger.LogInfo("ManagerRegistry", "$1");
                 }
             }
 
@@ -246,7 +228,7 @@ namespace ProjectChimera.Core
             _registrationTimes.Clear();
 
             if (_enableRegistryLogging)
-                ChimeraLogger.LogVerbose("All managers shut down");
+                ChimeraLogger.LogInfo("ManagerRegistry", "$1");
         }
 
         /// <summary>

@@ -1,0 +1,201 @@
+using UnityEngine;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Core.Interfaces;
+using ProjectChimera.Systems.Rendering;
+using ProjectChimera.Systems.Cultivation;
+using ProjectChimera.Systems.UI;
+using System.Linq;
+
+namespace ProjectChimera.Core
+{
+    /// <summary>
+    /// Validation test for FindObjectOfType migration to ServiceContainer
+    /// Ensures all services can be resolved and migration is successful
+    /// </summary>
+    public class FindObjectOfTypeMigrationTest : MonoBehaviour
+    {
+        [Header("Test Configuration")]
+        [SerializeField] private bool _runTestOnStart = false;
+        [SerializeField] private bool _testAllServices = true;
+
+        private void Start()
+        {
+            if (_runTestOnStart)
+            {
+                RunMigrationValidationTest();
+            }
+        }
+
+        [ContextMenu("Run FindObjectOfType Migration Test")]
+        public void RunMigrationValidationTest()
+        {
+            ChimeraLogger.Log("MIGRATION_TEST", "=== FindObjectOfType Migration Validation Started ===", this);
+
+            var container = ServiceContainerFactory.Instance;
+            if (container == null)
+            {
+                ChimeraLogger.LogError("MIGRATION_TEST", "ServiceContainer not available", this);
+                return;
+            }
+
+            int totalTests = 0;
+            int passedTests = 0;
+
+            // Test Core Services
+            totalTests++; passedTests += TestService<ITimeManager>("ITimeManager");
+            totalTests++; passedTests += TestService<IServiceHealthMonitor>("IServiceHealthMonitor");
+            totalTests++; passedTests += TestService<IGCOptimizationManager>("IGCOptimizationManager");
+            totalTests++; passedTests += TestService<IStreamingCoordinator>("IStreamingCoordinator");
+            totalTests++; passedTests += TestService<IMemoryProfiler>("IMemoryProfiler");
+            totalTests++; passedTests += TestService<IPoolManager>("IPoolManager");
+            totalTests++; passedTests += TestService<UpdateOrchestrator>("UpdateOrchestrator");
+            totalTests++; passedTests += TestService<IAssetManager>("IAssetManager");
+            totalTests++; passedTests += TestService<ILightingService>("ILightingService");
+
+            if (_testAllServices)
+            {
+                // Test Rendering Services
+                totalTests++; passedTests += TestService<IAdvancedRenderingManager>("IAdvancedRenderingManager");
+                totalTests++; passedTests += TestService<IPlantInstancedRenderer>("IPlantInstancedRenderer");
+                totalTests++; passedTests += TestService<ICustomLightingRenderer>("ICustomLightingRenderer");
+                totalTests++; passedTests += TestService<IEnvironmentalRenderer>("IEnvironmentalRenderer");
+
+                // Test Cultivation Services
+                totalTests++; passedTests += TestService<IPlantGrowthSystem>("IPlantGrowthSystem");
+                totalTests++; passedTests += TestService<ICultivationManager>("ICultivationManager");
+                totalTests++; passedTests += TestService<IPlantStreamingLODIntegration>("IPlantStreamingLODIntegration");
+
+                // Test Construction Services
+                totalTests++; passedTests += TestService<IGridInputHandler>("IGridInputHandler");
+                totalTests++; passedTests += TestService<IGridPlacementController>("IGridPlacementController");
+                totalTests++; passedTests += TestService<IConstructionSaveProvider>("IConstructionSaveProvider");
+
+                // Test Camera Services
+                totalTests++; passedTests += TestService<ICameraService>("ICameraService");
+                totalTests++; passedTests += TestService<ICameraLevelContextualMenuIntegrator>("ICameraLevelContextualMenuIntegrator");
+
+                // Test UI Services
+                totalTests++; passedTests += TestService<IUIPerformanceMonitor>("IUIPerformanceMonitor");
+                totalTests++; passedTests += TestService<ICultivationDashboard>("ICultivationDashboard");
+            }
+
+            // Test Unity component alternatives
+            TestUnityComponentAlternatives();
+
+            // Summary
+            ChimeraLogger.Log("MIGRATION_TEST", $"Test Results: {passedTests}/{totalTests} services resolved successfully", this);
+
+            if (passedTests == totalTests)
+            {
+                ChimeraLogger.Log("MIGRATION_TEST", "✅ ALL TESTS PASSED - FindObjectOfType migration successful!", this);
+            }
+            else
+            {
+                ChimeraLogger.LogWarning("MIGRATION_TEST", $"⚠️ {totalTests - passedTests} services failed resolution", this);
+            }
+
+            ChimeraLogger.Log("MIGRATION_TEST", "=== FindObjectOfType Migration Validation Completed ===", this);
+        }
+
+        private int TestService<T>(string serviceName) where T : class
+        {
+            var container = ServiceContainerFactory.Instance;
+            var service = container?.TryResolve<T>();
+
+            if (service != null)
+            {
+                ChimeraLogger.Log("MIGRATION_TEST", $"✓ {serviceName}: Resolved successfully", this);
+                return 1;
+            }
+            else
+            {
+                ChimeraLogger.LogWarning("MIGRATION_TEST", $"✗ {serviceName}: Failed to resolve", this);
+                return 0;
+            }
+        }
+
+        private void TestUnityComponentAlternatives()
+        {
+            ChimeraLogger.Log("MIGRATION_TEST", "Testing Unity component alternatives:", this);
+
+            // Test Camera alternative
+            var cameraService = ServiceContainerFactory.Instance?.TryResolve<ICameraService>();
+            var mainCamera = UnityEngine.Camera.main ?? cameraService?.MainCamera;
+
+            if (mainCamera != null)
+            {
+                ChimeraLogger.Log("MIGRATION_TEST", "✓ Camera alternative: Main camera resolved", this);
+            }
+            else
+            {
+                ChimeraLogger.LogWarning("MIGRATION_TEST", "✗ Camera alternative: No main camera found", this);
+            }
+
+            // Test Light alternative
+            var lightingService = ServiceContainerFactory.Instance?.TryResolve<ILightingService>();
+            var mainLight = lightingService?.GetMainLight();
+
+            if (mainLight != null)
+            {
+                ChimeraLogger.Log("MIGRATION_TEST", "✓ Light alternative: Main light resolved", this);
+            }
+            else
+            {
+                ChimeraLogger.LogWarning("MIGRATION_TEST", "✗ Light alternative: No main light found", this);
+            }
+        }
+
+        [ContextMenu("Check Service Registrations")]
+        public void CheckServiceRegistrations()
+        {
+            var container = ServiceContainerFactory.Instance;
+            if (container == null)
+            {
+                ChimeraLogger.LogError("MIGRATION_TEST", "ServiceContainer not available", this);
+                return;
+            }
+
+            var registrations = container.GetRegistrations();
+            var registrationsCount = (registrations as System.Collections.ICollection)?.Count
+                                      ?? registrations.Count();
+            ChimeraLogger.Log("MIGRATION_TEST", $"Total registered services: {registrationsCount}", this);
+
+            foreach (var kvp in registrations)
+            {
+                var keyType = kvp is System.Collections.Generic.KeyValuePair<System.Type, ProjectChimera.Core.ServiceRegistrationData> pair
+                    ? pair.Key
+                    : null;
+                var value = kvp is System.Collections.Generic.KeyValuePair<System.Type, ProjectChimera.Core.ServiceRegistrationData> pair2
+                    ? pair2.Value
+                    : null;
+
+                if (value != null)
+                {
+                    ChimeraLogger.Log("MIGRATION_TEST",
+                        $"Service: {(value.ServiceType?.Name ?? keyType?.Name ?? "Unknown")} -> {value.ImplementationType?.Name ?? "Unknown"}", this);
+                }
+                else
+                {
+                    ChimeraLogger.Log("MIGRATION_TEST",
+                        $"Service registration entry present for: {keyType?.Name ?? "Unknown"}", this);
+                }
+            }
+        }
+
+        [ContextMenu("Test FindObjectOfType Replacement Patterns")]
+        public void TestReplacementPatterns()
+        {
+            ChimeraLogger.Log("MIGRATION_TEST", "Testing FindObjectOfType replacement patterns:", this);
+
+            // These would have been FindObjectOfType calls before migration
+            var timeManager = ServiceContainerFactory.Instance?.TryResolve<ITimeManager>();
+            var updateOrchestrator = ServiceContainerFactory.Instance?.TryResolve<UpdateOrchestrator>();
+            var camera = UnityEngine.Camera.main ?? ServiceContainerFactory.Instance?.TryResolve<ICameraService>()?.MainCamera;
+
+            ChimeraLogger.Log("MIGRATION_TEST", $"ITimeManager resolved: {timeManager != null}", this);
+            ChimeraLogger.Log("MIGRATION_TEST", $"UpdateOrchestrator resolved: {updateOrchestrator != null}", this);
+            ChimeraLogger.Log("MIGRATION_TEST", $"Camera resolved: {camera != null}", this);
+        }
+    }
+}

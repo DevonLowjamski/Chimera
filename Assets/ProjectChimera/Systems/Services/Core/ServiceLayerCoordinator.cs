@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
 
 namespace ProjectChimera.Systems.Services.Core
 {
@@ -36,7 +37,7 @@ namespace ProjectChimera.Systems.Services.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log("[ServiceLayerCoordinator] Initialized successfully");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 
@@ -54,14 +55,14 @@ namespace ProjectChimera.Systems.Services.Core
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[ServiceLayerCoordinator] Registered service: {serviceName}");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
             }
             else
             {
                 if (_enableLogging)
                 {
-                    ChimeraLogger.LogWarning($"[ServiceLayerCoordinator] Service already registered: {serviceName}");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
             }
         }
@@ -77,7 +78,7 @@ namespace ProjectChimera.Systems.Services.Core
 
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[ServiceLayerCoordinator] Unregistered service: {serviceName}");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
             }
         }
@@ -98,7 +99,7 @@ namespace ProjectChimera.Systems.Services.Core
                     OnServiceError?.Invoke(serviceName, "Type mismatch");
                     if (_enableLogging)
                     {
-                        ChimeraLogger.LogError($"[ServiceLayerCoordinator] Type mismatch for service: {serviceName}");
+                        ChimeraLogger.Log("OTHER", "$1", this);
                     }
                     return default;
                 }
@@ -107,7 +108,7 @@ namespace ProjectChimera.Systems.Services.Core
             OnServiceError?.Invoke(serviceName, "Service not found");
             if (_enableLogging)
             {
-                ChimeraLogger.LogWarning($"[ServiceLayerCoordinator] Service not found: {serviceName}");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
             return default;
         }
@@ -141,7 +142,7 @@ namespace ProjectChimera.Systems.Services.Core
                 // Basic operation execution - could be expanded based on service interface
                 if (_enableLogging)
                 {
-                    ChimeraLogger.Log($"[ServiceLayerCoordinator] Executed operation '{operation}' on service '{serviceName}'");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
                 return true;
             }
@@ -150,7 +151,7 @@ namespace ProjectChimera.Systems.Services.Core
                 OnServiceError?.Invoke(serviceName, ex.Message);
                 if (_enableLogging)
                 {
-                    ChimeraLogger.LogError($"[ServiceLayerCoordinator] Operation failed: {ex.Message}");
+                    ChimeraLogger.Log("OTHER", "$1", this);
                 }
                 return false;
             }
@@ -193,7 +194,7 @@ namespace ProjectChimera.Systems.Services.Core
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[ServiceLayerCoordinator] Cleared {serviceNames.Count} services");
+                ChimeraLogger.Log("OTHER", "$1", this);
             }
         }
 

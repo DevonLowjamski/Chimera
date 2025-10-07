@@ -1,6 +1,7 @@
 using UnityEngine;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Shared;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Cultivation
 {
@@ -8,7 +9,7 @@ namespace ProjectChimera.Systems.Cultivation
     /// BASIC: Simple plant physiology for Project Chimera's cultivation system.
     /// Focuses on essential plant health and growth without complex calculations.
     /// </summary>
-    public class PlantPhysiology : MonoBehaviour
+    public class PlantPhysiology : MonoBehaviour, ITickable
     {
         [Header("Basic Plant Settings")]
         [SerializeField] private bool _enableBasicPhysiology = true;
@@ -46,44 +47,58 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantPhysiology] Initialized plant {plantId} in {initialStage} stage");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
         /// <summary>
         /// Update plant physiology
         /// </summary>
-        private void Update()
+    [SerializeField] private float _tickInterval = 0.1f; // Configurable update frequency
+    private float _lastTickTime;
+
+    public int TickPriority => 50; // Lower priority for complex updates
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
+
+    public void Tick(float deltaTime)
+    {
+        _lastTickTime += deltaTime;
+        if (_lastTickTime >= _tickInterval)
         {
-            if (!_enableBasicPhysiology || !_isInitialized) return;
-
-            // Simple health decay over time
-            float deltaTime = Time.deltaTime;
-            _health = Mathf.Max(0f, _health - _healthDecayRate * deltaTime * 0.01f); // Very slow decay
-
-            // Consume water and nutrients
-            _waterLevel = Mathf.Max(0f, _waterLevel - _waterConsumptionRate * deltaTime * 0.01f);
-            _nutrientLevel = Mathf.Max(0f, _nutrientLevel - _nutrientConsumptionRate * deltaTime * 0.01f);
-
-            // Health affected by water and nutrients
-            if (_waterLevel < 0.2f || _nutrientLevel < 0.2f)
-            {
-                _health = Mathf.Max(0f, _health - 0.05f * deltaTime);
-            }
-
-            OnHealthChanged?.Invoke(_plantId, _health);
-
-            // Check if plant died
-            if (_health <= 0f)
-            {
-                OnPlantDied?.Invoke(_plantId);
-
-                if (_enableLogging)
-                {
-                    ChimeraLogger.Log($"[PlantPhysiology] Plant {_plantId} died");
-                }
-            }
+            _lastTickTime = 0f;
+                if (!_enableBasicPhysiology || !_isInitialized) return;
+    
+                // Simple health decay over time
+                _health = Mathf.Max(0f, _health - _healthDecayRate * deltaTime * 0.01f); // Very slow decay
+    
+                // Consume water and nutrients
+                _waterLevel = Mathf.Max(0f, _waterLevel - _waterConsumptionRate * deltaTime * 0.01f);
+                _nutrientLevel = Mathf.Max(0f, _nutrientLevel - _nutrientConsumptionRate * deltaTime * 0.01f);
+    
+                // Health affected by water and nutrients
+                if (_waterLevel < 0.2f || _nutrientLevel < 0.2f)
+                    _health = Mathf.Max(0f, _health - 0.05f * deltaTime);
+    
+                OnHealthChanged?.Invoke(_plantId, _health);
+    
+                // Check if plant died
+                if (_health <= 0f)
+                    OnPlantDied?.Invoke(_plantId);
+    
+                    if (_enableLogging)
+                        ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
+    }
+
+    private void Awake()
+    {
+        UpdateOrchestrator.Instance.RegisterTickable(this);
+    }
+
+    private void OnDestroy()
+    {
+        UpdateOrchestrator.Instance.UnregisterTickable(this);
+    }
 
         /// <summary>
         /// Water the plant
@@ -96,7 +111,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantPhysiology] Plant {_plantId} watered, water level: {_waterLevel:F2}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -111,7 +126,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantPhysiology] Plant {_plantId} fed, nutrient level: {_nutrientLevel:F2}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -127,7 +142,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantPhysiology] Plant {_plantId} healed, health: {_health:F2}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -144,7 +159,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantPhysiology] Plant {_plantId} stage changed from {oldStage} to {newStage}");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
 
@@ -235,7 +250,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                ChimeraLogger.Log($"[PlantPhysiology] Plant {_plantId} reset to initial state");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
         }
     }

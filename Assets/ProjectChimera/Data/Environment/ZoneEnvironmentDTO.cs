@@ -1,3 +1,4 @@
+
 namespace ProjectChimera.Data.Environment
 {
     public class ZoneEnvironmentDTO

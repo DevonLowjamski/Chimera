@@ -1,6 +1,8 @@
 using UnityEngine;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Shared;
+using ProjectChimera.Data.Cultivation.Plant;
+using ProjectChimera.Core.Pooling;
 
 namespace ProjectChimera.Systems.Cultivation
 {
@@ -8,7 +10,7 @@ namespace ProjectChimera.Systems.Cultivation
     /// BASIC: Simple plant component for Project Chimera's cultivation system.
     /// Focuses on essential plant visualization and interaction.
     /// </summary>
-    public class PlantInstanceComponent : MonoBehaviour
+    public class PlantInstanceComponent : MonoBehaviour, IPoolable
     {
         [Header("Basic Plant Settings")]
         [SerializeField] private string _plantId = "";
@@ -39,26 +41,34 @@ namespace ProjectChimera.Systems.Cultivation
         /// </summary>
         public void Initialize(string plantId, string strainName)
         {
+            Initialize(new PlantInstance
+            {
+                PlantId = plantId,
+                StrainName = strainName,
+                GrowthStage = PlantGrowthStage.Seedling,
+                Health = 1f
+            });
+        }
+
+        /// <summary>
+        /// Initialize with PlantInstance data
+        /// </summary>
+        public void Initialize(PlantInstance plantData)
+        {
             if (_isInitialized) return;
 
-            _plantId = plantId;
-            _strainName = strainName;
-
-            _plantData = new PlantInstance
-            {
-                PlantID = plantId,
-                PlantName = strainName,
-                CurrentGrowthStage = _currentStage,
-                Health = _health,
-                GrowthProgress = _growthProgress
-            };
+            _plantData = plantData;
+            _plantId = plantData.PlantId;
+            _strainName = plantData.StrainName;
+            _currentStage = plantData.GrowthStage;
+            _health = plantData.Health;
 
             _renderer = GetComponent<Renderer>();
             UpdateVisuals();
 
             _isInitialized = true;
 
-            ChimeraLogger.Log($"[PlantInstanceComponent] Initialized plant {plantId}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         /// <summary>
@@ -77,7 +87,7 @@ namespace ProjectChimera.Systems.Cultivation
             UpdateVisuals();
             OnPlantHealthChanged?.Invoke(this);
 
-            ChimeraLogger.Log($"[PlantInstanceComponent] Health updated to {_health:F2} for {_plantId}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         /// <summary>
@@ -118,7 +128,7 @@ namespace ProjectChimera.Systems.Cultivation
                 _plantData.LastWatering = System.DateTime.Now;
             }
 
-            ChimeraLogger.Log($"[PlantInstanceComponent] Watered plant {_plantId}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         /// <summary>
@@ -133,7 +143,7 @@ namespace ProjectChimera.Systems.Cultivation
                 _plantData.LastFeeding = System.DateTime.Now;
             }
 
-            ChimeraLogger.Log($"[PlantInstanceComponent] Applied nutrients to plant {_plantId}");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         /// <summary>
@@ -142,7 +152,7 @@ namespace ProjectChimera.Systems.Cultivation
         private void OnMouseDown()
         {
             OnPlantClicked?.Invoke(this);
-            ChimeraLogger.Log($"[PlantInstanceComponent] Plant {_plantId} clicked");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         /// <summary>
@@ -215,6 +225,70 @@ namespace ProjectChimera.Systems.Cultivation
             // Scale based on growth progress
             float scale = Mathf.Lerp(0.1f, _maxScale, _growthProgress);
             transform.localScale = new Vector3(scale, scale, scale);
+        }
+
+        #endregion
+
+        #region Pooling Support
+
+        /// <summary>
+        /// Update visuals with plant instance data
+        /// </summary>
+        public void UpdateVisuals(PlantInstance plantData)
+        {
+            if (plantData != null)
+            {
+                _plantData = plantData;
+                _health = plantData.Health;
+                _currentStage = plantData.GrowthStage;
+                UpdateVisuals();
+                UpdateScale();
+            }
+        }
+
+        /// <summary>
+        /// Reset plant for pool reuse
+        /// </summary>
+        public void ResetForPool()
+        {
+            _health = 1f;
+            _growthProgress = 0f;
+            _currentStage = PlantGrowthStage.Seedling;
+            _isInitialized = false;
+            transform.localScale = Vector3.one * 0.1f;
+            
+            if (_renderer != null)
+            {
+                _renderer.material.color = _healthyColor;
+            }
+        }
+
+        /// <summary>
+        /// Cleanup before destruction
+        /// </summary>
+        public void CleanupForDestroy()
+        {
+            OnPlantClicked = null;
+            OnPlantHealthChanged = null;
+            _plantData = null;
+        }
+
+        /// <summary>
+        /// IPoolable implementation - called when retrieved from pool
+        /// </summary>
+        public void OnGetFromPool()
+        {
+            gameObject.SetActive(true);
+            _isInitialized = false; // Allow re-initialization
+        }
+
+        /// <summary>
+        /// IPoolable implementation - called when returned to pool
+        /// </summary>
+        public void OnReturnToPool()
+        {
+            ResetForPool();
+            gameObject.SetActive(false);
         }
 
         #endregion

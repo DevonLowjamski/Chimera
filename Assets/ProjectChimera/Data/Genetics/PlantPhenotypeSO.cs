@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ProjectChimera.Shared;
 using ProjectChimera.Data.Shared;
 
+
 namespace ProjectChimera.Data.Genetics
 {
     /// <summary>
@@ -13,7 +14,7 @@ namespace ProjectChimera.Data.Genetics
     public class PlantPhenotypeSO : ChimeraDataSO
     {
         [Header("Phenotype Identity")]
-        [SerializeField] private PlantStrainSO _parentStrain;
+        [SerializeField] private GeneticPlantStrainSO _parentStrain;
         [SerializeField] private string _phenotypeId;
         [SerializeField] private string _phenotypeName;
         [SerializeField, TextArea(2, 4)] private string _phenotypeDescription;
@@ -55,7 +56,7 @@ namespace ProjectChimera.Data.Genetics
         [SerializeField] private bool _hasUniqueMorphology = false;
 
         // Public Properties
-        public PlantStrainSO ParentStrain => _parentStrain;
+        public GeneticPlantStrainSO ParentStrain => _parentStrain;
         public string PhenotypeId { get => _phenotypeId; set => _phenotypeId = value; }
         public string PhenotypeName { get => _phenotypeName; set => _phenotypeName = value; }
         public string PhenotypeDescription { get => _phenotypeDescription; set => _phenotypeDescription = value; }

@@ -1,6 +1,7 @@
 using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Shared;
+using ProjectChimera.Core.Logging;
 
 namespace ProjectChimera.Systems.Cultivation
 {

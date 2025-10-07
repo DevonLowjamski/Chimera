@@ -1,0 +1,366 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+using ProjectChimera.Data.Construction;
+
+namespace ProjectChimera.Systems.Construction.Core
+{
+    /// <summary>
+    /// REFACTORED: Construction Project Manager
+    /// Focused component for managing construction projects and their lifecycle
+    /// </summary>
+    public class ConstructionProjectManager : MonoBehaviour, ITickable
+    {
+        [Header("Project Management Settings")]
+        [SerializeField] private bool _enableLogging = false;
+        [SerializeField] private int _maxConcurrentProjects = 10;
+        [SerializeField] private float _projectUpdateInterval = 0.1f;
+
+        // Project management
+        private readonly Dictionary<string, ConstructionProject> _activeProjects = new Dictionary<string, ConstructionProject>();
+        private readonly Queue<ConstructionProject> _projectQueue = new Queue<ConstructionProject>();
+        private readonly List<ConstructionProject> _completedProjects = new List<ConstructionProject>();
+
+        // Performance tracking
+        private float _lastUpdateTime;
+        private ProjectManagerStats _stats = new ProjectManagerStats();
+
+        // Properties
+        public bool IsEnabled { get; private set; } = true;
+        public int ActiveProjectCount => _activeProjects.Count;
+        public int QueuedProjectCount => _projectQueue.Count;
+        public int CompletedProjectCount => _completedProjects.Count;
+
+        // ITickable implementation
+        public int TickPriority => 25; // Project managers: 25-30 (coordination after planning)
+        public bool IsTickable => IsEnabled && gameObject.activeInHierarchy;
+
+        // Events
+        public System.Action<ConstructionProject> OnProjectStarted;
+        public System.Action<ConstructionProject> OnProjectCompleted;
+        public System.Action<ConstructionProject> OnProjectFailed;
+        public System.Action<string> OnProjectCancelled;
+
+        private void Start()
+        {
+            Initialize();
+
+            // Register with UpdateOrchestrator
+            var orchestrator = UpdateOrchestrator.Instance;
+            orchestrator?.RegisterTickable(this);
+        }
+
+        private void Initialize()
+        {
+            ResetStats();
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", "✅ Construction Project Manager initialized", this);
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (!IsEnabled) return;
+
+            if (Time.time - _lastUpdateTime >= _projectUpdateInterval)
+            {
+                UpdateProjects();
+                _lastUpdateTime = Time.time;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            // Unregister from UpdateOrchestrator
+            var orchestrator = UpdateOrchestrator.Instance;
+            orchestrator?.UnregisterTickable(this);
+        }
+
+        /// <summary>
+        /// Start a new construction project
+        /// </summary>
+        public bool StartProject(ConstructionProject project)
+        {
+            if (!IsEnabled) return false;
+
+            // Check if we can start immediately
+            if (_activeProjects.Count < _maxConcurrentProjects)
+            {
+                return StartProjectImmediate(project);
+            }
+            else
+            {
+                // Queue the project
+                _projectQueue.Enqueue(project);
+                _stats.QueuedProjects++;
+
+                if (_enableLogging)
+                    ChimeraLogger.Log("CONSTRUCTION", $"Project queued: {project.ProjectName}", this);
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Complete construction project
+        /// </summary>
+        public bool CompleteProject(string projectId)
+        {
+            if (!_activeProjects.TryGetValue(projectId, out var project)) return false;
+
+            project.Status = ConstructionStatus.Completed;
+            project.Progress = 1f;
+
+            _activeProjects.Remove(projectId);
+            _completedProjects.Add(project);
+
+            _stats.CompletedProjects++;
+            OnProjectCompleted?.Invoke(project);
+
+            // Start next queued project if available
+            ProcessProjectQueue();
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Project completed: {project.ProjectName}", this);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Cancel construction project
+        /// </summary>
+        public bool CancelProject(string projectId)
+        {
+            if (!_activeProjects.TryGetValue(projectId, out var project)) return false;
+
+            project.Status = ConstructionStatus.Cancelled;
+            _activeProjects.Remove(projectId);
+
+            _stats.CancelledProjects++;
+            OnProjectCancelled?.Invoke(projectId);
+
+            // Start next queued project if available
+            ProcessProjectQueue();
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Project cancelled: {project.ProjectName}", this);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Get construction project by ID
+        /// </summary>
+        public ConstructionProject? GetProject(string projectId)
+        {
+            return _activeProjects.TryGetValue(projectId, out var project) ? project : null;
+        }
+
+        /// <summary>
+        /// Get all active construction projects
+        /// </summary>
+        public ConstructionProject[] GetActiveProjects()
+        {
+            return _activeProjects.Values.ToArray();
+        }
+
+        /// <summary>
+        /// Get projects by status
+        /// </summary>
+        public ConstructionProject[] GetProjectsByStatus(ConstructionStatus status)
+        {
+            return _activeProjects.Values.Where(p => p.Status == status).ToArray();
+        }
+
+        /// <summary>
+        /// Update project progress
+        /// </summary>
+        public void UpdateProjectProgress(string projectId, float progress)
+        {
+            if (_activeProjects.TryGetValue(projectId, out var project))
+            {
+                project.Progress = Mathf.Clamp01(progress);
+                _activeProjects[projectId] = project;
+
+                // Auto-complete if progress reaches 100%
+                if (progress >= 1f && project.Status == ConstructionStatus.InProgress)
+                {
+                    CompleteProject(projectId);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Set project as failed
+        /// </summary>
+        public void SetProjectFailed(string projectId, string reason)
+        {
+            if (_activeProjects.TryGetValue(projectId, out var project))
+            {
+                project.Status = ConstructionStatus.Failed;
+                _activeProjects.Remove(projectId);
+
+                _stats.FailedProjects++;
+                OnProjectFailed?.Invoke(project);
+
+                // Start next queued project if available
+                ProcessProjectQueue();
+
+                if (_enableLogging)
+                    ChimeraLogger.Log("CONSTRUCTION", $"Project failed: {project.ProjectName} - {reason}", this);
+            }
+        }
+
+        /// <summary>
+        /// Update all active projects
+        /// </summary>
+        public void UpdateProjects()
+        {
+            var projectsToUpdate = _activeProjects.Values.Where(p => p.NeedsUpdate).ToArray();
+
+            foreach (var project in projectsToUpdate)
+            {
+                UpdateSingleProject(project);
+                _stats.ProjectsUpdated++;
+            }
+
+            // Process queued projects
+            ProcessProjectQueue();
+
+            // Update statistics
+            UpdateProjectStats();
+        }
+
+        /// <summary>
+        /// Get project manager statistics
+        /// </summary>
+        public ProjectManagerStats GetStats()
+        {
+            return _stats;
+        }
+
+        /// <summary>
+        /// Set project manager enabled/disabled
+        /// </summary>
+        public void SetEnabled(bool enabled)
+        {
+            IsEnabled = enabled;
+
+            if (!enabled)
+            {
+                // Cancel all active projects when disabled
+                var activeProjectIds = _activeProjects.Keys.ToArray();
+                foreach (var projectId in activeProjectIds)
+                {
+                    CancelProject(projectId);
+                }
+                _projectQueue.Clear();
+            }
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Project Manager: {(enabled ? "enabled" : "disabled")}", this);
+        }
+
+        /// <summary>
+        /// Set maximum concurrent projects
+        /// </summary>
+        public void SetMaxConcurrentProjects(int maxProjects)
+        {
+            _maxConcurrentProjects = Mathf.Max(1, maxProjects);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Max concurrent projects set to: {_maxConcurrentProjects}", this);
+        }
+
+        private bool StartProjectImmediate(ConstructionProject project)
+        {
+            project.Status = ConstructionStatus.InProgress;
+            project.StartTime = System.DateTime.Now;
+            project.IsActive = true;
+            project.NeedsUpdate = true;
+
+            _activeProjects[project.ProjectId] = project;
+            _stats.ActiveProjects++;
+            OnProjectStarted?.Invoke(project);
+
+            if (_enableLogging)
+                ChimeraLogger.Log("CONSTRUCTION", $"Project started: {project.ProjectName}", this);
+
+            return true;
+        }
+
+        private void ProcessProjectQueue()
+        {
+            while (_projectQueue.Count > 0 && _activeProjects.Count < _maxConcurrentProjects)
+            {
+                var queuedProject = _projectQueue.Dequeue();
+                StartProjectImmediate(queuedProject);
+                _stats.QueuedProjects--;
+            }
+        }
+
+        private void UpdateSingleProject(ConstructionProject project)
+        {
+            // Simulate project progress (in real implementation, this would update based on resources, workers, etc.)
+            if (project.Status == ConstructionStatus.InProgress)
+            {
+                // Simple progress simulation
+                float progressIncrement = Time.deltaTime * 0.1f; // 10 seconds to complete
+                UpdateProjectProgress(project.ProjectId, project.Progress + progressIncrement);
+            }
+        }
+
+        private void UpdateProjectStats()
+        {
+            _stats.ActiveProjects = _activeProjects.Count;
+            _stats.QueuedProjects = _projectQueue.Count;
+            _stats.CompletedProjects = _completedProjects.Count;
+
+            // Calculate average project duration for completed projects
+            if (_completedProjects.Count > 0)
+            {
+                var durations = _completedProjects
+                    .Where(p => p.StartTime != default)
+                    .Select(p => (float)(System.DateTime.Now - p.StartTime).TotalSeconds);
+
+                _stats.AverageProjectDuration = durations.Any() ? durations.Average() : 0f;
+            }
+
+            // Performance assessment
+            _stats.IsPerformingWell = _stats.FailedProjects < _stats.CompletedProjects * 0.1f; // Less than 10% failure rate
+        }
+
+        private void ResetStats()
+        {
+            _stats = new ProjectManagerStats
+            {
+                ActiveProjects = 0,
+                QueuedProjects = 0,
+                CompletedProjects = 0,
+                FailedProjects = 0,
+                CancelledProjects = 0,
+                ProjectsUpdated = 0,
+                AverageProjectDuration = 0f,
+                IsPerformingWell = true
+            };
+        }
+    }
+
+    /// <summary>
+    /// Project manager statistics
+    /// </summary>
+    [System.Serializable]
+    public struct ProjectManagerStats
+    {
+        public int ActiveProjects;
+        public int QueuedProjects;
+        public int CompletedProjects;
+        public int FailedProjects;
+        public int CancelledProjects;
+        public int ProjectsUpdated;
+        public float AverageProjectDuration;
+        public bool IsPerformingWell;
+    }
+}

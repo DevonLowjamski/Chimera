@@ -4,9 +4,9 @@
     "references": [
         "ProjectChimera.Shared",
         "ProjectChimera.Data.Shared",
-        "ProjectChimera.Data.Economy",
+        "ProjectChimera.Data.Facilities",
         "ProjectChimera.Data.Genetics",
-        "ProjectChimera.Data.Facilities"
+        "ProjectChimera.Data.Cultivation"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -220,46 +220,46 @@ namespace ProjectChimera.Data.Cultivation
             // Validate basic properties
             if (string.IsNullOrEmpty(_zoneID))
             {
-                Debug.LogError($"[{nameof(SimpleCultivationZoneSO)}] Zone ID is required");
+                ProjectChimera.Shared.SharedLogger.Log("CULTIVATION", "Zone validation failed", this);
                 isValid = false;
             }
 
             if (string.IsNullOrEmpty(_zoneName))
             {
-                Debug.LogError($"[{nameof(SimpleCultivationZoneSO)}] Zone name is required");
+                ProjectChimera.Shared.SharedLogger.Log("CULTIVATION", "Zone validation failed", this);
                 isValid = false;
             }
 
             // Validate dimensions
             if (_zoneDimensions.x <= 0 || _zoneDimensions.y <= 0 || _zoneDimensions.z <= 0)
             {
-                Debug.LogError($"[{nameof(SimpleCultivationZoneSO)}] Zone dimensions must be positive");
+                ProjectChimera.Shared.SharedLogger.Log("CULTIVATION", "Zone validation failed", this);
                 isValid = false;
             }
 
             // Validate capacity
             if (_maxPlantCapacity <= 0)
             {
-                Debug.LogError($"[{nameof(SimpleCultivationZoneSO)}] Max plant capacity must be positive");
+                ProjectChimera.Shared.SharedLogger.Log("CULTIVATION", "Zone validation failed", this);
                 isValid = false;
             }
 
             // Validate grid size
             if (_gridSize.x <= 0 || _gridSize.y <= 0)
             {
-                Debug.LogError($"[{nameof(SimpleCultivationZoneSO)}] Grid size must be positive");
+                ProjectChimera.Shared.SharedLogger.Log("CULTIVATION", "Zone validation failed", this);
                 isValid = false;
             }
 
             // Validate environmental ranges
             if (_targetConditions.Temperature < 10f || _targetConditions.Temperature > 40f)
             {
-                Debug.LogWarning($"[{nameof(SimpleCultivationZoneSO)}] Target temperature {_targetConditions.Temperature}°C is outside typical range (10-40°C)");
+                ProjectChimera.Shared.SharedLogger.Log("CULTIVATION", "Zone validation failed", this);
             }
 
             if (_targetConditions.Humidity < 20f || _targetConditions.Humidity > 90f)
             {
-                Debug.LogWarning($"[{nameof(SimpleCultivationZoneSO)}] Target humidity {_targetConditions.Humidity}% is outside typical range (20-90%)");
+                ProjectChimera.Shared.SharedLogger.Log("CULTIVATION", "Zone validation failed", this);
             }
 
             return isValid;
