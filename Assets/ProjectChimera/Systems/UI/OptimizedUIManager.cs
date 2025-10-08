@@ -498,11 +498,4 @@ namespace ProjectChimera.Systems.UI
 
         #endregion
     }
-
-    #region Data Structures
-
-    /// <summary>
-    /// UI update request
-    /// </summary>
-    [System.Serializable]
 }
