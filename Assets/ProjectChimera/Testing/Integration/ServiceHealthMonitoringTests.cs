@@ -3,8 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TestTools;
+using ProjectChimera.Core;
 using ProjectChimera.Core.DI;
 using ProjectChimera.Core.DI.Validation;
+using ServiceHealthMonitor = ProjectChimera.Core.DI.Validation.ServiceHealthMonitor;
+using ServiceHealthStatus = ProjectChimera.Core.DI.Validation.ServiceHealthStatus;
+using IHealthCheckable = ProjectChimera.Core.DI.Validation.IServiceHealthCheckable;
 
 namespace ProjectChimera.Testing.Integration
 {
@@ -189,13 +193,12 @@ namespace ProjectChimera.Testing.Integration
         #region Performance Tests
 
         [Test]
-        [Performance]
         public void HealthMonitor_LargeServiceSet_PerformanceAcceptable()
         {
             // Arrange
             for (int i = 0; i < 100; i++)
             {
-                _container.RegisterSingleton(typeof(IHealthCheckable).Assembly.GetType($"TestService{i}"), 
+                _container.RegisterSingleton(typeof(IHealthCheckable).Assembly.GetType($"TestService{i}"),
                     i % 2 == 0 ? (object)new HealthyTestService() : new DegradedTestService());
             }
 

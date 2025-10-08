@@ -3,7 +3,6 @@
 
 using System;
 using UnityEngine;
-using ProjectChimera.Data.Cultivation;
 
 namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
 {

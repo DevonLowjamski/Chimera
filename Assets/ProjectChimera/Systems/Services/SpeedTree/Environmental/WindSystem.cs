@@ -580,7 +580,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
 
     #region Data Structures
 
-    /// <summary>
-    /// Settings for individual wind zones
-    /// </summary>
-    [Serializable]
+    // Data structures moved to dedicated files during Phase 0 refactoring
+
+    #endregion
+}

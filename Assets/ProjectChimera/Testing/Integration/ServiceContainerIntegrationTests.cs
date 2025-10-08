@@ -2,6 +2,7 @@ using NUnit.Framework;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
+using ProjectChimera.Core;
 using ProjectChimera.Core.DI;
 using ProjectChimera.Core.DI.Validation;
 
@@ -66,7 +67,7 @@ namespace ProjectChimera.Testing.Integration
         {
             // Arrange
             var createdCount = 0;
-            _container.RegisterFactory<ITestService>(() => 
+            _container.RegisterFactory<ITestService>(locator =>
             {
                 createdCount++;
                 return new TestService();
@@ -161,7 +162,6 @@ namespace ProjectChimera.Testing.Integration
         #region Performance Tests
 
         [Test]
-        [Performance]
         public void ServiceContainer_ResolvePerformance_CompletesQuickly()
         {
             // Arrange
@@ -200,7 +200,7 @@ namespace ProjectChimera.Testing.Integration
 
             // Assert
             Assert.IsNotNull(testComponent.InjectedService);
-            
+
             // Cleanup
             Object.Destroy(gameObject);
         }
@@ -226,7 +226,9 @@ namespace ProjectChimera.Testing.Integration
 
         public class DependentService : IDependentService
         {
-            public ITestService Dependency { get; }
+            public ITestService Dependency { get; private set; }
+
+            public DependentService() { }
 
             public DependentService(ITestService dependency)
             {
@@ -243,7 +245,9 @@ namespace ProjectChimera.Testing.Integration
 
         public class NestedDependentService : INestedDependentService
         {
-            public IDependentService DependentService { get; }
+            public IDependentService DependentService { get; private set; }
+
+            public NestedDependentService() { }
 
             public NestedDependentService(IDependentService dependentService)
             {

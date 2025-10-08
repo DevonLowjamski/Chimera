@@ -565,7 +565,4 @@ namespace ProjectChimera.Data.Cultivation.Plant
 
         #endregion
     }
-
-    // Additional data structures for PlantInstanceSO functionality
-    [System.Serializable]
 }

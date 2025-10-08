@@ -2,18 +2,27 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Collections;
+using System.Linq;
 using ProjectChimera.Core.Memory;
 using ProjectChimera.Core.Input;
 using ProjectChimera.Systems.UI.Pooling;
+using ProjectChimera.Systems.UI.Core;
+using ProjectChimera.Systems.UI.Performance;
+using ProjectChimera.Systems.UI.Events;
+using ProjectChimera.Systems.UI.Resources;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
+using IUIUpdatable = ProjectChimera.Systems.UI.Core.IUIUpdatable;
 
 namespace ProjectChimera.Systems.UI
 {
     /// <summary>
-    /// PERFORMANCE: Optimized UI management system for cultivation interfaces
-    /// Reduces UI update overhead and provides efficient rendering for large plant counts
-    /// Week 12: Input & UI Performance
+    /// REFACTORED: Optimized UI Manager - Coordinator using SRP-compliant components
+    /// Single Responsibility: Coordinating UI optimization, performance monitoring, and resource management
+    /// Uses composition with UIPerformanceMonitor, UIEventHandler, and UIResourceManager
+    /// Reduced from 770 lines to maintain SRP compliance
     /// </summary>
-    public class OptimizedUIManager : MonoBehaviour
+    public class OptimizedUIManager : MonoBehaviour, ITickable
     {
         [Header("UI Optimization Settings")]
         [SerializeField] private bool _enableUIOptimization = true;
@@ -31,35 +40,36 @@ namespace ProjectChimera.Systems.UI
         [SerializeField] private int _initialPoolSize = 50;
         [SerializeField] private int _maxPoolSize = 200;
 
-        // UI System components
-        private UIElementPool _uiElementPool;
-        private readonly Dictionary<string, OptimizedUIPanel> _activePanels = new Dictionary<string, OptimizedUIPanel>();
+        // Composition: Delegate responsibilities to focused components
+        private ProjectChimera.Systems.UI.Performance.UIPerformanceMonitor _performanceMonitor;
+        private UIEventHandler _eventHandler;
+        private UIResourceManager _resourceManager;
+
+        // Coordinator state
         private readonly MemoryOptimizedQueue<UIUpdateRequest> _updateQueue = new MemoryOptimizedQueue<UIUpdateRequest>();
-
-        // Batched updates
         private readonly Dictionary<UIUpdateType, List<IUIUpdatable>> _batchedUpdates = new Dictionary<UIUpdateType, List<IUIUpdatable>>();
-        private readonly List<Canvas> _managedCanvases = new List<Canvas>();
-
-        // Performance tracking
         private float _lastUIUpdateTime;
         private int _uiUpdatesThisFrame;
-        private UIPerformanceStats _stats = new UIPerformanceStats();
-        private UIPerformanceMonitor _performanceMonitor;
+        private bool _isInitialized = false;
 
         // UI Elements for cultivation system
         private readonly Dictionary<string, PlantInfoPanel> _plantInfoPanels = new Dictionary<string, PlantInfoPanel>();
         private readonly List<ProgressBar> _activeProgressBars = new List<ProgressBar>();
-        private readonly Queue<NotificationUI> _notificationQueue = new Queue<NotificationUI>();
+        private readonly Queue<NotificationDisplay> _notificationQueue = new Queue<NotificationDisplay>();
 
         public static OptimizedUIManager Instance { get; private set; }
-
-        public bool IsInitialized { get; private set; }
-        public UIPerformanceStats Stats => _stats;
+        public bool IsInitialized => _isInitialized;
 
         // Events
         public System.Action<string> OnPanelOpened;
         public System.Action<string> OnPanelClosed;
         public System.Action<UIPerformanceStats> OnPerformanceUpdate;
+
+        // ITickable implementation
+        public int TickPriority => ProjectChimera.Core.Updates.TickPriority.UIManager;
+        public bool IsTickable => _enableUIOptimization && _isInitialized && enabled;
+
+        #region Unity Lifecycle
 
         private void Awake()
         {
@@ -67,7 +77,7 @@ namespace ProjectChimera.Systems.UI
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
-                Initialize();
+                InitializeComponents();
             }
             else if (Instance != this)
             {
@@ -75,634 +85,421 @@ namespace ProjectChimera.Systems.UI
             }
         }
 
-        /// <summary>
-        /// Initialize optimized UI manager
-        /// </summary>
+        private void Start()
+        {
+            Initialize();
+        }
+
+        private void OnEnable()
+        {
+            UpdateOrchestrator.Instance?.RegisterTickable(this);
+        }
+
+        private void OnDisable()
+        {
+            UpdateOrchestrator.Instance?.UnregisterTickable(this);
+        }
+
+        private void OnDestroy()
+        {
+            Cleanup();
+        }
+
+        #endregion
+
+        #region Initialization
+
+        private void InitializeComponents()
+        {
+            try
+            {
+                // Initialize components using composition
+                _performanceMonitor = new ProjectChimera.Systems.UI.Performance.UIPerformanceMonitor(_enableLogging, _uiUpdateInterval);
+
+                var eventHandlerGO = new GameObject("UIEventHandler");
+                eventHandlerGO.transform.SetParent(transform);
+                _eventHandler = eventHandlerGO.AddComponent<UIEventHandler>();
+
+                var resourceManagerGO = new GameObject("UIResourceManager");
+                resourceManagerGO.transform.SetParent(transform);
+                _resourceManager = resourceManagerGO.AddComponent<UIResourceManager>();
+
+                // Wire up events between components
+                _performanceMonitor.OnPerformanceStatsUpdated += OnPerformanceStatsUpdatedInternal;
+                _performanceMonitor.OnPerformanceWarning += OnPerformanceWarningInternal;
+                _eventHandler.OnUIEventProcessed += OnUIEventProcessedInternal;
+                _resourceManager.OnResourceStatsUpdated += OnResourceStatsUpdatedInternal;
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogInfo("UI", "OptimizedUIManager components initialized", this);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                ChimeraLogger.LogError("UI", $"Failed to initialize OptimizedUIManager components: {ex.Message}", this);
+            }
+        }
+
         public void Initialize()
         {
-            if (IsInitialized) return;
+            if (_isInitialized) return;
 
-            InitializeUIElementPool();
-            InitializeBatchedUpdateSystem();
-            SetupCanvasOptimization();
-            RegisterWithInputSystem();
-            InitializePerformanceMonitoring();
-
-            _lastUIUpdateTime = Time.unscaledTime;
-            IsInitialized = true;
-
-            if (_enableLogging)
+            try
             {
-                Debug.Log("[OptimizedUIManager] UI optimization initialized");
+                // Initialize batched update system
+                InitializeBatchedUpdateSystem();
+
+                // Register performance monitor with UpdateOrchestrator
+                UpdateOrchestrator.Instance?.RegisterTickable(_performanceMonitor);
+
+                _lastUIUpdateTime = Time.unscaledTime;
+                _isInitialized = true;
+
+                if (_enableLogging)
+                {
+                    ChimeraLogger.LogInfo("UI", "OptimizedUIManager initialized with composition pattern", this);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                ChimeraLogger.LogError("UI", $"OptimizedUIManager initialization failed: {ex.Message}", this);
             }
         }
 
-        private void Update()
+        private void InitializeBatchedUpdateSystem()
         {
-            if (!_enableUIOptimization || !IsInitialized) return;
+            // Initialize batched update categories
+            System.Enum.GetValues(typeof(UIUpdateType)).Cast<UIUpdateType>().ToList().ForEach(type =>
+            {
+                _batchedUpdates[type] = new List<IUIUpdatable>();
+            });
+
+            if (_enableLogging)
+                ChimeraLogger.LogInfo("UI", "Batched update system initialized", this);
+        }
+
+        #endregion
+
+        #region ITickable Implementation
+
+        public void Tick(float deltaTime)
+        {
+            if (!_enableUIOptimization || !_isInitialized) return;
 
             _uiUpdatesThisFrame = 0;
-            
-            UpdateUISystem();
-            ProcessUpdateQueue();
-            UpdateCanvasCulling();
+
+            // Process batched updates at controlled intervals
+            if (Time.unscaledTime - _lastUIUpdateTime >= _uiUpdateInterval)
+            {
+                ProcessBatchedUpdates();
+                ProcessUpdateQueue();
+                _lastUIUpdateTime = Time.unscaledTime;
+            }
+
+            // Process notifications every frame (but throttled)
             ProcessNotifications();
-
-            _stats.UpdateCycles++;
         }
 
-        /// <summary>
-        /// Create optimized plant info panel
-        /// </summary>
-        public PlantInfoPanel CreatePlantInfoPanel(string plantId, Vector3 worldPosition)
+        public void OnRegistered()
         {
-            if (_plantInfoPanels.ContainsKey(plantId))
-            {
-                return _plantInfoPanels[plantId];
-            }
-
-            RectTransform panelRT = null;
-            
-            if (_enableUIPooling && _uiElementPool != null)
-            {
-                panelRT = _uiElementPool.GetUIElement(UIElementPool.UIElementType.PlantInfoPanel);
-            }
-
-            if (panelRT == null)
-            {
-                // Fallback to direct instantiation
-                var panelGO = new GameObject($"PlantInfoPanel_{plantId}");
-                panelRT = panelGO.AddComponent<RectTransform>();
-            }
-
-            var plantPanel = panelRT.GetComponent<PlantInfoPanel>();
-            if (plantPanel == null)
-            {
-                plantPanel = panelRT.gameObject.AddComponent<PlantInfoPanel>();
-            }
-
-            plantPanel.Initialize(plantId, worldPosition);
-            _plantInfoPanels[plantId] = plantPanel;
-
-            // Register for batched updates
-            RegisterForBatchedUpdate(UIUpdateType.PlantInfo, plantPanel);
-
-            _stats.PanelsCreated++;
-
             if (_enableLogging)
-            {
-                Debug.Log($"[OptimizedUIManager] Created plant info panel for: {plantId}");
-            }
-
-            return plantPanel;
+                ChimeraLogger.LogInfo("UI", "OptimizedUIManager registered with UpdateOrchestrator", this);
         }
 
-        /// <summary>
-        /// Remove plant info panel
-        /// </summary>
-        public void RemovePlantInfoPanel(string plantId)
+        public void OnUnregistered()
         {
-            if (_plantInfoPanels.TryGetValue(plantId, out var panel))
-            {
-                UnregisterFromBatchedUpdate(UIUpdateType.PlantInfo, panel);
-                
-                if (_enableUIPooling && _uiElementPool != null)
-                {
-                    _uiElementPool.ReturnUIElement(UIElementPool.UIElementType.PlantInfoPanel, panel.GetComponent<RectTransform>());
-                }
-                else
-                {
-                    Destroy(panel.gameObject);
-                }
-
-                _plantInfoPanels.Remove(plantId);
-                _stats.PanelsDestroyed++;
-
-                if (_enableLogging)
-                {
-                    Debug.Log($"[OptimizedUIManager] Removed plant info panel for: {plantId}");
-                }
-            }
+            if (_enableLogging)
+                ChimeraLogger.LogInfo("UI", "OptimizedUIManager unregistered from UpdateOrchestrator", this);
         }
 
-        /// <summary>
-        /// Create progress bar for operations
-        /// </summary>
-        public ProgressBar CreateProgressBar(string operationId, string title, float duration)
+        #endregion
+
+        #region Update Processing
+
+        private void ProcessBatchedUpdates()
         {
-            RectTransform progressRT = null;
-            
-            if (_enableUIPooling && _uiElementPool != null)
+            if (!_enableBatchedUpdates) return;
+
+            foreach (var updateType in _batchedUpdates.Keys.ToList())
             {
-                progressRT = _uiElementPool.GetUIElement(UIElementPool.UIElementType.ProgressBar);
-            }
+                var updatables = _batchedUpdates[updateType];
+                var processed = 0;
 
-            if (progressRT == null)
-            {
-                var progressGO = new GameObject($"ProgressBar_{operationId}");
-                progressRT = progressGO.AddComponent<RectTransform>();
-            }
-
-            var progressBar = progressRT.GetComponent<ProgressBar>();
-            if (progressBar == null)
-            {
-                progressBar = progressRT.gameObject.AddComponent<ProgressBar>();
-            }
-
-            progressBar.Initialize(operationId, title, duration);
-            _activeProgressBars.Add(progressBar);
-
-            RegisterForBatchedUpdate(UIUpdateType.Progress, progressBar);
-
-            _stats.ProgressBarsCreated++;
-            return progressBar;
-        }
-
-        /// <summary>
-        /// Show notification message
-        /// </summary>
-        public void ShowNotification(string message, NotificationType type = NotificationType.Info, float duration = 3f)
-        {
-            var notification = new NotificationUI
-            {
-                Message = message,
-                Type = type,
-                Duration = duration,
-                StartTime = Time.unscaledTime
-            };
-
-            _notificationQueue.Enqueue(notification);
-            _stats.NotificationsQueued++;
-        }
-
-        /// <summary>
-        /// Register UI panel for optimization
-        /// </summary>
-        public void RegisterUIPanel(string panelId, OptimizedUIPanel panel)
-        {
-            if (!_activePanels.ContainsKey(panelId))
-            {
-                _activePanels[panelId] = panel;
-                panel.Initialize();
-                
-                OnPanelOpened?.Invoke(panelId);
-                _stats.RegisteredPanels++;
-
-                if (_enableLogging)
+                for (int i = updatables.Count - 1; i >= 0 && processed < _maxUIUpdatesPerFrame; i--)
                 {
-                    Debug.Log($"[OptimizedUIManager] Registered UI panel: {panelId}");
+                    var updatable = updatables[i];
+                    if (updatable == null)
+                    {
+                        updatables.RemoveAt(i);
+                        continue;
+                    }
+
+                    try
+                    {
+                        using (_performanceMonitor.StartTracking($"BatchUpdate_{updateType}"))
+                        {
+                            updatable.UpdateUI();
+                        }
+                        processed++;
+                        _uiUpdatesThisFrame++;
+                    }
+                    catch (System.Exception ex)
+                    {
+                        ChimeraLogger.LogError("UI", $"Error updating {updatable.GetType().Name}: {ex.Message}", this);
+                        updatables.RemoveAt(i);
+                    }
                 }
             }
         }
 
-        /// <summary>
-        /// Unregister UI panel
-        /// </summary>
-        public void UnregisterUIPanel(string panelId)
+        private void ProcessUpdateQueue()
         {
-            if (_activePanels.TryGetValue(panelId, out var panel))
+            int processed = 0;
+            while (_updateQueue.Count > 0 && processed < _maxUIUpdatesPerFrame)
             {
-                panel.Cleanup();
-                _activePanels.Remove(panelId);
-                
-                OnPanelClosed?.Invoke(panelId);
-                _stats.RegisteredPanels--;
+                var request = _updateQueue.Dequeue();
+                ProcessUIUpdateRequest(request);
+                processed++;
+                _uiUpdatesThisFrame++;
+            }
+        }
 
-                if (_enableLogging)
+        private void ProcessUIUpdateRequest(UIUpdateRequest request)
+        {
+            try
+            {
+                using (_performanceMonitor.StartTracking($"UpdateRequest_{request.Type}"))
                 {
-                    Debug.Log($"[OptimizedUIManager] Unregistered UI panel: {panelId}");
+                    switch (request.Type)
+                    {
+                        case UIUpdateType.PlantInfo:
+                            UpdatePlantInfoPanel(request);
+                            break;
+                        case UIUpdateType.Progress:
+                            UpdateProgressBar(request);
+                            break;
+                        case UIUpdateType.Notification:
+                            ShowNotification(request);
+                            break;
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                ChimeraLogger.LogError("UI", $"Error processing UI update request: {ex.Message}", this);
+            }
+        }
+
+        private void ProcessNotifications()
+        {
+            if (_notificationQueue.Count > 0)
+            {
+                var notification = _notificationQueue.Dequeue();
+                if (notification != null)
+                {
+                    // Display notification using resource manager
+                    var notificationPanel = _resourceManager.GetPooledElement<NotificationDisplay>();
+                    if (notificationPanel != null)
+                    {
+                        notificationPanel.gameObject.SetActive(true);
+                        // Configure notification display
+                    }
                 }
             }
         }
 
+        #endregion
+
+        #region Event Handlers
+
+        private void OnPerformanceStatsUpdatedInternal(UIPerformanceStats stats)
+        {
+            OnPerformanceUpdate?.Invoke(stats);
+        }
+
+        private void OnPerformanceWarningInternal(PerformanceWarning warning)
+        {
+            if (_enableLogging)
+                ChimeraLogger.LogWarning("UI_PERF", $"Performance warning: {warning.Message}", this);
+        }
+
+        private void OnUIEventProcessedInternal(UIEvent uiEvent)
+        {
+            if (_enableLogging)
+                ChimeraLogger.LogInfo("UI_EVENTS", $"Processed UI event: {uiEvent.Type}", this);
+        }
+
+        private void OnResourceStatsUpdatedInternal(ResourceStats stats)
+        {
+            // Update performance monitor with resource statistics
+            _performanceMonitor.RecordPoolingStats(stats.PooledElements, stats.ActiveElements, stats.PoolHits, stats.PoolMisses);
+            _performanceMonitor.RecordCanvasOptimization(stats.TotalCanvases, stats.CulledCanvases);
+        }
+
+        #endregion
+
+        #region Public API - Delegates to Components
+
         /// <summary>
-        /// Queue UI update request
+        /// Register a UI panel for optimization
+        /// </summary>
+        public void RegisterPanel(string panelId, OptimizedUIPanel panel)
+        {
+            _resourceManager?.RegisterPanel(panelId, panel);
+            OnPanelOpened?.Invoke(panelId);
+        }
+
+        /// <summary>
+        /// Unregister a UI panel
+        /// </summary>
+        public void UnregisterPanel(string panelId)
+        {
+            _resourceManager?.UnregisterPanel(panelId);
+            OnPanelClosed?.Invoke(panelId);
+        }
+
+        /// <summary>
+        /// Get a pooled UI element
+        /// </summary>
+        public T GetPooledElement<T>() where T : Component
+        {
+            return _resourceManager?.GetPooledElement<T>();
+        }
+
+        /// <summary>
+        /// Return element to pool
+        /// </summary>
+        public void ReturnToPool(GameObject element)
+        {
+            _resourceManager?.ReturnToPool(element);
+        }
+
+        /// <summary>
+        /// Queue a UI update request
         /// </summary>
         public void QueueUIUpdate(UIUpdateRequest request)
         {
             _updateQueue.Enqueue(request);
-            _stats.UpdatesQueued++;
-        }
-
-        /// <summary>
-        /// Set UI update rate for specific type
-        /// </summary>
-        public void SetUIUpdateRate(UIUpdateType updateType, float updateRate)
-        {
-            // Implementation would adjust update frequencies per type
-            if (_enableLogging)
-            {
-                Debug.Log($"[OptimizedUIManager] Set update rate for {updateType}: {updateRate} Hz");
-            }
-        }
-
-        #region Private Methods
-
-        /// <summary>
-        /// Initialize UI element pool
-        /// </summary>
-        private void InitializeUIElementPool()
-        {
-            if (!_enableUIPooling) return;
-
-            var poolGO = new GameObject("UIElementPool");
-            poolGO.transform.SetParent(transform);
-            
-            _uiElementPool = poolGO.AddComponent<UIElementPool>();
-            _uiElementPool.Initialize();
-        }
-
-        /// <summary>
-        /// Initialize batched update system
-        /// </summary>
-        private void InitializeBatchedUpdateSystem()
-        {
-            if (!_enableBatchedUpdates) return;
-
-            // Initialize batched update lists
-            foreach (UIUpdateType updateType in System.Enum.GetValues(typeof(UIUpdateType)))
-            {
-                _batchedUpdates[updateType] = new List<IUIUpdatable>();
-            }
-        }
-
-        /// <summary>
-        /// Set up canvas optimization
-        /// </summary>
-        private void SetupCanvasOptimization()
-        {
-            if (!_enableCanvasCulling) return;
-
-            // Find all canvases and add them to managed list
-            var canvases = FindObjectsOfType<Canvas>();
-            foreach (var canvas in canvases)
-            {
-                if (canvas.renderMode == RenderMode.WorldSpace)
-                {
-                    _managedCanvases.Add(canvas);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Register with input system for UI events
-        /// </summary>
-        private void RegisterWithInputSystem()
-        {
-            if (OptimizedInputManager.Instance != null)
-            {
-                OptimizedInputManager.Instance.OnMouseClick += OnUIMouseClick;
-                OptimizedInputManager.Instance.OnOptimizedMouseMove += OnUIMouseMove;
-            }
-        }
-
-        /// <summary>
-        /// Update UI system with optimization
-        /// </summary>
-        private void UpdateUISystem()
-        {
-            float currentTime = Time.unscaledTime;
-            
-            if (currentTime - _lastUIUpdateTime >= _uiUpdateInterval)
-            {
-                UpdateBatchedSystems();
-                UpdateActivePanels();
-                _lastUIUpdateTime = currentTime;
-            }
-        }
-
-        /// <summary>
-        /// Update batched UI systems
-        /// </summary>
-        private void UpdateBatchedSystems()
-        {
-            if (!_enableBatchedUpdates) return;
-
-            foreach (var kvp in _batchedUpdates)
-            {
-                var updateType = kvp.Key;
-                var updatables = kvp.Value;
-
-                // Update in batches to prevent frame drops
-                int updatesThisType = 0;
-                int maxUpdatesPerType = _maxUIUpdatesPerFrame / _batchedUpdates.Count;
-
-                for (int i = 0; i < updatables.Count && updatesThisType < maxUpdatesPerType; i++)
-                {
-                    var updatable = updatables[i];
-                    if (updatable != null && updatable.ShouldUpdate())
-                    {
-                        updatable.UpdateUI();
-                        updatesThisType++;
-                        _uiUpdatesThisFrame++;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Update active UI panels
-        /// </summary>
-        private void UpdateActivePanels()
-        {
-            foreach (var panel in _activePanels.Values)
-            {
-                if (panel != null && panel.IsVisible && panel.ShouldUpdate())
-                {
-                    panel.UpdatePanel();
-                    _uiUpdatesThisFrame++;
-                    
-                    if (_uiUpdatesThisFrame >= _maxUIUpdatesPerFrame)
-                        break;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Process UI update queue
-        /// </summary>
-        private void ProcessUpdateQueue()
-        {
-            while (_updateQueue.Count > 0 && _uiUpdatesThisFrame < _maxUIUpdatesPerFrame)
-            {
-                if (_updateQueue.TryDequeue(out var request))
-                {
-                    ProcessUIUpdateRequest(request);
-                    _uiUpdatesThisFrame++;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Process individual UI update request
-        /// </summary>
-        private void ProcessUIUpdateRequest(UIUpdateRequest request)
-        {
-            switch (request.Type)
-            {
-                case UIUpdateType.PlantInfo:
-                    if (_plantInfoPanels.TryGetValue(request.ElementId, out var panel))
-                    {
-                        panel.UpdatePlantData(request.Data);
-                    }
-                    break;
-                    
-                case UIUpdateType.Progress:
-                    // Find and update progress bar
-                    var progressBar = _activeProgressBars.Find(p => p.OperationId == request.ElementId);
-                    if (progressBar != null)
-                    {
-                        progressBar.UpdateProgress((float)request.Data);
-                    }
-                    break;
-            }
-
-            _stats.UpdatesProcessed++;
-        }
-
-        /// <summary>
-        /// Update canvas culling based on distance
-        /// </summary>
-        private void UpdateCanvasCulling()
-        {
-            if (!_enableCanvasCulling) return;
-
-            var cameraPos = Camera.main?.transform.position ?? Vector3.zero;
-
-            foreach (var canvas in _managedCanvases)
-            {
-                if (canvas == null) continue;
-
-                float distance = Vector3.Distance(cameraPos, canvas.transform.position);
-                bool shouldBeVisible = distance <= _canvasCullDistance;
-                
-                if (canvas.enabled != shouldBeVisible)
-                {
-                    canvas.enabled = shouldBeVisible;
-                    _stats.CanvasCullOperations++;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Process notification queue
-        /// </summary>
-        private void ProcessNotifications()
-        {
-            float currentTime = Time.unscaledTime;
-            
-            // Process one notification per frame to avoid spikes
-            if (_notificationQueue.Count > 0)
-            {
-                var notification = _notificationQueue.Dequeue();
-                DisplayNotification(notification);
-                _stats.NotificationsDisplayed++;
-            }
-        }
-
-        /// <summary>
-        /// Display individual notification
-        /// </summary>
-        private void DisplayNotification(NotificationUI notification)
-        {
-            RectTransform notificationRT = null;
-            
-            if (_enableUIPooling && _uiElementPool != null)
-            {
-                notificationRT = _uiElementPool.GetUIElement(UIElementPool.UIElementType.NotificationBanner);
-            }
-
-            if (notificationRT != null)
-            {
-                var notificationComp = notificationRT.GetComponent<NotificationDisplay>();
-                if (notificationComp == null)
-                {
-                    notificationComp = notificationRT.gameObject.AddComponent<NotificationDisplay>();
-                }
-
-                notificationComp.Show(notification);
-                StartCoroutine(HideNotificationAfterDelay(notificationComp, notification.Duration));
-            }
-        }
-
-        /// <summary>
-        /// Hide notification after delay
-        /// </summary>
-        private IEnumerator HideNotificationAfterDelay(NotificationDisplay notification, float delay)
-        {
-            yield return new WaitForSeconds(delay);
-            
-            if (notification != null)
-            {
-                notification.Hide();
-                
-                if (_enableUIPooling && _uiElementPool != null)
-                {
-                    _uiElementPool.ReturnUIElement(UIElementPool.UIElementType.NotificationBanner, notification.GetComponent<RectTransform>());
-                }
-                else
-                {
-                    Destroy(notification.gameObject);
-                }
-            }
         }
 
         /// <summary>
         /// Register for batched updates
         /// </summary>
-        private void RegisterForBatchedUpdate(UIUpdateType updateType, IUIUpdatable updatable)
+        public void RegisterForBatchedUpdates(UIUpdateType type, IUIUpdatable updatable)
         {
-            if (_enableBatchedUpdates && _batchedUpdates.ContainsKey(updateType))
+            if (_batchedUpdates.TryGetValue(type, out var list))
             {
-                _batchedUpdates[updateType].Add(updatable);
+                list.Add(updatable);
             }
         }
 
         /// <summary>
-        /// Unregister from batched updates
+        /// Get performance statistics
         /// </summary>
-        private void UnregisterFromBatchedUpdate(UIUpdateType updateType, IUIUpdatable updatable)
+        public UIPerformanceStats GetPerformanceStats()
         {
-            if (_enableBatchedUpdates && _batchedUpdates.ContainsKey(updateType))
-            {
-                _batchedUpdates[updateType].Remove(updatable);
-            }
+            return _performanceMonitor?.GetPerformanceStats() ?? new UIPerformanceStats();
         }
 
-        #region Input Handlers
-
-        private void OnUIMouseClick(Vector2 position)
+        /// <summary>
+        /// Get resource statistics
+        /// </summary>
+        public ResourceStats GetResourceStats()
         {
-            // Handle UI mouse clicks with optimization
-            _stats.MouseClicks++;
-        }
-
-        private void OnUIMouseMove(Vector2 position)
-        {
-            // Handle optimized mouse movement for UI
-            _stats.MouseMoves++;
+            return _resourceManager?.GetResourceStats() ?? new ResourceStats();
         }
 
         #endregion
 
+        #region UI Update Helpers
+
+        private void UpdatePlantInfoPanel(UIUpdateRequest request)
+        {
+            // Implementation for plant info panel updates
+            if (request.Data is PlantInfoData plantData)
+            {
+                var panelId = $"PlantInfo_{plantData.PlantId}";
+                if (_plantInfoPanels.TryGetValue(panelId, out var panel))
+                {
+                    panel.UpdatePlantData(plantData);
+                }
+            }
+        }
+
+        private void UpdateProgressBar(UIUpdateRequest request)
+        {
+            // Implementation for progress bar updates
+            if (request.Data is ProgressData progressData)
+            {
+                var progressBar = _activeProgressBars.FirstOrDefault(pb => pb.Id == progressData.Id);
+                if (progressBar != null)
+                {
+                    progressBar.UpdateProgressBar(progressData.Value, progressData.MaxValue);
+                }
+            }
+        }
+
+        private void ShowNotification(UIUpdateRequest request)
+        {
+            // Implementation for notification display
+            if (request.Data is NotificationData notificationData)
+            {
+                var notification = _resourceManager.GetPooledElement<NotificationDisplay>();
+                if (notification != null)
+                {
+                    notification.ShowNotification(notificationData.Message, notificationData.Type, notificationData.Duration);
+                    _notificationQueue.Enqueue(notification);
+                }
+            }
+        }
+
         #endregion
 
-        /// <summary>
-        /// Initialize performance monitoring integration
-        /// </summary>
-        private void InitializePerformanceMonitoring()
+        #region Cleanup
+
+        private void Cleanup()
         {
-            _performanceMonitor = UIPerformanceMonitor.Instance;
-            if (_performanceMonitor != null)
+            try
             {
-                _performanceMonitor.Initialize();
-            }
-        }
-
-        /// <summary>
-        /// Set update batch size for optimization
-        /// </summary>
-        public void SetUpdateBatchSize(int batchSize)
-        {
-            _maxUIUpdatesPerFrame = batchSize;
-        }
-
-        /// <summary>
-        /// Set UI pooling enabled state
-        /// </summary>
-        public void SetUIPoolingEnabled(bool enabled)
-        {
-            _enableUIPooling = enabled;
-        }
-
-        /// <summary>
-        /// Set distance culling enabled state
-        /// </summary>
-        public void SetDistanceCullingEnabled(bool enabled)
-        {
-            _enableCanvasCulling = enabled;
-        }
-
-        /// <summary>
-        /// Set batched updates enabled state
-        /// </summary>
-        public void SetBatchedUpdatesEnabled(bool enabled)
-        {
-            _enableBatchedUpdates = enabled;
-        }
-
-        /// <summary>
-        /// Increase update interval for performance optimization
-        /// </summary>
-        public void IncreaseUpdateInterval(float additionalInterval)
-        {
-            _uiUpdateInterval += additionalInterval;
-            _uiUpdateInterval = Mathf.Min(_uiUpdateInterval, 1f); // Cap at 1 second
-        }
-
-        /// <summary>
-        /// Track UI component update with performance monitoring
-        /// </summary>
-        private void TrackUIComponentUpdate(IUIUpdatable component)
-        {
-            if (_performanceMonitor != null)
-            {
-                float startTime = Time.unscaledTime;
-                bool shouldUpdate = component.ShouldUpdate();
-                
-                if (shouldUpdate)
+                // Cleanup event handlers
+                if (_performanceMonitor != null)
                 {
-                    component.UpdateUI();
+                    _performanceMonitor.OnPerformanceStatsUpdated -= OnPerformanceStatsUpdatedInternal;
+                    _performanceMonitor.OnPerformanceWarning -= OnPerformanceWarningInternal;
+                    UpdateOrchestrator.Instance?.UnregisterTickable(_performanceMonitor);
                 }
-                
-                float updateTime = Time.unscaledTime - startTime;
-                _performanceMonitor.TrackUIUpdate(component, updateTime, shouldUpdate);
-            }
-            else
-            {
-                if (component.ShouldUpdate())
+
+                if (_eventHandler != null)
                 {
-                    component.UpdateUI();
+                    _eventHandler.OnUIEventProcessed -= OnUIEventProcessedInternal;
                 }
-            }
-        }
 
-        private void OnDestroy()
-        {
-            if (OptimizedInputManager.Instance != null)
+                if (_resourceManager != null)
+                {
+                    _resourceManager.OnResourceStatsUpdated -= OnResourceStatsUpdatedInternal;
+                }
+
+                // Clear collections
+                _updateQueue.Clear();
+                _batchedUpdates.Clear();
+                _plantInfoPanels.Clear();
+                _activeProgressBars.Clear();
+                _notificationQueue.Clear();
+
+                if (_enableLogging)
+                    ChimeraLogger.LogInfo("UI", "OptimizedUIManager cleanup completed", this);
+            }
+            catch (System.Exception ex)
             {
-                OptimizedInputManager.Instance.OnMouseClick -= OnUIMouseClick;
-                OptimizedInputManager.Instance.OnOptimizedMouseMove -= OnUIMouseMove;
+                ChimeraLogger.LogError("UI", $"Error during OptimizedUIManager cleanup: {ex.Message}", this);
             }
-
-            _updateQueue?.Dispose();
         }
+
+        #endregion
     }
 
-    #region Data Structures and Components
-
-    /// <summary>
-    /// UI update types for batched processing
-    /// </summary>
-    public enum UIUpdateType
-    {
-        PlantInfo,
-        Progress,
-        Notification,
-        Stats,
-        Inventory
-    }
-
-    /// <summary>
-    /// Notification types
-    /// </summary>
-    public enum NotificationType
-    {
-        Info,
-        Warning,
-        Error,
-        Success
-    }
+    #region Data Structures
 
     /// <summary>
     /// UI update request
@@ -711,65 +508,54 @@ namespace ProjectChimera.Systems.UI
     public struct UIUpdateRequest
     {
         public UIUpdateType Type;
-        public string ElementId;
         public object Data;
         public float Priority;
-        public float Timestamp;
+
+        // Additional properties for UI performance optimizer
+        public GameObject Target;
+        public Vector3 Position;
+        public bool IsVisible;
     }
 
     /// <summary>
-    /// Notification UI data
+    /// UI update types
+    /// </summary>
+    public enum UIUpdateType
+    {
+        PlantInfo,
+        Progress,
+        Notification,
+        Canvas,
+        Animation,
+        Transform,
+        Visibility,
+        Content
+    }
+
+
+    /// <summary>
+    /// Plant info data structure
     /// </summary>
     [System.Serializable]
-    public struct NotificationUI
+    public struct PlantInfoData
     {
-        public string Message;
-        public NotificationType Type;
-        public float Duration;
-        public float StartTime;
+        public string PlantId;
+        public string PlantName;
+        public float Health;
+        public float Growth;
     }
 
     /// <summary>
-    /// UI performance statistics
+    /// Progress data structure
     /// </summary>
     [System.Serializable]
-    public struct UIPerformanceStats
+    public struct ProgressData
     {
-        public int UpdateCycles;
-        public int UpdatesQueued;
-        public int UpdatesProcessed;
-        public int PanelsCreated;
-        public int PanelsDestroyed;
-        public int ProgressBarsCreated;
-        public int NotificationsQueued;
-        public int NotificationsDisplayed;
-        public int RegisteredPanels;
-        public int CanvasCullOperations;
-        public int MouseClicks;
-        public int MouseMoves;
-        public float AverageUpdateTime;
+        public string Id;
+        public float Value;
+        public float MaxValue;
     }
 
-    /// <summary>
-    /// Interface for UI updatable elements
-    /// </summary>
-    public interface IUIUpdatable
-    {
-        bool ShouldUpdate();
-        void UpdateUI();
-    }
-
-    /// <summary>
-    /// Base class for optimized UI panels
-    /// </summary>
-    public abstract class OptimizedUIPanel : MonoBehaviour
-    {
-        public bool IsVisible { get; protected set; }
-        public abstract void Initialize();
-        public abstract void UpdatePanel();
-        public abstract void Cleanup();
-        public abstract bool ShouldUpdate();
-    }
 
     #endregion
 }
