@@ -3,8 +3,13 @@ using UnityEngine.Rendering;
 using System.Collections.Generic;
 using ProjectChimera.Core.Memory;
 using Unity.Collections;
+#if UNITY_MATHEMATICS
 using Unity.Mathematics;
+#endif
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
+using ProjectChimera.Core.Interfaces;
+using ProjectChimera.Systems.Camera;
 
 namespace ProjectChimera.Systems.Rendering
 {
@@ -40,7 +45,7 @@ namespace ProjectChimera.Systems.Rendering
         private NativeArray<Vector4> _instanceData;
         private NativeArray<Vector4> _instanceColors;
         private NativeArray<float> _instanceLODs;
-        
+
         // Managed collections for tracking
         private readonly Dictionary<int, PlantInstanceData> _registeredPlants = new Dictionary<int, PlantInstanceData>();
         private readonly List<int> _visibleInstances = new List<int>();
@@ -49,14 +54,14 @@ namespace ProjectChimera.Systems.Rendering
         private readonly List<Vector4> _renderColors = new List<Vector4>();
 
         // Performance tracking
-        private Camera _mainCamera;
+        private UnityEngine.Camera _mainCamera;
         private Plane[] _cameraFrustumPlanes = new Plane[6];
         private PlantRenderingStats _stats = new PlantRenderingStats();
-        
+
         // Rendering batches
         private readonly List<PlantRenderBatch> _renderBatches = new List<PlantRenderBatch>();
         private readonly Dictionary<int, List<Matrix4x4>> _lodBatches = new Dictionary<int, List<Matrix4x4>>();
-        
+
         // Material property blocks
         private MaterialPropertyBlock _propertyBlock;
         private int _plantDataProperty;
@@ -82,19 +87,19 @@ namespace ProjectChimera.Systems.Rendering
 
             _maxInstances = maxInstances;
             _cullingDistance = cullingDistance;
-            
+
             InitializeNativeArrays();
             InitializeRenderingComponents();
             SetupMaterialProperties();
-            
-            _mainCamera = Camera.main;
+
+            _mainCamera = UnityEngine.Camera.main;
             if (_mainCamera == null)
             {
-                _mainCamera = FindObjectOfType<Camera>();
+                _mainCamera = UnityEngine.Camera.main ?? ServiceContainerFactory.Instance?.TryResolve<ICameraService>()?.MainCamera;
             }
 
             IsInitialized = true;
-            ChimeraLogger.Log("OTHER", $1, this);
+            ChimeraLogger.Log("RENDER", "PlantInstancedRenderer initialized", this);
         }
 
         /// <summary>
@@ -108,7 +113,7 @@ namespace ProjectChimera.Systems.Rendering
             }
 
             int instanceID = GetNextInstanceID();
-            
+
             var instanceData = new PlantInstanceData
             {
                 InstanceID = instanceID,
@@ -119,7 +124,7 @@ namespace ProjectChimera.Systems.Rendering
             };
 
             _registeredPlants[instanceID] = instanceData;
-            
+
             // Update native arrays
             if (instanceID < _instanceMatrices.Length)
             {
@@ -139,7 +144,7 @@ namespace ProjectChimera.Systems.Rendering
         public void UnregisterPlant(GameObject plantObject)
         {
             int instanceIDToRemove = -1;
-            
+
             foreach (var kvp in _registeredPlants)
             {
                 if (kvp.Value.GameObject == plantObject)
@@ -204,7 +209,7 @@ namespace ProjectChimera.Systems.Rendering
             if (maxInstances != _maxInstances && maxInstances > 0)
             {
                 _maxInstances = maxInstances;
-                
+
                 if (IsInitialized)
                 {
                     ReallocateNativeArrays();
@@ -269,7 +274,7 @@ namespace ProjectChimera.Systems.Rendering
         private void InitializeRenderingComponents()
         {
             _propertyBlock = new MaterialPropertyBlock();
-            
+
             // Initialize LOD batches
             _lodBatches[0] = new List<Matrix4x4>();
             _lodBatches[1] = new List<Matrix4x4>();
@@ -404,7 +409,7 @@ namespace ProjectChimera.Systems.Rendering
                 if (lodMesh == null) continue;
 
                 var matrices = _lodBatches[lodLevel];
-                
+
                 // Render in batches of 1023 (Unity's instancing limit)
                 const int maxBatchSize = 1023;
                 for (int i = 0; i < matrices.Count; i += maxBatchSize)

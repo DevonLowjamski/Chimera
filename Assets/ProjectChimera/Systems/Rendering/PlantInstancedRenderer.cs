@@ -475,40 +475,4 @@ namespace ProjectChimera.Systems.Rendering
     /// Plant instance data
     /// </summary>
     [System.Serializable]
-    public struct PlantInstanceData
-    {
-        public int InstanceID;
-        public GameObject GameObject;
-        public PlantRenderingData RenderData;
-        public float LastUpdateTime;
-        public bool IsVisible;
-    }
-
-    /// <summary>
-    /// Plant rendering batch
-    /// </summary>
-    [System.Serializable]
-    public struct PlantRenderBatch
-    {
-        public int LODLevel;
-        public List<Matrix4x4> Matrices;
-        public List<Vector4> InstanceData;
-        public List<Vector4> InstanceColors;
-    }
-
-    /// <summary>
-    /// Plant rendering statistics
-    /// </summary>
-    [System.Serializable]
-    public struct PlantRenderingStats
-    {
-        public int RegisteredPlants;
-        public int VisibleInstances;
-        public int CulledInstances;
-        public int DrawCalls;
-        public int UpdateCalls;
-        public float LastUpdateTime;
-    }
-
-    #endregion
 }
