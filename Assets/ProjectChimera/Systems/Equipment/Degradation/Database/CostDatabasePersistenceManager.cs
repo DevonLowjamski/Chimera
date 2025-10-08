@@ -3,25 +3,24 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using ProjectChimera.Core.Logging;
-using Newtonsoft.Json;
 using ProjectChimera.Data.Equipment;
 
 namespace ProjectChimera.Systems.Equipment.Degradation.Database
 {
     /// <summary>
-    /// REFACTORED: Cost Database Persistence Manager - Focused database file I/O and persistence
-    /// Single Responsibility: Managing database file operations, auto-save, and data serialization
-    /// Extracted from CostDatabaseManager for better SRP compliance
+    /// REFACTORED: Cost Database Persistence Manager Coordinator
+    /// Single Responsibility: Coordinate database persistence through helper classes
+    /// Reduced from 550 lines using composition with DatabaseSerializer and DatabaseFileIO
     /// </summary>
     public class CostDatabasePersistenceManager
     {
         private readonly bool _enableLogging;
         private readonly bool _persistData;
-        private readonly string _databaseFileName;
         private readonly float _autoSaveInterval;
 
-        // File paths
-        private string _databaseFilePath;
+        // Helper components (Composition pattern for SRP)
+        private DatabaseSerializer _serializer;
+        private DatabaseFileIO _fileIO;
 
         // Persistence state
         private float _lastAutoSave;
@@ -40,46 +39,20 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Database
         {
             _enableLogging = enableLogging;
             _persistData = persistData;
-            _databaseFileName = databaseFileName;
             _autoSaveInterval = autoSaveInterval;
 
-            InitializeFilePaths();
+            // Initialize helper components
+            string databaseFilePath = Path.Combine(Application.persistentDataPath, "Database", databaseFileName);
+            _serializer = new DatabaseSerializer(enableLogging);
+            _fileIO = new DatabaseFileIO(databaseFilePath, enableLogging);
         }
 
         // Properties
         public DatabasePersistenceStatistics Statistics => _persistenceStats;
         public bool IsPersistenceEnabled => _persistData;
         public bool IsDatabaseDirty => _isDatabaseDirty;
-        public string DatabaseFilePath => _databaseFilePath;
+        public string DatabaseFilePath => _fileIO?.GetFileSize().ToString() ?? "0";
 
-        #region Initialization
-
-        /// <summary>
-        /// Initialize file paths and directories
-        /// </summary>
-        private void InitializeFilePaths()
-        {
-            _databaseFilePath = Path.Combine(Application.persistentDataPath, "Database", _databaseFileName);
-
-            try
-            {
-                var databaseDir = Path.GetDirectoryName(_databaseFilePath);
-                if (!Directory.Exists(databaseDir))
-                    Directory.CreateDirectory(databaseDir);
-
-                if (_enableLogging)
-                    ChimeraLogger.LogInfo("DB_PERSIST", $"Database persistence path: {_databaseFilePath}", null);
-            }
-            catch (Exception ex)
-            {
-                if (_enableLogging)
-                    ChimeraLogger.LogError("DB_PERSIST", $"Failed to initialize database directories: {ex.Message}", null);
-            }
-        }
-
-        /// <summary>
-        /// Initialize persistence manager
-        /// </summary>
         public void Initialize()
         {
             _lastAutoSave = Time.time;
@@ -88,463 +61,162 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Database
                 ChimeraLogger.LogInfo("DB_PERSIST", "Database persistence manager initialized", null);
         }
 
-        #endregion
-
-        #region Save Operations
-
-        /// <summary>
-        /// Save database to file
-        /// </summary>
         public bool SaveDatabaseToFile(Dictionary<MalfunctionType, CostDatabaseEntry> costDatabase,
                                      Dictionary<EquipmentType, EquipmentCostProfile> equipmentProfiles,
                                      List<CostDataPoint> historicalData)
         {
-            if (!_persistData)
-                return false;
+            if (!_persistData) return false;
 
             try
             {
-                var startTime = DateTime.Now;
+                var startTime = Time.realtimeSinceStartup;
 
-                var databaseData = new CostDatabaseData
+                // Serialize database
+                string json = _serializer.SerializeDatabase(costDatabase, equipmentProfiles, historicalData);
+                if (string.IsNullOrEmpty(json))
                 {
-                    CostDatabase = costDatabase,
-                    EquipmentProfiles = equipmentProfiles,
-                    HistoricalData = historicalData,
-                    SavedAt = DateTime.Now,
-                    Version = "1.0"
-                };
+                    OnPersistenceError?.Invoke("Failed to serialize database");
+                    return false;
+                }
 
-                var jsonSettings = new JsonSerializerSettings
+                // Write to file
+                bool success = _fileIO.WriteToFile(json);
+                if (success)
                 {
-                    Formatting = Formatting.Indented,
-                    DateFormatHandling = DateFormatHandling.IsoDateFormat,
-                    TypeNameHandling = TypeNameHandling.Auto
-                };
+                    _isDatabaseDirty = false;
+                    _persistenceStats.LastSaveTime = DateTime.Now;
+                    _persistenceStats.SaveOperations++;
 
-                var jsonContent = JsonConvert.SerializeObject(databaseData, jsonSettings);
+                    var saveTime = Time.realtimeSinceStartup - startTime;
+                    _persistenceStats.TotalSaveTime += saveTime;
+                    _persistenceStats.AverageSaveTime = _persistenceStats.TotalSaveTime / _persistenceStats.SaveOperations;
 
-                // Write to temporary file first, then move to final location for atomic operation
-                var tempFilePath = _databaseFilePath + ".tmp";
-                File.WriteAllText(tempFilePath, jsonContent);
+                    OnDatabaseSaved?.Invoke(_fileIO.GetFileSize().ToString());
 
-                if (File.Exists(_databaseFilePath))
-                    File.Delete(_databaseFilePath);
+                    if (_enableLogging)
+                        ChimeraLogger.LogInfo("DB_PERSIST", $"Database saved successfully (took {saveTime:F3}s)", null);
+                }
+                else
+                {
+                    _persistenceStats.SaveErrors++;
+                    OnPersistenceError?.Invoke("Failed to write database file");
+                }
 
-                File.Move(tempFilePath, _databaseFilePath);
-
-                var saveTime = (DateTime.Now - startTime).TotalMilliseconds;
-                _persistenceStats.TotalSaves++;
-                _persistenceStats.TotalSaveTime += saveTime;
-                _persistenceStats.LastSaveTime = DateTime.Now;
-
-                _isDatabaseDirty = false;
-                _lastAutoSave = Time.time;
-
-                OnDatabaseSaved?.Invoke(_databaseFilePath);
-
-                if (_enableLogging)
-                    ChimeraLogger.LogInfo("DB_PERSIST", $"Database saved to {_databaseFilePath} ({saveTime:F1}ms)", null);
-
-                return true;
+                return success;
             }
             catch (Exception ex)
             {
                 _persistenceStats.SaveErrors++;
-                var errorMessage = $"Failed to save database: {ex.Message}";
-
-                OnPersistenceError?.Invoke(errorMessage);
+                OnPersistenceError?.Invoke($"Save error: {ex.Message}");
 
                 if (_enableLogging)
-                    ChimeraLogger.LogError("DB_PERSIST", errorMessage, null);
+                    ChimeraLogger.LogError("DB_PERSIST", $"Failed to save database: {ex.Message}", null);
 
                 return false;
             }
         }
 
-        /// <summary>
-        /// Auto-save if interval elapsed and database is dirty
-        /// </summary>
-        public bool AutoSave(Dictionary<MalfunctionType, CostDatabaseEntry> costDatabase,
-                           Dictionary<EquipmentType, EquipmentCostProfile> equipmentProfiles,
-                           List<CostDataPoint> historicalData)
+        public (Dictionary<MalfunctionType, CostDatabaseEntry> costDatabase,
+                Dictionary<EquipmentType, EquipmentCostProfile> equipmentProfiles,
+                List<CostDataPoint> historicalData) LoadDatabaseFromFile()
         {
-            if (!_persistData || !_isDatabaseDirty)
-                return true;
-
-            if (Time.time - _lastAutoSave >= _autoSaveInterval)
+            if (!_persistData || !_fileIO.FileExists())
             {
-                if (_enableLogging)
-                    ChimeraLogger.LogInfo("DB_PERSIST", "Performing auto-save", null);
-
-                return SaveDatabaseToFile(costDatabase, equipmentProfiles, historicalData);
+                return (
+                    new Dictionary<MalfunctionType, CostDatabaseEntry>(),
+                    new Dictionary<EquipmentType, EquipmentCostProfile>(),
+                    new List<CostDataPoint>()
+                );
             }
-
-            return true;
-        }
-
-        #endregion
-
-        #region Load Operations
-
-        /// <summary>
-        /// Load database from file
-        /// </summary>
-        public CostDatabaseData LoadDatabaseFromFile()
-        {
-            if (!_persistData || !File.Exists(_databaseFilePath))
-                return new CostDatabaseData();
 
             try
             {
-                var startTime = DateTime.Now;
+                var startTime = Time.realtimeSinceStartup;
 
-                var jsonContent = File.ReadAllText(_databaseFilePath);
-
-                var jsonSettings = new JsonSerializerSettings
+                // Read from file
+                string json = _fileIO.ReadFromFile();
+                if (string.IsNullOrEmpty(json))
                 {
-                    DateFormatHandling = DateFormatHandling.IsoDateFormat,
-                    TypeNameHandling = TypeNameHandling.Auto
-                };
-
-                var databaseData = JsonConvert.DeserializeObject<CostDatabaseData>(jsonContent, jsonSettings);
-
-                var loadTime = (DateTime.Now - startTime).TotalMilliseconds;
-                _persistenceStats.TotalLoads++;
-                _persistenceStats.TotalLoadTime += loadTime;
-                _persistenceStats.LastLoadTime = DateTime.Now;
-
-                OnDatabaseLoaded?.Invoke(_databaseFilePath);
-
-                if (_enableLogging)
-                {
-                    var entriesCount = databaseData.CostDatabase?.Count ?? 0;
-                    var profilesCount = databaseData.EquipmentProfiles?.Count ?? 0;
-                    var historyCount = databaseData.HistoricalData?.Count ?? 0;
-
-                    ChimeraLogger.LogInfo("DB_PERSIST",
-                        $"Database loaded from {_databaseFilePath} ({loadTime:F1}ms): {entriesCount} entries, {profilesCount} profiles, {historyCount} history points", null);
+                    OnPersistenceError?.Invoke("Failed to read database file");
+                    return (
+                        new Dictionary<MalfunctionType, CostDatabaseEntry>(),
+                        new Dictionary<EquipmentType, EquipmentCostProfile>(),
+                        new List<CostDataPoint>()
+                    );
                 }
 
-                return databaseData ?? new CostDatabaseData();
+                // Deserialize database
+                var data = _serializer.DeserializeDatabase(json);
+
+                _persistenceStats.LastLoadTime = DateTime.Now;
+                _persistenceStats.LoadOperations++;
+
+                var loadTime = Time.realtimeSinceStartup - startTime;
+                _persistenceStats.TotalLoadTime += loadTime;
+                _persistenceStats.AverageLoadTime = _persistenceStats.TotalLoadTime / _persistenceStats.LoadOperations;
+
+                OnDatabaseLoaded?.Invoke(_fileIO.GetFileSize().ToString());
+
+                if (_enableLogging)
+                    ChimeraLogger.LogInfo("DB_PERSIST", $"Database loaded successfully (took {loadTime:F3}s)", null);
+
+                return data;
             }
             catch (Exception ex)
             {
                 _persistenceStats.LoadErrors++;
-                var errorMessage = $"Failed to load database: {ex.Message}";
-
-                OnPersistenceError?.Invoke(errorMessage);
+                OnPersistenceError?.Invoke($"Load error: {ex.Message}");
 
                 if (_enableLogging)
-                    ChimeraLogger.LogError("DB_PERSIST", errorMessage, null);
+                    ChimeraLogger.LogError("DB_PERSIST", $"Failed to load database: {ex.Message}", null);
 
-                return new CostDatabaseData();
+                return (
+                    new Dictionary<MalfunctionType, CostDatabaseEntry>(),
+                    new Dictionary<EquipmentType, EquipmentCostProfile>(),
+                    new List<CostDataPoint>()
+                );
             }
         }
 
-        #endregion
-
-        #region Backup Operations
-
-        /// <summary>
-        /// Create a backup of the current database
-        /// </summary>
-        public bool CreateBackup()
+        public void UpdateAutoSave(Dictionary<MalfunctionType, CostDatabaseEntry> costDatabase,
+                                  Dictionary<EquipmentType, EquipmentCostProfile> equipmentProfiles,
+                                  List<CostDataPoint> historicalData)
         {
-            if (!_persistData || !File.Exists(_databaseFilePath))
-                return false;
+            if (!_persistData || !_isDatabaseDirty) return;
 
-            try
+            float currentTime = Time.time;
+            if (currentTime - _lastAutoSave >= _autoSaveInterval)
             {
-                var backupDir = Path.Combine(Path.GetDirectoryName(_databaseFilePath), "Backups");
-                if (!Directory.Exists(backupDir))
-                    Directory.CreateDirectory(backupDir);
-
-                var backupFileName = $"cost_database_backup_{DateTime.Now:yyyyMMdd_HHmmss}.json";
-                var backupFilePath = Path.Combine(backupDir, backupFileName);
-
-                File.Copy(_databaseFilePath, backupFilePath, true);
-
-                _persistenceStats.BackupsCreated++;
+                SaveDatabaseToFile(costDatabase, equipmentProfiles, historicalData);
+                _lastAutoSave = currentTime;
 
                 if (_enableLogging)
-                    ChimeraLogger.LogInfo("DB_PERSIST", $"Database backup created: {backupFileName}", null);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _persistenceStats.BackupErrors++;
-
-                if (_enableLogging)
-                    ChimeraLogger.LogError("DB_PERSIST", $"Failed to create database backup: {ex.Message}", null);
-
-                return false;
+                    ChimeraLogger.LogInfo("DB_PERSIST", "Auto-save triggered", null);
             }
         }
 
-        /// <summary>
-        /// Restore from a specific backup
-        /// </summary>
-        public CostDatabaseData RestoreFromBackup(string backupFileName)
-        {
-            try
-            {
-                var backupDir = Path.Combine(Path.GetDirectoryName(_databaseFilePath), "Backups");
-                var backupFilePath = Path.Combine(backupDir, backupFileName);
-
-                if (!File.Exists(backupFilePath))
-                {
-                    var errorMessage = $"Backup file not found: {backupFileName}";
-                    OnPersistenceError?.Invoke(errorMessage);
-
-                    if (_enableLogging)
-                        ChimeraLogger.LogWarning("DB_PERSIST", errorMessage, null);
-
-                    return new CostDatabaseData();
-                }
-
-                var jsonContent = File.ReadAllText(backupFilePath);
-
-                var jsonSettings = new JsonSerializerSettings
-                {
-                    DateFormatHandling = DateFormatHandling.IsoDateFormat,
-                    TypeNameHandling = TypeNameHandling.Auto
-                };
-
-                var restoredData = JsonConvert.DeserializeObject<CostDatabaseData>(jsonContent, jsonSettings);
-
-                _persistenceStats.BackupsRestored++;
-
-                if (_enableLogging)
-                    ChimeraLogger.LogInfo("DB_PERSIST", $"Database restored from backup: {backupFileName}", null);
-
-                return restoredData ?? new CostDatabaseData();
-            }
-            catch (Exception ex)
-            {
-                _persistenceStats.RestoreErrors++;
-                var errorMessage = $"Failed to restore from backup {backupFileName}: {ex.Message}";
-
-                OnPersistenceError?.Invoke(errorMessage);
-
-                if (_enableLogging)
-                    ChimeraLogger.LogError("DB_PERSIST", errorMessage, null);
-
-                return new CostDatabaseData();
-            }
-        }
-
-        /// <summary>
-        /// Get available backup files
-        /// </summary>
-        public List<DatabaseBackupInfo> GetAvailableBackups()
-        {
-            var backups = new List<DatabaseBackupInfo>();
-
-            try
-            {
-                var backupDir = Path.Combine(Path.GetDirectoryName(_databaseFilePath), "Backups");
-                if (!Directory.Exists(backupDir))
-                    return backups;
-
-                var backupFiles = Directory.GetFiles(backupDir, "cost_database_backup_*.json");
-
-                foreach (var backupFile in backupFiles)
-                {
-                    var fileInfo = new FileInfo(backupFile);
-                    var backupInfo = new DatabaseBackupInfo
-                    {
-                        FileName = Path.GetFileName(backupFile),
-                        FilePath = backupFile,
-                        CreatedAt = fileInfo.CreationTime,
-                        FileSize = fileInfo.Length,
-                        IsAccessible = fileInfo.Exists
-                    };
-
-                    backups.Add(backupInfo);
-                }
-
-                // Sort by creation time (newest first)
-                backups.Sort((a, b) => b.CreatedAt.CompareTo(a.CreatedAt));
-            }
-            catch (Exception ex)
-            {
-                if (_enableLogging)
-                    ChimeraLogger.LogError("DB_PERSIST", $"Failed to get available backups: {ex.Message}", null);
-            }
-
-            return backups;
-        }
-
-        #endregion
-
-        #region State Management
-
-        /// <summary>
-        /// Mark database as dirty (needs saving)
-        /// </summary>
         public void MarkDirty()
         {
             _isDatabaseDirty = true;
         }
 
-        /// <summary>
-        /// Clear dirty flag
-        /// </summary>
-        public void ClearDirty()
-        {
-            _isDatabaseDirty = false;
-        }
-
-        /// <summary>
-        /// Update persistence manager (call from Update loop)
-        /// </summary>
-        public void UpdatePersistence(Dictionary<MalfunctionType, CostDatabaseEntry> costDatabase,
-                                    Dictionary<EquipmentType, EquipmentCostProfile> equipmentProfiles,
-                                    List<CostDataPoint> historicalData)
-        {
-            if (_persistData && _isDatabaseDirty)
-            {
-                AutoSave(costDatabase, equipmentProfiles, historicalData);
-            }
-        }
-
-        #endregion
-
-        #region Utility Methods
-
-        /// <summary>
-        /// Check if database file exists
-        /// </summary>
-        public bool DatabaseFileExists()
-        {
-            return File.Exists(_databaseFilePath);
-        }
-
-        /// <summary>
-        /// Get database file size
-        /// </summary>
-        public long GetDatabaseFileSize()
-        {
-            try
-            {
-                if (File.Exists(_databaseFilePath))
-                {
-                    var fileInfo = new FileInfo(_databaseFilePath);
-                    return fileInfo.Length;
-                }
-            }
-            catch (Exception ex)
-            {
-                if (_enableLogging)
-                    ChimeraLogger.LogError("DB_PERSIST", $"Failed to get database file size: {ex.Message}", null);
-            }
-
-            return 0;
-        }
-
-        /// <summary>
-        /// Get database file last modified time
-        /// </summary>
-        public DateTime GetDatabaseFileLastModified()
-        {
-            try
-            {
-                if (File.Exists(_databaseFilePath))
-                {
-                    return File.GetLastWriteTime(_databaseFilePath);
-                }
-            }
-            catch (Exception ex)
-            {
-                if (_enableLogging)
-                    ChimeraLogger.LogError("DB_PERSIST", $"Failed to get database file modification time: {ex.Message}", null);
-            }
-
-            return DateTime.MinValue;
-        }
-
-        /// <summary>
-        /// Validate database file integrity
-        /// </summary>
-        public DatabaseValidationResult ValidateDatabaseFile()
-        {
-            var result = new DatabaseValidationResult
-            {
-                IsValid = false,
-                ValidationTime = DateTime.Now
-            };
-
-            try
-            {
-                if (!File.Exists(_databaseFilePath))
-                {
-                    result.ErrorMessage = "Database file does not exist";
-                    return result;
-                }
-
-                var jsonContent = File.ReadAllText(_databaseFilePath);
-
-                if (string.IsNullOrWhiteSpace(jsonContent))
-                {
-                    result.ErrorMessage = "Database file is empty";
-                    return result;
-                }
-
-                var jsonSettings = new JsonSerializerSettings
-                {
-                    DateFormatHandling = DateFormatHandling.IsoDateFormat,
-                    TypeNameHandling = TypeNameHandling.Auto
-                };
-
-                var databaseData = JsonConvert.DeserializeObject<CostDatabaseData>(jsonContent, jsonSettings);
-
-                if (databaseData == null)
-                {
-                    result.ErrorMessage = "Failed to deserialize database data";
-                    return result;
-                }
-
-                // Basic validation
-                result.EntriesCount = databaseData.CostDatabase?.Count ?? 0;
-                result.ProfilesCount = databaseData.EquipmentProfiles?.Count ?? 0;
-                result.HistoryCount = databaseData.HistoricalData?.Count ?? 0;
-                result.FileSize = GetDatabaseFileSize();
-                result.IsValid = true;
-
-                if (_enableLogging)
-                    ChimeraLogger.LogInfo("DB_PERSIST", $"Database file validation passed: {result.EntriesCount} entries, {result.ProfilesCount} profiles, {result.HistoryCount} history points", null);
-            }
-            catch (Exception ex)
-            {
-                result.ErrorMessage = ex.Message;
-                _persistenceStats.ValidationErrors++;
-
-                if (_enableLogging)
-                    ChimeraLogger.LogError("DB_PERSIST", $"Database file validation failed: {ex.Message}", null);
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Reset persistence statistics
-        /// </summary>
         public void ResetStatistics()
         {
             _persistenceStats = new DatabasePersistenceStatistics();
 
             if (_enableLogging)
-                ChimeraLogger.LogInfo("DB_PERSIST", "Database persistence statistics reset", null);
+                ChimeraLogger.LogInfo("DB_PERSIST", "Persistence statistics reset", null);
         }
 
-        #endregion
+        public bool DeleteDatabase()
+        {
+            return _fileIO.DeleteFile();
+        }
+
+        public long GetDatabaseFileSize()
+        {
+            return _fileIO.GetFileSize();
+        }
     }
-
-    #region Data Structures
-
-    // Data structures moved to dedicated files during Phase 0 refactoring
-
-    #endregion
 }
+
