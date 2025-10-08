@@ -6,6 +6,7 @@ using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Data.Shared;
 using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Cultivation.Plant;
 using ProjectChimera.Core.Events;
 using EnvironmentalConditions = ProjectChimera.Data.Shared.EnvironmentalConditions;
 using PlantGrowthStage = ProjectChimera.Data.Shared.PlantGrowthStage;
@@ -66,31 +67,31 @@ namespace ProjectChimera.Systems.Cultivation
         {
             if (IsInitialized) return;
 
-            UnityEngine.Debug.Log("Operation completed");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
 
             // Get dependencies
             // _environmentManager = GameManager.Instance?.GetManager<EnvironmentManager>(); // EnvironmentManager not available
-            _zoneManager = ServiceContainerFactory.Instance?.TryResolve<CultivationZoneManager>();
+            _zoneManager = ServiceContainerFactory.Instance.TryResolve<CultivationZoneManager>();
 
             // if (_environmentManager == null) // EnvironmentManager not available
             {
-                // UnityEngine.Debug.Log("Operation completed"); // EnvironmentManager not available
+                // ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this); // EnvironmentManager not available
             }
 
             if (_zoneManager == null)
             {
-                UnityEngine.Debug.Log("Operation completed");
+                ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
             }
 
             _lastEnvironmentalUpdate = Time.time;
 
             IsInitialized = true;
-            UnityEngine.Debug.Log("Operation completed");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         public void Shutdown()
         {
-            UnityEngine.Debug.Log("Operation completed");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
 
             _environmentalHistory.Clear();
             _activeAlerts.Clear();
@@ -155,7 +156,7 @@ namespace ProjectChimera.Systems.Cultivation
             totalStress *= _environmentalSensitivity;
 
             // Apply stress to plant (this would be handled by PlantManager in practice)
-            UnityEngine.Debug.Log("Operation completed");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         /// <summary>
@@ -206,7 +207,7 @@ namespace ProjectChimera.Systems.Cultivation
             }
 
             OnEnvironmentalOptimization?.Invoke(zoneId);
-            UnityEngine.Debug.Log("Operation completed");
+            ChimeraLogger.Log("CULTIVATION", "Cultivation system operation", this);
         }
 
         /// <summary>
@@ -407,8 +408,8 @@ namespace ProjectChimera.Systems.Cultivation
         }
 
     // ITickable implementation
-    public int Priority => 0;
-    public bool Enabled => enabled && gameObject.activeInHierarchy;
+    public int TickPriority => ProjectChimera.Core.Updates.TickPriority.EnvironmentalManager;
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
 
     public virtual void OnRegistered()
     {
