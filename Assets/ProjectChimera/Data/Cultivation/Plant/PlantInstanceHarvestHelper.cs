@@ -47,8 +47,8 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 IsReadyToHarvest = _harvestData?.IsHarvestReady ?? false,
                 OptimalHarvestDate = _harvestData?.OptimalHarvestDate ?? DateTime.Now,
                 TrichomeMaturity = _harvestData?.TrichomeMaturity ?? 0f,
-                RecommendationReason = _harvestData?.IsHarvestReady ?? false 
-                    ? "Trichome maturity optimal" 
+                RecommendationReason = _harvestData?.IsHarvestReady ?? false
+                    ? "Trichome maturity optimal"
                     : "Continue monitoring trichome development"
             };
         }
