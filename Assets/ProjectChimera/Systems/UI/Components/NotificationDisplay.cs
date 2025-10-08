@@ -467,40 +467,4 @@ namespace ProjectChimera.Systems.UI
     /// <summary>
     /// Notification types
     /// </summary>
-    public enum NotificationType
-    {
-        Info,
-        Warning,
-        Error,
-        Success
-    }
-
-    /// <summary>
-    /// Notification data
-    /// </summary>
-    [System.Serializable]
-    public struct NotificationData
-    {
-        public string Id;
-        public string Message;
-        public NotificationType Type;
-        public float Duration;
-        public float Timestamp;
-        public int Priority;
-    }
-
-    /// <summary>
-    /// UI notification element
-    /// </summary>
-    public class NotificationElement
-    {
-        public GameObject GameObject;
-        public RectTransform RectTransform;
-        public Image BackgroundImage;
-        public TextMeshProUGUI TextComponent;
-        public CanvasGroup CanvasGroup;
-        public NotificationData Data;
-    }
-
-    #endregion
 }

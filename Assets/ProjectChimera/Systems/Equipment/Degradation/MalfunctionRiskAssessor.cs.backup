@@ -482,4 +482,28 @@ namespace ProjectChimera.Systems.Equipment.Degradation
     /// Risk assessment statistics
     /// </summary>
     [System.Serializable]
+    public struct MalfunctionRiskAssessorStats
+    {
+        public int TotalAssessments;
+        public int LowRiskAssessments;
+        public int MediumRiskAssessments;
+        public int HighRiskAssessments;
+        public int CriticalRiskAssessments;
+        public int AssessmentsWithoutProfile;
+        public int AssessmentErrors;
+        public float TotalAssessmentTime;
+        public float AverageAssessmentTime;
+        public float MaxAssessmentTime;
+    }
+
+    /// <summary>
+    /// Risk component breakdown
+    /// </summary>
+    [System.Serializable]
+    public struct RiskComponents
+    {
+        public float WearRisk;
+        public float EnvironmentalRisk;
+        public float MaintenanceRisk;
+    }
 }

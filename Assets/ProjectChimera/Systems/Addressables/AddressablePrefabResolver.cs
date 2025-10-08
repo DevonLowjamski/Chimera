@@ -486,19 +486,5 @@ namespace ProjectChimera.Systems.Addressables
         Task<bool> HasPrefabAsync(string address);
     }
 
-    /// <summary>
-    /// Prefab resolver statistics
-    /// </summary>
-    [System.Serializable]
-    public struct PrefabResolverStats
-    {
-        public bool IsInitialized;
-        public int LoadedPrefabs;
-        public int ActiveInstances;
-        public int PooledInstances;
-        public int PreloadedPrefabs;
-        public bool PoolingEnabled;
-        public int MaxPoolSize;
-    }
 #endif
 }

@@ -4,6 +4,8 @@ using TMPro;
 using ProjectChimera.Core.Memory;
 using System.Collections;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Systems.UI.Core;
 
 namespace ProjectChimera.Systems.UI
 {
@@ -37,7 +39,7 @@ namespace ProjectChimera.Systems.UI
         private RectTransform _rectTransform;
         private VerticalLayoutGroup _layoutGroup;
         private ContentSizeFitter _sizeFitter;
-        
+
         // Performance tracking
         private int _totalNotifications = 0;
         private int _pooledElements = 0;
@@ -102,7 +104,7 @@ namespace ProjectChimera.Systems.UI
             {
                 StartCoroutine(HideNotification(notification, true));
             }
-            
+
             _notificationQueue.Clear();
         }
 
@@ -126,19 +128,19 @@ namespace ProjectChimera.Systems.UI
         public bool ShouldUpdate()
         {
             float currentTime = Time.unscaledTime;
-            return currentTime - _lastUpdateTime >= UPDATE_INTERVAL && 
+            return currentTime - _lastUpdateTime >= UPDATE_INTERVAL &&
                    (_notificationQueue.Count > 0 || _needsLayoutUpdate || HasExpiredNotifications());
         }
 
         /// <summary>
         /// Update UI display
         /// </summary>
-        public void UpdateUI()
+        public void UpdateUI(float deltaTime = 0f)
         {
             ProcessNotificationQueue();
             UpdateActiveNotifications();
             UpdateLayout();
-            
+
             _lastUpdateTime = Time.unscaledTime;
             _needsLayoutUpdate = false;
         }
@@ -162,7 +164,7 @@ namespace ProjectChimera.Systems.UI
             {
                 _layoutGroup = gameObject.AddComponent<VerticalLayoutGroup>();
             }
-            
+
             _layoutGroup.spacing = _notificationSpacing;
             _layoutGroup.childControlHeight = false;
             _layoutGroup.childControlWidth = false;
@@ -176,7 +178,7 @@ namespace ProjectChimera.Systems.UI
             {
                 _sizeFitter = gameObject.AddComponent<ContentSizeFitter>();
             }
-            
+
             _sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             // Pre-populate notification pool
@@ -215,7 +217,7 @@ namespace ProjectChimera.Systems.UI
             // Text
             var textGO = new GameObject("Text");
             textGO.transform.SetParent(notificationGO.transform, false);
-            
+
             var textRT = textGO.AddComponent<RectTransform>();
             textRT.anchorMin = Vector2.zero;
             textRT.anchorMax = Vector2.one;
@@ -226,7 +228,7 @@ namespace ProjectChimera.Systems.UI
             var textComponent = textGO.AddComponent<TextMeshProUGUI>();
             textComponent.text = "";
             textComponent.fontSize = 12;
-            textComponent.alignment = TextAlignmentOptions.CenterLeft;
+            textComponent.alignment = TextAlignmentOptions.Left;
             textComponent.color = Color.white;
             textComponent.enableWordWrapping = true;
 
@@ -337,7 +339,7 @@ namespace ProjectChimera.Systems.UI
         private IEnumerator HideNotificationAfterDelay(NotificationElement element, float delay)
         {
             yield return new WaitForSecondsRealtime(delay);
-            
+
             if (_activeNotifications.Contains(element))
             {
                 StartCoroutine(HideNotification(element));
@@ -353,7 +355,7 @@ namespace ProjectChimera.Systems.UI
             {
                 float elapsed = 0f;
                 float startAlpha = element.CanvasGroup.alpha;
-                
+
                 while (elapsed < _fadeOutDuration)
                 {
                     elapsed += Time.unscaledDeltaTime;
@@ -377,7 +379,7 @@ namespace ProjectChimera.Systems.UI
             {
                 var notification = _activeNotifications[i];
                 float elapsed = Time.unscaledTime - notification.Data.Timestamp;
-                
+
                 if (elapsed > notification.Data.Duration)
                 {
                     StartCoroutine(HideNotification(notification));
@@ -448,7 +450,7 @@ namespace ProjectChimera.Systems.UI
         {
             _notificationQueue.Clear();
             _activeNotifications.Clear();
-            
+
             while (_notificationPool.Count > 0)
             {
                 var element = _notificationPool.Pop();
