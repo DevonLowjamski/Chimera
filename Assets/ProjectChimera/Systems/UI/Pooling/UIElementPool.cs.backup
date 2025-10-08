@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using ProjectChimera.Core.Pooling;
 using System.Collections.Generic;
 
+using ProjectChimera.Core.Logging;
 namespace ProjectChimera.Systems.UI.Pooling
 {
     /// <summary>
@@ -66,7 +67,7 @@ namespace ProjectChimera.Systems.UI.Pooling
 
             if (_enableLogging)
             {
-                Debug.Log($"[UIElementPool] Initialized {_uiPools.Count} UI element pools");
+                ChimeraLogger.LogInfo("UIElementPool", "Initialized UIElementPool");
             }
         }
 
@@ -106,7 +107,7 @@ namespace ProjectChimera.Systems.UI.Pooling
 
                 if (_enableLogging)
                 {
-                    Debug.Log($"[UIElementPool] Retrieved {elementType} from pool");
+                    ChimeraLogger.LogInfo("UIElementPool", $"Got {elementType} element");
                 }
             }
 
@@ -133,7 +134,7 @@ namespace ProjectChimera.Systems.UI.Pooling
 
             if (_enableLogging)
             {
-                Debug.Log($"[UIElementPool] Returned {elementType} to pool");
+                ChimeraLogger.LogInfo("UIElementPool", $"Returned {elementType} element");
             }
         }
 
@@ -169,7 +170,7 @@ namespace ProjectChimera.Systems.UI.Pooling
 
             if (_enableLogging)
             {
-                Debug.Log($"[UIElementPool] Pre-warmed {elementType} pool with {count} elements");
+                ChimeraLogger.LogInfo("UIElementPool", $"Prewarmed {count} elements for {elementType}");
             }
         }
 
@@ -200,7 +201,7 @@ namespace ProjectChimera.Systems.UI.Pooling
         public Dictionary<UIElementType, UIPoolStats> GetAllPoolStats()
         {
             var allStats = new Dictionary<UIElementType, UIPoolStats>();
-            
+
             foreach (var elementType in _uiPools.Keys)
             {
                 allStats[elementType] = GetPoolStats(elementType);
@@ -220,7 +221,7 @@ namespace ProjectChimera.Systems.UI.Pooling
 
                 if (_enableLogging)
                 {
-                    Debug.Log($"[UIElementPool] Cleared {elementType} pool");
+                    ChimeraLogger.LogInfo("UIElementPool", $"Cleared pool {elementType}");
                 }
             }
         }
@@ -237,8 +238,121 @@ namespace ProjectChimera.Systems.UI.Pooling
 
             if (_enableLogging)
             {
-                Debug.Log("[UIElementPool] Cleared all UI pools");
+                ChimeraLogger.LogInfo("UIElementPool", "Cleared all pools");
             }
+        }
+
+        // --- Compatibility shims for legacy callers (string/generic-based API) ---
+
+        // Initialize with sizes (falls back to default Initialize)
+        public void Initialize(int initialPoolSize, int maxPoolSize)
+        {
+            // Current implementation uses Scriptable config; simply ensure initialized
+            if (!_isInitialized)
+            {
+                Initialize();
+            }
+        }
+
+        // Get pooled element by string key
+        public GameObject GetPooledElement(string elementType)
+        {
+            var type = ParseElementType(elementType);
+            var rt = GetUIElement(type);
+            return rt != null ? rt.gameObject : null;
+        }
+
+        // Generic legacy accessor used by UIResourceManager
+        public T GetPooledObject<T>() where T : Component
+        {
+            // Best-effort: try to pull by inferred enum from type name
+            var inferred = ParseElementType(typeof(T).Name);
+            var rt = GetUIElement(inferred);
+            return rt != null ? rt.GetComponent<T>() : null;
+        }
+
+        // Return pooled element by object
+        public void ReturnToPool(GameObject element)
+        {
+            if (element == null) return;
+            ReturnUIElement(element.GetComponent<RectTransform>());
+        }
+
+        // Return pooled element with explicit type
+        public void ReturnToPool(GameObject element, string elementType)
+        {
+            if (element == null) return;
+            var type = ParseElementType(elementType);
+            ReturnUIElement(type, element.GetComponent<RectTransform>());
+        }
+
+        // Create pooled object of generic type (no-op fallback)
+        public T CreatePooledObject<T>() where T : Component
+        {
+            // Without a prefab reference, we cannot create; return null to allow caller fallback
+            return null;
+        }
+
+        // Legacy stats wrappers
+        public int PoolSize
+        {
+            get
+            {
+                int total = 0;
+                if (_uiPools != null)
+                {
+                    foreach (var pool in _uiPools.Values) total += pool.CountAll;
+                }
+                return total;
+            }
+        }
+
+        public int ActiveCount
+        {
+            get
+            {
+                int total = 0;
+                if (_uiPools != null)
+                {
+                    foreach (var pool in _uiPools.Values) total += pool.CountActive;
+                }
+                return total;
+            }
+        }
+
+        public int GetTotalPooledCount()
+        {
+            int total = 0;
+            if (_uiPools != null)
+            {
+                foreach (var pool in _uiPools.Values) total += pool.CountInactive;
+            }
+            return total;
+        }
+
+        public void TrimPool()
+        {
+            // No-op trim for compatibility
+        }
+
+        public void InitializePool(string elementType, GameObject prefab, int initialCount)
+        {
+            // Compatibility stub – full configuration is done via _uiPoolConfigs
+        }
+
+        // Helper to map string keys to enum values
+        private UIElementType ParseElementType(string elementType)
+        {
+            if (System.Enum.TryParse<UIElementType>(elementType, out var parsed))
+            {
+                return parsed;
+            }
+            // Heuristic mapping by common names
+            var key = (elementType ?? string.Empty).ToLowerInvariant();
+            if (key.Contains("progress")) return UIElementType.ProgressBar;
+            if (key.Contains("notify")) return UIElementType.NotificationBanner;
+            if (key.Contains("plant")) return UIElementType.PlantInfoPanel;
+            return UIElementType.ListItem;
         }
 
         #region Private Methods
@@ -280,7 +394,7 @@ namespace ProjectChimera.Systems.UI.Pooling
             if (obj.name.Contains("Panel")) return UIElementType.PlantInfoPanel;
             if (obj.name.Contains("Icon")) return UIElementType.Icon;
             if (obj.name.Contains("Tooltip")) return UIElementType.TooltipPanel;
-            
+
             // Default
             return UIElementType.ListItem;
         }
