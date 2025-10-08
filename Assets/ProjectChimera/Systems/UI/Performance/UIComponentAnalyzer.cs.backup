@@ -462,4 +462,65 @@ namespace ProjectChimera.Systems.UI.Performance
     /// Canvas analysis data
     /// </summary>
     [System.Serializable]
+    public struct CanvasAnalysisData
+    {
+        public Canvas Canvas;
+        public int ComponentCount;
+        public int DrawCalls;
+        public bool IsOptimized;
+        public List<string> Issues;
+    }
+
+    /// <summary>
+    /// UI performance issue
+    /// </summary>
+    [System.Serializable]
+    public struct UIPerformanceIssue
+    {
+        public UIPerformanceIssueType IssueType;
+        public UIPerformanceIssueSeverity Severity;
+        public string Description;
+        public System.Type ComponentType;
+        public Component Component;
+        public Canvas Canvas;
+    }
+
+    /// <summary>
+    /// UI performance issue types
+    /// </summary>
+    public enum UIPerformanceIssueType
+    {
+        SlowComponent,
+        ExcessiveComponents,
+        ExcessiveDrawCalls,
+        MemoryLeak,
+        UnoptimizedCanvas,
+        RedundantUpdates
+    }
+
+    /// <summary>
+    /// UI performance issue severity
+    /// </summary>
+    public enum UIPerformanceIssueSeverity
+    {
+        Info,
+        Warning,
+        Critical
+    }
+
+    /// <summary>
+    /// UI component analysis statistics
+    /// </summary>
+    [System.Serializable]
+    public struct UIComponentAnalysisStats
+    {
+        public int AnalysisRuns;
+        public int ComponentsAnalyzed;
+        public int PerformanceIssues;
+        public int CriticalIssues;
+        public int WarningIssues;
+        public int CanvasesAnalyzed;
+    }
+
+    #endregion
 }
