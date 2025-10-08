@@ -437,7 +437,4 @@ namespace ProjectChimera.Systems.Equipment.Degradation
             return actions;
         }
     }
-
-    /// <summary>
-    /// Thin wrapper to provide instance-based detection API expected by EquipmentDegradationManager
-    /// </summary>
+}

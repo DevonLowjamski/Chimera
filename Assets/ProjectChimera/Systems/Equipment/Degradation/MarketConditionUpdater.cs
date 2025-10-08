@@ -24,9 +24,9 @@ namespace ProjectChimera.Systems.Equipment.Degradation
             {
                 Supply = 1f,
                 Demand = 1f,
-                Trend = 0f,
+                Trend = MarketTrend.Stable,
                 Confidence = 1f,
-                LastUpdateTime = 0f
+                LastUpdateTime = DateTime.Now
             };
             _lastMarketUpdate = 0f;
             _lastPriceUpdate = 0f;
@@ -45,13 +45,16 @@ namespace ProjectChimera.Systems.Equipment.Degradation
 
             // Calculate market trend based on supply/demand ratio
             float supplyDemandRatio = _currentConditions.Demand / _currentConditions.Supply;
-            _currentConditions.Trend = (supplyDemandRatio - 1f) * 0.5f; // -0.5 to +0.5 range
+            float trendValue = (supplyDemandRatio - 1f) * 0.5f; // -0.5 to +0.5 range
+            _currentConditions.Trend = trendValue > 0.1f ? MarketTrend.Bullish :
+                                       trendValue < -0.1f ? MarketTrend.Bearish :
+                                       MarketTrend.Stable;
 
             // Update confidence based on volatility
             float volatilityFactor = Math.Abs(getSin(currentTime * 0.02f, 0.3f));
             _currentConditions.Confidence = Clamp01(1f - volatilityFactor);
 
-            _currentConditions.LastUpdateTime = currentTime;
+            _currentConditions.LastUpdateTime = DateTime.MinValue.AddSeconds(currentTime);
         }
 
         public bool ShouldUpdatePrices(float currentTime)

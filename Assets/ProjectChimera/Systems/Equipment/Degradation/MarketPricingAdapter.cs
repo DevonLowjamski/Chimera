@@ -177,6 +177,14 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         public SupplyLevel SupplyLevel;
         public DateTime LastUpdate;
         public MarketTrend TrendDirection;
+        public int PriceUpdateCount;
+
+        // Aliases for backward compatibility
+        public float BasePrice { get => BaseMultiplier; set => BaseMultiplier = value; }
+        public float CurrentPrice { get => CurrentMultiplier; set => CurrentMultiplier = value; }
+        public float Volatility { get => VolatilityFactor; set => VolatilityFactor = value; }
+        public DateTime LastUpdateTime { get => LastUpdate; set => LastUpdate = value; }
+        public int UpdateCount { get => PriceUpdateCount; set => PriceUpdateCount = value; }
     }
 
     /// <summary>
@@ -188,6 +196,9 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         public DateTime Timestamp;
         public float PriceMultiplier;
         public MarketConditions MarketConditions;
+
+        // Alias for backward compatibility
+        public float Price { get => PriceMultiplier; set => PriceMultiplier = value; }
     }
 
     /// <summary>
@@ -203,6 +214,11 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         public float CyclePosition;
         public float CycleLength;
         public float CompoundingInterval;
+        public float AccumulatedInflationAmount;
+
+        // Aliases for backward compatibility
+        public float AccumulatedInflation { get => AccumulatedInflationAmount; set => AccumulatedInflationAmount = value; }
+        public DateTime LastUpdateTime { get => LastUpdate; set => LastUpdate = value; }
     }
 
     /// <summary>
@@ -218,6 +234,13 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         public float EconomicIndicator;
         public DateTime LastUpdate;
         public float ConfidenceLevel;
+
+        // Aliases for backward compatibility
+        public float Supply { get => SupplyConstraints; set => SupplyConstraints = value; }
+        public float Demand { get => DemandPressure; set => DemandPressure = value; }
+        public MarketTrend Trend { get => TrendDirection; set => TrendDirection = value; }
+        public float Confidence { get => ConfidenceLevel; set => ConfidenceLevel = value; }
+        public DateTime LastUpdateTime { get => LastUpdate; set => LastUpdate = value; }
 
         public MarketConditions() { }
 

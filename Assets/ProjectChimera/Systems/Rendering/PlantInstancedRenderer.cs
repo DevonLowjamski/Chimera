@@ -469,10 +469,4 @@ namespace ProjectChimera.Systems.Rendering
         }
     }
 
-    #region Data Structures
-
-    /// <summary>
-    /// Plant instance data
-    /// </summary>
-    [System.Serializable]
 }

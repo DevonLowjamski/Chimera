@@ -459,11 +459,5 @@ namespace ProjectChimera.Systems.Cultivation
         _eventPool?.Dispose();
         _updateDataPool?.Dispose();
     }
-    }
-
-    #region Data Structures
-
-    /// <summary>
-    /// Cultivation event for memory optimization
-    /// </summary>
+}
 }

@@ -130,7 +130,7 @@ namespace ProjectChimera.Systems.UI.Core
         /// <summary>
         /// Create notification
         /// </summary>
-        public ProjectChimera.Systems.UI.NotificationDisplay CreateNotification(string message, ProjectChimera.Systems.UI.NotificationType type, float duration)
+        public ProjectChimera.Systems.UI.NotificationDisplay CreateNotification(string message, ProjectChimera.Systems.UI.Components.NotificationType type, float duration)
         {
             if (string.IsNullOrEmpty(message))
             {

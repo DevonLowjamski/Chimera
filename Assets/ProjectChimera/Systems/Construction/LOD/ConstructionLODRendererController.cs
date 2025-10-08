@@ -469,10 +469,4 @@ namespace ProjectChimera.Systems.Construction.LOD
         #endregion
     }
 
-    #region Data Structures
-
-    /// <summary>
-    /// LOD render configuration
-    /// </summary>
-    [System.Serializable]
 }

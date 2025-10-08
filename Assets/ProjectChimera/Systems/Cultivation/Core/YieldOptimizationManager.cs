@@ -446,9 +446,4 @@ namespace ProjectChimera.Systems.Cultivation.Core
 
         #endregion
     }
-
-    /// <summary>
-    /// Yield optimization data for individual plant
-    /// </summary>
-    [System.Serializable]
 }

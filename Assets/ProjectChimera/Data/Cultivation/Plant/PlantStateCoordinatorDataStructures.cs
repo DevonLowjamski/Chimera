@@ -3,6 +3,7 @@
 
 using System;
 using UnityEngine;
+using ProjectChimera.Data.Shared;
 
 namespace ProjectChimera.Data.Cultivation.Plant
 {

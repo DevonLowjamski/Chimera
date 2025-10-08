@@ -6,6 +6,9 @@ using System.Collections;
 using System.Collections.Generic;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Systems.UI.Core;
+using NotificationType = ProjectChimera.Systems.UI.Components.NotificationType;
+using NotificationData = ProjectChimera.Systems.UI.Components.NotificationData;
+using NotificationElement = ProjectChimera.Systems.UI.Components.NotificationElement;
 
 namespace ProjectChimera.Systems.UI
 {
@@ -461,10 +464,4 @@ namespace ProjectChimera.Systems.UI
             }
         }
     }
-
-    #region Data Structures
-
-    /// <summary>
-    /// Notification types
-    /// </summary>
 }

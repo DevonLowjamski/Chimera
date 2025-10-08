@@ -420,11 +420,5 @@ namespace ProjectChimera.Systems.Cultivation
     {
         // Override in derived classes if needed
     }
-
 }
-
-    /// <summary>
-    /// Environmental alert information
-    /// </summary>
-    [System.Serializable]
 }

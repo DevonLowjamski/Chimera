@@ -477,9 +477,4 @@ namespace ProjectChimera.Systems.Equipment.Degradation
 
         #endregion
     }
-
-    /// <summary>
-    /// Risk assessment statistics
-    /// </summary>
-    [System.Serializable]
 }

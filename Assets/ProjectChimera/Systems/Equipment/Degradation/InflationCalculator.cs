@@ -15,7 +15,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         private readonly float _inflationVarianceRange;
         private readonly float _economicCycleLength;
         private readonly float _inflationCompoundingInterval;
-        private float _lastInflationUpdate;
+        private DateTime _lastInflationUpdate;
 
         public float CurrentInflationRate => _inflationTracker.CurrentRate;
 
@@ -31,13 +31,13 @@ namespace ProjectChimera.Systems.Equipment.Degradation
                 CurrentRate = baseInflationRate,
                 BaseRate = baseInflationRate,
                 AccumulatedInflation = 0f,
-                LastUpdateTime = 0f
+                LastUpdateTime = DateTime.Now
             };
             _useVariableInflation = useVariableInflation;
             _inflationVarianceRange = inflationVarianceRange;
             _economicCycleLength = economicCycleLength;
             _inflationCompoundingInterval = inflationCompoundingInterval;
-            _lastInflationUpdate = 0f;
+            _lastInflationUpdate = DateTime.Now;
         }
 
         public float ApplyInflation(float baseCost, float currentTime)
@@ -54,10 +54,10 @@ namespace ProjectChimera.Systems.Equipment.Degradation
 
         public void UpdateInflationRate(float currentTime)
         {
-            if (currentTime - _lastInflationUpdate < _inflationCompoundingInterval)
-                return;
+            float lastUpdateFloat = (float)(_inflationTracker.LastUpdateTime - DateTime.MinValue).TotalSeconds;
 
-            _lastInflationUpdate = currentTime;
+            if (currentTime - lastUpdateFloat < _inflationCompoundingInterval)
+                return;
 
             if (_useVariableInflation)
             {
@@ -74,13 +74,13 @@ namespace ProjectChimera.Systems.Equipment.Degradation
             }
 
             // Update accumulated inflation
-            float timeDelta = currentTime - _inflationTracker.LastUpdateTime;
+            float timeDelta = currentTime - lastUpdateFloat;
             if (timeDelta > 0f)
             {
                 _inflationTracker.AccumulatedInflation += _inflationTracker.CurrentRate * timeDelta;
             }
 
-            _inflationTracker.LastUpdateTime = currentTime;
+            _inflationTracker.LastUpdateTime = DateTime.MinValue.AddSeconds(currentTime);
         }
 
         public void SetBaseInflationRate(float rate)

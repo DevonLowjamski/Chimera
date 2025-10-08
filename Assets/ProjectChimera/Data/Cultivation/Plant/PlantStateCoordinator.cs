@@ -458,9 +458,4 @@ namespace ProjectChimera.Data.Cultivation.Plant
             }
         }
     }
-
-    /// <summary>
-    /// Plant state statistics
-    /// </summary>
-    [System.Serializable]
 }

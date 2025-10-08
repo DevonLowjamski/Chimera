@@ -13,6 +13,8 @@ using ProjectChimera.Systems.UI.Resources;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Core.Updates;
 using IUIUpdatable = ProjectChimera.Systems.UI.Core.IUIUpdatable;
+using NotificationType = ProjectChimera.Systems.UI.Components.NotificationType;
+using NotificationData = ProjectChimera.Systems.UI.Components.NotificationData;
 
 namespace ProjectChimera.Systems.UI
 {

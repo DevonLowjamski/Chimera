@@ -456,10 +456,4 @@ namespace ProjectChimera.Systems.UI.Performance
         #endregion
     }
 
-    #region Data Structures
-
-    /// <summary>
-    /// Canvas analysis data
-    /// </summary>
-    [System.Serializable]
 }

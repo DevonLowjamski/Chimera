@@ -471,9 +471,4 @@ namespace ProjectChimera.Systems.UI.Pooling
             ClearAllPools();
         }
     }
-
-    /// <summary>
-    /// Configuration for UI pool
-    /// </summary>
-    [System.Serializable]
 }

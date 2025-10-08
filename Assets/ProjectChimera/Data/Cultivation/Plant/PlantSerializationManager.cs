@@ -504,7 +504,4 @@ namespace ProjectChimera.Data.Cultivation.Plant
             return new List<string>(_serializedCache.Keys);
         }
     }
-
-    /// <summary>
-    /// Serialization format options
-    /// </summary>
+}

@@ -60,7 +60,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
             return baseCost * marketMultiplier;
         }
 
-        public void UpdateMarketPrice(MalfunctionType type, float newPrice, float currentTime)
+        public void UpdateMarketPrice(MalfunctionType type, float newPrice, DateTime currentTime)
         {
             if (_marketPrices.ContainsKey(type))
             {
@@ -99,7 +99,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
                 BasePrice = basePrice,
                 CurrentPrice = basePrice,
                 Volatility = _marketVolatility,
-                LastUpdateTime = 0f,
+                LastUpdateTime = DateTime.Now,
                 UpdateCount = 0
             };
         }

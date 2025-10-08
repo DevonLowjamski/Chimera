@@ -2,6 +2,7 @@
 // Extracted from MemoryOptimizedCultivationManager for better separation of concerns
 
 using System;
+using ProjectChimera.Core.Memory;
 
 namespace ProjectChimera.Systems.Cultivation
 {
