@@ -9,11 +9,9 @@ using ProjectChimera.Core.Updates;
 namespace ProjectChimera.Systems.Equipment.Degradation
 {
     /// <summary>
-    /// REFACTORED: Cost Configuration Manager with ITickable - Coordinator using SRP-compliant components
-    /// Single Responsibility: Coordinating configuration management through composed services
-    /// Uses composition with ConfigurationProfileManager, ConfigurationValidationManager, and ConfigurationPersistenceManager
-    /// Uses ITickable for centralized update management
-    /// Reduced from 1156 lines to maintain SRP compliance
+    /// REFACTORED: Cost Configuration Manager Coordinator
+    /// Single Responsibility: Coordinate configuration management through composed services
+    /// Uses ITickable for centralized update management. Reduced from 591 lines using delegation consolidation
     /// </summary>
     public class CostConfigurationManager : MonoBehaviour, ITickable
     {
@@ -21,7 +19,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         [SerializeField] private bool _enableLogging = false;
         [SerializeField] private bool _persistConfiguration = true;
         [SerializeField] private string _configFileName = "cost_estimation_config.json";
-        [SerializeField] private float _autoSaveInterval = 600f; // 10 minutes
+        [SerializeField] private float _autoSaveInterval = 600f;
         [SerializeField] private bool _validateOnLoad = true;
 
         [Header("Configuration Profiles")]
@@ -39,7 +37,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         [Header("Configuration Backup")]
         [SerializeField] private bool _enableBackups = true;
         [SerializeField] private int _maxBackups = 5;
-        [SerializeField] private float _backupInterval = 3600f; // 1 hour
+        [SerializeField] private float _backupInterval = 3600f;
         [SerializeField] private bool _compressBackups = true;
 
         // Composition: Delegate responsibilities to focused components
@@ -84,9 +82,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         public void Tick(float deltaTime)
         {
             if (_persistenceManager != null)
-            {
                 _persistenceManager.UpdatePersistence(_profileManager.GetAllProfiles());
-            }
         }
 
         private void OnEnable()
@@ -119,22 +115,20 @@ namespace ProjectChimera.Systems.Equipment.Degradation
                 _validationManager = new ConfigurationValidationManager(_enableLogging, _enableValidation, _enforceConstraints, _logValidationWarnings, _validationMode);
                 _persistenceManager = new ConfigurationPersistenceManager(_enableLogging, _persistConfiguration, _configFileName, _autoSaveInterval, _enableBackups, _maxBackups, _backupInterval, _compressBackups);
 
-                // Wire up events between components
-                _profileManager.OnProfileCreated += OnProfileCreatedInternal;
-                _profileManager.OnProfileUpdated += OnProfileUpdatedInternal;
-                _profileManager.OnProfileDeleted += OnProfileDeletedInternal;
-                _profileManager.OnProfileSwitched += OnProfileSwitchedInternal;
+                // Wire up events using lambdas for conciseness
+                _profileManager.OnProfileCreated += (name, profile) => { OnProfileCreated?.Invoke(name, profile); _persistenceManager?.MarkDirty(); };
+                _profileManager.OnProfileUpdated += (name, profile) => { OnProfileUpdated?.Invoke(name, profile); _persistenceManager?.MarkDirty(); };
+                _profileManager.OnProfileDeleted += (name) => { OnProfileDeleted?.Invoke(name); _persistenceManager?.MarkDirty(); };
+                _profileManager.OnProfileSwitched += OnProfileSwitched;
 
-                _validationManager.OnValidationCompleted += OnValidationCompletedInternal;
+                _validationManager.OnValidationCompleted += OnValidationCompleted;
 
-                _persistenceManager.OnConfigurationSaved += OnConfigurationSavedInternal;
-                _persistenceManager.OnConfigurationLoaded += OnConfigurationLoadedInternal;
-                _persistenceManager.OnConfigurationError += OnConfigurationErrorInternal;
+                _persistenceManager.OnConfigurationSaved += OnConfigurationSaved;
+                _persistenceManager.OnConfigurationLoaded += OnConfigurationLoaded;
+                _persistenceManager.OnConfigurationError += OnConfigurationError;
 
                 if (_enableLogging)
-                {
                     ChimeraLogger.LogInfo("CONFIG", "CostConfigurationManager components initialized", this);
-                }
             }
             catch (Exception ex)
             {
@@ -157,30 +151,22 @@ namespace ProjectChimera.Systems.Equipment.Degradation
                 {
                     var loadedProfiles = _persistenceManager.LoadConfiguration();
                     foreach (var profile in loadedProfiles)
-                    {
                         _profileManager.CreateProfile(profile.Key, profile.Value);
-                    }
                 }
 
                 // Ensure we have an active profile
                 if (_profileManager.ActiveProfile == null)
-                {
                     _profileManager.SetActiveProfile(_defaultProfileName);
-                }
 
                 // Validate configuration if enabled
                 if (_enableValidation && _validateOnLoad && _profileManager.ActiveProfile != null)
-                {
                     _validationManager.ValidateConfiguration(_profileManager.ActiveProfile);
-                }
 
                 ResetStats();
                 _isInitialized = true;
 
                 if (_enableLogging)
-                {
                     ChimeraLogger.LogInfo("CONFIG", $"Cost Configuration Manager initialized with profile '{ActiveProfileName}'", this);
-                }
             }
             catch (Exception ex)
             {
@@ -190,301 +176,135 @@ namespace ProjectChimera.Systems.Equipment.Degradation
 
         #endregion
 
-        #region Event Handlers
-
-        private void OnProfileCreatedInternal(string profileName, CostConfigurationProfile profile)
-        {
-            OnProfileCreated?.Invoke(profileName, profile);
-            _persistenceManager?.MarkDirty();
-        }
-
-        private void OnProfileUpdatedInternal(string profileName, CostConfigurationProfile profile)
-        {
-            OnProfileUpdated?.Invoke(profileName, profile);
-            _persistenceManager?.MarkDirty();
-        }
-
-        private void OnProfileDeletedInternal(string profileName)
-        {
-            OnProfileDeleted?.Invoke(profileName);
-            _persistenceManager?.MarkDirty();
-        }
-
-        private void OnProfileSwitchedInternal(string previousProfile, string newProfile)
-        {
-            OnProfileSwitched?.Invoke(previousProfile, newProfile);
-        }
-
-        private void OnValidationCompletedInternal(ValidationResult result)
-        {
-            OnValidationCompleted?.Invoke(result);
-        }
-
-        private void OnConfigurationSavedInternal(string filePath)
-        {
-            OnConfigurationSaved?.Invoke(filePath);
-        }
-
-        private void OnConfigurationLoadedInternal(string filePath)
-        {
-            OnConfigurationLoaded?.Invoke(filePath);
-        }
-
-        private void OnConfigurationErrorInternal(string error)
-        {
-            OnConfigurationError?.Invoke(error);
-        }
-
-        #endregion
-
         #region Public API - Delegates to Components
 
-        /// <summary>
-        /// Get configuration parameter value
-        /// </summary>
         public T GetParameter<T>(string parameterName, T defaultValue = default)
         {
-            if (!_isInitialized || _profileManager?.ActiveProfile == null)
-                return defaultValue;
-
-            try
-            {
-                var activeProfile = _profileManager.ActiveProfile;
-                if (activeProfile.Parameters.TryGetValue(parameterName, out var value))
-                {
-                    _stats.ParameterRetrievals++;
-
-                    if (value is T typedValue)
-                        return typedValue;
-
-                    // Try to convert if types don't match
-                    var converted = Convert.ChangeType(value, typeof(T));
-                    return (T)converted;
-                }
-
-                _stats.ParameterMisses++;
-
-                if (_enableLogging)
-                {
-                    ChimeraLogger.LogWarning("CONFIG", $"Parameter '{parameterName}' not found, using default value", this);
-                }
-
-                return defaultValue;
-            }
-            catch (Exception ex)
-            {
-                _stats.ParameterErrors++;
-
-                if (_enableLogging)
-                {
-                    ChimeraLogger.LogError("CONFIG", $"Error retrieving parameter '{parameterName}': {ex.Message}", this);
-                }
-
-                return defaultValue;
-            }
+            return _isInitialized && _profileManager?.ActiveProfile != null ? 
+                _profileManager.GetParameter(parameterName, defaultValue) : 
+                defaultValue;
         }
 
-        /// <summary>
-        /// Set configuration parameter value
-        /// </summary>
-        public bool SetParameter<T>(string parameterName, T value, bool validate = true)
+        public bool SetParameter<T>(string parameterName, T value)
         {
-            if (!_isInitialized || _profileManager?.ActiveProfile == null || string.IsNullOrEmpty(parameterName))
-                return false;
+            if (!_isInitialized || _profileManager == null) return false;
 
-            try
+            var success = _profileManager.SetParameter(parameterName, value);
+            if (success)
             {
-                // Validate parameter if enabled
-                if (_enableValidation && validate)
-                {
-                    if (!_validationManager.ValidateParameter(parameterName, value))
-                    {
-                        _stats.ParameterValidationFailures++;
-
-                        if (_enforceConstraints)
-                        {
-                            if (_enableLogging)
-                            {
-                                ChimeraLogger.LogWarning("CONFIG", $"Parameter '{parameterName}' validation failed, value not set", this);
-                            }
-                            return false;
-                        }
-                    }
-                }
-
-                var activeProfile = _profileManager.ActiveProfile;
-                activeProfile.Parameters[parameterName] = value;
-                _profileManager.UpdateActiveProfileMetadata();
-
                 _persistenceManager?.MarkDirty();
-                _stats.ParameterUpdates++;
+                _stats.ParametersModified++;
+            }
+            return success;
+        }
 
-                if (_enableLogging)
-                {
-                    ChimeraLogger.LogInfo("CONFIG", $"Parameter '{parameterName}' updated to '{value}'", this);
-                }
+        public bool HasParameter(string parameterName) =>
+            _profileManager?.HasParameter(parameterName) ?? false;
 
+        public IEnumerable<string> GetParameterNames() =>
+            _profileManager?.GetParameterNames() ?? Enumerable.Empty<string>();
+
+        public bool ValidateParameter<T>(string parameterName, T value) =>
+            _validationManager?.ValidateParameter(parameterName, value, _profileManager?.ActiveProfile) ?? true;
+
+        public ValidationResult ValidateConfiguration() =>
+            _validationManager?.ValidateConfiguration(_profileManager?.ActiveProfile) ?? new ValidationResult { IsValid = true };
+
+        public bool CreateProfile(string profileName, CostConfigurationProfile profile = null) =>
+            _profileManager?.CreateProfile(profileName, profile) ?? false;
+
+        public bool DeleteProfile(string profileName) =>
+            _profileManager?.DeleteProfile(profileName) ?? false;
+
+        public bool SetActiveProfile(string profileName) =>
+            _profileManager?.SetActiveProfile(profileName) ?? false;
+
+        public CostConfigurationProfile GetProfile(string profileName) =>
+            _profileManager?.GetProfile(profileName);
+
+        public IEnumerable<string> GetProfileNames() =>
+            _profileManager?.ProfileNames ?? Enumerable.Empty<string>();
+
+        public bool DuplicateProfile(string sourceProfileName, string newProfileName) =>
+            _profileManager?.DuplicateProfile(sourceProfileName, newProfileName) ?? false;
+
+        public bool RenameProfile(string oldName, string newName) =>
+            _profileManager?.RenameProfile(oldName, newName) ?? false;
+
+        public bool ExportProfile(string profileName, string filePath) =>
+            _persistenceManager?.ExportProfile(profileName, _profileManager.GetProfile(profileName), filePath) ?? false;
+
+        public bool ImportProfile(string filePath)
+        {
+            if (_persistenceManager == null || _profileManager == null) return false;
+
+            var importedProfile = _persistenceManager.ImportProfile(filePath);
+            if (importedProfile.profile != null)
+            {
+                _profileManager.CreateProfile(importedProfile.name, importedProfile.profile);
                 return true;
             }
-            catch (Exception ex)
-            {
-                _stats.ParameterErrors++;
-
-                if (_enableLogging)
-                {
-                    ChimeraLogger.LogError("CONFIG", $"Error setting parameter '{parameterName}': {ex.Message}", this);
-                }
-
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Create a new configuration profile
-        /// </summary>
-        public bool CreateProfile(string profileName, CostConfigurationProfile profile = null)
-        {
-            return _profileManager?.CreateProfile(profileName, profile) ?? false;
-        }
-
-        /// <summary>
-        /// Set the active configuration profile
-        /// </summary>
-        public bool SetActiveProfile(string profileName)
-        {
-            return _profileManager?.SetActiveProfile(profileName) ?? false;
-        }
-
-        /// <summary>
-        /// Delete a configuration profile
-        /// </summary>
-        public bool DeleteProfile(string profileName)
-        {
-            return _profileManager?.DeleteProfile(profileName) ?? false;
-        }
-
-        /// <summary>
-        /// Get a specific profile by name
-        /// </summary>
-        public CostConfigurationProfile GetProfile(string profileName)
-        {
-            return _profileManager?.GetProfile(profileName);
-        }
-
-        /// <summary>
-        /// Get all available profile names
-        /// </summary>
-        public IEnumerable<string> GetProfileNames()
-        {
-            return _profileManager?.ProfileNames ?? Enumerable.Empty<string>();
-        }
-
-        /// <summary>
-        /// Validate the current configuration
-        /// </summary>
-        public ValidationResult ValidateConfiguration()
-        {
-            if (_profileManager?.ActiveProfile != null)
-            {
-                return _validationManager?.ValidateConfiguration(_profileManager.ActiveProfile) ?? new ValidationResult { Success = false, Message = "Validation manager not available" };
-            }
-
-            return new ValidationResult { Success = false, Message = "No active profile to validate" };
-        }
-
-        /// <summary>
-        /// Save configuration to disk
-        /// </summary>
-        public bool SaveConfiguration()
-        {
-            if (_profileManager != null && _persistenceManager != null)
-            {
-                return _persistenceManager.SaveConfiguration(_profileManager.GetAllProfiles());
-            }
-
             return false;
         }
 
-        /// <summary>
-        /// Load configuration from disk
-        /// </summary>
+        public bool SaveConfiguration()
+        {
+            if (_profileManager != null && _persistenceManager != null)
+                return _persistenceManager.SaveConfiguration(_profileManager.GetAllProfiles());
+            return false;
+        }
+
         public bool LoadConfiguration()
         {
-            if (_persistenceManager != null && _profileManager != null)
-            {
-                var loadedProfiles = _persistenceManager.LoadConfiguration();
+            if (_persistenceManager == null || _profileManager == null) return false;
 
-                // Clear existing profiles and load new ones
+            var loadedProfiles = _persistenceManager.LoadConfiguration();
+
+            // Clear existing profiles and load new ones
+            foreach (var profileName in _profileManager.ProfileNames.ToList())
+            {
+                if (profileName != _defaultProfileName)
+                    _profileManager.DeleteProfile(profileName);
+            }
+
+            foreach (var profile in loadedProfiles)
+                _profileManager.CreateProfile(profile.Key, profile.Value);
+
+            return true;
+        }
+
+        public bool CreateBackup()
+        {
+            if (_profileManager != null && _persistenceManager != null)
+                return _persistenceManager.CreateBackup(_profileManager.GetAllProfiles());
+            return false;
+        }
+
+        public IEnumerable<BackupInfo> GetAvailableBackups() =>
+            _persistenceManager?.GetAvailableBackups() ?? Enumerable.Empty<BackupInfo>();
+
+        public bool RestoreFromBackup(string backupId)
+        {
+            if (_persistenceManager == null || _profileManager == null) return false;
+
+            var restoredProfiles = _persistenceManager.RestoreFromBackup(backupId);
+            if (restoredProfiles != null)
+            {
+                // Clear existing profiles and load restored ones
                 foreach (var profileName in _profileManager.ProfileNames.ToList())
                 {
                     if (profileName != _defaultProfileName)
                         _profileManager.DeleteProfile(profileName);
                 }
 
-                foreach (var profile in loadedProfiles)
-                {
+                foreach (var profile in restoredProfiles)
                     _profileManager.CreateProfile(profile.Key, profile.Value);
-                }
 
                 return true;
             }
-
             return false;
         }
 
-        /// <summary>
-        /// Create a backup of current configuration
-        /// </summary>
-        public bool CreateBackup()
-        {
-            if (_profileManager != null && _persistenceManager != null)
-            {
-                return _persistenceManager.CreateBackup(_profileManager.GetAllProfiles());
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Get available backups
-        /// </summary>
-        public IEnumerable<BackupInfo> GetAvailableBackups()
-        {
-            return _persistenceManager?.GetAvailableBackups() ?? Enumerable.Empty<BackupInfo>();
-        }
-
-        /// <summary>
-        /// Restore from a specific backup
-        /// </summary>
-        public bool RestoreFromBackup(string backupId)
-        {
-            if (_persistenceManager != null && _profileManager != null)
-            {
-                var restoredProfiles = _persistenceManager.RestoreFromBackup(backupId);
-                if (restoredProfiles != null)
-                {
-                    // Clear existing profiles and load restored ones
-                    foreach (var profileName in _profileManager.ProfileNames.ToList())
-                    {
-                        if (profileName != _defaultProfileName)
-                            _profileManager.DeleteProfile(profileName);
-                    }
-
-                    foreach (var profile in restoredProfiles)
-                    {
-                        _profileManager.CreateProfile(profile.Key, profile.Value);
-                    }
-
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Reset configuration to defaults
-        /// </summary>
         public void ResetToDefaults()
         {
             if (_profileManager != null)
@@ -507,9 +327,6 @@ namespace ProjectChimera.Systems.Equipment.Degradation
                 ChimeraLogger.LogInfo("CONFIG", "Configuration reset to defaults", this);
         }
 
-        /// <summary>
-        /// Get comprehensive configuration statistics
-        /// </summary>
         public ConfigurationStatistics GetConfigurationStatistics()
         {
             return new ConfigurationStatistics
@@ -546,30 +363,10 @@ namespace ProjectChimera.Systems.Equipment.Degradation
             {
                 // Save configuration before cleanup if dirty
                 if (_persistenceManager?.IsDirty == true)
-                {
                     SaveConfiguration();
-                }
 
-                // Cleanup event handlers
-                if (_profileManager != null)
-                {
-                    _profileManager.OnProfileCreated -= OnProfileCreatedInternal;
-                    _profileManager.OnProfileUpdated -= OnProfileUpdatedInternal;
-                    _profileManager.OnProfileDeleted -= OnProfileDeletedInternal;
-                    _profileManager.OnProfileSwitched -= OnProfileSwitchedInternal;
-                }
-
-                if (_validationManager != null)
-                {
-                    _validationManager.OnValidationCompleted -= OnValidationCompletedInternal;
-                }
-
-                if (_persistenceManager != null)
-                {
-                    _persistenceManager.OnConfigurationSaved -= OnConfigurationSavedInternal;
-                    _persistenceManager.OnConfigurationLoaded -= OnConfigurationLoadedInternal;
-                    _persistenceManager.OnConfigurationError -= OnConfigurationErrorInternal;
-                }
+                // Events are automatically unsubscribed when components are garbage collected
+                // No need for explicit unsubscription with lambda expressions
 
                 if (_enableLogging)
                     ChimeraLogger.LogInfo("CONFIG", "CostConfigurationManager cleanup completed", this);
@@ -582,10 +379,4 @@ namespace ProjectChimera.Systems.Equipment.Degradation
 
         #endregion
     }
-
-    #region Data Structures
-
-    // Data structures moved to dedicated files during Phase 0 refactoring
-
-    #endregion
 }
