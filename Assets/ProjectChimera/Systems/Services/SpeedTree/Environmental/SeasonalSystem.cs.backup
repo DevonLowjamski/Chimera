@@ -24,7 +24,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         private float _seasonTimer = 0f;
 
         // Seasonal effects data
-        private Dictionary<Season, SeasonalEffects> _seasonalEffects = new Dictionary<Season, SeasonalEffects>();
+        private Dictionary<Season, SeasonalEffectProfile> _seasonalEffects = new Dictionary<Season, SeasonalEffectProfile>();
         private Dictionary<int, PlantSeasonalData> _plantSeasonalData = new Dictionary<int, PlantSeasonalData>();
 
         // Shader property IDs
@@ -41,7 +41,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         #region Initialization
         public void Initialize()
         {
-            UnityEngine.Debug.Log("Operation completed");
+            ChimeraLogger.Log("SPEEDTREE/SEASON", "SeasonalSystem Initialize", this);
 
             // Cache shader properties
             CacheShaderProperties();
@@ -53,17 +53,17 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             _seasonTimer = 0f;
             _seasonalTransitionProgress = 1f; // Start fully transitioned
 
-            UnityEngine.Debug.Log("Operation completed");
+            ChimeraLogger.Log("SPEEDTREE/SEASON", "SeasonalSystem Initialized", this);
         }
 
         public void Shutdown()
         {
-            UnityEngine.Debug.Log("Operation completed");
+            ChimeraLogger.Log("SPEEDTREE/SEASON", "SeasonalSystem Shutdown", this);
 
             _seasonalEffects.Clear();
             _plantSeasonalData.Clear();
 
-            UnityEngine.Debug.Log("Operation completed");
+            ChimeraLogger.Log("SPEEDTREE/SEASON", "SeasonalSystem Shutdown Complete", this);
         }
 
         private void CacheShaderProperties()
@@ -76,7 +76,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         private void InitializeSeasonalEffects()
         {
             // Spring effects - growth and renewal
-            _seasonalEffects[Season.Spring] = new SeasonalEffects
+            _seasonalEffects[Season.Spring] = new SeasonalEffectProfile
             {
                 Tint = new Color(0.8f, 1.0f, 0.8f, 1.0f), // Slight green tint
                 Brightness = 1.1f,
@@ -87,7 +87,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             };
 
             // Summer effects - peak growth and heat
-            _seasonalEffects[Season.Summer] = new SeasonalEffects
+            _seasonalEffects[Season.Summer] = new SeasonalEffectProfile
             {
                 Tint = new Color(1.0f, 1.0f, 0.9f, 1.0f), // Warm yellow tint
                 Brightness = 1.2f,
@@ -98,7 +98,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             };
 
             // Autumn effects - maturation and color change
-            _seasonalEffects[Season.Autumn] = new SeasonalEffects
+            _seasonalEffects[Season.Autumn] = new SeasonalEffectProfile
             {
                 Tint = new Color(1.0f, 0.8f, 0.6f, 1.0f), // Orange-brown tint
                 Brightness = 0.9f,
@@ -109,7 +109,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             };
 
             // Winter effects - dormancy and cold
-            _seasonalEffects[Season.Winter] = new SeasonalEffects
+            _seasonalEffects[Season.Winter] = new SeasonalEffectProfile
             {
                 Tint = new Color(0.9f, 0.9f, 1.0f, 1.0f), // Cool blue tint
                 Brightness = 0.7f,
@@ -156,7 +156,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log("Operation completed");
+                ChimeraLogger.Log("SPEEDTREE/SEASON", "SeasonalSystem Update Exception", this);
             }
         }
 
@@ -169,7 +169,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
 
             OnSeasonChanged?.Invoke(_currentSeason);
 
-            UnityEngine.Debug.Log("Operation completed");
+            ChimeraLogger.Log("SPEEDTREE/SEASON", $"Season changed to {_currentSeason}", this);
         }
 
         private Season GetNextSeason(Season currentSeason)
@@ -197,7 +197,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
 
             OnSeasonChanged?.Invoke(_currentSeason);
 
-            UnityEngine.Debug.Log("Operation completed");
+            ChimeraLogger.Log("SPEEDTREE/SEASON", $"Season set to {_currentSeason}", this);
         }
 
         #endregion
@@ -231,7 +231,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log("Operation completed");
+                ChimeraLogger.LogWarning("SPEEDTREE/SEASON", "ApplySeasonalEffects exception", this);
             }
         }
 
@@ -248,7 +248,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             }
         }
 
-        private void ApplySeasonalEffectsToPlant(int plantId, SeasonalEffects effects, PlantSeasonalData plantData)
+        private void ApplySeasonalEffectsToPlant(int plantId, SeasonalEffectProfile effects, PlantSeasonalData plantData)
         {
             // Find SpeedTree renderers for this plant
             var renderers = FindPlantRenderers(plantId);
@@ -262,7 +262,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             plantData.SeasonalAdaptation = CalculateSeasonalAdaptation(plantData, effects);
         }
 
-        private void ApplySeasonalEffectsToRenderer(Renderer renderer, SeasonalEffects effects, float transitionProgress)
+        private void ApplySeasonalEffectsToRenderer(Renderer renderer, SeasonalEffectProfile effects, float transitionProgress)
         {
             if (renderer == null || renderer.sharedMaterial == null) return;
 
@@ -293,7 +293,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log("Operation completed");
+                ChimeraLogger.Log("SPEEDTREE/SEASON", "ApplySeasonalEffectsToRenderer Exception", this);
             }
         }
 
@@ -314,7 +314,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
 
         #region Seasonal Calculations
 
-        private float CalculateSeasonalAdaptation(PlantSeasonalData plantData, SeasonalEffects effects)
+        private float CalculateSeasonalAdaptation(PlantSeasonalData plantData, SeasonalEffectProfile effects)
         {
             // Calculate how well the plant adapts to seasonal conditions
             float adaptation = plantData.SeasonalAdaptation;
@@ -345,6 +345,38 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         }
 
         /// <summary>
+        /// Get current seasonal state
+        /// </summary>
+        public SeasonalState GetCurrentSeasonalState()
+        {
+            return new SeasonalState
+            {
+                CurrentSeason = _currentSeason,
+                TransitionProgress = _seasonalTransitionProgress,
+                IsTransitioning = _seasonalTransitionProgress > 0f && _seasonalTransitionProgress < 1f
+            };
+        }
+
+        /// <summary>
+        /// Get seasonal conditions for environmental calculations
+        /// </summary>
+        public SeasonalConditions GetSeasonalConditions()
+        {
+            var effectProfile = _seasonalEffects.ContainsKey(_currentSeason) ?
+                _seasonalEffects[_currentSeason] : new SeasonalEffectProfile();
+
+            return new SeasonalConditions
+            {
+                Season = _currentSeason,
+                TemperatureModifier = effectProfile.TemperatureModifier,
+                HumidityModifier = effectProfile.HumidityModifier,
+                LightIntensityModifier = effectProfile.LightIntensityModifier,
+                GrowthRateModifier = effectProfile.GrowthMultiplier,
+                TransitionProgress = _seasonalTransitionProgress
+            };
+        }
+
+        /// <summary>
         /// Gets the stress multiplier for current season
         /// </summary>
         public float GetSeasonalStressMultiplier()
@@ -359,6 +391,87 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         #endregion
 
         #region Public Interface
+
+        /// <summary>
+        /// Register a plant for seasonal effects
+        /// </summary>
+        public void RegisterPlant(int plantId)
+        {
+            if (plantId <= 0) return;
+
+            if (!_plantSeasonalData.ContainsKey(plantId))
+            {
+                var plantData = new PlantSeasonalData(plantId);
+                _plantSeasonalData[plantId] = plantData;
+                ChimeraLogger.Log("SPEEDTREE/SEASON", $"Registered plant {plantId} for seasonal effects", this);
+            }
+        }
+
+        /// <summary>
+        /// Unregister a plant from seasonal effects
+        /// </summary>
+        public void UnregisterPlant(int plantId)
+        {
+            if (_plantSeasonalData.ContainsKey(plantId))
+            {
+                _plantSeasonalData.Remove(plantId);
+                ChimeraLogger.Log("SPEEDTREE/SEASON", $"Unregistered plant {plantId} from seasonal effects", this);
+            }
+        }
+
+        /// <summary>
+        /// Update seasonal effects for a specific plant
+        /// </summary>
+        public void UpdateSeasonalEffects(int plantId, Season season)
+        {
+            if (plantId <= 0) return;
+
+            // Ensure plant is registered
+            RegisterPlant(plantId);
+
+            // Apply seasonal effects for the specified season
+            ApplySeasonalEffects(plantId, season);
+
+            ChimeraLogger.Log("SPEEDTREE/SEASON", $"Updated seasonal effects for plant {plantId} to {season}", this);
+        }
+
+        /// <summary>
+        /// Get seasonal system statistics
+        /// </summary>
+        public SeasonalStatistics GetStatistics()
+        {
+            return new SeasonalStatistics
+            {
+                CurrentSeason = _currentSeason,
+                TransitionProgress = _seasonalTransitionProgress,
+                RegisteredPlants = _plantSeasonalData.Count,
+                SeasonalChangesEnabled = _enableSeasonalChanges,
+                TransitionDuration = _seasonalTransitionDuration,
+                UpdateFrequency = _seasonalUpdateFrequency
+            };
+        }
+
+        /// <summary>
+        /// Enable or disable seasonal changes
+        /// </summary>
+        public bool EnableSeasonalChanges
+        {
+            get => _enableSeasonalChanges;
+            set => _enableSeasonalChanges = value;
+        }
+
+        /// <summary>
+        /// Reset seasonal system to default state
+        /// </summary>
+        public void ResetSeasonal()
+        {
+            _currentSeason = Season.Spring;
+            _seasonalTransitionProgress = 1f;
+            _seasonTimer = 0f;
+            _plantSeasonalData.Clear();
+
+            ChimeraLogger.Log("SPEEDTREE/SEASON", "Reset seasonal system to default state", this);
+        }
 
         /// <summary>
         /// Gets the current season
@@ -379,13 +492,13 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         /// <summary>
         /// Gets seasonal effects for a specific season
         /// </summary>
-        public SeasonalEffects GetSeasonalEffects(Season season)
+        public SeasonalEffectProfile GetSeasonalEffects(Season season)
         {
             if (_seasonalEffects.TryGetValue(season, out var effects))
             {
                 return effects;
             }
-            return new SeasonalEffects();
+            return new SeasonalEffectProfile();
         }
 
         /// <summary>
@@ -414,7 +527,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log("Operation completed");
+                ChimeraLogger.Log("SPEEDTREE/SEASON", "Tick Exception", this);
             }
         }
 
@@ -424,27 +537,19 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
     #region Data Structures
 
     /// <summary>
-    /// Seasons enumeration
-    /// </summary>
-    public enum Season
-    {
-        Spring,
-        Summer,
-        Autumn,
-        Winter
-    }
-
-    /// <summary>
-    /// Seasonal effects data
+    /// Seasonal effects profile used by SeasonalSystem
     /// </summary>
     [Serializable]
-    public struct SeasonalEffects
+    public struct SeasonalEffectProfile
     {
         public Color Tint;
         public float Brightness;
         public float Contrast;
         public float GrowthMultiplier;
         public float StressMultiplier;
+        public float TemperatureModifier;
+        public float HumidityModifier;
+        public float LightIntensityModifier;
         public string Description;
     }
 
@@ -467,5 +572,37 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         }
     }
 
+    /// <summary>
+    /// Seasonal system statistics
+    /// </summary>
+    [Serializable]
+    public struct SeasonalStatistics
+    {
+        public Season CurrentSeason;
+        public float TransitionProgress;
+        public int RegisteredPlants;
+        public bool SeasonalChangesEnabled;
+        public float TransitionDuration;
+        public float UpdateFrequency;
+    }
+
     #endregion
+
+    /// <summary>
+    /// Seasonal state data structure
+    /// </summary>
+
+    /// <summary>
+    /// Seasonal conditions for environmental calculations
+    /// </summary>
+    [Serializable]
+    public struct SeasonalConditions
+    {
+        public Season Season;
+        public float TemperatureModifier;
+        public float HumidityModifier;
+        public float LightIntensityModifier;
+        public float GrowthRateModifier;
+        public float TransitionProgress;
+    }
 }

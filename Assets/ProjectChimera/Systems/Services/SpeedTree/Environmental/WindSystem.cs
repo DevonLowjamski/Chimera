@@ -584,36 +584,3 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
     /// Settings for individual wind zones
     /// </summary>
     [Serializable]
-    public class WindZoneSettings
-    {
-        public float Strength;
-        public Vector3 Direction;
-        public float Radius;
-        public WindZone Zone;
-
-        public WindZoneSettings(WindZone zone)
-        {
-            Zone = zone;
-            Strength = zone.windMain;
-            Direction = zone.transform.forward;
-            Radius = zone.radius;
-        }
-    }
-
-
-    /// <summary>
-    /// Wind system statistics
-    /// </summary>
-    [Serializable]
-    public struct WindStatistics
-    {
-        public float GlobalWindStrength;
-        public float CurrentWindStrength;
-        public Vector3 WindDirection;
-        public int ActiveWindZones;
-        public bool WindAnimationEnabled;
-        public float UpdateFrequency;
-    }
-
-    #endregion
-}

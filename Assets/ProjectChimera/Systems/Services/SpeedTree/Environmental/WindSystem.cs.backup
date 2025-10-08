@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using ProjectChimera.Core;
+using System.Linq;
+using Logger = ProjectChimera.Core.Logging.ChimeraLogger;
 
 namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
 {
@@ -29,6 +31,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         private Vector3 _currentWindDirection = Vector3.zero;
         private float _windVariationTimer = 0f;
         private float _windGustTimer = 0f;
+        private float _gustStrength = 0f;
 
         // Shader property IDs for wind effects
         private int _windStrengthPropertyId;
@@ -44,7 +47,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         #region Initialization
         public void Initialize()
         {
-            UnityEngine.Debug.Log("Operation completed");
+            Logger.Log("SPEEDTREE/WIND", "Initialize", this);
 
             // Cache shader property IDs
             CacheShaderProperties();
@@ -56,17 +59,17 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             // Find existing wind zones
             FindExistingWindZones();
 
-            UnityEngine.Debug.Log("Operation completed");
+            Logger.Log("SPEEDTREE/WIND", "Initialized", this);
         }
 
         public void Shutdown()
         {
-            UnityEngine.Debug.Log("Operation completed");
+            Logger.Log("SPEEDTREE/WIND", "Shutdown", this);
 
             _windZones.Clear();
             _activeWindZones.Clear();
 
-            UnityEngine.Debug.Log("Operation completed");
+            Logger.Log("SPEEDTREE/WIND", "Shutdown Complete", this);
         }
 
         private void CacheShaderProperties()
@@ -78,26 +81,19 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
 
         private void FindExistingWindZones()
         {
-            // Primary: Try ServiceContainer resolution for registered WindZones
-            var windZones = ServiceContainerFactory.Instance.ResolveAll<WindZone>();
-            if (windZones?.Any() != true)
+            // Primary: Try GameObjectRegistry for registered WindZones
+            var registry = ServiceContainerFactory.Instance?.TryResolve<ProjectChimera.Core.Performance.IGameObjectRegistry>();
+            var windZones = registry?.GetAll<WindZone>();
+
+            if (windZones != null && windZones.Any())
             {
-                // Fallback: Scene discovery + auto-registration
-                windZones = UnityEngine.Object.FindObjectsOfType<WindZone>();
-                
-                // Auto-register discovered WindZones in ServiceContainer for future use
-                foreach (var windZone in windZones)
-                {
-                    ServiceContainerFactory.Instance.RegisterInstance<WindZone>(windZone);
-                }
-                
-                UnityEngine.Debug.Log("Operation completed");
+                Logger.Log("SPEEDTREE/WIND", "Resolved WindZones from GameObjectRegistry", this);
             }
             else
             {
-                UnityEngine.Debug.Log("Operation completed");
+                Logger.Log("SPEEDTREE/WIND", "Using registered WindZones", this);
             }
-            
+
             foreach (var windZone in windZones)
             {
                 RegisterWindZone(windZone);
@@ -120,11 +116,11 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
                 _windZones[windZone] = settings;
                 _activeWindZones.Add(windZone);
 
-                UnityEngine.Debug.Log("Operation completed");
+                Logger.Log("SPEEDTREE/WIND", "Registered wind zone", this);
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log("Operation completed");
+                Logger.LogWarning("SPEEDTREE/WIND", "RegisterWindZone failed", this);
             }
         }
 
@@ -138,7 +134,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             _windZones.Remove(windZone);
             _activeWindZones.Remove(windZone);
 
-            UnityEngine.Debug.Log("Operation completed");
+            Logger.Log("SPEEDTREE/WIND", "Unregistered wind zone", this);
         }
 
         /// <summary>
@@ -158,7 +154,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log("Operation completed");
+                Logger.Log("SPEEDTREE/WIND", "Wind gust", this);
             }
         }
 
@@ -196,18 +192,18 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log("Operation completed");
+                Logger.Log("SPEEDTREE/WIND", "Registered discovered Renderers", this);
             }
         }
 
         private void UpdateWindVariation()
         {
             // Add natural wind variation
-            float variationStrength = Random.Range(0.8f, 1.2f);
+            float variationStrength = UnityEngine.Random.Range(0.8f, 1.2f);
             float newStrength = _globalWindStrength * variationStrength;
 
             // Slight direction variation
-            float angleVariation = Random.Range(-10f, 10f);
+            float angleVariation = UnityEngine.Random.Range(-10f, 10f);
             Vector3 newDirection = Quaternion.Euler(0, angleVariation, 0) * _globalWindDirection;
 
             // Update if significant change
@@ -227,12 +223,12 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         private void UpdateWindGusts()
         {
             // Occasional wind gusts
-            if (Random.value < 0.1f) // 10% chance per gust interval
+            if (UnityEngine.Random.value < 0.1f) // 10% chance per gust interval
             {
-                float gustStrength = Random.Range(1.5f, 3.0f);
+                float gustStrength = UnityEngine.Random.Range(1.5f, 3.0f);
                 OnWindGust?.Invoke(gustStrength);
 
-                UnityEngine.Debug.Log("Operation completed");
+                Logger.LogWarning("SPEEDTREE/WIND", "ApplyWindToRenderer failed", this);
             }
         }
 
@@ -242,22 +238,16 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
 
         private void ApplyGlobalWindToRenderers()
         {
-            // Primary: Try ServiceContainer resolution for registered Renderers
-            var allRenderers = ServiceContainerFactory.Instance.ResolveAll<Renderer>();
-            if (allRenderers?.Any() != true)
+            // Primary: Try GameObjectRegistry for registered Renderers
+            var registry = ServiceContainerFactory.Instance?.TryResolve<ProjectChimera.Core.Performance.IGameObjectRegistry>();
+            var allRenderers = registry?.GetAll<Renderer>();
+
+            if (allRenderers == null || !allRenderers.Any())
             {
-                // Fallback: Scene discovery + auto-registration
-                allRenderers = UnityEngine.Object.FindObjectsOfType<Renderer>();
-                
-                // Auto-register discovered Renderers in ServiceContainer for future use
-                foreach (var renderer in allRenderers)
-                {
-                    ServiceContainerFactory.Instance.RegisterInstance<Renderer>(renderer);
-                }
-                
-                UnityEngine.Debug.Log("Operation completed");
+                Logger.LogWarning("SPEEDTREE/WIND", "No Renderers found - ensure they are registered with GameObjectRegistry in Awake()", this);
+                return;
             }
-            
+
             // Filter for SpeedTree renderers
             var renderers = allRenderers
                 .Where(r => r.sharedMaterial != null &&
@@ -274,15 +264,16 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         {
             if (windZone == null) return;
 
-            // Primary: Try ServiceContainer resolution for registered Renderers
-            var allRenderers = ServiceContainerFactory.Instance.ResolveAll<Renderer>();
-            if (allRenderers?.Any() != true)
+            // Primary: Try GameObjectRegistry for registered Renderers
+            var registry = ServiceContainerFactory.Instance?.TryResolve<ProjectChimera.Core.Performance.IGameObjectRegistry>();
+            var allRenderers = registry?.GetAll<Renderer>();
+
+            if (allRenderers == null || !allRenderers.Any())
             {
-                // Fallback: Scene discovery (should already be registered from previous calls)
-                allRenderers = UnityEngine.Object.FindObjectsOfType<Renderer>();
-                UnityEngine.Debug.Log("Operation completed");
+                Logger.LogWarning("SPEEDTREE/WIND", "No Renderers found for wind zone - ensure they are registered with GameObjectRegistry", this);
+                return;
             }
-            
+
             // Find renderers within wind zone range
             var renderers = allRenderers
                 .Where(r => r.sharedMaterial != null &&
@@ -322,7 +313,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log("Operation completed");
+                Logger.LogWarning("SPEEDTREE/WIND", "ApplyWindToRenderer exception", this);
             }
         }
 
@@ -342,7 +333,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             settings.Direction = windZone.transform.forward;
 
             // Apply zone-specific variations
-            settings.Strength *= Random.Range(0.9f, 1.1f);
+            settings.Strength *= UnityEngine.Random.Range(0.9f, 1.1f);
         }
 
         private WindZoneSettings CreateWindSettingsForZone(WindZone windZone)
@@ -353,6 +344,106 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         #endregion
 
         #region Public Interface
+
+        /// <summary>
+        /// Register a plant for wind effects
+        /// </summary>
+        public void RegisterPlant(int plantId)
+        {
+            if (plantId <= 0) return;
+
+            // For this implementation, wind effects are applied globally to all SpeedTree renderers
+            // Individual plant registration could be used for more specific wind effects
+            Logger.Log("SPEEDTREE/WIND", $"Registered plant {plantId} for wind effects", this);
+        }
+
+        /// <summary>
+        /// Unregister a plant from wind effects
+        /// </summary>
+        public void UnregisterPlant(int plantId)
+        {
+            if (plantId <= 0) return;
+
+            // For this implementation, wind effects are applied globally
+            // Individual plant unregistration could be used for more specific control
+            Logger.Log("SPEEDTREE/WIND", $"Unregistered plant {plantId} from wind effects", this);
+        }
+
+        /// <summary>
+        /// Update wind effects for specified plants
+        /// </summary>
+        public void UpdateWindEffects(int plantId, float windStrength, Vector3 windDirection)
+        {
+            if (plantId <= 0) return;
+
+            try
+            {
+                // Find renderers for this specific plant and apply wind effects
+                // For now, we'll apply to all SpeedTree renderers as a global effect
+                var registry = ServiceContainerFactory.Instance?.TryResolve<ProjectChimera.Core.Performance.IGameObjectRegistry>();
+                var allRenderers = registry?.GetAll<Renderer>();
+
+                if (allRenderers == null || !allRenderers.Any())
+                {
+                    Logger.LogWarning("SPEEDTREE/WIND", "No Renderers found for plant wind - ensure they are registered with GameObjectRegistry", this);
+                    return;
+                }
+
+                var speedTreeRenderers = allRenderers
+                    .Where(r => r.sharedMaterial != null &&
+                               r.sharedMaterial.shader != null &&
+                               r.sharedMaterial.shader.name.Contains("SpeedTree"));
+
+                foreach (var renderer in speedTreeRenderers)
+                {
+                    ApplyWindToRenderer(renderer, windStrength, windDirection);
+                }
+
+                Logger.Log("SPEEDTREE/WIND", $"Updated wind effects for plant {plantId}", this);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning("SPEEDTREE/WIND", $"Failed to update wind effects for plant {plantId}", this);
+            }
+        }
+
+        /// <summary>
+        /// Get wind system statistics
+        /// </summary>
+        public WindStatistics GetStatistics()
+        {
+            return new WindStatistics
+            {
+                GlobalWindStrength = _globalWindStrength,
+                CurrentWindStrength = _currentWindStrength,
+                WindDirection = _currentWindDirection,
+                ActiveWindZones = _activeWindZones.Count,
+                WindAnimationEnabled = _enableWindAnimation,
+                UpdateFrequency = _windVariationFrequency
+            };
+        }
+
+        /// <summary>
+        /// Enable or disable wind animation
+        /// </summary>
+        public bool EnableWindAnimation
+        {
+            get => _enableWindAnimation;
+            set => _enableWindAnimation = value;
+        }
+
+        /// <summary>
+        /// Reset wind system to default state
+        /// </summary>
+        public void ResetWind()
+        {
+            _currentWindStrength = _globalWindStrength;
+            _currentWindDirection = _globalWindDirection.normalized;
+            _windVariationTimer = 0f;
+            _windGustTimer = 0f;
+
+            Logger.Log("SPEEDTREE/WIND", "Reset wind system to default state", this);
+        }
 
         /// <summary>
         /// Sets the global wind strength
@@ -426,8 +517,62 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log("Operation completed");
+                Logger.LogWarning("SPEEDTREE/WIND", "Tick exception", this);
             }
+        }
+
+        /// <summary>
+        /// Get current wind state
+        /// </summary>
+        public WindState GetCurrentWindState()
+        {
+            return new WindState
+            {
+                CurrentStrength = _currentWindStrength,
+                CurrentDirection = _currentWindDirection,
+                GustStrength = _gustStrength
+            };
+        }
+
+        /// <summary>
+        /// Create a wind gust effect
+        /// </summary>
+        public void CreateWindGust(float gustStrength = 2.0f, float gustDuration = 1.5f)
+        {
+            StartCoroutine(CreateWindGustCoroutine(gustStrength, gustDuration));
+        }
+
+        private System.Collections.IEnumerator CreateWindGustCoroutine(float gustStrength, float gustDuration)
+        {
+            float originalStrength = _currentWindStrength;
+            float targetStrength = originalStrength * gustStrength;
+            float elapsedTime = 0f;
+
+            // Ramp up
+            while (elapsedTime < gustDuration * 0.3f)
+            {
+                float progress = elapsedTime / (gustDuration * 0.3f);
+                _currentWindStrength = Mathf.Lerp(originalStrength, targetStrength, progress);
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            // Hold
+            _currentWindStrength = targetStrength;
+            yield return new WaitForSeconds(gustDuration * 0.4f);
+
+            // Ramp down
+            elapsedTime = 0f;
+            while (elapsedTime < gustDuration * 0.3f)
+            {
+                float progress = elapsedTime / (gustDuration * 0.3f);
+                _currentWindStrength = Mathf.Lerp(targetStrength, originalStrength, progress);
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            _currentWindStrength = originalStrength;
+            OnWindGust?.Invoke(gustStrength);
         }
 
         #endregion
@@ -453,6 +598,21 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             Direction = zone.transform.forward;
             Radius = zone.radius;
         }
+    }
+
+
+    /// <summary>
+    /// Wind system statistics
+    /// </summary>
+    [Serializable]
+    public struct WindStatistics
+    {
+        public float GlobalWindStrength;
+        public float CurrentWindStrength;
+        public Vector3 WindDirection;
+        public int ActiveWindZones;
+        public bool WindAnimationEnabled;
+        public float UpdateFrequency;
     }
 
     #endregion

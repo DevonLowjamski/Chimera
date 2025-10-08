@@ -41,7 +41,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         #region Initialization
         public void Initialize()
         {
-            UnityEngine.Debug.Log("Operation completed");
+            ChimeraLogger.Log("SPEEDTREE/STRESS", "Initialize", this);
 
             // Cache shader properties
             CacheShaderProperties();
@@ -49,17 +49,17 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             // Initialize default gradients if not set
             InitializeDefaultGradients();
 
-            UnityEngine.Debug.Log("Operation completed");
+            ChimeraLogger.Log("SPEEDTREE/STRESS", "Initialized", this);
         }
 
         public void Shutdown()
         {
-            UnityEngine.Debug.Log("Operation completed");
+            ChimeraLogger.Log("SPEEDTREE/STRESS", "Shutdown", this);
 
             _plantStressData.Clear();
             _plantsNeedingVisualizationUpdate.Clear();
 
-            UnityEngine.Debug.Log("Operation completed");
+            ChimeraLogger.Log("SPEEDTREE/STRESS", "Shutdown Complete", this);
         }
 
         private void CacheShaderProperties()
@@ -129,11 +129,11 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
                 OnPlantHealthVisualizationChanged?.Invoke(plantId, healthLevel);
                 OnPlantStressVisualizationChanged?.Invoke(plantId, stressLevel);
 
-                UnityEngine.Debug.Log("Operation completed");
+                ChimeraLogger.Log("SPEEDTREE/STRESS", "Updated plant stress", this);
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log("Operation completed");
+                ChimeraLogger.LogWarning("SPEEDTREE/STRESS", "Update exception", this);
             }
         }
 
@@ -169,7 +169,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log("Operation completed");
+                ChimeraLogger.LogWarning("SPEEDTREE/STRESS", "Apply exception", this);
             }
         }
 
@@ -221,7 +221,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log("Operation completed");
+                ChimeraLogger.LogWarning("SPEEDTREE/STRESS", "Apply renderer exception", this);
             }
         }
 
@@ -256,7 +256,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log("Operation completed");
+                ChimeraLogger.LogWarning("SPEEDTREE/STRESS", "Apply environmental effects exception", this);
             }
         }
 
@@ -314,13 +314,130 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log("Operation completed");
+                ChimeraLogger.LogWarning("SPEEDTREE/STRESS", "Environmental effects renderer exception", this);
             }
         }
 
         #endregion
 
         #region Public Interface
+
+        /// <summary>
+        /// Register a plant for stress visualization
+        /// </summary>
+        public void RegisterPlant(int plantId)
+        {
+            if (plantId <= 0) return;
+
+            if (!_plantStressData.ContainsKey(plantId))
+            {
+                var visualization = new PlantStressVisualization(plantId);
+                _plantStressData[plantId] = visualization;
+                ChimeraLogger.Log("SPEEDTREE/STRESS", $"Registered plant {plantId} for stress visualization", this);
+            }
+        }
+
+        /// <summary>
+        /// Unregister a plant from stress visualization
+        /// </summary>
+        public void UnregisterPlant(int plantId)
+        {
+            if (_plantStressData.ContainsKey(plantId))
+            {
+                _plantStressData.Remove(plantId);
+                _plantsNeedingVisualizationUpdate.Remove(plantId);
+                ChimeraLogger.Log("SPEEDTREE/STRESS", $"Unregistered plant {plantId} from stress visualization", this);
+            }
+        }
+
+        /// <summary>
+        /// Update plant stress levels for visualization
+        /// </summary>
+        public void UpdatePlantStress(int plantId, float overallStress, float temperatureStress, float humidityStress, float lightStress)
+        {
+            if (plantId <= 0) return;
+
+            // Ensure plant is registered
+            RegisterPlant(plantId);
+
+            // Calculate health level from stress (inverse relationship)
+            float healthLevel = 1f - Mathf.Clamp01(overallStress);
+
+            // Update stress visualization
+            UpdatePlantStressVisualization(plantId, healthLevel, overallStress);
+
+            // Apply environmental stress indicators
+            var indicators = new EnvironmentalStressIndicators
+            {
+                TemperatureStress = temperatureStress,
+                HumidityStress = humidityStress,
+                LightStress = lightStress,
+                NutrientStress = 0f, // Default
+                PestStress = 0f,     // Default
+                DiseaseStress = 0f   // Default
+            };
+
+            ApplyEnvironmentalStressIndicators(plantId, indicators);
+        }
+
+        /// <summary>
+        /// Get stress visualization statistics
+        /// </summary>
+        public StressVisualizationStatistics GetStatistics()
+        {
+            int totalPlants = _plantStressData.Count;
+            int healthyPlants = 0;
+            int stressedPlants = 0;
+            float averageHealth = 0f;
+            float averageStress = 0f;
+
+            foreach (var data in _plantStressData.Values)
+            {
+                averageHealth += data.HealthLevel;
+                averageStress += data.StressLevel;
+
+                if (data.HealthLevel > 0.7f)
+                    healthyPlants++;
+                else if (data.StressLevel > 0.5f)
+                    stressedPlants++;
+            }
+
+            if (totalPlants > 0)
+            {
+                averageHealth /= totalPlants;
+                averageStress /= totalPlants;
+            }
+
+            return new StressVisualizationStatistics
+            {
+                TotalPlants = totalPlants,
+                HealthyPlants = healthyPlants,
+                StressedPlants = stressedPlants,
+                AverageHealthLevel = averageHealth,
+                AverageStressLevel = averageStress,
+                VisualizationEnabled = _enableStressVisualization,
+                UpdateFrequency = _visualizationUpdateFrequency
+            };
+        }
+
+        /// <summary>
+        /// Enable or disable stress visualization
+        /// </summary>
+        public bool EnableStressVisualization
+        {
+            get => _enableStressVisualization;
+            set => _enableStressVisualization = value;
+        }
+
+        /// <summary>
+        /// Reset all stress visualization data
+        /// </summary>
+        public void ResetVisualization()
+        {
+            _plantStressData.Clear();
+            _plantsNeedingVisualizationUpdate.Clear();
+            ChimeraLogger.Log("SPEEDTREE/STRESS", "Reset stress visualization data", this);
+        }
 
         /// <summary>
         /// Gets current stress visualization data for a plant
@@ -441,6 +558,11 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             DiseaseStress = 0f
         };
     }
+
+
+    /// <summary>
+    /// Stress visualization system statistics
+    /// </summary>
 
     #endregion
 }
