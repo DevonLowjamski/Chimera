@@ -3,6 +3,8 @@ using ProjectChimera.Core.Memory;
 using ProjectChimera.Data.Cultivation.Plant;
 using ProjectChimera.Data.Shared;
 using System.Collections.Generic;
+using ProjectChimera.Core.Logging;
+using ProjectChimera.Core.Updates;
 
 namespace ProjectChimera.Systems.Cultivation
 {
@@ -11,7 +13,7 @@ namespace ProjectChimera.Systems.Cultivation
     /// Demonstrates memory optimization techniques in cultivation system
     /// Week 10: Memory & GC Optimization
     /// </summary>
-    public class MemoryOptimizedCultivationManager : MonoBehaviour
+    public class MemoryOptimizedCultivationManager : MonoBehaviour, ITickable
     {
         [Header("Memory Optimization Settings")]
         [SerializeField] private bool _enableMemoryOptimization = true;
@@ -55,7 +57,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                Debug.Log("[MemoryOptimizedCultivationManager] Initialized with memory optimization");
+                ChimeraLogger.Log("CULTIVATION", "MemoryOptimizedCultivationManager initialized", this);
             }
         }
 
@@ -80,7 +82,7 @@ namespace ProjectChimera.Systems.Cultivation
             if (_enableLogging)
             {
                 var logMessage = StringOptimizer.Format("Added plant {0} ({1})", plant.PlantId, plant.StrainName);
-                Debug.Log(logMessage);
+                ChimeraLogger.Log("CULTIVATION", logMessage, this);
             }
         }
 
@@ -105,7 +107,7 @@ namespace ProjectChimera.Systems.Cultivation
 
                 if (_enableLogging)
                 {
-                    Debug.Log(StringOptimizer.Format("Removed plant {0}", plantId));
+                    ChimeraLogger.Log("CULTIVATION", $"Removed plant {plantId}", this);
                 }
                 return true;
             }
@@ -127,7 +129,7 @@ namespace ProjectChimera.Systems.Cultivation
             for (int i = 0; i < _plants.Count; i += batchSize)
             {
                 int batchEnd = Mathf.Min(i + batchSize, _plants.Count);
-                
+
                 for (int j = i; j < batchEnd; j++)
                 {
                     UpdateSinglePlant(_plants[j], deltaTime);
@@ -249,7 +251,7 @@ namespace ProjectChimera.Systems.Cultivation
 
             if (_enableLogging)
             {
-                Debug.Log("[MemoryOptimizedCultivationManager] Memory optimization performed");
+                ChimeraLogger.Log("PERFORMANCE", "OptimizeMemory completed for cultivation manager", this);
             }
         }
 
@@ -263,7 +265,7 @@ namespace ProjectChimera.Systems.Cultivation
             _plants = new MemoryOptimizedList<PlantInstance>(_initialPlantCapacity);
             _plantIdToIndex = new MemoryOptimizedDictionary<string, int>();
             _eventQueue = new MemoryOptimizedQueue<CultivationEvent>();
-            
+
             _eventPool = new MemoryPool<CultivationEvent>(
                 maxSize: 100,
                 factory: () => new CultivationEvent(),
@@ -315,14 +317,14 @@ namespace ProjectChimera.Systems.Cultivation
 
             // Use pooled update data
             var updateData = _updateDataPool.Get();
-            
+
             // Perform plant update logic (simplified)
             updateData.DeltaTime = deltaTime;
             updateData.PlantId = plant.PlantId;
-            
+
             // Simulate growth
             plant.Age += deltaTime;
-            
+
             if (plant.Health > 0.1f)
             {
                 plant.Height += deltaTime * 0.5f; // Simple growth
@@ -360,12 +362,12 @@ namespace ProjectChimera.Systems.Cultivation
         {
             // Event processing logic would go here
             // This is a simplified implementation
-            
+
             if (_enableLogging && cultEvent.EventType == CultivationEventType.PlantAdded)
             {
-                var message = StringOptimizer.Format("Processed event: {0} for plant {1}", 
+                var message = StringOptimizer.Format("Processed event: {0} for plant {1}",
                     _eventTypeStrings[cultEvent.EventType], cultEvent.PlantId);
-                Debug.Log(message);
+                ChimeraLogger.Log("CULTIVATION", message, this);
             }
         }
 
@@ -375,7 +377,7 @@ namespace ProjectChimera.Systems.Cultivation
         private void RebuildPlantIndex()
         {
             _plantIdToIndex.Clear();
-            
+
             for (int i = 0; i < _plants.Count; i++)
             {
                 _plantIdToIndex[_plants[i].PlantId] = i;
@@ -434,22 +436,29 @@ namespace ProjectChimera.Systems.Cultivation
 
         #endregion
 
-        private void Update()
-        {
-            if (IsInitialized)
-            {
-                UpdatePlants(Time.deltaTime);
-            }
-        }
+    public int TickPriority => 100;
+    public bool IsTickable => enabled && gameObject.activeInHierarchy;
 
-        private void OnDestroy()
-        {
-            _plants?.Dispose();
-            _plantIdToIndex?.Dispose();
-            _eventQueue?.Dispose();
-            _eventPool?.Dispose();
-            _updateDataPool?.Dispose();
-        }
+    public void Tick(float deltaTime)
+    {
+            if (IsInitialized)
+                UpdatePlants(deltaTime);
+    }
+
+    private void Awake()
+    {
+        UpdateOrchestrator.Instance.RegisterTickable(this);
+    }
+
+    private void OnDestroy()
+    {
+        UpdateOrchestrator.Instance.UnregisterTickable(this);
+        _plants?.Dispose();
+        _plantIdToIndex?.Dispose();
+        _eventQueue?.Dispose();
+        _eventPool?.Dispose();
+        _updateDataPool?.Dispose();
+    }
     }
 
     #region Data Structures
