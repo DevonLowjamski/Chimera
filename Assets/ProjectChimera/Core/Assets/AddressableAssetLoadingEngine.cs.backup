@@ -523,5 +523,74 @@ namespace ProjectChimera.Core.Assets
             }
         }
     }
+
+    /// <summary>
+    /// Loading operation tracking
+    /// </summary>
+    [System.Serializable]
+    public struct LoadingOperation
+    {
+        public string Address;
+        public DateTime StartTime;
+        public bool IsActive;
+    }
+
+    /// <summary>
+    /// Load request queuing
+    /// </summary>
+    [System.Serializable]
+    public struct LoadRequest
+    {
+        public string Address;
+        public Type AssetType;
+        public System.Action<object> OnComplete;
+        public System.Action<string> OnError;
+        public DateTime RequestTime;
+    }
+
+    /// <summary>
+    /// Loading statistics
+    /// </summary>
+    [System.Serializable]
+    public struct LoadingStats
+    {
+        public int LoadsAttempted;
+        public int LoadsSucceeded;
+        public int LoadsFailed;
+        public int LoadsCancelled;
+        public int LoadsTimedOut;
+        public int BatchLoadsCompleted;
+        public int BatchLoadsFailed;
+        public int AssetsReleased;
+        public float TotalLoadTime;
+
+        public readonly float SuccessRate => LoadsAttempted > 0 ? (float)LoadsSucceeded / LoadsAttempted : 0f;
+        public readonly float AverageLoadTime => LoadsSucceeded > 0 ? TotalLoadTime / LoadsSucceeded : 0f;
+    }
+
+    /// <summary>
+    /// Loading operation info
+    /// </summary>
+    [System.Serializable]
+    public struct LoadingOperationInfo
+    {
+        public string Address;
+        public DateTime StartTime;
+        public float Progress;
+        public float ElapsedTime;
+    }
+
+    /// <summary>
+    /// Loading summary
+    /// </summary>
+    [System.Serializable]
+    public struct LoadingSummary
+    {
+        public List<LoadingOperationInfo> ActiveOperations;
+        public int QueuedOperations;
+        public LoadingStats Stats;
+        public bool IsInitialized;
+        public int MaxConcurrentLoads;
+    }
 #endif
 }

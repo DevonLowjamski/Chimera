@@ -551,4 +551,95 @@ namespace ProjectChimera.Systems.Equipment.Degradation
 
         #endregion
     }
+
+    /// <summary>
+    /// Repair operation data
+    /// </summary>
+    [System.Serializable]
+    public class RepairOperation
+    {
+        public string RepairId;
+        public string MalfunctionId;
+        public string EquipmentId;
+        public RepairType RepairType;
+        public DateTime StartTime;
+        public TimeSpan EstimatedDuration;
+        public TimeSpan ActualDuration;
+        public float RepairQuality;
+        public bool UseSpecialist;
+        public List<string> RequiredParts;
+        public float EstimatedCost;
+        public float ActualCost;
+        public RepairStatus Status;
+        public float Progress;
+    }
+
+    /// <summary>
+    /// Repair type enumeration
+    /// </summary>
+    public enum RepairType
+    {
+        General,
+        Mechanical,
+        Electrical,
+        Software,
+        Thermal,
+        Calibration
+    }
+
+    /// <summary>
+    /// Repair status enumeration
+    /// </summary>
+    public enum RepairStatus
+    {
+        Pending,
+        InProgress,
+        Completed,
+        Failed,
+        Cancelled
+    }
+
+    /// <summary>
+    /// Repair statistics summary
+    /// </summary>
+    [System.Serializable]
+    public struct RepairStatistics
+    {
+        public int TotalRepairs;
+        public int SuccessfulRepairs;
+        public int FailedRepairs;
+        public float SuccessRate;
+        public float AverageRepairTime;
+        public float AverageRepairCost;
+        public float TotalRepairCost;
+    }
+
+    /// <summary>
+    /// Repair processor statistics
+    /// </summary>
+    [System.Serializable]
+    public struct MalfunctionRepairProcessorStats
+    {
+        public int RepairsStarted;
+        public int RepairsCompleted;
+        public int RepairsFailed;
+        public int RepairsCancelled;
+        public int RepairErrors;
+
+        public float TotalProcessingTime;
+        public float AverageProcessingTime;
+        public float MaxProcessingTime;
+
+        public float TotalRepairCost;
+        public float AverageRepairCost;
+        public float AverageRepairTime;
+
+        // Repair type counters
+        public int MechanicalRepairs;
+        public int ElectricalRepairs;
+        public int SoftwareRepairs;
+        public int ThermalRepairs;
+        public int CalibrationRepairs;
+        public int GeneralRepairs;
+    }
 }

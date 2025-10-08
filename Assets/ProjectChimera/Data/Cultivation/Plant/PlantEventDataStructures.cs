@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using ProjectChimera.Data.Cultivation;
+using ProjectChimera.Data.Shared;
 
 namespace ProjectChimera.Data.Cultivation.Plant
 {

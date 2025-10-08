@@ -91,7 +91,7 @@ namespace ProjectChimera.Core.DI.Validation
 
         private void ValidateServiceRegistrations(ValidationResults results)
         {
-            var registrations = _container.GetAllRegistrations();
+            var registrations = _container.GetRegistrations().Values.ToList();
             results.TotalServicesRegistered = registrations.Count;
 
             if (registrations.Count == 0)
@@ -133,7 +133,7 @@ namespace ProjectChimera.Core.DI.Validation
                 }
 
                 // Validate implementation is assignable to service type
-                if (registration.ImplementationType != null && 
+                if (registration.ImplementationType != null &&
                     !registration.ServiceType.IsAssignableFrom(registration.ImplementationType))
                 {
                     results.Errors.Add(new ValidationError
@@ -151,7 +151,7 @@ namespace ProjectChimera.Core.DI.Validation
 
         private void ValidateDependencies(ValidationResults results)
         {
-            var registrations = _container.GetAllRegistrations();
+            var registrations = _container.GetRegistrations().Values.ToList();
 
             foreach (var registration in registrations)
             {
@@ -195,7 +195,7 @@ namespace ProjectChimera.Core.DI.Validation
 
         private void ValidateCircularDependencies(ValidationResults results)
         {
-            var registrations = _container.GetAllRegistrations();
+            var registrations = _container.GetRegistrations().Values.ToList();
             var dependencyGraph = BuildDependencyGraph(registrations);
 
             foreach (var serviceType in dependencyGraph.Keys)
@@ -221,7 +221,7 @@ namespace ProjectChimera.Core.DI.Validation
 
         private void ValidateSingletonIntegrity(ValidationResults results)
         {
-            var registrations = _container.GetAllRegistrations();
+            var registrations = _container.GetRegistrations().Values.ToList();
 
             foreach (var registration in registrations)
             {
@@ -249,8 +249,9 @@ namespace ProjectChimera.Core.DI.Validation
                         {
                             if (_container.IsRegistered(dependency))
                             {
-                                var depRegistration = _container.GetRegistration(dependency);
-                                if (depRegistration.Lifetime == ServiceLifetime.Transient)
+                                var allRegistrations = _container.GetRegistrations();
+                                if (allRegistrations.TryGetValue(dependency, out var depRegistration) &&
+                                    depRegistration.Lifetime == ServiceLifetime.Transient)
                                 {
                                     results.Warnings.Add(new ValidationWarning
                                     {
@@ -269,7 +270,7 @@ namespace ProjectChimera.Core.DI.Validation
 
         private void ValidateInterfaceImplementations(ValidationResults results)
         {
-            var registrations = _container.GetAllRegistrations();
+            var registrations = _container.GetRegistrations().Values.ToList();
 
             foreach (var registration in registrations)
             {
@@ -306,7 +307,7 @@ namespace ProjectChimera.Core.DI.Validation
 
         private void ValidateLifecycleManagement(ValidationResults results)
         {
-            var registrations = _container.GetAllRegistrations();
+            var registrations = _container.GetRegistrations().Values.ToList();
 
             var lifecycleCounts = new Dictionary<ServiceLifetime, int>
             {
@@ -337,7 +338,7 @@ namespace ProjectChimera.Core.DI.Validation
             }
         }
 
-        private Dictionary<Type, List<Type>> BuildDependencyGraph(List<ServiceRegistration> registrations)
+        private Dictionary<Type, List<Type>> BuildDependencyGraph(List<ServiceRegistrationData> registrations)
         {
             var graph = new Dictionary<Type, List<Type>>();
 

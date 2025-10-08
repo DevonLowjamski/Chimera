@@ -48,7 +48,7 @@ namespace ProjectChimera.Core.DI.Validation
 
             try
             {
-                var registrations = _container.GetAllRegistrations();
+                var registrations = _container.GetRegistrations().Values.ToList();
                 report.TotalServices = registrations.Count;
 
                 foreach (var registration in registrations)
@@ -98,7 +98,7 @@ namespace ProjectChimera.Core.DI.Validation
         /// <summary>
         /// Check health of a specific service
         /// </summary>
-        public ServiceHealthCheck CheckServiceHealth(ServiceRegistration registration)
+        public ServiceHealthCheck CheckServiceHealth(ServiceRegistrationData registration)
         {
             var healthCheck = new ServiceHealthCheck
             {

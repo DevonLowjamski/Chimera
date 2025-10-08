@@ -1,9 +1,11 @@
 using UnityEngine;
 using ProjectChimera.Shared;
 using ProjectChimera.Data.Genetics;
+using ProjectChimera.Data.Cultivation;
 using System;
 using System.Linq;
 using ProjectChimera.Data.Shared;
+using GeneticPlantStrainSO = ProjectChimera.Data.Genetics.GeneticPlantStrainSO;
 
 
 namespace ProjectChimera.Data.Cultivation.Plant
@@ -245,7 +247,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
         /// <summary>
         /// Feed the plant
         /// </summary>
-        public FeedingResult Feed(float nutrientAmount)
+        public ProjectChimera.Data.Cultivation.FeedingResult Feed(float nutrientAmount)
         {
             InitializeModularSystem();
             var nutrients = new System.Collections.Generic.Dictionary<string, float>
@@ -254,10 +256,11 @@ namespace ProjectChimera.Data.Cultivation.Plant
             };
             _plantResources.Feed(nutrients);
 
-            var result = new FeedingResult
+            var result = new ProjectChimera.Data.Cultivation.FeedingResult
             {
-                NutrientAmount = nutrientAmount,
                 Success = true,
+                NutrientAmountApplied = nutrientAmount,
+                NutrientLevelAfter = _plantResources.NutrientLevel,
                 Timestamp = DateTime.Now
             };
 
@@ -425,6 +428,11 @@ namespace ProjectChimera.Data.Cultivation.Plant
             set => _currentGrowthStage = value;
         }
         public float AgeInDays => _ageInDays;
+        public int DaysSincePlanted
+        {
+            get => (int)_ageInDays;
+            set => _ageInDays = value;
+        }
         public float DaysInCurrentStage => _daysInCurrentStage;
         public Vector3 WorldPosition => _worldPosition;
         public float CurrentHeight => _currentHeight;
@@ -437,7 +445,11 @@ namespace ProjectChimera.Data.Cultivation.Plant
             get => _overallHealth;
             set => _overallHealth = Mathf.Clamp01(value);
         }
-        public float CurrentGrowthProgress => _maturityLevel;
+        public float CurrentGrowthProgress
+        {
+            get => _maturityLevel;
+            set => _maturityLevel = Mathf.Clamp01(value);
+        }
         public float MaturityLevel => _maturityLevel;
         public float Vigor => _vigor;
         public float StressLevel => _stressLevel;
@@ -467,19 +479,94 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public bool IsActive => _overallHealth > 0f && _currentGrowthStage != PlantGrowthStage.Dormant;
         public bool RequiresTraining => _stressLevel > 0.7f || _vigor < 0.3f;
 
+        // Additional compatibility aliases
+        public string PlantId => _plantID; // Alias for PlantID
+        public string PlantInstanceId => _plantID; // Alias for PlantID
+
+        // Writable CurrentGrowthProgress property
+        public float CurrentGrowthProgress_Writable
+        {
+            get => _maturityLevel;
+            set => _maturityLevel = Mathf.Clamp01(value);
+        }
+
+        /// <summary>
+        /// Initialize plant from strain data
+        /// </summary>
+        public void InitializeFromStrain(object strain)
+        {
+            if (strain != null)
+            {
+                // Convert to local PlantStrainSO type if possible
+                if (strain is PlantStrainSO localStrain)
+                {
+                    _strain = localStrain;
+                }
+                // Otherwise, keep _strain as null and extract data only
+
+                // Use a safe approach for plant name with fallback
+                _plantName = GetStrainName(strain);
+                // Use a safe approach for max height with fallback
+                _calculatedMaxHeight = GetStrainMaxHeight(strain);
+                // Initialize other strain-specific properties as needed
+            }
+        }
+
+        /// <summary>
+        /// Safely get strain name with fallback using pattern matching
+        /// </summary>
+        private string GetStrainName(object strain)
+        {
+            if (strain == null)
+                return "Unknown Strain";
+
+            // Use pattern matching to handle different PlantStrainSO types
+            switch (strain)
+            {
+                // Handle ScriptableObject PlantStrainSO from Data.Cultivation namespace
+                case ProjectChimera.Data.Cultivation.PlantStrainSO cultivationStrain:
+                    return cultivationStrain.StrainName ?? cultivationStrain.name ?? "Unknown Strain";
+
+                // Handle simple PlantStrainSO class from Data.Cultivation.Plant namespace
+                case PlantStrainSO simpleStrain:
+                    return simpleStrain.Name ?? "Unknown Strain";
+
+                // Fallback
+                default:
+                    return strain.ToString() ?? "Unknown Strain";
+            }
+        }
+
+        /// <summary>
+        /// Safely get max height from strain with fallback using pattern matching
+        /// </summary>
+        private float GetStrainMaxHeight(object strain)
+        {
+            if (strain == null)
+                return 150.0f;
+
+            // Use pattern matching to handle different PlantStrainSO types
+            switch (strain)
+            {
+                // Handle ScriptableObject PlantStrainSO from Data.Cultivation namespace
+                case ProjectChimera.Data.Cultivation.PlantStrainSO cultivationStrain:
+                    return cultivationStrain.MaxHeight;
+
+                // Handle simple PlantStrainSO class from Data.Cultivation.Plant namespace
+                case PlantStrainSO simpleStrain:
+                    // Simple strain doesn't have MaxHeight, use default
+                    return 150.0f;
+
+                // Fallback
+                default:
+                    return 150.0f;
+            }
+        }
+
         #endregion
     }
 
     // Additional data structures for PlantInstanceSO functionality
-    [System.Serializable]
-    public class TrainingResult
-    {
-        public string TrainingType;
-        public bool Success;
-        public float StressIncrease;
-        public DateTime TrainingDate;
-    }
-
     [System.Serializable]
     public class YieldCalculation
     {
@@ -490,7 +577,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
 
 
     [System.Serializable]
-    public class HarvestRecommendation
+    public class HarvestRecommendationSimple
     {
         public bool IsReady;
         public DateTime OptimalHarvestDate;
@@ -498,7 +585,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
     }
 
     [System.Serializable]
-    public class PostHarvestProcess
+    public class PostHarvestProcessSimple
     {
         public string ProcessType;
         public float Duration;
@@ -515,7 +602,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
     /// Result of watering operation
     /// </summary>
     [System.Serializable]
-    public class WateringResult
+    public class WateringResultSimple
     {
         public float WaterAmount;
         public bool Success;
@@ -527,7 +614,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
     /// Result of feeding operation
     /// </summary>
     [System.Serializable]
-    public class FeedingResult
+    public class FeedingResultSimple
     {
         public float NutrientAmount;
         public bool Success;

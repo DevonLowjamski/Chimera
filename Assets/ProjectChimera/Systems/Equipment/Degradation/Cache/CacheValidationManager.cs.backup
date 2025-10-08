@@ -497,4 +497,101 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Cache
 
         #endregion
     }
+
+    /// <summary>
+    /// Validation result information
+    /// </summary>
+    [System.Serializable]
+    public struct ValidationResult
+    {
+        public bool Success;
+        public DateTime StartTime;
+        public float ExecutionTime;
+        public int SampleSize;
+        public int ValidatedSamples;
+        public int AccurateEstimates;
+        public float OverallAccuracy;
+        public float AverageErrorMargin;
+        public string Message;
+    }
+
+    /// <summary>
+    /// Sample validation result
+    /// </summary>
+    [System.Serializable]
+    public struct SampleValidationResult
+    {
+        public string Key;
+        public float CachedCost;
+        public float RecalculatedCost;
+        public float ErrorMargin;
+        public bool IsAccurate;
+        public DateTime ValidationTime;
+
+        // Additional properties for compatibility
+        public bool IsValid { get; set; }
+        public string ValidationMessage { get; set; }
+    }
+
+    /// <summary>
+    /// Validation record for tracking individual items
+    /// </summary>
+    [System.Serializable]
+    public class ValidationRecord
+    {
+        public int ValidationCount = 0;
+        public int AccurateValidations = 0;
+        public float AccuracyRate = 0f;
+        public float TotalErrorMargin = 0f;
+        public float AverageErrorMargin = 0f;
+        public DateTime LastValidationTime = DateTime.MinValue;
+    }
+
+    /// <summary>
+    /// Validation sample for trend analysis
+    /// </summary>
+    [System.Serializable]
+    public struct ValidationSample
+    {
+        public string Key;
+        public float ErrorMargin;
+        public bool IsAccurate;
+        public DateTime Timestamp;
+    }
+
+    /// <summary>
+    /// Overall validation statistics
+    /// </summary>
+    [System.Serializable]
+    public class ValidationStatistics
+    {
+        public int TotalValidations = 0;
+        public int TotalSamplesValidated = 0;
+        public int TotalAccurateSamples = 0;
+        public float AverageAccuracy = 0f;
+        public float RecentAccuracy = 0f;
+        public DateTime LastValidationTime = DateTime.MinValue;
+    }
+
+    /// <summary>
+    /// Accuracy trend analysis
+    /// </summary>
+    [System.Serializable]
+    public struct AccuracyTrend
+    {
+        public TrendDirection Trend;
+        public float Confidence;
+        public float FirstPeriodAccuracy;
+        public float SecondPeriodAccuracy;
+    }
+
+    /// <summary>
+    /// Trend direction enumeration
+    /// </summary>
+    public enum TrendDirection
+    {
+        Declining,
+        Stable,
+        Improving
+    }
 }

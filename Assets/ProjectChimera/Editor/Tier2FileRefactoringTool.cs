@@ -326,7 +326,7 @@ namespace ProjectChimera.Editor
                 var file = _tier2Files[i];
                 var progress = (float)(i + 1) / _tier2Files.Count;
 
-                EditorUtility.DisplayProgressBar("Tier 2 Refactoring", 
+                EditorUtility.DisplayProgressBar("Tier 2 Refactoring",
                     $"Processing: {file.FileName} ({i + 1}/{_tier2Files.Count})", progress);
 
                 AnalyzeFileStructure(file);
@@ -352,7 +352,7 @@ namespace ProjectChimera.Editor
             for (int i = 0; i < _tier2Files.Count; i++)
             {
                 var file = _tier2Files[i];
-                var planSummary = file.RefactoringPlan?.Replace("\n", " ").Substring(0, Mathf.Min(50, file.RefactoringPlan.Length ?? 0)) ?? "Not analyzed";
+                var planSummary = file.RefactoringPlan?.Replace("\n", " ").Substring(0, Mathf.Min(50, file.RefactoringPlan?.Length ?? 0)) ?? "Not analyzed";
                 report += $"| {i + 1} | `{file.FileName}` | {file.LineCount} | {file.Status} | {planSummary}... |\n";
             }
 

@@ -1,6 +1,8 @@
 // REFACTORED: Data Structures
 // Extracted from AddressableAssetLoadingEngine.cs for better separation of concerns
 
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ProjectChimera.Core.Assets

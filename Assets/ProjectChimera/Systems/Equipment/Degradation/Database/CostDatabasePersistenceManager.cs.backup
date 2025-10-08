@@ -544,7 +544,67 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Database
 
     #region Data Structures
 
-    // Data structures moved to dedicated files during Phase 0 refactoring
+    /// <summary>
+    /// Database persistence statistics
+    /// </summary>
+    [System.Serializable]
+    public class DatabasePersistenceStatistics
+    {
+        public int TotalSaves = 0;
+        public int TotalLoads = 0;
+        public int SaveErrors = 0;
+        public int LoadErrors = 0;
+        public int BackupsCreated = 0;
+        public int BackupsRestored = 0;
+        public int BackupErrors = 0;
+        public int RestoreErrors = 0;
+        public int ValidationErrors = 0;
+        public double TotalSaveTime = 0.0;
+        public double TotalLoadTime = 0.0;
+        public DateTime LastSaveTime = DateTime.MinValue;
+        public DateTime LastLoadTime = DateTime.MinValue;
+    }
+
+    /// <summary>
+    /// Complete database data container for serialization
+    /// </summary>
+    [System.Serializable]
+    public class CostDatabaseData
+    {
+        public Dictionary<MalfunctionType, CostDatabaseEntry> CostDatabase = new Dictionary<MalfunctionType, CostDatabaseEntry>();
+        public Dictionary<EquipmentType, EquipmentCostProfile> EquipmentProfiles = new Dictionary<EquipmentType, EquipmentCostProfile>();
+        public List<CostDataPoint> HistoricalData = new List<CostDataPoint>();
+        public DateTime SavedAt = DateTime.Now;
+        public string Version = "1.0";
+    }
+
+    /// <summary>
+    /// Database backup information
+    /// </summary>
+    [System.Serializable]
+    public struct DatabaseBackupInfo
+    {
+        public string FileName;
+        public string FilePath;
+        public DateTime CreatedAt;
+        public long FileSize;
+        public bool IsAccessible;
+    }
+
+    /// <summary>
+    /// Database validation result
+    /// </summary>
+    [System.Serializable]
+    public struct DatabaseValidationResult
+    {
+        public bool IsValid;
+        public string ErrorMessage;
+        public int EntriesCount;
+        public int ProfilesCount;
+        public int HistoryCount;
+        public long FileSize;
+        public DateTime ValidationTime;
+    }
 
     #endregion
 }

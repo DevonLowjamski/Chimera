@@ -528,4 +528,71 @@ namespace ProjectChimera.Data.Cultivation.Plant
             }
         }
     }
+
+    /// <summary>
+    /// Plant growth statistics
+    /// </summary>
+    [System.Serializable]
+    public struct PlantGrowthStats
+    {
+        public int GrowthProcessingCycles;
+        public int GrowthMeasurements;
+        public int EnvironmentalUpdates;
+        public int GeneticUpdates;
+        public float TotalBiomassGained;
+    }
+
+    /// <summary>
+    /// Growth measurement for tracking
+    /// </summary>
+    [System.Serializable]
+    public struct GrowthMeasurement
+    {
+        public DateTime Timestamp;
+        public float AgeInDays;
+        public float GrowthProgress;
+        public float TotalBiomass;
+        public float Height;
+        public float Width;
+        public float HealthFactor;
+        public float ResourceFactor;
+        public float EnvironmentalFactor;
+        public float GrowthModifier;
+    }
+
+    /// <summary>
+    /// Growth processing result
+    /// </summary>
+    [System.Serializable]
+    public struct GrowthComputationResult
+    {
+        public bool Success;
+        public float BiomassGain;
+        public float HeightGain;
+        public float WidthGain;
+        public float GrowthModifier;
+        public PlantGrowthStage RecommendedStage;
+        public float ProcessingTime;
+    }
+
+    /// <summary>
+    /// Plant growth summary
+    /// </summary>
+    [System.Serializable]
+    public struct PlantGrowthSummary
+    {
+        public float CurrentProgress;
+        public float TotalBiomass;
+        public float CurrentHeight;
+        public float CurrentWidth;
+        public float CurrentLeafArea;
+        public float DailyGrowthRate;
+        public float BiomassAccumulation;
+        public float RootDevelopmentRate;
+        public float EnvironmentalFactor;
+        public float GeneticVigorModifier;
+        public PlantGrowthStage RecommendedStage;
+        public DateTime LastGrowthUpdate;
+        public int GrowthHistoryEntries;
+    }
 }
