@@ -54,7 +54,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 ChimeraLogger.Log("PLANT", "Plant Serialization Manager initialized");
             }
         }
-
         /// <summary>
         /// Serialize plant data to string
         /// </summary>
@@ -165,7 +164,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 };
             }
         }
-
         /// <summary>
         /// Deserialize plant data from string
         /// </summary>
@@ -273,7 +271,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 };
             }
         }
-
         /// <summary>
         /// Save plant data to file
         /// </summary>
@@ -332,7 +329,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 };
             }
         }
-
         /// <summary>
         /// Load plant data from file
         /// </summary>
@@ -387,7 +383,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 };
             }
         }
-
         /// <summary>
         /// Get cached plant data
         /// </summary>
@@ -409,7 +404,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 ChimeraLogger.Log("PLANT", $"Updated cache for plant {plantId}");
             }
         }
-
         /// <summary>
         /// Clear cached data
         /// </summary>
@@ -433,7 +427,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 }
             }
         }
-
         /// <summary>
         /// Set serialization format
         /// </summary>
@@ -446,7 +439,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 ChimeraLogger.Log("PLANT", $"Serialization format set to: {format}");
             }
         }
-
         /// <summary>
         /// Get serialization summary
         /// </summary>
@@ -495,7 +487,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 ChimeraLogger.Log("PLANT", $"Serialization options updated: PrettyPrint={prettyPrint}, IncludeTimestamp={includeTimestamp}");
             }
         }
-
         /// <summary>
         /// Get list of cached plant IDs
         /// </summary>

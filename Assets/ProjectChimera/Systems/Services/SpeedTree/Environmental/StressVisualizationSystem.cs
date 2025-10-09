@@ -136,7 +136,6 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
                 ChimeraLogger.LogWarning("SPEEDTREE/STRESS", "Update exception", this);
             }
         }
-
         /// <summary>
         /// Updates stress visualization for multiple plants
         /// </summary>
@@ -149,7 +148,6 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
                 UpdatePlantStressVisualization(kvp.Key, kvp.Value.HealthLevel, kvp.Value.StressLevel);
             }
         }
-
         /// <summary>
         /// Applies stress visualization to plant renderers
         /// </summary>
@@ -231,9 +229,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             // For now, return empty array - this should be connected to your plant management system
             return new Renderer[0];
         }
-
         #endregion
-
         #region Advanced Visualization Features
 
         /// <summary>
@@ -317,9 +313,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
                 ChimeraLogger.LogWarning("SPEEDTREE/STRESS", "Environmental effects renderer exception", this);
             }
         }
-
         #endregion
-
         #region Public Interface
 
         /// <summary>
@@ -336,7 +330,6 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
                 ChimeraLogger.Log("SPEEDTREE/STRESS", $"Registered plant {plantId} for stress visualization", this);
             }
         }
-
         /// <summary>
         /// Unregister a plant from stress visualization
         /// </summary>
@@ -349,7 +342,6 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
                 ChimeraLogger.Log("SPEEDTREE/STRESS", $"Unregistered plant {plantId} from stress visualization", this);
             }
         }
-
         /// <summary>
         /// Update plant stress levels for visualization
         /// </summary>
@@ -379,7 +371,6 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
 
             ApplyEnvironmentalStressIndicators(plantId, indicators);
         }
-
         /// <summary>
         /// Get stress visualization statistics
         /// </summary>
@@ -419,7 +410,6 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
                 UpdateFrequency = _visualizationUpdateFrequency
             };
         }
-
         /// <summary>
         /// Enable or disable stress visualization
         /// </summary>
@@ -428,7 +418,6 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             get => _enableStressVisualization;
             set => _enableStressVisualization = value;
         }
-
         /// <summary>
         /// Reset all stress visualization data
         /// </summary>
@@ -438,7 +427,6 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             _plantsNeedingVisualizationUpdate.Clear();
             ChimeraLogger.Log("SPEEDTREE/STRESS", "Reset stress visualization data", this);
         }
-
         /// <summary>
         /// Gets current stress visualization data for a plant
         /// </summary>
@@ -450,7 +438,6 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             }
             return new PlantStressVisualization(plantId);
         }
-
         /// <summary>
         /// Gets all plants needing visualization updates
         /// </summary>
@@ -458,7 +445,6 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         {
             return _plantsNeedingVisualizationUpdate.AsReadOnly();
         }
-
         /// <summary>
         /// Clears the visualization update queue
         /// </summary>
@@ -466,7 +452,6 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         {
             _plantsNeedingVisualizationUpdate.Clear();
         }
-
         /// <summary>
         /// Sets the stress visualization intensity
         /// </summary>
@@ -474,9 +459,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         {
             _stressVisualizationIntensity = Mathf.Max(0f, intensity);
         }
-
         #endregion
-
         #region Update Loop
 
         public void Tick(float deltaTime)

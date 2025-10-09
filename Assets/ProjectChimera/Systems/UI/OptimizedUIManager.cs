@@ -106,7 +106,6 @@ namespace ProjectChimera.Systems.UI
         {
             Cleanup();
         }
-
         #endregion
 
         #region Initialization
@@ -180,7 +179,6 @@ namespace ProjectChimera.Systems.UI
             if (_enableLogging)
                 ChimeraLogger.LogInfo("UI", "Batched update system initialized", this);
         }
-
         #endregion
 
         #region ITickable Implementation
@@ -214,7 +212,6 @@ namespace ProjectChimera.Systems.UI
             if (_enableLogging)
                 ChimeraLogger.LogInfo("UI", "OptimizedUIManager unregistered from UpdateOrchestrator", this);
         }
-
         #endregion
 
         #region Update Processing

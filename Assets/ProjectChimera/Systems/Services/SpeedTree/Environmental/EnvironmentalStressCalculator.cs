@@ -31,7 +31,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         /// <summary>
         /// Calculate light-induced stress
         /// </summary>
-        public static float CalculateLight Stress(float currentLight, float baselineLight)
+        public static float CalculateLightStress(float currentLight, float baselineLight)
         {
             float deviation = Mathf.Abs(currentLight - baselineLight);
             return Mathf.Clamp01(deviation / 500f); // 500 PPFD deviation = max stress
@@ -49,13 +49,13 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         /// <summary>
         /// Calculate overall stress from individual stress factors
         /// </summary>
-        public static float CalculateOverallStress(float temperatureStress, float humidityStress, 
+        public static float CalculateOverallStress(float temperatureStress, float humidityStress,
                                                    float lightStress, float co2Stress)
         {
             // Weighted average of stress factors
-            float weightedStress = (temperatureStress * 0.3f) + 
-                                  (humidityStress * 0.25f) + 
-                                  (lightStress * 0.3f) + 
+            float weightedStress = (temperatureStress * 0.3f) +
+                                  (humidityStress * 0.25f) +
+                                  (lightStress * 0.3f) +
                                   (co2Stress * 0.15f);
             return Mathf.Clamp01(weightedStress);
         }

@@ -463,6 +463,13 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         public float AdaptationFactor = 0f;    // How well adapted (0-1)
         public PlantResponseData CurrentResponse;
 
+        // Backward-compatible alias
+        public float BaselineLightIntensity
+        {
+            get => BaselineLight;
+            set => BaselineLight = value;
+        }
+
         public PlantEnvironmentalResponse(int plantId)
         {
             PlantId = plantId;

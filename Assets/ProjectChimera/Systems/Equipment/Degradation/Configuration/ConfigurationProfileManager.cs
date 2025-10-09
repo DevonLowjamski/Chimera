@@ -82,13 +82,11 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
                 LogWarning("Cannot create profile with empty name");
                 return false;
             }
-
             if (_configProfiles.ContainsKey(profileName))
             {
                 LogWarning($"Profile '{profileName}' already exists");
                 return false;
             }
-
             if (_configProfiles.Count >= _maxProfiles)
             {
                 LogWarning( $"Maximum profiles ({_maxProfiles}) reached");
@@ -108,7 +106,6 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
             Log($"Created profile '{profileName}'");
             return true;
         }
-
         /// <summary>
         /// Set the active configuration profile
         /// </summary>
@@ -119,7 +116,6 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
                 LogWarning( "Profile switching is disabled");
                 return false;
             }
-
             if (!_configProfiles.TryGetValue(profileName, out var profile))
             {
                 LogWarning( $"Profile '{profileName}' not found");
@@ -137,7 +133,6 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
 
             return true;
         }
-
         /// <summary>
         /// Delete a configuration profile
         /// </summary>
@@ -175,7 +170,6 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
 
             return true;
         }
-
         /// <summary>
         /// Get a specific profile by name
         /// </summary>
@@ -217,7 +211,6 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
         }
 
         #endregion
-
         #region Profile Creation Helpers
 
         /// <summary>
@@ -282,7 +275,6 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
         }
 
         #endregion
-
         #region Parameter Management (Delegating to Active Profile)
 
         /// <summary>
@@ -307,7 +299,6 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
             UpdateActiveProfileMetadata();
             return true;
         }
-
         /// <summary>
         /// Check if active profile has parameter
         /// </summary>
@@ -357,7 +348,6 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
         }
 
         #endregion
-
         #region Statistics and Utilities
 
         /// <summary>

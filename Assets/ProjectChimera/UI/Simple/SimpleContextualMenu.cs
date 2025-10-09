@@ -187,10 +187,10 @@ namespace ProjectChimera.UI.Simple
         {
             AddMenuAction("Place Wall", () => ExecuteAction("Place Wall"));
             AddMenuAction("Place Light", () => ExecuteAction("Place Light"));
-            AddMenuAction("Place Pot", () => ExecuteAction("Place Pot"));
+            AddMenuAction("Place Growing Container", () => ExecuteAction("Place Growing Container"));
             AddMenuAction("Install HVAC", () => ExecuteAction("Install HVAC"));
-            AddMenuAction("Add Irrigation", () => ExecuteAction("Add Irrigation"));
-            AddMenuAction("Create Schematic", () => ExecuteAction("Create Schematic"));
+            AddMenuAction("Install Irrigation", () => ExecuteAction("Install Irrigation"));
+            AddMenuAction("Place Dehumidifier", () => ExecuteAction("Place Dehumidifier"));
         }
 
         private void SetupCultivationActions()
@@ -209,8 +209,8 @@ namespace ProjectChimera.UI.Simple
             AddMenuAction("Create Tissue Culture", () => ExecuteAction("Create Tissue Culture"));
             AddMenuAction("Start Micropropagation", () => ExecuteAction("Start Micropropagation"));
             AddMenuAction("Cross Plants", () => ExecuteAction("Cross Plants"));
-            AddMenuAction("Select Phenotype", () => ExecuteAction("Select Phenotype"));
-            AddMenuAction("Analyze Genetics", () => ExecuteAction("Analyze Genetics"));
+            AddMenuAction("View Strain Info", () => ExecuteAction("View Strain Info"));
+            AddMenuAction("View Lineage", () => ExecuteAction("View Lineage"));
         }
 
         /// <summary>
