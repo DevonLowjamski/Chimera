@@ -31,6 +31,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Cache
 
         // Dependencies
         private CacheStorageManager _storageManager;
+        private CacheEvictionStrategy _evictionStrategy;
 
         // Events
         public event System.Action<OptimizationResult> OnOptimizationCompleted;
@@ -60,6 +61,9 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Cache
         public void Initialize(CacheStorageManager storageManager)
         {
             _storageManager = storageManager ?? throw new ArgumentNullException(nameof(storageManager));
+
+            // Create eviction strategy
+            _evictionStrategy = new CacheEvictionStrategy(_evictionPolicy, _accessFrequency, _storageManager);
 
             // Wire up events
             _storageManager.OnCacheItemAdded += OnCacheItemAdded;
@@ -206,71 +210,11 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Cache
         }
 
         /// <summary>
-        /// Select items for eviction based on policy
+        /// Select items for eviction based on policy (delegates to strategy)
         /// </summary>
         private IEnumerable<string> SelectItemsForEviction(int itemCount)
         {
-            switch (_evictionPolicy)
-            {
-                case CacheEvictionPolicy.LRU:
-                    return SelectLRUItems(itemCount);
-                case CacheEvictionPolicy.LFU:
-                    return SelectLFUItems(itemCount);
-                case CacheEvictionPolicy.FIFO:
-                    return SelectFIFOItems(itemCount);
-                case CacheEvictionPolicy.Random:
-                    return SelectRandomItems(itemCount);
-                default:
-                    return SelectLRUItems(itemCount);
-            }
-        }
-
-        /// <summary>
-        /// Select Least Recently Used items
-        /// </summary>
-        private IEnumerable<string> SelectLRUItems(int itemCount)
-        {
-            var allMetadata = _storageManager.GetAllMetadata();
-            return allMetadata
-                .OrderBy(kvp => kvp.Value.LastAccessed)
-                .Take(itemCount)
-                .Select(kvp => kvp.Key);
-        }
-
-        /// <summary>
-        /// Select Least Frequently Used items
-        /// </summary>
-        private IEnumerable<string> SelectLFUItems(int itemCount)
-        {
-            return _accessFrequency
-                .OrderBy(kvp => kvp.Value)
-                .Take(itemCount)
-                .Select(kvp => kvp.Key);
-        }
-
-        /// <summary>
-        /// Select First In First Out items
-        /// </summary>
-        private IEnumerable<string> SelectFIFOItems(int itemCount)
-        {
-            var allMetadata = _storageManager.GetAllMetadata();
-            return allMetadata
-                .OrderBy(kvp => kvp.Value.CreatedAt)
-                .Take(itemCount)
-                .Select(kvp => kvp.Key);
-        }
-
-        /// <summary>
-        /// Select random items for eviction
-        /// </summary>
-        private IEnumerable<string> SelectRandomItems(int itemCount)
-        {
-            var allKeys = _storageManager.GetAllKeys().ToList();
-            var random = new System.Random();
-
-            return allKeys
-                .OrderBy(x => random.Next())
-                .Take(itemCount);
+            return _evictionStrategy.SelectItemsForEviction(itemCount);
         }
 
         #endregion
