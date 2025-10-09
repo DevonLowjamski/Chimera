@@ -41,6 +41,17 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
             _allowProfileSwitching = allowProfileSwitching;
         }
 
+        // Helper for conditional logging
+        private void Log(string message) 
+        { 
+            if (_enableLogging) ChimeraLogger.LogInfo("CONFIG_PROFILE", message); 
+        }
+        
+        private void LogWarning(string message) 
+        { 
+            if (_enableLogging) ChimeraLogger.LogWarning("CONFIG_PROFILE", message); 
+        }
+
         // Properties
         public string ActiveProfileName => _activeProfileName;
         public CostConfigurationProfile ActiveProfile => _activeProfile;
@@ -58,8 +69,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
             CreateDefaultProfile();
             SetActiveProfile(_defaultProfileName);
 
-            if (_enableLogging)
-                ChimeraLogger.LogInfo("CONFIG_PROFILE", "Configuration profile manager initialized", null);
+            Log("Configuration profile manager initialized");
         }
 
         /// <summary>
@@ -69,22 +79,19 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
         {
             if (string.IsNullOrEmpty(profileName))
             {
-                if (_enableLogging)
-                    ChimeraLogger.LogWarning("CONFIG_PROFILE", "Cannot create profile with empty name", null);
+                LogWarning("Cannot create profile with empty name");
                 return false;
             }
 
             if (_configProfiles.ContainsKey(profileName))
             {
-                if (_enableLogging)
-                    ChimeraLogger.LogWarning("CONFIG_PROFILE", $"Profile '{profileName}' already exists", null);
+                LogWarning($"Profile '{profileName}' already exists");
                 return false;
             }
 
             if (_configProfiles.Count >= _maxProfiles)
             {
-                if (_enableLogging)
-                    ChimeraLogger.LogWarning("CONFIG_PROFILE", $"Maximum profiles ({_maxProfiles}) reached", null);
+                LogWarning( $"Maximum profiles ({_maxProfiles}) reached");
                 return false;
             }
 
@@ -98,9 +105,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
 
             OnProfileCreated?.Invoke(profileName, newProfile);
 
-            if (_enableLogging)
-                ChimeraLogger.LogInfo("CONFIG_PROFILE", $"Created profile '{profileName}'", null);
-
+            Log($"Created profile '{profileName}'");
             return true;
         }
 
@@ -111,15 +116,13 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
         {
             if (!_allowProfileSwitching && _activeProfile != null)
             {
-                if (_enableLogging)
-                    ChimeraLogger.LogWarning("CONFIG_PROFILE", "Profile switching is disabled", null);
+                LogWarning( "Profile switching is disabled");
                 return false;
             }
 
             if (!_configProfiles.TryGetValue(profileName, out var profile))
             {
-                if (_enableLogging)
-                    ChimeraLogger.LogWarning("CONFIG_PROFILE", $"Profile '{profileName}' not found", null);
+                LogWarning( $"Profile '{profileName}' not found");
                 return false;
             }
 
@@ -130,8 +133,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
 
             OnProfileSwitched?.Invoke(previousProfile, profileName);
 
-            if (_enableLogging)
-                ChimeraLogger.LogInfo("CONFIG_PROFILE", $"Switched to profile '{profileName}'", null);
+            Log( $"Switched to profile '{profileName}'");
 
             return true;
         }
@@ -146,24 +148,21 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
 
             if (!_configProfiles.ContainsKey(profileName))
             {
-                if (_enableLogging)
-                    ChimeraLogger.LogWarning("CONFIG_PROFILE", $"Profile '{profileName}' not found for deletion", null);
+                LogWarning( $"Profile '{profileName}' not found for deletion");
                 return false;
             }
 
             // Prevent deletion of active profile
             if (profileName == _activeProfileName)
             {
-                if (_enableLogging)
-                    ChimeraLogger.LogWarning("CONFIG_PROFILE", "Cannot delete active profile", null);
+                LogWarning( "Cannot delete active profile");
                 return false;
             }
 
             // Prevent deletion of default profile
             if (profileName == _defaultProfileName && _configProfiles.Count == 1)
             {
-                if (_enableLogging)
-                    ChimeraLogger.LogWarning("CONFIG_PROFILE", "Cannot delete the last remaining profile", null);
+                LogWarning( "Cannot delete the last remaining profile");
                 return false;
             }
 
@@ -172,8 +171,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
 
             OnProfileDeleted?.Invoke(profileName);
 
-            if (_enableLogging)
-                ChimeraLogger.LogInfo("CONFIG_PROFILE", $"Deleted profile '{profileName}'", null);
+            Log( $"Deleted profile '{profileName}'");
 
             return true;
         }
@@ -235,7 +233,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
                 _configProfiles[_defaultProfileName] = defaultProfile;
 
                 if (_enableLogging)
-                    ChimeraLogger.LogInfo("CONFIG_PROFILE", $"Created default profile '{_defaultProfileName}'", null);
+                    ChimeraLogger.LogInfo("CONFIG_PROFILE", $"Created default profile '{_defaultProfileName}'");
             }
         }
 
@@ -353,8 +351,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
             if (_activeProfileName == oldName)
                 _activeProfileName = newName;
 
-            if (_enableLogging)
-                ChimeraLogger.LogInfo("CONFIG_PROFILE", $"Renamed profile '{oldName}' to '{newName}'", null);
+            Log( $"Renamed profile '{oldName}' to '{newName}'");
 
             return true;
         }
@@ -370,8 +367,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
         {
             _profileStats = new ProfileStatistics();
 
-            if (_enableLogging)
-                ChimeraLogger.LogInfo("CONFIG_PROFILE", "Profile statistics reset", null);
+            Log( "Profile statistics reset");
         }
 
         /// <summary>

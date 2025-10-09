@@ -170,83 +170,53 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
 
         private float CalculateTemperatureStress(float currentTemp, float baselineTemp)
         {
-            float delta = Mathf.Abs(currentTemp - baselineTemp);
-            // Optimal temperature range for cannabis: 20-28°C
-            if (currentTemp >= 20f && currentTemp <= 28f) return 0f;
-            return Mathf.Clamp(delta / 10f, 0f, 1f); // Normalize to 0-1 range
+            return EnvironmentalStressCalculator.CalculateTemperatureStress(currentTemp, baselineTemp);
         }
 
         private float CalculateHumidityStress(float currentHumidity, float baselineHumidity)
         {
-            float delta = Mathf.Abs(currentHumidity - baselineHumidity);
-            // Optimal humidity range for cannabis: 40-60%
-            if (currentHumidity >= 40f && currentHumidity <= 60f) return 0f;
-            return Mathf.Clamp(delta / 20f, 0f, 1f); // Normalize to 0-1 range
+            return EnvironmentalStressCalculator.CalculateHumidityStress(currentHumidity, baselineHumidity);
         }
 
         private float CalculateLightStress(float currentLight, float baselineLight)
         {
-            float delta = Mathf.Abs(currentLight - baselineLight);
-            // Light stress based on deviation from baseline
-            return Mathf.Clamp(delta / baselineLight, 0f, 1f);
+            return EnvironmentalStressCalculator.CalculateLightStress(currentLight, baselineLight);
         }
 
         private float CalculateCO2Stress(float currentCO2, float baselineCO2)
         {
-            float delta = Mathf.Abs(currentCO2 - baselineCO2);
-            // Optimal CO2 range: 800-1500 ppm
-            if (currentCO2 >= 800f && currentCO2 <= 1500f) return 0f;
-            return Mathf.Clamp(delta / 500f, 0f, 1f); // Normalize to 0-1 range
+            return EnvironmentalStressCalculator.CalculateCO2Stress(currentCO2, baselineCO2);
         }
 
         private float CalculateTemperatureAdaptation(float currentTemp, PlantEnvironmentalResponse response)
         {
-            // Simple adaptation model - plants gradually adapt to new conditions
-            float adaptationFactor = response.AdaptationFactor;
-            if (currentTemp >= 20f && currentTemp <= 28f)
-            {
-                adaptationFactor = Mathf.Min(adaptationFactor + _adaptationRate * Time.deltaTime, 1f);
-            }
-            return adaptationFactor;
+            return EnvironmentalStressCalculator.CalculateTemperatureAdaptation(
+                currentTemp, response.BaselineTemperature, _adaptationRate * Time.deltaTime);
         }
 
         private float CalculateHumidityAdaptation(float currentHumidity, PlantEnvironmentalResponse response)
         {
-            float adaptationFactor = response.AdaptationFactor;
-            if (currentHumidity >= 40f && currentHumidity <= 60f)
-            {
-                adaptationFactor = Mathf.Min(adaptationFactor + _adaptationRate * Time.deltaTime, 1f);
-            }
-            return adaptationFactor;
+            return EnvironmentalStressCalculator.CalculateHumidityAdaptation(
+                currentHumidity, response.BaselineHumidity, _adaptationRate * Time.deltaTime);
         }
 
         private float CalculateLightAdaptation(float currentLight, PlantEnvironmentalResponse response)
         {
-            // Light adaptation is faster
-            float adaptationFactor = response.AdaptationFactor;
-            adaptationFactor = Mathf.Min(adaptationFactor + (_adaptationRate * 2f) * Time.deltaTime, 1f);
-            return adaptationFactor;
+            return EnvironmentalStressCalculator.CalculateLightAdaptation(
+                currentLight, response.BaselineLightIntensity, _adaptationRate * 2f * Time.deltaTime);
         }
 
         private float CalculateCO2Adaptation(float currentCO2, PlantEnvironmentalResponse response)
         {
-            float adaptationFactor = response.AdaptationFactor;
-            if (currentCO2 >= 800f && currentCO2 <= 1500f)
-            {
-                adaptationFactor = Mathf.Min(adaptationFactor + (_adaptationRate * 0.5f) * Time.deltaTime, 1f);
-            }
-            return adaptationFactor;
+            return EnvironmentalStressCalculator.CalculateCO2Adaptation(
+                currentCO2, response.BaselineCO2, _adaptationRate * 0.5f * Time.deltaTime);
         }
 
         private float CalculateOverallStress(PlantResponseData responseData)
         {
-            // Weighted average of all stress factors
-            float totalStress = responseData.TemperatureStress * 0.3f +
-                               responseData.HumidityStress * 0.25f +
-                               responseData.LightStress * 0.25f +
-                               responseData.CO2Stress * 0.2f;
-
-            return Mathf.Clamp(totalStress, 0f, 1f);
+            return EnvironmentalStressCalculator.CalculateOverallStress(
+                responseData.TemperatureStress, responseData.HumidityStress,
+                responseData.LightStress, responseData.CO2Stress);
         }
 
         private float CalculateAdaptationProgress(int plantId, EnvironmentalConditions conditions)

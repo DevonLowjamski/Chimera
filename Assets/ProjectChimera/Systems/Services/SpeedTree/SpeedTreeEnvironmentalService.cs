@@ -159,16 +159,9 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         /// </summary>
         public void UpdateEnvironmentalResponse(int plantId, EnvironmentalConditions conditions)
         {
-            if (!ValidateInitialization()) return;
-
-            try
-            {
-                environmentalResponseSystem?.UpdatePlantEnvironmentalResponse(plantId, conditions);
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogWarning("SPEEDTREE/ENV", "UpdateEnvironmentalResponse failed", this);
-            }
+            EnvironmentalServiceDelegator.SafeDelegate(IsInitialized, 
+                () => environmentalResponseSystem?.UpdatePlantEnvironmentalResponse(plantId, conditions),
+                nameof(UpdateEnvironmentalResponse), this);
         }
 
         /// <summary>
@@ -176,16 +169,9 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         /// </summary>
         public void ApplyEnvironmentalConditions(int plantId, EnvironmentalConditions conditions)
         {
-            if (!ValidateInitialization()) return;
-
-            try
-            {
-                environmentalResponseSystem?.ApplyEnvironmentalConditions(plantId, conditions);
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogWarning("SPEEDTREE/ENV", "ApplyEnvironmentalConditions failed", this);
-            }
+            EnvironmentalServiceDelegator.SafeDelegate(IsInitialized,
+                () => environmentalResponseSystem?.ApplyEnvironmentalConditions(plantId, conditions),
+                nameof(ApplyEnvironmentalConditions), this);
         }
 
         /// <summary>
@@ -193,16 +179,9 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         /// </summary>
         public void UpdateSeasonalChanges(IEnumerable<int> plantIds)
         {
-            if (!ValidateInitialization()) return;
-
-            try
-            {
-                seasonalSystem?.ApplySeasonalEffects(Time.deltaTime);
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogWarning("SPEEDTREE/ENV", "UpdateSeasonalChanges failed", this);
-            }
+            EnvironmentalServiceDelegator.SafeDelegate(IsInitialized,
+                () => seasonalSystem?.ApplySeasonalEffects(Time.deltaTime),
+                nameof(UpdateSeasonalChanges), this);
         }
 
         /// <summary>
@@ -210,16 +189,9 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         /// </summary>
         public void UpdatePlantStressVisualization(int plantId, float healthLevel, float stressLevel)
         {
-            if (!ValidateInitialization()) return;
-
-            try
-            {
-                stressVisualizationSystem?.UpdatePlantStressVisualization(plantId, healthLevel, stressLevel);
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogWarning("SPEEDTREE/ENV", "UpdatePlantStressVisualization failed", this);
-            }
+            EnvironmentalServiceDelegator.SafeDelegate(IsInitialized,
+                () => stressVisualizationSystem?.UpdatePlantStressVisualization(plantId, healthLevel, stressLevel),
+                nameof(UpdatePlantStressVisualization), this);
         }
 
         /// <summary>
@@ -227,16 +199,9 @@ namespace ProjectChimera.Systems.Services.SpeedTree
         /// </summary>
         public void UpdateWindSystem()
         {
-            if (!ValidateInitialization()) return;
-
-            try
-            {
-                windSystem?.UpdateGlobalWind();
-            }
-            catch (Exception ex)
-            {
-                ChimeraLogger.LogWarning("SPEEDTREE/ENV", "UpdateWindSystem failed", this);
-            }
+            EnvironmentalServiceDelegator.SafeDelegate(IsInitialized,
+                () => windSystem?.UpdateGlobalWind(),
+                nameof(UpdateWindSystem), this);
         }
 
         #endregion
