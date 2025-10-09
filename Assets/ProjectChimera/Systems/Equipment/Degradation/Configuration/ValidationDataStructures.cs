@@ -165,6 +165,13 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
         public List<string> ValidationWarnings;
         public string Message;
 
+        // Backward compatibility alias
+        public bool IsValid
+        {
+            get => Success;
+            set => Success = value;
+        }
+
         /// <summary>
         /// Create an empty validation result
         /// </summary>

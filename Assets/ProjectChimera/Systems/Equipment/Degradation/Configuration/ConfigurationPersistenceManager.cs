@@ -260,6 +260,78 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
 
         #endregion
 
+        #region Profile Import/Export
+
+        /// <summary>
+        /// Export a single profile to a file
+        /// </summary>
+        public bool ExportProfile(CostConfigurationProfile profile, string filePath)
+        {
+            if (profile == null || string.IsNullOrEmpty(filePath))
+                return false;
+
+            try
+            {
+                var directory = Path.GetDirectoryName(filePath);
+                if (!Directory.Exists(directory))
+                    Directory.CreateDirectory(directory);
+
+                var json = _serializer.SerializeProfile(profile);
+                File.WriteAllText(filePath, json);
+
+                _persistenceStats.TotalSaves++;
+
+                if (_enableLogging)
+                    ChimeraLogger.LogInfo("CONFIG_PERSIST", $"Profile '{profile.Name}' exported to {filePath}", null);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (_enableLogging)
+                    ChimeraLogger.LogError("CONFIG_PERSIST", $"Failed to export profile: {ex.Message}", null);
+
+                OnConfigurationError?.Invoke($"Export failed: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Import a profile from a file
+        /// </summary>
+        public CostConfigurationProfile ImportProfile(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            {
+                if (_enableLogging)
+                    ChimeraLogger.LogWarning("CONFIG_PERSIST", $"Import file not found: {filePath}", null);
+                return null;
+            }
+
+            try
+            {
+                var json = File.ReadAllText(filePath);
+                var profile = _serializer.DeserializeProfile(json);
+
+                _persistenceStats.TotalLoads++;
+
+                if (_enableLogging)
+                    ChimeraLogger.LogInfo("CONFIG_PERSIST", $"Profile '{profile?.Name}' imported from {filePath}", null);
+
+                return profile;
+            }
+            catch (Exception ex)
+            {
+                if (_enableLogging)
+                    ChimeraLogger.LogError("CONFIG_PERSIST", $"Failed to import profile: {ex.Message}", null);
+
+                OnConfigurationError?.Invoke($"Import failed: {ex.Message}");
+                return null;
+            }
+        }
+
+        #endregion
+
         #region State Management
 
         /// <summary>

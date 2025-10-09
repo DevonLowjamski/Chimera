@@ -27,7 +27,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             _windZones[windZone] = settings;
             _activeWindZones.Add(windZone);
 
-            Logger.Log("SPEEDTREE/WIND", $"Registered wind zone: {windZone.name}", null);
+            ChimeraLogger.Log("SPEEDTREE/WIND", $"Registered wind zone: {windZone.name}", null);
         }
 
         public void UnregisterWindZone(WindZone windZone)
@@ -37,7 +37,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             _windZones.Remove(windZone);
             _activeWindZones.Remove(windZone);
 
-            Logger.Log("SPEEDTREE/WIND", $"Unregistered wind zone: {windZone.name}", null);
+            ChimeraLogger.Log("SPEEDTREE/WIND", $"Unregistered wind zone: {windZone.name}", null);
         }
 
         public void UpdateWindZone(WindZone windZone)

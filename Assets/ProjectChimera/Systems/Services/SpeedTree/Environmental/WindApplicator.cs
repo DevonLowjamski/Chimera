@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using ProjectChimera.Core.Logging;
+using ProjectChimera.Core;
+using IServiceContainer = ProjectChimera.Core.IServiceContainer;
 
 namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
 {
@@ -32,7 +34,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
 
             if (allRenderers == null || !allRenderers.Any())
             {
-                Logger.LogWarning("SPEEDTREE/WIND", "No Renderers found - ensure they are registered with GameObjectRegistry in Awake()", null);
+                ChimeraLogger.LogWarning("SPEEDTREE/WIND", "No Renderers found - ensure they are registered with GameObjectRegistry in Awake()", null);
                 return;
             }
 
@@ -50,12 +52,15 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         {
             if (windZone == null) return;
 
-            var registry = ServiceContainerFactory.Instance?.TryResolve<ProjectChimera.Core.Performance.IGameObjectRegistry>();
+            var container = ServiceContainerFactory.Instance;
+            if (container == null) return;
+
+            var registry = container.TryResolve<ProjectChimera.Core.Performance.IGameObjectRegistry>();
             var allRenderers = registry?.GetAll<Renderer>();
 
             if (allRenderers == null || !allRenderers.Any())
             {
-                Logger.LogWarning("SPEEDTREE/WIND", "No Renderers found for wind zone", null);
+                ChimeraLogger.LogWarning("SPEEDTREE/WIND", "No Renderers found for wind zone", null);
                 return;
             }
 
@@ -90,7 +95,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
             }
             catch (Exception ex)
             {
-                Logger.LogWarning("SPEEDTREE/WIND", "ApplyWindToRenderer exception", null);
+                ChimeraLogger.LogWarning("SPEEDTREE/WIND", "ApplyWindToRenderer exception", null);
             }
         }
 

@@ -175,19 +175,19 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         public void UpdateWindEffects(int plantId, float windStrength, Vector3 windDirection)
         {
             // Wind effects are applied globally through materials
-            Logger.LogVerbose("SPEEDTREE/WIND", $"Wind effect update requested for plant {plantId}", this);
+            ChimeraLogger.Log("SPEEDTREE/WIND", $"Wind effect update requested for plant {plantId}", this);
         }
 
         public WindStatistics GetStatistics()
         {
             return new WindStatistics
             {
-                GlobalStrength = _currentWindStrength,
-                GlobalDirection = _currentWindDirection,
+                GlobalWindStrength = _currentWindStrength,
+                CurrentWindStrength = _currentWindStrength,
+                WindDirection = _currentWindDirection,
                 ActiveWindZones = _windZoneManager?.WindZoneCount ?? 0,
-                GustCount = 0,
-                AverageStrength = _currentWindStrength,
-                LastUpdate = Time.realtimeSinceStartup
+                TotalGusts = 0,
+                LastStatisticsUpdate = System.DateTime.Now
             };
         }
 
@@ -252,7 +252,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
                 Strength = _currentWindStrength,
                 Direction = _currentWindDirection,
                 IsActive = _enableWindAnimation,
-                LastUpdate = Time.realtimeSinceStartup
+                LastUpdate = System.DateTime.Now
             };
         }
 

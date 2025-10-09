@@ -26,6 +26,12 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Database
         public double TotalLoadTime = 0.0;
         public DateTime LastSaveTime = DateTime.MinValue;
         public DateTime LastLoadTime = DateTime.MinValue;
+
+        // Aliases for backward compatibility
+        public int SaveOperations { get => TotalSaves; set => TotalSaves = value; }
+        public int LoadOperations { get => TotalLoads; set => TotalLoads = value; }
+        public double AverageSaveTime => TotalSaves > 0 ? TotalSaveTime / TotalSaves : 0.0;
+        public double AverageLoadTime => TotalLoads > 0 ? TotalLoadTime / TotalLoads : 0.0;
     }
 
     public class CostDatabaseData

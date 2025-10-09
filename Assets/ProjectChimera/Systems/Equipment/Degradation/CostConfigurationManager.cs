@@ -180,8 +180,8 @@ namespace ProjectChimera.Systems.Equipment.Degradation
 
         public T GetParameter<T>(string parameterName, T defaultValue = default)
         {
-            return _isInitialized && _profileManager?.ActiveProfile != null ? 
-                _profileManager.GetParameter(parameterName, defaultValue) : 
+            return _isInitialized && _profileManager?.ActiveProfile != null ?
+                _profileManager.GetParameter(parameterName, defaultValue) :
                 defaultValue;
         }
 
@@ -205,7 +205,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
             _profileManager?.GetParameterNames() ?? Enumerable.Empty<string>();
 
         public bool ValidateParameter<T>(string parameterName, T value) =>
-            _validationManager?.ValidateParameter(parameterName, value, _profileManager?.ActiveProfile) ?? true;
+            _validationManager?.ValidateParameter(parameterName, value) ?? true;
 
         public ValidationResult ValidateConfiguration() =>
             _validationManager?.ValidateConfiguration(_profileManager?.ActiveProfile) ?? new ValidationResult { IsValid = true };
@@ -232,16 +232,16 @@ namespace ProjectChimera.Systems.Equipment.Degradation
             _profileManager?.RenameProfile(oldName, newName) ?? false;
 
         public bool ExportProfile(string profileName, string filePath) =>
-            _persistenceManager?.ExportProfile(profileName, _profileManager.GetProfile(profileName), filePath) ?? false;
+            _persistenceManager?.ExportProfile(_profileManager.GetProfile(profileName), filePath) ?? false;
 
         public bool ImportProfile(string filePath)
         {
             if (_persistenceManager == null || _profileManager == null) return false;
 
             var importedProfile = _persistenceManager.ImportProfile(filePath);
-            if (importedProfile.profile != null)
+            if (importedProfile != null)
             {
-                _profileManager.CreateProfile(importedProfile.name, importedProfile.profile);
+                _profileManager.CreateProfile(importedProfile.Name, importedProfile);
                 return true;
             }
             return false;

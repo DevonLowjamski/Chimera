@@ -285,6 +285,82 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
 
         #endregion
 
+        #region Parameter Management (Delegating to Active Profile)
+
+        /// <summary>
+        /// Get parameter from active profile
+        /// </summary>
+        public T GetParameter<T>(string parameterName, T defaultValue)
+        {
+            if (_activeProfile == null)
+                return defaultValue;
+
+            return _activeProfile.GetParameter(parameterName, defaultValue);
+        }
+
+        /// <summary>
+        /// Set parameter in active profile
+        /// </summary>
+        public bool SetParameter<T>(string parameterName, T value)
+        {
+            if (_activeProfile == null) return false;
+
+            _activeProfile.SetParameter(parameterName, value);
+            UpdateActiveProfileMetadata();
+            return true;
+        }
+
+        /// <summary>
+        /// Check if active profile has parameter
+        /// </summary>
+        public bool HasParameter(string parameterName)
+        {
+            return _activeProfile?.HasParameter(parameterName) ?? false;
+        }
+
+        /// <summary>
+        /// Get all parameter names from active profile
+        /// </summary>
+        public IEnumerable<string> GetParameterNames()
+        {
+            return _activeProfile?.Parameters.Keys ?? Enumerable.Empty<string>();
+        }
+
+        /// <summary>
+        /// Duplicate an existing profile
+        /// </summary>
+        public bool DuplicateProfile(string sourceProfileName, string newProfileName)
+        {
+            return CloneProfile(sourceProfileName, newProfileName);
+        }
+
+        /// <summary>
+        /// Rename an existing profile
+        /// </summary>
+        public bool RenameProfile(string oldName, string newName)
+        {
+            if (!_configProfiles.TryGetValue(oldName, out var profile))
+                return false;
+
+            if (_configProfiles.ContainsKey(newName))
+                return false;
+
+            _configProfiles.Remove(oldName);
+            profile.Name = newName;
+            profile.LastModified = DateTime.Now;
+            _configProfiles[newName] = profile;
+
+            if (_activeProfileName == oldName)
+                _activeProfileName = newName;
+
+            if (_enableLogging)
+                ChimeraLogger.LogInfo("CONFIG_PROFILE", $"Renamed profile '{oldName}' to '{newName}'", null);
+
+            return true;
+        }
+
+        #endregion
+
         #region Statistics and Utilities
 
         /// <summary>

@@ -406,6 +406,14 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         public float CurrentStrength;
         public Vector3 CurrentDirection;
         public float GustStrength;
+        public bool Active;
+        public System.DateTime LastStateUpdate;
+
+        // Aliases for backward compatibility
+        public float Strength { get => CurrentStrength; set => CurrentStrength = value; }
+        public Vector3 Direction { get => CurrentDirection; set => CurrentDirection = value; }
+        public bool IsActive { get => Active; set => Active = value; }
+        public System.DateTime LastUpdate { get => LastStateUpdate; set => LastStateUpdate = value; }
     }
 
     [System.Serializable]

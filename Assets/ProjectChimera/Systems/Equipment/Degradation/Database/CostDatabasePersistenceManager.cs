@@ -89,7 +89,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Database
 
                     var saveTime = Time.realtimeSinceStartup - startTime;
                     _persistenceStats.TotalSaveTime += saveTime;
-                    _persistenceStats.AverageSaveTime = _persistenceStats.TotalSaveTime / _persistenceStats.SaveOperations;
+                    // AverageSaveTime is computed automatically
 
                     OnDatabaseSaved?.Invoke(_fileIO.GetFileSize().ToString());
 
@@ -153,7 +153,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Database
 
                 var loadTime = Time.realtimeSinceStartup - startTime;
                 _persistenceStats.TotalLoadTime += loadTime;
-                _persistenceStats.AverageLoadTime = _persistenceStats.TotalLoadTime / _persistenceStats.LoadOperations;
+                // AverageLoadTime is computed automatically
 
                 OnDatabaseLoaded?.Invoke(_fileIO.GetFileSize().ToString());
 

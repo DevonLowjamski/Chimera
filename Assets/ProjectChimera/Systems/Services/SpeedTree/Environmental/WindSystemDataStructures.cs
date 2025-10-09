@@ -38,6 +38,15 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         public int ActiveWindZones;
         public bool WindAnimationEnabled;
         public float UpdateFrequency;
+        public int TotalGusts;
+        public System.DateTime LastStatisticsUpdate;
+
+        // Aliases for backward compatibility
+        public float GlobalStrength { get => GlobalWindStrength; set => GlobalWindStrength = value; }
+        public Vector3 GlobalDirection { get => WindDirection; set => WindDirection = value; }
+        public int GustCount { get => TotalGusts; set => TotalGusts = value; }
+        public float AverageStrength { get => (GlobalWindStrength + CurrentWindStrength) / 2f; }
+        public System.DateTime LastUpdate { get => LastStatisticsUpdate; set => LastStatisticsUpdate = value; }
     }
 }
 

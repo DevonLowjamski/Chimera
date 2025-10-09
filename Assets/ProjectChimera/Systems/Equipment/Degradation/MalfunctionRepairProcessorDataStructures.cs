@@ -25,6 +25,10 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         public float ActualCost;
         public RepairStatus Status;
         public float Progress;
+
+        // Aliases for backward compatibility
+        public RepairType Type { get => RepairType; set => RepairType = value; }
+        public TimeSpan EstimatedTime { get => EstimatedDuration; set => EstimatedDuration = value; }
     }
 
     public enum RepairType
@@ -34,7 +38,8 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         Electrical,
         Software,
         Thermal,
-        Calibration
+        Calibration,
+        Maintenance
     }
 
     public enum RepairStatus
@@ -80,6 +85,9 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         public int ThermalRepairs;
         public int CalibrationRepairs;
         public int GeneralRepairs;
+
+        // Alias for backward compatibility
+        public float TotalRepairTime => TotalProcessingTime;
     }
 
 }

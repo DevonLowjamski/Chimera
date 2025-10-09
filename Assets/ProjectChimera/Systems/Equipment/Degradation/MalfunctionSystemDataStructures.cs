@@ -64,6 +64,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         public float PerformanceImpact { get => ImpactOnPerformance; set => ImpactOnPerformance = value; } // Alias
         public float RepairCost;
         public float EstimatedRepairCost { get => RepairCost; set => RepairCost = value; } // Alias
+        public float EstimatedCost { get => RepairCost; set => RepairCost = value; } // Alias
         public TimeSpan EstimatedRepairTime;
         public bool RequiresSpecialist;
         public RepairComplexity Complexity;
@@ -113,6 +114,9 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         public bool EquipmentRestored;
         public float RepairQuality;
         public DateTime CompletionTime;
+
+        // Alias for backward compatibility
+        public float ActualCost { get => RepairCost; set => RepairCost = value; }
     }
 }
 

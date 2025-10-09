@@ -151,6 +151,59 @@ namespace ProjectChimera.Systems.Equipment.Degradation.Configuration
         }
 
         /// <summary>
+        /// Serialize a single profile to JSON
+        /// </summary>
+        public string SerializeProfile(CostConfigurationProfile profile)
+        {
+            if (profile == null)
+                return string.Empty;
+
+            try
+            {
+                var jsonSettings = new JsonSerializerSettings
+                {
+                    Formatting = Formatting.Indented,
+                    DateFormatHandling = DateFormatHandling.IsoDateFormat
+                };
+
+                return JsonConvert.SerializeObject(profile, jsonSettings);
+            }
+            catch (Exception ex)
+            {
+                if (_enableLogging)
+                    ChimeraLogger.LogError("CONFIG_PERSIST", $"Failed to serialize profile: {ex.Message}", null);
+
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Deserialize a profile from JSON
+        /// </summary>
+        public CostConfigurationProfile DeserializeProfile(string json)
+        {
+            if (string.IsNullOrEmpty(json))
+                return null;
+
+            try
+            {
+                var jsonSettings = new JsonSerializerSettings
+                {
+                    DateFormatHandling = DateFormatHandling.IsoDateFormat
+                };
+
+                return JsonConvert.DeserializeObject<CostConfigurationProfile>(json, jsonSettings);
+            }
+            catch (Exception ex)
+            {
+                if (_enableLogging)
+                    ChimeraLogger.LogError("CONFIG_PERSIST", $"Failed to deserialize profile: {ex.Message}", null);
+
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Simple string compression simulation
         /// </summary>
         public string CompressString(string input)

@@ -90,13 +90,13 @@ namespace ProjectChimera.Systems.Equipment.Degradation
             {
                 float effectiveQuality = _qualityCalculator.CalculateEffectiveRepairQuality(repairQuality);
                 float estimatedCost = _qualityCalculator.CalculateRepairCost(
-                    malfunction.EstimatedCost, 
-                    malfunction.Severity, 
+                    malfunction.EstimatedCost,
+                    ConvertSeverityToFloat(malfunction.Severity),
                     useSpecialist);
                 float estimatedTime = _qualityCalculator.CalculateRepairTime(
                     1800f, // 30 minutes base time
                     malfunction.Type,
-                    malfunction.Severity,
+                    ConvertSeverityToFloat(malfunction.Severity),
                     useSpecialist);
 
                 var repairOperation = new RepairOperation
@@ -316,7 +316,7 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         private void UpdateStats(RepairResult result)
         {
             _stats.TotalRepairCost += result.RepairCost;
-            _stats.TotalRepairTime += (float)result.RepairTime.TotalSeconds;
+            _stats.TotalProcessingTime += (float)result.RepairTime.TotalSeconds;
 
             var totalRepairs = _stats.RepairsCompleted + _stats.RepairsFailed;
             if (totalRepairs > 0)
@@ -329,6 +329,18 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         private void ResetStats()
         {
             _stats = new MalfunctionRepairProcessorStats();
+        }
+
+        private float ConvertSeverityToFloat(MalfunctionSeverity severity)
+        {
+            return severity switch
+            {
+                MalfunctionSeverity.Minor => 0.25f,
+                MalfunctionSeverity.Moderate => 0.5f,
+                MalfunctionSeverity.Major => 0.75f,
+                MalfunctionSeverity.Critical => 1.0f,
+                _ => 0.5f
+            };
         }
 
         #endregion

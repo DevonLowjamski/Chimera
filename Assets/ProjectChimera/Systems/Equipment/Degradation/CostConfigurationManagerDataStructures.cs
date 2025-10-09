@@ -19,6 +19,9 @@ namespace ProjectChimera.Systems.Equipment.Degradation
         public int ParameterErrors = 0;
         public int ParameterValidationFailures = 0;
         public DateTime LastParameterAccess = DateTime.MinValue;
+
+        // Alias for backward compatibility
+        public int ParametersModified { get => ParameterUpdates; set => ParameterUpdates = value; }
     }
 
     public struct ConfigurationStatistics
