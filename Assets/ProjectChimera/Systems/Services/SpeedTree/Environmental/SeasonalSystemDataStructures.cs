@@ -78,6 +78,8 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         public bool SeasonalChangesEnabled;
         public float TransitionDuration;
         public float UpdateFrequency;
+        public float SeasonTimer;
+        public DateTime LastUpdate;
     }
 
     /// <summary>
@@ -92,6 +94,9 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         public float LightIntensityModifier;
         public float GrowthRateModifier;
         public float TransitionProgress;
+        public float GrowthMultiplier;
+        public float HealthMultiplier;
+        public bool IsTransitioning;
     }
 }
 

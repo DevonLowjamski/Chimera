@@ -197,7 +197,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
 
             try
             {
-                seasonalSystem?.ApplySeasonalEffects(plantIds);
+                seasonalSystem?.ApplySeasonalEffects(Time.deltaTime);
             }
             catch (Exception ex)
             {
@@ -251,7 +251,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree
             // Step environmental systems forward
             environmentalResponseSystem?.Tick(deltaTime);
             windSystem?.UpdateGlobalWind();
-            seasonalSystem?.UpdateSeasonalSystem();
+            seasonalSystem?.UpdateSeasonalSystem(deltaTime);
             stressVisualizationSystem?.Tick(deltaTime);
         }
 

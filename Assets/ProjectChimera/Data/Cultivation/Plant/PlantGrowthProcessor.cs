@@ -70,7 +70,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public float CalculatedMaxHeight => _calculatedMaxHeight;
         public float CalculatedMaxWidth => _calculatedMaxWidth;
         public float GeneticVigorModifier => _geneticVigorModifier;
-        public EnvironmentalConditions CurrentEnvironment => _environmentalCalculator?.CurrentEnvironment;
+        public EnvironmentalConditions CurrentEnvironment => _environmentalCalculator?.CurrentEnvironment ?? default;
 
         public void Initialize()
         {
@@ -181,7 +181,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
                     OnBiomassChanged?.Invoke(previousBiomass, TotalBiomass);
 
                 OnGrowthMeasurementTaken?.Invoke(measurement);
-                _stats.TotalGrowthCycles++;
+                _stats.GrowthProcessingCycles++;
 
                 // Update last growth time
                 _lastGrowthUpdate = DateTime.Now;

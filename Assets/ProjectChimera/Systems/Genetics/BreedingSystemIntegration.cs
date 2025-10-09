@@ -36,8 +36,10 @@ namespace ProjectChimera.Systems.Genetics
 
         // Public events
         public event Action<BreedingResult> OnBreedingCompleted;
-        public event Action<string, TissueCulture> OnTissueCultureCreated;
-        public event Action<string, string[]> OnMicropropagationCompleted;
+        // Parameters: cultureId, cultureName, success, viability
+        public event Action<string, string, bool, float> OnTissueCultureCreated;
+        // Parameters: cultureId, requestedQuantity, successfulClones, cloneSeeds
+        public event Action<string, int, int, BreedingSeed[]> OnMicropropagationCompleted;
 
         private void Awake()
         {
@@ -65,10 +67,10 @@ namespace ProjectChimera.Systems.Genetics
             _seedBank = new BreedingSeedBank(_breedingCore);
 
             // Wire up events from components
-            _tissueCultureManager.OnTissueCultureCreated += (id, culture) =>
-                OnTissueCultureCreated?.Invoke(id, culture);
-            _tissueCultureManager.OnMicropropagationCompleted += (id, seeds) =>
-                OnMicropropagationCompleted?.Invoke(id, seeds);
+            _tissueCultureManager.OnTissueCultureCreated += (id, name, success, viability) =>
+                OnTissueCultureCreated?.Invoke(id, name, success, viability);
+            _tissueCultureManager.OnMicropropagationCompleted += (id, requestedQty, successfulClones, seeds) =>
+                OnMicropropagationCompleted?.Invoke(id, requestedQty, successfulClones, seeds);
 
             ChimeraLogger.Log("GENETICS", "Breeding system initialized successfully", this);
         }
@@ -214,6 +216,11 @@ namespace ProjectChimera.Systems.Genetics
         public string ParentHash;      // Genetics hash of source plant
         public float CreationTime;
         public float Viability;        // 0-1, affects propagation success
+
+        // Backward-compatible aliases for UI layer
+        public string CultureName { get => Name; set => Name = value; }
+        public float CurrentViability { get => Viability; set => Viability = value; }
+        public PlantGenotype SourceGenotype { get; set; } // Extended property for UI
     }
 
     /// <summary>

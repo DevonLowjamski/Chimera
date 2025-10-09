@@ -15,6 +15,9 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public int EnvironmentalUpdates;
         public int GeneticUpdates;
         public float TotalBiomassGained;
+
+        // Backward-compatible alias
+        public int TotalGrowthCycles => GrowthProcessingCycles;
     }
 
     public struct GrowthMeasurement
@@ -29,6 +32,12 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public float ResourceFactor;
         public float EnvironmentalFactor;
         public float GrowthModifier;
+        public PlantGrowthStage GrowthStage;
+
+        // Backward-compatible aliases
+        public float Age { get => AgeInDays; set => AgeInDays = value; }
+        public float Progress { get => GrowthProgress; set => GrowthProgress = value; }
+        public PlantGrowthStage Stage { get => GrowthStage; set => GrowthStage = value; }
     }
 
     public struct GrowthComputationResult
@@ -40,6 +49,14 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public float GrowthModifier;
         public PlantGrowthStage RecommendedStage;
         public float ProcessingTime;
+        public string Error;
+        public float CurrentHeight;
+        public float CurrentWidth;
+
+        // Backward-compatible aliases
+        public string ErrorMessage { get => Error; set => Error = value; }
+        public float Height { get => CurrentHeight; set => CurrentHeight = value; }
+        public float Width { get => CurrentWidth; set => CurrentWidth = value; }
     }
 
     public struct PlantGrowthSummary
@@ -57,6 +74,19 @@ namespace ProjectChimera.Data.Cultivation.Plant
         public PlantGrowthStage RecommendedStage;
         public DateTime LastGrowthUpdate;
         public int GrowthHistoryEntries;
+        public float RootBiomass;
+        public float LeafBiomass;
+        public float StemBiomass;
+        public PlantGrowthStats GrowthStats;
+
+        // Backward-compatible aliases
+        public float LeafArea { get => CurrentLeafArea; set => CurrentLeafArea = value; }
+        public float RootMass { get => RootBiomass; set => RootBiomass = value; }
+        public float LeafMass { get => LeafBiomass; set => LeafBiomass = value; }
+        public float StemMass { get => StemBiomass; set => StemBiomass = value; }
+        public DateTime LastUpdate { get => LastGrowthUpdate; set => LastGrowthUpdate = value; }
+        public int TotalMeasurements { get => GrowthHistoryEntries; set => GrowthHistoryEntries = value; }
+        public PlantGrowthStats Stats { get => GrowthStats; set => GrowthStats = value; }
     }
 
 }

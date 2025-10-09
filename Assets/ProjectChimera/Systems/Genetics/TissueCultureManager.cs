@@ -18,8 +18,10 @@ namespace ProjectChimera.Systems.Genetics
         private readonly float _micropropagationSuccessRate;
 
         // Events for tissue culture operations
-        public event Action<string, TissueCulture> OnTissueCultureCreated;
-        public event Action<string, string[]> OnMicropropagationCompleted;
+        // Parameters: cultureId, cultureName, success, viability
+        public event Action<string, string, bool, float> OnTissueCultureCreated;
+        // Parameters: cultureId, requestedQuantity, successfulClones, cloneSeeds
+        public event Action<string, int, int, BreedingSeed[]> OnMicropropagationCompleted;
 
         public TissueCultureManager(
             float tissueCultureSuccessRate = 0.85f,
@@ -70,7 +72,7 @@ namespace ProjectChimera.Systems.Genetics
             ChimeraLogger.Log("GENETICS",
                 $"Tissue culture created: {cultureName} (ID: {culture.CultureId}, Viability: {culture.Viability:P0})", null);
 
-            OnTissueCultureCreated?.Invoke(culture.CultureId, culture);
+            OnTissueCultureCreated?.Invoke(culture.CultureId, cultureName, true, culture.Viability);
             return true;
         }
 
@@ -116,14 +118,7 @@ namespace ProjectChimera.Systems.Genetics
             ChimeraLogger.Log("GENETICS",
                 $"Micropropagation successful: {quantity} clones created from {culture.Name}", null);
 
-            // Generate seed IDs for event
-            var seedIds = new string[cloneSeeds.Length];
-            for (int i = 0; i < cloneSeeds.Length; i++)
-            {
-                seedIds[i] = GenerateSeedId(cloneSeeds[i]);
-            }
-
-            OnMicropropagationCompleted?.Invoke(cultureId, seedIds);
+            OnMicropropagationCompleted?.Invoke(cultureId, quantity, cloneSeeds.Length, cloneSeeds);
             return true;
         }
 

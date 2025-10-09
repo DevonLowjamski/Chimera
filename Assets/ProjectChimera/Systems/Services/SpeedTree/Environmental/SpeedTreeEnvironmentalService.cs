@@ -226,7 +226,17 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         /// </summary>
         public SeasonalState GetSeasonalState()
         {
-            return _seasonalSystem?.GetCurrentSeasonalState() ?? new SeasonalState();
+            var stats = _seasonalSystem?.GetCurrentSeasonalState();
+            if (stats.HasValue)
+            {
+                return new SeasonalState
+                {
+                    CurrentSeason = stats.Value.CurrentSeason,
+                    TransitionProgress = stats.Value.TransitionProgress,
+                    IsTransitioning = stats.Value.TransitionProgress < 1f
+                };
+            }
+            return new SeasonalState();
         }
 
         /// <summary>

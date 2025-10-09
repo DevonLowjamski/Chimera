@@ -189,7 +189,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
                 {
                     var currentTint = material.GetColor(_seasonalTintPropertyId);
                     var targetTint = effect.ColorTint;
-                    material.SetColor(_seasonalTintPropertyId, 
+                    material.SetColor(_seasonalTintPropertyId,
                         Color.Lerp(currentTint, targetTint, _seasonalTransitionProgress));
                 }
 
@@ -243,6 +243,32 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
                 TransitionProgress = _seasonalTransitionProgress,
                 IsTransitioning = _seasonalTransitionProgress < 1f
             };
+        }
+
+        // Backward-compatible method aliases
+        public SeasonalConditions GetSeasonalConditions() => GetCurrentSeasonalConditions();
+        public SeasonalStatistics GetCurrentSeasonalState() => GetStatistics();
+
+        public void ApplySeasonalEffects(float deltaTime)
+        {
+            Tick(deltaTime);
+        }
+
+        public void UpdateSeasonalSystem(float deltaTime)
+        {
+            Tick(deltaTime);
+        }
+
+        public float GetSeasonalGrowthMultiplier()
+        {
+            var effect = _effectsManager?.GetSeasonalEffect(_currentSeason);
+            return effect?.GrowthMultiplier ?? 1f;
+        }
+
+        public float GetSeasonalStressMultiplier()
+        {
+            var effect = _effectsManager?.GetSeasonalEffect(_currentSeason);
+            return effect?.StressMultiplier ?? 1f;
         }
 
         #endregion

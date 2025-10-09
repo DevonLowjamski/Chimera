@@ -14,9 +14,9 @@ namespace ProjectChimera.Data.Cultivation.Plant
     public class GrowthEnvironmentalCalculator
     {
         [SerializeField] private bool _environmentalInfluence = true;
-        
+
         // Environmental factors
-        [SerializeField] private EnvironmentalConditions _currentEnvironment;
+        [SerializeField] private EnvironmentalConditions? _currentEnvironment;
         [SerializeField] private float _lightOptimalityFactor = 1f;
         [SerializeField] private float _temperatureOptimalityFactor = 1f;
         [SerializeField] private float _humidityOptimalityFactor = 1f;
@@ -29,7 +29,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
         private const float OPTIMAL_HUMIDITY_MIN = 50f;
         private const float OPTIMAL_HUMIDITY_MAX = 70f;
 
-        public EnvironmentalConditions CurrentEnvironment => _currentEnvironment;
+        public EnvironmentalConditions? CurrentEnvironment => _currentEnvironment;
         public float LightOptimalityFactor => _lightOptimalityFactor;
         public float TemperatureOptimalityFactor => _temperatureOptimalityFactor;
         public float HumidityOptimalityFactor => _humidityOptimalityFactor;
@@ -69,20 +69,22 @@ namespace ProjectChimera.Data.Cultivation.Plant
 
         private void UpdateEnvironmentalFactors()
         {
-            if (_currentEnvironment == null)
+            if (!_currentEnvironment.HasValue)
             {
                 InitializeEnvironmentalFactors();
                 return;
             }
 
+            var env = _currentEnvironment.Value;
+
             // Light optimality (PPFD between 400-800 is optimal)
-            _lightOptimalityFactor = CalculateLightOptimality(_currentEnvironment.LightIntensity);
+            _lightOptimalityFactor = CalculateLightOptimality(env.LightIntensity);
 
             // Temperature optimality (20-28°C is optimal)
-            _temperatureOptimalityFactor = CalculateTemperatureOptimality(_currentEnvironment.Temperature);
+            _temperatureOptimalityFactor = CalculateTemperatureOptimality(env.Temperature);
 
             // Humidity optimality (50-70% is optimal)
-            _humidityOptimalityFactor = CalculateHumidityOptimality(_currentEnvironment.Humidity);
+            _humidityOptimalityFactor = CalculateHumidityOptimality(env.Humidity);
         }
 
         private void InitializeEnvironmentalFactors()
