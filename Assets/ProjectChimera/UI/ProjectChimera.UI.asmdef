@@ -6,6 +6,7 @@
         "ProjectChimera.Shared",
         "ProjectChimera.Data",
         "ProjectChimera.Data.Events",
+        "ProjectChimera.Data.Genetics",
         "ProjectChimera.Systems",
         "ProjectChimera.Systems.Gameplay",
         "Unity.TextMeshPro",

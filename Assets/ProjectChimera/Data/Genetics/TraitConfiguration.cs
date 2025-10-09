@@ -322,13 +322,18 @@ namespace ProjectChimera.Data.Genetics
         {
             return traitType switch
             {
-                TraitType.THC => THC,
-                TraitType.CBD => CBD,
+                // Map comprehensive TraitType enum to configuration names
+                TraitType.THCPotency => THC,
+                TraitType.THCContent => THC,
+                TraitType.CBDContent => CBD,
                 TraitType.Yield => Yield,
+                TraitType.TotalYield => Yield,
+                TraitType.YieldPotential => Yield,
                 TraitType.FloweringTime => FloweringTime,
-                TraitType.StressTolerance => StressTolerance,
+                TraitType.StressResistance => StressTolerance,
                 TraitType.Height => Height,
-                TraitType.TerpeneIntensity => TerpeneIntensity,
+                TraitType.PlantHeight => Height,
+                TraitType.TerpeneProduction => TerpeneIntensity,
                 _ => TraitConfiguration.Default
             };
         }

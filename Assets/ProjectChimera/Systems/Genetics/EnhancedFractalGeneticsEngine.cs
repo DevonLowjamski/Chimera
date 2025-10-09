@@ -463,33 +463,5 @@ namespace ProjectChimera.Systems.Genetics
         };
     }
 
-    /// <summary>
-    /// Deterministic pseudo-random number generator for reproducible genetics.
-    /// Same seed → same offspring (critical for blockchain verification!)
-    /// </summary>
-    public class DeterministicPRNG
-    {
-        private System.Random _rng;
-
-        public DeterministicPRNG(ulong seed)
-        {
-            // Convert ulong to int for System.Random (platform-consistent)
-            _rng = new System.Random((int)(seed % int.MaxValue));
-        }
-
-        public float NextFloat(float min, float max)
-        {
-            return (float)(_rng.NextDouble() * (max - min) + min);
-        }
-
-        public bool NextBool()
-        {
-            return _rng.Next(2) == 0;
-        }
-
-        public int NextInt(int min, int max)
-        {
-            return _rng.Next(min, max);
-        }
-    }
+    // NOTE: DeterministicPRNG class is now in dedicated DeterministicPRNG.cs file
 }

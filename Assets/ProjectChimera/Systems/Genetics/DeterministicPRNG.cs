@@ -1,169 +1,50 @@
-using UnityEngine;
-using ProjectChimera.Core.Logging;
-using ProjectChimera.Core;
+using System;
 
 namespace ProjectChimera.Systems.Genetics
 {
     /// <summary>
-    /// SIMPLE: Basic deterministic random number generator aligned with Project Chimera's genetics vision.
-    /// Focuses on essential randomization for basic breeding mechanics.
+    /// Deterministic pseudo-random number generator for reproducible genetics.
+    /// Same seed → same offspring (critical for blockchain verification!)
+    ///
+    /// USAGE: Used by EnhancedFractalGeneticsEngine for deterministic breeding.
+    /// IMPORTANT: Must be deterministic across platforms for blockchain consensus.
     /// </summary>
-    public class DeterministicPRNG : MonoBehaviour
+    public class DeterministicPRNG
     {
-        [Header("Basic Random Settings")]
-        [SerializeField] private int _seed = 12345;
-        [SerializeField] private bool _enableLogging = true;
-
-        // Basic random state
-        private System.Random _random;
-        private bool _isInitialized = false;
+        private System.Random _rng;
 
         /// <summary>
-        /// Initialize the basic PRNG
+        /// Create a new deterministic PRNG with the given seed.
+        /// Same seed will always produce the same sequence of random numbers.
         /// </summary>
-        public void Initialize(int? customSeed = null)
+        public DeterministicPRNG(ulong seed)
         {
-            if (_isInitialized) return;
-
-            int seed = customSeed ?? _seed;
-            _random = new System.Random(seed);
-            _isInitialized = true;
-
-            if (_enableLogging)
-            {
-                ChimeraLogger.Log("OTHER", "$1", this);
-            }
+            // Convert ulong to int for System.Random (platform-consistent)
+            _rng = new System.Random((int)(seed % int.MaxValue));
         }
 
         /// <summary>
-        /// Generate a random float between 0 and 1
-        /// </summary>
-        public float NextFloat()
-        {
-            EnsureInitialized();
-            return (float)_random.NextDouble();
-        }
-
-        /// <summary>
-        /// Generate a random float between min and max
+        /// Generate a random float between min and max (inclusive).
         /// </summary>
         public float NextFloat(float min, float max)
         {
-            EnsureInitialized();
-            return Mathf.Lerp(min, max, (float)_random.NextDouble());
+            return (float)(_rng.NextDouble() * (max - min) + min);
         }
 
         /// <summary>
-        /// Generate a random integer
-        /// </summary>
-        public int NextInt()
-        {
-            EnsureInitialized();
-            return _random.Next();
-        }
-
-        /// <summary>
-        /// Generate a random integer between min and max (exclusive)
-        /// </summary>
-        public int NextInt(int min, int max)
-        {
-            EnsureInitialized();
-            return _random.Next(min, max);
-        }
-
-        /// <summary>
-        /// Generate a random boolean
+        /// Generate a random boolean.
         /// </summary>
         public bool NextBool()
         {
-            EnsureInitialized();
-            return _random.Next(2) == 1;
+            return _rng.Next(2) == 0;
         }
 
         /// <summary>
-        /// Generate a random Vector3
+        /// Generate a random integer between min (inclusive) and max (exclusive).
         /// </summary>
-        public Vector3 NextVector3(float min, float max)
+        public int NextInt(int min, int max)
         {
-            return new Vector3(
-                NextFloat(min, max),
-                NextFloat(min, max),
-                NextFloat(min, max)
-            );
+            return _rng.Next(min, max);
         }
-
-        /// <summary>
-        /// Set a new seed
-        /// </summary>
-        public void SetSeed(int newSeed)
-        {
-            _seed = newSeed;
-            _random = new System.Random(_seed);
-
-            if (_enableLogging)
-            {
-                ChimeraLogger.Log("OTHER", "$1", this);
-            }
-        }
-
-        /// <summary>
-        /// Get current seed
-        /// </summary>
-        public int GetCurrentSeed()
-        {
-            return _seed;
-        }
-
-        /// <summary>
-        /// Reset to original seed
-        /// </summary>
-        public void ResetToOriginalSeed()
-        {
-            SetSeed(_seed);
-        }
-
-        /// <summary>
-        /// Check if initialized
-        /// </summary>
-        public bool IsInitialized()
-        {
-            return _isInitialized;
-        }
-
-        /// <summary>
-        /// Get random statistics
-        /// </summary>
-        public RandomStatistics GetStatistics()
-        {
-            return new RandomStatistics
-            {
-                IsInitialized = _isInitialized,
-                CurrentSeed = _seed,
-                EnableLogging = _enableLogging
-            };
-        }
-
-        #region Private Methods
-
-        private void EnsureInitialized()
-        {
-            if (!_isInitialized)
-            {
-                Initialize();
-            }
-        }
-
-        #endregion
-    }
-
-    /// <summary>
-    /// Random statistics
-    /// </summary>
-    [System.Serializable]
-    public class RandomStatistics
-    {
-        public bool IsInitialized;
-        public int CurrentSeed;
-        public bool EnableLogging;
     }
 }

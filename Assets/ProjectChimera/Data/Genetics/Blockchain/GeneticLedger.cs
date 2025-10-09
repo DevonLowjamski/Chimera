@@ -69,7 +69,7 @@ namespace ProjectChimera.Data.Genetics.Blockchain
             // 1. Verify proof-of-work (breeding calculations were completed)
             if (!packet.ValidateProofOfWork(DIFFICULTY))
             {
-                ProjectChimera.Core.Logging.ChimeraLogger.LogWarning("BLOCKCHAIN", "Block failed proof-of-work validation", null);
+                Debug.LogWarning("[BLOCKCHAIN] Block failed proof-of-work validation");
                 return false;
             }
 
@@ -81,7 +81,7 @@ namespace ProjectChimera.Data.Genetics.Blockchain
 
                 if (!parent1Exists && !parent2Exists)
                 {
-                    ProjectChimera.Core.Logging.ChimeraLogger.LogWarning("BLOCKCHAIN", "Block references unknown parent genetics", null);
+                    Debug.LogWarning("[BLOCKCHAIN] Block references unknown parent genetics");
                     return false;
                 }
             }
@@ -89,7 +89,7 @@ namespace ProjectChimera.Data.Genetics.Blockchain
             // 3. Verify hash integrity
             if (packet.BlockHash != packet.CalculateHash())
             {
-                ProjectChimera.Core.Logging.ChimeraLogger.LogWarning("BLOCKCHAIN", "Block hash mismatch - possible data corruption", null);
+                Debug.LogWarning("[BLOCKCHAIN] Block hash mismatch - possible data corruption");
                 return false;
             }
 
@@ -99,7 +99,7 @@ namespace ProjectChimera.Data.Genetics.Blockchain
                 var lastBlock = _chain[_chain.Count - 1];
                 if (packet.PreviousBlockHash != lastBlock.BlockHash)
                 {
-                    ProjectChimera.Core.Logging.ChimeraLogger.LogWarning("BLOCKCHAIN", "Block chain linkage broken", null);
+                    Debug.LogWarning("[BLOCKCHAIN] Block chain linkage broken");
                     return false;
                 }
             }
@@ -122,7 +122,7 @@ namespace ProjectChimera.Data.Genetics.Blockchain
                 // Verify hash integrity
                 if (currentBlock.BlockHash != currentBlock.CalculateHash())
                 {
-                    ProjectChimera.Core.Logging.ChimeraLogger.LogError("BLOCKCHAIN", $"Chain validation failed at block {i} - hash mismatch", null);
+                    Debug.LogError($"[BLOCKCHAIN] Chain validation failed at block {i} - hash mismatch");
                     return false;
                 }
 
@@ -131,7 +131,7 @@ namespace ProjectChimera.Data.Genetics.Blockchain
                 {
                     if (currentBlock.PreviousBlockHash != previousBlock.BlockHash)
                     {
-                        ProjectChimera.Core.Logging.ChimeraLogger.LogError("BLOCKCHAIN", $"Chain validation failed at block {i} - broken link", null);
+                        Debug.LogError($"[BLOCKCHAIN] Chain validation failed at block {i} - broken link");
                         return false;
                     }
                 }
@@ -139,7 +139,7 @@ namespace ProjectChimera.Data.Genetics.Blockchain
                 // Verify proof-of-work
                 if (!currentBlock.ValidateProofOfWork(DIFFICULTY))
                 {
-                    ProjectChimera.Core.Logging.ChimeraLogger.LogError("BLOCKCHAIN", $"Chain validation failed at block {i} - invalid proof-of-work", null);
+                    Debug.LogError($"[BLOCKCHAIN] Chain validation failed at block {i} - invalid proof-of-work");
                     return false;
                 }
             }

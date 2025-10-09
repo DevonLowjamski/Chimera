@@ -12,6 +12,7 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
     [Serializable]
     public struct SeasonalEffectProfile
     {
+        public Season SeasonType; // The season this profile represents
         public Color Tint;
         public float Brightness;
         public float Contrast;
@@ -21,6 +22,11 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         public float HumidityModifier;
         public float LightIntensityModifier;
         public string Description;
+
+        // Backward-compatible aliases
+        public Season Season { get => SeasonType; set => SeasonType = value; }
+        public Color ColorTint { get => Tint; set => Tint = value; }
+        public float HealthMultiplier { get => StressMultiplier; set => StressMultiplier = value; }
     }
 
     /// <summary>
@@ -32,14 +38,32 @@ namespace ProjectChimera.Systems.Services.SpeedTree.Environmental
         public int PlantId;
         public Season CurrentSeason;
         public float SeasonalAdaptation; // 0-1, how well adapted to current season
-        public float LastSeasonUpdate;
+        public float LastSeasonUpdate; // Time.time of last update
+        public float AccumulatedEffects; // Cumulative seasonal effects
+        public DateTime LastChange; // DateTime of last season change
 
         public PlantSeasonalData(int plantId)
         {
             PlantId = plantId;
             SeasonalAdaptation = 0.5f; // Start at 50% adaptation
             LastSeasonUpdate = Time.time;
+            AccumulatedEffects = 0f;
+            LastChange = DateTime.Now;
         }
+
+        // Parameterless constructor for compatibility
+        public PlantSeasonalData()
+        {
+            PlantId = -1;
+            SeasonalAdaptation = 0.5f;
+            LastSeasonUpdate = Time.time;
+            AccumulatedEffects = 0f;
+            LastChange = DateTime.Now;
+        }
+
+        // Backward-compatible aliases
+        public float AccumulatedSeasonalEffects { get => AccumulatedEffects; set => AccumulatedEffects = value; }
+        public DateTime LastSeasonChange { get => LastChange; set => LastChange = value; }
     }
 
     /// <summary>
