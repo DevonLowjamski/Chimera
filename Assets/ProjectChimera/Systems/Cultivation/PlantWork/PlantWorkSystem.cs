@@ -5,6 +5,7 @@ using UnityEngine;
 using ProjectChimera.Core;
 using ProjectChimera.Core.Logging;
 using ProjectChimera.Data.Cultivation.Plant;
+using ProjectChimera.Data.Shared;
 
 namespace ProjectChimera.Systems.Cultivation.PlantWork
 {
@@ -135,7 +136,7 @@ namespace ProjectChimera.Systems.Cultivation.PlantWork
                 WorkType = PlantWorkType.Topping,
                 ApplicationDate = DateTime.Now,
                 GrowthStage = plant.CurrentGrowthStage,
-                DaysIntoStage = plant.DaysInCurrentStage
+                DaysIntoStage = (int)(plant.Age) // Data layer PlantInstance doesn't track stage transitions
             };
 
             AddWorkRecord(plantId, record);
@@ -178,7 +179,7 @@ namespace ProjectChimera.Systems.Cultivation.PlantWork
                 WorkType = PlantWorkType.FIMming,
                 ApplicationDate = DateTime.Now,
                 GrowthStage = plant.CurrentGrowthStage,
-                DaysIntoStage = plant.DaysInCurrentStage
+                DaysIntoStage = (int)(plant.Age) // Data layer PlantInstance doesn't track stage transitions
             };
 
             AddWorkRecord(plantId, record);
@@ -203,7 +204,7 @@ namespace ProjectChimera.Systems.Cultivation.PlantWork
         /// </summary>
         public bool ApplyLollipopping(string plantId, PlantInstance plant)
         {
-            if (plant.CurrentGrowthStage != GrowthStage.Flowering)
+            if (plant.CurrentGrowthStage != PlantGrowthStage.Flowering)
             {
                 OnWorkFailed?.Invoke(plantId, "Lollipopping: early flowering stage");
                 return false;
@@ -216,7 +217,7 @@ namespace ProjectChimera.Systems.Cultivation.PlantWork
                 WorkType = PlantWorkType.Lollipopping,
                 ApplicationDate = DateTime.Now,
                 GrowthStage = plant.CurrentGrowthStage,
-                DaysIntoStage = plant.DaysInCurrentStage
+                DaysIntoStage = (int)(plant.Age) // Data layer PlantInstance doesn't track stage transitions
             };
 
             AddWorkRecord(plantId, record);
@@ -251,7 +252,7 @@ namespace ProjectChimera.Systems.Cultivation.PlantWork
                 WorkType = PlantWorkType.Defoliation,
                 ApplicationDate = DateTime.Now,
                 GrowthStage = plant.CurrentGrowthStage,
-                DaysIntoStage = plant.DaysInCurrentStage
+                DaysIntoStage = (int)(plant.Age) // Data layer PlantInstance doesn't track stage transitions
             };
 
             AddWorkRecord(plantId, record);
@@ -277,7 +278,7 @@ namespace ProjectChimera.Systems.Cultivation.PlantWork
         /// </summary>
         public bool ApplyLST(string plantId, PlantInstance plant)
         {
-            if (plant.CurrentGrowthStage != GrowthStage.Vegetative && plant.CurrentGrowthStage != GrowthStage.Flowering)
+            if (plant.CurrentGrowthStage != PlantGrowthStage.Vegetative && plant.CurrentGrowthStage != PlantGrowthStage.Flowering)
             {
                 OnWorkFailed?.Invoke(plantId, "LST requires vegetative or early flowering stage");
                 return false;
@@ -290,7 +291,7 @@ namespace ProjectChimera.Systems.Cultivation.PlantWork
                 WorkType = PlantWorkType.LST,
                 ApplicationDate = DateTime.Now,
                 GrowthStage = plant.CurrentGrowthStage,
-                DaysIntoStage = plant.DaysInCurrentStage
+                DaysIntoStage = (int)(plant.Age) // Data layer PlantInstance doesn't track stage transitions
             };
 
             AddWorkRecord(plantId, record);
@@ -312,7 +313,7 @@ namespace ProjectChimera.Systems.Cultivation.PlantWork
         /// </summary>
         public bool ApplyHST(string plantId, PlantInstance plant)
         {
-            if (plant.CurrentGrowthStage != GrowthStage.Vegetative)
+            if (plant.CurrentGrowthStage != PlantGrowthStage.Vegetative)
             {
                 OnWorkFailed?.Invoke(plantId, "HST requires vegetative stage");
                 return false;
@@ -325,7 +326,7 @@ namespace ProjectChimera.Systems.Cultivation.PlantWork
                 WorkType = PlantWorkType.HST,
                 ApplicationDate = DateTime.Now,
                 GrowthStage = plant.CurrentGrowthStage,
-                DaysIntoStage = plant.DaysInCurrentStage
+                DaysIntoStage = (int)(plant.Age) // Data layer PlantInstance doesn't track stage transitions
             };
 
             AddWorkRecord(plantId, record);
@@ -347,7 +348,7 @@ namespace ProjectChimera.Systems.Cultivation.PlantWork
         /// </summary>
         public bool ApplyScrOG(string plantId, PlantInstance plant)
         {
-            if (plant.CurrentGrowthStage != GrowthStage.Vegetative)
+            if (plant.CurrentGrowthStage != PlantGrowthStage.Vegetative)
             {
                 OnWorkFailed?.Invoke(plantId, "ScrOG requires vegetative stage");
                 return false;
@@ -366,7 +367,7 @@ namespace ProjectChimera.Systems.Cultivation.PlantWork
                 WorkType = PlantWorkType.ScrOG,
                 ApplicationDate = DateTime.Now,
                 GrowthStage = plant.CurrentGrowthStage,
-                DaysIntoStage = plant.DaysInCurrentStage
+                DaysIntoStage = (int)(plant.Age) // Data layer PlantInstance doesn't track stage transitions
             };
 
             AddWorkRecord(plantId, record);
@@ -388,7 +389,7 @@ namespace ProjectChimera.Systems.Cultivation.PlantWork
         /// </summary>
         public bool ApplySupercropping(string plantId, PlantInstance plant)
         {
-            if (plant.CurrentGrowthStage != GrowthStage.Vegetative)
+            if (plant.CurrentGrowthStage != PlantGrowthStage.Vegetative)
             {
                 OnWorkFailed?.Invoke(plantId, "Supercropping requires vegetative stage");
                 return false;
@@ -401,7 +402,7 @@ namespace ProjectChimera.Systems.Cultivation.PlantWork
                 WorkType = PlantWorkType.Supercropping,
                 ApplicationDate = DateTime.Now,
                 GrowthStage = plant.CurrentGrowthStage,
-                DaysIntoStage = plant.DaysInCurrentStage
+                DaysIntoStage = (int)(plant.Age) // Data layer PlantInstance doesn't track stage transitions
             };
 
             AddWorkRecord(plantId, record);
@@ -423,16 +424,18 @@ namespace ProjectChimera.Systems.Cultivation.PlantWork
 
         private bool ValidateTiming(PlantInstance plant, PlantWorkType workType, int minDays, int maxDays)
         {
+            int daysInStage = (int)plant.Age; // Data layer PlantInstance doesn't track stage transitions
+
             if (workType == PlantWorkType.Topping || workType == PlantWorkType.FIMming)
             {
-                return plant.CurrentGrowthStage == GrowthStage.Vegetative &&
-                       plant.DaysInCurrentStage >= minDays && plant.DaysInCurrentStage <= maxDays;
+                return plant.CurrentGrowthStage == PlantGrowthStage.Vegetative &&
+                       daysInStage >= minDays && daysInStage <= maxDays;
             }
 
             if (workType == PlantWorkType.Defoliation)
             {
-                return plant.CurrentGrowthStage == GrowthStage.Flowering &&
-                       plant.DaysInCurrentStage >= minDays && plant.DaysInCurrentStage <= maxDays;
+                return plant.CurrentGrowthStage == PlantGrowthStage.Flowering &&
+                       daysInStage >= minDays && daysInStage <= maxDays;
             }
 
             return true;
@@ -480,7 +483,6 @@ namespace ProjectChimera.Systems.Cultivation.PlantWork
         public PlantWorkStats GetStatistics()
         {
             var allRecords = _workHistory.Values.SelectMany(h => h).ToList();
-
             return new PlantWorkStats
             {
                 TotalOperations = allRecords.Count,
@@ -488,10 +490,7 @@ namespace ProjectChimera.Systems.Cultivation.PlantWork
                 TrainingOperations = allRecords.Count(r => r.WorkType > PlantWorkType.Defoliation),
                 AverageYieldBoost = _activeEffects.Values.Any() ? _activeEffects.Values.Average(e => e.YieldMultiplier) - 1f : 0f,
                 PlantsWithWork = _activeEffects.Count,
-                MostCommonWork = allRecords.GroupBy(r => r.WorkType)
-                    .OrderByDescending(g => g.Count())
-                    .Select(g => g.Key)
-                    .FirstOrDefault()
+                MostCommonWork = allRecords.GroupBy(r => r.WorkType).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault()
             };
         }
 
