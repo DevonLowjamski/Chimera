@@ -211,7 +211,7 @@ namespace ProjectChimera.Systems.Marketplace
         #region Skill Point Management
 
         /// <summary>
-        /// Checks if user can afford price.
+        /// Checks if user can afford price using MarketplaceTransactionHelpers.
         /// </summary>
         private bool CanAfford(string userId, int priceSkillPoints)
         {
@@ -221,12 +221,8 @@ namespace ProjectChimera.Systems.Marketplace
             // For current player, check actual skill points
             if (userId == _currentPlayerId)
             {
-                var availableSkillPointsProperty = _skillTreeManager.GetType().GetProperty("AvailableSkillPoints");
-                if (availableSkillPointsProperty != null)
-                {
-                    int availablePoints = (int)availableSkillPointsProperty.GetValue(_skillTreeManager);
-                    return availablePoints >= priceSkillPoints;
-                }
+                int availablePoints = MarketplaceTransactionHelpers.GetAvailableSkillPoints(_skillTreeManager);
+                return availablePoints >= priceSkillPoints;
             }
 
             // For other players, assume they can afford (server would validate)
@@ -234,7 +230,7 @@ namespace ProjectChimera.Systems.Marketplace
         }
 
         /// <summary>
-        /// Deducts skill points from buyer.
+        /// Deducts skill points from buyer using MarketplaceTransactionHelpers.
         /// </summary>
         private bool DeductSkillPoints(string userId, int amount)
         {
@@ -244,54 +240,40 @@ namespace ProjectChimera.Systems.Marketplace
             // Only deduct from current player
             if (userId == _currentPlayerId)
             {
-                var spendMethod = _skillTreeManager.GetType().GetMethod("SpendSkillPoints");
-                if (spendMethod != null)
+                bool success = MarketplaceTransactionHelpers.SpendSkillPoints(
+                    _skillTreeManager, amount, "Marketplace purchase");
+
+                if (success)
                 {
-                    bool success = (bool)spendMethod.Invoke(_skillTreeManager, new object[] { amount, "Marketplace purchase" });
-                    if (success)
-                    {
-                        OnSkillPointsSpent?.Invoke(userId, amount);
-                    }
-                    return success;
+                    OnSkillPointsSpent?.Invoke(userId, amount);
                 }
+                return success;
             }
 
             return true;
         }
 
         /// <summary>
-        /// Refunds skill points to buyer (on failed transaction).
+        /// Refunds skill points to buyer (on failed transaction) using MarketplaceTransactionHelpers.
         /// </summary>
         private void RefundSkillPoints(string userId, int amount)
         {
-            if (_skillTreeManager == null)
+            if (_skillTreeManager == null || userId != _currentPlayerId)
                 return;
 
-            if (userId == _currentPlayerId)
-            {
-                var awardMethod = _skillTreeManager.GetType().GetMethod("AwardSkillPoints");
-                awardMethod?.Invoke(_skillTreeManager, new object[] { amount, "Marketplace refund" });
-            }
+            MarketplaceTransactionHelpers.AwardSkillPoints(_skillTreeManager, amount, "Marketplace refund");
         }
 
         /// <summary>
-        /// Credits skill points to seller.
+        /// Credits skill points to seller using MarketplaceTransactionHelpers.
         /// </summary>
         private void CreditSeller(string sellerId, int amount)
         {
-            if (_skillTreeManager == null)
+            if (_skillTreeManager == null || sellerId != _currentPlayerId)
                 return;
 
-            // Only credit current player
-            if (sellerId == _currentPlayerId)
-            {
-                var awardMethod = _skillTreeManager.GetType().GetMethod("AwardSkillPoints");
-                if (awardMethod != null)
-                {
-                    awardMethod.Invoke(_skillTreeManager, new object[] { amount, "Marketplace sale" });
-                    OnSkillPointsEarned?.Invoke(sellerId, amount);
-                }
-            }
+            MarketplaceTransactionHelpers.AwardSkillPoints(_skillTreeManager, amount, "Marketplace sale");
+            OnSkillPointsEarned?.Invoke(sellerId, amount);
         }
 
         #endregion
@@ -480,20 +462,11 @@ namespace ProjectChimera.Systems.Marketplace
         #endregion
 
         /// <summary>
-        /// Gets current player's skill point balance.
+        /// Gets current player's skill point balance using MarketplaceTransactionHelpers.
         /// </summary>
         public int GetPlayerSkillPoints()
         {
-            if (_skillTreeManager == null)
-                return 0;
-
-            var availableSkillPointsProperty = _skillTreeManager.GetType().GetProperty("AvailableSkillPoints");
-            if (availableSkillPointsProperty != null)
-            {
-                return (int)availableSkillPointsProperty.GetValue(_skillTreeManager);
-            }
-
-            return 0;
+            return MarketplaceTransactionHelpers.GetAvailableSkillPoints(_skillTreeManager);
         }
 
         /// <summary>
