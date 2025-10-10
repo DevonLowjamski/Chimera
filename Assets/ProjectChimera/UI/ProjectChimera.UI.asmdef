@@ -9,6 +9,7 @@
         "ProjectChimera.Data.Genetics",
         "ProjectChimera.Systems",
         "ProjectChimera.Systems.Gameplay",
+        "ProjectChimera.Systems.Progression",
         "Unity.TextMeshPro",
         "UnityEngine.UI",
         "Unity.UIToolkit"

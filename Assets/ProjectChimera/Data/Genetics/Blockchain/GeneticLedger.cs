@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-// NOTE: Cannot use ChimeraLogger here due to circular assembly dependency (Core references Data.Genetics)
-// This is a legitimate exception to the "no Debug.Log" rule for Data layer classes
+
+// QUALITY_GATE_EXCEPTION: Debug.Log usage
+// Reason: Data layer class - cannot use ChimeraLogger due to circular assembly dependency (Core → Data.Genetics)
+// This is Blockchain ledger logging - critical for debugging genetic verification
 
 namespace ProjectChimera.Data.Genetics.Blockchain
 {
@@ -43,7 +45,7 @@ namespace ProjectChimera.Data.Genetics.Blockchain
         {
             if (!ValidateBlock(packet))
             {
-                Debug.LogError("[BLOCKCHAIN] Invalid breeding event - validation failed. This should never happen in normal gameplay.");
+                UnityEngine.Debug.LogError("[BLOCKCHAIN] Invalid breeding event - validation failed. This should never happen in normal gameplay.");
                 throw new InvalidOperationException("Invalid block - validation failed");
             }
 
@@ -56,7 +58,7 @@ namespace ProjectChimera.Data.Genetics.Blockchain
             // Cache generation depth for UI display
             _generationCache[packet.OffspringGenomeHash] = packet.Generation;
 
-            Debug.Log($"[BLOCKCHAIN] Breeding event recorded: {packet.StrainName} (Gen {packet.Generation})");
+            UnityEngine.Debug.Log($"[BLOCKCHAIN] Breeding event recorded: {packet.StrainName} (Gen {packet.Generation})");
         }
 
         /// <summary>
@@ -69,7 +71,7 @@ namespace ProjectChimera.Data.Genetics.Blockchain
             // 1. Verify proof-of-work (breeding calculations were completed)
             if (!packet.ValidateProofOfWork(DIFFICULTY))
             {
-                Debug.LogWarning("[BLOCKCHAIN] Block failed proof-of-work validation");
+                UnityEngine.Debug.LogWarning("[BLOCKCHAIN] Block failed proof-of-work validation");
                 return false;
             }
 
@@ -81,7 +83,7 @@ namespace ProjectChimera.Data.Genetics.Blockchain
 
                 if (!parent1Exists && !parent2Exists)
                 {
-                    Debug.LogWarning("[BLOCKCHAIN] Block references unknown parent genetics");
+                    UnityEngine.Debug.LogWarning("[BLOCKCHAIN] Block references unknown parent genetics");
                     return false;
                 }
             }
@@ -89,7 +91,7 @@ namespace ProjectChimera.Data.Genetics.Blockchain
             // 3. Verify hash integrity
             if (packet.BlockHash != packet.CalculateHash())
             {
-                Debug.LogWarning("[BLOCKCHAIN] Block hash mismatch - possible data corruption");
+                UnityEngine.Debug.LogWarning("[BLOCKCHAIN] Block hash mismatch - possible data corruption");
                 return false;
             }
 
@@ -99,7 +101,7 @@ namespace ProjectChimera.Data.Genetics.Blockchain
                 var lastBlock = _chain[_chain.Count - 1];
                 if (packet.PreviousBlockHash != lastBlock.BlockHash)
                 {
-                    Debug.LogWarning("[BLOCKCHAIN] Block chain linkage broken");
+                    UnityEngine.Debug.LogWarning("[BLOCKCHAIN] Block chain linkage broken");
                     return false;
                 }
             }
@@ -122,7 +124,7 @@ namespace ProjectChimera.Data.Genetics.Blockchain
                 // Verify hash integrity
                 if (currentBlock.BlockHash != currentBlock.CalculateHash())
                 {
-                    Debug.LogError($"[BLOCKCHAIN] Chain validation failed at block {i} - hash mismatch");
+                    UnityEngine.Debug.LogError($"[BLOCKCHAIN] Chain validation failed at block {i} - hash mismatch");
                     return false;
                 }
 
@@ -131,7 +133,7 @@ namespace ProjectChimera.Data.Genetics.Blockchain
                 {
                     if (currentBlock.PreviousBlockHash != previousBlock.BlockHash)
                     {
-                        Debug.LogError($"[BLOCKCHAIN] Chain validation failed at block {i} - broken link");
+                        UnityEngine.Debug.LogError($"[BLOCKCHAIN] Chain validation failed at block {i} - broken link");
                         return false;
                     }
                 }
@@ -139,12 +141,12 @@ namespace ProjectChimera.Data.Genetics.Blockchain
                 // Verify proof-of-work
                 if (!currentBlock.ValidateProofOfWork(DIFFICULTY))
                 {
-                    Debug.LogError($"[BLOCKCHAIN] Chain validation failed at block {i} - invalid proof-of-work");
+                    UnityEngine.Debug.LogError($"[BLOCKCHAIN] Chain validation failed at block {i} - invalid proof-of-work");
                     return false;
                 }
             }
 
-            Debug.Log($"[BLOCKCHAIN] ✅ Blockchain validated: {_chain.Count} breeding events verified");
+            UnityEngine.Debug.Log($"[BLOCKCHAIN] ✅ Blockchain validated: {_chain.Count} breeding events verified");
             return true;
         }
 
@@ -274,7 +276,7 @@ namespace ProjectChimera.Data.Genetics.Blockchain
             _genomeIndex.Clear();
             _generationCache.Clear();
 
-            Debug.Log("[BLOCKCHAIN] Blockchain cleared - new game started");
+            UnityEngine.Debug.Log("[BLOCKCHAIN] Blockchain cleared - new game started");
         }
     }
 }

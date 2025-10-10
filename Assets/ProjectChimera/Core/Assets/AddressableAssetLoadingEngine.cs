@@ -65,7 +65,6 @@ namespace ProjectChimera.Core.Assets
                 ChimeraLogger.Log("ASSETS", "Addressable Asset Loading Engine initialized");
             }
         }
-
         /// <summary>
         /// Load asset asynchronously with full error handling
         /// </summary>
@@ -75,7 +74,6 @@ namespace ProjectChimera.Core.Assets
             {
                 throw new InvalidOperationException("Loading engine not initialized");
             }
-
             var startTime = DateTime.Now;
             _stats.LoadsAttempted++;
 
@@ -86,7 +84,6 @@ namespace ProjectChimera.Core.Assets
                 {
                     await _loadSemaphore.WaitAsync();
                 }
-
                 // Create loading operation
                 var operation = new LoadingOperation
                 {
@@ -94,20 +91,15 @@ namespace ProjectChimera.Core.Assets
                     StartTime = startTime,
                     IsActive = true
                 };
-
                 _activeOperations[address] = operation;
-
                 // Perform the actual load
                 var result = await PerformLoadAsync<T>(address, operation);
-
                 var loadTime = (float)(DateTime.Now - startTime).TotalMilliseconds;
                 _stats.TotalLoadTime += loadTime;
-
                 if (result != null)
                 {
                     _stats.LoadsSucceeded++;
                     OnAssetLoaded?.Invoke(address, result);
-
                     if (_enableLogging)
                     {
                         ChimeraLogger.Log("ASSETS", $"Loaded asset '{address}' in {loadTime:F1}ms");
@@ -118,7 +110,6 @@ namespace ProjectChimera.Core.Assets
                     _stats.LoadsFailed++;
                     OnLoadFailed?.Invoke(address, "Load returned null");
                 }
-
                 OnStatsUpdated?.Invoke(_stats);
                 return result;
             }
@@ -126,27 +117,22 @@ namespace ProjectChimera.Core.Assets
             {
                 _stats.LoadsFailed++;
                 var errorMessage = $"Exception loading '{address}': {ex.Message}";
-
                 OnLoadFailed?.Invoke(address, errorMessage);
-
                 if (_enableLogging)
                 {
                     ChimeraLogger.LogError("ASSETS", errorMessage);
                 }
-
                 return null;
             }
             finally
             {
                 _activeOperations.Remove(address);
-
                 if (_enableParallelLoading)
                 {
                     _loadSemaphore.Release();
                 }
             }
         }
-
         /// <summary>
         /// Load asset with cancellation token support
         /// </summary>
@@ -181,7 +167,6 @@ namespace ProjectChimera.Core.Assets
                 return null;
             }
         }
-
         /// <summary>
         /// Load asset with timeout
         /// </summary>
@@ -208,7 +193,6 @@ namespace ProjectChimera.Core.Assets
                 }
             }
         }
-
         /// <summary>
         /// Load multiple assets in parallel
         /// </summary>
@@ -245,7 +229,6 @@ namespace ProjectChimera.Core.Assets
                 return new T[0];
             }
         }
-
         /// <summary>
         /// Load asset with callback pattern
         /// </summary>
@@ -269,7 +252,6 @@ namespace ProjectChimera.Core.Assets
                 onError?.Invoke(ex.Message);
             }
         }
-
         /// <summary>
         /// Perform the actual Addressable load operation
         /// </summary>
@@ -317,7 +299,6 @@ namespace ProjectChimera.Core.Assets
                 return null;
             }
         }
-
         /// <summary>
         /// Cancel ongoing load operation
         /// </summary>
@@ -351,7 +332,6 @@ namespace ProjectChimera.Core.Assets
 
             return false;
         }
-
         /// <summary>
         /// Release specific asset handle
         /// </summary>
@@ -384,7 +364,6 @@ namespace ProjectChimera.Core.Assets
 
             return false;
         }
-
         /// <summary>
         /// Release all active handles
         /// </summary>
@@ -418,7 +397,6 @@ namespace ProjectChimera.Core.Assets
                 ChimeraLogger.Log("ASSETS", $"Released {releasedCount} asset handles");
             }
         }
-
         /// <summary>
         /// Check if asset is currently loading
         /// </summary>
@@ -426,7 +404,6 @@ namespace ProjectChimera.Core.Assets
         {
             return _activeOperations.ContainsKey(address);
         }
-
         /// <summary>
         /// Get loading progress for specific asset
         /// </summary>
@@ -439,7 +416,6 @@ namespace ProjectChimera.Core.Assets
 
             return _activeOperations.ContainsKey(address) ? 0f : -1f;
         }
-
         /// <summary>
         /// Get current loading operations summary
         /// </summary>
@@ -470,7 +446,6 @@ namespace ProjectChimera.Core.Assets
                 MaxConcurrentLoads = _maxConcurrentLoads
             };
         }
-
         /// <summary>
         /// Set loading engine parameters
         /// </summary>
@@ -489,7 +464,6 @@ namespace ProjectChimera.Core.Assets
                 ChimeraLogger.Log("ASSETS", $"Loading parameters updated: Parallel={enableParallel}, Max={maxConcurrent}, Timeout={timeoutSeconds:F1}s");
             }
         }
-
         /// <summary>
         /// Reset loading statistics
         /// </summary>
@@ -508,7 +482,6 @@ namespace ProjectChimera.Core.Assets
                 TotalLoadTime = 0f
             };
         }
-
         /// <summary>
         /// Clean up resources
         /// </summary>

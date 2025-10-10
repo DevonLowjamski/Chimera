@@ -28,7 +28,9 @@ def check_debug_log_violations():
         "AntiPatternMigrationTool.cs",
         "DebugLogMigrationTool.cs",
         "DebugLogAutoMigrationTool.cs",
-        "BatchMigrationScript.cs"
+        "BatchMigrationScript.cs",
+        "GeneticLedger.cs",  # Data layer - circular dependency prevents ChimeraLogger use
+        "SkillTreeIntegrationTest.cs",  # Test file
     }
     
     # Exempted directories (legitimate Debug.Log usage)

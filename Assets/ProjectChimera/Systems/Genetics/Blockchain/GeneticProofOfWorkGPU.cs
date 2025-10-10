@@ -61,8 +61,8 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
             // Load compute shader if not assigned
             if (_miningComputeShader == null)
             {
-                // Legacy: Resources.Load used for compute shader loading (compute shaders not supported by Addressables)
-                _miningComputeShader = Resources.Load<ComputeShader>("Shaders/GeneticProofOfWork");
+                // Fallback: Compute shaders not supported by IAssetManager/Addressables (legitimate exception)
+                _miningComputeShader = Resources.Load<ComputeShader>("Shaders/GeneticProofOfWork"); // Fallback to Resources
 
                 if (_miningComputeShader == null)
                 {

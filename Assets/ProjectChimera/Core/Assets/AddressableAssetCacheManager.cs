@@ -65,7 +65,6 @@ namespace ProjectChimera.Core.Assets
                 ChimeraLogger.Log("ASSETS", "Addressable Asset Cache Manager initialized");
             }
         }
-
         /// <summary>
         /// Cache asset with memory tracking
         /// </summary>
@@ -146,7 +145,6 @@ namespace ProjectChimera.Core.Assets
 
             return true;
         }
-
         /// <summary>
         /// Retrieve cached asset
         /// </summary>
@@ -178,7 +176,6 @@ namespace ProjectChimera.Core.Assets
             _stats.CacheMisses++;
             return null;
         }
-
         /// <summary>
         /// Check if asset is cached
         /// </summary>
@@ -186,7 +183,6 @@ namespace ProjectChimera.Core.Assets
         {
             return _assetCache.ContainsKey(address);
         }
-
         /// <summary>
         /// Remove specific asset from cache
         /// </summary>
@@ -228,7 +224,6 @@ namespace ProjectChimera.Core.Assets
 
             return true;
         }
-
         /// <summary>
         /// Clear all cached assets
         /// </summary>
@@ -250,7 +245,6 @@ namespace ProjectChimera.Core.Assets
                 ChimeraLogger.Log("ASSETS", $"Cleared cache ({count} assets removed)");
             }
         }
-
         /// <summary>
         /// Clear assets of specific type
         /// </summary>
@@ -259,7 +253,6 @@ namespace ProjectChimera.Core.Assets
             var targetType = typeof(T);
             return ClearAssetType(targetType);
         }
-
         /// <summary>
         /// Clear assets of specific type
         /// </summary>
@@ -288,7 +281,6 @@ namespace ProjectChimera.Core.Assets
 
             return removedCount;
         }
-
         /// <summary>
         /// Evict least recently used assets
         /// </summary>
@@ -301,7 +293,6 @@ namespace ProjectChimera.Core.Assets
                 _stats.LRUEvictions++;
             }
         }
-
         /// <summary>
         /// Evict assets to fit required size
         /// </summary>
@@ -342,7 +333,6 @@ namespace ProjectChimera.Core.Assets
 
             return freedMemory >= requiredSize;
         }
-
         /// <summary>
         /// Get cached assets by type
         /// </summary>
@@ -364,7 +354,6 @@ namespace ProjectChimera.Core.Assets
 
             return results;
         }
-
         /// <summary>
         /// Get cache memory statistics
         /// </summary>
@@ -393,7 +382,6 @@ namespace ProjectChimera.Core.Assets
                 AverageAssetSize = _assetCache.Count > 0 ? _currentMemoryUsage / _assetCache.Count : 0
             };
         }
-
         /// <summary>
         /// Estimate asset memory usage
         /// </summary>
@@ -410,7 +398,6 @@ namespace ProjectChimera.Core.Assets
                 _ => 1024 // Default estimate
             };
         }
-
         /// <summary>
         /// Optimize cache by removing unused assets
         /// </summary>
@@ -441,7 +428,6 @@ namespace ProjectChimera.Core.Assets
 
             return assetsToRemove.Count;
         }
-
         /// <summary>
         /// Set cache configuration
         /// </summary>
@@ -472,7 +458,6 @@ namespace ProjectChimera.Core.Assets
                 ChimeraLogger.Log("ASSETS", $"Cache config updated: Enabled={enabled}, MaxSize={maxSize}, MaxMemory={maxMemory}");
             }
         }
-
         /// <summary>
         /// Get comprehensive cache summary
         /// </summary>
@@ -495,7 +480,6 @@ namespace ProjectChimera.Core.Assets
                 TypeCounts = _typeIndex.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Count)
             };
         }
-
         /// <summary>
         /// Reset cache statistics
         /// </summary>

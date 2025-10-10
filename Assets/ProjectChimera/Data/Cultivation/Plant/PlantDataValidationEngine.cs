@@ -19,50 +19,39 @@ namespace ProjectChimera.Data.Cultivation.Plant
         [SerializeField] private bool _strictValidation = true;
         [SerializeField] private bool _autoCorrectValues = false;
         [SerializeField] private float _healthTolerance = 0.1f;
-
         // Validation rules
         [SerializeField] private ValidationRules _rules = new ValidationRules();
-
         // Validation state
         private List<ValidationError> _validationErrors = new List<ValidationError>();
         private Dictionary<string, float> _lastValidValues = new Dictionary<string, float>();
         private bool _isDataValid = true;
-
         // Statistics
         private ValidationStats _stats = new ValidationStats();
-
         // State tracking
         private bool _isInitialized = false;
-
         // Events
         public event System.Action<List<ValidationError>> OnValidationFailed;
         public event System.Action OnValidationPassed;
         public event System.Action<ValidationError> OnValueCorrected;
         public event System.Action<ValidationReport> OnValidationComplete;
-
         public bool IsInitialized => _isInitialized;
         public ValidationStats Stats => _stats;
         public bool IsDataValid => _isDataValid;
         public List<ValidationError> LastValidationErrors => new List<ValidationError>(_validationErrors);
         public ValidationRules Rules => _rules;
-
         public void Initialize()
         {
             if (_isInitialized) return;
-
             _validationErrors.Clear();
             _lastValidValues.Clear();
             ResetStats();
             InitializeDefaultRules();
-
             _isInitialized = true;
-
             if (_enableLogging)
             {
                 ChimeraLogger.Log("PLANT", "Plant Data Validation Engine initialized");
             }
         }
-
         /// <summary>
         /// Validate complete plant data
         /// </summary>
@@ -77,11 +66,9 @@ namespace ProjectChimera.Data.Cultivation.Plant
                     Errors = new List<ValidationError>()
                 };
             }
-
             var startTime = DateTime.Now;
             _validationErrors.Clear();
             _isDataValid = true;
-
             // Validate all data categories
             ValidateIdentityData(data);
             ValidateStateData(data);
@@ -89,11 +76,9 @@ namespace ProjectChimera.Data.Cultivation.Plant
             ValidateGrowthData(data);
             ValidateHarvestData(data);
             ValidateLogicalConsistency(data);
-
             var validationTime = (float)(DateTime.Now - startTime).TotalMilliseconds;
             _stats.TotalValidations++;
             _stats.TotalValidationTime += validationTime;
-
             var report = new ValidationReport
             {
                 IsValid = _isDataValid,
@@ -103,7 +88,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 CriticalErrors = _validationErrors.FindAll(e => e.Severity == ValidationSeverity.Critical).Count,
                 WarningCount = _validationErrors.FindAll(e => e.Severity == ValidationSeverity.Warning).Count
             };
-
             if (_isDataValid)
             {
                 _stats.SuccessfulValidations++;
@@ -114,17 +98,13 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 _stats.FailedValidations++;
                 OnValidationFailed?.Invoke(_validationErrors);
             }
-
             OnValidationComplete?.Invoke(report);
-
             if (_enableLogging)
             {
                 ChimeraLogger.Log("PLANT", $"Validation completed: {(_isDataValid ? "PASS" : "FAIL")} ({_validationErrors.Count} errors, {validationTime:F2}ms)");
             }
-
             return report;
         }
-
         /// <summary>
         /// Validate single field value
         /// </summary>
@@ -174,7 +154,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
             _stats.FieldValidations++;
             return result;
         }
-
         /// <summary>
         /// Validate identity data section
         /// </summary>
@@ -210,7 +189,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
 
             _stats.IdentityValidations++;
         }
-
         /// <summary>
         /// Validate state data section
         /// </summary>
@@ -249,7 +227,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
 
             _stats.StateValidations++;
         }
-
         /// <summary>
         /// Validate resource data section
         /// </summary>
@@ -277,7 +254,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
 
             _stats.ResourceValidations++;
         }
-
         /// <summary>
         /// Validate growth data section
         /// </summary>
@@ -302,7 +278,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
 
             _stats.GrowthValidations++;
         }
-
         /// <summary>
         /// Validate harvest data section
         /// </summary>
@@ -328,7 +303,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
 
             _stats.HarvestValidations++;
         }
-
         /// <summary>
         /// Validate logical consistency across all data
         /// </summary>
@@ -356,7 +330,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
 
             _stats.ConsistencyValidations++;
         }
-
         /// <summary>
         /// Validate float field against range
         /// </summary>
@@ -382,7 +355,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 }
             }
         }
-
         /// <summary>
         /// Validate float range with correction
         /// </summary>
@@ -406,7 +378,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
 
             return result;
         }
-
         /// <summary>
         /// Add validation error
         /// </summary>
@@ -429,7 +400,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
 
             _stats.TotalErrors++;
         }
-
         /// <summary>
         /// Check if type is valid
         /// </summary>
@@ -438,7 +408,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
             if (value == null) return !expectedType.IsValueType || Nullable.GetUnderlyingType(expectedType) != null;
             return expectedType.IsAssignableFrom(value.GetType());
         }
-
         /// <summary>
         /// Get minimum age for growth stage
         /// </summary>
@@ -455,7 +424,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 _ => 0f
             };
         }
-
         /// <summary>
         /// Get expected height for growth stage
         /// </summary>
@@ -472,7 +440,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 _ => 50f
             };
         }
-
         /// <summary>
         /// Count validated fields
         /// </summary>
@@ -480,7 +447,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
         {
             return 25; // Total serialized fields
         }
-
         /// <summary>
         /// Initialize default validation rules
         /// </summary>
@@ -497,7 +463,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
             _rules.FloatRanges["EstimatedPotency"] = new FloatRange { Min = 0f, Max = 1f };
             _rules.FloatRanges["GeneticVigorModifier"] = new FloatRange { Min = 0.1f, Max = 2f };
         }
-
         /// <summary>
         /// Reset validation statistics
         /// </summary>
@@ -505,7 +470,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
         {
             _stats = new ValidationStats();
         }
-
         /// <summary>
         /// Set validation configuration
         /// </summary>
@@ -520,7 +484,6 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 ChimeraLogger.Log("PLANT", $"Validation config updated: Strict={strictValidation}, AutoCorrect={autoCorrect}, Tolerance={tolerance:F2}");
             }
         }
-
         /// <summary>
         /// Add custom validation rule
         /// </summary>

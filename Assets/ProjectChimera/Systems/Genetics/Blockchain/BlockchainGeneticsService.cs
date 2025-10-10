@@ -10,37 +10,16 @@ using ProjectChimera.Data.Genetics.Blockchain;
 
 namespace ProjectChimera.Systems.Genetics.Blockchain
 {
-    /// <summary>
-    /// Blockchain-verified genetics breeding service.
-    /// Wraps existing BreedingCore with invisible blockchain verification.
-    ///
-    /// GAMEPLAY PHILOSOPHY - "VIDEO GAME FIRST":
-    /// ============================================
-    /// This service makes breeding:
-    /// 1. FUN - Players see progress bars and success messages, not hashes
-    /// 2. REWARDING - "✅ Verified Strain" badge feels like an achievement
-    /// 3. TRUSTWORTHY - Can safely trade strains knowing they're authentic
-    /// 4. FAST - <1-2 seconds per breed (gameplay stays responsive)
-    ///
-    /// INVISIBLE BLOCKCHAIN:
-    /// Players never see technical blockchain terms.
-    /// They just click "Breed" and get offspring with verification badge.
-    /// The blockchain runs silently, making genetics secure and traceable.
-    ///
-    /// INTEGRATION:
-    /// Uses existing BreedingCore for genetics calculations.
-    /// Adds blockchain layer on top for verification and lineage tracking.
-    /// </summary>
+    /// Blockchain-verified genetics breeding service with invisible blockchain verification
+    /// Wraps BreedingCore for secure, traceable genetics with player-friendly UI
     public class BlockchainGeneticsService : MonoBehaviour, IBlockchainGeneticsService
     {
         [Header("Blockchain Configuration")]
         [SerializeField] private bool _enableGPUMining = true;
         [SerializeField] private int _difficulty = GeneticLedger.DIFFICULTY; // 4 leading zeros
         [SerializeField] private int _maxMiningAttempts = 1000000; // Safety limit
-
         [Header("Player Identity")]
         [SerializeField] private string _playerSignature = "Player1"; // TODO: Replace with actual player ID
-
         private GeneticLedger _ledger;
         private BreedingCore _breedingCore;
         private GeneticProofOfWorkGPU _gpuMiner;
@@ -48,12 +27,10 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
 
         // Blockchain metadata storage (separate from PlantGenotype data structure)
         private Dictionary<string, BlockchainMetadata> _blockchainMetadata = new Dictionary<string, BlockchainMetadata>();
-
         private void Awake()
         {
             // Initialize blockchain ledger
             _ledger = new GeneticLedger();
-
             // Initialize GPU miner (if enabled)
             if (_enableGPUMining)
             {
@@ -74,37 +51,18 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
 
             // Initialize enhanced fractal genetics engine
             _fractalEngine = gameObject.AddComponent<EnhancedFractalGeneticsEngine>();
-
             ChimeraLogger.Log("GENETICS",
                 "🧬 Enhanced fractal genetics engine initialized (research-calibrated breeding)", this);
-
             // Register with service container
             var container = ServiceContainerFactory.Instance;
             if (container != null)
             {
                 container.RegisterInstance<IBlockchainGeneticsService>(this);
             }
-
             ChimeraLogger.Log("BLOCKCHAIN",
                 "Blockchain genetics service initialized (Video game mode: invisible blockchain)", this);
         }
-
-        /// <summary>
-        /// Breeds two plants with blockchain verification.
-        ///
-        /// GAMEPLAY FLOW:
-        /// 1. Player selects parent plants and clicks "Breed"
-        /// 2. UI shows "Calculating genetics..." with progress bar
-        /// 3. This method runs (genetic calculations + blockchain mining)
-        /// 4. Method completes in <1-2 seconds
-        /// 5. UI shows "✅ Breeding Complete! New verified strain created."
-        /// 6. Player receives offspring with verification badge
-        ///
-        /// BLOCKCHAIN MAGIC:
-        /// The genetic calculations ARE the proof-of-work.
-        /// No separate "mining" step - it's all part of breeding.
-        /// Player sees normal breeding progress, blockchain happens invisibly.
-        /// </summary>
+        // Breeds two plants with blockchain verification (<1-2s with invisible blockchain proof-of-work)
         public async Task<PlantGenotype> BreedPlantsAsync(
             PlantGenotype parent1,
             PlantGenotype parent2,
@@ -116,57 +74,43 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
                     "Cannot breed: One or both parents are null", this);
                 return null;
             }
-
             var startTime = Time.realtimeSinceStartup;
-
             // Auto-generate strain name if not provided
             if (string.IsNullOrEmpty(strainName))
             {
                 var gen = CalculateOffspringGeneration(parent1, parent2);
                 strainName = $"Hybrid F{gen}";
             }
-
             ChimeraLogger.Log("GENETICS",
                 $"🧬 Breeding started: {strainName}", this);
-
             try
             {
                 // STEP 1: Generate mutation seed (deterministic randomness for genetics)
                 var mutationSeed = GenerateMutationSeed();
-
                 // STEP 2: Perform genetic breeding calculations
                 // This is where the "proof-of-work" happens - complex genetic math
                 var offspring = await PerformGeneticBreeding(parent1, parent2, mutationSeed);
-
                 // STEP 3: Create blockchain event packet
                 var packet = await CreateBreedingEventPacket(
                     parent1, parent2, offspring,
                     mutationSeed, strainName);
-
                 // STEP 4: Add to blockchain (validates and records)
                 _ledger.AddBlock(packet);
-
                 // STEP 5: Store blockchain metadata for offspring
                 StoreBlockchainMetadata(offspring.GenotypeID, packet.BlockHash, packet.Generation);
-
                 var duration = Time.realtimeSinceStartup - startTime;
-
                 ChimeraLogger.Log("GENETICS",
                     $"✅ Breeding complete: {strainName} (Gen {packet.Generation}) in {duration:F2}s", this);
-
                 return offspring;
             }
             catch (Exception ex)
             {
                 var duration = Time.realtimeSinceStartup - startTime;
-
                 ChimeraLogger.LogError("BLOCKCHAIN",
                     $"❌ Breeding failed after {duration:F2}s: {ex.Message}", this);
-
                 return null;
             }
         }
-
         /// <summary>
         /// Performs the actual genetic breeding using enhanced fractal genetics.
         /// This async method allows UI to show progress while breeding calculates.
@@ -181,27 +125,17 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
         {
             // Yield to allow UI update
             await Task.Yield();
-
             // Use enhanced fractal genetics engine for realistic breeding
             // TODO: Get actual environmental data from cultivation system
             var environment = EnvironmentalProfile.Default;
-
             var offspring = _fractalEngine.GenerateOffspring(
                 parent1,
                 parent2,
                 mutationSeed,
                 environment);
-
             return offspring;
         }
-
-        /// <summary>
-        /// Creates blockchain event packet with proof-of-work.
-        ///
-        /// GAMEPLAY NOTE: This is the "mining" step, but player never sees it.
-        /// They just see breeding progress bar. The hash calculation is part of
-        /// the genetic breeding process - invisible blockchain at work!
-        /// </summary>
+        // Creates blockchain event packet with proof-of-work (invisible to player)
         private async Task<GeneEventPacket> CreateBreedingEventPacket(
             PlantGenotype parent1,
             PlantGenotype parent2,
@@ -237,7 +171,6 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
 
             return packet;
         }
-
         /// <summary>
         /// CPU-based proof-of-work mining (fallback).
         /// Searches for nonce that makes hash start with required zeros.
@@ -281,7 +214,6 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
                 $"Failed to mine block after {_maxMiningAttempts:N0} attempts. " +
                 "This should be extremely rare - check difficulty setting.");
         }
-
         /// <summary>
         /// Verifies strain authenticity by checking blockchain.
         ///
@@ -313,7 +245,6 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
 
             return true;
         }
-
         /// <summary>
         /// Gets complete breeding lineage for strain.
         ///
@@ -331,7 +262,6 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
 
             return _ledger.GetLineage(metadata.BlockchainHash);
         }
-
         /// <summary>
         /// Gets generation number (F1, F2, F3...).
         ///
@@ -353,7 +283,6 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
 
             return 0; // Default generation
         }
-
         /// <summary>
         /// Gets all strains player has bred.
         ///
@@ -363,15 +292,11 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
         {
             return _ledger.GetPlayerStrains(_playerSignature);
         }
-
-        /// <summary>
-        /// Gets total breeding count for achievements.
-        /// </summary>
+        // Gets total breeding count for achievements.
         public int GetTotalBreedingCount()
         {
             return _ledger.GetChainLength();
         }
-
         /// <summary>
         /// Validates entire blockchain integrity.
         ///
@@ -382,7 +307,6 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
         {
             return _ledger.ValidateChain();
         }
-
         /// <summary>
         /// Registers a purchased/starter strain as genesis.
         ///
@@ -421,7 +345,6 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
             ChimeraLogger.Log("GENETICS",
                 $"🌱 Genesis strain registered: {strainName}", this);
         }
-
         /// <summary>
         /// Gets blockchain verification info for UI display.
         ///
@@ -463,7 +386,6 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
 
             return info;
         }
-
         // ===== PRIVATE HELPER METHODS =====
 
         private ulong GenerateMutationSeed()
@@ -517,10 +439,7 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
 
             return offspring;
         }
-
-        /// <summary>
-        /// Average two values with random variation
-        /// </summary>
+        // Average two values with random variation
         private float AverageWithVariation(float val1, float val2, System.Random rng, float variationPercent)
         {
             var avg = (val1 + val2) / 2f;
@@ -537,10 +456,7 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
                 // Unregister logic if needed
             }
         }
-
-        /// <summary>
-        /// Store blockchain metadata for a genotype
-        /// </summary>
+        // Store blockchain metadata for a genotype
         private void StoreBlockchainMetadata(string genotypeId, string blockchainHash, int generation)
         {
             if (string.IsNullOrEmpty(genotypeId))
@@ -554,10 +470,7 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
                 VerificationTimestamp = DateTime.Now
             };
         }
-
-        /// <summary>
-        /// Get blockchain metadata for a genotype
-        /// </summary>
+        // Get blockchain metadata for a genotype
         public BlockchainMetadata GetBlockchainMetadata(string genotypeId)
         {
             if (_blockchainMetadata.TryGetValue(genotypeId, out var metadata))
@@ -565,10 +478,7 @@ namespace ProjectChimera.Systems.Genetics.Blockchain
 
             return new BlockchainMetadata { BlockchainVerified = false };
         }
-
-        /// <summary>
-        /// Check if a genotype is blockchain-verified
-        /// </summary>
+        // Check if a genotype is blockchain-verified
         public bool IsBlockchainVerified(string genotypeId)
         {
             return _blockchainMetadata.ContainsKey(genotypeId) &&

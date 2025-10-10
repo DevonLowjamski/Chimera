@@ -7,7 +7,6 @@ using System.Linq;
 using ProjectChimera.Data.Shared;
 using GeneticPlantStrainSO = ProjectChimera.Data.Genetics.GeneticPlantStrainSO;
 
-
 namespace ProjectChimera.Data.Cultivation.Plant
 {
     /// <summary>
@@ -22,63 +21,52 @@ namespace ProjectChimera.Data.Cultivation.Plant
         [SerializeField] private PlantGrowthData _plantGrowth;
         [SerializeField] private PlantResourceData _plantResources;
         [SerializeField] private PlantHarvestData _plantHarvest;
-
         // Legacy properties for backward compatibility (auto-initialized)
         [Header("Plant Identity")]
         [SerializeField] private string _plantID = "";
         [SerializeField] private string _plantName = "";
         [SerializeField] private PlantStrainSO _strain;
         [SerializeField] private GenotypeDataSO _genotype;
-
         [Header("Current State")]
         [SerializeField] private PlantGrowthStage _currentGrowthStage = PlantGrowthStage.Seedling;
         [SerializeField] private float _ageInDays = 0f;
         [SerializeField] private float _daysInCurrentStage = 0f;
         [SerializeField] private Vector3 _worldPosition = Vector3.zero;
-
         [Header("Physical Characteristics")]
         [SerializeField, Range(0f, 500f)] private float _currentHeight = 5f;
         [SerializeField, Range(0f, 200f)] private float _currentWidth = 2f;
         [SerializeField, Range(0f, 100f)] private float _rootMassPercentage = 30f;
         [SerializeField, Range(0f, 1000f)] private float _leafArea = 10f;
-
         [Header("Health and Vitality")]
         [SerializeField, Range(0f, 1f)] private float _overallHealth = 1f;
         [SerializeField, Range(0f, 1f)] private float _vigor = 1f;
         [SerializeField, Range(0f, 1f)] private float _stressLevel = 0f;
         [SerializeField, Range(0f, 1f)] private float _immuneResponse = 0.8f;
         [SerializeField, Range(0f, 1f)] private float _maturityLevel = 0f;
-
         [Header("Resource Status")]
         [SerializeField, Range(0f, 1f)] private float _waterLevel = 0.8f;
         [SerializeField, Range(0f, 1f)] private float _nutrientLevel = 0.7f;
         [SerializeField, Range(0f, 1f)] private float _energyReserves = 0.6f;
-
         [Header("Growth Metrics")]
         [SerializeField] private float _dailyGrowthRate = 1f;
         [SerializeField] private float _biomassAccumulation = 2f;
         [SerializeField] private float _rootDevelopmentRate = 1f;
         [SerializeField, Range(0f, 2f)] private float _growthProgress = 0f;
         [SerializeField] private int _daysSincePlanted = 0;
-
         [Header("Environmental History")]
         [SerializeField] private EnvironmentalConditions _currentEnvironment;
         [SerializeField] private float _cumulativeStressDays = 0f;
         [SerializeField] private float _optimalDays = 0f;
-
         [Header("Cultivation Events")]
         [SerializeField] private DateTime _plantedDate = DateTime.Now;
         [SerializeField] private DateTime _lastWatering = DateTime.Now;
         [SerializeField] private DateTime _lastFeeding = DateTime.Now;
         [SerializeField] private DateTime _lastTraining = DateTime.MinValue;
-
         [Header("Genetic Expression")]
         [SerializeField] private float _calculatedMaxHeight = 150f;
         [SerializeField] private float _lastTraitCalculationAge = 0f;
 
-        /// <summary>
-        /// Initialize the modular plant system
-        /// </summary>
+        // Initialize the modular plant system
         private void InitializeModularSystem()
         {
             // Initialize static class references (no instantiation needed for static classes)
@@ -89,10 +77,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 SyncFromSerializedFields();
             }
         }
-
-        /// <summary>
-        /// Sync modular system with serialized fields for backward compatibility
-        /// </summary>
+        // Sync modular system with serialized fields for backward compatibility
         private void SyncFromSerializedFields()
         {
             _plantState.PlantID = _plantID;
@@ -130,10 +115,8 @@ namespace ProjectChimera.Data.Cultivation.Plant
             _plantState.LastTraining = _lastTraining;
             _plantState.CalculatedMaxHeight = _calculatedMaxHeight;
             _plantState.LastTraitCalculationAge = _lastTraitCalculationAge;
-
             // Use the Water method to set water level
             _plantResources.Water(_waterLevel - _plantResources.WaterLevel);
-
             // Use the Feed method to set nutrient level
             var nutrientDict = new System.Collections.Generic.Dictionary<string, float>
             {
@@ -143,17 +126,13 @@ namespace ProjectChimera.Data.Cultivation.Plant
             {
                 _plantResources.Feed(nutrientDict);
             }
-
             // Energy reserves is set directly since it's a field
             _plantResources.CurrentEnergyLevel = _energyReserves;
             _plantResources.LastWatering = _lastWatering;
             _plantResources.LastFeeding = _lastFeeding;
             _plantResources.LastTraining = _lastTraining;
         }
-
-        /// <summary>
-        /// Sync serialized fields with modular system
-        /// </summary>
+        // Sync serialized fields with modular system
         private void SyncToSerializedFields()
         {
             _plantID = _plantState.PlantID;
@@ -191,19 +170,14 @@ namespace ProjectChimera.Data.Cultivation.Plant
 
         #region Public API
 
-        /// <summary>
-        /// Initialize plant with basic information
-        /// </summary>
+        // Initialize plant with basic information
         public void InitializePlant(string plantID, string plantName, PlantStrainSO strain, GenotypeDataSO genotype, Vector3 worldPosition)
         {
             InitializeModularSystem();
             _plantState.Initialize(plantID, plantName, strain, genotype, worldPosition);
             SyncToSerializedFields();
         }
-
-        /// <summary>
-        /// Process daily growth
-        /// </summary>
+        // Process daily growth
         public void ProcessDailyGrowth()
         {
             InitializeModularSystem();
@@ -212,20 +186,14 @@ namespace ProjectChimera.Data.Cultivation.Plant
             _plantState.CurrentEnvironment = _currentEnvironment.ToString();
             SyncToSerializedFields();
         }
-
-        /// <summary>
-        /// Set growth stage
-        /// </summary>
+        // Set growth stage
         public void SetGrowthStage(PlantGrowthStage newStage)
         {
             InitializeModularSystem();
             _plantState.SetGrowthStage(newStage);
             SyncToSerializedFields();
         }
-
-        /// <summary>
-        /// Water the plant
-        /// </summary>
+        // Water the plant
         public WateringResult Water(float waterAmount)
         {
             InitializeModularSystem();
@@ -235,18 +203,13 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 Success = true,
                 Timestamp = DateTime.Now
             };
-
             _plantResources.Water(waterAmount);
             _plantState.WaterLevel = _plantResources.WaterLevel;
             _plantState.LastWatering = DateTime.Now;
             SyncToSerializedFields();
-
             return result;
         }
-
-        /// <summary>
-        /// Feed the plant
-        /// </summary>
+        // Feed the plant
         public ProjectChimera.Data.Cultivation.FeedingResult Feed(float nutrientAmount)
         {
             InitializeModularSystem();
@@ -267,13 +230,9 @@ namespace ProjectChimera.Data.Cultivation.Plant
             _plantState.NutrientLevel = _plantResources.NutrientLevel;
             _plantState.LastFeeding = DateTime.Now;
             SyncToSerializedFields();
-
             return result;
         }
-
-        /// <summary>
-        /// Apply training
-        /// </summary>
+        // Apply training
         public TrainingResult ApplyTraining(string trainingType)
         {
             InitializeModularSystem();
@@ -288,13 +247,9 @@ namespace ProjectChimera.Data.Cultivation.Plant
 
             _plantState.LastTraining = DateTime.Now;
             SyncToSerializedFields();
-
             return result;
         }
-
-        /// <summary>
-        /// Calculate yield potential
-        /// </summary>
+        // Calculate yield potential
         public YieldCalculation CalculateYieldPotential()
         {
             InitializeModularSystem();
@@ -306,19 +261,13 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 CalculationDate = DateTime.Now
             };
         }
-
-        /// <summary>
-        /// Calculate potency potential
-        /// </summary>
+        // Calculate potency potential
         public float CalculatePotencyPotential()
         {
             InitializeModularSystem();
             return _plantHarvest.CalculateYieldPotential() * 0.15f; // Default potency calculation
         }
-
-        /// <summary>
-        /// Harvest the plant
-        /// </summary>
+        // Harvest the plant
         public HarvestResult Harvest()
         {
             InitializeModularSystem();
@@ -332,10 +281,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
             SyncToSerializedFields();
             return result;
         }
-
-        /// <summary>
-        /// Get harvest readiness
-        /// </summary>
+        // Get harvest readiness
         public HarvestReadiness CheckHarvestReadiness()
         {
             InitializeModularSystem();
@@ -346,10 +292,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 ReadinessReason = isReady ? "Plant is ready for harvest" : "Plant is not ready for harvest"
             };
         }
-
-        /// <summary>
-        /// Get harvest recommendations
-        /// </summary>
+        // Get harvest recommendations
         public HarvestRecommendation GetHarvestRecommendations()
         {
             InitializeModularSystem();
@@ -361,10 +304,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 RecommendationReason = "Plant shows optimal harvest characteristics"
             };
         }
-
-        /// <summary>
-        /// Get post-harvest processing recommendations
-        /// </summary>
+        // Get post-harvest processing recommendations
         public PostHarvestProcess GetPostHarvestProcess(HarvestResult harvestResult)
         {
             InitializeModularSystem();
@@ -377,47 +317,32 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 Humidity = 55f
             };
         }
-
-        /// <summary>
-        /// Get resource status
-        /// </summary>
+        // Get resource status
         public float GetResourceStatus()
         {
             InitializeModularSystem();
             return _plantResources.GetResourceStatus();
         }
-
-        /// <summary>
-        /// Get optimal watering schedule
-        /// </summary>
+        // Get optimal watering schedule
         public float GetOptimalWateringSchedule()
         {
             InitializeModularSystem();
             return _plantResources.GetOptimalWateringSchedule();
         }
-
-        /// <summary>
-        /// Get optimal feeding schedule
-        /// </summary>
+        // Get optimal feeding schedule
         public float GetOptimalFeedingSchedule()
         {
             InitializeModularSystem();
             return _plantResources.GetOptimalFeedingSchedule();
         }
-
-        /// <summary>
-        /// Get plant summary
-        /// </summary>
+        // Get plant summary
         public PlantSummary GetSummary()
         {
             InitializeModularSystem();
             return _plantState.GetSummary();
         }
-
         #endregion
-
         #region Legacy Properties (Backward Compatibility)
-
         public string PlantID => _plantID;
         public string PlantName => _plantName;
         public PlantStrainSO Strain => _strain;
@@ -489,10 +414,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
             get => _maturityLevel;
             set => _maturityLevel = Mathf.Clamp01(value);
         }
-
-        /// <summary>
-        /// Initialize plant from strain data
-        /// </summary>
+        // Initialize plant from strain data
         public void InitializeFromStrain(object strain)
         {
             if (strain != null)
@@ -511,10 +433,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
                 // Initialize other strain-specific properties as needed
             }
         }
-
-        /// <summary>
-        /// Safely get strain name with fallback using pattern matching
-        /// </summary>
+        // Safely get strain name with fallback using pattern matching
         private string GetStrainName(object strain)
         {
             if (strain == null)
@@ -536,10 +455,7 @@ namespace ProjectChimera.Data.Cultivation.Plant
                     return strain.ToString() ?? "Unknown Strain";
             }
         }
-
-        /// <summary>
-        /// Safely get max height from strain with fallback using pattern matching
-        /// </summary>
+        // Safely get max height from strain with fallback using pattern matching
         private float GetStrainMaxHeight(object strain)
         {
             if (strain == null)
