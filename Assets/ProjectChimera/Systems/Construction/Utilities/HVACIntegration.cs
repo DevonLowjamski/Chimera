@@ -93,7 +93,7 @@ namespace ProjectChimera.Systems.Construction.Utilities
 
             // Register with UpdateOrchestrator for ITickable
             var orchestrator = serviceContainer?.Resolve<UpdateOrchestrator>();
-            orchestrator?.Register(this);
+            orchestrator?.RegisterTickable(this);
 
             ChimeraLogger.Log("HVAC",
                 "HVAC integration initialized - climate control ready!", this);
@@ -145,14 +145,14 @@ namespace ProjectChimera.Systems.Construction.Utilities
                     Temperature = _defaultTemperature,
                     Humidity = _defaultHumidity,
                     CO2Level = _defaultCO2,
-                    AirflowVelocity = 0.3f
+                    AirVelocity = 0.3f
                 },
                 TargetConditions = new EnvironmentalConditions
                 {
                     Temperature = _defaultTemperature,
                     Humidity = _defaultHumidity,
                     CO2Level = _defaultCO2,
-                    AirflowVelocity = 0.3f
+                    AirVelocity = 0.3f
                 },
                 ZoneEquipment = new List<ActiveHVACEquipment>(),
                 ControlParameters = new HVACControlParameters
