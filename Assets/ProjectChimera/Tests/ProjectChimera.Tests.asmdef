@@ -1,0 +1,40 @@
+{
+    "name": "ProjectChimera.Tests",
+    "rootNamespace": "ProjectChimera.Tests",
+    "references": [
+        "ProjectChimera.Core",
+        "ProjectChimera.Shared",
+        "ProjectChimera.Data",
+        "ProjectChimera.Data.Shared",
+        "ProjectChimera.Data.Events",
+        "ProjectChimera.Data.Genetics",
+        "ProjectChimera.Data.Construction",
+        "ProjectChimera.Data.Cultivation",
+        "ProjectChimera.Data.Environment",
+        "ProjectChimera.Data.Economy",
+        "ProjectChimera.Systems",
+        "ProjectChimera.Systems.Gameplay",
+        "ProjectChimera.Systems.Cultivation",
+        "ProjectChimera.Systems.Construction",
+        "ProjectChimera.Systems.Services",
+        "ProjectChimera.UI",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
